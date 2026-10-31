@@ -1,6 +1,6 @@
 from resources import Quantity, ResourceUnit
 
-from ..renderer import GOLD, MUTED, TEXT_SOFT, resource_name, unit_label
+from ..renderer import GOLD, MUTED, TEXT_SOFT, duration_label, resource_name, unit_label
 class WorldScreen:
     def __init__(self, service, inventory_id="player"):
         self.service = service
@@ -169,7 +169,10 @@ class WorldScreen:
                     self.inventory_id,
                     Quantity(1, ResourceUnit(node.quantity[1])),
                 )
-                self.message = f"{resource_name(node.resource_type)} toplandı."
+                self.message = (
+                    f"{resource_name(node.resource_type)} toplama başladı. "
+                    f"{duration_label(self.service.gathering_duration(actor.actor_id))} sürecek."
+                )
             except (KeyError, ValueError, RuntimeError) as error:
                 self.message = f"Toplama başarısız: {error}"
 
@@ -180,7 +183,7 @@ class WorldScreen:
         if state.pressed("wait"):
             try:
                 self.service.advance_by(1)
-                self.message = "Bir tick ilerletildi."
+                self.message = "Zaman ilerletildi."
             except RuntimeError as error:
                 self.message = str(error)
 

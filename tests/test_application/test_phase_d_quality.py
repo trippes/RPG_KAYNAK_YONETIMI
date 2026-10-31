@@ -115,6 +115,7 @@ class TestPhaseDQuality(unittest.TestCase):
         local_screen = LocalMapScreen(service)
         local_screen.selected = (15, 15)
         self.assertTrue(local_screen._gather_at_selected_tree())
+        service.advance_by(service.gathering_duration(ids.hero_id))
         self.assertEqual(service.inventory(ids.inventory_id).stocks, (("iron_ore", 1, "item"),))
 
     def test_dialogue_prompt_uses_selected_npc_name(self):

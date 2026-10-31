@@ -112,13 +112,7 @@ class WorldResourceNode:
         """Atomically move a positive quantity from this node to an inventory."""
         if not isinstance(inventory, Inventory):
             raise TypeError("inventory must be Inventory.")
-        self._validate_quantity(quantity, "quantity")
-        if quantity.value <= 0:
-            raise ResourceNodeError("Extraction quantity must be positive.")
-        if quantity.unit != self._quantity.unit:
-            raise ResourceNodeError("Extraction unit does not match node unit.")
-        if quantity.value > self._quantity.value:
-            raise ResourceNodeInsufficientError("Node does not contain enough resource.")
+        self.validate_extraction(quantity)
         before = inventory.snapshot()
         try:
             inventory.add(self._resource_type, quantity)
@@ -126,6 +120,16 @@ class WorldResourceNode:
         except Exception:
             inventory._restore_snapshot(before)
             raise
+
+    def validate_extraction(self, quantity: Quantity) -> None:
+        """Validate an extraction without changing node or inventory state."""
+        self._validate_quantity(quantity, "quantity")
+        if quantity.value <= 0:
+            raise ResourceNodeError("Extraction quantity must be positive.")
+        if quantity.unit != self._quantity.unit:
+            raise ResourceNodeError("Extraction unit does not match node unit.")
+        if quantity.value > self._quantity.value:
+            raise ResourceNodeInsufficientError("Node does not contain enough resource.")
 
     @staticmethod
     def _validate_text(value: str, name: str) -> str:

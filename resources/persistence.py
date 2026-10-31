@@ -37,6 +37,7 @@ class GameplayFileError(OSError):
 class InventoryRecord:
     inventory_id: str
     stocks: tuple[tuple[str, int, str], ...]
+    items: tuple[tuple[str, int], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -119,7 +120,7 @@ class GameplaySnapshot:
                 (resource.value, quantity.value, quantity.unit.value)
                 for resource, quantity in inventory.snapshot()
             )
-            inventory_records.append(InventoryRecord(inventory_id, stocks))
+            inventory_records.append(InventoryRecord(inventory_id, stocks, inventory.item_snapshot()))
 
         node_records = [
             _node_record(node)
@@ -177,6 +178,9 @@ class GameplaySnapshot:
                 {"inventory_id": record.inventory_id, "stocks": [
                     {"resource_type": resource, "value": value, "unit": unit}
                     for resource, value, unit in record.stocks
+                ], "items": [
+                    {"item_id": item_id, "quantity": quantity}
+                    for item_id, quantity in record.items
                 ]}
                 for record in self.inventories
             ],
@@ -292,6 +296,8 @@ class GameplaySnapshot:
             inventory = Inventory()
             for resource, value, unit in record.stocks:
                 inventory.add(ResourceType(resource), Quantity(value, ResourceUnit(unit)))
+            for item_id, quantity in record.items:
+                inventory.add_item(item_id, quantity)
             inventories[record.inventory_id] = inventory
 
         nodes = WorldResourceNodeManager()
@@ -458,7 +464,16 @@ def _inventory_record(data) -> InventoryRecord:
         ))
     stocks = tuple(stock_records)
     _unique((resource for resource, _, _ in stocks), "inventory resource")
-    return InventoryRecord(inventory_id, stocks)
+    item_records = []
+    for item in data.get("items", []):
+        if not isinstance(item, Mapping):
+            raise GameplayPersistenceError("Inventory item must be an object.")
+        item_records.append((
+            _validate_id(item.get("item_id"), "item_id"),
+            _non_negative_int(item.get("quantity"), "quantity"),
+        ))
+    _unique((item_id for item_id, _ in item_records), "inventory item")
+    return InventoryRecord(inventory_id, stocks, tuple(sorted(item_records)))
 
 
 def _node_record_from_dict(data) -> NodeRecord:

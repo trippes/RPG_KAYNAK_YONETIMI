@@ -594,6 +594,7 @@
       }
     ],
     "reward": {
+      "experience": 100,
       "currency": 10,
       "items": [
         [

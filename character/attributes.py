@@ -30,6 +30,10 @@ class Attributes:
     def get(self, attribute: Attribute | str) -> int:
         return self.values[Attribute(attribute)]
 
+    def modifier(self, attribute: Attribute | str) -> int:
+        """Return the classic RPG modifier for an attribute score."""
+        return (self.get(attribute) - 10) // 2
+
     def with_modifiers(self, modifiers: Mapping[Attribute | str, int]) -> "Attributes":
         result = dict(self.values)
         for key, value in modifiers.items():
@@ -45,4 +49,3 @@ def _score(value: int) -> int:
     if isinstance(value, bool) or not isinstance(value, int) or not 1 <= value <= 30:
         raise ValueError("Attribute scores must be integers between 1 and 30.")
     return value
-

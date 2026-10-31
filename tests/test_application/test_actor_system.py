@@ -80,15 +80,16 @@ class TestActorSystem(unittest.TestCase):
         self.service.start_gathering("worker", "node", "main", Quantity(1, ResourceUnit.ITEM))
         self.service.collect("node", "main", Quantity(1, ResourceUnit.ITEM))
 
-    def test_gather_activity_uses_atomic_collection_and_completes_immediately(self):
+    def test_gather_activity_uses_atomic_collection_and_completes_after_duration(self):
         self.service.register_actor("miner", "miner")
         result = self.service.start_gathering(
             "miner", "node", "main", Quantity(2, ResourceUnit.ITEM), "gather-1"
         )
-        self.assertEqual(result.state, ActivityState.COMPLETED.value)
+        self.assertEqual(result.state, ActivityState.RUNNING.value)
+        self.service.advance_by(self.service.gathering_duration("miner"))
+        self.assertEqual(self.service.activity("gather-1").state, ActivityState.COMPLETED.value)
         self.assertEqual(self.inventory.get(self.ore), Quantity(2, ResourceUnit.ITEM))
         self.assertIsNone(self.service.actor("miner").activity_id)
-        self.assertEqual(self.service.activity("gather-1").state, ActivityState.COMPLETED.value)
 
     def test_failed_gather_does_not_change_inventory_or_node(self):
         self.service.register_actor("miner", "miner")
@@ -157,6 +158,26 @@ class TestActorSystem(unittest.TestCase):
             self.service.advance_to(3)
             self.service.advance_to(3)
             self.assertEqual(self.service.inventory("main").stocks, (("tool", 1, "item"),))
+
+    def test_active_gathering_restore_still_delivers_resources(self):
+        self.service.register_actor("worker", "worker")
+        self.service.start_gathering(
+            "worker", "node", "main", Quantity(1, ResourceUnit.ITEM), "persisted-gather"
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "gather-save.json"
+            self.service.save(path)
+            self.service.load(path)
+            self.assertEqual(
+                self.service.activity("persisted-gather").state,
+                ActivityState.RUNNING.value,
+            )
+            self.service.advance_by(150)
+            self.assertEqual(
+                self.service.activity("persisted-gather").state,
+                ActivityState.COMPLETED.value,
+            )
+            self.assertIn(("ore", 1, "item"), self.service.inventory("main").stocks)
 
     def test_invalid_actor_save_does_not_replace_active_bundle(self):
         self.service.register_actor("worker", "worker")

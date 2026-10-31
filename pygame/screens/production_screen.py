@@ -1,4 +1,4 @@
-from ..renderer import RESOURCE_NAMES, resource_name, unit_label
+from ..renderer import RESOURCE_NAMES, duration_label, resource_name, unit_label
 
 
 class ProductionScreen:
@@ -336,7 +336,7 @@ class ProductionScreen:
             y += 28
 
         renderer.text(
-            f"Süre: {recipe.processing_time.value} tick",
+            f"Süre: {duration_label(recipe.processing_time.value)}",
             375, min(y + 5, 385),
         )
 
@@ -358,7 +358,7 @@ class ProductionScreen:
         if running:
             elapsed, total = self._job_progress(running[0])
             renderer.text(
-                f"Üretiliyor: {elapsed}/{total} tick", 375, 421, (130, 180, 235),
+                f"Üretiliyor: {duration_label(elapsed)} / {duration_label(total)}", 375, 421, (130, 180, 235),
             )
             renderer.bar(
                 renderer.pg.Rect(375, 443, 200, 14), elapsed / total, (110, 170, 230),

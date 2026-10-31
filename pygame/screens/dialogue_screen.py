@@ -66,6 +66,37 @@ class DialogueScreen:
                     self.service._dialogue_context(actor_id, npc_id),
                 )
         if self.context is None or self.context[1] != "village_carpenter":
+            if self.context is not None and self.context[1] == "village_blacksmith":
+                quest = getattr(self.service, "blacksmith_quest", None)
+                state = getattr(getattr(quest, "state", None), "value", None)
+                inventory = self.service.inventory("player")
+                ore_amount = next(
+                    (
+                        amount for resource, amount, _unit in inventory.stocks
+                        if str(resource) == "iron_ore"
+                    ),
+                    0,
+                )
+                collect = next(
+                    (
+                        item for item in quest.objectives
+                        if item.objective_id == "collect_iron_ore"
+                    ),
+                    None,
+                ) if quest is not None else None
+                visible = []
+                for choice in choices:
+                    if choice.choice_id == "accept_blacksmith_quest" and state != "available":
+                        continue
+                    if choice.choice_id == "deliver_blacksmith_ore" and (
+                        state != "active"
+                        or collect is None
+                        or not collect.completed
+                        or ore_amount < 3
+                    ):
+                        continue
+                    visible.append(choice)
+                return tuple(visible)
             return choices
         quest = getattr(self.service, "carpenter_quest", None)
         inn_quest = getattr(self.service, "inn_quest", None)
@@ -171,12 +202,11 @@ class DialogueScreen:
                     False,
                 )
             ):
-                self.opening_stage = "name"
-                self.name_entry_active = True
-                self.character_name = ""
+                self.opening_stage = "creation"
+                self.service._creation_from_eren = True
                 self.message = (
                     "Bir dakika! Seni bu köyde daha önce görmedim. "
-                    "Adın ne yabancı?"
+                    "Sen kimsin? Kendini tanıt."
                 )
             else:
                 self.opening_stage = "dialogue"
@@ -190,9 +220,14 @@ class DialogueScreen:
         if self.opening_stage == "start":
             if state.pressed("confirm") and self.node is None:
                 self._open_default()
+                if self.opening_stage == "creation":
+                    return "character_creation"
             elif state.pressed("back") or state.pressed("world"):
                 return self._close_dialogue()
             return None
+
+        if self.opening_stage == "creation":
+            return "character_creation"
 
         if self.name_entry_active:
             if state.pressed("back"):
@@ -373,9 +408,14 @@ class DialogueScreen:
                     self.message = str(error)
 
         elif self.node is not None and self.node.choices and state.pressed("confirm"):
-            self.message = (
-                "Hilmi'nin şu anda vereceği veya teslim alacağı başka bir iş yok."
-            )
+            npc_name = "NPC"
+            if self.context is not None:
+                npc = self.service.application.holder.current.social.npcs.get(
+                    self.context[1],
+                )
+                if npc is not None:
+                    npc_name = npc.name
+            self.message = f"{npc_name} şu anda yeni bir görev vermiyor."
             return self._close_dialogue()
 
         elif (
@@ -389,6 +429,16 @@ class DialogueScreen:
             return self._close_dialogue()
 
         return None
+
+    def resume_after_creation(self):
+        character = self.service.application.holder.current.characters.get("hero")
+        self.character_name = character.name if character is not None else ""
+        self.custom_text = (
+            f"Memnun oldum, {self.character_name}. "
+            "Peki, buralara hangi amaçla geldin?"
+        )
+        self.opening_stage = "ask_reason"
+        self.name_entry_active = False
 
     def render(self, renderer):
         renderer.frame("Diyalog")

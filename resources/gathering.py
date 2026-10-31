@@ -79,6 +79,13 @@ class WorldResourceNodeManager:
             raise KeyError(f"Resource node not found: {node_id}")
         node.extract_to(inventory, quantity)
 
+    def validate_extraction(self, node_id: str, quantity: Quantity) -> None:
+        self.validate_world_references()
+        node = self.get(node_id)
+        if node is None:
+            raise KeyError(f"Resource node not found: {node_id}")
+        node.validate_extraction(quantity)
+
     def regenerate_to(self, node_id: str, tick) -> Quantity:
         self.validate_world_references()
         node = self.get(node_id)

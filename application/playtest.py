@@ -74,9 +74,10 @@ def run_demo_playtest(balance_path: str | Path | None = None) -> PlaytestReport:
     )
     steps.append("dialogue_and_quest")
 
+    travel_start_tick = service.state().simulation_tick
     service.move_actor(ids.hero_id, ids.forest_id)
     service.advance_by(1)
-    travel_ticks = service.state().simulation_tick
+    travel_ticks = service.state().simulation_tick - travel_start_tick
     steps.append("travel")
 
     for _ in range(3):
@@ -84,7 +85,7 @@ def run_demo_playtest(balance_path: str | Path | None = None) -> PlaytestReport:
             ids.hero_id, ids.forest_id, ids.node_id, ids.inventory_id,
             Quantity(1, ResourceUnit.ITEM),
         )
-        service.advance_by(1)
+        service.advance_by(service.gathering_duration(ids.hero_id))
     quest = application.holder.current.quest_log.get(ids.carpenter_quest_id)
     service.move_actor(ids.hero_id, ids.village_id)
     service.advance_by(1)

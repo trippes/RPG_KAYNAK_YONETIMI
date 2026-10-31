@@ -27,7 +27,7 @@ class TestContentPack(unittest.TestCase):
                 ids.hero_id, ids.forest_id, ids.node_id, ids.inventory_id,
                 Quantity(1, ResourceUnit.ITEM),
             )
-            service.advance_by(1)
+            service.advance_by(service.gathering_duration(ids.hero_id))
         service.move_actor(ids.hero_id, ids.village_id)
         service.advance_by(1)
         service.talk_to_npc(ids.hero_id, ids.carpenter_id, "carpenter_intro")

@@ -12,6 +12,8 @@ from dataclasses import dataclass
 from typing import Iterable
 
 from core.time import Tick
+from core.actions import ActionType, action_tick_cost
+from core.foundation import Identifier
 
 from resources import Inventory, Quantity, Recipe, ResourceType, ResourceUnit
 from economy import Currency, MarketOffer, Money, TradeService, Merchant
@@ -19,6 +21,7 @@ from economy import Currency, MarketOffer, Money, TradeService, Merchant
 from .game_application import GameApplication
 from .production_chain import ProductionChain, ProductionChainStage
 from .actor_system import ActivityView, ActorView, WorldActor
+from character import EquipmentSlot, ItemDefinition
 from .movement import MovementManager
 from world import WorldMap
 from npc import Faction, NPC
@@ -44,6 +47,8 @@ class GameplayChainStage:
 class InventoryView:
     inventory_id: str
     stocks: tuple[tuple[str, int, str], ...]
+    items: tuple[tuple[str, int], ...] = ()
+    weight: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -147,6 +152,30 @@ class GameplayService:
             )
         bundle.resource_nodes.extract(node_id, inventory, quantity)
 
+    def action_cost(self, action_type: ActionType | str) -> int:
+        """Return a fixed gameplay action's canonical cost in ticks."""
+        return action_tick_cost(action_type).value
+
+    def _complete_timed_action(self, action_type: ActionType, owner_id: str, callback):
+        """Run an immediate gameplay operation through the canonical action runtime."""
+        bundle = self._current_bundle()
+        duration = action_tick_cost(action_type)
+        action = bundle.simulation.actions.create(
+            Identifier(owner_id),
+            duration,
+            context={"action_type": action_type.value},
+        )
+        bundle.simulation.actions.schedule(
+            action.action_id,
+            bundle.simulation.current_tick,
+        )
+        bundle.production_jobs.advance_by(duration)
+        if action.state.value != "completed":
+            raise GameplayServiceError(
+                f"Timed action did not complete: {action.action_id}"
+            )
+        return callback()
+
     def start_production(
         self,
         recipe_id: str,
@@ -219,6 +248,7 @@ class GameplayService:
         result = self._application.load(path)
         self._chains.clear()
         self._bundle = result
+        result.actor_activities.bind_gameplay_service(self)
         self._rebind_content_quests()
         return result
 
@@ -314,12 +344,76 @@ class GameplayService:
         return {
             "character_id": character.character_id,
             "name": character.name,
+            "age": character.age,
             "attributes": character.attributes.to_dict(),
+            "modifiers": {
+                attribute: character.attributes.modifier(attribute)
+                for attribute in character.attributes.to_dict()
+            },
             "skills": character.skills.to_dict(),
             "level": character.progression.level,
+            "experience": character.progression.experience,
+            "experience_to_next_level": character.progression.experience_to_next_level,
+            "unspent_points": character.progression.unspent_points,
             "current_hit_points": character.current_hit_points,
             "max_hit_points": character.max_hit_points,
+            "attack_bonus": character.attack_bonus,
+            "defense_bonus": character.defense_bonus,
+            "initiative_bonus": character.initiative_bonus,
+            "weapon_damage": character.weapon_damage,
+            "equipment": character.equipment.snapshot(),
         }
+
+    def item(self, item_id: str) -> ItemDefinition | None:
+        return self._current_bundle().items.get(item_id)
+
+    def equipment(self, actor_id: str) -> dict[str, str]:
+        character = self.actor_character(actor_id)
+        if character is None:
+            raise GameplayServiceError("Actor must be linked to a character.")
+        return character.equipment.snapshot()
+
+    def equip_item(self, actor_id: str, inventory_id: str, item_id: str):
+        """Equip one catalog item, returning the replaced item to the inventory."""
+        bundle = self._current_bundle()
+        character = self.actor_character(actor_id)
+        if character is None:
+            raise GameplayServiceError("Actor must be linked to a character.")
+        item = bundle.items.get(item_id)
+        if item is None:
+            raise KeyError(f"Item not found: {item_id}")
+        inventory = self._inventory(bundle, inventory_id)
+        if inventory.item_quantity(item_id) < 1:
+            raise ValueError(f"Item is not in inventory: {item_id}")
+
+        def equip():
+            previous = character.equip(item)
+            inventory.remove_item(item_id)
+            if previous is not None:
+                inventory.add_item(previous)
+            character.current_hit_points = min(
+                character.max_hit_points,
+                character.current_hit_points,
+            )
+            return character.equipment.snapshot()
+
+        return self._complete_timed_action(ActionType.INTERACT, actor_id, equip)
+
+    def unequip_item(self, actor_id: str, inventory_id: str, slot: EquipmentSlot | str):
+        bundle = self._current_bundle()
+        character = self.actor_character(actor_id)
+        if character is None:
+            raise GameplayServiceError("Actor must be linked to a character.")
+        inventory = self._inventory(bundle, inventory_id)
+
+        def unequip():
+            item_id = character.unequip(slot)
+            if item_id is None:
+                raise ValueError(f"No item equipped in slot: {slot}")
+            inventory.add_item(item_id)
+            return item_id
+
+        return self._complete_timed_action(ActionType.INTERACT, actor_id, unequip)
 
     def set_actor_active(self, actor_id: str, active: bool) -> ActorView:
         bundle = self._current_bundle()
@@ -341,6 +435,12 @@ class GameplayService:
         )
         self._advance_quests("collect", node_id, quantity.value, actor_id, inventory_id)
         return result
+
+    def gathering_duration(self, actor_id: str) -> int:
+        """Return gathering duration after applying the character skill."""
+        character = self.actor_character(actor_id)
+        skill = character.skills.get("gathering") if character is not None else 0
+        return max(1, 150 - (skill * 15))
 
     def interact_with_location(self, actor_id: str, location_id: str) -> LocationInteractionView:
         """Inspect a location from an actor currently standing there."""
@@ -366,9 +466,13 @@ class GameplayService:
             for other in bundle.actors.for_world(actor.world_id)
             if other.location_id == location_id
         )
-        return LocationInteractionView(
-            actor_id, location.location_id, location.name, actor.character_id,
-            resource_node_ids, actor_ids,
+        return self._complete_timed_action(
+            ActionType.INTERACT,
+            actor_id,
+            lambda: LocationInteractionView(
+                actor_id, location.location_id, location.name, actor.character_id,
+                resource_node_ids, actor_ids,
+            ),
         )
 
     def start_gathering_at_location(
@@ -404,6 +508,12 @@ class GameplayService:
     def activity(self, activity_id: str) -> ActivityView | None:
         return self._current_bundle().actor_activities.get(activity_id)
 
+    def actor_activity(self, actor_id: str) -> ActivityView | None:
+        actor = self._current_bundle().actors.get(actor_id)
+        if actor is None or actor.activity_id is None:
+            return None
+        return self.activity(actor.activity_id)
+
     def inventory(self, inventory_id: str) -> InventoryView:
         bundle = self._current_bundle()
         inventory = self._inventory(bundle, inventory_id)
@@ -411,6 +521,8 @@ class GameplayService:
             inventory_id,
             tuple((resource.value, quantity.value, quantity.unit.value)
                   for resource, quantity in inventory.snapshot()),
+            inventory.item_snapshot(),
+            inventory.total_weight(bundle.items),
         )
 
     def consume_item(self, actor_id: str, inventory_id: str, resource_id: str) -> int:
@@ -425,6 +537,16 @@ class GameplayService:
         if healing is None:
             raise GameplayServiceError(f"Resource is not consumable: {resource_id}")
         inventory = self._inventory(bundle, inventory_id)
+        return self._complete_timed_action(
+            ActionType.CONSUME_ITEM,
+            actor_id,
+            lambda: self._consume_and_apply(
+                inventory, resource, character, healing,
+            ),
+        )
+
+    @staticmethod
+    def _consume_and_apply(inventory, resource, character, healing: int) -> int:
         inventory.remove(resource, Quantity(1, ResourceUnit.ITEM))
         character.current_hit_points = min(
             character.max_hit_points,
@@ -475,24 +597,27 @@ class GameplayService:
         purchased = offer.quantity if quantity is None else quantity
         if isinstance(purchased, bool) or not isinstance(purchased, int) or purchased <= 0 or purchased > offer.quantity:
             raise GameplayServiceError("Purchase quantity is invalid for this offer.")
-        trade = TradeService(bundle.economy.ledger).execute(
-            buyer_id, offer.seller_id, buyer_inventory, seller_inventory,
-            offer.resource_type,
-            Quantity(purchased, stock.unit),
-            offer.unit_price,
-        )
-        bundle.economy.market.withdraw(offer_id)
-        if purchased < offer.quantity:
-            bundle.economy.market.publish(MarketOffer(
-                offer.offer_id, offer.seller_id, offer.resource_type,
-                offer.quantity - purchased, offer.unit_price,
-                offer.inventory_id, offer.expires_at,
-            ))
-        self._advance_quests(
-            "collect", offer.resource_type.value, purchased,
-            buyer_id, buyer_inventory_id,
-        )
-        return trade
+        def execute_trade():
+            trade = TradeService(bundle.economy.ledger).execute(
+                buyer_id, offer.seller_id, buyer_inventory, seller_inventory,
+                offer.resource_type,
+                Quantity(purchased, stock.unit),
+                offer.unit_price,
+            )
+            bundle.economy.market.withdraw(offer_id)
+            if purchased < offer.quantity:
+                bundle.economy.market.publish(MarketOffer(
+                    offer.offer_id, offer.seller_id, offer.resource_type,
+                    offer.quantity - purchased, offer.unit_price,
+                    offer.inventory_id, offer.expires_at,
+                ))
+            self._advance_quests(
+                "collect", offer.resource_type.value, purchased,
+                buyer_id, buyer_inventory_id,
+            )
+            return trade
+
+        return self._complete_timed_action(ActionType.TRADE, buyer_id, execute_trade)
 
     def cancel_offer(self, offer_id: str, seller_id: str) -> MarketOffer:
         bundle = self._current_bundle()
@@ -541,13 +666,18 @@ class GameplayService:
         dialogue = bundle.social.dialogues.get(dialogue_id)
         if dialogue is None:
             raise KeyError(f"Dialogue not found: {dialogue_id}")
-        result = bundle.social.node_for(
-            dialogue_id,
-            node_id or dialogue.start_node_id,
-            self._dialogue_context(actor_id, npc_id),
-        )
-        self._advance_quests("talk", npc_id, 1, actor_id, None)
-        return result
+        selected_node_id = node_id or dialogue.start_node_id
+
+        def read_node():
+            result = bundle.social.node_for(
+                dialogue_id,
+                selected_node_id,
+                self._dialogue_context(actor_id, npc_id),
+            )
+            self._advance_quests("talk", npc_id, 1, actor_id, None)
+            return result
+
+        return self._complete_timed_action(ActionType.DIALOGUE, actor_id, read_node)
 
     def choose_dialogue(self, actor_id: str, npc_id: str, dialogue_id: str, node_id: str, choice_id: str):
         bundle = self._current_bundle()
@@ -563,10 +693,18 @@ class GameplayService:
             None,
         )
         if choice is None: raise ValueError(f"Dialogue choice not available: {choice_id}")
-        bundle.social.change_relationship(actor_id, npc_id, value=2, trust=1)
-        self._run_dialogue_action(choice.action or choice_id, actor_id, npc_id)
-        if choice.next_node_id is None: return None
-        return self.talk_to_npc(actor_id, npc_id, dialogue_id, choice.next_node_id)
+        def choose():
+            bundle.social.change_relationship(actor_id, npc_id, value=2, trust=1)
+            self._run_dialogue_action(choice.action or choice_id, actor_id, npc_id)
+            if choice.next_node_id is None:
+                return None
+            return bundle.social.node_for(
+                dialogue_id,
+                choice.next_node_id,
+                self._dialogue_context(actor_id, npc_id),
+            )
+
+        return self._complete_timed_action(ActionType.DIALOGUE_CHOICE, actor_id, choose)
 
     def _dialogue_context(self, actor_id: str, npc_id: str) -> dict:
         bundle = self._current_bundle()
@@ -721,6 +859,28 @@ class GameplayService:
             self._grant_quest_reward(quest, owner_id, inventory_id)
         return quest.state
 
+    def grant_experience(self, actor_id: str, amount: int) -> int:
+        """Award XP through the canonical character progression model."""
+        if isinstance(amount, bool) or not isinstance(amount, int) or amount < 0:
+            raise ValueError("Experience must be a non-negative integer.")
+        character = self.actor_character(actor_id)
+        if character is None:
+            raise KeyError(f"Character not found for actor: {actor_id}")
+        return character.progression.add_experience(amount)
+
+    def improve_skill(self, actor_id: str, skill: str) -> int:
+        """Spend one earned progression point on a class skill."""
+        character = self.actor_character(actor_id)
+        if character is None:
+            raise KeyError(f"Character not found for actor: {actor_id}")
+        character.progression.spend_point()
+        try:
+            character.skills = character.skills.improve(skill)
+        except (KeyError, TypeError, ValueError):
+            character.progression.unspent_points += 1
+            raise
+        return character.skills.get(skill)
+
     def add_combatant(self, combatant: Combatant) -> Combatant:
         self._current_bundle().combat.add(combatant)
         return combatant
@@ -729,16 +889,44 @@ class GameplayService:
         return self._current_bundle().combat.create_encounter(encounter_id, combatant_ids, initiative_scores)
 
     def next_combat_turn(self, encounter_id: str):
-        return self._current_bundle().combat.next_turn(encounter_id)
+        return self._complete_timed_action(
+            ActionType.COMBAT_TURN,
+            "combat",
+            lambda: self._current_bundle().combat.next_turn(encounter_id),
+        )
 
     def combat_attack(self, attacker_id: str, defender_id: str):
-        result = self._current_bundle().combat.attack_once(attacker_id, defender_id)
-        if result.defender_defeated:
-            self._advance_quests("kill", defender_id, 1, attacker_id, None)
-        return result
+        def attack():
+            combat = self._current_bundle().combat
+            attacker = combat.get(attacker_id)
+            defender = combat.get(defender_id)
+            if attacker is None:
+                raise KeyError(f"Combatant not found: {attacker_id}")
+            if defender is None:
+                raise KeyError(f"Combatant not found: {defender_id}")
+            attacker_character = self.actor_character(attacker_id)
+            defender_character = self.actor_character(defender_id)
+            weapon_bonus = attacker_character.weapon_damage if attacker_character else 0
+            armor_bonus = defender_character.defense_bonus if defender_character else 0
+            attacker.attack += weapon_bonus
+            defender.defense += armor_bonus
+            try:
+                result = combat.attack_once(attacker_id, defender_id)
+            finally:
+                attacker.attack -= weapon_bonus
+                defender.defense -= armor_bonus
+            if result.defender_defeated:
+                self._advance_quests("kill", defender_id, 1, attacker_id, None)
+            return result
 
-    def advance_combat_round(self) -> None:
-        self._current_bundle().combat.advance_round()
+        return self._complete_timed_action(ActionType.COMBAT_ATTACK, attacker_id, attack)
+
+    def advance_combat_round(self, actor_id: str = "combat") -> None:
+        self._complete_timed_action(
+            ActionType.COMBAT_TURN,
+            actor_id,
+            self._current_bundle().combat.advance_round,
+        )
 
     def _advance_quests(self, objective_type: str, target_id: str, amount: int, owner_id: str | None, inventory_id: str | None):
         for quest in self._current_bundle().quest_log.active():
@@ -762,6 +950,8 @@ class GameplayService:
     def _grant_quest_reward(self, quest: Quest, owner_id: str | None, inventory_id: str | None) -> None:
         bundle = self._current_bundle()
         account_id = owner_id or self._quest_reward_accounts.get(quest.quest_id)
+        if quest.reward.experience and account_id:
+            self.grant_experience(account_id, quest.reward.experience)
         if quest.reward.currency and account_id:
             bundle.economy.ledger.credit(account_id, Money(quest.reward.currency, Currency("gold")), "quest reward")
         target_inventory_id = inventory_id or self._quest_reward_inventories.get(quest.quest_id)

@@ -26,6 +26,7 @@ class TestSocialCombatIntegration(unittest.TestCase):
         self.service.register_dialogue(Dialogue("intro", (DialogueNode("start", "elder", "Welcome", (DialogueChoice("accept", "Accept"),)),), "start"))
         node = self.service.talk_to_npc("hero", "elder", "intro")
         self.assertEqual(node.text, "Welcome")
+        self.assertEqual(self.service.state().simulation_tick, 1)
         quest = Quest("intro-quest", "First Task", (Objective("talk", "Talk", ObjectiveType.TALK, "elder"),))
         self.service.start_quest(quest)
         self.assertEqual(self.application.holder.current.quest_log.active()[0].quest_id, "intro-quest")
@@ -37,7 +38,9 @@ class TestSocialCombatIntegration(unittest.TestCase):
         self.application.holder.current.combat.get("slime").add_status("poison", 2)
         result = self.service.combat_attack("hero", "slime")
         self.assertEqual(result.damage, 6)
+        self.assertEqual(self.service.state().simulation_tick, 1)
         self.service.advance_combat_round()
+        self.assertEqual(self.service.state().simulation_tick, 2)
         self.assertEqual(self.application.holder.current.combat.get("slime").statuses["poison"], 1)
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "social-combat.json"

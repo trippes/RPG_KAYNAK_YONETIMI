@@ -6,7 +6,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Mapping
 
-from resources import ProductionJobManager, ProductionJobState
+from resources import ProductionJobManager, ProductionJobState, Quantity, ResourceUnit
 from core.domain.spatial import Position
 
 from .actor_system import (
@@ -54,6 +54,7 @@ class ActivityRecord:
     facility_id: str | None
     job_id: str | None
     reason: str | None
+    quantity: Quantity | None = None
 
 
 @dataclass(frozen=True)
@@ -105,6 +106,7 @@ class ActorSnapshot:
                 view.facility_id,
                 view.job_id,
                 view.reason,
+                view.quantity,
             )
             for view in manager.activities()
         )
@@ -129,11 +131,10 @@ class ActorSnapshot:
                     ActivityState.PENDING.value,
                     ActivityState.RUNNING.value,
                 }
+                and activity.activity_type == "production"
                 and activity.job_id is None
             ):
-                raise ActorPersistenceError(
-                    "Active activity must reference a job."
-                )
+                raise ActorPersistenceError("Active production activity must reference a job.")
 
         return cls(actors, activities)
 
@@ -170,6 +171,10 @@ class ActorSnapshot:
                     "facility_id": record.facility_id,
                     "job_id": record.job_id,
                     "reason": record.reason,
+                    "quantity": (
+                        {"value": record.quantity.value, "unit": record.quantity.unit.value}
+                        if record.quantity is not None else None
+                    ),
                 }
                 for record in self.activities
             ],
@@ -220,6 +225,7 @@ class ActorSnapshot:
                     ActivityState.PENDING.value,
                     ActivityState.RUNNING.value,
                 }
+                and activity.activity_type == "production"
                 and activity.job_id is None
             ):
                 raise ActorPersistenceError(
@@ -339,6 +345,7 @@ class ActorSnapshot:
                 )
                 activity.job_id = record.job_id
                 activity.reason = record.reason
+                activity.quantity = record.quantity
 
                 job_action_id = None
 
@@ -490,7 +497,22 @@ def _activity_record(data) -> ActivityRecord:
         _optional_text(data.get("facility_id"), "facility_id"),
         _optional_text(data.get("job_id"), "job_id"),
         _optional_text(data.get("reason"), "reason"),
+        _quantity(data.get("quantity")),
     )
+
+
+def _quantity(data) -> Quantity | None:
+    if data is None:
+        return None
+    if not isinstance(data, Mapping):
+        raise ActorPersistenceError("Activity quantity must be an object.")
+    try:
+        return Quantity(
+            _non_negative_int(data.get("value"), "quantity.value"),
+            ResourceUnit.from_code(data.get("unit")),
+        )
+    except (TypeError, ValueError) as error:
+        raise ActorPersistenceError("Activity quantity is invalid.") from error
 
 
 def _list(data, key):

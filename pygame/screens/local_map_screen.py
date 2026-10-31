@@ -1,6 +1,6 @@
 """32x32 tile map for movement and local NPC positions."""
 
-from ..renderer import GOLD, TEXT_SOFT
+from ..renderer import GOLD, TEXT_SOFT, duration_label
 from resources import Quantity, ResourceUnit
 from collections import deque
 
@@ -115,9 +115,12 @@ class LocalMapScreen:
                 "player",
                 Quantity(1, ResourceUnit.ITEM),
             )
-            self.service.advance_by(1)
             resource_name = "demir cevheri" if "mine" in str(landmark[0]).lower() else "odun"
-            self.message = f"{landmark[1]} toplandı: +1 {resource_name}."
+            duration = self.service.gathering_duration(actors[0].actor_id)
+            self.message = (
+                f"{landmark[1]} toplama başladı. "
+                f"{duration_label(duration)} sonra envantere eklenecek."
+            )
         except (KeyError, ValueError, RuntimeError) as error:
             self.message = f"Odun toplanamadı: {error}"
         return True
@@ -294,7 +297,7 @@ class LocalMapScreen:
             self.steps_taken += 1
             self.message = (
                 f"Hareket tamamlandı: ({target[0]}, {target[1]}) "
-                f"— adım: {self.steps_taken}, süre: 1 tick."
+                f"— adım: {self.steps_taken}, süre: 1 sn."
             )
         except RuntimeError as error:
             self.message = f"Hareket tamamlanamadı: {error}"
@@ -432,6 +435,11 @@ class LocalMapScreen:
         self.renderer_height = renderer.height
         self.TILE_SIZE = self._tile_size_for(renderer)
         snapshot = self.service.state()
+        actor = snapshot.actors[0] if snapshot.actors else None
+        active = self.service.actor_activity(actor.actor_id) if actor else None
+        if active is not None and active.state == "running" and active.end_tick is not None:
+            remaining = max(0, active.end_tick - snapshot.simulation_tick)
+            self.message = f"Toplama sürüyor: {duration_label(remaining)} kaldı. Space ile zamanı ilerlet."
         renderer.frame("Yerel Harita", snapshot.simulation_tick)
         location = self._location()
         origin_x, origin_y = self._grid_origin()

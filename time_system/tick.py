@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import secrets
 
 
 # ============================================================
@@ -17,6 +18,27 @@ TICKS_PER_HOUR = TICKS_PER_MINUTE * MINUTES_PER_HOUR
 TICKS_PER_DAY = TICKS_PER_HOUR * HOURS_PER_DAY
 TICKS_PER_MONTH = TICKS_PER_DAY * DAYS_PER_MONTH
 TICKS_PER_YEAR = TICKS_PER_MONTH * MONTHS_PER_YEAR
+
+
+def random_start_tick(rng=None) -> int:
+    """Return a random in-world date, never the year-one epoch."""
+    generator = rng if rng is not None else secrets.SystemRandom()
+    year = generator.randint(100, 9999)
+    month = generator.randint(1, MONTHS_PER_YEAR)
+    day = generator.randint(1, DAYS_PER_MONTH)
+    hour = generator.randint(0, HOURS_PER_DAY - 1)
+    minute = generator.randint(0, SECONDS_PER_MINUTE - 1)
+    second = generator.randint(0, SECONDS_PER_MINUTE - 1)
+    tick = generator.randint(0, TICKS_PER_SECOND - 1)
+    return (
+        (year - 1) * TICKS_PER_YEAR
+        + (month - 1) * TICKS_PER_MONTH
+        + (day - 1) * TICKS_PER_DAY
+        + hour * TICKS_PER_HOUR
+        + minute * TICKS_PER_MINUTE
+        + second * TICKS_PER_SECOND
+        + tick
+    )
 
 
 @dataclass(frozen=True, order=True)

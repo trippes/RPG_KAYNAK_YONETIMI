@@ -8,6 +8,7 @@ from .skills import Skills
 from .race import Race
 from .class_ import CharacterClass
 from .progression import Progression
+from .equipment import EquipmentLoadout, ItemDefinition
 
 
 @dataclass
@@ -21,12 +22,18 @@ class Character:
     progression: Progression = field(default_factory=Progression)
     actor_id: str | None = None
     current_hit_points: int | None = None
+    age: int = 20
+    equipment: EquipmentLoadout = field(default_factory=EquipmentLoadout)
 
     def __post_init__(self):
         if not self.character_id.strip() or not self.name.strip():
             raise ValueError("Character id and name are required.")
         if not isinstance(self.race, Race) or not isinstance(self.character_class, CharacterClass):
             raise TypeError("Character requires a Race and CharacterClass.")
+        if not isinstance(self.equipment, EquipmentLoadout):
+            raise TypeError("equipment must be EquipmentLoadout.")
+        if isinstance(self.age, bool) or not isinstance(self.age, int) or not 13 <= self.age <= 120:
+            raise ValueError("Character age must be between 13 and 120.")
         self.attributes = self.attributes.with_modifiers(self.race.attribute_modifiers)
         self.skills = self.skills.with_ranks(self.character_class.skill_ranks)
         if self.current_hit_points is None:
@@ -36,7 +43,39 @@ class Character:
 
     @property
     def max_hit_points(self) -> int:
-        return self.character_class.hit_points + self.attributes.get("constitution")
+        return self.character_class.hit_points + self.attributes.get("constitution") + self._equipment_bonus("max_hit_points")
+
+    @property
+    def attack_bonus(self) -> int:
+        return self.attributes.modifier("strength") + self._equipment_bonus("attack")
+
+    @property
+    def defense_bonus(self) -> int:
+        return self.attributes.modifier("dexterity") + self._equipment_bonus("defense")
+
+    @property
+    def initiative_bonus(self) -> int:
+        return self.attributes.modifier("dexterity")
+
+    @property
+    def weapon_damage(self) -> int:
+        return self._equipment_bonus("damage")
+
+    def equip(self, item: ItemDefinition) -> str | None:
+        return self.equipment.equip(item)
+
+    def unequip(self, slot) -> str | None:
+        return self.equipment.unequip(slot)
+
+    def _equipment_bonus(self, field: str) -> int:
+        return sum(
+            getattr(item, field)
+            for item in getattr(self, "_item_catalog", {}).values()
+            if self.equipment.contains(item.item_id)
+        )
+
+    def bind_item_catalog(self, catalog) -> None:
+        self._item_catalog = dict(catalog)
 
     @property
     def abilities(self) -> tuple[Ability, ...]:
@@ -57,5 +96,6 @@ class Character:
             "level": self.progression.level, "experience": self.progression.experience,
             "unspent_points": self.progression.unspent_points,
             "actor_id": self.actor_id, "current_hit_points": self.current_hit_points,
+            "age": self.age,
+            "equipment": self.equipment.snapshot(),
         }
-

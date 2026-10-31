@@ -12,11 +12,11 @@ from core.persistence import RestoreContract, CanonicalRestoreState
 class GameSession:
     """Application/runtime boundary for Core 2.0 ownership operations."""
 
-    def __init__(self, world_registry=None, entity_repository=None, event_transport=None) -> None:
+    def __init__(self, world_registry=None, entity_repository=None, event_transport=None, start_tick=0) -> None:
         self._worlds = world_registry if world_registry is not None else WorldManager()
         self._entities = entity_repository if entity_repository is not None else EntityRepository()
         self._membership = WorldMembershipService(self._entities, self._worlds)
-        self._simulation = SimulationRuntime(event_transport=event_transport)
+        self._simulation = SimulationRuntime(start_tick=start_tick, event_transport=event_transport)
         self._world_runtime = WorldRuntimeBoundary(self._simulation)
 
     @property

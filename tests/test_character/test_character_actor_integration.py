@@ -129,7 +129,8 @@ class TestCharacterActorIntegration(unittest.TestCase):
             "char_1", "mine", "ore-node", "main",
             Quantity(1, ResourceUnit.ITEM), "mine-gather",
         )
-        self.assertEqual(result.state, "completed")
+        service.advance_by(service.gathering_duration("char_1"))
+        self.assertEqual(service.activity("mine-gather").state, "completed")
 
 
 if __name__ == "__main__":

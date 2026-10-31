@@ -247,6 +247,8 @@ class GameWindow:
 
         if next_screen in self.screens:
             if next_screen == "dialogue":
+                if self.current == "character_creation":
+                    self.screens["dialogue"].resume_after_creation()
                 self.screens["dialogue"].set_target_npc(
                     getattr(current_screen, "selected_npc_id", None)
                 )

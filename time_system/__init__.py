@@ -7,6 +7,7 @@ from .tick import (
     TICKS_PER_DAY,
     TICKS_PER_MONTH,
     TICKS_PER_YEAR,
+    random_start_tick,
 )
 
 from .calendar import Calendar
@@ -25,4 +26,5 @@ __all__ = [
     "TICKS_PER_DAY",
     "TICKS_PER_MONTH",
     "TICKS_PER_YEAR",
+    "random_start_tick",
 ]

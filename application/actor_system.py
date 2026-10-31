@@ -56,6 +56,7 @@ class ActivityView:
     facility_id: str | None
     job_id: str | None
     reason: str | None
+    quantity: Quantity | None = None
 
 
 class WorldActor:
@@ -269,6 +270,8 @@ class ActorActivity:
         self.job_id: str | None = None
         self.state = ActivityState.PENDING
         self.reason: str | None = None
+        self.quantity = None
+        self.gameplay_service = None
 
     def start(self) -> None:
         if self.state != ActivityState.PENDING:
@@ -303,6 +306,7 @@ class ActorActivity:
             None if self.end_tick is None else self.end_tick.value,
             self.target_id, self.inventory_id, self.facility_id,
             self.job_id, self.reason,
+            self.quantity,
         )
 
 
@@ -361,20 +365,20 @@ class ActorActivityManager:
         )
         actor = self._actors._require(actor_id)
         try:
+            gameplay_service._current_bundle().resource_nodes.validate_extraction(
+                node_id, quantity,
+            )
             actor.begin_activity(activity.activity_id)
             activity.start()
-        except Exception:
-            self._activities.pop(activity.activity_id, None)
-            raise
-        try:
-            gameplay_service.collect(node_id, inventory_id, quantity)
-            activity.complete(self.runtime.current_tick)
+            duration = gameplay_service.gathering_duration(actor_id)
+            activity.end_tick = self.runtime.current_tick + Tick(duration)
+            activity.quantity = quantity
+            activity.gameplay_service = gameplay_service
+            self._bind_runtime()
         except Exception as error:
             activity.fail(str(error))
+            actor.clear_activity(activity.activity_id)
             raise
-        finally:
-            if activity.state in {ActivityState.COMPLETED, ActivityState.FAILED}:
-                actor.clear_activity(activity.activity_id)
         return activity.view()
 
     def start_production(self, activity_id, actor_id, recipe_id, inventory_id, facility_id, gameplay_service):
@@ -440,6 +444,7 @@ class ActorActivityManager:
     def dispose(self) -> None:
         if self._runtime is not None:
             self._runtime.dispatcher.unregister(self)
+            self._runtime.unregister_tick_listener(self)
             self._runtime = None
 
     def restore_activity(self, activity: ActorActivity, job_action_id=None) -> None:
@@ -452,6 +457,14 @@ class ActorActivityManager:
         if activity.job_id is not None and job_action_id is not None:
             self._job_to_activity[job_action_id] = activity.activity_id
             self._bind_runtime()
+        elif activity.state in {ActivityState.PENDING, ActivityState.RUNNING}:
+            self._bind_runtime()
+
+    def bind_gameplay_service(self, gameplay_service) -> None:
+        """Reconnect restored gathering activities to the active service."""
+        for activity in self._activities.values():
+            if activity.activity_type == "gather" and activity.state == ActivityState.RUNNING:
+                activity.gameplay_service = gameplay_service
 
     def _create(self, activity_id, actor_id, activity_type, target_id, inventory_id=None, facility_id=None):
         if activity_id is None:
@@ -482,9 +495,28 @@ class ActorActivityManager:
         runtime = self._jobs.runtime
         if self._runtime is None:
             self._runtime = runtime
+            runtime.register_tick_listener(self)
             runtime.dispatcher.register(self)
         elif self._runtime is not runtime:
             raise ActivityError("Activity manager cannot span runtimes.")
+
+    def advance_to(self, tick) -> None:
+        target = tick if isinstance(tick, Tick) else Tick(tick)
+        for activity in tuple(self._activities.values()):
+            if activity.activity_type != "gather" or activity.state != ActivityState.RUNNING:
+                continue
+            if activity.end_tick is None or activity.end_tick > target:
+                continue
+            actor = self._actors._require(activity.actor_id)
+            try:
+                activity.gameplay_service.collect(
+                    activity.target_id, activity.inventory_id, activity.quantity,
+                )
+                activity.complete(target)
+            except Exception as error:
+                activity.fail(str(error))
+            finally:
+                actor.clear_activity(activity.activity_id)
 
 
 def _text(value, name: str) -> str:

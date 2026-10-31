@@ -12,6 +12,8 @@ interface that stay constant while playing:
 before each frame; screens only call the drawing helpers.
 """
 
+from time_system import GameTime
+
 # --- palette ---------------------------------------------------------------
 BACKGROUND = (18, 22, 32)
 TEXT = (235, 238, 245)
@@ -77,6 +79,15 @@ def resource_id(resource):
 def resource_name(resource):
     rid = resource_id(resource)
     return RESOURCE_NAMES.get(rid, rid.replace("_", " ").capitalize())
+
+
+def duration_label(ticks):
+    """Format simulation duration without exposing the internal tick unit."""
+    seconds = max(1, (int(ticks) + 59) // 60)
+    if seconds < 60:
+        return f"{seconds} sn"
+    minutes, remainder = divmod(seconds, 60)
+    return f"{minutes} dk {remainder} sn" if remainder else f"{minutes} dk"
 
 
 def resource_color(resource):
@@ -337,8 +348,18 @@ class Renderer:
             self._draw_nav()
         else:
             self.text(title, 28, 22, title=True)
-            if tick is not None:
-                self.text(f"Tick {tick}", self.width - 150, 34, MUTED)
+
+    def calendar(self, total_ticks: int, x: int | None = None, y: int = 18) -> None:
+        """Render player-facing calendar time without exposing simulation ticks."""
+        game_time = GameTime(total_ticks)
+        if x is None:
+            x = self.width - 224
+        rect = self.pg.Rect(x, y, 200, 38)
+        self.panel(rect, (29, 37, 51), (112, 91, 56))
+        date_text = f"{game_time.year:04d}-{game_time.month:02d}-{game_time.day:02d}"
+        time_text = f"{game_time.hour:02d}:{game_time.minute:02d}"
+        self.text(date_text, rect.x + 12, rect.y + 11, MUTED)
+        self.text(time_text, rect.x + 116, rect.y + 11, GOLD)
 
     def hud(self, service, actor_id="hero"):
         """Status strip shared by gameplay screens (+ resource bar on main ones)."""
@@ -382,11 +403,12 @@ class Renderer:
         self.text(gold_text, x + 20, 82, GOLD)
         x += 20 + self.text_width(gold_text) + 24
 
-        right = self.fit_text(
-            f"{location}  •  Tick {snapshot.simulation_tick}",
-            self.width - 40 - x,
+        location_text = self.fit_text(
+            location,
+            max(80, self.width - 40 - x - 220),
         )
-        self.text(right, self.width - 40 - self.text_width(right), 82, (170, 185, 205))
+        self.text(location_text, self.width - 260 - self.text_width(location_text), 82, (170, 185, 205))
+        self.calendar(snapshot.simulation_tick, y=74)
 
         if self.nav_current is not None:
             self.resource_bar(service)

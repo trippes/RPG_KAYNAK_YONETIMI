@@ -12,7 +12,7 @@ from resources import Inventory, ProductionJobManager, Recipe, WorldResourceNode
 from .production_facility import ProductionFacilityRegistry
 from .actor_system import ActorActivityManager, WorldActorRegistry
 from .movement import MovementManager
-from character import Character
+from character import Character, ItemDefinition
 from quests import QuestLog
 from economy import Economy
 from .social_runtime import SocialRuntime
@@ -38,6 +38,7 @@ class SessionBundle:
     economy: Economy | None = None
     social: SocialRuntime | None = None
     combat: CombatRuntime | None = None
+    items: Mapping[str, ItemDefinition] | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.session, GameSession):
@@ -52,6 +53,15 @@ class SessionBundle:
             raise TypeError("inventories must be a mapping.")
         if not isinstance(self.recipes, Mapping):
             raise TypeError("recipes must be a mapping.")
+        if self.items is None:
+            object.__setattr__(self, "items", {})
+        if not isinstance(self.items, Mapping) or any(
+            not isinstance(value, ItemDefinition) for value in self.items.values()
+        ):
+            raise TypeError("items must be a mapping of ItemDefinition values.")
+        for item_id, item in self.items.items():
+            if item_id != item.item_id:
+                raise ValueError("item registry key must match item.item_id.")
         if self.characters is None:
             object.__setattr__(self, "characters", {})
         if not isinstance(self.characters, Mapping) or any(not isinstance(value, Character) for value in self.characters.values()):
@@ -113,6 +123,8 @@ class SessionBundle:
             raise ValueError("simulation must be session.simulation.")
         if self.production_jobs.runtime is not self.simulation:
             raise ValueError("production_jobs must use the bundle simulation.")
+        for character in self.characters.values():
+            character.bind_item_catalog(self.items)
 
         self.resource_nodes.bind_world_registry(self.session.worlds)
         self.resource_nodes.validate_world_references()
@@ -145,10 +157,11 @@ class SessionBundle:
         object.__setattr__(self, "inventories", MappingProxyType(dict(self.inventories)))
         object.__setattr__(self, "recipes", MappingProxyType(dict(self.recipes)))
         object.__setattr__(self, "characters", MappingProxyType(dict(self.characters)))
+        object.__setattr__(self, "items", MappingProxyType(dict(self.items)))
 
     @classmethod
-    def create_default(cls) -> "SessionBundle":
-        session = GameSession()
+    def create_default(cls, start_tick=0) -> "SessionBundle":
+        session = GameSession(start_tick=start_tick)
         simulation = session.simulation
         return cls(
             session=session,

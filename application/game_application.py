@@ -25,7 +25,8 @@ from application.save_file_adapter import GameSaveFileAdapter
 from application.save_document import GameSaveDocument
 from application.production_persistence import ProductionSnapshot
 from application.actor_persistence import ActorSnapshot
-from character import Character, CharacterFactory, CharacterSnapshot
+from character import Character, CharacterFactory, CharacterSnapshot, Skills
+from character import Attributes
 from types import MappingProxyType
 from application.production_facility import ProductionFacilityRegistry
 from quests import QuestLog, QuestSnapshot
@@ -52,8 +53,8 @@ class GameApplication:
         self.events = self.event_manager.event_queue
 
     @classmethod
-    def create_default(cls) -> "GameApplication":
-        return cls(SessionHolder(SessionBundle.create_default()))
+    def create_default(cls, start_tick=0) -> "GameApplication":
+        return cls(SessionHolder(SessionBundle.create_default(start_tick=start_tick)))
 
     @property
     def actions(self):
@@ -111,6 +112,7 @@ class GameApplication:
             actors=actors,
             actor_activities=actor_activities,
             characters=characters,
+            items=document.characters.item_definitions() if document.characters is not None else {},
             quest_log=document.quests.restore({}) if document.quests is not None else QuestLog(),
             economy=(
                 Economy(*document.economy.restore())
@@ -222,7 +224,7 @@ class GameApplication:
         )
         return GameSaveFileAdapter.save(document, path)
 
-    def karakter_olustur(self, factory: CharacterFactory, character_id: str, name: str, race_id: str, class_id: str, actor_id: str | None = None) -> Character:
+    def karakter_olustur(self, factory: CharacterFactory, character_id: str, name: str, race_id: str, class_id: str, actor_id: str | None = None, *, age: int = 20, attributes=None) -> Character:
         """Create and register a basic character in the active session."""
         if not isinstance(factory, CharacterFactory):
             raise TypeError("factory must be CharacterFactory.")
@@ -233,7 +235,10 @@ class GameApplication:
             raise RuntimeError("Karakter oluşturmak için aktif bir dünya gereklidir.")
         if bundle.actors.get(actor_id) is not None:
             raise ValueError(f"Duplicate actor ID: {actor_id}")
-        character = factory.create_basic(character_id, name, race_id, class_id, actor_id)
+        character = factory.create(
+            character_id, name, race_id, class_id, actor_id=actor_id,
+            age=age, attributes=attributes,
+        )
         characters = dict(bundle.characters)
         if character.character_id in characters:
             raise ValueError(f"Duplicate character ID: {character.character_id}")
@@ -242,6 +247,31 @@ class GameApplication:
         bundle.actors.add(actor)
         bundle.actors.bind_character(actor_id, character)
         object.__setattr__(bundle, "characters", MappingProxyType(characters))
+        bundle.validate()
+        return character
+
+    def customize_character(
+        self, character_id: str, name: str, age: int, attributes,
+        *, race=None, character_class=None,
+    ) -> Character:
+        """Apply the player's creation choices to an existing character."""
+        bundle = self.holder.current
+        character = bundle.characters.get(character_id)
+        if character is None:
+            raise KeyError(f"Character not found: {character_id}")
+        if not isinstance(name, str) or not name.strip():
+            raise ValueError("Character name is required.")
+        if race is not None:
+            character.race = race
+        if character_class is not None:
+            character.character_class = character_class
+        character.age = age
+        character.name = name.strip()
+        character.attributes = Attributes(attributes).with_modifiers(
+            character.race.attribute_modifiers
+        )
+        character.skills = Skills().with_ranks(character.character_class.skill_ranks)
+        character.current_hit_points = character.max_hit_points
         bundle.validate()
         return character
 

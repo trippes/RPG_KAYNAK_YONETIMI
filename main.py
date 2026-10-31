@@ -4,6 +4,7 @@ import sys
 
 from application import GameApplication
 from application.runtime_logging import configure_logging
+from time_system import random_start_tick
 
 
 APP_VERSION = "3.0.0rc1"
@@ -12,7 +13,7 @@ APP_VERSION = "3.0.0rc1"
 def oyun_olustur(world_name="Başlangıç Dünyası", width=None, height=None):
     """Varsayılan dünyası oluşturulmuş ve başlatılmış bir oyun döndürür."""
 
-    game = GameApplication.create_default()
+    game = GameApplication.create_default(start_tick=random_start_tick())
     game.dunya_olustur(world_name, width=width, height=height)
     game.baslat()
     return game

@@ -28,3 +28,7 @@ class Progression:
             levels += 1
         return levels
 
+    def spend_point(self) -> None:
+        if self.unspent_points <= 0:
+            raise ValueError("No unspent progression points available.")
+        self.unspent_points -= 1

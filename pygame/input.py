@@ -78,6 +78,7 @@ class InputMapper:
                 "x": "map",
                 "l": "local_map",
                 "j": "quest_log",
+                "e": "equip",
             }
 
             action = actions.get(key)

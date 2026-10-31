@@ -8,6 +8,37 @@ class Inventory:
 
     def __init__(self) -> None:
         self._stocks: dict[ResourceType, Quantity] = {}
+        self._items: dict[str, int] = {}
+
+    def add_item(self, item_id: str, quantity: int = 1) -> None:
+        self._validate_item(item_id, quantity)
+        self._items[item_id] = self._items.get(item_id, 0) + quantity
+
+    def remove_item(self, item_id: str, quantity: int = 1) -> None:
+        self._validate_item(item_id, quantity)
+        current = self._items.get(item_id, 0)
+        if current < quantity:
+            raise ValueError("Insufficient item stock.")
+        if current == quantity:
+            del self._items[item_id]
+        else:
+            self._items[item_id] = current - quantity
+
+    def item_quantity(self, item_id: str) -> int:
+        self._validate_item(item_id, 0)
+        return self._items.get(item_id, 0)
+
+    def item_snapshot(self) -> tuple[tuple[str, int], ...]:
+        return tuple(sorted(self._items.items()))
+
+    def total_weight(self, item_catalog=None) -> float:
+        if item_catalog is None:
+            return 0.0
+        return sum(
+            item_catalog[item_id].weight * quantity
+            for item_id, quantity in self._items.items()
+            if item_id in item_catalog
+        )
 
     def add(self, resource_type: ResourceType, quantity: Quantity) -> None:
         self._validate_inputs(resource_type, quantity)
@@ -61,6 +92,16 @@ class Inventory:
     def _restore_snapshot(self, snapshot: tuple[tuple[ResourceType, Quantity], ...]) -> None:
         """Restore a snapshot for the package-local atomic transfer operation."""
         self._stocks = dict(snapshot)
+
+    def _restore_item_snapshot(self, snapshot: tuple[tuple[str, int], ...]) -> None:
+        self._items = dict(snapshot)
+
+    @staticmethod
+    def _validate_item(item_id: str, quantity: int) -> None:
+        if not isinstance(item_id, str) or not item_id.strip():
+            raise TypeError("item_id must be a non-empty string.")
+        if isinstance(quantity, bool) or not isinstance(quantity, int) or quantity < 0:
+            raise ValueError("Item quantity must be a non-negative integer.")
 
     @staticmethod
     def _validate_inputs(resource_type: ResourceType, quantity: Quantity) -> None:

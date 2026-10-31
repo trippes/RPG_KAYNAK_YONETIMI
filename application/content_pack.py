@@ -10,7 +10,7 @@ from types import MappingProxyType
 
 from application import GameplayService
 from application import ProductionFacility
-from character import Ability, CharacterClass, CharacterFactory, Race
+from character import Ability, CharacterClass, CharacterFactory, EquipmentSlot, ItemDefinition, Race
 from combat import Combatant
 from core.domain.spatial import Position
 from economy import Currency, Merchant, Money
@@ -173,6 +173,24 @@ def populate_demo_content(application, ids: DemoContentIds = DemoContentIds(), d
     resource_types = {item["id"]: ResourceType(item["id"]) for item in definition["resources"]}
     inventory = Inventory()
     merchant_inventory = Inventory()
+    starter_items = {
+        "iron_sword": ItemDefinition(
+            "iron_sword", "Demir Kılıç", EquipmentSlot.MAIN_HAND,
+            weight=2.0, attack=3, damage=4, description="Dengeli tek elli kılıç.",
+        ),
+        "leather_armor": ItemDefinition(
+            "leather_armor", "Deri Zırh", EquipmentSlot.CHEST,
+            weight=5.0, defense=2, description="Hafif ve hareketli zırh.",
+        ),
+        "iron_helmet": ItemDefinition(
+            "iron_helmet", "Demir Miğfer", EquipmentSlot.HEAD,
+            weight=2.0, defense=1, max_hit_points=2,
+        ),
+    }
+    inventory.add_item("iron_sword")
+    inventory.add_item("leather_armor")
+    inventory.add_item("iron_helmet")
+    object.__setattr__(bundle, "items", MappingProxyType(starter_items))
     recipe_data = definition["recipe"]
     market_resource = definition["market_offer"]["resource"]
     output_data = _recipe_output_for_resource(recipe_data, market_resource)
@@ -246,11 +264,45 @@ def populate_demo_content(application, ids: DemoContentIds = DemoContentIds(), d
     race_data = character_data["race"]
     class_data = character_data["class"]
     factory = CharacterFactory(
-        {race_data["id"]: Race(race_data["id"], race_data["name"], abilities=(Ability(race_data["ability_id"], race_data["ability_name"]),))},
-        {class_data["id"]: CharacterClass(class_data["id"], class_data["name"], hit_points=class_data["hit_points"])},
+        {
+            race_data["id"]: Race(
+                race_data["id"], race_data["name"],
+                abilities=(Ability(race_data["ability_id"], race_data["ability_name"]),),
+            ),
+            "elf": Race(
+                "elf", "Orman Elfi",
+                {"dexterity": 2, "wisdom": 1},
+                (Ability("night_sight", "Gece Görüşü", "Karanlıkta daha iyi algı."),),
+            ),
+            "dwarf": Race(
+                "dwarf", "Dağ Cücesi",
+                {"constitution": 2, "strength": 1},
+                (Ability("stone_endurance", "Taş Dayanıklılığı", "Yüksek fiziksel direnç."),),
+            ),
+        },
+        {
+            class_data["id"]: CharacterClass(
+                class_data["id"], class_data["name"],
+                hit_points=class_data["hit_points"],
+                skill_ranks=class_data.get(
+                    "skill_ranks", {"gathering": 1, "survival": 1}
+                ),
+            ),
+            "warden": CharacterClass(
+                "warden", "Vadi Muhafızı", hit_points=16,
+                skill_ranks={"combat": 2, "survival": 1},
+                abilities=(Ability("guard_stance", "Muhafız Duruşu", "Savunmada eğitimli."),),
+            ),
+            "arcanist": CharacterClass(
+                "arcanist", "Arkanist", hit_points=9,
+                skill_ranks={"lore": 2, "alchemy": 1},
+                abilities=(Ability("spark", "Kıvılcım", "Temel büyü bilgisi."),),
+            ),
+        },
     )
     if not bundle.characters:
         application.karakter_olustur(factory, resolve_id("hero_id"), character_data["name"], race_data["id"], class_data["id"], resolve_id("hero_id"))
+        bundle.characters[resolve_id("hero_id")].bind_item_catalog(starter_items)
     service = GameplayService(application)
     service.register_character_factory(factory)
 
@@ -396,7 +448,12 @@ def populate_demo_content(application, ids: DemoContentIds = DemoContentIds(), d
     reward_data = quest_data["reward"]
     quest = Quest(
         resolve_id("quest_id"), quest_data["title"], objectives,
-        Reward(currency=reward_data["currency"], items=tuple(tuple(item) for item in reward_data["items"]), reputation=((resolve_id("faction_id"), reward_data["reputation"]),)),
+        Reward(
+            experience=reward_data.get("experience", 0),
+            currency=reward_data["currency"],
+            items=tuple(tuple(item) for item in reward_data["items"]),
+            reputation=((resolve_id("faction_id"), reward_data["reputation"]),),
+        ),
     )
     service.available_forest_quest = quest
     carpenter_quest = Quest(
@@ -419,6 +476,7 @@ def populate_demo_content(application, ids: DemoContentIds = DemoContentIds(), d
             ),
         ),
         Reward(
+            experience=150,
             currency=15,
             items=(),
             reputation=((resolve_id("faction_id"), 5),),
@@ -434,7 +492,7 @@ def populate_demo_content(application, ids: DemoContentIds = DemoContentIds(), d
             Objective("buy_water", "Handan su al", ObjectiveType.COLLECT, "water"),
             Objective("deliver_supplies", "Ekmek ve suyu Hilmi'ye teslim et", ObjectiveType.CUSTOM, "carpenter_id"),
         ),
-        Reward(currency=10),
+        Reward(experience=100, currency=10),
     )
     service.blacksmith_quest = Quest(
         resolve_id("blacksmith_quest_id"),
@@ -455,7 +513,7 @@ def populate_demo_content(application, ids: DemoContentIds = DemoContentIds(), d
                 required=1,
             ),
         ),
-        Reward(items=(("iron_sword", 1),)),
+        Reward(experience=200, items=(("iron_sword", 1),)),
     )
     bundle.quest_log.add(quest)
     bundle.quest_log.add(carpenter_quest)

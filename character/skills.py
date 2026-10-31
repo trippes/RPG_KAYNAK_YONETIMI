@@ -27,6 +27,15 @@ class Skills:
         result.update(ranks)
         return Skills(result)
 
+    def improve(self, skill: str) -> "Skills":
+        name = skill.strip().lower()
+        if not name:
+            raise ValueError("Skill name is required.")
+        if name not in self.values:
+            raise KeyError(f"Unknown skill: {skill}")
+        result = dict(self.values)
+        result[name] += 1
+        return Skills(result)
+
     def to_dict(self) -> dict[str, int]:
         return dict(self.values)
-

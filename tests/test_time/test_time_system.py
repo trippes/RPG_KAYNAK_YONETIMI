@@ -12,10 +12,19 @@ from time_system import (
     TICKS_PER_DAY,
     TICKS_PER_MONTH,
     TICKS_PER_YEAR,
+    random_start_tick,
 )
 
 
 class TestTick(unittest.TestCase):
+
+    def test_random_start_tick_is_a_valid_non_epoch_date(self):
+        tick = random_start_tick()
+        game_time = GameTime(tick)
+
+        self.assertGreaterEqual(game_time.year, 100)
+        self.assertLessEqual(game_time.year, 9999)
+        self.assertGreater(tick, 0)
 
     def test_tick_creation(self):
         tick = Tick(60)
