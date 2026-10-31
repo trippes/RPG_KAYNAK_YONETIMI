@@ -48,6 +48,7 @@
   "resources": [
     {
       "id": "wood",
+      "role": "primary_gathering",
       "node_quantity": {
         "amount": 8,
         "unit": "item"
@@ -64,6 +65,7 @@
     },
     {
       "id": "iron_ore",
+      "role": "iron_ore",
       "node_quantity": {
         "amount": 8,
         "unit": "item"

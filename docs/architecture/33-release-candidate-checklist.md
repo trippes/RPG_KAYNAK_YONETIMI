@@ -22,6 +22,41 @@ oynanış değişikliğinde ayrıca şu manuel kontrol yapılmalıdır:
 python main.py --play
 ```
 
+## Gerçek oynanış kontrol listesi
+
+Her Pygame oynanış veya harita değişikliğinden sonra yeni bir oyun oturumunda
+bu akış baştan sona uygulanır. Her adım beklenen sonucu vermelidir:
+
+- [ ] `python main.py --play` ile pencere açılır; ana menü ve oyun ekranı
+      kararlı biçimde görüntülenir.
+- [ ] Oyuncu karakteri oluşturulur veya varsayılan karakterle oyuna başlanır;
+      karakter ekranı açılır ve geri dönülebilir.
+- [ ] Dünya haritası açılır; Köy, dört orman ve dört maden haritası görünür.
+- [ ] Köy yerel haritası açılır; çim zemin, landmark/ev, NPC, duvar ve kapılar
+      görünür.
+- [ ] Köy duvarının dış tile'larına girilemez; dört kapıdan girilip çıkılabilir.
+- [ ] Her orman ve maden haritası arasında seyahat edilebilir.
+- [ ] Nehir tile'larına girilemez; nehir yalnızca köprü tile'ından geçilebilir.
+- [ ] Orman yerel haritasında ağaç seçilip etkileşim tuşuyla odun toplanır;
+      envanter miktarı artar.
+- [ ] Maden yerel haritasında Demir Madeni seçilip etkileşim tuşuyla demir
+      cevheri toplanır; envanterde `iron_ore` görünür.
+- [ ] Köyde Demirci Usta Kemal ile konuşulur; demir cevheri görevi alınır.
+- [ ] En az üç demir cevheri toplanır; görev ilerlemesi güncellenir.
+- [ ] Cevher demirciye teslim edilir; cevher envanterden düşer ve demir kılıç
+      ödülü envantere eklenir.
+- [ ] Marangoz, han/pazar ve mevcut NPC diyalogları açılır; uygunsuz
+      lokasyonlarda ilgili eylemler devre dışı kalır.
+- [ ] Envanter, görev takibi, karakter ve harita ekranları arasında geçiş
+      yapılır; ekranlar beklenmedik biçimde kapanmaz.
+- [ ] Oyun kaydedilir, oturum yeniden açılır ve kayıt yüklenir; konum,
+      envanter, görev ilerlemesi ve ödül korunur.
+- [ ] Hatalı etkileşimlerde uygulama kapanmaz; kullanıcıya anlaşılır mesaj
+      gösterilir.
+
+Kontrol tamamlandığında tarih, test edilen sürüm ve sonucu release notuna
+eklenir. Başarısız bir adım varsa yayın adayı doğrulaması tamamlanmış sayılmaz.
+
 ## Donmuş sınır
 
 Bu kapı geçilmeden Core canonical state, scheduler, event transport veya

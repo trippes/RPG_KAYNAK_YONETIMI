@@ -10,6 +10,8 @@
 - İçerik JSON dosyaları paket veri dosyası olarak tanımlandı.
 - Yayın araçları `requirements-release.txt` içine ayrıldı.
 - `--version` ile paket sürümü doğrulanabiliyor.
+- Temiz bir sanal ortamda `python -m pip install .` kurulumu ve
+  `rpg-kaynak-yonetimi --version` giriş noktası doğrulandı.
 
 ## Yayın öncesi komutlar
 

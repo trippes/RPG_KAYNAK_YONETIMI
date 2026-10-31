@@ -8,6 +8,9 @@ from collections import deque
 class LocalMapScreen:
     GRID_SIZE = 32
     TILE_SIZE = 16
+    RIVER_TILES = frozenset((18, 19))
+    BRIDGE_TILES = frozenset(((18, 16), (19, 16)))
+    VILLAGE_GATES = frozenset(((16, 0), (16, 31), (0, 16), (31, 16)))
 
     def __init__(self, service):
         self.service = service
@@ -168,12 +171,23 @@ class LocalMapScreen:
                     for tile_x in range(x, min(self.GRID_SIZE, x + 2))
                     for tile_y in range(y, min(self.GRID_SIZE, y + 2))
                 )
-            else:
-                blocked.update(
-                    (x, y)
-                    for x in (18, 19)
-                    for y in range(self.GRID_SIZE)
+        blocked.update(
+            (x, y)
+            for x in self.RIVER_TILES
+            for y in range(self.GRID_SIZE)
+            if (x, y) not in self.BRIDGE_TILES
+        )
+        if location.location_id == "village":
+            blocked.update(
+                (x, y)
+                for x in range(self.GRID_SIZE)
+                for y in range(self.GRID_SIZE)
+                if (
+                    x in (0, self.GRID_SIZE - 1)
+                    or y in (0, self.GRID_SIZE - 1)
                 )
+                and (x, y) not in self.VILLAGE_GATES
+            )
         return blocked
 
     def _is_walkable(self, tile, target=None):
@@ -267,6 +281,9 @@ class LocalMapScreen:
             next_x = max(0, min(self.GRID_SIZE - 1, next_x))
             next_y = max(0, min(self.GRID_SIZE - 1, next_y))
         target = (next_x, next_y)
+        if not self._is_walkable(target, target=target):
+            self.message = "Bu yoldan geçemezsin. Nehirden yalnızca köprüden geçilebilir."
+            return
         self._complete_tile_move(actor.actor_id, target)
         self.selected = target
 
@@ -287,6 +304,11 @@ class LocalMapScreen:
         location = world_map.get(actor.location_id) if world_map else None
         if location is None or location.position is None:
             return False
+        x, y = self._position(actor.position)
+        gate_tile = (x, y)
+        if location.location_id == "village" and gate_tile not in self.VILLAGE_GATES:
+            self.message = "Köyden yalnızca kapılardan çıkabilirsin."
+            return True
         neighbors = world_map.neighbors(actor.location_id)
         candidates = []
         for neighbor in neighbors:
@@ -302,6 +324,16 @@ class LocalMapScreen:
             self.message = "Bu yönde başka bir yerel harita yok."
             return True
         destination = sorted(candidates, key=lambda item: item.location_id)[0]
+        if destination.location_id == "village":
+            target_gate = (
+                (16, 31) if dy < 0 else
+                (16, 0) if dy > 0 else
+                (31, 16) if dx < 0 else
+                (0, 16)
+            )
+            if target_gate not in self.VILLAGE_GATES:
+                self.message = "Köye yalnızca kapılardan girebilirsin."
+                return True
         self.service.place_actor(actor.actor_id, destination.location_id)
         target = (
             0 if dx > 0 else self.GRID_SIZE - 1 if dx < 0 else self._position(actor.position)[0],
@@ -434,6 +466,47 @@ class LocalMapScreen:
                 (rect.right - 3, rect.centery),
                 1,
             )
+
+        for bridge_x, bridge_y in self.BRIDGE_TILES:
+            rect = renderer.pg.Rect(
+                origin_x + bridge_x * self.TILE_SIZE,
+                origin_y + bridge_y * self.TILE_SIZE,
+                self.TILE_SIZE,
+                self.TILE_SIZE,
+            )
+            renderer.pg.draw.rect(renderer.surface, (151, 99, 53), rect)
+            renderer.pg.draw.line(
+                renderer.surface, (224, 172, 92),
+                (rect.x + 2, rect.y + self.TILE_SIZE // 3),
+                (rect.right - 2, rect.y + self.TILE_SIZE // 3), 2,
+            )
+            renderer.pg.draw.line(
+                renderer.surface, (224, 172, 92),
+                (rect.x + 2, rect.y + self.TILE_SIZE * 2 // 3),
+                (rect.right - 2, rect.y + self.TILE_SIZE * 2 // 3), 2,
+            )
+
+        if location and location.location_id == "village":
+            for x in range(self.GRID_SIZE):
+                for y in range(self.GRID_SIZE):
+                    if (
+                        x not in (0, self.GRID_SIZE - 1)
+                        and y not in (0, self.GRID_SIZE - 1)
+                    ) or (x, y) in self.VILLAGE_GATES:
+                        continue
+                    rect = renderer.pg.Rect(
+                        origin_x + x * self.TILE_SIZE,
+                        origin_y + y * self.TILE_SIZE,
+                        self.TILE_SIZE,
+                        self.TILE_SIZE,
+                    )
+                    renderer.pg.draw.rect(renderer.surface, (125, 125, 122), rect)
+                    renderer.pg.draw.rect(renderer.surface, (82, 87, 81), rect, 1)
+                    renderer.pg.draw.line(
+                        renderer.surface, (175, 172, 156),
+                        (rect.x + 2, rect.y + 3),
+                        (rect.right - 3, rect.y + 3), 2,
+                    )
 
         for landmark in self._landmarks():
             x, y = tuple(landmark[2])

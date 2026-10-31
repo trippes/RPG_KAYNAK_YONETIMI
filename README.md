@@ -16,10 +16,22 @@ API'si uyumluluk katmanında korunur. Çalışan alt sistemler:
 Pygame ile açmak için:
 
 ```powershell
-python main.py
-python -m pip install -r requirements.txt
+python -m pip install -e .
 python main.py --play
 ```
+
+Temiz bir Windows ortamında kurulum ve giriş noktası doğrulaması:
+
+```powershell
+python -m venv .venv-clean
+.\.venv-clean\Scripts\python.exe -m pip install --upgrade pip
+.\.venv-clean\Scripts\python.exe -m pip install .
+.\.venv-clean\Scripts\rpg-kaynak-yonetimi.exe --version
+.\.venv-clean\Scripts\python.exe main.py --play
+```
+
+Kurulum sonrasında beklenen sürüm `3.0.0rc1` olmalıdır. Kontrol tamamlandıktan
+sonra geçici `.venv-clean` klasörü kaldırılabilir.
 
 Yayın adayı sürümü `3.0.0rc1`'dir. Kurulumdan sonra aynı uygulama şu giriş
 noktasıyla da başlatılabilir:
@@ -71,7 +83,7 @@ katmanındaki açık bir entegrasyonla eklenmelidir.
 
 Güncel ilerleme, tamamlanan fazlar ve yayın hazırlığı için
 `docs/architecture/30-master-roadmap.md` belgesine bakın. Güncel proje sürümü
-`pyproject.toml` içinde `3.0.0a0` olarak tanımlıdır ve Core 2.1 ile Core 17
+`pyproject.toml` içinde `3.0.0rc1` olarak tanımlıdır ve Core 2.1 ile Core 17
 seviyesindeki application fazlarını kapsar. UI ve RPG domain genişlemeleri
 aynı üst katman sınırları içinde ilerlemektedir. Faz A-C tamamlanmış, güncel
 odak Faz D kalite ve yayın hazırlığıdır.

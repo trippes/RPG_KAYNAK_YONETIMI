@@ -66,6 +66,22 @@ class TestContentPack(unittest.TestCase):
             populate_demo_content(application, definition_path=path)
         self.assertEqual(application.holder.current.quest_log.get("forest_supplies").title, "Yeni Erzak Görevi")
 
+    def test_content_resource_order_does_not_change_node_setup(self):
+        definition = load_demo_content()
+        definition["resources"] = list(reversed(definition["resources"]))
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "reordered-content.json"
+            path.write_text(json.dumps(definition, ensure_ascii=False), encoding="utf-8")
+            application = GameApplication.create_default()
+            service, ids = populate_demo_content(application, definition_path=path)
+
+        node = application.holder.current.resource_nodes.get(ids.node_id)
+        self.assertEqual(node.resource_type.value, "wood")
+        self.assertIn(
+            "plank",
+            {resource for resource, _amount, _unit in service.inventory(ids.merchant_inventory_id).stocks},
+        )
+
     def test_future_content_schema_is_rejected(self):
         definition = load_demo_content()
         definition["schema_version"] = 99

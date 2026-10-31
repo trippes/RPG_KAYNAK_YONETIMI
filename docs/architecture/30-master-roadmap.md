@@ -34,7 +34,7 @@ ve faz tarihçesi olarak korunur.
 
 Proje şu anda testlerle doğrulanmış, oynanabilir bir application prototipi
 durumunda. Temel world/resource/actor/character/economy akışları birbirine
-bağlıdır ve güncel tam test suite'i 704 testte hatasızdır.
+bağlıdır ve güncel tam test suite'i 764 testte hatasızdır.
 
 Core mimari kapsamı tamamlanmış ve hardening testleriyle doğrulanmıştır.
 Gameplay, içerik ve UI tarafında yeni özellikler mümkün olmakla birlikte Core
@@ -95,7 +95,7 @@ dışıdır.
 ## Güncel doğrulama
 
 Ana test komutu `python -m unittest discover -s tests -t . -p "test_*.py"`'dir.
-Faz geçişleri testlerle kanıtlanır; güncel doğrulama 705 test, 0 hata sonucudur.
+Faz geçişleri testlerle kanıtlanır; güncel doğrulama 764 test, 0 hata sonucudur.
 
 Bu çalışma kopyasında Git metadata'sı bulunmadığından ilerleme karşılaştırması
 commit tarihçesine göre yapılamaz. Bu nedenle bu roadmap'teki durum; mevcut

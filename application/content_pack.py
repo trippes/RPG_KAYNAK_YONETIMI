@@ -94,6 +94,31 @@ def _id_resolver(definition: dict, ids: DemoContentIds):
 def _quantity(raw: dict) -> Quantity:
     return Quantity(int(raw["amount"]), ResourceUnit(raw.get("unit", "item")))
 
+
+def _resource_with_role(definition: dict, role: str) -> dict:
+    matches = [
+        resource for resource in definition["resources"]
+        if resource.get("role") == role
+    ]
+    if len(matches) != 1:
+        raise ContentDefinitionError(
+            f"Content must define exactly one resource with role: {role}"
+        )
+    return matches[0]
+
+
+def _recipe_output_for_resource(recipe: dict, resource_id: str) -> dict:
+    matches = [
+        output for output in recipe["outputs"]
+        if output["resource"] == resource_id
+    ]
+    if len(matches) != 1:
+        raise ContentDefinitionError(
+            f"Recipe must define exactly one output for resource: {resource_id}"
+        )
+    return matches[0]
+
+
 def build_demo_world_map(
     world_id: str,
     ids: DemoContentIds = DemoContentIds(),
@@ -149,9 +174,11 @@ def populate_demo_content(application, ids: DemoContentIds = DemoContentIds(), d
     inventory = Inventory()
     merchant_inventory = Inventory()
     recipe_data = definition["recipe"]
-    output = _quantity(recipe_data["outputs"][0])
+    market_resource = definition["market_offer"]["resource"]
+    output_data = _recipe_output_for_resource(recipe_data, market_resource)
+    output = _quantity(output_data)
     merchant_inventory.add(
-        resource_types[recipe_data["outputs"][0]["resource"]],
+        resource_types[output_data["resource"]],
         Quantity(definition["merchant"]["stock_amount"], output.unit),
     )
     for offer in definition.get("market_offers", ()):
@@ -172,7 +199,7 @@ def populate_demo_content(application, ids: DemoContentIds = DemoContentIds(), d
     if bundle.facilities.get(facility_data["id"]) is None:
         bundle.facilities.add(ProductionFacility(facility_data["id"], facility_data["type"], facility_data["capacity"]))
 
-    node_data = definition["resources"][0]
+    node_data = _resource_with_role(definition, "primary_gathering")
     zero_regeneration = Quantity(0, _quantity(node_data["regeneration_rate"]).unit)
     bundle.resource_nodes.add(WorldResourceNode(
         resolve_id("node_id"), world.world_id, resource_types[node_data["id"]], _quantity(node_data["node_quantity"]),
@@ -191,9 +218,8 @@ def populate_demo_content(application, ids: DemoContentIds = DemoContentIds(), d
         ]
         for index, landmark in enumerate(resource_landmarks):
             is_iron = "mine" in landmark["id"] or "maden" in landmark["name"].lower()
-            resource_data = next(
-                item for item in definition["resources"]
-                if item["id"] == ("iron_ore" if is_iron else "wood")
+            resource_data = _resource_with_role(
+                definition, "iron_ore" if is_iron else "primary_gathering",
             )
             node_id = (
                 resolve_id("node_id")
