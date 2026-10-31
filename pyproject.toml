@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rpg-kaynak-yonetimi"
+version = "3.0.0rc1"
+description = "Core, kaynak üretimi ve uygulama seviyesinde oynanabilir RPG simülasyon altyapısı"
+requires-python = ">=3.11"
+dependencies = ["pygame-ce>=2.5"]
+
+[project.scripts]
+rpg-kaynak-yonetimi = "main:main"
+
+[tool.setuptools]
+include-package-data = true
+py-modules = ["main"]
+
+[tool.setuptools.data-files]
+"." = ["data/demo_content.json", "data/playtest_balance.json"]
+
+[tool.unittest]
+test_command = "python -m unittest discover -s tests -t . -p test_*.py"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = [
+    "application*",
+    "character*",
+    "combat*",
+    "core*",
+    "economy*",
+    "inventory*",
+    "npc*",
+    "pygame*",
+    "quests*",
+    "resources*",
+    "save*",
+    "time_system*",
+    "world*",
+]
+exclude = ["tests*", "docs*", "scripts*"]

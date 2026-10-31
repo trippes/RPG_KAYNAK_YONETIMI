@@ -1,0 +1,1 @@
+"""Foundation value object tests."""

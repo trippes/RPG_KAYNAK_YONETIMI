@@ -1,0 +1,511 @@
+
+{
+  "schema_version": 1,
+  "ids": {
+    "world_id": "demo_valley",
+    "hero_id": "hero",
+    "village_id": "village",
+    "forest_id": "forest",
+    "faction_id": "wardens",
+    "npc_id": "warden_lyra",
+    "quest_id": "forest_supplies",
+    "node_id": "forest_wood",
+    "inventory_id": "player",
+    "merchant_id": "village_merchant",
+    "merchant_inventory_id": "merchant",
+    "market_offer_id": "market_plank",
+    "bread_offer_id": "market_bread",
+    "water_offer_id": "market_water",
+    "innkeeper_id": "village_innkeeper",
+    "enemy_id": "forest_wolf",
+    "encounter_id": "forest_wolf_encounter",
+    "carpenter_id": "village_carpenter",
+    "carpenter_quest_id": "carpenter_repair",
+    "inn_quest_id": "inn_supplies"
+  },
+  "world": {
+    "name": "Başlangıç Vadisi",
+    "width": 24,
+    "height": 16
+  },
+  "character": {
+    "name": "Arin",
+    "race": {
+      "id": "human",
+      "name": "İnsan",
+      "ability_id": "adapt",
+      "ability_name": "Uyum"
+    },
+    "class": {
+      "id": "gatherer",
+      "name": "Toplayıcı",
+      "hit_points": 12
+    }
+  },
+  "resources": [
+    {
+      "id": "wood",
+      "node_quantity": {
+        "amount": 8,
+        "unit": "item"
+      },
+      "node_capacity": {
+        "amount": 8,
+        "unit": "item"
+      },
+      "regeneration_rate": {
+        "amount": 1,
+        "unit": "item"
+      },
+      "location_id": "forest_id"
+    },
+    {
+      "id": "bread"
+    },
+    {
+      "id": "water"
+    },
+    {
+      "id": "plank"
+    }
+  ],
+  "recipe": {
+    "id": "campfire",
+    "inputs": [
+      {
+        "resource": "wood",
+        "amount": 2,
+        "unit": "item"
+      }
+    ],
+    "outputs": [
+      {
+        "resource": "plank",
+        "amount": 1,
+        "unit": "item"
+      }
+    ],
+    "duration": 2,
+    "output_tag": "campfire",
+    "facility": {
+      "id": "campfire",
+      "type": "campfire",
+      "capacity": 1
+    }
+  },
+  "locations": [
+    {
+      "id": "village_id",
+      "name": "Köy",
+      "type": "settlement",
+      "description": "Tüccarların ve Vadi Muhafızlarının güvenli merkezi.",
+      "activities": [
+        "dialogue",
+        "market",
+        "travel"
+      ],
+      "position": [
+        180,
+        220
+      ],
+      "landmarks": [
+        {
+          "id": "village_square",
+          "name": "Köy Meydanı",
+          "description": "Eren burada köyün işlerini takip ediyor.",
+          "activities": [
+            "dialogue"
+          ],
+          "position": [
+            15,
+            15
+          ]
+        },
+
+        {
+          "id": "village_carpenter_shop",
+          "name": "Marangoz Atölyesi",
+          "description": "Köyün marangoz ustası burada çalışır. İş arayanlara görev verebilir.",
+          "activities": [
+            "dialogue"
+          ],
+          "position": [
+            21,
+            15
+          ]
+        },
+
+        {
+          "id": "village_market",
+          "name": "Pazar Tezgâhları",
+          "description": "Gezgin tüccarın temel malzemeleri bulunur.",
+          "activities": [
+            "market"
+          ],
+          "position": [
+            24,
+            20
+          ]
+        },
+        {
+          "id": "village_inn",
+          "name": "Köy Hanı",
+          "description": "Yolcuların dinlenip ekmek ve su alabildiği han.",
+          "activities": ["market"],
+          "position": [20, 23]
+        },
+        {
+          "id": "village_gate",
+          "name": "Kuzey Kapısı",
+          "description": "Kuzey ormanına giden yol burada başlar.",
+          "activities": [
+            "travel"
+          ],
+          "position": [
+            16,
+            0
+          ]
+        },
+        {
+          "id": "village_entrance",
+          "name": "Güney Kapısı",
+          "description": "Köye girip çıkanların kullandığı güney kapısı.",
+          "activities": ["travel"],
+          "position": [16, 30]
+        },
+        {
+          "id": "village_east_gate",
+          "name": "Doğu Kapısı",
+          "description": "Doğu ormanına açılan köy kapısı.",
+          "activities": ["travel"],
+          "position": [31, 16]
+        },
+        {
+          "id": "village_west_gate",
+          "name": "Batı Kapısı",
+          "description": "Batı ormanına açılan köy kapısı.",
+          "activities": ["travel"],
+          "position": [0, 16]
+        },
+        {
+          "id": "village_municipality",
+          "name": "Muhtarlık",
+          "description": "Köyün kayıtlarının ve günlük işlerinin tutulduğu yapı.",
+          "activities": ["dialogue"],
+          "position": [11, 12]
+        },
+        {
+          "id": "village_house_01",
+          "name": "Köy Evi",
+          "description": "Köylülerden birinin yaşadığı sade ev.",
+          "activities": [],
+          "position": [7, 10]
+        },
+        {
+          "id": "village_house_02",
+          "name": "Köy Evi",
+          "description": "Köy meydanına bakan küçük bir ev.",
+          "activities": [],
+          "position": [26, 11]
+        },
+        {
+          "id": "headmans_house",
+          "name": "Muhtarın Evi",
+          "description": "Muhtarın ailesiyle birlikte yaşadığı ev.",
+          "activities": ["dialogue"],
+          "position": [10, 6]
+        },
+        {
+          "id": "watchtower",
+          "name": "Gözetleme Kulesi",
+          "description": "Vadinin yollarını gözleyen yüksek kule.",
+          "activities": ["dialogue"],
+          "position": [3,5]
+        },
+        {
+          "id": "carpenters_house",
+          "name": "Marangozun Evi",
+          "description": "Marangoz ustasının atölyesinin yanındaki evi.",
+          "activities": [],
+          "position": [25, 16]
+        },
+        {
+          "id": "village_house_03",
+          "name": "Köy Evi",
+          "description": "Nehir kıyısında bulunan başka bir köy evi.",
+          "activities": [],
+          "position": [7, 23]
+        }
+      ]
+    },
+    {
+      "id": "forest_id",
+      "name": "Kuzey Ormanı",
+      "type": "wilderness",
+      "description": "Odun kaynakları ve tehlikeli yaratıklarla dolu eski orman.",
+      "activities": [
+        "gather",
+        "combat",
+        "travel"
+      ],
+      "position": [
+        180,
+        50
+      ],
+      "landmarks": [
+        {
+          "id": "forest_grove",
+          "name": "Odun Korusu",
+          "description": "Toplanabilir odunların bulunduğu açıklık.",
+          "activities": [
+            "gather"
+          ],
+          "position": [
+            150,
+            210
+          ]
+        },
+        {
+          "id": "forest_clearing",
+          "name": "Kurt Açıklığı",
+          "description": "Bir yaratık karşılaşması için tehlikeli alan.",
+          "activities": [
+            "combat"
+          ],
+          "position": [
+            350,
+            130
+          ]
+        },
+        {
+          "id": "forest_trail",
+          "name": "Köy Yolu",
+          "description": "Köye geri dönen patika.",
+          "activities": [
+            "travel"
+          ],
+          "position": [
+            470,
+            270
+          ]
+        },
+        {
+          "id": "forest_tree_01",
+          "name": "Çam Ağacı",
+          "description": "Kesilip odun toplanabilen yaşlı bir çam ağacı.",
+          "activities": ["gather"],
+          "position": [4, 5]
+        },
+        {
+          "id": "forest_tree_02",
+          "name": "Meşe Ağacı",
+          "description": "Gövdesinde toplanabilir odun bulunan güçlü bir meşe.",
+          "activities": ["gather"],
+          "position": [8, 11]
+        },
+        {
+          "id": "forest_tree_03",
+          "name": "Çam Ağacı",
+          "description": "Kesilip odun toplanabilen yaşlı bir çam ağacı.",
+          "activities": ["gather"],
+          "position": [13, 7]
+        },
+        {
+          "id": "forest_tree_04",
+          "name": "Meşe Ağacı",
+          "description": "Gövdesinde toplanabilir odun bulunan güçlü bir meşe.",
+          "activities": ["gather"],
+          "position": [23, 12]
+        },
+        {
+          "id": "forest_tree_05",
+          "name": "Çam Ağacı",
+          "description": "Kesilip odun toplanabilen yaşlı bir çam ağacı.",
+          "activities": ["gather"],
+          "position": [27, 24]
+        }
+      ]
+    },
+    {
+      "id": "south_forest",
+      "name": "Güney Ormanı",
+      "type": "wilderness",
+      "description": "Köyün güneyinde uzanan yoğun ve nemli orman.",
+      "activities": ["gather", "combat", "travel"],
+      "position": [180, 390],
+      "landmarks": [
+        {"id": "south_tree_01", "name": "Çam Ağacı", "description": "Odun toplanabilen çam ağacı.", "activities": ["gather"], "position": [6, 8]},
+        {"id": "south_tree_02", "name": "Meşe Ağacı", "description": "Odun toplanabilen meşe ağacı.", "activities": ["gather"], "position": [18, 14]},
+        {"id": "south_tree_03", "name": "Çam Ağacı", "description": "Odun toplanabilen çam ağacı.", "activities": ["gather"], "position": [27, 24]}
+      ]
+    },
+    {
+      "id": "west_forest",
+      "name": "Batı Ormanı",
+      "type": "wilderness",
+      "description": "Köyün batısında kayalık geçitlerle çevrili orman.",
+      "activities": ["gather", "combat", "travel"],
+      "position": [30, 220],
+      "landmarks": [
+        {"id": "west_tree_01", "name": "Meşe Ağacı", "description": "Odun toplanabilen meşe ağacı.", "activities": ["gather"], "position": [5, 6]},
+        {"id": "west_tree_02", "name": "Çam Ağacı", "description": "Odun toplanabilen çam ağacı.", "activities": ["gather"], "position": [15, 20]},
+        {"id": "west_tree_03", "name": "Meşe Ağacı", "description": "Odun toplanabilen meşe ağacı.", "activities": ["gather"], "position": [26, 10]}
+      ]
+    },
+    {
+      "id": "east_forest",
+      "name": "Doğu Ormanı",
+      "type": "wilderness",
+      "description": "Köyün doğusunda eski patikaların bulunduğu orman.",
+      "activities": ["gather", "combat", "travel"],
+      "position": [330, 220],
+      "landmarks": [
+        {"id": "east_tree_01", "name": "Çam Ağacı", "description": "Odun toplanabilen çam ağacı.", "activities": ["gather"], "position": [4, 17]},
+        {"id": "east_tree_02", "name": "Meşe Ağacı", "description": "Odun toplanabilen meşe ağacı.", "activities": ["gather"], "position": [17, 7]},
+        {"id": "east_tree_03", "name": "Çam Ağacı", "description": "Odun toplanabilen çam ağacı.", "activities": ["gather"], "position": [25, 22]}
+      ]
+    }
+  ],
+  "connections": [
+    [
+      "village_id",
+      "forest_id"
+    ],
+    [
+      "village_id",
+      "south_forest"
+    ],
+    [
+      "village_id",
+      "west_forest"
+    ],
+    [
+      "village_id",
+      "east_forest"
+    ]
+  ],
+  "faction": {
+    "name": "Vadi Muhafızları"
+  },
+  "npc": {
+    "name": "Eren",
+    "role": "warden",
+    "location_id": "village_id",
+    "position": [16, 30]
+  },
+  "carpenter_npc": {
+    "name": "Marangoz Hilmi",
+    "role": "carpenter",
+    "location_id": "village_id",
+    "position": [21, 15]
+  },
+  "innkeeper_npc": {
+    "name": "Han İşletmecisi Ayşe",
+    "position": [20, 23]
+  },
+  "dialogue": {
+    "id": "warden_intro",
+    "start_node": "start",
+    "nodes": [
+      {
+        "id": "start",
+        "text": "Bir dakika! Seni bu köyde daha önce görmedim. Kimsin sen?",
+        "choices": []
+      }
+    ]
+  },
+
+  "carpenter_dialogue": {
+    "id": "carpenter_intro",
+    "start_node": "carpenter_start",
+    "nodes": [
+      {
+        "id": "carpenter_start",
+        "text": "Ben köyün marangoz ustasıyım. Yardım edecek birini arıyordum. Benim için çalışmak ister misin?",
+        "choices": [
+          {
+            "id": "accept_carpenter_quest",
+            "text": "Evet, işi kabul ediyorum."
+          },
+          {
+            "id": "deliver_carpenter_wood",
+            "text": "İstediğin odunları getirdim."
+          },
+          {
+            "id": "decline_carpenter_quest",
+            "text": "Şimdilik hayır."
+          }
+        ]
+      }
+    ]
+  },
+
+  "quest": {
+    "title": "Orman Erzakları",
+    "objectives": [
+      {
+        "id": "talk_lyra",
+        "description": "Eren ile konuş",
+        "type": "talk",
+        "target_id": "npc_id"
+      },
+      {
+        "id": "collect_wood",
+        "description": "Ormandan odun topla",
+        "type": "collect",
+        "target_id": "node_id"
+      }
+    ],
+    "reward": {
+      "currency": 10,
+      "items": [
+        [
+          "plank",
+          1
+        ]
+      ],
+      "reputation": 15
+    }
+  },
+  "merchant": {
+    "stock_amount": 4
+  },
+  "market_offer": {
+    "resource": "plank",
+    "quantity": 4,
+    "price": 2,
+    "currency": "gold"
+  },
+  "market_offers": [
+    {
+      "id": "bread_offer_id",
+      "resource": "bread",
+      "quantity": 1,
+      "price": 2,
+      "currency": "gold",
+      "stock_amount": 12
+    },
+    {
+      "id": "water_offer_id",
+      "resource": "water",
+      "quantity": 1,
+      "price": 1,
+      "currency": "gold",
+      "stock_amount": 12
+    }
+  ],
+  "combat": {
+    "hero": {
+      "hp": 12,
+      "attack": 4,
+      "defense": 1,
+      "initiative": 3
+    },
+    "enemy": {
+      "hp": 8,
+      "attack": 2,
+      "defense": 0,
+      "initiative": 1
+    }
+  }
+}

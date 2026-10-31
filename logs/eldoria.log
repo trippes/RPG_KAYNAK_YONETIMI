@@ -1,0 +1,101 @@
+2026-10-30 15:42:16,997 ERROR Interactive game session failed
+Traceback (most recent call last):
+  File "C:\Users\sabri\Desktop\Yeni klasör (12)\RPG_KAYNAK_YONETIMI\main.py", line 39, in main
+    launch(create_demo_service(game), pygame)
+    ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sabri\Desktop\Yeni klasör (12)\RPG_KAYNAK_YONETIMI\pygame\game_window.py", line 199, in launch
+    window = GameWindow(service, backend, **kwargs)
+  File "C:\Users\sabri\Desktop\Yeni klasör (12)\RPG_KAYNAK_YONETIMI\pygame\game_window.py", line 69, in __init__
+    "dialogue": DialogueScreen(service),
+                ~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\sabri\Desktop\Yeni klasör (12)\RPG_KAYNAK_YONETIMI\pygame\screens\dialogue_screen.py", line 42, in __init__
+    self.context = (actor_id, "village_carpenter", "carpenter_intro")
+                    ^^^^^^^^
+NameError: name 'actor_id' is not defined
+2026-10-31 11:16:15,813 ERROR Interactive game session failed
+Traceback (most recent call last):
+  File "C:\Users\sabri\Desktop\Yeni klasör (12)\RPG_KAYNAK_YONETIMI\application\content_pack.py", line 64, in load_demo_content
+    definition = json.loads(source.read_text(encoding="utf-8"))
+  File "C:\Users\sabri\AppData\Local\Python\pythoncore-3.14-64\Lib\json\__init__.py", line 352, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "C:\Users\sabri\AppData\Local\Python\pythoncore-3.14-64\Lib\json\decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sabri\AppData\Local\Python\pythoncore-3.14-64\Lib\json\decoder.py", line 361, in raw_decode
+    obj, end = self.scan_once(s, idx)
+               ~~~~~~~~~~~~~~^^^^^^^^
+json.decoder.JSONDecodeError: Expecting ',' delimiter: line 194 column 9 (char 4550)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\sabri\Desktop\Yeni klasör (12)\RPG_KAYNAK_YONETIMI\main.py", line 39, in main
+    launch(create_demo_service(game), pygame)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\sabri\Desktop\Yeni klasör (12)\RPG_KAYNAK_YONETIMI\pygame\demo.py", line 7, in create_demo_service
+    service, _ = populate_demo_content(game)
+                 ~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\sabri\Desktop\Yeni klasör (12)\RPG_KAYNAK_YONETIMI\application\content_pack.py", line 133, in populate_demo_content
+    definition = load_demo_content(definition_path)
+  File "C:\Users\sabri\Desktop\Yeni klasör (12)\RPG_KAYNAK_YONETIMI\application\content_pack.py", line 66, in load_demo_content
+    raise ContentDefinitionError(f"Content definition could not be loaded: {source}") from error
+application.content_pack.ContentDefinitionError: Content definition could not be loaded: C:\Users\sabri\Desktop\Yeni klasör (12)\RPG_KAYNAK_YONETIMI\data\demo_content.json
+2026-10-31 11:16:18,405 ERROR Interactive game session failed
+Traceback (most recent call last):
+  File "C:\Users\sabri\Desktop\Yeni klasör (12)\RPG_KAYNAK_YONETIMI\application\content_pack.py", line 64, in load_demo_content
+    definition = json.loads(source.read_text(encoding="utf-8"))
+  File "C:\Users\sabri\AppData\Local\Python\pythoncore-3.14-64\Lib\json\__init__.py", line 352, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "C:\Users\sabri\AppData\Local\Python\pythoncore-3.14-64\Lib\json\decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sabri\AppData\Local\Python\pythoncore-3.14-64\Lib\json\decoder.py", line 361, in raw_decode
+    obj, end = self.scan_once(s, idx)
+               ~~~~~~~~~~~~~~^^^^^^^^
+json.decoder.JSONDecodeError: Expecting ',' delimiter: line 194 column 9 (char 4550)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\sabri\Desktop\Yeni klasör (12)\RPG_KAYNAK_YONETIMI\main.py", line 39, in main
+    launch(create_demo_service(game), pygame)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\sabri\Desktop\Yeni klasör (12)\RPG_KAYNAK_YONETIMI\pygame\demo.py", line 7, in create_demo_service
+    service, _ = populate_demo_content(game)
+                 ~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\sabri\Desktop\Yeni klasör (12)\RPG_KAYNAK_YONETIMI\application\content_pack.py", line 133, in populate_demo_content
+    definition = load_demo_content(definition_path)
+  File "C:\Users\sabri\Desktop\Yeni klasör (12)\RPG_KAYNAK_YONETIMI\application\content_pack.py", line 66, in load_demo_content
+    raise ContentDefinitionError(f"Content definition could not be loaded: {source}") from error
+application.content_pack.ContentDefinitionError: Content definition could not be loaded: C:\Users\sabri\Desktop\Yeni klasör (12)\RPG_KAYNAK_YONETIMI\data\demo_content.json
+2026-10-31 11:25:35,928 ERROR Interactive game session failed
+Traceback (most recent call last):
+  File "C:\Users\sabri\Desktop\Yeni klasör (12)\RPG_KAYNAK_YONETIMI\main.py", line 39, in main
+    launch(create_demo_service(game), pygame)
+    ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sabri\Desktop\Yeni klasör (12)\RPG_KAYNAK_YONETIMI\pygame\game_window.py", line 213, in launch
+    window.run()
+    ~~~~~~~~~~^^
+  File "C:\Users\sabri\Desktop\Yeni klasör (12)\RPG_KAYNAK_YONETIMI\pygame\game_window.py", line 197, in run
+    self.step(self.pg.event.get())
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sabri\Desktop\Yeni klasör (12)\RPG_KAYNAK_YONETIMI\pygame\game_window.py", line 184, in step
+    self.screens[shown].render(self.renderer)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\sabri\Desktop\Yeni klasör (12)\RPG_KAYNAK_YONETIMI\pygame\screens\local_map_screen.py", line 196, in render
+    renderer.pg.draw.rect(renderer.surface, (145, 105, ), rect)
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: invalid color (color sequence must have size 3 or 4, and each element must be an integer in the range [0, 255])
+2026-10-31 11:57:59,118 ERROR Interactive game session failed
+Traceback (most recent call last):
+  File "C:\Users\sabri\Desktop\Yeni klasör (12)\RPG_KAYNAK_YONETIMI\main.py", line 39, in main
+    launch(create_demo_service(game), pygame)
+    ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sabri\Desktop\Yeni klasör (12)\RPG_KAYNAK_YONETIMI\pygame\game_window.py", line 231, in launch
+    window = GameWindow(service, backend, **kwargs)
+  File "C:\Users\sabri\Desktop\Yeni klasör (12)\RPG_KAYNAK_YONETIMI\pygame\game_window.py", line 74, in __init__
+    self.save_dir = self.save_path.parent
+                    ^^^^^^^^^^^^^^
+AttributeError: 'GameWindow' object has no attribute 'save_path'

@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "balance": {
+    "travel_ticks": {"min": 1, "max": 1},
+    "quest_reward_gold": {"min": 8, "max": 20},
+    "combat_attacks": {"min": 2, "max": 3},
+    "combat_damage_taken": {"min": 0, "max": 6}
+  }
+}

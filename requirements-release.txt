@@ -1,0 +1,5 @@
+# Tools required to build and validate a distributable release artifact.
+setuptools>=68
+wheel>=0.43
+build>=1.2
+pygame-ce>=2.5
