@@ -57,6 +57,14 @@ class DialogueScreen:
         if self.node is None:
             return ()
         choices = tuple(self.node.choices)
+        if self.context is not None:
+            actor_id, npc_id, dialogue_id = self.context
+            dialogue = self.service.application.holder.current.social.dialogues.get(dialogue_id)
+            if dialogue is not None:
+                choices = dialogue.available_choices(
+                    self.node.node_id,
+                    self.service._dialogue_context(actor_id, npc_id),
+                )
         if self.context is None or self.context[1] != "village_carpenter":
             return choices
         quest = getattr(self.service, "carpenter_quest", None)
@@ -278,6 +286,7 @@ class DialogueScreen:
 
         visible_choices = self._visible_choices()
         if self.node is not None and visible_choices:
+            self.selected %= len(visible_choices)
             if state.pressed("up"):
                 self.selected = (
                     self.selected - 1

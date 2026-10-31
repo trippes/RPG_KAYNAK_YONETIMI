@@ -482,6 +482,20 @@ def populate_demo_content(application, ids: DemoContentIds = DemoContentIds(), d
         world_map.connect(resolve_id(connection[0]), resolve_id(connection[1]))
     service.register_world_map(world_map)
     service.place_actor(resolve_id("hero_id"), resolve_id("village_id"))
+    start_position = character_data.get("starting_position") or (16, 29)
+    if (
+        not isinstance(start_position, (list, tuple))
+        or len(start_position) != 2
+        or not all(isinstance(value, int) for value in start_position)
+    ):
+        raise ContentDefinitionError(
+            "Character starting_position must contain two integer tile coordinates."
+        )
+    service.set_actor_tile_position(
+        resolve_id("hero_id"),
+        start_position[0],
+        start_position[1],
+    )
 
     merchant_data = definition["merchant"]
     service.register_merchant(Merchant(resolve_id("merchant_id"), account_id=resolve_id("merchant_id"), inventory_id=resolve_id("merchant_inventory_id")))

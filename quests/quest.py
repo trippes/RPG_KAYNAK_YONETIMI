@@ -45,5 +45,8 @@ class QuestLog:
     def get(self, quest_id): return self._quests.get(quest_id)
     def all(self): return tuple(self._quests[k] for k in sorted(self._quests))
     def active(self): return tuple(q for q in self.all() if q.state is QuestState.ACTIVE)
+    def completed(self): return tuple(q for q in self.all() if q.state is QuestState.COMPLETED)
+    def failed(self): return tuple(q for q in self.all() if q.state is QuestState.FAILED)
+    def available(self): return tuple(q for q in self.all() if q.state is QuestState.AVAILABLE)
 
 __all__ = ["Quest", "QuestLog", "QuestState"]

@@ -17,10 +17,11 @@ from .screens.character_creation import CharacterCreationScreen
 from .screens.production_screen import ProductionScreen
 from .screens.opening_screen import OpeningScreen
 from .screens.save_slots_screen import SaveSlotsScreen
+from .screens.quest_log_screen import QuestLogScreen
 
 # Screens that show the navigation tab bar / resource bar.
 NAV_SCREENS = frozenset(
-    {"world", "inventory", "production", "character", "market", "map", "local_map"}
+    {"world", "inventory", "production", "character", "quest_log", "market", "map", "local_map"}
 )
 NOTICE_FRAMES = 240  # ~4 seconds at 60 fps
 
@@ -71,6 +72,7 @@ class GameWindow:
             "inventory": InventoryScreen(service),
             "production": ProductionScreen(service),
             "character": CharacterScreen(service),
+            "quest_log": QuestLogScreen(service),
             "market": MarketScreen(service),
             "dialogue": DialogueScreen(service),
             "combat": CombatScreen(service),

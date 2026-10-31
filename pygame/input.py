@@ -77,6 +77,7 @@ class InputMapper:
                 "f11": "fullscreen",
                 "x": "map",
                 "l": "local_map",
+                "j": "quest_log",
             }
 
             action = actions.get(key)
@@ -113,7 +114,7 @@ class InputMapper:
         }
 
         if self.backend is not None:
-            for letter in "gcipwqxlmdbn":
+            for letter in "gcipwqxlmdbnj":
                 names[getattr(self.backend, f"K_{letter}", object())] = letter
             names[getattr(self.backend, "K_F5", object())] = "f5"
             names[getattr(self.backend, "K_F9", object())] = "f9"

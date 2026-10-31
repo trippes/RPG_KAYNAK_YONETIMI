@@ -33,6 +33,10 @@
   },
   "character": {
     "name": "Arin",
+    "starting_position": [
+      16,
+      29
+    ],
     "race": {
       "id": "human",
       "name": "İnsan",

@@ -541,7 +541,11 @@ class GameplayService:
         dialogue = bundle.social.dialogues.get(dialogue_id)
         if dialogue is None:
             raise KeyError(f"Dialogue not found: {dialogue_id}")
-        result = bundle.social.node_for(dialogue_id, node_id or dialogue.start_node_id, {"actor_id": actor_id, "npc_id": npc_id})
+        result = bundle.social.node_for(
+            dialogue_id,
+            node_id or dialogue.start_node_id,
+            self._dialogue_context(actor_id, npc_id),
+        )
         self._advance_quests("talk", npc_id, 1, actor_id, None)
         return result
 
@@ -549,12 +553,46 @@ class GameplayService:
         bundle = self._current_bundle()
         dialogue = bundle.social.dialogues.get(dialogue_id)
         if dialogue is None: raise KeyError(f"Dialogue not found: {dialogue_id}")
-        choice = next((item for item in dialogue.available_choices(node_id, {"actor_id": actor_id, "npc_id": npc_id}) if item.choice_id == choice_id), None)
+        choice = next(
+            (
+                item for item in dialogue.available_choices(
+                    node_id, self._dialogue_context(actor_id, npc_id)
+                )
+                if item.choice_id == choice_id
+            ),
+            None,
+        )
         if choice is None: raise ValueError(f"Dialogue choice not available: {choice_id}")
         bundle.social.change_relationship(actor_id, npc_id, value=2, trust=1)
         self._run_dialogue_action(choice.action or choice_id, actor_id, npc_id)
         if choice.next_node_id is None: return None
         return self.talk_to_npc(actor_id, npc_id, dialogue_id, choice.next_node_id)
+
+    def _dialogue_context(self, actor_id: str, npc_id: str) -> dict:
+        bundle = self._current_bundle()
+        objectives = {
+            objective.objective_id: objective.progress
+            for quest in bundle.quest_log.all()
+            for objective in quest.objectives
+        }
+        items = {}
+        try:
+            items = {
+                getattr(resource, "value", str(resource)): amount
+                for resource, amount, _unit in self.inventory("player").stocks
+            }
+        except (KeyError, ValueError, RuntimeError):
+            pass
+        return {
+            "actor_id": actor_id,
+            "npc_id": npc_id,
+            "objectives": objectives,
+            "items": items,
+            "flags": {
+                f"quest:{quest.quest_id}": quest.state.value
+                for quest in bundle.quest_log.all()
+            },
+        }
 
     def _run_dialogue_action(self, action: str, actor_id: str, npc_id: str) -> None:
         actions = {

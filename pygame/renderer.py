@@ -98,6 +98,7 @@ NAV_TABS = (
     ("inventory", "Çanta"),
     ("production", "Üretim"),
     ("character", "Karakter"),
+    ("quest_log", "Görevler"),
     ("market", "Pazar"),
     ("map", "Harita"),
 )
