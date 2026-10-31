@@ -35,6 +35,9 @@ class DemoContentIds:
     quest_id: str = "forest_supplies"
     carpenter_id: str = "village_carpenter"
     carpenter_quest_id: str = "carpenter_repair"
+    blacksmith_id: str = "village_blacksmith"
+    blacksmith_quest_id: str = "blacksmith_iron"
+    iron_node_id: str = "north_iron_mine"
     inn_quest_id: str = "inn_supplies"
     node_id: str = "forest_wood"
     inventory_id: str = "player"
@@ -177,25 +180,39 @@ def populate_demo_content(application, ids: DemoContentIds = DemoContentIds(), d
         location_id=resolve_id(node_data["location_id"]),
     ))
     for location in definition["locations"]:
-        tree_landmarks = [
+        resource_landmarks = [
             landmark for landmark in location.get("landmarks", ())
-            if "tree" in landmark["id"] or "ağaç" in landmark["name"].lower()
+            if (
+                "tree" in landmark["id"]
+                or "ağaç" in landmark["name"].lower()
+                or "mine" in landmark["id"]
+                or "maden" in landmark["name"].lower()
+            )
         ]
-        for index, landmark in enumerate(tree_landmarks):
+        for index, landmark in enumerate(resource_landmarks):
+            is_iron = "mine" in landmark["id"] or "maden" in landmark["name"].lower()
+            resource_data = next(
+                item for item in definition["resources"]
+                if item["id"] == ("iron_ore" if is_iron else "wood")
+            )
             node_id = (
                 resolve_id("node_id")
-                if location["id"] == "forest_id" and index == 0
-                else f"{landmark['id']}_wood"
+                if location["id"] == "forest_id" and not is_iron and index == 0
+                else (
+                    resolve_id("iron_node_id")
+                    if location["id"] == "forest_id" and is_iron
+                    else landmark["id"] if is_iron else f"{landmark['id']}_wood"
+                )
             )
             if bundle.resource_nodes.get(node_id) is not None:
                 continue
             bundle.resource_nodes.add(WorldResourceNode(
                 node_id,
                 world.world_id,
-                resource_types[node_data["id"]],
-                _quantity(node_data["node_quantity"]),
-                _quantity(node_data["node_capacity"]),
-                zero_regeneration,
+                resource_types[resource_data["id"]],
+                _quantity(resource_data["node_quantity"]),
+                _quantity(resource_data["node_capacity"]),
+                Quantity(0, _quantity(resource_data["regeneration_rate"]).unit),
                 location_id=resolve_id(location["id"]),
             ))
 
@@ -245,6 +262,17 @@ def populate_demo_content(application, ids: DemoContentIds = DemoContentIds(), d
             position=Position(*(carpenter_data.get("position") or (21, 15))),
         )
     )
+    blacksmith_data = definition.get("blacksmith_npc", {})
+    service.register_npc(
+        NPC(
+            resolve_id("blacksmith_id"),
+            blacksmith_data.get("name", "Demirci Usta"),
+            blacksmith_data.get("role", "blacksmith"),
+            (resolve_id("faction_id"),),
+            resolve_id(blacksmith_data.get("location_id", "village_id")),
+            position=Position(*(blacksmith_data.get("position") or (27, 15))),
+        )
+    )
 
     dialogue_data = definition["dialogue"]
     nodes = []
@@ -291,6 +319,29 @@ def populate_demo_content(application, ids: DemoContentIds = DemoContentIds(), d
         "carpenter_start",
     )
     service.register_dialogue(carpenter_dialogue)
+    service.register_dialogue(Dialogue(
+        "blacksmith_intro",
+        (
+            DialogueNode(
+                "blacksmith_start",
+                resolve_id("blacksmith_id"),
+                "Demir ocağından demir cevheri getirirsen onu dövüp sana sağlam bir demir kılıç yapabilirim.",
+                (
+                    DialogueChoice(
+                        "accept_blacksmith_quest",
+                        "Demir cevheri toplamaya gidiyorum.",
+                        action="accept_blacksmith_quest",
+                    ),
+                    DialogueChoice(
+                        "deliver_blacksmith_ore",
+                        "İstediğin demir cevherini getirdim.",
+                        action="deliver_blacksmith_ore",
+                    ),
+                ),
+            ),
+        ),
+        "blacksmith_start",
+    ))
     service.register_dialogue(Dialogue(
         "innkeeper_intro",
         (
@@ -359,9 +410,31 @@ def populate_demo_content(application, ids: DemoContentIds = DemoContentIds(), d
         ),
         Reward(currency=10),
     )
+    service.blacksmith_quest = Quest(
+        resolve_id("blacksmith_quest_id"),
+        "Demirciye Cevher Getir",
+        (
+            Objective(
+                "collect_iron_ore",
+                "Demir madenlerinden demir cevheri topla",
+                ObjectiveType.COLLECT,
+                resolve_id("iron_node_id"),
+                required=3,
+            ),
+            Objective(
+                "deliver_iron_ore",
+                "Demir cevherini demirciye teslim et",
+                ObjectiveType.CUSTOM,
+                resolve_id("blacksmith_id"),
+                required=1,
+            ),
+        ),
+        Reward(items=(("iron_sword", 1),)),
+    )
     bundle.quest_log.add(quest)
     bundle.quest_log.add(carpenter_quest)
     bundle.quest_log.add(service.inn_quest)
+    bundle.quest_log.add(service.blacksmith_quest)
     
     world_map = WorldMap(world.world_id)
     for location in definition["locations"]:

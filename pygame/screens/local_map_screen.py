@@ -24,6 +24,7 @@ class LocalMapScreen:
             ("market", "Han / Pazar"),
             ("map", "Dünya Haritası"),
             ("close", "Oyuna Dön"),
+            ("menu", "Ana Menüye Dön"),
         )
         self.renderer_width = 960
         self.renderer_height = 640
@@ -52,7 +53,7 @@ class LocalMapScreen:
         location = self._location()
         return tuple(
             landmark for landmark in (location.landmarks if location else ())
-            if self._tree_is_available(landmark)
+            if self._resource_is_available(landmark)
         )
 
     def _landmark_at(self, tile):
@@ -82,6 +83,12 @@ class LocalMapScreen:
                 if landmark[0] == "forest_tree_01"
                 else f"{landmark[0]}_wood"
             )
+        if "mine" in str(landmark[0]).lower() or "maden" in str(landmark[1]).lower():
+            return (
+                "north_iron_mine"
+                if self._location().location_id == "forest"
+                else str(landmark[0])
+            )
         return self._wood_node_id()
 
     def _gather_at_selected_tree(self):
@@ -91,11 +98,11 @@ class LocalMapScreen:
         if landmark is None or "gather" not in landmark[3]:
             return False
         if not actors or location is None:
-            self.message = "Odun toplayacak bir karakter bulunamadı."
+            self.message = "Kaynak toplayacak bir karakter bulunamadı."
             return True
         node_id = self._node_id_for_landmark(landmark)
         if node_id is None:
-            self.message = "Bu bölgede odun kaynağı bulunamadı."
+            self.message = "Bu bölgede kaynak bulunamadı."
             return True
         try:
             self.service.start_gathering_at_location(
@@ -106,24 +113,34 @@ class LocalMapScreen:
                 Quantity(1, ResourceUnit.ITEM),
             )
             self.service.advance_by(1)
-            self.message = (
-                f"{landmark[1]} kesildi: +1 odun. "
-                "Bir ağaç daha seçip Enter'a bas."
-            )
+            resource_name = "demir cevheri" if "mine" in str(landmark[0]).lower() else "odun"
+            self.message = f"{landmark[1]} toplandı: +1 {resource_name}."
         except (KeyError, ValueError, RuntimeError) as error:
             self.message = f"Odun toplanamadı: {error}"
         return True
 
     def _tree_is_available(self, landmark):
-        if (
-            "tree" not in str(landmark[0]).lower()
-            and "ağaç" not in str(landmark[1]).lower()
-        ):
+        if not self._is_resource_landmark(landmark):
             return True
         node = self.service.application.holder.current.resource_nodes.get(
             self._node_id_for_landmark(landmark),
         )
         return node is not None and node.current_quantity.value > 0
+
+    def _is_resource_landmark(self, landmark):
+        landmark_id = str(landmark[0]).lower()
+        landmark_name = str(landmark[1]).lower()
+        return (
+            "tree" in landmark_id
+            or "ağaç" in landmark_name
+            or "mine" in landmark_id
+            or "maden" in landmark_name
+        )
+
+    def _resource_is_available(self, landmark):
+        if not self._is_resource_landmark(landmark):
+            return True
+        return self._tree_is_available(landmark)
 
     def _tile_at(self, mouse_pos):
         origin_x, origin_y = self._grid_origin()
@@ -320,6 +337,9 @@ class LocalMapScreen:
                         if target == "close" or target == "local_map":
                             self.menu_open = False
                             return None
+                        if target == "menu":
+                            self.menu_open = False
+                            return "menu"
                         self.menu_open = False
                         return target
             if state.pressed("up"):
@@ -336,6 +356,9 @@ class LocalMapScreen:
                 if target == "close" or target == "local_map":
                     self.menu_open = False
                     return None
+                if target == "menu":
+                    self.menu_open = False
+                    return "menu"
                 self.menu_open = False
                 return target
             return None
@@ -390,11 +413,11 @@ class LocalMapScreen:
                     self.TILE_SIZE,
                     self.TILE_SIZE,
                 )
-                color = (34, 47, 64) if (x + y) % 2 else (29, 40, 55)
+                color = (74, 145, 72) if (x + y) % 2 else (67, 133, 66)
                 if (x, y) == self.selected:
-                    color = (70, 90, 120)
+                    color = (112, 177, 82)
                 renderer.pg.draw.rect(renderer.surface, color, rect)
-                renderer.pg.draw.rect(renderer.surface, (52, 68, 88), rect, 1)
+                renderer.pg.draw.rect(renderer.surface, (54, 112, 57), rect, 1)
 
         for y in range(self.GRID_SIZE):
             rect = renderer.pg.Rect(
@@ -441,9 +464,61 @@ class LocalMapScreen:
                     (rect.centerx, rect.y + self.TILE_SIZE // 2),
                     max(5, self.TILE_SIZE // 2),
                 )
+            elif "mine" in str(landmark[0]).lower() or "maden" in str(landmark[1]).lower():
+                renderer.pg.draw.polygon(
+                    renderer.surface,
+                    (112, 108, 104),
+                    (
+                        (rect.x + 2, rect.bottom - 2),
+                        (rect.centerx, rect.y + 3),
+                        (rect.right - 2, rect.bottom - 2),
+                    ),
+                )
+                renderer.pg.draw.ellipse(
+                    renderer.surface,
+                    (35, 38, 42),
+                    renderer.pg.Rect(
+                        rect.centerx - self.TILE_SIZE // 2,
+                        rect.centery - 2,
+                        self.TILE_SIZE,
+                        self.TILE_SIZE // 2,
+                    ),
+                )
             else:
-                renderer.pg.draw.rect(renderer.surface, (145, 105, 60), rect)
-            renderer.pg.draw.rect(renderer.surface, (225, 190, 125), rect, 1)
+                house_body = renderer.pg.Rect(
+                    rect.x + 2,
+                    rect.y + self.TILE_SIZE // 2,
+                    rect.width - 4,
+                    rect.height - self.TILE_SIZE // 2 - 2,
+                )
+                renderer.pg.draw.rect(renderer.surface, (210, 170, 105), house_body)
+                renderer.pg.draw.polygon(
+                    renderer.surface,
+                    (150, 55, 45),
+                    (
+                        (rect.x, house_body.y + 2),
+                        (rect.centerx, rect.y + 1),
+                        (rect.right, house_body.y + 2),
+                    ),
+                )
+                renderer.pg.draw.rect(
+                    renderer.surface,
+                    (92, 59, 39),
+                    renderer.pg.Rect(
+                        rect.centerx - max(2, self.TILE_SIZE // 6),
+                        house_body.bottom - self.TILE_SIZE // 2,
+                        max(4, self.TILE_SIZE // 3),
+                        self.TILE_SIZE // 2,
+                    ),
+                )
+                window_size = max(3, self.TILE_SIZE // 4)
+                for window_x in (house_body.x + self.TILE_SIZE // 3, house_body.right - self.TILE_SIZE // 3 - window_size):
+                    renderer.pg.draw.rect(
+                        renderer.surface,
+                        (105, 190, 205),
+                        renderer.pg.Rect(window_x, house_body.y + 3, window_size, window_size),
+                    )
+            renderer.pg.draw.rect(renderer.surface, (102, 72, 43), rect, 1)
 
         for npc in self._npcs():
             x, y = self._position(npc.position)
@@ -487,7 +562,7 @@ class LocalMapScreen:
                 )
                 remaining = node.current_quantity.value if node is not None else 0
                 renderer.text(
-                    f"Odun: {remaining} kaldı — Enter: topla",
+                    f"{'Demir cevheri' if 'mine' in str(landmark[0]).lower() else 'Odun'}: {remaining} kaldı — Enter: topla",
                     28, 232, (140, 220, 160), max_width=360,
                 )
         renderer.wrapped_text(

@@ -11,7 +11,7 @@ class MainMenu:
                 rect_left, rect_top = 84, 250 + index * 64
                 if rect_left <= x <= rect_left + 300 and rect_top <= y <= rect_top + 48:
                     self.selected = index
-                    return ("save_slots" if index in (0, 1) else "quit")
+                    return ("save_slots" if index == 0 else "continue" if index == 1 else "quit")
 
         if state.pressed("up") or state.pressed("down"):
             delta = -1 if state.pressed("up") else 1
@@ -19,7 +19,7 @@ class MainMenu:
         if state.pressed("quit"):
             return "quit"
         if state.pressed("confirm"):
-            return "save_slots" if self.selected in (0, 1) else "quit"
+            return "save_slots" if self.selected == 0 else "continue" if self.selected == 1 else "quit"
         return None
 
     def render(self, renderer):

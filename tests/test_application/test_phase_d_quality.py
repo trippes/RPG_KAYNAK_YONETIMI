@@ -99,6 +99,18 @@ class TestPhaseDQuality(unittest.TestCase):
         self.assertEqual(path[-1], (8, 8))
         self.assertFalse(local_screen._is_walkable((7, 10)))
 
+    def test_mine_landmark_collects_iron_ore(self):
+        service, ids = populate_demo_content(GameApplication.create_default())
+        service.move_actor(ids.hero_id, ids.forest_id)
+        service.advance_by(1)
+        service.move_actor(ids.hero_id, "north_mine")
+        service.advance_by(1)
+
+        local_screen = LocalMapScreen(service)
+        local_screen.selected = (15, 15)
+        self.assertTrue(local_screen._gather_at_selected_tree())
+        self.assertEqual(service.inventory(ids.inventory_id).stocks, (("iron_ore", 1, "item"),))
+
     def test_dialogue_prompt_uses_selected_npc_name(self):
         from application.content_pack import populate_demo_content
         service, ids = populate_demo_content(GameApplication.create_default())

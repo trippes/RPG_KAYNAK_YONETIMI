@@ -21,6 +21,9 @@
     "encounter_id": "forest_wolf_encounter",
     "carpenter_id": "village_carpenter",
     "carpenter_quest_id": "carpenter_repair",
+    "blacksmith_id": "village_blacksmith",
+    "blacksmith_quest_id": "blacksmith_iron",
+    "iron_node_id": "north_iron_mine",
     "inn_quest_id": "inn_supplies"
   },
   "world": {
@@ -45,6 +48,22 @@
   "resources": [
     {
       "id": "wood",
+      "node_quantity": {
+        "amount": 8,
+        "unit": "item"
+      },
+      "node_capacity": {
+        "amount": 8,
+        "unit": "item"
+      },
+      "regeneration_rate": {
+        "amount": 1,
+        "unit": "item"
+      },
+      "location_id": "forest_id"
+    },
+    {
+      "id": "iron_ore",
       "node_quantity": {
         "amount": 8,
         "unit": "item"
@@ -131,6 +150,18 @@
           ],
           "position": [
             21,
+            15
+          ]
+        },
+        {
+          "id": "village_forge",
+          "name": "Demir Ocağı",
+          "description": "Köy demircisinin demir cevherini işleyip kılıç dövdüğü ocak.",
+          "activities": [
+            "dialogue"
+          ],
+          "position": [
+            27,
             15
           ]
         },
@@ -323,6 +354,13 @@
           "description": "Kesilip odun toplanabilen yaşlı bir çam ağacı.",
           "activities": ["gather"],
           "position": [27, 24]
+        },
+        {
+          "id": "forest_iron_mine",
+          "name": "Demir Madeni",
+          "description": "Kayaların arasında demir cevheri damarları bulunan maden.",
+          "activities": ["gather"],
+          "position": [20, 25]
         }
       ]
     },
@@ -336,7 +374,8 @@
       "landmarks": [
         {"id": "south_tree_01", "name": "Çam Ağacı", "description": "Odun toplanabilen çam ağacı.", "activities": ["gather"], "position": [6, 8]},
         {"id": "south_tree_02", "name": "Meşe Ağacı", "description": "Odun toplanabilen meşe ağacı.", "activities": ["gather"], "position": [18, 14]},
-        {"id": "south_tree_03", "name": "Çam Ağacı", "description": "Odun toplanabilen çam ağacı.", "activities": ["gather"], "position": [27, 24]}
+        {"id": "south_tree_03", "name": "Çam Ağacı", "description": "Odun toplanabilen çam ağacı.", "activities": ["gather"], "position": [27, 24]},
+        {"id": "south_iron_mine", "name": "Demir Madeni", "description": "Demir cevheri çıkarılabilen kayalık maden.", "activities": ["gather"], "position": [22, 5]}
       ]
     },
     {
@@ -349,7 +388,8 @@
       "landmarks": [
         {"id": "west_tree_01", "name": "Meşe Ağacı", "description": "Odun toplanabilen meşe ağacı.", "activities": ["gather"], "position": [5, 6]},
         {"id": "west_tree_02", "name": "Çam Ağacı", "description": "Odun toplanabilen çam ağacı.", "activities": ["gather"], "position": [15, 20]},
-        {"id": "west_tree_03", "name": "Meşe Ağacı", "description": "Odun toplanabilen meşe ağacı.", "activities": ["gather"], "position": [26, 10]}
+        {"id": "west_tree_03", "name": "Meşe Ağacı", "description": "Odun toplanabilen meşe ağacı.", "activities": ["gather"], "position": [26, 10]},
+        {"id": "west_iron_mine", "name": "Demir Madeni", "description": "Demir cevheri çıkarılabilen kayalık maden.", "activities": ["gather"], "position": [23, 26]}
       ]
     },
     {
@@ -362,7 +402,76 @@
       "landmarks": [
         {"id": "east_tree_01", "name": "Çam Ağacı", "description": "Odun toplanabilen çam ağacı.", "activities": ["gather"], "position": [4, 17]},
         {"id": "east_tree_02", "name": "Meşe Ağacı", "description": "Odun toplanabilen meşe ağacı.", "activities": ["gather"], "position": [17, 7]},
-        {"id": "east_tree_03", "name": "Çam Ağacı", "description": "Odun toplanabilen çam ağacı.", "activities": ["gather"], "position": [25, 22]}
+        {"id": "east_tree_03", "name": "Çam Ağacı", "description": "Odun toplanabilen çam ağacı.", "activities": ["gather"], "position": [25, 22]},
+        {"id": "east_iron_mine", "name": "Demir Madeni", "description": "Demir cevheri çıkarılabilen kayalık maden.", "activities": ["gather"], "position": [8, 25]}
+      ]
+    },
+    {
+      "id": "north_mine",
+      "name": "Kuzey Maden Haritası",
+      "type": "mine",
+      "description": "Kuzey Ormanı'nın yanında bulunan demir cevheri madeni.",
+      "activities": ["gather", "travel"],
+      "position": [300, 50],
+      "landmarks": [
+        {
+          "id": "north_mine_iron",
+          "name": "Demir Madeni",
+          "description": "Kırmızı damarlı kayalardan demir cevheri çıkar.",
+          "activities": ["gather"],
+          "position": [15, 15]
+        }
+      ]
+    },
+    {
+      "id": "south_mine",
+      "name": "Güney Maden Haritası",
+      "type": "mine",
+      "description": "Güney Ormanı'nın yanında bulunan demir cevheri madeni.",
+      "activities": ["gather", "travel"],
+      "position": [300, 390],
+      "landmarks": [
+        {
+          "id": "south_mine_iron",
+          "name": "Demir Madeni",
+          "description": "Kırmızı damarlı kayalardan demir cevheri çıkar.",
+          "activities": ["gather"],
+          "position": [15, 15]
+        }
+      ]
+    },
+    {
+      "id": "west_mine",
+      "name": "Batı Maden Haritası",
+      "type": "mine",
+      "description": "Batı Ormanı'nın yanında bulunan demir cevheri madeni.",
+      "activities": ["gather", "travel"],
+      "position": [30, 390],
+      "landmarks": [
+        {
+          "id": "west_mine_iron",
+          "name": "Demir Madeni",
+          "description": "Kırmızı damarlı kayalardan demir cevheri çıkar.",
+          "activities": ["gather"],
+          "position": [15, 15]
+        }
+      ]
+    },
+    {
+      "id": "east_mine",
+      "name": "Doğu Maden Haritası",
+      "type": "mine",
+      "description": "Doğu Ormanı'nın yanında bulunan demir cevheri madeni.",
+      "activities": ["gather", "travel"],
+      "position": [480, 220],
+      "landmarks": [
+        {
+          "id": "east_mine_iron",
+          "name": "Demir Madeni",
+          "description": "Kırmızı damarlı kayalardan demir cevheri çıkar.",
+          "activities": ["gather"],
+          "position": [15, 15]
+        }
       ]
     }
   ],
@@ -382,6 +491,22 @@
     [
       "village_id",
       "east_forest"
+    ],
+    [
+      "forest_id",
+      "north_mine"
+    ],
+    [
+      "south_forest",
+      "south_mine"
+    ],
+    [
+      "west_forest",
+      "west_mine"
+    ],
+    [
+      "east_forest",
+      "east_mine"
     ]
   ],
   "faction": {
@@ -398,6 +523,12 @@
     "role": "carpenter",
     "location_id": "village_id",
     "position": [21, 15]
+  },
+  "blacksmith_npc": {
+    "name": "Demirci Usta Kemal",
+    "role": "blacksmith",
+    "location_id": "village_id",
+    "position": [27, 15]
   },
   "innkeeper_npc": {
     "name": "Han İşletmecisi Ayşe",

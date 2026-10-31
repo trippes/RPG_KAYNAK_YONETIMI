@@ -120,6 +120,37 @@ class GameWindow:
             return "local_map"
         return "opening"
 
+    def _latest_save_path(self):
+        candidates = []
+        if self.save_path.is_file():
+            candidates.append(self.save_path)
+        if self.save_dir.is_dir():
+            candidates.extend(
+                path for path in self.save_dir.glob("slot_*.json")
+                if path.is_file()
+            )
+        if not candidates:
+            return None
+        return max(candidates, key=lambda path: path.stat().st_mtime_ns)
+
+    def _continue_latest_save(self):
+        path = self._latest_save_path()
+        if path is None:
+            self._set_notice("Açılacak kayıt bulunamadı.", "error")
+            return None
+        try:
+            self.service.load(path)
+        except (OSError, KeyError, ValueError, RuntimeError) as error:
+            self._set_notice(f"Kayıt yüklenemedi: {error}", "error")
+            return None
+        self.save_path = path
+        self.selected_slot = (
+            int(path.stem.removeprefix("slot_")) - 1
+            if path.stem.startswith("slot_") and path.stem.removeprefix("slot_").isdigit()
+            else None
+        )
+        return "local_map"
+
     def _set_notice(self, message, level="info"):
         self.notice = message
         self.notice_level = level
@@ -206,6 +237,8 @@ class GameWindow:
         if next_screen == "quit":
             self.running = False
             return
+        if next_screen == "continue":
+            next_screen = self._continue_latest_save()
 
         if next_screen == "world":
             next_screen = "local_map"

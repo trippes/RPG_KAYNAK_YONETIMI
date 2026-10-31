@@ -71,6 +71,7 @@ class InputMapper:
                 "up": "up",
                 "down": "down",
                 "backspace": "backspace",
+                "delete": "delete",
                 "f5": "save",
                 "f9": "load",
                 "f11": "fullscreen",
@@ -108,6 +109,7 @@ class InputMapper:
             getattr(self.backend, "K_UP", object()): "up",
             getattr(self.backend, "K_DOWN", object()): "down",
             getattr(self.backend, "K_BACKSPACE", object()): "backspace",
+            getattr(self.backend, "K_DELETE", object()): "delete",
         }
 
         if self.backend is not None:
@@ -116,5 +118,6 @@ class InputMapper:
             names[getattr(self.backend, "K_F5", object())] = "f5"
             names[getattr(self.backend, "K_F9", object())] = "f9"
             names[getattr(self.backend, "K_F11", object())] = "f11"
+            names[getattr(self.backend, "K_DELETE", object())] = "delete"
 
         return names.get(key, "")

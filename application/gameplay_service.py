@@ -225,7 +225,7 @@ class GameplayService:
     def _rebind_content_quests(self) -> None:
         """Reconnect optional content aliases to the restored canonical quest log."""
         quest_log = self._current_bundle().quest_log
-        for attribute in ("available_forest_quest", "carpenter_quest", "inn_quest"):
+        for attribute in ("available_forest_quest", "carpenter_quest", "inn_quest", "blacksmith_quest"):
             current = getattr(self, attribute, None)
             quest_id = getattr(current, "quest_id", None)
             if quest_id is None:
@@ -562,6 +562,8 @@ class GameplayService:
             "deliver_carpenter_wood": lambda: self.deliver_carpenter_wood(actor_id, npc_id, "player"),
             "accept_inn_quest": lambda: self.accept_inn_quest(actor_id, "player"),
             "deliver_inn_supplies": lambda: self.deliver_inn_supplies(actor_id, npc_id, "player"),
+            "accept_blacksmith_quest": lambda: self.accept_blacksmith_quest(actor_id, "player"),
+            "deliver_blacksmith_ore": lambda: self.deliver_blacksmith_ore(actor_id, npc_id, "player"),
         }
         handler = actions.get(action)
         if handler is not None:
@@ -624,6 +626,33 @@ class GameplayService:
         return self.start_quest(
             quest, owner_id=owner_id, reward_inventory_id=inventory_id,
         )
+
+    def accept_blacksmith_quest(self, owner_id: str, inventory_id: str):
+        quest = getattr(self, "blacksmith_quest", None)
+        if quest is None:
+            raise RuntimeError("Demirci görevi bulunamadı.")
+        if quest.state.value == "active":
+            return quest
+        if quest.state.value == "completed":
+            raise ValueError("Demirci görevi zaten tamamlandı.")
+        return self.start_quest(quest, owner_id=owner_id, reward_inventory_id=inventory_id)
+
+    def deliver_blacksmith_ore(self, actor_id: str, npc_id: str, inventory_id: str):
+        quest = getattr(self, "blacksmith_quest", None)
+        if quest is None or quest.state.value != "active":
+            raise ValueError("Demircinin aktif bir cevher görevi yok.")
+        if npc_id != "village_blacksmith":
+            raise ValueError("Demir cevheri yalnızca demirciye teslim edilebilir.")
+        inventory = self._inventory(self._current_bundle(), inventory_id)
+        ore = ResourceType("iron_ore")
+        stock = inventory.get(ore)
+        if stock is None or stock.value < 3:
+            raise ValueError("Teslim etmek için en az 3 demir cevheri gerekli.")
+        inventory.remove(ore, Quantity(3, ResourceUnit.ITEM))
+        self.update_quest_objective(
+            quest.quest_id, "deliver_iron_ore", 1, actor_id, inventory_id,
+        )
+        return quest
 
     def deliver_inn_supplies(self, actor_id: str, npc_id: str, inventory_id: str):
         quest = getattr(self, "inn_quest", None)
