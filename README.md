@@ -5,7 +5,6 @@ aktör faaliyetleri ve genişletilebilir RPG sistemleri içeren bir oyun altyap�
 
 `GameApplication` Core ve application state'inin bileşim köküdür. Eski `Game`
 API'si uyumluluk katmanında korunur. Çalışan alt sistemler:
-
 - dünya ve aktif dünya yönetimi;
 - varlıkların merkezi kayıt ve dünya içi yerleşimi;
 - zaman ve süreli aksiyonlar;
