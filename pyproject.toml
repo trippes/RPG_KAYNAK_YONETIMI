@@ -16,6 +16,9 @@ rpg-kaynak-yonetimi = "main:main"
 include-package-data = true
 py-modules = ["main"]
 
+[tool.setuptools.package-data]
+pygame = ["assets/*.png"]
+
 [tool.setuptools.data-files]
 "." = ["data/demo_content.json", "data/playtest_balance.json"]
 

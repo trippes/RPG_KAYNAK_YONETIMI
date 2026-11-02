@@ -64,7 +64,7 @@ class GameWindow:
         self.save_path = Path(save_path)
 
         self.screens = {
-            "menu": MainMenu(),
+            "menu": MainMenu(width=self.width, height=self.height),
             "opening": OpeningScreen(),
             "world": WorldScreen(service),
             "map": MapScreen(service),
@@ -234,13 +234,26 @@ class GameWindow:
         if self.current == "opening":
               current_screen.update()
 
-        next_screen = current_screen.handle(state)
+        next_screen = (
+            current_screen.handle(state, self.renderer)
+            if self.current == "menu"
+            else current_screen.handle(state)
+        )
 
         if next_screen == "quit":
             self.running = False
             return
         if next_screen == "continue":
             next_screen = self._continue_latest_save()
+
+        if self.current == "menu" and next_screen in {"settings", "guide", "about"}:
+            notices = {
+                "settings": "Ayarlar ekranı arayüz geliştirmesinin sonraki adımında açılacak.",
+                "guide": "Oyun rehberi arayüz geliştirmesinin sonraki adımında açılacak.",
+                "about": "Eldoria: Kaynak Yönetimi — v1.0.0",
+            }
+            self._set_notice(notices[next_screen])
+            next_screen = None
 
         if next_screen == "world":
             next_screen = "local_map"
