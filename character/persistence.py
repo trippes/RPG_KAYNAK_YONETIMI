@@ -104,7 +104,10 @@ class CharacterSnapshot:
                 character_class = CharacterClass(class_data["class_id"], class_data["name"], class_data["hit_points"], class_data.get("skill_ranks", {}), tuple(decode_ability(a) for a in class_data.get("abilities", [])))
                 effective = Attributes(item.get("attributes", {}))
                 base = {attribute: effective.get(attribute) - race.attribute_modifiers.get(attribute, 0) for attribute in Attribute}
-                character = Character(item["character_id"], item["name"], race, character_class, Attributes(base), Skills(item.get("skills", {})), Progression(item.get("level", 1), item.get("experience", 0), item.get("unspent_points", 0)), item.get("actor_id"), item.get("current_hit_points"), item.get("age", 20), EquipmentLoadout(item.get("equipment", {})))
+                appearance = item.get("appearance", {})
+                if not isinstance(appearance, Mapping):
+                    raise CharacterPersistenceError("Invalid character appearance.")
+                character = Character(item["character_id"], item["name"], race, character_class, Attributes(base), Skills(item.get("skills", {})), Progression(item.get("level", 1), item.get("experience", 0), item.get("unspent_points", 0)), item.get("actor_id"), item.get("current_hit_points"), item.get("age", 20), EquipmentLoadout(item.get("equipment", {})), dict(appearance))
             except (KeyError, TypeError, ValueError) as error:
                 raise CharacterPersistenceError("Invalid character record.") from error
             restored[character.character_id] = character

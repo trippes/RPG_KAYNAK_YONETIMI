@@ -6,7 +6,9 @@ from pathlib import Path
 from application import GameApplication, GameplayService, migrate_save_data
 from application.content_pack import populate_demo_content
 from combat import calculate_damage, order_initiative, tick_statuses
+from pygame.game_window import GameWindow
 from pygame.input import InputMapper, InputState
+from pygame.window_manager import WindowManager
 from pygame.screens.character_creation import CharacterCreationScreen
 from pygame.screens.combat_screen import CombatScreen
 from pygame.screens.dialogue_screen import DialogueScreen
@@ -174,6 +176,315 @@ class TestPhaseDQuality(unittest.TestCase):
         inventory_event = type("Event", (), {"type": "KEYDOWN", "key": 2})()
         self.assertTrue(mapper.collect([market_event]).pressed("market"))
         self.assertTrue(mapper.collect([inventory_event]).pressed("inventory"))
+
+    def test_gameplay_world_is_persistent_and_cannot_return_to_menu(self):
+        window = object.__new__(GameWindow)
+        window.gameplay_active = False
+        window.gameplay_screen = "local_map"
+        window.current = "menu"
+        window.screens = {"local_map": object(), "menu": object()}
+        window.window_manager = type(
+            "Manager", (), {"windows": {}, "render": lambda self, renderer: None}
+        )()
+        window.notice = ""
+        window.notice_level = "info"
+        window._notice_frames = 0
+
+        self.assertTrue(window._set_current("local_map"))
+        self.assertTrue(window.gameplay_active)
+        self.assertFalse(window._set_current("menu"))
+        self.assertEqual(window.current, "local_map")
+
+    def test_gameplay_world_renders_before_active_surface(self):
+        calls = []
+
+        class Surface:
+            def __init__(self, name):
+                self.name = name
+
+            def render(self, renderer):
+                calls.append(self.name)
+
+        window = object.__new__(GameWindow)
+        window.gameplay_active = True
+        window.gameplay_screen = "local_map"
+        window.current = "inventory"
+        window.renderer = object()
+        window.window_manager = type(
+            "Manager", (), {"render": lambda self, renderer: calls.append("inventory")}
+        )()
+        window.screens = {
+            "local_map": Surface("world"),
+            "inventory": Surface("inventory"),
+        }
+
+        window._render_current()
+
+        self.assertEqual(calls, ["world", "inventory"])
+
+    def test_window_manager_keeps_two_windows_open_and_singleton(self):
+        class Rect:
+            def __init__(self, *value):
+                self.x, self.y, self.width, self.height = (
+                    value[0] if len(value) == 1 else value
+                )
+            @property
+            def right(self):
+                return self.x + self.width
+            @property
+            def bottom(self):
+                return self.y + self.height
+            @property
+            def topleft(self):
+                return self.x, self.y
+            @topleft.setter
+            def topleft(self, value):
+                self.x, self.y = value
+            def collidepoint(self, point):
+                return (
+                    self.x <= point[0] < self.right
+                    and self.y <= point[1] < self.bottom
+                )
+
+        RectType = Rect
+        class Backend:
+            Rect = RectType
+
+        manager = WindowManager(Backend(), 960, 640)
+        manager.register("inventory", object(), (20, 20, 300, 240))
+        manager.register("character", object(), (100, 100, 300, 240))
+        manager.open("inventory")
+        manager.open("character")
+
+        self.assertEqual(manager.open_ids, ("inventory", "character"))
+        manager.focus("inventory")
+        self.assertEqual(manager.open_ids, ("character", "inventory"))
+        with self.assertRaises(ValueError):
+            manager.register("inventory", object(), (0, 0, 100, 100))
+
+    def test_window_manager_drag_focus_and_event_consumption(self):
+        class Rect:
+            def __init__(self, *value):
+                self.x, self.y, self.width, self.height = (
+                    value[0] if len(value) == 1 else value
+                )
+            @property
+            def right(self):
+                return self.x + self.width
+            @property
+            def bottom(self):
+                return self.y + self.height
+            @property
+            def topleft(self):
+                return self.x, self.y
+            @topleft.setter
+            def topleft(self, value):
+                self.x, self.y = value
+            def collidepoint(self, point):
+                return (
+                    self.x <= point[0] < self.right
+                    and self.y <= point[1] < self.bottom
+                )
+
+        RectType = Rect
+        class Backend:
+            Rect = RectType
+
+        class Screen:
+            def __init__(self):
+                self.calls = []
+            def handle(self, state):
+                self.calls.append(state.mouse_pos)
+
+        manager = WindowManager(Backend(), 960, 640)
+        screen = Screen()
+        manager.register("inventory", screen, (100, 100, 300, 240))
+        manager.open("inventory")
+
+        self.assertTrue(manager.handle_input(InputState(
+            mouse_pos=(130, 110), mouse_clicked=True, mouse_button_down=True,
+        )))
+        self.assertTrue(manager.windows["inventory"].dragging)
+        self.assertTrue(manager.handle_input(InputState(
+            mouse_pos=(220, 180), mouse_motion=True,
+        )))
+        self.assertEqual(manager.windows["inventory"].bounds.topleft, (190, 170))
+        self.assertTrue(manager.handle_input(InputState(
+            mouse_pos=(220, 180), mouse_button_up=True,
+        )))
+        self.assertFalse(manager.windows["inventory"].dragging)
+
+        self.assertTrue(manager.handle_input(InputState(
+            mouse_pos=(220, 220), mouse_clicked=True, mouse_button_down=True,
+        )))
+        self.assertEqual(screen.calls[-1], (54, 144))
+        self.assertEqual(
+            manager._screen_position(
+                manager.windows["inventory"], (190 + 320, 170 + 32 + 64)
+            ),
+            (344, 190),
+        )
+
+    def test_window_manager_close_preserves_gameplay_owner(self):
+        class Rect:
+            def __init__(self, *value):
+                self.x, self.y, self.width, self.height = (
+                    value[0] if len(value) == 1 else value
+                )
+            @property
+            def right(self):
+                return self.x + self.width
+            @property
+            def bottom(self):
+                return self.y + self.height
+            @property
+            def topleft(self):
+                return self.x, self.y
+            @topleft.setter
+            def topleft(self, value):
+                self.x, self.y = value
+            def collidepoint(self, point):
+                return (
+                    self.x <= point[0] < self.right
+                    and self.y <= point[1] < self.bottom
+                )
+
+        RectType = Rect
+        class Backend:
+            Rect = RectType
+
+        manager = WindowManager(Backend(), 960, 640)
+        manager.register("inventory", object(), (20, 20, 300, 240))
+        manager.open("inventory")
+        manager.close("inventory")
+        self.assertEqual(manager.open_ids, ())
+        self.assertFalse(manager.is_open("inventory"))
+
+    def test_inventory_control_uses_window_coordinates_after_move(self):
+        class Rect:
+            def __init__(self, *value):
+                self.x, self.y, self.width, self.height = (
+                    value[0] if len(value) == 1 else value
+                )
+            @property
+            def right(self):
+                return self.x + self.width
+            @property
+            def bottom(self):
+                return self.y + self.height
+            @property
+            def topleft(self):
+                return self.x, self.y
+            @topleft.setter
+            def topleft(self, value):
+                self.x, self.y = value
+            def collidepoint(self, point):
+                return (
+                    self.x <= point[0] < self.right
+                    and self.y <= point[1] < self.bottom
+                )
+
+        RectType = Rect
+        class Backend:
+            Rect = RectType
+
+        service, _ = populate_demo_content(GameApplication.create_default())
+        screen = InventoryScreen(service)
+        manager = WindowManager(Backend(), 960, 640)
+        manager.register("inventory", screen, (100, 100, 500, 470))
+        manager.open("inventory")
+
+        # Source tab 2 is at (190, 190); the window content starts below its title bar.
+        self.assertTrue(manager.handle_input(InputState(
+            mouse_pos=(100 + (200 - 24), 100 + 32 + (200 - 126)),
+            mouse_clicked=True,
+            mouse_button_down=True,
+        )))
+        self.assertEqual(screen.tab, 1)
+
+    def test_inventory_drag_swaps_slots_and_invalid_drop_preserves_order(self):
+        class Rect:
+            def __init__(self, *value):
+                self.x, self.y, self.width, self.height = (
+                    value[0] if len(value) == 1 else value
+                )
+            @property
+            def right(self):
+                return self.x + self.width
+            @property
+            def bottom(self):
+                return self.y + self.height
+            @property
+            def topleft(self):
+                return self.x, self.y
+            @topleft.setter
+            def topleft(self, value):
+                self.x, self.y = value
+            def collidepoint(self, point):
+                return (
+                    self.x <= point[0] < self.right
+                    and self.y <= point[1] < self.bottom
+                )
+
+        class Service:
+            def inventory(self, inventory_id):
+                return type(
+                    "InventoryView",
+                    (),
+                    {"items": (("iron_sword", 1), ("bread_item", 2)), "stocks": ()},
+                )()
+            def item(self, item_id):
+                return None
+
+        RectType = Rect
+        class Backend:
+            Rect = RectType
+
+        screen = InventoryScreen(Service())
+        manager = WindowManager(Backend(), 960, 640)
+        manager.register("inventory", screen, (100, 100, 500, 470))
+        manager.open("inventory")
+        source = (100 + 296, 100 + 32 + 110)
+        target = (source[0] + 82, source[1])
+
+        manager.handle_input(InputState(
+            mouse_pos=source, mouse_clicked=True, mouse_button_down=True,
+        ))
+        manager.handle_input(InputState(
+            mouse_pos=target, mouse_motion=True,
+        ))
+        manager.handle_input(InputState(
+            mouse_pos=target, mouse_button_up=True,
+        ))
+        self.assertEqual(screen.slot_order[:2], [
+            ("item", "bread_item"), ("item", "iron_sword"),
+        ])
+
+        empty_target = (source[0] + 82 * 4, source[1])
+        manager.handle_input(InputState(
+            mouse_pos=(target[0], target[1]), mouse_clicked=True,
+            mouse_button_down=True,
+        ))
+        manager.handle_input(InputState(
+            mouse_pos=empty_target, mouse_motion=True,
+        ))
+        manager.handle_input(InputState(
+            mouse_pos=empty_target, mouse_button_up=True,
+        ))
+        self.assertEqual(screen.slot_order[1], None)
+        self.assertEqual(screen.slot_order[4], ("item", "iron_sword"))
+
+        before = list(screen.slot_order)
+        manager.handle_input(InputState(
+            mouse_pos=empty_target, mouse_clicked=True, mouse_button_down=True,
+        ))
+        manager.handle_input(InputState(
+            mouse_pos=(900, 600), mouse_motion=True,
+        ))
+        manager.handle_input(InputState(
+            mouse_pos=(900, 600), mouse_button_up=True,
+        ))
+        self.assertEqual(screen.slot_order, before)
 
 
 if __name__ == "__main__":

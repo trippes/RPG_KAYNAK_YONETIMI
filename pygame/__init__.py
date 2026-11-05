@@ -7,6 +7,7 @@ from pathlib import Path
 from .game_window import GameWindow, launch
 from .input import InputMapper, InputState
 from .renderer import Renderer
+from .window_manager import WindowManager
 
 
 def load_backend():
@@ -73,4 +74,7 @@ def _load_installed_backend(adapter_module):
             setattr(adapter_module, name, getattr(constants, name))
     return adapter_module
 
-__all__ = ["GameWindow", "InputMapper", "InputState", "Renderer", "launch", "load_backend"]
+__all__ = [
+    "GameWindow", "InputMapper", "InputState", "Renderer",
+    "WindowManager", "launch", "load_backend",
+]

@@ -1,0 +1,260 @@
+"""Central management for the movable gameplay windows."""
+
+from dataclasses import dataclass
+
+from .input import InputState
+
+
+@dataclass
+class ManagedWindow:
+    window_id: str
+    screen: object
+    bounds: object
+    content_origin: tuple[int, int]
+    title: str
+    visible: bool = False
+    dragging: bool = False
+    drag_offset: tuple[int, int] = (0, 0)
+
+
+class WindowManager:
+    """Own singleton gameplay windows, focus, z-order, and pointer capture."""
+
+    TITLE_HEIGHT = 32
+    CLOSE_SIZE = 24
+    DRAG_THRESHOLD = 4
+
+    def __init__(self, backend, width, height, on_result=None):
+        self.pg = backend
+        self.width = width
+        self.height = height
+        self.windows = {}
+        self.z_order = []
+        self.focused_id = None
+        self._drag_origin = None
+        self.on_result = on_result
+
+    @property
+    def open_ids(self):
+        return tuple(
+            window_id for window_id in self.z_order
+            if self.windows[window_id].visible
+        )
+
+    def register(self, window_id, screen, bounds, *, content_origin=(24, 126), title=None):
+        if window_id in self.windows:
+            raise ValueError(f"Window already registered: {window_id}")
+        self.windows[window_id] = ManagedWindow(
+            window_id,
+            screen,
+            self.pg.Rect(bounds),
+            content_origin,
+            title or window_id,
+        )
+
+    def open(self, window_id):
+        window = self._get(window_id)
+        window.visible = True
+        self.focus(window_id)
+        return window
+
+    def close(self, window_id):
+        window = self._get(window_id)
+        window.visible = False
+        window.dragging = False
+        if self.focused_id == window_id:
+            self.focused_id = next(reversed(self.open_ids), None)
+
+    def toggle(self, window_id):
+        window = self._get(window_id)
+        if window.visible:
+            self.close(window_id)
+        else:
+            self.open(window_id)
+        return window.visible
+
+    def focus(self, window_id):
+        window = self._get(window_id)
+        if not window.visible:
+            window.visible = True
+        self.z_order = [item for item in self.z_order if item != window_id]
+        self.z_order.append(window_id)
+        self.focused_id = window_id
+
+    def is_open(self, window_id):
+        return self._get(window_id).visible
+
+    def _get(self, window_id):
+        try:
+            return self.windows[window_id]
+        except KeyError as error:
+            raise KeyError(f"Unknown window: {window_id}") from error
+
+    def _top_at(self, position):
+        for window_id in reversed(self.z_order):
+            window = self.windows[window_id]
+            if window.visible and window.bounds.collidepoint(position):
+                return window
+        return None
+
+    def _close_rect(self, window):
+        return self.pg.Rect(
+            window.bounds.right - self.CLOSE_SIZE - 4,
+            window.bounds.y + 4,
+            self.CLOSE_SIZE,
+            self.CLOSE_SIZE,
+        )
+
+    def _title_rect(self, window):
+        return self.pg.Rect(
+            window.bounds.x,
+            window.bounds.y,
+            window.bounds.width,
+            self.TITLE_HEIGHT,
+        )
+
+    def _content_destination(self, window):
+        return (
+            window.bounds.x,
+            window.bounds.y + self.TITLE_HEIGHT,
+        )
+
+    def _content_source_rect(self, window):
+        return self.pg.Rect(
+            window.content_origin[0],
+            window.content_origin[1],
+            window.bounds.width,
+            max(0, window.bounds.height - self.TITLE_HEIGHT),
+        )
+
+    def _screen_position(self, window, position):
+        destination_x, destination_y = self._content_destination(window)
+        origin_x, origin_y = window.content_origin
+        return (
+            position[0] - destination_x + origin_x,
+            position[1] - destination_y + origin_y,
+        )
+
+    def _clamp(self, window, x, y):
+        return (
+            max(0, min(x, self.width - window.bounds.width)),
+            max(0, min(y, self.height - self.TITLE_HEIGHT)),
+        )
+
+    def _dispatch(self, window, state):
+        local_pos = None
+        if state.mouse_pos is not None:
+            local_pos = self._screen_position(window, state.mouse_pos)
+        translated = InputState(
+            actions=set(state.actions),
+            text=state.text,
+            quit_requested=state.quit_requested,
+            mouse_pos=local_pos,
+            mouse_clicked=state.mouse_clicked,
+            mouse_button_down=state.mouse_button_down,
+            mouse_button_up=state.mouse_button_up,
+            mouse_motion=state.mouse_motion,
+        )
+        result = window.screen.handle(translated)
+        if result is not None and self.on_result is not None:
+            self.on_result(result, window.window_id)
+
+    def handle_input(self, state):
+        """Consume input destined for a window, returning whether it was consumed."""
+        if self.focused_id is None and "inventory" in state.actions:
+            self.open("inventory")
+            state.actions.discard("inventory")
+            return True
+        if self.focused_id is None and "character" in state.actions:
+            self.open("character")
+            state.actions.discard("character")
+            return True
+
+        if self.focused_id is not None and self.windows[self.focused_id].dragging:
+            window = self.windows[self.focused_id]
+            if state.mouse_button_up:
+                window.dragging = False
+                self._drag_origin = None
+            elif state.mouse_motion and state.mouse_pos is not None:
+                x = state.mouse_pos[0] - window.drag_offset[0]
+                y = state.mouse_pos[1] - window.drag_offset[1]
+                window.bounds.topleft = self._clamp(window, x, y)
+            state.mouse_clicked = False
+            return True
+
+        if state.mouse_pos is not None and (
+            state.mouse_button_down or state.mouse_clicked
+        ):
+            window = self._top_at(state.mouse_pos)
+            if window is not None:
+                self.focus(window.window_id)
+                if self._close_rect(window).collidepoint(state.mouse_pos):
+                    self.close(window.window_id)
+                elif self._title_rect(window).collidepoint(state.mouse_pos):
+                    window.dragging = True
+                    window.drag_offset = (
+                        state.mouse_pos[0] - window.bounds.x,
+                        state.mouse_pos[1] - window.bounds.y,
+                    )
+                else:
+                    self._dispatch(window, state)
+                state.mouse_clicked = False
+                return True
+
+        if self.focused_id is not None:
+            window = self.windows[self.focused_id]
+            pointer_capture = getattr(window.screen, "pointer_capture", False)
+            inside = (
+                state.mouse_pos is not None
+                and window.bounds.collidepoint(state.mouse_pos)
+            )
+            if (state.mouse_motion or state.mouse_button_up) and (
+                inside or pointer_capture
+            ):
+                self._dispatch(window, state)
+                return True
+
+        if self.focused_id is not None:
+            window = self.windows[self.focused_id]
+            if state.actions:
+                self._dispatch(window, state)
+                return True
+        return False
+
+    def render(self, renderer):
+        original_surface = renderer.surface
+        original_mouse_pos = renderer.mouse_pos
+        for window_id in self.open_ids:
+            window = self.windows[window_id]
+            renderer.panel(window.bounds)
+            if original_mouse_pos is not None:
+                renderer.mouse_pos = self._screen_position(window, original_mouse_pos)
+            source = self._render_content(renderer, window)
+            if source is not None:
+                renderer.surface.blit(
+                    source,
+                    self._content_destination(window),
+                    self._content_source_rect(window),
+                )
+            renderer.surface = original_surface
+            renderer.mouse_pos = original_mouse_pos
+            renderer.text(window.title, window.bounds.x + 12, window.bounds.y + 6)
+            close = self._close_rect(window)
+            renderer.button(close, "X")
+        renderer.mouse_pos = original_mouse_pos
+
+    def _render_content(self, renderer, window):
+        surface_type = getattr(self.pg, "Surface", type(renderer.surface))
+        if surface_type is None:
+            window.screen.render(renderer)
+            return None
+        try:
+            source = surface_type((renderer.width, renderer.height))
+        except TypeError:
+            window.screen.render(renderer)
+            return None
+        old_surface = renderer.surface
+        renderer.surface = source
+        window.screen.render(renderer)
+        renderer.surface = old_surface
+        return source

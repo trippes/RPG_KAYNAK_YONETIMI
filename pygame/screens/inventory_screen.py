@@ -1,5 +1,5 @@
 from ..renderer import (
-    BAD, BUTTON_FILL, BUTTON_SELECTED, GOLD, GOOD, HIGHLIGHT, MUTED,
+    BAD, BUTTON_FILL, BUTTON_HOVER, BUTTON_SELECTED, GOLD, GOOD, HIGHLIGHT, MUTED,
     PANEL_BORDER, TEXT, TEXT_SOFT, duration_label, resource_color, resource_name, unit_label,
 )
 
@@ -20,22 +20,117 @@ class InventoryScreen:
         self.tab = 0
         self.selected = 0
         self.message = "Bir eşya seçin. E: Kuşan | Enter: Kullan"
+        self.slot_order = []
+        self.drag_index = None
+        self.drag_position = None
+        self.drag_moved = False
+
+    @property
+    def pointer_capture(self):
+        return self.drag_index is not None
 
     def _items(self):
         return list(self.service.inventory(self.inventory_id).items)
 
     def _entries(self):
         snapshot = self.service.inventory(self.inventory_id)
-        return (
+        entries = (
             [("item", item_id, amount) for item_id, amount in snapshot.items]
             + [("resource", resource, amount) for resource, amount, _unit in snapshot.stocks]
         )
+        by_key = {self._entry_key(entry): entry for entry in entries}
+        order = list(self.slot_order)
+        if not order:
+            order = list(by_key)
+        order = [key if key in by_key else None for key in order[:20]]
+        for key in by_key:
+            if key not in order:
+                try:
+                    order[order.index(None)] = key
+                except ValueError:
+                    if len(order) < 20:
+                        order.append(key)
+        self.slot_order = order[:20]
+        return [by_key[key] for key in self.slot_order if key is not None]
+
+    def _slot_entries(self):
+        entries = self._entries()
+        by_key = {self._entry_key(entry): entry for entry in entries}
+        return [
+            by_key.get(key) if key is not None else None
+            for key in self.slot_order
+        ] + [None] * max(0, 20 - len(self.slot_order))
+
+    @staticmethod
+    def _entry_key(entry):
+        kind, entry_id, _amount = entry
+        return kind, str(getattr(entry_id, "value", entry_id))
+
+    def _slot_rects(self, renderer=None):
+        grid_x, grid_y = 320, 236
+        size, gap = 72, 10
+        values = tuple(
+            (
+                grid_x + (index % 5) * (size + gap),
+                grid_y + (index // 5) * (size + gap),
+                size,
+                size,
+            )
+            for index in range(20)
+        )
+        return (
+            tuple(renderer.pg.Rect(value) for value in values)
+            if renderer is not None
+            else values
+        )
+
+    def _slot_at(self, position, renderer=None):
+        return next(
+            (index for index, rect in enumerate(self._slot_rects(renderer))
+             if (
+                 rect.collidepoint(position)
+                 if renderer is not None
+                 else rect[0] <= position[0] < rect[0] + rect[2]
+                 and rect[1] <= position[1] < rect[1] + rect[3]
+             )),
+            None,
+        )
+
+    def _begin_drag(self, index, position):
+        self.drag_index = index
+        self.drag_position = position
+        self.drag_moved = False
+
+    def _finish_drag(self, target_index):
+        source_index = self.drag_index
+        self.drag_index = None
+        self.drag_position = None
+        self.drag_moved = False
+        if source_index is None or target_index is None:
+            return
+        slot_entries = self._slot_entries()
+        if source_index >= len(slot_entries) or target_index >= 20:
+            return
+        order = list(self.slot_order)
+        if target_index >= len(order):
+            order.extend([None] * (target_index + 1 - len(order)))
+        source_key = order[source_index]
+        target_key = order[target_index]
+        if source_key is None:
+            return
+        if target_key is None:
+            order[target_index] = source_key
+            order[source_index] = None
+        else:
+            order[source_index], order[target_index] = target_key, source_key
+        self.slot_order = order[:20]
+        self.selected = target_index
 
     def _selected_item(self):
-        entries = self._entries()
-        if not entries:
+        entries = self._slot_entries()
+        if self.selected >= len(entries) or entries[self.selected] is None:
             return None
-        kind, entry_id, _amount = entries[self.selected % len(entries)]
+        kind, entry_id, _amount = entries[self.selected]
         return self.service.item(entry_id) if kind == "item" else None
 
     def handle(self, state):
@@ -55,7 +150,7 @@ class InventoryScreen:
             self.selected += 1
         entries = self._entries()
         if entries:
-            self.selected %= len(entries)
+            self.selected %= 20
         if state.mouse_clicked and state.mouse_pos is not None:
             x, y = state.mouse_pos
             for index in range(len(self.TABS)):
@@ -63,13 +158,21 @@ class InventoryScreen:
                 if rect[0] <= x <= rect[0] + rect[2] and rect[1] <= y <= rect[1] + rect[3]:
                     self.tab = index
                     return None
-            grid_x, grid_y = 320, 236
-            for index in range(min(20, len(entries))):
-                column, row = index % 5, index // 5
-                left, top = grid_x + column * 70, grid_y + row * 58
-                if left <= x <= left + 60 and top <= y <= top + 50:
-                    self.selected = index
-                    break
+            slot = self._slot_at(state.mouse_pos)
+            if slot is not None and slot < len(self._slot_entries()) and self._slot_entries()[slot] is not None:
+                self.selected = slot
+                self._begin_drag(slot, state.mouse_pos)
+        if self.drag_index is not None and state.mouse_motion and state.mouse_pos is not None:
+            self.drag_position = state.mouse_pos
+            self.drag_moved = True
+        if self.drag_index is not None and state.mouse_button_up:
+            target = self._slot_at(state.mouse_pos) if state.mouse_pos else None
+            if self.drag_moved:
+                self._finish_drag(target)
+            else:
+                self.drag_index = None
+                self.drag_position = None
+                self.drag_moved = False
         item = self._selected_item()
         if state.pressed("equip") and item is not None:
             try:
@@ -100,6 +203,7 @@ class InventoryScreen:
         equipment = self.service.equipment("hero")
         items = self._items()
         entries = self._entries()
+        slot_entries = self._slot_entries()
         renderer.frame("Envanter")
         renderer.hud(self.service)
 
@@ -144,24 +248,48 @@ class InventoryScreen:
         renderer.text(stat_text, 62, 490, TEXT_SOFT, max_width=225)
 
         # Item grid.
-        grid_x, grid_y = 320, 236
-        for index in range(20):
-            column, row = index % 5, index // 5
-            rect = renderer.pg.Rect(grid_x + column * 70, grid_y + row * 58, 60, 50)
+        slot_rects = self._slot_rects(renderer)
+        for index, rect in enumerate(slot_rects):
+            hovered = renderer.hovered(rect)
+            entry = slot_entries[index]
+            selected = index == self.selected and entry is not None
+            dragging_source = index == self.drag_index
+            fill = BUTTON_HOVER if hovered else (BUTTON_SELECTED if selected else (29, 38, 52))
+            border = (
+                (240, 190, 90) if dragging_source
+                else HIGHLIGHT if selected
+                else (115, 135, 160) if hovered
+                else PANEL_BORDER
+            )
+            shadow = renderer.pg.Rect(rect.x + 3, rect.y + 4, rect.width, rect.height)
+            renderer.pg.draw.rect(renderer.surface, (10, 13, 21), shadow, border_radius=8)
             renderer.panel(
                 rect,
-                BUTTON_SELECTED if index == self.selected and index < len(entries) else (29, 38, 52),
-                HIGHLIGHT if index == self.selected and index < len(entries) else PANEL_BORDER,
+                fill,
+                border,
             )
-            if index >= len(entries):
+            if entry is None:
                 continue
-            kind, entry_id, amount = entries[index]
+            kind, entry_id, amount = entry
             item = self.service.item(entry_id) if kind == "item" else None
             color = resource_color(entry_id)
-            renderer.pg.draw.circle(renderer.surface, color, (rect.centerx, rect.y + 21), 15)
-            renderer.text(str(amount), rect.right - 17, rect.bottom - 20, GOLD)
+            renderer.pg.draw.circle(renderer.surface, color, (rect.centerx, rect.y + 30), 23)
+            renderer.pg.draw.circle(renderer.surface, (225, 225, 225), (rect.centerx, rect.y + 30), 23, 2)
+            amount_rect = renderer.pg.Rect(rect.right - 30, rect.bottom - 27, 24, 21)
+            renderer.pg.draw.rect(renderer.surface, (12, 16, 24), amount_rect, border_radius=5)
+            renderer.text(str(amount), amount_rect.centerx - renderer.text_width(str(amount)) // 2,
+                          amount_rect.y + 2, GOLD, max_width=22)
             label = item.name if item is not None else resource_name(entry_id)
-            renderer.text(label[:9], rect.x + 4, rect.y + 34, TEXT_SOFT, max_width=52)
+            renderer.text(label[:10], rect.x + 5, rect.bottom - 20, TEXT_SOFT, max_width=rect.width - 10)
+
+        if self.drag_index is not None and self.drag_position is not None:
+            entry = slot_entries[self.drag_index] if self.drag_index < len(slot_entries) else None
+            if entry is not None:
+                kind, entry_id, amount = entry
+                color = resource_color(entry_id)
+                renderer.pg.draw.circle(renderer.surface, color, self.drag_position, 25)
+                renderer.pg.draw.circle(renderer.surface, HIGHLIGHT, self.drag_position, 25, 2)
+                renderer.text(str(amount), self.drag_position[0] + 10, self.drag_position[1] + 10, GOLD)
 
         # Detail pane on the right, with explicit item stats.
         detail_x = 700

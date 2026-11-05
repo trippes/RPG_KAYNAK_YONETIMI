@@ -18,6 +18,7 @@ from .screens.production_screen import ProductionScreen
 from .screens.opening_screen import OpeningScreen
 from .screens.save_slots_screen import SaveSlotsScreen
 from .screens.quest_log_screen import QuestLogScreen
+from .window_manager import WindowManager
 
 # Screens that show the navigation tab bar / resource bar.
 NAV_SCREENS = frozenset(
@@ -84,8 +85,30 @@ class GameWindow:
             self.save_dir,
             self._select_save_slot,
         )
+        self.window_manager = WindowManager(
+            backend,
+            self.width,
+            self.height,
+            on_result=self._handle_window_result,
+        )
+        self.window_manager.register(
+            "inventory",
+            self.screens["inventory"],
+            (24, 110, min(self.width - 48, 912), min(self.height - 110, 470)),
+            content_origin=(24, 126),
+            title="Envanter",
+        )
+        self.window_manager.register(
+            "character",
+            self.screens["character"],
+            (24, 110, min(self.width - 48, 912), min(self.height - 110, 470)),
+            content_origin=(24, 126),
+            title="Karakter",
+        )
 
         self.current = "menu"
+        self.gameplay_active = False
+        self.gameplay_screen = "local_map"
         self.running = False
         self.notice = ""
         self.notice_level = "info"
@@ -158,6 +181,36 @@ class GameWindow:
         self.notice_level = level
         self._notice_frames = NOTICE_FRAMES
 
+    def _set_current(self, target):
+        """Change application state without allowing gameplay to close."""
+        if target == "world":
+            target = self.gameplay_screen
+
+        if target in self.window_manager.windows:
+            self.window_manager.open(target)
+            return True
+
+        if target == "menu" and self.gameplay_active:
+            self._set_notice("Oyun ekranı açık kalmalıdır.", "info")
+            return False
+
+        if target not in self.screens:
+            return False
+
+        if target == self.gameplay_screen:
+            self.gameplay_active = True
+        elif target == "menu":
+            self.gameplay_active = False
+
+        self.current = target
+        return True
+
+    def _handle_window_result(self, result, window_id):
+        if result in self.window_manager.windows:
+            self.window_manager.open(result)
+        elif result in {"local_map", "world"}:
+            self.window_manager.close(window_id)
+
     def _nav_enabled(self):
         """Which navigation tabs may be used from the current location."""
         enabled = {}
@@ -187,7 +240,17 @@ class GameWindow:
             self._set_notice("Pazar yalnızca yerleşim yerlerinde kullanılabilir.", "error")
             return
         if target in self.screens:
-            self.current = target
+            self._set_current(target)
+
+    def _render_current(self):
+        """Render the persistent world before the current gameplay surface."""
+        if self.gameplay_active:
+            world = self.screens[self.gameplay_screen]
+            world.render(self.renderer)
+            self.window_manager.render(self.renderer)
+            return
+
+        self.screens[self.current].render(self.renderer)
 
     def step(self, events=()):
         state = self.input.collect(events)
@@ -226,15 +289,19 @@ class GameWindow:
                 self._set_notice(f"Oyun yüklenemedi: {error}", "error")
 
         self._handle_nav_click(state)
+        window_consumed = (
+            self.gameplay_active
+            and self.window_manager.handle_input(state)
+        )
         current_screen = self.screens[self.current]
 
-        if self.current == "world":
+        if self.current == "world" and not window_consumed:
             current_screen._inject_mouse_action(state, self.renderer)
 
         if self.current == "opening":
               current_screen.update()
 
-        next_screen = (
+        next_screen = None if window_consumed else (
             current_screen.handle(state, self.renderer)
             if self.current == "menu"
             else current_screen.handle(state)
@@ -256,7 +323,7 @@ class GameWindow:
             next_screen = None
 
         if next_screen == "world":
-            next_screen = "local_map"
+            next_screen = self.gameplay_screen
 
         if next_screen in self.screens:
             if next_screen == "dialogue":
@@ -265,7 +332,7 @@ class GameWindow:
                 self.screens["dialogue"].set_target_npc(
                     getattr(current_screen, "selected_npc_id", None)
                 )
-            self.current = next_screen
+            self._set_current(next_screen)
 
         # Tell the renderer which chrome to draw for the screen shown this frame.
         shown = self.current
@@ -276,7 +343,7 @@ class GameWindow:
             self.renderer.nav_enabled = self._nav_enabled()
         else:
             self.renderer.nav_current = None
-        self.screens[shown].render(self.renderer)
+        self._render_current()
 
         if self.notice:
             self.renderer.toast(self.notice, self.notice_level)

@@ -252,7 +252,7 @@ class GameApplication:
 
     def customize_character(
         self, character_id: str, name: str, age: int, attributes,
-        *, race=None, character_class=None,
+        *, race=None, character_class=None, appearance=None,
     ) -> Character:
         """Apply the player's creation choices to an existing character."""
         bundle = self.holder.current
@@ -272,6 +272,13 @@ class GameApplication:
         )
         character.skills = Skills().with_ranks(character.character_class.skill_ranks)
         character.current_hit_points = character.max_hit_points
+        if appearance is not None:
+            if not isinstance(appearance, dict) or any(
+                not isinstance(key, str) or not isinstance(value, str)
+                for key, value in appearance.items()
+            ):
+                raise TypeError("appearance must be a string mapping.")
+            character.appearance = dict(appearance)
         bundle.validate()
         return character
 

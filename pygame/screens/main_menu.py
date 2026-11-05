@@ -67,7 +67,7 @@ class MainMenu:
         image = getattr(renderer.pg, "image", None)
         if image is None or not hasattr(image, "load"):
             return None
-        path = Path(__file__).resolve().parents[1] / "assets" / "main_menu.png"
+        path = Path(__file__).resolve().parents[1] / "assets" / "main_menu1.png"
         if not path.is_file():
             return None
         self._background = image.load(str(path))
@@ -202,21 +202,18 @@ class MainMenu:
                       (diamond_x, center_y + 5), (diamond_x - 5, center_y)])
 
     def _draw_hint(self, renderer):
-        rect = renderer.pg.Rect(
-            round(renderer.width * 1115 / self.ARTWORK_SIZE[0]),
-            round(renderer.height * 702 / self.ARTWORK_SIZE[1]),
-            round(renderer.width * 230 / self.ARTWORK_SIZE[0]),
-            round(renderer.height * 43 / self.ARTWORK_SIZE[1]),
-        )
-        renderer.pg.draw.rect(renderer.surface, (10, 12, 17, 225), rect, border_radius=8)
-        renderer.pg.draw.rect(renderer.surface, (174, 133, 57, 245), rect, 2, border_radius=8)
         label = self.HINTS[self.selected]
+        x = round(renderer.width * 1115 / self.ARTWORK_SIZE[0])
+        y = round(renderer.height * 713 / self.ARTWORK_SIZE[1])
+        # Keep the artwork visible; the shadow preserves readability over
+        # bright scenery without adding an opaque or dark backing panel.
+        renderer.text(label, x + 2, y + 2, (20, 17, 14), max_width=renderer.width - x - 16)
         renderer.text(
             label,
-            rect.x + 14,
-            rect.y + (rect.height - 18) // 2,
+            x,
+            y,
             (244, 224, 175),
-            max_width=rect.width - 28,
+            max_width=renderer.width - x - 16,
         )
 
     def render(self, renderer):

@@ -13,6 +13,9 @@ class InputState:
     quit_requested: bool = False
     mouse_pos: tuple[int, int] | None = None
     mouse_clicked: bool = False
+    mouse_button_down: bool = False
+    mouse_button_up: bool = False
+    mouse_motion: bool = False
 
     def pressed(self, action: str) -> bool:
         return action in self.actions
@@ -32,6 +35,7 @@ class InputMapper:
             quit_type = getattr(self.backend, "QUIT", "QUIT")
             keydown_type = getattr(self.backend, "KEYDOWN", "KEYDOWN")
             mouse_down_type = getattr(self.backend, "MOUSEBUTTONDOWN", "MOUSEBUTTONDOWN")
+            mouse_up_type = getattr(self.backend, "MOUSEBUTTONUP", "MOUSEBUTTONUP")
             mouse_motion_type = getattr(self.backend, "MOUSEMOTION", "MOUSEMOTION")
 
             if event_type == quit_type or event_type == "QUIT":
@@ -40,10 +44,17 @@ class InputMapper:
 
             if event_type == mouse_down_type and getattr(event, "button", None) == 1:
                 state.mouse_clicked = True
+                state.mouse_button_down = True
+                state.mouse_pos = getattr(event, "pos", None)
+                continue
+
+            if event_type == mouse_up_type and getattr(event, "button", None) == 1:
+                state.mouse_button_up = True
                 state.mouse_pos = getattr(event, "pos", None)
                 continue
 
             if event_type == mouse_motion_type:
+                state.mouse_motion = True
                 state.mouse_pos = getattr(event, "pos", None)
                 continue
 

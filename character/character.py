@@ -24,6 +24,7 @@ class Character:
     current_hit_points: int | None = None
     age: int = 20
     equipment: EquipmentLoadout = field(default_factory=EquipmentLoadout)
+    appearance: dict[str, str] = field(default_factory=dict)
 
     def __post_init__(self):
         if not self.character_id.strip() or not self.name.strip():
@@ -32,6 +33,11 @@ class Character:
             raise TypeError("Character requires a Race and CharacterClass.")
         if not isinstance(self.equipment, EquipmentLoadout):
             raise TypeError("equipment must be EquipmentLoadout.")
+        if not isinstance(self.appearance, dict) or any(
+            not isinstance(key, str) or not isinstance(value, str)
+            for key, value in self.appearance.items()
+        ):
+            raise TypeError("appearance must be a string mapping.")
         if isinstance(self.age, bool) or not isinstance(self.age, int) or not 13 <= self.age <= 120:
             raise ValueError("Character age must be between 13 and 120.")
         self.attributes = self.attributes.with_modifiers(self.race.attribute_modifiers)
@@ -98,4 +104,5 @@ class Character:
             "actor_id": self.actor_id, "current_hit_points": self.current_hit_points,
             "age": self.age,
             "equipment": self.equipment.snapshot(),
+            "appearance": dict(self.appearance),
         }
