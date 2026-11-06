@@ -1,55 +1,368 @@
-from ..renderer import GOOD, MUTED, TEXT_SOFT, WARN
+from ..renderer import (
+    BAD, BUTTON_HOVER, BUTTON_SELECTED, GOOD, GOLD, HIGHLIGHT, MUTED,
+    PANEL_BORDER, TEXT, TEXT_SOFT, WARN,
+)
 
 
 class QuestLogScreen:
-    """Full quest journal with separate active and completed sections."""
+    """Window content for the four-state quest journal."""
+
+    CATEGORIES = (
+        ("active", "Devam Eden"),
+        ("available", "Mevcut"),
+        ("completed", "Tamamlanan"),
+        ("failed", "Başarısız"),
+    )
+    CATEGORY_COLORS = {
+        "active": WARN,
+        "available": TEXT_SOFT,
+        "completed": GOOD,
+        "failed": BAD,
+    }
+    STATUS_LABELS = {
+        "active": "Devam ediyor",
+        "available": "Mevcut",
+        "completed": "Tamamlandı",
+        "failed": "Başarısız",
+    }
+    CONTENT_X = 24
+    CONTENT_Y = 126
+    CONTENT_MARGIN = 16
+    HEADER_HEIGHT = 48
+    TAB_HEIGHT = 34
+    BODY_HEIGHT = 230
+    REWARD_HEIGHT = 76
 
     def __init__(self, service):
         self.service = service
+        self.category = 0
+        self.selected = 0
+        self.scroll = 0
+        self.detail_scroll = 0
+        self._viewport = (960, 640)
 
     def handle(self, state):
         if state.pressed("world") or state.pressed("back"):
             return "world"
         if state.pressed("character"):
             return "character"
+
+        list_bounds = self._list_bounds()
+        detail_bounds = self._details_bounds()
+        if state.mouse_wheel and (
+            state.mouse_pos is None
+            or self._contains(list_bounds, state.mouse_pos)
+            or self._contains(detail_bounds, state.mouse_pos)
+        ):
+            if state.mouse_pos is not None and self._contains(detail_bounds, state.mouse_pos):
+                self.detail_scroll -= state.mouse_wheel * 28
+                self._clamp_detail_scroll()
+            else:
+                self.scroll -= state.mouse_wheel * 28
+                self._clamp_scroll()
+            return None
+
+        if not state.mouse_clicked or state.mouse_pos is None:
+            return None
+
+        for index, rect in enumerate(self._tab_bounds()):
+            if self._contains(rect, state.mouse_pos):
+                self.category = index
+                self.selected = 0
+                self.scroll = 0
+                self.detail_scroll = 0
+                return None
+
+        for index, rect in enumerate(self._row_bounds()):
+            if self._contains(rect, state.mouse_pos):
+                self.selected = index
+                self.detail_scroll = 0
+                return None
         return None
 
     def render(self, renderer):
+        self._viewport = (renderer.width, renderer.height)
         renderer.frame("Görev Günlüğü")
         renderer.hud(self.service)
-        log = self.service.application.holder.current.quest_log
-        active = log.active()
-        completed = log.completed()
 
-        left = renderer.pg.Rect(32, 132, renderer.width // 2 - 48, 390)
-        right = renderer.pg.Rect(renderer.width // 2 + 16, 132, renderer.width // 2 - 48, 390)
-        self._render_section(renderer, left, "Devam Eden Görevler", active, WARN)
-        self._render_section(renderer, right, "Tamamlanan Görevler", completed, GOOD)
-        renderer.footer("W Yerel Harita   P Karakter   Esc Geri")
+        layout = self._layout(renderer.width, renderer.height)
+        outer = renderer.pg.Rect(*layout["outer"])
+        renderer.panel(outer, (25, 31, 43), (145, 118, 70))
+        renderer.text("Görev Günlüğü", outer.x + 20, outer.y + 14, GOLD, title=True)
+
+        counts = self._counts()
+        for index, (_key, label) in enumerate(self.CATEGORIES):
+            title = f"{label} ({counts[index]})"
+            renderer.button(
+                renderer.pg.Rect(*self._tab_bounds()[index]),
+                title,
+                selected=index == self.category,
+            )
+
+        quests = self._quests()
+        self._normalize_selection(quests)
+        self._render_list(renderer, quests)
+        self._render_details(renderer, quests[self.selected] if quests else None)
+        self._render_rewards(
+            renderer,
+            quests[self.selected].reward if quests else None,
+            *self._reward_origin(),
+        )
+
+    def _quest_log(self):
+        return self.service.application.holder.current.quest_log
+
+    def _category_quests(self, category=None):
+        key = self.CATEGORIES[self.category if category is None else category][0]
+        return getattr(self._quest_log(), key)()
+
+    def _quests(self):
+        return self._category_quests()
+
+    def _counts(self):
+        return tuple(len(self._category_quests(index)) for index in range(len(self.CATEGORIES)))
+
+    def _normalize_selection(self, quests):
+        if not quests:
+            self.selected = 0
+            self.scroll = 0
+            self.detail_scroll = 0
+        else:
+            self.selected = min(self.selected, len(quests) - 1)
+        self._clamp_scroll()
+        self._clamp_detail_scroll()
+
+    def _clamp_scroll(self):
+        quests = self._quests()
+        list_bounds = self._list_bounds()
+        visible_height = list_bounds[3] - 42
+        content_height = len(quests) * 54
+        self.scroll = max(0, min(self.scroll, max(0, content_height - visible_height)))
+
+    def _clamp_detail_scroll(self):
+        quests = self._quests()
+        quest = quests[self.selected] if quests and self.selected < len(quests) else None
+        content_height = self._detail_content_height(quest)
+        visible_height = self._details_bounds()[3] - 62
+        self.detail_scroll = max(
+            0, min(self.detail_scroll, max(0, content_height - visible_height))
+        )
 
     @staticmethod
-    def _render_section(renderer, rect, title, quests, title_color):
-        renderer.panel(rect)
-        renderer.text(title, rect.x + 18, rect.y + 16, title_color)
+    def _contains(rect, position):
+        return (
+            position is not None
+            and rect[0] <= position[0] < rect[0] + rect[2]
+            and rect[1] <= position[1] < rect[1] + rect[3]
+        )
+
+    def _layout(self, width=None, height=None):
+        width, height = self._viewport if width is None or height is None else (width, height)
+        x = self.CONTENT_X
+        y = self.CONTENT_Y
+        available_width = max(640, width - x * 2)
+        available_height = max(360, height - y - 76)
+        return {
+            "outer": (x, y, available_width, available_height),
+            "body_y": y + self.HEADER_HEIGHT + self.TAB_HEIGHT + 10,
+            "body_height": min(self.BODY_HEIGHT, available_height - 170),
+        }
+
+    def _tab_bounds(self):
+        x = self.CONTENT_X + self.CONTENT_MARGIN
+        y = self.CONTENT_Y + self.HEADER_HEIGHT
+        width = 210
+        return tuple((x + index * (width + 10), y, width, self.TAB_HEIGHT)
+                     for index in range(len(self.CATEGORIES)))
+
+    def _list_bounds(self):
+        layout = self._layout()
+        return (
+            self.CONTENT_X + self.CONTENT_MARGIN,
+            layout["body_y"],
+            304,
+            layout["body_height"],
+        )
+
+    def _details_bounds(self):
+        layout = self._layout()
+        list_x, _list_y, list_width, _list_height = self._list_bounds()
+        return (
+            list_x + list_width + 12,
+            layout["body_y"],
+            self._layout()["outer"][2] - list_width - 3 * self.CONTENT_MARGIN,
+            layout["body_height"],
+        )
+
+    def _reward_bounds(self):
+        layout = self._layout()
+        outer_x, outer_y, outer_width, outer_height = layout["outer"]
+        return (
+            outer_x + self.CONTENT_MARGIN,
+            outer_y + outer_height - self.REWARD_HEIGHT - self.CONTENT_MARGIN,
+            outer_width - 2 * self.CONTENT_MARGIN,
+            self.REWARD_HEIGHT,
+        )
+
+    def _reward_origin(self):
+        bounds = self._reward_bounds()
+        return bounds[0] + 16, bounds[1] + 34
+
+    def _row_bounds(self):
+        list_x, list_y, list_width, _list_height = self._list_bounds()
+        return tuple(
+            (list_x + 10, list_y + 38 + index * 54 - self.scroll, list_width - 20, 48)
+            for index in range(len(self._quests()))
+        )
+
+    def _tab_rects(self, renderer=None):
+        pg = renderer.pg if renderer is not None else getattr(self.service, "_pygame", None)
+        values = self._tab_bounds()
+        return tuple(pg.Rect(value) for value in values) if pg is not None else values
+
+    def _list_rect(self, renderer=None):
+        pg = renderer.pg if renderer is not None else getattr(self.service, "_pygame", None)
+        value = self._list_bounds()
+        return pg.Rect(value) if pg is not None else value
+
+    def _row_rects(self, renderer=None):
+        values = self._row_bounds()
+        pg = renderer.pg if renderer is not None else getattr(self.service, "_pygame", None)
+        return tuple(pg.Rect(value) for value in values) if pg is not None else values
+
+    def _render_list(self, renderer, quests):
+        rect = self._list_rect(renderer)
+        renderer.panel(rect, (32, 40, 54), PANEL_BORDER)
+        renderer.text("Görevler", rect.x + 16, rect.y + 12, GOLD)
         if not quests:
-            renderer.text("Henüz görev yok.", rect.x + 18, rect.y + 60, MUTED)
-            return
-        y = rect.y + 58
-        for quest in quests:
             renderer.text(
-                renderer.fit_text(quest.title, rect.width - 36),
-                rect.x + 18, y, title_color,
+                "Bu kategoride görev yok.",
+                rect.x + 16,
+                rect.y + 58,
+                MUTED,
+                max_width=rect.width - 32,
             )
-            y += 28
-            for objective in quest.objectives:
+            return
+
+        self._clamp_scroll()
+        row_rects = self._row_rects(renderer)
+        category_key = self.CATEGORIES[self.category][0]
+        for index, quest in enumerate(quests):
+            row = row_rects[index]
+            if row.y < rect.y + 34 or row.bottom > rect.bottom - 8:
+                continue
+            selected = index == self.selected
+            fill = (
+                BUTTON_SELECTED
+                if selected
+                else BUTTON_HOVER if renderer.hovered(row) else (29, 38, 52)
+            )
+            renderer.panel(row, fill, HIGHLIGHT if selected else PANEL_BORDER)
+            marker = "●" if category_key == "active" else "✓" if category_key == "completed" else "!"
+            renderer.text(marker, row.x + 10, row.y + 10,
+                          self.CATEGORY_COLORS[category_key])
+            renderer.text(
+                renderer.fit_text(quest.title, row.width - 42),
+                row.x + 30,
+                row.y + 8,
+                self.CATEGORY_COLORS[category_key] if selected else TEXT,
+                max_width=row.width - 42,
+            )
+            renderer.text(
+                self.STATUS_LABELS[category_key],
+                row.x + 30,
+                row.y + 29,
+                MUTED,
+                max_width=row.width - 42,
+            )
+
+    def _detail_content_height(self, quest):
+        if quest is None:
+            return 80
+        return 78 + len(quest.objectives) * 50
+
+    def _render_details(self, renderer, quest):
+        rect = renderer.pg.Rect(*self._details_bounds())
+        renderer.panel(rect, (27, 35, 50), PANEL_BORDER)
+        if quest is None:
+            renderer.text("Bir görev seçin.", rect.x + 18, rect.y + 18, MUTED)
+            return
+
+        category_key = self.CATEGORIES[self.category][0]
+        renderer.text(
+            renderer.fit_text(quest.title, rect.width - 36),
+            rect.x + 18,
+            rect.y + 16,
+            self.CATEGORY_COLORS[category_key],
+            title=True,
+            max_width=rect.width - 36,
+        )
+        renderer.text(
+            self.STATUS_LABELS[category_key],
+            rect.x + 18,
+            rect.y + 50,
+            MUTED,
+        )
+        heading_y = rect.y + 78 - self.detail_scroll
+        if rect.y + 58 <= heading_y <= rect.bottom - 24:
+            renderer.text("Hedefler", rect.x + 18, heading_y, GOLD)
+
+        y = rect.y + 106 - self.detail_scroll
+        for objective in quest.objectives:
+            if y >= rect.y + 58 and y + 42 <= rect.bottom - 12:
                 marker = "[x]" if objective.completed else "[ ]"
-                line = f"{marker} {objective.description} ({objective.progress}/{objective.required})"
-                y = renderer.wrapped_text(
-                    line, rect.x + 22, y, rect.width - 44,
-                    TEXT_SOFT if not objective.completed else GOOD,
-                    line_height=20, max_lines=1,
-                ) + 4
-            y += 12
-            if y > rect.bottom - 42:
-                renderer.text("Daha fazla görev için kayıt günlüğünü açın.", rect.x + 18, rect.bottom - 30, MUTED)
-                break
+                required_label = "İsteğe bağlı" if objective.optional else "Zorunlu"
+                color = GOOD if objective.completed else TEXT_SOFT
+                renderer.text(
+                    f"{marker} {objective.description}",
+                    rect.x + 18,
+                    y,
+                    color,
+                    max_width=rect.width - 36,
+                )
+                renderer.text(
+                    f"{required_label}  {objective.progress}/{objective.required}",
+                    rect.x + 18,
+                    y + 22,
+                    MUTED,
+                )
+                ratio = (
+                    objective.progress / objective.required
+                    if objective.required > 0 else 0
+                )
+                renderer.bar(
+                    renderer.pg.Rect(rect.x + 160, y + 25, rect.width - 178, 10),
+                    ratio,
+                    GOOD if objective.completed else WARN,
+                )
+            y += 50
+
+        self._clamp_detail_scroll()
+        if self.detail_scroll:
+            renderer.text("Daha fazla hedef...", rect.x + 18, rect.bottom - 20, MUTED)
+
+    def _render_rewards(self, renderer, reward, x, y):
+        rect = renderer.pg.Rect(*self._reward_bounds())
+        renderer.panel(rect, (34, 39, 49), (112, 96, 65))
+        renderer.text("Ödüller", rect.x + 16, rect.y + 12, GOLD)
+        if reward is None:
+            renderer.text("Bir görev seçin.", x, y, MUTED)
+            return
+
+        lines = []
+        if reward.experience:
+            lines.append(f"XP {reward.experience}")
+        if reward.currency:
+            lines.append(f"Para {reward.currency}")
+        for item_id, amount in reward.items:
+            item = self.service.item(item_id)
+            name = getattr(item, "name", None) if item is not None else None
+            lines.append(f"Eşya: {name or item_id} x{amount}")
+        for faction_id, amount in reward.reputation:
+            lines.append(f"İtibar: {faction_id} {amount:+d}")
+        if not lines:
+            renderer.text("Bu görev için ödül yok.", x, y, MUTED)
+            return
+        for index, line in enumerate(lines[:4]):
+            renderer.text(line, x, y + index * 20, TEXT_SOFT,
+                          max_width=rect.width - 32)

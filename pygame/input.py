@@ -16,6 +16,7 @@ class InputState:
     mouse_button_down: bool = False
     mouse_button_up: bool = False
     mouse_motion: bool = False
+    mouse_wheel: int = 0
 
     def pressed(self, action: str) -> bool:
         return action in self.actions
@@ -37,6 +38,7 @@ class InputMapper:
             mouse_down_type = getattr(self.backend, "MOUSEBUTTONDOWN", "MOUSEBUTTONDOWN")
             mouse_up_type = getattr(self.backend, "MOUSEBUTTONUP", "MOUSEBUTTONUP")
             mouse_motion_type = getattr(self.backend, "MOUSEMOTION", "MOUSEMOTION")
+            mouse_wheel_type = getattr(self.backend, "MOUSEWHEEL", "MOUSEWHEEL")
 
             if event_type == quit_type or event_type == "QUIT":
                 state.quit_requested = True
@@ -58,6 +60,16 @@ class InputMapper:
                 state.mouse_pos = getattr(event, "pos", None)
                 continue
 
+            if event_type == mouse_wheel_type or event_type == "MOUSEWHEEL":
+                state.mouse_wheel += int(getattr(event, "y", 0))
+                state.mouse_pos = getattr(event, "pos", None)
+                if state.mouse_pos is None:
+                    mouse = getattr(self.backend, "mouse", None)
+                    get_pos = getattr(mouse, "get_pos", None)
+                    if get_pos is not None:
+                        state.mouse_pos = get_pos()
+                continue
+
             if event_type != keydown_type and event_type != "KEYDOWN":
                 continue
 
@@ -68,11 +80,11 @@ class InputMapper:
                 "return": "confirm",
                 "space": "wait",
                 "g": "gather",
-                "c": "craft",
+                "c": "character",
                 "i": "inventory",
                 "p": "character",
                 "m": "market",
-                "d": "dialogue",
+                "d": "dialogue_history",
                 "b": "combat",
                 "n": "character_creation",
                 "w": "world",

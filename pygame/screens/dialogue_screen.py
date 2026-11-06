@@ -1,4 +1,7 @@
 
+from ..renderer import GOLD, TEXT_SOFT
+
+
 class DialogueScreen:
     def __init__(self, service):
         self.service = service
@@ -24,6 +27,9 @@ class DialogueScreen:
             ),
         }
         self._reset_dialogue()
+        self.history_scroll = 0
+        self.history_open = False
+        self._panel_height = 250
 
     def _reset_dialogue(self):
         """Prepare a fresh conversation when the screen is opened again."""
@@ -40,6 +46,9 @@ class DialogueScreen:
 
         self.opening_stage = "start"
         self.selected_reason = None
+        self.history = []
+        self.history_scroll = 0
+        self.history_open = False
 
     def set_target_npc(self, npc_id):
         self.target_npc_id = npc_id
@@ -47,6 +56,47 @@ class DialogueScreen:
         npc = bundle.social.npcs.get(npc_id) if npc_id else None
         if npc is not None:
             self.message = f"{npc.name} ile konuşmak için Enter tuşuna bas."
+
+    def is_active(self):
+        return self.target_npc_id is not None
+
+    def panel_rect(self, width=960, height=640):
+        panel_height = min(self._panel_height, max(210, height - 180))
+        return (36, height - panel_height - 18, width - 72, panel_height)
+
+    def _panel_contains(self, position, width=960, height=640):
+        rect = self.panel_rect(width, height)
+        return (
+            position is not None
+            and rect[0] <= position[0] < rect[0] + rect[2]
+            and rect[1] <= position[1] < rect[1] + rect[3]
+        )
+
+    def _add_history(self, speaker, text):
+        if text and (not self.history or self.history[-1] != (speaker, text)):
+            self.history.append((speaker, text))
+            self.history_scroll = 0
+
+    def _choice_at_mouse(self, state, count):
+        if not state.mouse_clicked or state.mouse_pos is None or count <= 0:
+            return None
+        x, y, width, _height = self.panel_rect()
+        row_top = y + 124
+        row_height = 30
+        if not (x + 140 <= state.mouse_pos[0] < x + width):
+            return None
+        index = (state.mouse_pos[1] - row_top) // row_height
+        return index if 0 <= index < count else None
+
+    def _npc_name(self):
+        if self.context is None:
+            return "NPC"
+        npc = self.service.application.holder.current.social.npcs.get(self.context[1])
+        return npc.name if npc is not None else "NPC"
+
+    def _record_current_node(self):
+        if self.node is not None:
+            self._add_history(self._npc_name(), self.node.text)
 
     def _close_dialogue(self):
         self._reset_dialogue()
@@ -191,6 +241,7 @@ class DialogueScreen:
 
             self.node = self.service.talk_to_npc(*self.context)
             self.selected = 0
+            self._record_current_node()
 
             if (
                 self.node is not None
@@ -217,6 +268,16 @@ class DialogueScreen:
             self.message = str(error)
 
     def handle(self, state):
+        if state.pressed("dialogue_history"):
+            self.history_open = not self.history_open
+            self.history_scroll = 76 * len(self.history) if self.history_open else 0
+            return None
+
+        if self.history_open:
+            if state.mouse_wheel:
+                self.history_scroll = max(0, self.history_scroll - state.mouse_wheel * 28)
+            return None
+
         if self.opening_stage == "start":
             if state.pressed("confirm") and self.node is None:
                 self._open_default()
@@ -271,6 +332,10 @@ class DialogueScreen:
             return None
 
         if self.opening_stage == "ask_reason":
+            clicked = self._choice_at_mouse(state, len(self.reason_choices))
+            if clicked is not None:
+                self.selected = clicked
+
             if state.pressed("up"):
                 self.selected = (
                     self.selected - 1
@@ -322,6 +387,10 @@ class DialogueScreen:
         visible_choices = self._visible_choices()
         if self.node is not None and visible_choices:
             self.selected %= len(visible_choices)
+            clicked = self._choice_at_mouse(state, len(visible_choices))
+            if clicked is not None:
+                self.selected = clicked
+
             if state.pressed("up"):
                 self.selected = (
                     self.selected - 1
@@ -337,6 +406,7 @@ class DialogueScreen:
 
                 try:
                     choice = visible_choices[self.selected]
+                    self._add_history("Sen", choice.text)
                     if (
                         npc_id == "village_carpenter"
                         and choice.choice_id == "accept_carpenter_quest"
@@ -402,6 +472,7 @@ class DialogueScreen:
                             self.message = "Han ürünleri açıldı."
                             return "market"
                         return self._close_dialogue()
+                    self._record_current_node()
                     self.message = "Seçim yapıldı."
 
                 except (KeyError, ValueError, RuntimeError) as error:
@@ -441,13 +512,19 @@ class DialogueScreen:
         self.name_entry_active = False
 
     def render(self, renderer):
-        renderer.frame("Diyalog")
-        renderer.hud(self.service)
-        panel = renderer.pg.Rect(
-            70, 130, renderer.width - 140, min(350, renderer.height - 220),
+        x, y, width, height = self.panel_rect(renderer.width, renderer.height)
+        panel = renderer.pg.Rect(x, y, width, height)
+        renderer.panel(panel, (39, 29, 24), (145, 118, 70))
+        renderer.pg.draw.rect(
+            renderer.surface, (88, 62, 42),
+            renderer.pg.Rect(panel.x + 8, panel.y + 8, 116, panel.height - 16),
+            border_radius=8,
         )
-        renderer.panel(panel)
-        text_width = panel.width - 60
+        text_width = panel.width - 166
+
+        if self.history_open:
+            self._render_history(renderer, panel)
+            return
 
         npc_name = "Eren"
         if self.context is not None:
@@ -458,21 +535,21 @@ class DialogueScreen:
                 npc_name = npc.name
 
         if self.opening_stage == "name":
-            renderer.text(npc_name, 100, 170, title=True)
+            renderer.text(npc_name, panel.x + 140, panel.y + 24, title=True)
             renderer.wrapped_text(
                 "Bir dakika! Seni bu köyde daha önce görmedim. "
                 "Adın ne yabancı?",
-                100,
-                225,
+                panel.x + 140,
+                panel.y + 74,
                 text_width,
             )
 
         elif self.opening_stage == "ask_reason":
-            renderer.text(npc_name, 100, 170, title=True)
+            renderer.text(npc_name, panel.x + 140, panel.y + 24, title=True)
             renderer.wrapped_text(
                 self.custom_text or "",
-                100,
-                205,
+                panel.x + 140,
+                panel.y + 64,
                 text_width,
             )
 
@@ -485,49 +562,48 @@ class DialogueScreen:
                 )
                 renderer.text(
                     f"{marker}{choice}",
-                    120,
-                    290 + index * 36,
+                    panel.x + 160,
+                    panel.y + 124 + index * 30,
                     color,
                 )
 
         elif self.opening_stage in ("response", "welcome"):
-            renderer.text(npc_name, 100, 170, title=True)
+            renderer.text(npc_name, panel.x + 140, panel.y + 24, title=True)
             renderer.wrapped_text(
                 self.custom_text or "",
-                100,
-                225,
+                panel.x + 140,
+                panel.y + 74,
                 text_width,
             )
             renderer.text(
                 "Enter: Devam et",
-                100,
-                330,
+                panel.x + 140,
+                panel.bottom - 58,
                 (170, 185, 205),
             )
-
         elif self.intro_complete:
-            renderer.text(npc_name, 100, 170, title=True)
+            renderer.text(npc_name, panel.x + 140, panel.y + 24, title=True)
             renderer.wrapped_text(
                 self.custom_text or "",
-                100,
-                225,
+                panel.x + 140,
+                panel.y + 74,
                 text_width,
             )
 
         elif self.node is None:
             renderer.wrapped_text(
                 self.message,
-                100,
-                190,
+                panel.x + 140,
+                panel.y + 64,
                 text_width,
             )
 
         else:
-            renderer.text(npc_name, 100, 170, title=True)
+            renderer.text(npc_name, panel.x + 140, panel.y + 24, title=True)
             renderer.wrapped_text(
                 self.node.text,
-                100,
-                225,
+                panel.x + 140,
+                panel.y + 74,
                 text_width,
             )
 
@@ -540,14 +616,14 @@ class DialogueScreen:
                 )
                 renderer.text(
                     renderer.fit_text(f"{marker}{choice.text}", text_width - 40),
-                    120,
-                    310 + index * 36,
+                    panel.x + 160,
+                    panel.y + 124 + index * 30,
                     color,
                 )
 
         if self.name_entry_active:
             entry_rect = renderer.pg.Rect(
-                panel.x + 30, min(390, panel.bottom - 120), text_width, 120,
+                panel.x + 140, panel.bottom - 130, text_width, 100,
             )
             renderer.panel(entry_rect)
             renderer.text("Adın nedir?", entry_rect.x + 20, entry_rect.y + 10, title=True)
@@ -564,19 +640,33 @@ class DialogueScreen:
                 max_width=entry_rect.width - 40,
             )
 
-        if self.opening_stage == "name":
-            renderer.footer(
-                "Yaz: İsim   Backspace: Sil   Enter: Onayla"
-            )
-        elif self.opening_stage == "ask_reason":
-            renderer.footer(
-                "Yukarı/Aşağı: Cevap seç   Enter: Onayla"
-            )
-        elif self.opening_stage in ("response", "welcome"):
-            renderer.footer("Enter: Devam et")
-        elif self.intro_complete:
-            renderer.footer("Enter: Köye gir")
-        else:
-            renderer.footer(
-                "Enter: Konuş/Seç   Yukarı/Aşağı: Seçim   Esc: Dünya"
-            )
+        renderer.text("D: Geçmiş", panel.right - 150, panel.bottom - 28, (170, 185, 205))
+        renderer.text("Enter: Devam", panel.right - 330, panel.bottom - 28, (170, 185, 205))
+        self._render_portrait(renderer, panel, npc_name)
+
+    def _render_portrait(self, renderer, panel, npc_name):
+        center = (panel.x + 66, panel.y + 78)
+        renderer.pg.draw.circle(renderer.surface, (190, 145, 105), center, 28)
+        renderer.pg.draw.rect(
+            renderer.surface, (70, 100, 135),
+            renderer.pg.Rect(panel.x + 34, panel.y + 104, 64, 62),
+            border_radius=10,
+        )
+        renderer.text(str(npc_name)[:1].upper(), center[0] - 8, center[1] - 12, (45, 32, 24), title=True)
+
+    def _render_history(self, renderer, panel):
+        renderer.text("Konuşma Geçmişi", panel.x + 18, panel.y + 16, GOLD, title=True)
+        content_height = max(0, len(self.history) * 76)
+        max_scroll = max(0, content_height - (panel.height - 92))
+        self.history_scroll = min(self.history_scroll, max_scroll)
+        y = panel.y + 64 - self.history_scroll
+        for speaker, text in self.history:
+            if y + 22 >= panel.y + 48 and y < panel.bottom - 28:
+                renderer.text(speaker, panel.x + 20, y, GOLD, max_width=150)
+                y = renderer.wrapped_text(
+                    text, panel.x + 150, y, panel.width - 174,
+                    TEXT_SOFT, line_height=22, max_lines=3,
+                ) + 10
+            else:
+                y += 76
+        renderer.text("D: Diyaloğa dön", panel.right - 190, panel.bottom - 28, (170, 185, 205))

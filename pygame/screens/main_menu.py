@@ -6,7 +6,7 @@ class MainMenu:
 
     ARTWORK_SIZE = (1365, 768)
     OPTIONS = (
-        ("Yeni Oyun", "save_slots"),
+        ("Yeni Oyun", "new_game"),
         ("Devam Et", "continue"),
         ("Ayarlar", "settings"),
         ("Oyun Rehberi", "guide"),
@@ -21,11 +21,18 @@ class MainMenu:
         "Eldoria hakkında bilgi al",
         "Oyundan çık",
     )
+    NEW_GAME_OPTIONS = (
+        ("Kayıtlı Oyunu Yükle", "load_slots"),
+        ("Yeni Oyun Başlat", "new_game"),
+        ("Geri", "back"),
+    )
 
     def __init__(self, width=1365, height=768):
         self.width = width
         self.height = height
         self.selected = 0
+        self.new_game_open = False
+        self.new_game_selected = 0
         self._background = None
         self._crest = None
 
@@ -44,12 +51,52 @@ class MainMenu:
         ]
 
     def handle(self, state, renderer=None):
+        if self.new_game_open:
+            if state.mouse_clicked and state.mouse_pos is not None and renderer is not None:
+                panel = renderer.pg.Rect(
+                    renderer.width // 2 - 250, renderer.height // 2 - 120, 500, 300,
+                )
+                for index, _option in enumerate(self.NEW_GAME_OPTIONS):
+                    button = renderer.pg.Rect(
+                        panel.x + 45, panel.y + 90 + index * 55,
+                        panel.width - 90, 42,
+                    )
+                    if button.collidepoint(state.mouse_pos):
+                        self.new_game_selected = index
+                        action = self.NEW_GAME_OPTIONS[index][1]
+                        if action == "back":
+                            self.new_game_open = False
+                            return None
+                        self.new_game_open = False
+                        return action
+            if state.pressed("up") or state.pressed("down"):
+                delta = -1 if state.pressed("up") else 1
+                self.new_game_selected = (
+                    self.new_game_selected + delta
+                ) % len(self.NEW_GAME_OPTIONS)
+            if state.pressed("back"):
+                self.new_game_open = False
+                return None
+            if state.pressed("confirm"):
+                action = self.NEW_GAME_OPTIONS[self.new_game_selected][1]
+                if action == "back":
+                    self.new_game_open = False
+                    return None
+                self.new_game_open = False
+                return action
+            return None
+
         if state.mouse_pos is not None and renderer is not None:
             for index, rect in enumerate(self._menu_rects(renderer)):
                 if rect.collidepoint(state.mouse_pos):
                     self.selected = index
                     if state.mouse_clicked:
-                        return self.OPTIONS[index][1]
+                        action = self.OPTIONS[index][1]
+                        if action == "new_game":
+                            self.new_game_open = True
+                            self.new_game_selected = 0
+                            return None
+                        return action
                     break
 
         if state.pressed("up") or state.pressed("down"):
@@ -58,7 +105,12 @@ class MainMenu:
         if state.pressed("quit"):
             return "quit"
         if state.pressed("confirm"):
-            return self.OPTIONS[self.selected][1]
+            action = self.OPTIONS[self.selected][1]
+            if action == "new_game":
+                self.new_game_open = True
+                self.new_game_selected = 0
+                return None
+            return action
         return None
 
     def _load_background(self, renderer):
@@ -237,3 +289,23 @@ class MainMenu:
         for index, rect in enumerate(rects):
             self._draw_button_layer(renderer, rect, index, index == self.selected)
         self._draw_hint(renderer)
+        if self.new_game_open:
+            panel = renderer.pg.Rect(
+                renderer.width // 2 - 250, renderer.height // 2 - 120, 500, 300,
+            )
+            renderer.panel(panel, (23, 29, 43), (180, 145, 75))
+            renderer.text(
+                "Yeni Oyun",
+                panel.centerx - renderer.text_width("Yeni Oyun", title=True) // 2,
+                panel.y + 24,
+                (240, 210, 135),
+                title=True,
+            )
+            for index, (label, _action) in enumerate(self.NEW_GAME_OPTIONS):
+                button = renderer.pg.Rect(
+                    panel.x + 45, panel.y + 90 + index * 55,
+                    panel.width - 90, 42,
+                )
+                renderer.button(
+                    button, label, selected=index == self.new_game_selected,
+                )

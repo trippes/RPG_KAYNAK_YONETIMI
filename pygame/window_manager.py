@@ -154,6 +154,7 @@ class WindowManager:
             mouse_button_down=state.mouse_button_down,
             mouse_button_up=state.mouse_button_up,
             mouse_motion=state.mouse_motion,
+            mouse_wheel=state.mouse_wheel,
         )
         result = window.screen.handle(translated)
         if result is not None and self.on_result is not None:
@@ -161,9 +162,25 @@ class WindowManager:
 
     def handle_input(self, state):
         """Consume input destined for a window, returning whether it was consumed."""
-        if self.focused_id is None and "inventory" in state.actions:
-            self.open("inventory")
+        if "quest_log" in state.actions:
+            state.actions.discard("quest_log")
+            self.toggle("quest_log")
+            return True
+
+        if "dialogue_history" in state.actions:
+            return False
+
+        if "character" in state.actions:
+            state.actions.discard("character")
+            if self.is_open("character"):
+                self.close("character")
+            else:
+                self.open("character")
+            return True
+
+        if "inventory" in state.actions:
             state.actions.discard("inventory")
+            self.toggle("inventory")
             return True
         if self.focused_id is None and "character" in state.actions:
             self.open("character")
@@ -208,8 +225,12 @@ class WindowManager:
                 state.mouse_pos is not None
                 and window.bounds.collidepoint(state.mouse_pos)
             )
-            if (state.mouse_motion or state.mouse_button_up) and (
-                inside or pointer_capture
+            if (
+                state.mouse_motion
+                or state.mouse_button_up
+                or (state.mouse_wheel and state.mouse_pos is None)
+            ) and (
+                inside or pointer_capture or (state.mouse_wheel and state.mouse_pos is None)
             ):
                 self._dispatch(window, state)
                 return True

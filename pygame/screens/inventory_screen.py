@@ -68,7 +68,7 @@ class InventoryScreen:
 
     def _slot_rects(self, renderer=None):
         grid_x, grid_y = 320, 236
-        size, gap = 72, 10
+        size, gap = 60, 6
         values = tuple(
             (
                 grid_x + (index % 5) * (size + gap),
@@ -273,14 +273,16 @@ class InventoryScreen:
             kind, entry_id, amount = entry
             item = self.service.item(entry_id) if kind == "item" else None
             color = resource_color(entry_id)
-            renderer.pg.draw.circle(renderer.surface, color, (rect.centerx, rect.y + 30), 23)
-            renderer.pg.draw.circle(renderer.surface, (225, 225, 225), (rect.centerx, rect.y + 30), 23, 2)
-            amount_rect = renderer.pg.Rect(rect.right - 30, rect.bottom - 27, 24, 21)
+            icon_center = (rect.centerx, rect.centery - 2)
+            icon_radius = max(16, rect.width // 3)
+            renderer.pg.draw.circle(renderer.surface, color, icon_center, icon_radius)
+            renderer.pg.draw.circle(renderer.surface, (225, 225, 225), icon_center, icon_radius, 2)
+            amount_rect = renderer.pg.Rect(rect.right - 25, rect.bottom - 23, 21, 19)
             renderer.pg.draw.rect(renderer.surface, (12, 16, 24), amount_rect, border_radius=5)
             renderer.text(str(amount), amount_rect.centerx - renderer.text_width(str(amount)) // 2,
-                          amount_rect.y + 2, GOLD, max_width=22)
+                          amount_rect.y + 1, GOLD, max_width=19)
             label = item.name if item is not None else resource_name(entry_id)
-            renderer.text(label[:10], rect.x + 5, rect.bottom - 20, TEXT_SOFT, max_width=rect.width - 10)
+            renderer.text(label[:8], rect.x + 4, rect.bottom - 17, TEXT_SOFT, max_width=rect.width - 8)
 
         if self.drag_index is not None and self.drag_position is not None:
             entry = slot_entries[self.drag_index] if self.drag_index < len(slot_entries) else None

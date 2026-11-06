@@ -6,12 +6,15 @@ from ..renderer import GOLD, MUTED, TEXT_SOFT
 class SaveSlotsScreen:
     SLOT_COUNT = 10
 
-    def __init__(self, save_dir, on_selected):
+    def __init__(self, save_dir, on_selected, mode="load", return_target="menu"):
         self.save_dir = Path(save_dir)
         self.on_selected = on_selected
+        self.mode = mode
+        self.return_target = return_target
         self.selected = 0
         self.message = ""
         self.pending_delete = False
+        self.pending_overwrite = False
         self.delete_rects = ()
         self._background = None
 
@@ -118,6 +121,16 @@ class SaveSlotsScreen:
         self.pending_delete = False
 
     def handle(self, state):
+        if self.pending_overwrite:
+            if state.pressed("back"):
+                self.pending_overwrite = False
+                return None
+            if state.pressed("confirm"):
+                self.pending_overwrite = False
+                path = self.slot_path(self.selected)
+                return self.on_selected(self.selected, path, True)
+            return None
+
         if self.pending_delete:
             if state.pressed("back"):
                 self.pending_delete = False
@@ -138,7 +151,7 @@ class SaveSlotsScreen:
         if state.pressed("down"):
             self.selected = (self.selected + 1) % self.SLOT_COUNT
         if state.pressed("back"):
-            return "menu"
+            return self.return_target
         if state.mouse_pos is not None:
             for index, rect in enumerate(getattr(self, "slot_rects", ())):
                 if rect.collidepoint(state.mouse_pos):
@@ -150,6 +163,9 @@ class SaveSlotsScreen:
         if state.pressed("confirm"):
             path = self.slot_path(self.selected)
             self.save_dir.mkdir(parents=True, exist_ok=True)
+            if self.mode == "save" and path.exists():
+                self.pending_overwrite = True
+                return None
             return self.on_selected(self.selected, path, path.exists())
         if state.mouse_clicked and state.mouse_pos is not None:
             for index, rect in enumerate(self.delete_rects):
@@ -161,6 +177,9 @@ class SaveSlotsScreen:
                     self.selected = index
                     path = self.slot_path(self.selected)
                     self.save_dir.mkdir(parents=True, exist_ok=True)
+                    if self.mode == "save" and path.exists():
+                        self.pending_overwrite = True
+                        return None
                     return self.on_selected(self.selected, path, path.exists())
         return None
 
@@ -236,6 +255,24 @@ class SaveSlotsScreen:
             self.confirm_rect = renderer.pg.Rect(modal.right - 205, modal.bottom - 62, 160, 40)
             renderer.button(self.cancel_rect, "İptal")
             renderer.button(self.confirm_rect, "Onayla", True)
+        if self.pending_overwrite:
+            modal = renderer.pg.Rect(
+                (renderer.width - 460) // 2, (renderer.height - 220) // 2,
+                460, 220,
+            )
+            renderer.panel(modal, (23, 29, 43), (220, 166, 68))
+            renderer.text(
+                "Kaydın Üzerine Yaz",
+                modal.centerx - renderer.text_width("Kaydın Üzerine Yaz", title=True) // 2,
+                modal.y + 24,
+                GOLD,
+                title=True,
+            )
+            renderer.text(
+                f"Slot {self.selected + 1} üzerine yazılsın mı?",
+                modal.x + 30, modal.y + 76, TEXT_SOFT,
+            )
+            renderer.text("Enter: Onayla   Esc: İptal", modal.x + 30, modal.bottom - 58, TEXT_SOFT)
         if self.message:
             renderer.text(
                 self.message,
@@ -244,4 +281,9 @@ class SaveSlotsScreen:
                 GOLD if self.pending_delete else TEXT_SOFT,
                 max_width=panel.width - 60,
             )
-        renderer.footer("↑/↓ Slot seç   Enter Aç/Yeni Oyun   Delete Sil   Esc Menü")
+        footer = (
+            "↑/↓ Slot seç   Enter Kaydet   Delete Sil   Esc Menü"
+            if self.mode == "save"
+            else "↑/↓ Slot seç   Enter Aç/Yeni Oyun   Delete Sil   Esc Menü"
+        )
+        renderer.footer(footer)
