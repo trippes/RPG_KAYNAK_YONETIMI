@@ -1,0 +1,737 @@
+﻿========== application\gameplay_service.py ==========
+ 114:     actors: tuple[ActorView, ...] = ()
+ 115:     activities: tuple[ActivityView, ...] = ()
+ 116:     movements: tuple = ()
+ 117: 
+ 118: 
+ 119: class GameplayService:
+ 120:     """Coordinate the existing gameplay components for a playable loop."""
+ 121: 
+ 122:     def __init__(self, application: GameApplication) -> None:
+ 123:         if not isinstance(application, GameApplication):
+ 124:             raise TypeError("application must be GameApplication.")
+ 125:         self._application = application
+ 126:         self._chains: dict[str, ProductionChain] = {}
+ 127:         self._bundle = None
+ 128:         self._character_factory = None
+ 129:         self._quest_reward_accounts: dict[str, str] = {}
+ 130:         self._quest_reward_inventories: dict[str, str] = {}
+ 131: 
+ 132:     @property
+ 133:     def application(self) -> GameApplication:
+ 134:         return self._application
+ 135: 
+ 136:     def register_character_factory(self, factory) -> None:
+ 137:         self._character_factory = factory
+ 138: 
+ 139:     def collect(self, node_id: str, inventory_id: str, quantity: Quantity) -> None:
+ 140:         """Atomically extract from an active-world node into a registered inventory."""
+ 141:         bundle = self._current_bundle()
+ 142:         world = bundle.session.worlds.get_active()
+ 143:         if world is None:
+ 144:             raise GameplayServiceError("An active world is required for collection.")
+ 145:         inventory = self._inventory(bundle, inventory_id)
+ 146:         node = bundle.resource_nodes.get(node_id)
+ 147:         if node is None:
+ 148:             raise KeyError(f"Resource node not found: {node_id}")
+
+ 247:     def load(self, path):
+ 248:         result = self._application.load(path)
+ 249:         self._chains.clear()
+ 250:         self._bundle = result
+ 251:         result.actor_activities.bind_gameplay_service(self)
+ 252:         self._rebind_content_quests()
+ 253:         return result
+ 254: 
+ 255:     def _rebind_content_quests(self) -> None:
+ 256:         """Reconnect optional content aliases to the restored canonical quest log."""
+ 257:         quest_log = self._current_bundle().quest_log
+ 258:         for attribute in ("available_forest_quest", "carpenter_quest", "inn_quest", "blacksmith_quest"):
+ 259:             current = getattr(self, attribute, None)
+ 260:             quest_id = getattr(current, "quest_id", None)
+ 261:             if quest_id is None:
+ 262:                 continue
+ 263:             restored = quest_log.get(quest_id)
+ 264:             if restored is not None:
+ 265:                 setattr(self, attribute, restored)
+ 266:                 if attribute in ("carpenter_quest", "inn_quest"):
+ 267:                     self._quest_reward_accounts.setdefault(quest_id, "hero")
+ 268:                     self._quest_reward_inventories.setdefault(quest_id, "player")
+ 269: 
+ 270:     def register_actor(self, actor_id: str, role: str, world_id: str | None = None, active: bool = True, character_id: str | None = None) -> ActorView:
+ 271:         bundle = self._current_bundle()
+ 272:         target_world = world_id
+ 273:         if target_world is None:
+ 274:             world = bundle.session.worlds.get_active()
+ 275:             if world is None:
+ 276:                 raise GameplayServiceError("An active world is required to register an actor.")
+ 277:             target_world = world.world_id
+ 278:         character = None
+ 279:         if character_id is not None:
+ 280:             character = bundle.characters.get(character_id)
+ 281:             if character is None:
+
+ 520:         return InventoryView(
+ 521:             inventory_id,
+ 522:             tuple((resource.value, quantity.value, quantity.unit.value)
+ 523:                   for resource, quantity in inventory.snapshot()),
+ 524:             inventory.item_snapshot(),
+ 525:             inventory.total_weight(bundle.items),
+ 526:         )
+ 527: 
+ 528:     def consume_item(self, actor_id: str, inventory_id: str, resource_id: str) -> int:
+ 529:         """Consume one item and apply its supported character effect."""
+ 530:         bundle = self._current_bundle()
+ 531:         character = self.actor_character(actor_id)
+ 532:         if character is None:
+ 533:             raise GameplayServiceError("Actor must be linked to a character to consume items.")
+ 534:         resource = ResourceType(resource_id)
+ 535:         effects = {"bread": 2, "water": 1}
+ 536:         healing = effects.get(resource.value)
+ 537:         if healing is None:
+ 538:             raise GameplayServiceError(f"Resource is not consumable: {resource_id}")
+ 539:         inventory = self._inventory(bundle, inventory_id)
+ 540:         return self._complete_timed_action(
+ 541:             ActionType.CONSUME_ITEM,
+ 542:             actor_id,
+ 543:             lambda: self._consume_and_apply(
+ 544:                 inventory, resource, character, healing,
+ 545:             ),
+ 546:         )
+ 547: 
+ 548:     @staticmethod
+ 549:     def _consume_and_apply(inventory, resource, character, healing: int) -> int:
+ 550:         inventory.remove(resource, Quantity(1, ResourceUnit.ITEM))
+ 551:         character.current_hit_points = min(
+ 552:             character.max_hit_points,
+ 553:             character.current_hit_points + healing,
+ 554:         )
+ 555:         return character.current_hit_points
+ 556: 
+ 557:     def balance(self, account_id: str, currency_id: str) -> Money:
+ 558:         bundle = self._current_bundle()
+ 559:         return bundle.economy.ledger.balance(account_id, Currency(currency_id))
+ 560: 
+ 561:     def credit(self, account_id: str, currency_id: str, amount: int) -> Money:
+ 562:         bundle = self._current_bundle()
+ 563:         bundle.economy.ledger.credit(account_id, Money(amount, Currency(currency_id)), "application credit")
+ 564:         return self.balance(account_id, currency_id)
+ 565: 
+ 566:     def publish_offer(
+ 567:         self, offer_id: str, seller_id: str, seller_inventory_id: str,
+ 568:         resource_type: ResourceType, quantity: int, unit_price: Money, expires_at: int | None = None,
+ 569:     ) -> MarketOffer:
+ 570:         bundle = self._current_bundle()
+ 571:         self._inventory(bundle, seller_inventory_id)
+ 572:         if not isinstance(resource_type, ResourceType):
+ 573:             raise TypeError("resource_type must be ResourceType.")
+ 574:         stock = bundle.inventories[seller_inventory_id].get(resource_type)
+ 575:         reserved = bundle.economy.market.reserved_quantity(seller_inventory_id, resource_type)
+
+ 701:             return bundle.social.node_for(
+ 702:                 dialogue_id,
+ 703:                 choice.next_node_id,
+ 704:                 self._dialogue_context(actor_id, npc_id),
+ 705:             )
+ 706: 
+ 707:         return self._complete_timed_action(ActionType.DIALOGUE_CHOICE, actor_id, choose)
+ 708: 
+ 709:     def _dialogue_context(self, actor_id: str, npc_id: str) -> dict:
+ 710:         bundle = self._current_bundle()
+ 711:         objectives = {
+ 712:             objective.objective_id: objective.progress
+ 713:             for quest in bundle.quest_log.all()
+ 714:             for objective in quest.objectives
+ 715:         }
+ 716:         items = {}
+ 717:         try:
+ 718:             items = {
+ 719:                 getattr(resource, "value", str(resource)): amount
+ 720:                 for resource, amount, _unit in self.inventory("player").stocks
+ 721:             }
+ 722:         except (KeyError, ValueError, RuntimeError):
+ 723:             pass
+ 724:         return {
+ 725:             "actor_id": actor_id,
+ 726:             "npc_id": npc_id,
+ 727:             "objectives": objectives,
+ 728:             "items": items,
+ 729:             "flags": {
+ 730:                 f"quest:{quest.quest_id}": quest.state.value
+ 731:                 for quest in bundle.quest_log.all()
+ 732:             },
+ 733:         }
+ 734: 
+ 735:     def _run_dialogue_action(self, action: str, actor_id: str, npc_id: str) -> None:
+ 736:         actions = {
+ 737:             "accept_carpenter_quest": lambda: self.accept_carpenter_quest(actor_id, "player"),
+ 738:             "deliver_carpenter_wood": lambda: self.deliver_carpenter_wood(actor_id, npc_id, "player"),
+ 739:             "accept_inn_quest": lambda: self.accept_inn_quest(actor_id, "player"),
+ 740:             "deliver_inn_supplies": lambda: self.deliver_inn_supplies(actor_id, npc_id, "player"),
+ 741:             "accept_blacksmith_quest": lambda: self.accept_blacksmith_quest(actor_id, "player"),
+ 742:             "deliver_blacksmith_ore": lambda: self.deliver_blacksmith_ore(actor_id, npc_id, "player"),
+ 743:         }
+ 744:         handler = actions.get(action)
+ 745:         if handler is not None:
+ 746:             handler()
+ 747: 
+ 748:     def start_quest(self, quest: Quest, context=None, owner_id: str | None = None, reward_inventory_id: str | None = None) -> Quest:
+ 749:         bundle = self._current_bundle()
+ 750:         quest.start(context or {})
+ 751:         registered = bundle.quest_log.get(quest.quest_id)
+ 752:         if registered is None:
+ 753:             bundle.quest_log.add(quest)
+ 754:         elif registered is not quest:
+ 755:             raise ValueError(f"Quest ID is already registered: {quest.quest_id}")
+ 756:         if owner_id is not None:
+ 757:             self._quest_reward_accounts[quest.quest_id] = owner_id
+ 758:         if reward_inventory_id is not None:
+ 759:             self._quest_reward_inventories[quest.quest_id] = reward_inventory_id
+ 760:         return quest
+ 761: 
+ 762:     def accept_carpenter_quest(self, owner_id: str, inventory_id: str):
+ 763:         quest = getattr(self, "carpenter_quest", None)
+ 764:         if quest is None:
+ 765:             raise RuntimeError("Marangoz gÃ¶revi bulunamadÄ±.")
+ 766:         if quest.state.value == "active":
+ 767:             return quest
+ 768:         if quest.state.value == "completed":
+ 769:             raise ValueError("Marangoz gÃ¶revi zaten tamamlandÄ±.")
+ 770:         return self.start_quest(
+ 771:             quest, owner_id=owner_id, reward_inventory_id=inventory_id,
+ 772:         )
+ 773: 
+ 774:     def deliver_carpenter_wood(self, actor_id: str, npc_id: str, inventory_id: str):
+ 775:         quest = getattr(self, "carpenter_quest", None)
+ 776:         if quest is None or quest.state.value != "active":
+ 777:             raise ValueError("Hilmi'nin aktif bir odun gÃ¶revi yok.")
+ 778:         if npc_id != "village_carpenter":
+ 779:             raise ValueError("Odun yalnÄ±zca Marangoz Hilmi'ye teslim edilebilir.")
+ 780:         inventory = self._inventory(self._current_bundle(), inventory_id)
+ 781:         wood = ResourceType("wood")
+ 782:         stock = inventory.get(wood)
+ 783:         if stock is None or stock.value < 3:
+ 784:             raise ValueError("Teslim etmek iÃ§in en az 3 odun gerekli.")
+ 785:         inventory.remove(wood, Quantity(3, ResourceUnit.ITEM))
+ 786:         self.update_quest_objective(
+ 787:             quest.quest_id, "deliver_wood", 1, actor_id, inventory_id,
+ 788:         )
+ 789:         return quest
+ 790: 
+ 791:     def accept_inn_quest(self, owner_id: str, inventory_id: str):
+ 792:         quest = getattr(self, "inn_quest", None)
+ 793:         if quest is None:
+ 794:             raise RuntimeError("Han gÃ¶revi bulunamadÄ±.")
+ 795:         if quest.state.value == "active":
+ 796:             return quest
+ 797:         if quest.state.value == "completed":
+ 798:             raise ValueError("Han gÃ¶revi zaten tamamlandÄ±.")
+ 799:         carpenter = getattr(self, "carpenter_quest", None)
+ 800:         if carpenter is None or carpenter.state.value != "completed":
+ 801:             raise ValueError("Ã–nce Hilmi'nin odun gÃ¶revini tamamlamalÄ±sÄ±n.")
+ 802:         return self.start_quest(
+ 803:             quest, owner_id=owner_id, reward_inventory_id=inventory_id,
+ 804:         )
+ 805: 
+ 806:     def accept_blacksmith_quest(self, owner_id: str, inventory_id: str):
+ 807:         quest = getattr(self, "blacksmith_quest", None)
+ 808:         if quest is None:
+ 809:             raise RuntimeError("Demirci gÃ¶revi bulunamadÄ±.")
+ 810:         if quest.state.value == "active":
+ 811:             return quest
+ 812:         if quest.state.value == "completed":
+ 813:             raise ValueError("Demirci gÃ¶revi zaten tamamlandÄ±.")
+ 814:         return self.start_quest(quest, owner_id=owner_id, reward_inventory_id=inventory_id)
+ 815: 
+ 816:     def deliver_blacksmith_ore(self, actor_id: str, npc_id: str, inventory_id: str):
+ 817:         quest = getattr(self, "blacksmith_quest", None)
+ 818:         if quest is None or quest.state.value != "active":
+ 819:             raise ValueError("Demircinin aktif bir cevher gÃ¶revi yok.")
+ 820:         if npc_id != "village_blacksmith":
+ 821:             raise ValueError("Demir cevheri yalnÄ±zca demirciye teslim edilebilir.")
+ 822:         inventory = self._inventory(self._current_bundle(), inventory_id)
+ 823:         ore = ResourceType("iron_ore")
+ 824:         stock = inventory.get(ore)
+ 825:         if stock is None or stock.value < 3:
+ 826:             raise ValueError("Teslim etmek iÃ§in en az 3 demir cevheri gerekli.")
+ 827:         inventory.remove(ore, Quantity(3, ResourceUnit.ITEM))
+ 828:         self.update_quest_objective(
+ 829:             quest.quest_id, "deliver_iron_ore", 1, actor_id, inventory_id,
+ 830:         )
+ 831:         return quest
+ 832: 
+ 833:     def deliver_inn_supplies(self, actor_id: str, npc_id: str, inventory_id: str):
+ 834:         quest = getattr(self, "inn_quest", None)
+ 835:         if quest is None or quest.state.value != "active":
+ 836:             raise ValueError("Hilmi'nin aktif bir han gÃ¶revi yok.")
+ 837:         if npc_id != "village_carpenter":
+ 838:             raise ValueError("Erzaklar Hilmi'ye teslim edilmelidir.")
+ 839:         inventory = self._inventory(self._current_bundle(), inventory_id)
+ 840:         bread = inventory.get(ResourceType("bread"))
+ 841:         water = inventory.get(ResourceType("water"))
+ 842:         if bread is None or bread.value < 1 or water is None or water.value < 1:
+ 843:             raise ValueError("Teslim etmek iÃ§in 1 ekmek ve 1 su gerekli.")
+ 844:         inventory.remove(ResourceType("bread"), Quantity(1, ResourceUnit.ITEM))
+ 845:         inventory.remove(ResourceType("water"), Quantity(1, ResourceUnit.ITEM))
+ 846:         self.update_quest_objective(
+ 847:             quest.quest_id, "deliver_supplies", 1, actor_id, inventory_id,
+ 848:         )
+ 849:         return quest
+ 850: 
+ 851:     def update_quest_objective(self, quest_id: str, objective_id: str, amount: int = 1, owner_id: str | None = None, inventory_id: str | None = None):
+ 852:         bundle = self._current_bundle()
+ 853:         quest = bundle.quest_log.get(quest_id)
+ 854:         if quest is None:
+ 855:             raise KeyError(f"Quest not found: {quest_id}")
+ 856:         previous = quest.state
+ 857:         quest.update(objective_id, amount)
+ 858:         if previous != quest.state and quest.state.value == "completed":
+ 859:             self._grant_quest_reward(quest, owner_id, inventory_id)
+
+========== application\content_pack.py ==========
+ 227:     )
+ 228:     dialogue_data = definition["dialogue"]
+ 229:     nodes = tuple(
+ 230:         DialogueNode(
+ 231:             node_data["id"],
+ 232:             resolve_id("npc_id"),
+ 233:             node_data["text"],
+ 234:             tuple(
+ 235:                 DialogueChoice(choice["id"], choice["text"], choice.get("next"))
+ 236:                 for choice in node_data.get("choices", ())
+ 237:             ),
+ 238:         )
+ 239:         for node_data in dialogue_data["nodes"]
+ 240:     )
+ 241:     service.register_dialogue(
+ 242:         Dialogue(dialogue_data["id"], nodes, dialogue_data["start_node"])
+ 243:     )
+ 244:     world_map = _build_world_map_from_definition(
+ 245:         definition, world.world_id, ids
+ 246:     )
+ 247:     service.register_world_map(world_map)
+ 248:     service.place_actor(resolve_id("hero_id"), resolve_id("village_id"))
+ 249:     start_position = character_data.get("starting_position") or (16, 29)
+ 250:     service.set_actor_tile_position(
+ 251:         resolve_id("hero_id"), start_position[0], start_position[1]
+ 252:     )
+ 253:     return service, ids
+ 254: 
+ 255: 
+ 256: def populate_opening_content(
+ 257:     application, ids: DemoContentIds = DemoContentIds(), definition_path=None
+ 258: ):
+ 259:     """Build only the opening session used before character creation."""
+ 260:     return _register_opening_content(
+ 261:         application,
+
+ 303:     definition_path=None,
+ 304: ):
+ 305:     """Rebuild the static demo map without resetting saved gameplay state."""
+ 306:     definition = load_demo_content(definition_path)
+ 307: 
+ 308:     return _build_world_map_from_definition(definition, world_id, ids)
+ 309: 
+ 310: 
+ 311: def populate_demo_content(application, ids: DemoContentIds = DemoContentIds(), definition_path=None):
+ 312:     """Build a deterministic playable session from a JSON content definition."""
+ 313:     definition = load_demo_content(definition_path)
+ 314:     resolve_id = _id_resolver(definition, ids)
+ 315:     world_data = definition["world"]
+ 316:     world = application.aktif_dunya() or application.dunya_olustur(
+ 317:         world_data["name"], width=world_data["width"], height=world_data["height"], world_id=resolve_id("world_id")
+ 318:     )
+ 319:     bundle = application.holder.current
+ 320: 
+ 321:     resource_types = {item["id"]: ResourceType(item["id"]) for item in definition["resources"]}
+ 322:     inventory = Inventory()
+ 323:     merchant_inventory = Inventory()
+ 324:     starter_items = {
+ 325:         "iron_sword": ItemDefinition(
+ 326:             "iron_sword", "Demir KÄ±lÄ±Ã§", EquipmentSlot.MAIN_HAND,
+ 327:             weight=2.0, attack=3, damage=4, description="Dengeli tek elli kÄ±lÄ±Ã§.",
+ 328:         ),
+ 329:         "leather_armor": ItemDefinition(
+ 330:             "leather_armor", "Deri ZÄ±rh", EquipmentSlot.CHEST,
+ 331:             weight=5.0, defense=2, description="Hafif ve hareketli zÄ±rh.",
+ 332:         ),
+ 333:         "iron_helmet": ItemDefinition(
+ 334:             "iron_helmet", "Demir MiÄŸfer", EquipmentSlot.HEAD,
+ 335:             weight=2.0, defense=1, max_hit_points=2,
+ 336:         ),
+ 337:     }
+
+ 462:             resolve_id(blacksmith_data.get("location_id", "village_id")),
+ 463:             position=Position(*(blacksmith_data.get("position") or (27, 15))),
+ 464:         )
+ 465:     )
+ 466: 
+ 467:     dialogue_data = definition["dialogue"]
+ 468:     nodes = []
+ 469:     for node_data in dialogue_data["nodes"]:
+ 470:         choices = tuple(DialogueChoice(choice["id"], choice["text"], choice.get("next")) for choice in node_data.get("choices", ()))
+ 471:         nodes.append(DialogueNode(node_data["id"], resolve_id("npc_id"), node_data["text"], choices))
+ 472:     service.register_dialogue(Dialogue(dialogue_data["id"], tuple(nodes), dialogue_data["start_node"]))
+ 473:     carpenter_dialogue = Dialogue(
+ 474:         "carpenter_intro",
+ 475:         (
+ 476:             DialogueNode(
+ 477:                 "carpenter_start",
+ 478:                 resolve_id("carpenter_id"),
+ 479:                 "Ben kÃ¶yÃ¼n marangoz ustasÄ±yÄ±m. YardÄ±m edecek birini arÄ±yordum. "
+ 480:                 "Benim iÃ§in Ã§alÄ±ÅŸmak ister misin?",
+ 481:                 (
+ 482:                     DialogueChoice(
+ 483:                         "accept_carpenter_quest",
+ 484:                         "Evet, iÅŸi kabul ediyorum.",
+ 485:                         action="accept_carpenter_quest",
+ 486:                     ),
+ 487:                     DialogueChoice(
+ 488:                         "deliver_carpenter_wood",
+ 489:                         "Ä°stediÄŸin odunlarÄ± getirdim.",
+ 490:                         action="deliver_carpenter_wood",
+ 491:                     ),
+ 492:                     DialogueChoice(
+ 493:                         "accept_inn_quest",
+ 494:                         "Han iÃ§in ekmek ve su alabilirim.",
+ 495:                         action="accept_inn_quest",
+ 496:                     ),
+ 497:                     DialogueChoice(
+ 498:                         "deliver_inn_supplies",
+ 499:                         "Ekmek ve suyu getirdim.",
+ 500:                         action="deliver_inn_supplies",
+ 501:                     ),
+ 502:                     DialogueChoice(
+ 503:                         "decline_carpenter_quest",
+ 504:                         "Åimdilik hayÄ±r.",
+ 505:                     ),
+ 506:                 ),
+ 507:             ),
+ 508:         ),
+ 509:         "carpenter_start",
+ 510:     )
+ 511:     service.register_dialogue(carpenter_dialogue)
+ 512:     service.register_dialogue(Dialogue(
+ 513:         "blacksmith_intro",
+ 514:         (
+ 515:             DialogueNode(
+ 516:                 "blacksmith_start",
+ 517:                 resolve_id("blacksmith_id"),
+ 518:                 "Demir ocaÄŸÄ±ndan demir cevheri getirirsen onu dÃ¶vÃ¼p sana saÄŸlam bir demir kÄ±lÄ±Ã§ yapabilirim.",
+ 519:                 (
+ 520:                     DialogueChoice(
+ 521:                         "accept_blacksmith_quest",
+ 522:                         "Demir cevheri toplamaya gidiyorum.",
+ 523:                         action="accept_blacksmith_quest",
+ 524:                     ),
+ 525:                     DialogueChoice(
+ 526:                         "deliver_blacksmith_ore",
+ 527:                         "Ä°stediÄŸin demir cevherini getirdim.",
+ 528:                         action="deliver_blacksmith_ore",
+ 529:                     ),
+ 530:                 ),
+ 531:             ),
+ 532:         ),
+ 533:         "blacksmith_start",
+ 534:     ))
+ 535:     service.register_dialogue(Dialogue(
+ 536:         "innkeeper_intro",
+ 537:         (
+ 538:             DialogueNode(
+ 539:                 "innkeeper_start",
+ 540:                 resolve_id("innkeeper_id"),
+ 541:                 "HoÅŸ geldin. HanÄ±mÄ±zda taze ekmek ve temiz su bulunur.",
+ 542:                 (
+ 543:                     DialogueChoice(
+ 544:                         "open_inn_market",
+ 545:                         "Ekmek ve su satÄ±n almak istiyorum.",
+ 546:                         action="open_market",
+ 547:                     ),
+ 548:                     DialogueChoice("leave_inn", "TeÅŸekkÃ¼rler, birazdan bakarÄ±m."),
+ 549:                 ),
+ 550:             ),
+ 551:         ),
+ 552:         "innkeeper_start",
+ 553:     ))
+ 554: 
+ 555:     quest_data = definition["quest"]
+ 556:     objectives = tuple(
+ 557:         Objective(item["id"], item["description"], ObjectiveType(item["type"]), resolve_id(item["target_id"]))
+ 558:         for item in quest_data["objectives"]
+ 559:     )
+ 560:     reward_data = quest_data["reward"]
+ 561:     quest = Quest(
+ 562:         resolve_id("quest_id"), quest_data["title"], objectives,
+ 563:         Reward(
+ 564:             experience=reward_data.get("experience", 0),
+ 565:             currency=reward_data["currency"],
+ 566:             items=tuple(tuple(item) for item in reward_data["items"]),
+ 567:             reputation=((resolve_id("faction_id"), reward_data["reputation"]),),
+ 568:         ),
+ 569:     )
+ 570:     service.available_forest_quest = quest
+ 571:     carpenter_quest = Quest(
+ 572:         resolve_id("carpenter_quest_id"),
+ 573:         "Marangozun YardÄ±mcÄ±sÄ±",
+ 574:         (
+
+========== game_ui\screens\dialogue_screen.py ==========
+   1: 
+   2: from ..renderer import GOLD, TEXT_SOFT
+   3: 
+   4: 
+   5: class DialogueScreen:
+   6:     def __init__(self, service):
+   7:         self.service = service
+   8:         self.target_npc_id = None
+   9:         self.reason_choices = (
+  10:             "Yeni yerler gÃ¶rmek iÃ§in yollara dÃ¼ÅŸtÃ¼m.",
+  11:             "Kendime bir iÅŸ ve yeni bir hayat arÄ±yorum.",
+  12:             "Yolum buraya dÃ¼ÅŸtÃ¼. Biraz dinlenmek istiyorum.",
+  13:         )
+  14: 
+  15:         self.reason_responses = {
+  16:             0: (
+  17:                 "Demek yeni yerler gÃ¶rmek istiyorsun. "
+  18:                 "Bu topraklarda keÅŸfedilecek Ã§ok ÅŸey var."
+  19:             ),
+  20:             1: (
+  21:                 "Yeni bir hayat arÄ±yorsun demek. "
+  22:                 "Belki kÃ¶yÃ¼mÃ¼zde sana uygun bir iÅŸ bulunabilir."
+  23:             ),
+  24:             2: (
+  25:                 "Uzun bir yolculuktan sonra dinlenmek iyi gelir. "
+  26:                 "KÃ¶yÃ¼mÃ¼zde biraz soluklanabilirsin."
+  27:             ),
+  28:         }
+  29:         self._reset_dialogue()
+  30:         self.history_scroll = 0
+  31:         self.history_open = False
+  32:         self._panel_height = 250
+
+  97:     def _record_current_node(self):
+  98:         if self.node is not None:
+  99:             self._add_history(self._npc_name(), self.node.text)
+ 100: 
+ 101:     def _close_dialogue(self):
+ 102:         self._reset_dialogue()
+ 103:         return "local_map"
+ 104: 
+ 105:     def _visible_choices(self):
+ 106:         """Only show Hilmi actions that match the current quest state."""
+ 107:         if self.node is None:
+ 108:             return ()
+ 109:         choices = tuple(self.node.choices)
+ 110:         if self.context is not None:
+ 111:             actor_id, npc_id, dialogue_id = self.context
+ 112:             dialogue = self.service.application.holder.current.social.dialogues.get(dialogue_id)
+ 113:             if dialogue is not None:
+ 114:                 choices = dialogue.available_choices(
+ 115:                     self.node.node_id,
+ 116:                     self.service._dialogue_context(actor_id, npc_id),
+ 117:                 )
+ 118:         if self.context is None or self.context[1] != "village_carpenter":
+ 119:             if self.context is not None and self.context[1] == "village_blacksmith":
+ 120:                 quest = getattr(self.service, "blacksmith_quest", None)
+ 121:                 state = getattr(getattr(quest, "state", None), "value", None)
+ 122:                 inventory = self.service.inventory("player")
+ 123:                 ore_amount = next(
+ 124:                     (
+ 125:                         amount for resource, amount, _unit in inventory.stocks
+ 126:                         if str(resource) == "iron_ore"
+ 127:                     ),
+ 128:                     0,
+ 129:                 )
+ 130:                 collect = next(
+ 131:                     (
+
+ 196:                     or water_amount < 1
+ 197:                     or not objectives.get("buy_bread", ()).completed
+ 198:                     or not objectives.get("buy_water", ()).completed
+ 199:                 ):
+ 200:                     continue
+ 201:             visible.append(choice)
+ 202:         return tuple(visible)
+ 203: 
+ 204:     def _open_default(self):
+ 205:         bundle = self.service.application.holder.current
+ 206:         actors = bundle.actors.actors()
+ 207:         npcs = bundle.social.npcs.all()
+ 208:         dialogues = tuple(sorted(bundle.social.dialogues))
+ 209: 
+ 210:         if not actors or not npcs or not dialogues:
+ 211:             self.message = "KonuÅŸulacak NPC veya diyalog bulunamadÄ±."
+ 212:             return
+ 213: 
+ 214:         try:
+ 215:             actor = next(
+ 216:                 (item for item in actors if item.actor_id == "hero"),
+ 217:                 actors[0],
+ 218:             )
+ 219:             npc = next(
+ 220:                 (item for item in npcs if item.npc_id == self.target_npc_id),
+ 221:                 next(
+ 222:                     (item for item in npcs if item.npc_id == "warden_lyra"),
+ 223:                     npcs[0],
+ 224:                 ),
+ 225:             )
+ 226: 
+ 227:             dialogue_id = next(
+ 228:                 (
+ 229:                     dialogue_id
+ 230:                     for dialogue_id in dialogues
+
+ 262:             else:
+ 263:                 self.opening_stage = "dialogue"
+ 264:                 npc_name = npc.name
+ 265:                 self.message = f"{npc_name} ile konuÅŸuyorsun."
+ 266: 
+ 267:         except (KeyError, ValueError, RuntimeError) as error:
+ 268:             self.message = str(error)
+ 269: 
+ 270:     def handle(self, state):
+ 271:         if state.pressed("dialogue_history"):
+ 272:             self.history_open = not self.history_open
+ 273:             self.history_scroll = 76 * len(self.history) if self.history_open else 0
+ 274:             return None
+ 275: 
+ 276:         if self.history_open:
+ 277:             if state.mouse_wheel:
+ 278:                 self.history_scroll = max(0, self.history_scroll - state.mouse_wheel * 28)
+ 279:             return None
+ 280: 
+ 281:         if self.opening_stage == "start":
+ 282:             if state.pressed("confirm") and self.node is None:
+ 283:                 self._open_default()
+ 284:                 if self.opening_stage == "creation":
+ 285:                     return "character_creation"
+ 286:             elif state.pressed("back") or state.pressed("world"):
+ 287:                 return self._close_dialogue()
+ 288:             return None
+ 289: 
+ 290:         if self.opening_stage == "creation":
+ 291:             return "character_creation"
+ 292: 
+ 293:         if self.name_entry_active:
+ 294:             if state.pressed("back"):
+ 295:                 self.message = (
+ 296:                     "KÃ¶ye girmek iÃ§in Ã¶nce adÄ±nÄ± sÃ¶ylemelisin."
+
+========== game_ui\screens\inventory_screen.py ==========
+   9: 
+  10:     TABS = ("Envanter", "KuÅŸanÄ±mlar", "GÃ¶rev EÅŸyalarÄ±", "TÃ¼ketilebilir", "DiÄŸer")
+  11:     SLOTS = (
+  12:         ("head", "BaÅŸ"), ("chest", "GÃ¶vde"), ("hands", "Eller"),
+  13:         ("legs", "Bacak"), ("feet", "Ayak"), ("main_hand", "Ana El"),
+  14:         ("off_hand", "Yan El"), ("accessory", "Aksesuar"),
+  15:     )
+  16: 
+  17:     def __init__(self, service, inventory_id="player"):
+  18:         self.service = service
+  19:         self.inventory_id = inventory_id
+  20:         self.tab = 0
+  21:         self.selected = 0
+  22:         self.message = "Bir eÅŸya seÃ§in. E: KuÅŸan | Enter: Kullan"
+  23:         self.slot_order = []
+  24:         self.drag_index = None
+  25:         self.drag_position = None
+  26:         self.drag_moved = False
+  27: 
+  28:     @property
+  29:     def pointer_capture(self):
+  30:         return self.drag_index is not None
+  31: 
+  32:     def _items(self):
+  33:         return list(self.service.inventory(self.inventory_id).items)
+  34: 
+  35:     def _entries(self):
+  36:         snapshot = self.service.inventory(self.inventory_id)
+  37:         entries = (
+  38:             [("item", item_id, amount) for item_id, amount in snapshot.items]
+  39:             + [("resource", resource, amount) for resource, amount, _unit in snapshot.stocks]
+  40:         )
+  41:         by_key = {self._entry_key(entry): entry for entry in entries}
+  42:         order = list(self.slot_order)
+  43:         if not order:
+
+ 128: 
+ 129:     def _selected_item(self):
+ 130:         entries = self._slot_entries()
+ 131:         if self.selected >= len(entries) or entries[self.selected] is None:
+ 132:             return None
+ 133:         kind, entry_id, _amount = entries[self.selected]
+ 134:         return self.service.item(entry_id) if kind == "item" else None
+ 135: 
+ 136:     def handle(self, state):
+ 137:         if state.pressed("world") or state.pressed("back"):
+ 138:             return "local_map"
+ 139:         if state.pressed("market"):
+ 140:             return "market"
+ 141:         if state.pressed("character"):
+ 142:             return "character"
+ 143:         if state.pressed("left"):
+ 144:             self.tab = (self.tab - 1) % len(self.TABS)
+ 145:         if state.pressed("right"):
+ 146:             self.tab = (self.tab + 1) % len(self.TABS)
+ 147:         if state.pressed("up"):
+ 148:             self.selected = max(0, self.selected - 1)
+ 149:         if state.pressed("down"):
+ 150:             self.selected += 1
+ 151:         entries = self._entries()
+ 152:         if entries:
+ 153:             self.selected %= 20
+ 154:         if state.mouse_clicked and state.mouse_pos is not None:
+ 155:             x, y = state.mouse_pos
+ 156:             for index in range(len(self.TABS)):
+ 157:                 rect = (48 + index * 142, 190, 132, 34)
+ 158:                 if rect[0] <= x <= rect[0] + rect[2] and rect[1] <= y <= rect[1] + rect[3]:
+ 159:                     self.tab = index
+ 160:                     return None
+ 161:             slot = self._slot_at(state.mouse_pos)
+ 162:             if slot is not None and slot < len(self._slot_entries()) and self._slot_entries()[slot] is not None:
+
+========== resources\inventory.py ==========
+   1: """Independent resource inventory domain object."""
+   2: 
+   3: from .resource import Quantity, ResourceType
+   4: 
+   5: 
+   6: class Inventory:
+   7:     """Deterministic, single-threaded container for resource stock."""
+   8: 
+   9:     def __init__(self) -> None:
+  10:         self._stocks: dict[ResourceType, Quantity] = {}
+  11:         self._items: dict[str, int] = {}
+  12: 
+  13:     def add_item(self, item_id: str, quantity: int = 1) -> None:
+  14:         self._validate_item(item_id, quantity)
+  15:         self._items[item_id] = self._items.get(item_id, 0) + quantity
+  16: 
+  17:     def remove_item(self, item_id: str, quantity: int = 1) -> None:
+  18:         self._validate_item(item_id, quantity)
+  19:         current = self._items.get(item_id, 0)
+  20:         if current < quantity:
+  21:             raise ValueError("Insufficient item stock.")
+  22:         if current == quantity:
+  23:             del self._items[item_id]
+  24:         else:
+  25:             self._items[item_id] = current - quantity
+  26: 
+  27:     def item_quantity(self, item_id: str) -> int:
+  28:         self._validate_item(item_id, 0)
+  29:         return self._items.get(item_id, 0)
+  30: 
+  31:     def item_snapshot(self) -> tuple[tuple[str, int], ...]:
+  32:         return tuple(sorted(self._items.items()))
+  33: 
+  34:     def total_weight(self, item_catalog=None) -> float:
+  35:         if item_catalog is None:
+  36:             return 0.0
+  37:         return sum(
+  38:             item_catalog[item_id].weight * quantity
+  39:             for item_id, quantity in self._items.items()
+  40:             if item_id in item_catalog
+  41:         )
+  42: 
+  43:     def add(self, resource_type: ResourceType, quantity: Quantity) -> None:
+

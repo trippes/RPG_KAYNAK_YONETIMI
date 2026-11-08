@@ -9,7 +9,7 @@ those rules.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterable
+from typing import Callable, Iterable
 
 from core.time import Tick
 from core.actions import ActionType, action_tick_cost
@@ -128,6 +128,7 @@ class GameplayService:
         self._character_factory = None
         self._quest_reward_accounts: dict[str, str] = {}
         self._quest_reward_inventories: dict[str, str] = {}
+        self._dialogue_actions: dict[str, Callable[[str, str], None]] = {}
 
     @property
     def application(self) -> GameApplication:
@@ -253,9 +254,13 @@ class GameplayService:
         return result
 
     def _rebind_content_quests(self) -> None:
-        """Reconnect optional content aliases to the restored canonical quest log."""
         quest_log = self._current_bundle().quest_log
-        for attribute in ("available_forest_quest", "carpenter_quest", "inn_quest", "blacksmith_quest"):
+        for attribute in (
+            "available_forest_quest",
+            "carpenter_quest",
+            "inn_quest",
+            "blacksmith_quest",
+        ):
             current = getattr(self, attribute, None)
             quest_id = getattr(current, "quest_id", None)
             if quest_id is None:
@@ -653,6 +658,20 @@ class GameplayService:
 
     def register_dialogue(self, dialogue: Dialogue) -> Dialogue:
         return self._current_bundle().social.add_dialogue(dialogue)
+    def register_dialogue_action(
+    self,
+    action_id: str,
+    handler: Callable[[str, str], None],
+) -> None:
+    """Register a reusable handler for a dialogue action."""
+    if not isinstance(action_id, str) or not action_id.strip():
+        raise ValueError("action_id must be a non-empty string.")
+    if not callable(handler):
+        raise TypeError("handler must be callable.")
+    if action_id in self._dialogue_actions:
+        raise ValueError(f"Dialogue action already registered: {action_id}")
+
+    self._dialogue_actions[action_id] = handler
 
     def talk_to_npc(self, actor_id: str, npc_id: str, dialogue_id: str, node_id: str | None = None):
         bundle = self._current_bundle()

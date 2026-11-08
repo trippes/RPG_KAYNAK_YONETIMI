@@ -1,0 +1,247 @@
+﻿
+  application\content_pack.py:29:    world_id: str = "demo_valley"
+  application\content_pack.py:30:    hero_id: str = "hero"
+  application\content_pack.py:31:    village_id: str = "village"
+  application\content_pack.py:32:    forest_id: str = "forest"
+  application\content_pack.py:33:    faction_id: str = "wardens"
+  application\content_pack.py:34:    npc_id: str = "warden_lyra"
+  application\content_pack.py:35:    quest_id: str = "forest_supplies"
+  application\content_pack.py:36:    carpenter_id: str = "village_carpenter"
+> application\content_pack.py:37:    carpenter_quest_id: str = "carpenter_repair"
+  application\content_pack.py:38:    blacksmith_id: str = "village_blacksmith"
+> application\content_pack.py:39:    blacksmith_quest_id: str = "blacksmith_iron"
+  application\content_pack.py:40:    iron_node_id: str = "north_iron_mine"
+> application\content_pack.py:41:    inn_quest_id: str = "inn_supplies"
+  application\content_pack.py:42:    node_id: str = "forest_wood"
+  application\content_pack.py:43:    inventory_id: str = "player"
+  application\content_pack.py:44:    merchant_id: str = "village_merchant"
+  application\content_pack.py:45:    merchant_inventory_id: str = "merchant"
+  application\content_pack.py:46:    market_offer_id: str = "market_plank"
+  application\content_pack.py:47:    bread_offer_id: str = "market_bread"
+  application\content_pack.py:48:    water_offer_id: str = "market_water"
+  application\content_pack.py:49:    innkeeper_id: str = "village_innkeeper"
+  application\content_pack.py:50:    enemy_id: str = "forest_wolf"
+  application\content_pack.py:51:    encounter_id: str = "forest_wolf_encounter"
+  application\content_pack.py:52:    
+  application\content_pack.py:53:
+  application\content_pack.py:54:
+  application\content_pack.py:55:class ContentDefinitionError(ValueError):
+  application\content_pack.py:227:    )
+  application\content_pack.py:228:    dialogue_data = definition["dialogue"]
+  application\content_pack.py:229:    nodes = tuple(
+  application\content_pack.py:230:        DialogueNode(
+  application\content_pack.py:231:            node_data["id"],
+  application\content_pack.py:232:            resolve_id("npc_id"),
+  application\content_pack.py:233:            node_data["text"],
+  application\content_pack.py:234:            tuple(
+> application\content_pack.py:235:        DialogueChoice(
+  application\content_pack.py:236:            choice["id"],
+  application\content_pack.py:237:            choice["text"],
+  application\content_pack.py:238:            choice.get("next"),
+  application\content_pack.py:239:            action=choice.get("action"),
+  application\content_pack.py:240:)
+  application\content_pack.py:241:                for choice in node_data.get("choices", ())
+  application\content_pack.py:242:            ),
+  application\content_pack.py:243:        )
+  application\content_pack.py:244:        for node_data in dialogue_data["nodes"]
+  application\content_pack.py:245:    )
+  application\content_pack.py:246:    service.register_dialogue(
+  application\content_pack.py:247:        Dialogue(dialogue_data["id"], nodes, dialogue_data["start_node"])
+  application\content_pack.py:248:    )
+  application\content_pack.py:249:    world_map = _build_world_map_from_definition(
+  application\content_pack.py:468:            position=Position(*(blacksmith_data.get("position") or (27, 15))),
+  application\content_pack.py:469:        )
+  application\content_pack.py:470:    )
+  application\content_pack.py:471:
+  application\content_pack.py:472:    dialogue_data = definition["dialogue"]
+  application\content_pack.py:473:    nodes = []
+  application\content_pack.py:474:    for node_data in dialogue_data["nodes"]:
+  application\content_pack.py:475:        choices = tuple(
+> application\content_pack.py:476:            DialogueChoice(
+  application\content_pack.py:477:        choice["id"],
+  application\content_pack.py:478:        choice["text"],
+  application\content_pack.py:479:        choice.get("next"),
+  application\content_pack.py:480:        action=choice.get("action"),
+  application\content_pack.py:481:    )
+  application\content_pack.py:482:    for choice in node_data.get("choices", ())
+  application\content_pack.py:483:)
+  application\content_pack.py:484:        nodes.append(DialogueNode(node_data["id"], resolve_id("npc_id"), node_data["text"], choices))
+  application\content_pack.py:485:    service.register_dialogue(Dialogue(dialogue_data["id"], tuple(nodes), dialogue_data["start_node"]))
+  application\content_pack.py:486:    carpenter_dialogue = Dialogue(
+  application\content_pack.py:487:        "carpenter_intro",
+  application\content_pack.py:488:        (
+  application\content_pack.py:489:            DialogueNode(
+  application\content_pack.py:490:                "carpenter_start",
+  application\content_pack.py:491:                resolve_id("carpenter_id"),
+  application\content_pack.py:492:                "Ben köyün marangoz ustasıyım. Yardım edecek birini arıyordum. "
+  application\content_pack.py:493:                "Benim için çalışmak ister misin?",
+  application\content_pack.py:494:                (
+> application\content_pack.py:495:                    DialogueChoice(
+> application\content_pack.py:496:                        "accept_carpenter_quest",
+  application\content_pack.py:497:                        "Evet, işi kabul ediyorum.",
+> application\content_pack.py:498:                        action="accept_carpenter_quest",
+  application\content_pack.py:499:                    ),
+> application\content_pack.py:500:                    DialogueChoice(
+  application\content_pack.py:501:                        "deliver_carpenter_wood",
+  application\content_pack.py:502:                        "İstediğin odunları getirdim.",
+  application\content_pack.py:503:                        action="deliver_carpenter_wood",
+  application\content_pack.py:504:                    ),
+> application\content_pack.py:505:                    DialogueChoice(
+> application\content_pack.py:506:                        "accept_inn_quest",
+  application\content_pack.py:507:                        "Han için ekmek ve su alabilirim.",
+> application\content_pack.py:508:                        action="accept_inn_quest",
+  application\content_pack.py:509:                    ),
+> application\content_pack.py:510:                    DialogueChoice(
+  application\content_pack.py:511:                        "deliver_inn_supplies",
+  application\content_pack.py:512:                        "Ekmek ve suyu getirdim.",
+  application\content_pack.py:513:                        action="deliver_inn_supplies",
+  application\content_pack.py:514:                    ),
+> application\content_pack.py:515:                    DialogueChoice(
+> application\content_pack.py:516:                        "decline_carpenter_quest",
+  application\content_pack.py:517:                        "Şimdilik hayır.",
+  application\content_pack.py:518:                    ),
+  application\content_pack.py:519:                ),
+  application\content_pack.py:520:            ),
+  application\content_pack.py:521:        ),
+  application\content_pack.py:522:        "carpenter_start",
+  application\content_pack.py:523:    )
+  application\content_pack.py:524:    service.register_dialogue(carpenter_dialogue)
+  application\content_pack.py:525:    service.register_dialogue(Dialogue(
+  application\content_pack.py:526:        "blacksmith_intro",
+  application\content_pack.py:527:        (
+  application\content_pack.py:528:            DialogueNode(
+  application\content_pack.py:529:                "blacksmith_start",
+  application\content_pack.py:530:                resolve_id("blacksmith_id"),
+  application\content_pack.py:531:                "Demir ocağından demir cevheri getirirsen onu dövüp sana sağlam bir demir kılıç yapabilirim.",
+  application\content_pack.py:532:                (
+> application\content_pack.py:533:                    DialogueChoice(
+> application\content_pack.py:534:                        "accept_blacksmith_quest",
+  application\content_pack.py:535:                        "Demir cevheri toplamaya gidiyorum.",
+> application\content_pack.py:536:                        action="accept_blacksmith_quest",
+  application\content_pack.py:537:                    ),
+> application\content_pack.py:538:                    DialogueChoice(
+  application\content_pack.py:539:                        "deliver_blacksmith_ore",
+  application\content_pack.py:540:                        "İstediğin demir cevherini getirdim.",
+  application\content_pack.py:541:                        action="deliver_blacksmith_ore",
+  application\content_pack.py:542:                    ),
+  application\content_pack.py:543:                ),
+  application\content_pack.py:544:            ),
+  application\content_pack.py:545:        ),
+  application\content_pack.py:546:        "blacksmith_start",
+  application\content_pack.py:547:    ))
+  application\content_pack.py:548:    service.register_dialogue(Dialogue(
+  application\content_pack.py:549:        "innkeeper_intro",
+  application\content_pack.py:550:        (
+  application\content_pack.py:551:            DialogueNode(
+  application\content_pack.py:552:                "innkeeper_start",
+  application\content_pack.py:553:                resolve_id("innkeeper_id"),
+  application\content_pack.py:554:                "Hoş geldin. Hanımızda taze ekmek ve temiz su bulunur.",
+  application\content_pack.py:555:                (
+> application\content_pack.py:556:                    DialogueChoice(
+  application\content_pack.py:557:                        "open_inn_market",
+  application\content_pack.py:558:                        "Ekmek ve su satın almak istiyorum.",
+  application\content_pack.py:559:                        action="open_market",
+  application\content_pack.py:560:                    ),
+> application\content_pack.py:561:                    DialogueChoice("leave_inn", "Teşekkürler, birazdan bakarım."),
+  application\content_pack.py:562:                ),
+  application\content_pack.py:563:            ),
+  application\content_pack.py:564:        ),
+  application\content_pack.py:565:        "innkeeper_start",
+  application\content_pack.py:566:    ))
+  application\content_pack.py:567:
+  application\content_pack.py:568:    quest_data = definition["quest"]
+  application\content_pack.py:569:    objectives = tuple(
+> application\content_pack.py:570:        Objective(item["id"], item["description"], ObjectiveType(item["type"]), resolve_id(item["target_id"]))
+  application\content_pack.py:571:        for item in quest_data["objectives"]
+  application\content_pack.py:572:    )
+  application\content_pack.py:573:    reward_data = quest_data["reward"]
+  application\content_pack.py:574:    quest = Quest(
+  application\content_pack.py:575:        resolve_id("quest_id"), quest_data["title"], objectives,
+  application\content_pack.py:576:        Reward(
+  application\content_pack.py:577:            experience=reward_data.get("experience", 0),
+  application\content_pack.py:578:            currency=reward_data["currency"],
+  application\content_pack.py:579:            items=tuple(tuple(item) for item in reward_data["items"]),
+  application\content_pack.py:580:            reputation=((resolve_id("faction_id"), reward_data["reputation"]),),
+  application\content_pack.py:581:        ),
+  application\content_pack.py:582:    )
+  application\content_pack.py:583:    service.available_forest_quest = quest
+> application\content_pack.py:584:    carpenter_quest = Quest(
+> application\content_pack.py:585:        resolve_id("carpenter_quest_id"),
+  application\content_pack.py:586:        "Marangozun Yardımcısı",
+  application\content_pack.py:587:        (
+> application\content_pack.py:588:            Objective(
+  application\content_pack.py:589:                "collect_wood",
+  application\content_pack.py:590:                "Marangoz için odun topla",
+  application\content_pack.py:591:                ObjectiveType.COLLECT,
+  application\content_pack.py:592:                resolve_id("node_id"),
+  application\content_pack.py:593:                required=3,
+  application\content_pack.py:594:            ),
+> application\content_pack.py:595:            Objective(
+  application\content_pack.py:596:                "deliver_wood",
+  application\content_pack.py:597:                "Odunları Marangoz Hilmi'ye teslim et",
+  application\content_pack.py:598:                ObjectiveType.CUSTOM,
+  application\content_pack.py:599:                resolve_id("carpenter_id"),
+  application\content_pack.py:600:                required=1,
+  application\content_pack.py:601:            ),
+  application\content_pack.py:602:        ),
+  application\content_pack.py:603:        Reward(
+  application\content_pack.py:604:            experience=150,
+  application\content_pack.py:605:            currency=15,
+  application\content_pack.py:606:            items=(),
+  application\content_pack.py:607:            reputation=((resolve_id("faction_id"), 5),),
+  application\content_pack.py:608:        ),
+  application\content_pack.py:609:    )
+> application\content_pack.py:610:    service.carpenter_quest = carpenter_quest
+> application\content_pack.py:611:    service.carpenter_quest_reward_inventory_id = resolve_id("inventory_id")
+> application\content_pack.py:612:    service.inn_quest = Quest(
+> application\content_pack.py:613:        resolve_id("inn_quest_id"),
+  application\content_pack.py:614:        "Handan Erzak Al",
+  application\content_pack.py:615:        (
+> application\content_pack.py:616:            Objective("buy_bread", "Handan ekmek al", ObjectiveType.COLLECT, "bread"),
+> application\content_pack.py:617:            Objective("buy_water", "Handan su al", ObjectiveType.COLLECT, "water"),
+> application\content_pack.py:618:            Objective("deliver_supplies", "Ekmek ve suyu Hilmi'ye teslim et", ObjectiveType.CUSTOM, "carpenter_id"),
+  application\content_pack.py:619:        ),
+  application\content_pack.py:620:        Reward(experience=100, currency=10),
+  application\content_pack.py:621:    )
+> application\content_pack.py:622:    service.blacksmith_quest = Quest(
+> application\content_pack.py:623:        resolve_id("blacksmith_quest_id"),
+  application\content_pack.py:624:        "Demirciye Cevher Getir",
+  application\content_pack.py:625:        (
+> application\content_pack.py:626:            Objective(
+  application\content_pack.py:627:                "collect_iron_ore",
+  application\content_pack.py:628:                "Demir madenlerinden demir cevheri topla",
+  application\content_pack.py:629:                ObjectiveType.COLLECT,
+  application\content_pack.py:630:                resolve_id("iron_node_id"),
+  application\content_pack.py:631:                required=3,
+  application\content_pack.py:632:            ),
+> application\content_pack.py:633:            Objective(
+  application\content_pack.py:634:                "deliver_iron_ore",
+  application\content_pack.py:635:                "Demir cevherini demirciye teslim et",
+  application\content_pack.py:636:                ObjectiveType.CUSTOM,
+  application\content_pack.py:637:                resolve_id("blacksmith_id"),
+  application\content_pack.py:638:                required=1,
+  application\content_pack.py:639:            ),
+  application\content_pack.py:640:        ),
+  application\content_pack.py:641:        Reward(experience=200, items=(("iron_sword", 1),)),
+  application\content_pack.py:642:    )
+  application\content_pack.py:643:    bundle.quest_log.add(quest)
+> application\content_pack.py:644:    bundle.quest_log.add(carpenter_quest)
+> application\content_pack.py:645:    bundle.quest_log.add(service.inn_quest)
+> application\content_pack.py:646:    bundle.quest_log.add(service.blacksmith_quest)
+  application\content_pack.py:647:    
+  application\content_pack.py:648:    world_map = WorldMap(world.world_id)
+  application\content_pack.py:649:    for location in definition["locations"]:
+  application\content_pack.py:650:        world_map.add_location(Location(
+  application\content_pack.py:651:            resolve_id(location["id"]), location["name"],
+  application\content_pack.py:652:            tuple(location["position"]) if location.get("position") is not None else None,
+  application\content_pack.py:653:            location.get("description", ""),
+  application\content_pack.py:654:            location.get("type", "unknown"),
+  application\content_pack.py:655:            tuple(location.get("activities", ())),
+  application\content_pack.py:656:            tuple(
+  application\content_pack.py:657:                (
+  application\content_pack.py:658:                    landmark["id"], landmark["name"], tuple(landmark.get("position", (180, 180))),
+  application\content_pack.py:659:                    tuple(landmark.get("activities", ())), landmark.get("description", ""),
+  application\content_pack.py:660:                )
+
+
+

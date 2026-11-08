@@ -1,0 +1,380 @@
+
+========== game_ui\screens\dialogue_screen.py [120-210] ==========
+
+ 120:                 quest = getattr(self.service, "blacksmith_quest", None)
+ 121:                 state = getattr(getattr(quest, "state", None), "value", None)
+ 122:                 inventory = self.service.inventory("player")
+ 123:                 ore_amount = next(
+ 124:                     (
+ 125:                         amount for resource, amount, _unit in inventory.stocks
+ 126:                         if str(resource) == "iron_ore"
+ 127:                     ),
+ 128:                     0,
+ 129:                 )
+ 130:                 collect = next(
+ 131:                     (
+ 132:                         item for item in quest.objectives
+ 133:                         if item.objective_id == "collect_iron_ore"
+ 134:                     ),
+ 135:                     None,
+ 136:                 ) if quest is not None else None
+ 137:                 visible = []
+ 138:                 for choice in choices:
+ 139:                     if choice.choice_id == "accept_blacksmith_quest" and state != "available":
+ 140:                         continue
+ 141:                     if choice.choice_id == "deliver_blacksmith_ore" and (
+ 142:                         state != "active"
+ 143:                         or collect is None
+ 144:                         or not collect.completed
+ 145:                         or ore_amount < 3
+ 146:                     ):
+ 147:                         continue
+ 148:                     visible.append(choice)
+ 149:                 return tuple(visible)
+ 150:             return choices
+ 151:         quest = getattr(self.service, "carpenter_quest", None)
+ 152:         inn_quest = getattr(self.service, "inn_quest", None)
+ 153:         state = getattr(getattr(quest, "state", None), "value", None)
+ 154:         inn_state = getattr(getattr(inn_quest, "state", None), "value", None)
+ 155:         inventory = self.service.inventory("player")
+ 156:         wood_amount = next(
+ 157:             (amount for resource, amount, _unit in inventory.stocks if str(resource) == "wood"),
+ 158:             0,
+ 159:         )
+ 160:         visible = []
+ 161:         for choice in choices:
+ 162:             if choice.choice_id == "accept_carpenter_quest" and state != "available":
+ 163:                 continue
+ 164:             if choice.choice_id == "decline_carpenter_quest" and state != "available":
+ 165:                 continue
+ 166:             if choice.choice_id == "deliver_carpenter_wood":
+ 167:                 collect = next(
+ 168:                     (
+ 169:                         item for item in quest.objectives
+ 170:                         if item.objective_id == "collect_wood"
+ 171:                     ),
+ 172:                     None,
+ 173:                 ) if quest is not None else None
+ 174:                 if state != "active" or collect is None or not collect.completed or wood_amount < 3:
+ 175:                     continue
+ 176:             if choice.choice_id == "accept_inn_quest" and (
+ 177:                 state != "completed" or inn_state != "available"
+ 178:             ):
+ 179:                 continue
+ 180:             if choice.choice_id == "deliver_inn_supplies":
+ 181:                 objectives = {
+ 182:                     item.objective_id: item
+ 183:                     for item in inn_quest.objectives
+ 184:                 } if inn_quest is not None else {}
+ 185:                 bread_amount = next(
+ 186:                     (amount for resource, amount, _unit in inventory.stocks if str(resource) == "bread"),
+ 187:                     0,
+ 188:                 )
+ 189:                 water_amount = next(
+ 190:                     (amount for resource, amount, _unit in inventory.stocks if str(resource) == "water"),
+ 191:                     0,
+ 192:                 )
+ 193:                 if (
+ 194:                     inn_state != "active"
+ 195:                     or bread_amount < 1
+ 196:                     or water_amount < 1
+ 197:                     or not objectives.get("buy_bread", ()).completed
+ 198:                     or not objectives.get("buy_water", ()).completed
+ 199:                 ):
+ 200:                     continue
+ 201:             visible.append(choice)
+ 202:         return tuple(visible)
+ 203: 
+ 204:     def _open_default(self):
+ 205:         bundle = self.service.application.holder.current
+ 206:         actors = bundle.actors.actors()
+ 207:         npcs = bundle.social.npcs.all()
+ 208:         dialogues = tuple(sorted(bundle.social.dialogues))
+ 209: 
+ 210:         if not actors or not npcs or not dialogues:
+
+========== game_ui\screens\dialogue_screen.py [390-465] ==========
+
+ 390:             clicked = self._choice_at_mouse(state, len(visible_choices))
+ 391:             if clicked is not None:
+ 392:                 self.selected = clicked
+ 393: 
+ 394:             if state.pressed("up"):
+ 395:                 self.selected = (
+ 396:                     self.selected - 1
+ 397:                 ) % len(visible_choices)
+ 398: 
+ 399:             if state.pressed("down"):
+ 400:                 self.selected = (
+ 401:                     self.selected + 1
+ 402:                 ) % len(visible_choices)
+ 403: 
+ 404:             if state.pressed("confirm"):
+ 405:                 actor_id, npc_id, dialogue_id = self.context
+ 406: 
+ 407:                 try:
+ 408:                     choice = visible_choices[self.selected]
+ 409:                     self._add_history("Sen", choice.text)
+ 410:                     if (
+ 411:                         npc_id == "village_carpenter"
+ 412:                         and choice.choice_id == "accept_carpenter_quest"
+ 413:                     ):
+ 414:                         self.service.accept_carpenter_quest(actor_id, "player")
+ 415:                         self.custom_text = (
+ 416:                             "Harika. Kuzey Ormanı'ndaki ağaçlardan 3 odun "
+ 417:                             "topla ve bana geri getir."
+ 418:                         )
+ 419:                         self.opening_stage = "response"
+ 420:                         self.message = "Marangoz Hilmi görevi verdi."
+ 421:                         return None
+ 422:                     if (
+ 423:                         npc_id == "village_carpenter"
+ 424:                         and choice.choice_id == "deliver_carpenter_wood"
+ 425:                     ):
+ 426:                         self.service.deliver_carpenter_wood(
+ 427:                             actor_id, npc_id, "player",
+ 428:                         )
+ 429:                         self.custom_text = (
+ 430:                             "İşte böyle! Bu odunlarla köyün çatısını "
+ 431:                             "onarabileceğim. Ödülün burada."
+ 432:                         )
+ 433:                         self.opening_stage = "welcome"
+ 434:                         self.message = "Odunlar Hilmi'ye teslim edildi."
+ 435:                         return None
+ 436:                     if (
+ 437:                         npc_id == "village_carpenter"
+ 438:                         and choice.choice_id == "accept_inn_quest"
+ 439:                     ):
+ 440:                         self.service.accept_inn_quest(actor_id, "player")
+ 441:                         self.custom_text = (
+ 442:                             "Köy hanına gidip bir ekmek ve bir su al. "
+ 443:                             "Bunları bana getirirsen işimiz tamamlanır."
+ 444:                         )
+ 445:                         self.opening_stage = "response"
+ 446:                         self.message = "Hilmi ikinci görevi verdi."
+ 447:                         return None
+ 448:                     if (
+ 449:                         npc_id == "village_carpenter"
+ 450:                         and choice.choice_id == "deliver_inn_supplies"
+ 451:                     ):
+ 452:                         self.service.deliver_inn_supplies(
+ 453:                             actor_id, npc_id, "player",
+ 454:                         )
+ 455:                         self.custom_text = (
+ 456:                             "Harika iş çıkardın. Ekmek ve su tam zamanında "
+ 457:                             "geldi. Marangoz atölyesi sana minnettar."
+ 458:                         )
+ 459:                         self.opening_stage = "welcome"
+ 460:                         self.message = "İkinci görev tamamlandı, ödülünü aldın."
+ 461:                         return None
+ 462:                     self.node = self.service.choose_dialogue(
+ 463:                         actor_id,
+ 464:                         npc_id,
+ 465:                         dialogue_id,
+
+========== game_ui\screens\inventory_screen.py [160-210] ==========
+
+ 160:                     return None
+ 161:             slot = self._slot_at(state.mouse_pos)
+ 162:             if slot is not None and slot < len(self._slot_entries()) and self._slot_entries()[slot] is not None:
+ 163:                 self.selected = slot
+ 164:                 self._begin_drag(slot, state.mouse_pos)
+ 165:         if self.drag_index is not None and state.mouse_motion and state.mouse_pos is not None:
+ 166:             self.drag_position = state.mouse_pos
+ 167:             self.drag_moved = True
+ 168:         if self.drag_index is not None and state.mouse_button_up:
+ 169:             target = self._slot_at(state.mouse_pos) if state.mouse_pos else None
+ 170:             if self.drag_moved:
+ 171:                 self._finish_drag(target)
+ 172:             else:
+ 173:                 self.drag_index = None
+ 174:                 self.drag_position = None
+ 175:                 self.drag_moved = False
+ 176:         item = self._selected_item()
+ 177:         if state.pressed("equip") and item is not None:
+ 178:             try:
+ 179:                 self.service.equip_item("hero", self.inventory_id, item.item_id)
+ 180:                 self.message = f"{item.name} kuşanıldı."
+ 181:             except (KeyError, ValueError, RuntimeError) as error:
+ 182:                 self.message = f"Kuşanılamadı: {error}"
+ 183:         if state.pressed("confirm"):
+ 184:             stocks = self.service.inventory(self.inventory_id).stocks
+ 185:             consumable = next(
+ 186:                 (resource for resource, amount, _unit in stocks
+ 187:                  if resource in {"bread", "water"} and amount > 0),
+ 188:                 None,
+ 189:             )
+ 190:             if consumable is None:
+ 191:                 self.message = "Seçili eşya kuşanılabilir veya kullanılamaz."
+ 192:             else:
+ 193:                 try:
+ 194:                     hp = self.service.consume_item("hero", self.inventory_id, consumable)
+ 195:                     self.message = f"{resource_name(consumable)} tüketildi. Can: {hp}"
+ 196:                 except (KeyError, ValueError, RuntimeError) as error:
+ 197:                     self.message = f"Tüketilemedi: {error}"
+ 198:         return None
+ 199: 
+ 200:     def render(self, renderer):
+ 201:         snapshot = self.service.inventory(self.inventory_id)
+ 202:         stats = self.service.actor_stats("hero") or {}
+ 203:         equipment = self.service.equipment("hero")
+ 204:         items = self._items()
+ 205:         entries = self._entries()
+ 206:         slot_entries = self._slot_entries()
+ 207:         renderer.frame("Envanter")
+ 208:         renderer.hud(self.service)
+ 209: 
+ 210:         # Main parchment-like inventory frame.
+
+========== application\content_pack.py [1-150] ==========
+
+   1: """Data-driven content loading for the playable demo slice."""
+   2: 
+   3: from __future__ import annotations
+   4: 
+   5: import json
+   6: import sys
+   7: from dataclasses import dataclass, fields
+   8: from pathlib import Path
+   9: from types import MappingProxyType
+  10: 
+  11: from application import GameplayService
+  12: from application import ProductionFacility
+  13: from character import Ability, CharacterClass, CharacterFactory, EquipmentSlot, ItemDefinition, Race
+  14: from combat import Combatant
+  15: from core.domain.spatial import Position
+  16: from economy import Currency, Merchant, Money
+  17: from npc import Faction, NPC
+  18: from quests import Dialogue, DialogueChoice, DialogueNode, Objective, ObjectiveType, Quest, Reward
+  19: from resources import Inventory, Quantity, Recipe, ResourceType, ResourceUnit, WorldResourceNode
+  20: from world import Location, WorldMap
+  21: 
+  22: 
+  23: DEFAULT_CONTENT_PATH = Path(__file__).resolve().parent.parent / "data" / "demo_content.json"
+  24: CONTENT_SCHEMA_VERSION = 1
+  25: 
+  26: 
+  27: @dataclass(frozen=True)
+  28: class DemoContentIds:
+  29:     world_id: str = "demo_valley"
+  30:     hero_id: str = "hero"
+  31:     village_id: str = "village"
+  32:     forest_id: str = "forest"
+  33:     faction_id: str = "wardens"
+  34:     npc_id: str = "warden_lyra"
+  35:     quest_id: str = "forest_supplies"
+  36:     carpenter_id: str = "village_carpenter"
+  37:     carpenter_quest_id: str = "carpenter_repair"
+  38:     blacksmith_id: str = "village_blacksmith"
+  39:     blacksmith_quest_id: str = "blacksmith_iron"
+  40:     iron_node_id: str = "north_iron_mine"
+  41:     inn_quest_id: str = "inn_supplies"
+  42:     node_id: str = "forest_wood"
+  43:     inventory_id: str = "player"
+  44:     merchant_id: str = "village_merchant"
+  45:     merchant_inventory_id: str = "merchant"
+  46:     market_offer_id: str = "market_plank"
+  47:     bread_offer_id: str = "market_bread"
+  48:     water_offer_id: str = "market_water"
+  49:     innkeeper_id: str = "village_innkeeper"
+  50:     enemy_id: str = "forest_wolf"
+  51:     encounter_id: str = "forest_wolf_encounter"
+  52:     
+  53: 
+  54: 
+  55: class ContentDefinitionError(ValueError):
+  56:     """Raised when a content definition cannot safely enter the runtime."""
+  57: 
+  58: 
+  59: def load_demo_content(path: str | Path | None = None) -> dict:
+  60:     """Load and validate a JSON content definition without mutating it."""
+  61:     if path is None:
+  62:         candidates = (
+  63:             DEFAULT_CONTENT_PATH,
+  64:             Path(sys.prefix) / "data" / "demo_content.json",
+  65:             Path(sys.prefix) / "demo_content.json",
+  66:         )
+  67:         source = next((candidate for candidate in candidates if candidate.exists()), candidates[0])
+  68:     else:
+  69:         source = Path(path)
+  70:     try:
+  71:         definition = json.loads(source.read_text(encoding="utf-8"))
+  72:     except (OSError, json.JSONDecodeError) as error:
+  73:         raise ContentDefinitionError(f"Content definition could not be loaded: {source}") from error
+  74:     if not isinstance(definition, dict):
+  75:         raise ContentDefinitionError("Content definition must be a JSON object.")
+  76:     if definition.get("schema_version") != CONTENT_SCHEMA_VERSION:
+  77:         raise ContentDefinitionError("Unsupported content definition schema version.")
+  78:     required = {"ids", "world", "character", "resources", "recipe", "locations", "faction", "npc", "dialogue", "quest", "merchant", "market_offer", "combat"}
+  79:     missing = sorted(required - definition.keys())
+  80:     if missing:
+  81:         raise ContentDefinitionError(f"Content definition is missing sections: {', '.join(missing)}")
+  82:     return definition
+  83: 
+  84: 
+  85: def load_opening_content(path: str | Path | None = None) -> dict:
+  86:     """Load only the definition sections required before character creation."""
+  87:     if path is None:
+  88:         candidates = (
+  89:             DEFAULT_CONTENT_PATH,
+  90:             Path(sys.prefix) / "data" / "demo_content.json",
+  91:             Path(sys.prefix) / "demo_content.json",
+  92:         )
+  93:         source = next((candidate for candidate in candidates if candidate.exists()), candidates[0])
+  94:     else:
+  95:         source = Path(path)
+  96:     try:
+  97:         definition = json.loads(source.read_text(encoding="utf-8"))
+  98:     except (OSError, json.JSONDecodeError) as error:
+  99:         raise ContentDefinitionError(f"Opening content definition could not be loaded: {source}") from error
+ 100:     if not isinstance(definition, dict):
+ 101:         raise ContentDefinitionError("Opening content definition must be a JSON object.")
+ 102:     if definition.get("schema_version") != CONTENT_SCHEMA_VERSION:
+ 103:         raise ContentDefinitionError("Unsupported content definition schema version.")
+ 104:     required = {"ids", "world", "character", "locations", "faction", "npc", "dialogue"}
+ 105:     missing = sorted(required - definition.keys())
+ 106:     if missing:
+ 107:         raise ContentDefinitionError(
+ 108:             f"Opening content definition is missing sections: {', '.join(missing)}"
+ 109:         )
+ 110:     return definition
+ 111: 
+ 112: 
+ 113: def _id_resolver(definition: dict, ids: DemoContentIds):
+ 114:     configured = definition["ids"]
+ 115:     valid_fields = {field.name for field in fields(DemoContentIds)}
+ 116:     if set(configured) != valid_fields:
+ 117:         raise ContentDefinitionError("Content ids must match DemoContentIds fields.")
+ 118:     replacements = {key: getattr(ids, key) for key in valid_fields}
+ 119:     return lambda key: replacements.get(key, key)
+ 120: 
+ 121: 
+ 122: def _quantity(raw: dict) -> Quantity:
+ 123:     return Quantity(int(raw["amount"]), ResourceUnit(raw.get("unit", "item")))
+ 124: 
+ 125: 
+ 126: def _resource_with_role(definition: dict, role: str) -> dict:
+ 127:     matches = [
+ 128:         resource for resource in definition["resources"]
+ 129:         if resource.get("role") == role
+ 130:     ]
+ 131:     if len(matches) != 1:
+ 132:         raise ContentDefinitionError(
+ 133:             f"Content must define exactly one resource with role: {role}"
+ 134:         )
+ 135:     return matches[0]
+ 136: 
+ 137: 
+ 138: def _recipe_output_for_resource(recipe: dict, resource_id: str) -> dict:
+ 139:     matches = [
+ 140:         output for output in recipe["outputs"]
+ 141:         if output["resource"] == resource_id
+ 142:     ]
+ 143:     if len(matches) != 1:
+ 144:         raise ContentDefinitionError(
+ 145:             f"Recipe must define exactly one output for resource: {resource_id}"
+ 146:         )
+ 147:     return matches[0]
+ 148: 
+ 149: 
+ 150: def _build_character_factory(character_data: dict) -> CharacterFactory:

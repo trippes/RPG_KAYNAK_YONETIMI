@@ -29,7 +29,7 @@ def main():
         print(game.bilgi())
         return
     game = oyun_olustur("Başlangıç Vadisi", width=24, height=16)
-    from game_ui.demo import create_demo_service
+    from game_ui.demo import create_opening_service
     from game_ui.game_window import launch
     from game_ui import load_backend
     try:
@@ -37,7 +37,7 @@ def main():
     except RuntimeError as error:
         raise SystemExit("Oynatmak için pygame-ce kurulmalı: pip install pygame-ce") from error
     try:
-        launch(create_demo_service(game), pygame)
+        launch(create_opening_service(game), pygame)
     except Exception as error:
         logger.exception("Interactive game session failed")
         raise SystemExit(f"Oyun başlatılamadı. Ayrıntılar logs/eldoria.log dosyasına yazıldı: {error}") from error

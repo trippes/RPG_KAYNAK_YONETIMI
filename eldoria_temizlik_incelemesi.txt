@@ -1,0 +1,126 @@
+﻿=== GIT DURUMU ===
+## main...origin/main [ahead 1]
+?? eldoria_temizlik_incelemesi.txt
+
+=== SON COMMIT ===
+6d91063 feat: add user save storage and reorganize game UI
+
+=== ILGILI DOSYALAR ===
+application\actor_persistence.py  [18194 bytes]
+application\content_pack.py  [24787 bytes]
+application\extended_persistence.py  [7393 bytes]
+application\production_persistence.py  [8346 bytes]
+application\save_codec.py  [1663 bytes]
+application\save_document.py  [8129 bytes]
+application\save_file_adapter.py  [2779 bytes]
+application\save_storage.py  [8950 bytes]
+backups\mouse_ui_20261027_121152\world_screen.py  [9056 bytes]
+backups\mouse_ui_20261027_121246\world_screen.py  [9056 bytes]
+character\character.py  [4660 bytes]
+character\character_factory.py  [1578 bytes]
+character\persistence.py  [7769 bytes]
+core\application\persistence.py  [692 bytes]
+core\application\world_runtime.py  [2021 bytes]
+core\domain\world_contract.py  [1986 bytes]
+core\world\world.py  [10938 bytes]
+core\world\world_id.py  [401 bytes]
+core\world\world_manager.py  [8073 bytes]
+data\demo_content.json  [18170 bytes]
+docs\architecture\01-package-layout.md  [1636 bytes]
+docs\architecture\19-world-runtime-separation.md  [2066 bytes]
+docs\architecture\20-persistence-preparation.md  [3208 bytes]
+docs\architecture\24-unified-persistence.md  [3587 bytes]
+docs\architecture\29-core17-world-actors-activities.md  [3757 bytes]
+docs\architecture\34-content-data-contract.md  [1181 bytes]
+economy\persistence.py  [5041 bytes]
+game_ui\screens\character_creation.py  [39957 bytes]
+game_ui\screens\character_screen.py  [5523 bytes]
+game_ui\screens\dialogue_screen.py  [26904 bytes]
+game_ui\screens\quest_log_screen.py  [13888 bytes]
+game_ui\screens\save_slots_screen.py  [14032 bytes]
+game_ui\screens\world_screen.py  [13194 bytes]
+inventory\item.py  [0 bytes]
+npc\npc.py  [1698 bytes]
+quests\dialogue.py  [2238 bytes]
+quests\persistence.py  [5367 bytes]
+quests\quest.py  [2780 bytes]
+resources\persistence.py  [27345 bytes]
+save\eldoria_save.json  [14652 bytes]
+save\eldoria_save.json.bak  [14566 bytes]
+save\save_manager.py  [0 bytes]
+tests\test_application\test_content_pack.py  [7809 bytes]
+tests\test_application\test_entity_world_boundary.py  [4494 bytes]
+tests\test_application\test_game_application_save.py  [7478 bytes]
+tests\test_application\test_persistence_session.py  [9297 bytes]
+tests\test_application\test_save_storage.py  [24319 bytes]
+tests\test_application\test_unified_save_document.py  [5865 bytes]
+tests\test_architecture\test_world_model_boundaries.py  [4996 bytes]
+tests\test_character\test_character_actor_integration.py  [6143 bytes]
+tests\test_domain\test_world_model.py  [5077 bytes]
+tests\test_resources\test_core13_world_cycle.py  [4843 bytes]
+tests\test_resources\test_persistence.py  [9478 bytes]
+tests\test_world\test_world.py  [7159 bytes]
+tests\test_world\test_world_clock.py  [3575 bytes]
+tests\test_world\test_world_entity_relation.py  [4253 bytes]
+tests\test_world\test_world_events.py  [4480 bytes]
+tests\test_world\test_world_id.py  [962 bytes]
+tests\test_world\test_world_manager.py  [3215 bytes]
+tests\test_world\test_world_manager_active_time.py  [4077 bytes]
+tests\test_world\test_world_manager_lifecycle.py  [6402 bytes]
+tests\test_world\test_world_registry_contract.py  [4980 bytes]
+tests\test_world\test_world_runtime_separation.py  [3214 bytes]
+tests\test_world\test_world_scheduler.py  [6230 bytes]
+world\world.py  [0 bytes]
+=== PROJE BAGIMLILIKLARI ===
+--- pyproject.toml ---
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rpg-kaynak-yonetimi"
+version = "3.0.0rc1"
+description = "Core, kaynak Ã¼retimi ve uygulama seviyesinde oynanabilir RPG simÃ¼lasyon altyapÄ±sÄ±"
+requires-python = ">=3.11"
+dependencies = ["pygame-ce>=2.5"]
+
+[project.scripts]
+rpg-kaynak-yonetimi = "main:main"
+
+[tool.setuptools]
+include-package-data = true
+py-modules = ["main"]
+
+[tool.setuptools.package-data]
+game_ui = ["assets/*.png"]
+
+[tool.setuptools.data-files]
+"." = ["data/demo_content.json", "data/playtest_balance.json"]
+
+[tool.unittest]
+test_command = "python -m unittest discover -s tests -t . -p test_*.py"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = [
+    "application*",
+    "character*",
+    "combat*",
+    "core*",
+    "economy*",
+    "inventory*",
+    "npc*",
+    "game_ui*",
+    "quests*",
+    "resources*",
+    "save*",
+    "time_system*",
+    "world*",
+]
+exclude = ["tests*", "docs*", "scripts*"]
+
+--- requirements.txt ---
+# Core 2.0 baseline has no runtime third-party dependencies.
+# The standard test command uses Python's built-in unittest module.
+pygame-ce>=2.5
+

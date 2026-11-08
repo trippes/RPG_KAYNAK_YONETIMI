@@ -267,10 +267,10 @@ class GameWindow:
         self._notice_frames = NOTICE_FRAMES
 
     def _start_new_game(self):
-        from application.content_pack import populate_demo_content
+        from application.content_pack import populate_opening_content
         from application.game_application import GameApplication
 
-        service, _ = populate_demo_content(GameApplication.create_default())
+        service, _ = populate_opening_content(GameApplication.create_default())
         self.service = service
         self.screens.update({
             "opening": OpeningScreen(),

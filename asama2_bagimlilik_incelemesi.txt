@@ -1,0 +1,80 @@
+﻿C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\application\content_pack.py : 47 : bread_offer_id: str = "market_bread"
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\application\content_pack.py : 48 : water_offer_id: str = "market_water"
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\application\content_pack.py : 483 : "accept_carpenter_quest",
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\application\content_pack.py : 485 : action="accept_carpenter_quest",
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\application\content_pack.py : 488 : "deliver_carpenter_wood",
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\application\content_pack.py : 490 : action="deliver_carpenter_wood",
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\application\content_pack.py : 493 : "accept_inn_quest",
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\application\content_pack.py : 495 : action="accept_inn_quest",
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\application\content_pack.py : 498 : "deliver_inn_supplies",
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\application\content_pack.py : 500 : action="deliver_inn_supplies",
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\application\content_pack.py : 521 : "accept_blacksmith_quest",
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\application\content_pack.py : 523 : action="accept_blacksmith_quest",
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\application\content_pack.py : 526 : "deliver_blacksmith_ore",
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\application\content_pack.py : 528 : action="deliver_blacksmith_ore",
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\application\content_pack.py : 603 : Objective("buy_bread", "Handan ekmek al", ObjectiveType.COLLECT, "bread"),
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\application\content_pack.py : 604 : Objective("buy_water", "Handan su al", ObjectiveType.COLLECT, "water"),
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\application\gameplay_service.py : 528 : def consume_item(self, actor_id: str, inventory_id: str, resource_id: str) -> int:
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\application\gameplay_service.py : 535 : effects = {"bread": 2, "water": 1}
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\application\gameplay_service.py : 737 : "accept_carpenter_quest": lambda: self.accept_carpenter_quest(actor_id, "player"),
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\application\gameplay_service.py : 738 : "deliver_carpenter_wood": lambda: self.deliver_carpenter_wood(actor_id, npc_id, "player"),
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\application\gameplay_service.py : 739 : "accept_inn_quest": lambda: self.accept_inn_quest(actor_id, "player"),
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\application\gameplay_service.py : 740 : "deliver_inn_supplies": lambda: self.deliver_inn_supplies(actor_id, npc_id, "player"),
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\application\gameplay_service.py : 741 : "accept_blacksmith_quest": lambda: self.accept_blacksmith_quest(actor_id, "player"),
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\application\gameplay_service.py : 742 : "deliver_blacksmith_ore": lambda: self.deliver_blacksmith_ore(actor_id, npc_id, "player"),
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\application\gameplay_service.py : 762 : def accept_carpenter_quest(self, owner_id: str, inventory_id: str):
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\application\gameplay_service.py : 774 : def deliver_carpenter_wood(self, actor_id: str, npc_id: str, inventory_id: str):
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\application\gameplay_service.py : 791 : def accept_inn_quest(self, owner_id: str, inventory_id: str):
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\application\gameplay_service.py : 806 : def accept_blacksmith_quest(self, owner_id: str, inventory_id: str):
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\application\gameplay_service.py : 816 : def deliver_blacksmith_ore(self, actor_id: str, npc_id: str, inventory_id: str):
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\application\gameplay_service.py : 833 : def deliver_inn_supplies(self, actor_id: str, npc_id: str, inventory_id: str):
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\application\gameplay_service.py : 840 : bread = inventory.get(ResourceType("bread"))
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\application\gameplay_service.py : 841 : water = inventory.get(ResourceType("water"))
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\application\gameplay_service.py : 842 : if bread is None or bread.value < 1 or water is None or water.value < 1:
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\application\gameplay_service.py : 844 : inventory.remove(ResourceType("bread"), Quantity(1, ResourceUnit.ITEM))
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\application\gameplay_service.py : 845 : inventory.remove(ResourceType("water"), Quantity(1, ResourceUnit.ITEM))
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\application\playtest.py : 73 : "carpenter_start", "accept_carpenter_quest",
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\application\playtest.py : 95 : "carpenter_start", "deliver_carpenter_wood",
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\application\playtest.py : 103 : "carpenter_start", "accept_inn_quest",
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\application\playtest.py : 106 : service.buy_offer(ids.bread_offer_id, ids.hero_id, ids.inventory_id, quantity=1)
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\application\playtest.py : 107 : service.buy_offer(ids.water_offer_id, ids.hero_id, ids.inventory_id, quantity=1)
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\application\playtest.py : 111 : "carpenter_start", "deliver_inn_supplies",
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\game_ui\renderer.py : 47 : "bread": "Ekmek",
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\game_ui\renderer.py : 48 : "water": "Su",
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\game_ui\renderer.py : 59 : "bread": (205, 155, 90),
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\game_ui\renderer.py : 60 : "water": (90, 165, 220),
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\game_ui\screens\dialogue_screen.py : 139 : if choice.choice_id == "accept_blacksmith_quest" and state != "available":
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\game_ui\screens\dialogue_screen.py : 141 : if choice.choice_id == "deliver_blacksmith_ore" and (
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\game_ui\screens\dialogue_screen.py : 162 : if choice.choice_id == "accept_carpenter_quest" and state != "available":
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\game_ui\screens\dialogue_screen.py : 166 : if choice.choice_id == "deliver_carpenter_wood":
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\game_ui\screens\dialogue_screen.py : 176 : if choice.choice_id == "accept_inn_quest" and (
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\game_ui\screens\dialogue_screen.py : 180 : if choice.choice_id == "deliver_inn_supplies":
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\game_ui\screens\dialogue_screen.py : 185 : bread_amount = next(
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\game_ui\screens\dialogue_screen.py : 186 : (amount for resource, amount, _unit in inventory.stocks if str(resource) == "bread"),
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\game_ui\screens\dialogue_screen.py : 189 : water_amount = next(
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\game_ui\screens\dialogue_screen.py : 190 : (amount for resource, amount, _unit in inventory.stocks if str(resource) == "water"),
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\game_ui\screens\dialogue_screen.py : 195 : or bread_amount < 1
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\game_ui\screens\dialogue_screen.py : 196 : or water_amount < 1
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\game_ui\screens\dialogue_screen.py : 197 : or not objectives.get("buy_bread", ()).completed
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\game_ui\screens\dialogue_screen.py : 198 : or not objectives.get("buy_water", ()).completed
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\game_ui\screens\dialogue_screen.py : 412 : and choice.choice_id == "accept_carpenter_quest"
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\game_ui\screens\dialogue_screen.py : 414 : self.service.accept_carpenter_quest(actor_id, "player")
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\game_ui\screens\dialogue_screen.py : 424 : and choice.choice_id == "deliver_carpenter_wood"
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\game_ui\screens\dialogue_screen.py : 426 : self.service.deliver_carpenter_wood(
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\game_ui\screens\dialogue_screen.py : 438 : and choice.choice_id == "accept_inn_quest"
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\game_ui\screens\dialogue_screen.py : 440 : self.service.accept_inn_quest(actor_id, "player")
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\game_ui\screens\dialogue_screen.py : 450 : and choice.choice_id == "deliver_inn_supplies"
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\game_ui\screens\dialogue_screen.py : 452 : self.service.deliver_inn_supplies(
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\game_ui\screens\inventory_screen.py : 187 : if resource in {"bread", "water"} and amount > 0),
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\game_ui\screens\inventory_screen.py : 194 : hp = self.service.consume_item("hero", self.inventory_id, consumable)
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\resources\resource.py : 10 : class ResourceType(Identifier):
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\tests\test_application\test_content_pack.py : 64 : "carpenter_start", "accept_carpenter_quest",
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\tests\test_application\test_content_pack.py : 79 : "carpenter_start", "deliver_carpenter_wood",
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\tests\test_application\test_content_pack.py : 155 : "carpenter_start", "accept_carpenter_quest",
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\tests\test_application\test_content_pack.py : 178 : service.buy_offer(ids.bread_offer_id, ids.hero_id, ids.inventory_id, quantity=1)
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\tests\test_application\test_content_pack.py : 181 : healed = service.consume_item(ids.hero_id, ids.inventory_id, "bread")
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\tests\test_application\test_phase_d_quality.py : 1315 : {"items": (("iron_sword", 1), ("bread_item", 2)), "stocks": ()},
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\tests\test_application\test_phase_d_quality.py : 1341 : ("item", "bread_item"), ("item", "iron_sword"),
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\tests\test_character\test_equipment.py : 37 : {**bundle.items, "bread_item": ItemDefinition("bread_item", "Ekmek")},
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\tests\test_character\test_equipment.py : 39 : bundle.inventories[ids.inventory_id].add_item("bread_item")
+C:\Users\elifo\OneDrive\Belgeler\GitHub\RPG_KAYNAK_YONETIMI\tests\test_character\test_equipment.py : 41 : service.equip_item(ids.hero_id, ids.inventory_id, "bread_item")

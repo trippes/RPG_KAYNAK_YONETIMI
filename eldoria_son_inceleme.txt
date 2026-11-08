@@ -1,0 +1,1698 @@
+﻿========== GIT DURUMU ==========
+## main...origin/main [ahead 1]
+?? eldoria_temizlik_detayli_inceleme.txt
+?? eldoria_temizlik_dorduncu_asama.txt
+?? eldoria_temizlik_ikinci_asama.txt
+?? eldoria_temizlik_incelemesi.txt
+?? eldoria_temizlik_ucuncu_asama.txt
+6d91063 feat: add user save storage and reorganize game UI
+========== application\content_pack.py : 1-80 ==========
+1: """Data-driven content loading for the playable demo slice."""
+2: 
+3: from __future__ import annotations
+4: 
+5: import json
+6: import sys
+7: from dataclasses import dataclass, fields
+8: from pathlib import Path
+9: from types import MappingProxyType
+10: 
+11: from application import GameplayService
+12: from application import ProductionFacility
+13: from character import Ability, CharacterClass, CharacterFactory, EquipmentSlot, ItemDefinition, Race
+14: from combat import Combatant
+15: from core.domain.spatial import Position
+16: from economy import Currency, Merchant, Money
+17: from npc import Faction, NPC
+18: from quests import Dialogue, DialogueChoice, DialogueNode, Objective, ObjectiveType, Quest, Reward
+19: from resources import Inventory, Quantity, Recipe, ResourceType, ResourceUnit, WorldResourceNode
+20: from world import Location, WorldMap
+21: 
+22: 
+23: DEFAULT_CONTENT_PATH = Path(__file__).resolve().parent.parent / "data" / "demo_content.json"
+24: CONTENT_SCHEMA_VERSION = 1
+25: 
+26: 
+27: @dataclass(frozen=True)
+28: class DemoContentIds:
+29:     world_id: str = "demo_valley"
+30:     hero_id: str = "hero"
+31:     village_id: str = "village"
+32:     forest_id: str = "forest"
+33:     faction_id: str = "wardens"
+34:     npc_id: str = "warden_lyra"
+35:     quest_id: str = "forest_supplies"
+36:     carpenter_id: str = "village_carpenter"
+37:     carpenter_quest_id: str = "carpenter_repair"
+38:     blacksmith_id: str = "village_blacksmith"
+39:     blacksmith_quest_id: str = "blacksmith_iron"
+40:     iron_node_id: str = "north_iron_mine"
+41:     inn_quest_id: str = "inn_supplies"
+42:     node_id: str = "forest_wood"
+43:     inventory_id: str = "player"
+44:     merchant_id: str = "village_merchant"
+45:     merchant_inventory_id: str = "merchant"
+46:     market_offer_id: str = "market_plank"
+47:     bread_offer_id: str = "market_bread"
+48:     water_offer_id: str = "market_water"
+49:     innkeeper_id: str = "village_innkeeper"
+50:     enemy_id: str = "forest_wolf"
+51:     encounter_id: str = "forest_wolf_encounter"
+52:     
+53: 
+54: 
+55: class ContentDefinitionError(ValueError):
+56:     """Raised when a content definition cannot safely enter the runtime."""
+57: 
+58: 
+59: def load_demo_content(path: str | Path | None = None) -> dict:
+60:     """Load and validate a JSON content definition without mutating it."""
+61:     if path is None:
+62:         candidates = (
+63:             DEFAULT_CONTENT_PATH,
+64:             Path(sys.prefix) / "data" / "demo_content.json",
+65:             Path(sys.prefix) / "demo_content.json",
+66:         )
+67:         source = next((candidate for candidate in candidates if candidate.exists()), candidates[0])
+68:     else:
+69:         source = Path(path)
+70:     try:
+71:         definition = json.loads(source.read_text(encoding="utf-8"))
+72:     except (OSError, json.JSONDecodeError) as error:
+73:         raise ContentDefinitionError(f"Content definition could not be loaded: {source}") from error
+74:     if not isinstance(definition, dict):
+75:         raise ContentDefinitionError("Content definition must be a JSON object.")
+76:     if definition.get("schema_version") != CONTENT_SCHEMA_VERSION:
+77:         raise ContentDefinitionError("Unsupported content definition schema version.")
+78:     required = {"ids", "world", "character", "resources", "recipe", "locations", "faction", "npc", "dialogue", "quest", "merchant", "market_offer", "combat"}
+79:     missing = sorted(required - definition.keys())
+80:     if missing:
+========== application\content_pack.py : 160-409 ==========
+160:     return world_map
+161: 
+162: 
+163: def populate_demo_content(application, ids: DemoContentIds = DemoContentIds(), definition_path=None):
+164:     """Build a deterministic playable session from a JSON content definition."""
+165:     definition = load_demo_content(definition_path)
+166:     resolve_id = _id_resolver(definition, ids)
+167:     world_data = definition["world"]
+168:     world = application.aktif_dunya() or application.dunya_olustur(
+169:         world_data["name"], width=world_data["width"], height=world_data["height"], world_id=resolve_id("world_id")
+170:     )
+171:     bundle = application.holder.current
+172: 
+173:     resource_types = {item["id"]: ResourceType(item["id"]) for item in definition["resources"]}
+174:     inventory = Inventory()
+175:     merchant_inventory = Inventory()
+176:     starter_items = {
+177:         "iron_sword": ItemDefinition(
+178:             "iron_sword", "Demir KÄ±lÄ±Ã§", EquipmentSlot.MAIN_HAND,
+179:             weight=2.0, attack=3, damage=4, description="Dengeli tek elli kÄ±lÄ±Ã§.",
+180:         ),
+181:         "leather_armor": ItemDefinition(
+182:             "leather_armor", "Deri ZÄ±rh", EquipmentSlot.CHEST,
+183:             weight=5.0, defense=2, description="Hafif ve hareketli zÄ±rh.",
+184:         ),
+185:         "iron_helmet": ItemDefinition(
+186:             "iron_helmet", "Demir MiÄŸfer", EquipmentSlot.HEAD,
+187:             weight=2.0, defense=1, max_hit_points=2,
+188:         ),
+189:     }
+190:     inventory.add_item("iron_sword")
+191:     inventory.add_item("leather_armor")
+192:     inventory.add_item("iron_helmet")
+193:     object.__setattr__(bundle, "items", MappingProxyType(starter_items))
+194:     recipe_data = definition["recipe"]
+195:     market_resource = definition["market_offer"]["resource"]
+196:     output_data = _recipe_output_for_resource(recipe_data, market_resource)
+197:     output = _quantity(output_data)
+198:     merchant_inventory.add(
+199:         resource_types[output_data["resource"]],
+200:         Quantity(definition["merchant"]["stock_amount"], output.unit),
+201:     )
+202:     for offer in definition.get("market_offers", ()):
+203:         merchant_inventory.add(
+204:             resource_types[offer["resource"]],
+205:             Quantity(offer.get("stock_amount", offer["quantity"]), ResourceUnit.ITEM),
+206:         )
+207:     object.__setattr__(bundle, "inventories", MappingProxyType({
+208:         ids.inventory_id: inventory,
+209:         ids.merchant_inventory_id: merchant_inventory,
+210:     }))
+211:     inputs = tuple((resource_types[item["resource"]], _quantity(item)) for item in recipe_data["inputs"])
+212:     outputs = tuple((resource_types[item["resource"]], _quantity(item)) for item in recipe_data["outputs"])
+213:     object.__setattr__(bundle, "recipes", MappingProxyType({
+214:         recipe_data["id"]: Recipe(recipe_data["id"], inputs, outputs, recipe_data["duration"], recipe_data["output_tag"]),
+215:     }))
+216:     facility_data = recipe_data["facility"]
+217:     if bundle.facilities.get(facility_data["id"]) is None:
+218:         bundle.facilities.add(ProductionFacility(facility_data["id"], facility_data["type"], facility_data["capacity"]))
+219: 
+220:     node_data = _resource_with_role(definition, "primary_gathering")
+221:     zero_regeneration = Quantity(0, _quantity(node_data["regeneration_rate"]).unit)
+222:     bundle.resource_nodes.add(WorldResourceNode(
+223:         resolve_id("node_id"), world.world_id, resource_types[node_data["id"]], _quantity(node_data["node_quantity"]),
+224:         _quantity(node_data["node_capacity"]), zero_regeneration,
+225:         location_id=resolve_id(node_data["location_id"]),
+226:     ))
+227:     for location in definition["locations"]:
+228:         resource_landmarks = [
+229:             landmark for landmark in location.get("landmarks", ())
+230:             if (
+231:                 "tree" in landmark["id"]
+232:                 or "aÄŸaÃ§" in landmark["name"].lower()
+233:                 or "mine" in landmark["id"]
+234:                 or "maden" in landmark["name"].lower()
+235:             )
+236:         ]
+237:         for index, landmark in enumerate(resource_landmarks):
+238:             is_iron = "mine" in landmark["id"] or "maden" in landmark["name"].lower()
+239:             resource_data = _resource_with_role(
+240:                 definition, "iron_ore" if is_iron else "primary_gathering",
+241:             )
+242:             node_id = (
+243:                 resolve_id("node_id")
+244:                 if location["id"] == "forest_id" and not is_iron and index == 0
+245:                 else (
+246:                     resolve_id("iron_node_id")
+247:                     if location["id"] == "forest_id" and is_iron
+248:                     else landmark["id"] if is_iron else f"{landmark['id']}_wood"
+249:                 )
+250:             )
+251:             if bundle.resource_nodes.get(node_id) is not None:
+252:                 continue
+253:             bundle.resource_nodes.add(WorldResourceNode(
+254:                 node_id,
+255:                 world.world_id,
+256:                 resource_types[resource_data["id"]],
+257:                 _quantity(resource_data["node_quantity"]),
+258:                 _quantity(resource_data["node_capacity"]),
+259:                 Quantity(0, _quantity(resource_data["regeneration_rate"]).unit),
+260:                 location_id=resolve_id(location["id"]),
+261:             ))
+262: 
+263:     character_data = definition["character"]
+264:     race_data = character_data["race"]
+265:     class_data = character_data["class"]
+266:     factory = CharacterFactory(
+267:         {
+268:             race_data["id"]: Race(
+269:                 race_data["id"], race_data["name"],
+270:                 abilities=(Ability(race_data["ability_id"], race_data["ability_name"]),),
+271:             ),
+272:             "elf": Race(
+273:                 "elf", "Orman Elfi",
+274:                 {"dexterity": 2, "wisdom": 1},
+275:                 (Ability("night_sight", "Gece GÃ¶rÃ¼ÅŸÃ¼", "KaranlÄ±kta daha iyi algÄ±."),),
+276:             ),
+277:             "dwarf": Race(
+278:                 "dwarf", "DaÄŸ CÃ¼cesi",
+279:                 {"constitution": 2, "strength": 1},
+280:                 (Ability("stone_endurance", "TaÅŸ DayanÄ±klÄ±lÄ±ÄŸÄ±", "YÃ¼ksek fiziksel direnÃ§."),),
+281:             ),
+282:         },
+283:         {
+284:             class_data["id"]: CharacterClass(
+285:                 class_data["id"], class_data["name"],
+286:                 hit_points=class_data["hit_points"],
+287:                 skill_ranks=class_data.get(
+288:                     "skill_ranks", {"gathering": 1, "survival": 1}
+289:                 ),
+290:             ),
+291:             "warden": CharacterClass(
+292:                 "warden", "Vadi MuhafÄ±zÄ±", hit_points=16,
+293:                 skill_ranks={"combat": 2, "survival": 1},
+294:                 abilities=(Ability("guard_stance", "MuhafÄ±z DuruÅŸu", "Savunmada eÄŸitimli."),),
+295:             ),
+296:             "arcanist": CharacterClass(
+297:                 "arcanist", "Arkanist", hit_points=9,
+298:                 skill_ranks={"lore": 2, "alchemy": 1},
+299:                 abilities=(Ability("spark", "KÄ±vÄ±lcÄ±m", "Temel bÃ¼yÃ¼ bilgisi."),),
+300:             ),
+301:         },
+302:     )
+303:     if not bundle.characters:
+304:         application.karakter_olustur(factory, resolve_id("hero_id"), character_data["name"], race_data["id"], class_data["id"], resolve_id("hero_id"))
+305:         bundle.characters[resolve_id("hero_id")].bind_item_catalog(starter_items)
+306:     service = GameplayService(application)
+307:     service.register_character_factory(factory)
+308: 
+309:     faction_data = definition["faction"]
+310:     service.register_faction(Faction(resolve_id("faction_id"), faction_data["name"]))
+311:     npc_data = definition["npc"]
+312:     service.register_npc(
+313:         NPC(
+314:             resolve_id("npc_id"),
+315:             npc_data["name"],
+316:             npc_data["role"],
+317:             (resolve_id("faction_id"),),
+318:             resolve_id(npc_data["location_id"]),
+319:             position=Position(*(npc_data.get("position") or (16, 30))),
+320:         )
+321:     )
+322:     service.register_npc(
+323:         NPC(
+324:             resolve_id("innkeeper_id"),
+325:             definition.get("innkeeper_npc", {}).get("name", "Han Ä°ÅŸletmecisi AyÅŸe"),
+326:             "innkeeper",
+327:             (resolve_id("faction_id"),),
+328:             resolve_id("village_id"),
+329:             position=Position(*(definition.get("innkeeper_npc", {}).get("position") or (20, 23))),
+330:         )
+331:     )
+332:     carpenter_data = definition.get("carpenter_npc", {})
+333:     service.register_npc(
+334:         NPC(
+335:             resolve_id("carpenter_id"),
+336:             carpenter_data.get("name", "Marangoz Hilmi"),
+337:             carpenter_data.get("role", "carpenter"),
+338:             (resolve_id("faction_id"),),
+339:             resolve_id(carpenter_data.get("location_id", "village_id")),
+340:             position=Position(*(carpenter_data.get("position") or (21, 15))),
+341:         )
+342:     )
+343:     blacksmith_data = definition.get("blacksmith_npc", {})
+344:     service.register_npc(
+345:         NPC(
+346:             resolve_id("blacksmith_id"),
+347:             blacksmith_data.get("name", "Demirci Usta"),
+348:             blacksmith_data.get("role", "blacksmith"),
+349:             (resolve_id("faction_id"),),
+350:             resolve_id(blacksmith_data.get("location_id", "village_id")),
+351:             position=Position(*(blacksmith_data.get("position") or (27, 15))),
+352:         )
+353:     )
+354: 
+355:     dialogue_data = definition["dialogue"]
+356:     nodes = []
+357:     for node_data in dialogue_data["nodes"]:
+358:         choices = tuple(DialogueChoice(choice["id"], choice["text"], choice.get("next")) for choice in node_data.get("choices", ()))
+359:         nodes.append(DialogueNode(node_data["id"], resolve_id("npc_id"), node_data["text"], choices))
+360:     service.register_dialogue(Dialogue(dialogue_data["id"], tuple(nodes), dialogue_data["start_node"]))
+361:     carpenter_dialogue = Dialogue(
+362:         "carpenter_intro",
+363:         (
+364:             DialogueNode(
+365:                 "carpenter_start",
+366:                 resolve_id("carpenter_id"),
+367:                 "Ben kÃ¶yÃ¼n marangoz ustasÄ±yÄ±m. YardÄ±m edecek birini arÄ±yordum. "
+368:                 "Benim iÃ§in Ã§alÄ±ÅŸmak ister misin?",
+369:                 (
+370:                     DialogueChoice(
+371:                         "accept_carpenter_quest",
+372:                         "Evet, iÅŸi kabul ediyorum.",
+373:                         action="accept_carpenter_quest",
+374:                     ),
+375:                     DialogueChoice(
+376:                         "deliver_carpenter_wood",
+377:                         "Ä°stediÄŸin odunlarÄ± getirdim.",
+378:                         action="deliver_carpenter_wood",
+379:                     ),
+380:                     DialogueChoice(
+381:                         "accept_inn_quest",
+382:                         "Han iÃ§in ekmek ve su alabilirim.",
+383:                         action="accept_inn_quest",
+384:                     ),
+385:                     DialogueChoice(
+386:                         "deliver_inn_supplies",
+387:                         "Ekmek ve suyu getirdim.",
+388:                         action="deliver_inn_supplies",
+389:                     ),
+390:                     DialogueChoice(
+391:                         "decline_carpenter_quest",
+392:                         "Åimdilik hayÄ±r.",
+393:                     ),
+394:                 ),
+395:             ),
+396:         ),
+397:         "carpenter_start",
+398:     )
+399:     service.register_dialogue(carpenter_dialogue)
+400:     service.register_dialogue(Dialogue(
+401:         "blacksmith_intro",
+402:         (
+403:             DialogueNode(
+404:                 "blacksmith_start",
+405:                 resolve_id("blacksmith_id"),
+406:                 "Demir ocaÄŸÄ±ndan demir cevheri getirirsen onu dÃ¶vÃ¼p sana saÄŸlam bir demir kÄ±lÄ±Ã§ yapabilirim.",
+407:                 (
+408:                     DialogueChoice(
+409:                         "accept_blacksmith_quest",
+========== application\content_pack.py : 400-589 ==========
+400:     service.register_dialogue(Dialogue(
+401:         "blacksmith_intro",
+402:         (
+403:             DialogueNode(
+404:                 "blacksmith_start",
+405:                 resolve_id("blacksmith_id"),
+406:                 "Demir ocaÄŸÄ±ndan demir cevheri getirirsen onu dÃ¶vÃ¼p sana saÄŸlam bir demir kÄ±lÄ±Ã§ yapabilirim.",
+407:                 (
+408:                     DialogueChoice(
+409:                         "accept_blacksmith_quest",
+410:                         "Demir cevheri toplamaya gidiyorum.",
+411:                         action="accept_blacksmith_quest",
+412:                     ),
+413:                     DialogueChoice(
+414:                         "deliver_blacksmith_ore",
+415:                         "Ä°stediÄŸin demir cevherini getirdim.",
+416:                         action="deliver_blacksmith_ore",
+417:                     ),
+418:                 ),
+419:             ),
+420:         ),
+421:         "blacksmith_start",
+422:     ))
+423:     service.register_dialogue(Dialogue(
+424:         "innkeeper_intro",
+425:         (
+426:             DialogueNode(
+427:                 "innkeeper_start",
+428:                 resolve_id("innkeeper_id"),
+429:                 "HoÅŸ geldin. HanÄ±mÄ±zda taze ekmek ve temiz su bulunur.",
+430:                 (
+431:                     DialogueChoice(
+432:                         "open_inn_market",
+433:                         "Ekmek ve su satÄ±n almak istiyorum.",
+434:                         action="open_market",
+435:                     ),
+436:                     DialogueChoice("leave_inn", "TeÅŸekkÃ¼rler, birazdan bakarÄ±m."),
+437:                 ),
+438:             ),
+439:         ),
+440:         "innkeeper_start",
+441:     ))
+442: 
+443:     quest_data = definition["quest"]
+444:     objectives = tuple(
+445:         Objective(item["id"], item["description"], ObjectiveType(item["type"]), resolve_id(item["target_id"]))
+446:         for item in quest_data["objectives"]
+447:     )
+448:     reward_data = quest_data["reward"]
+449:     quest = Quest(
+450:         resolve_id("quest_id"), quest_data["title"], objectives,
+451:         Reward(
+452:             experience=reward_data.get("experience", 0),
+453:             currency=reward_data["currency"],
+454:             items=tuple(tuple(item) for item in reward_data["items"]),
+455:             reputation=((resolve_id("faction_id"), reward_data["reputation"]),),
+456:         ),
+457:     )
+458:     service.available_forest_quest = quest
+459:     carpenter_quest = Quest(
+460:         resolve_id("carpenter_quest_id"),
+461:         "Marangozun YardÄ±mcÄ±sÄ±",
+462:         (
+463:             Objective(
+464:                 "collect_wood",
+465:                 "Marangoz iÃ§in odun topla",
+466:                 ObjectiveType.COLLECT,
+467:                 resolve_id("node_id"),
+468:                 required=3,
+469:             ),
+470:             Objective(
+471:                 "deliver_wood",
+472:                 "OdunlarÄ± Marangoz Hilmi'ye teslim et",
+473:                 ObjectiveType.CUSTOM,
+474:                 resolve_id("carpenter_id"),
+475:                 required=1,
+476:             ),
+477:         ),
+478:         Reward(
+479:             experience=150,
+480:             currency=15,
+481:             items=(),
+482:             reputation=((resolve_id("faction_id"), 5),),
+483:         ),
+484:     )
+485:     service.carpenter_quest = carpenter_quest
+486:     service.carpenter_quest_reward_inventory_id = resolve_id("inventory_id")
+487:     service.inn_quest = Quest(
+488:         resolve_id("inn_quest_id"),
+489:         "Handan Erzak Al",
+490:         (
+491:             Objective("buy_bread", "Handan ekmek al", ObjectiveType.COLLECT, "bread"),
+492:             Objective("buy_water", "Handan su al", ObjectiveType.COLLECT, "water"),
+493:             Objective("deliver_supplies", "Ekmek ve suyu Hilmi'ye teslim et", ObjectiveType.CUSTOM, "carpenter_id"),
+494:         ),
+495:         Reward(experience=100, currency=10),
+496:     )
+497:     service.blacksmith_quest = Quest(
+498:         resolve_id("blacksmith_quest_id"),
+499:         "Demirciye Cevher Getir",
+500:         (
+501:             Objective(
+502:                 "collect_iron_ore",
+503:                 "Demir madenlerinden demir cevheri topla",
+504:                 ObjectiveType.COLLECT,
+505:                 resolve_id("iron_node_id"),
+506:                 required=3,
+507:             ),
+508:             Objective(
+509:                 "deliver_iron_ore",
+510:                 "Demir cevherini demirciye teslim et",
+511:                 ObjectiveType.CUSTOM,
+512:                 resolve_id("blacksmith_id"),
+513:                 required=1,
+514:             ),
+515:         ),
+516:         Reward(experience=200, items=(("iron_sword", 1),)),
+517:     )
+518:     bundle.quest_log.add(quest)
+519:     bundle.quest_log.add(carpenter_quest)
+520:     bundle.quest_log.add(service.inn_quest)
+521:     bundle.quest_log.add(service.blacksmith_quest)
+522:     
+523:     world_map = WorldMap(world.world_id)
+524:     for location in definition["locations"]:
+525:         world_map.add_location(Location(
+526:             resolve_id(location["id"]), location["name"],
+527:             tuple(location["position"]) if location.get("position") is not None else None,
+528:             location.get("description", ""),
+529:             location.get("type", "unknown"),
+530:             tuple(location.get("activities", ())),
+531:             tuple(
+532:                 (
+533:                     landmark["id"], landmark["name"], tuple(landmark.get("position", (180, 180))),
+534:                     tuple(landmark.get("activities", ())), landmark.get("description", ""),
+535:                 )
+536:                 for landmark in location.get("landmarks", ())
+537:             ),
+538:         ))
+539:     for connection in definition.get("connections", ()):
+540:         world_map.connect(resolve_id(connection[0]), resolve_id(connection[1]))
+541:     service.register_world_map(world_map)
+542:     service.place_actor(resolve_id("hero_id"), resolve_id("village_id"))
+543:     start_position = character_data.get("starting_position") or (16, 29)
+544:     if (
+545:         not isinstance(start_position, (list, tuple))
+546:         or len(start_position) != 2
+547:         or not all(isinstance(value, int) for value in start_position)
+548:     ):
+549:         raise ContentDefinitionError(
+550:             "Character starting_position must contain two integer tile coordinates."
+551:         )
+552:     service.set_actor_tile_position(
+553:         resolve_id("hero_id"),
+554:         start_position[0],
+555:         start_position[1],
+556:     )
+557: 
+558:     merchant_data = definition["merchant"]
+559:     service.register_merchant(Merchant(resolve_id("merchant_id"), account_id=resolve_id("merchant_id"), inventory_id=resolve_id("merchant_inventory_id")))
+560:     offer_data = definition["market_offer"]
+561:     service.publish_offer(
+562:         resolve_id("market_offer_id"), resolve_id("merchant_id"), resolve_id("merchant_inventory_id"),
+563:         resource_types[offer_data["resource"]], offer_data["quantity"],
+564:         Money(offer_data["price"], Currency(offer_data["currency"])),
+565:     )
+566:     for offer in definition.get("market_offers", ()):
+567:         service.publish_offer(
+568:             resolve_id(offer["id"]),
+569:             resolve_id("merchant_id"),
+570:             resolve_id("merchant_inventory_id"),
+571:             resource_types[offer["resource"]],
+572:             offer["quantity"],
+573:             Money(offer["price"], Currency(offer["currency"])),
+574:         )
+575: 
+576:     combat_data = definition["combat"]
+577:     service.add_combatant(Combatant(resolve_id("hero_id"), combat_data["hero"]["hp"], attack=combat_data["hero"]["attack"], defense=combat_data["hero"]["defense"]))
+578:     service.add_combatant(Combatant(resolve_id("enemy_id"), combat_data["enemy"]["hp"], attack=combat_data["enemy"]["attack"], defense=combat_data["enemy"]["defense"]))
+579:     service.create_combat_encounter(resolve_id("encounter_id"), (resolve_id("hero_id"), resolve_id("enemy_id")), {resolve_id("hero_id"): combat_data["hero"]["initiative"], resolve_id("enemy_id"): combat_data["enemy"]["initiative"]})
+580:     return service, ids
+581: 
+582: 
+583: __all__ = [
+584:     "CONTENT_SCHEMA_VERSION",
+585:     "ContentDefinitionError",
+586:     "DemoContentIds",
+587:     "load_demo_content",
+588:     "populate_demo_content",
+589:     "build_demo_world_map",
+========== tests\test_application\test_content_pack.py : 1-220 ==========
+1: import json
+2: import tempfile
+3: import unittest
+4: from pathlib import Path
+5: 
+6: from application import GameApplication
+7: from application.content_pack import ContentDefinitionError, load_demo_content, populate_demo_content
+8: from application.playtest import run_demo_playtest, run_determinism_check
+9: from resources import Quantity, ResourceUnit
+10: from combat import Combatant
+11: 
+12: 
+13: class TestContentPack(unittest.TestCase):
+14:     def test_demo_quest_chain_is_reproducible_end_to_end(self):
+15:         application = GameApplication.create_default()
+16:         service, ids = populate_demo_content(application)
+17: 
+18:         service.talk_to_npc(ids.hero_id, ids.carpenter_id, "carpenter_intro")
+19:         service.choose_dialogue(
+20:             ids.hero_id, ids.carpenter_id, "carpenter_intro",
+21:             "carpenter_start", "accept_carpenter_quest",
+22:         )
+23:         service.move_actor(ids.hero_id, ids.forest_id)
+24:         service.advance_by(1)
+25:         for _ in range(3):
+26:             service.start_gathering_at_location(
+27:                 ids.hero_id, ids.forest_id, ids.node_id, ids.inventory_id,
+28:                 Quantity(1, ResourceUnit.ITEM),
+29:             )
+30:             service.advance_by(service.gathering_duration(ids.hero_id))
+31:         service.move_actor(ids.hero_id, ids.village_id)
+32:         service.advance_by(1)
+33:         service.talk_to_npc(ids.hero_id, ids.carpenter_id, "carpenter_intro")
+34:         service.choose_dialogue(
+35:             ids.hero_id, ids.carpenter_id, "carpenter_intro",
+36:             "carpenter_start", "deliver_carpenter_wood",
+37:         )
+38: 
+39:         quest = application.holder.current.quest_log.get(ids.carpenter_quest_id)
+40:         self.assertEqual(quest.state.value, "completed")
+41:         self.assertEqual(service.balance(ids.hero_id, "gold").amount, 15)
+42:         self.assertEqual(service.reputation(ids.faction_id), (5, "neutral"))
+43:         self.assertNotIn("wood", {resource for resource, _amount, _unit in service.inventory(ids.inventory_id).stocks})
+44: 
+45:     def test_demo_market_and_combat_are_ready_for_play(self):
+46:         application = GameApplication.create_default()
+47:         service, ids = populate_demo_content(application)
+48: 
+49:         self.assertIn(ids.market_offer_id, {offer.offer_id for offer in service.market_offers()})
+50:         service.credit(ids.hero_id, "gold", 2)
+51:         service.buy_offer(ids.market_offer_id, ids.hero_id, ids.inventory_id, quantity=1)
+52:         self.assertEqual(service.inventory(ids.inventory_id).stocks[-1][0], "plank")
+53: 
+54:         combatants = application.holder.current.combat.all()
+55:         self.assertEqual(tuple(item.combatant_id for item in combatants), (ids.enemy_id, ids.hero_id))
+56:         service.combat_attack(ids.hero_id, ids.enemy_id)
+57:         self.assertEqual(application.holder.current.combat.get(ids.enemy_id).hit_points, 4)
+58: 
+59:     def test_demo_content_can_be_changed_without_python_code(self):
+60:         definition = load_demo_content()
+61:         definition["quest"]["title"] = "Yeni Erzak GÃ¶revi"
+62:         with tempfile.TemporaryDirectory() as directory:
+63:             path = Path(directory) / "content.json"
+64:             path.write_text(json.dumps(definition, ensure_ascii=False), encoding="utf-8")
+65:             application = GameApplication.create_default()
+66:             populate_demo_content(application, definition_path=path)
+67:         self.assertEqual(application.holder.current.quest_log.get("forest_supplies").title, "Yeni Erzak GÃ¶revi")
+68: 
+69:     def test_content_resource_order_does_not_change_node_setup(self):
+70:         definition = load_demo_content()
+71:         definition["resources"] = list(reversed(definition["resources"]))
+72:         with tempfile.TemporaryDirectory() as directory:
+73:             path = Path(directory) / "reordered-content.json"
+74:             path.write_text(json.dumps(definition, ensure_ascii=False), encoding="utf-8")
+75:             application = GameApplication.create_default()
+76:             service, ids = populate_demo_content(application, definition_path=path)
+77: 
+78:         node = application.holder.current.resource_nodes.get(ids.node_id)
+79:         self.assertEqual(node.resource_type.value, "wood")
+80:         self.assertIn(
+81:             "plank",
+82:             {resource for resource, _amount, _unit in service.inventory(ids.merchant_inventory_id).stocks},
+83:         )
+84: 
+85:     def test_future_content_schema_is_rejected(self):
+86:         definition = load_demo_content()
+87:         definition["schema_version"] = 99
+88:         with tempfile.TemporaryDirectory() as directory:
+89:             path = Path(directory) / "future.json"
+90:             path.write_text(json.dumps(definition), encoding="utf-8")
+91:             with self.assertRaises(ContentDefinitionError):
+92:                 load_demo_content(path)
+93: 
+94:     def test_demo_playtest_covers_the_full_loop(self):
+95:         report = run_demo_playtest()
+96:         self.assertEqual(report.completed_steps[-1], "save_load_restore")
+97:         self.assertTrue(report.enemy_defeated)
+98:         self.assertEqual(report.restored_quest_state, "completed")
+99:         self.assertGreaterEqual(report.gold_after_purchase, 0)
+100:         self.assertEqual(report.plank_count_after_purchase, 1)
+101: 
+102:     def test_demo_playtest_is_deterministic(self):
+103:         first, second = run_determinism_check()
+104:         self.assertEqual(first, second)
+105: 
+106:     def test_hilmi_quest_aliases_and_progress_survive_save_load(self):
+107:         application = GameApplication.create_default()
+108:         service, ids = populate_demo_content(application)
+109:         service.talk_to_npc(ids.hero_id, ids.carpenter_id, "carpenter_intro")
+110:         service.choose_dialogue(
+111:             ids.hero_id, ids.carpenter_id, "carpenter_intro",
+112:             "carpenter_start", "accept_carpenter_quest",
+113:         )
+114:         with tempfile.TemporaryDirectory() as directory:
+115:             path = Path(directory) / "active-quest.json"
+116:             service.save(path)
+117:             service.load(path)
+118: 
+119:         restored = application.holder.current.quest_log.get(ids.carpenter_quest_id)
+120:         self.assertIs(service.carpenter_quest, restored)
+121:         self.assertEqual(restored.state.value, "active")
+122:         self.assertEqual(
+123:             service.carpenter_quest_reward_inventory_id,
+124:             ids.inventory_id,
+125:         )
+126: 
+127:     def test_innkeeper_dialogue_and_consumable_food(self):
+128:         application = GameApplication.create_default()
+129:         service, ids = populate_demo_content(application)
+130:         node = service.talk_to_npc(
+131:             ids.hero_id, ids.innkeeper_id, "innkeeper_intro",
+132:         )
+133:         self.assertEqual(node.node_id, "innkeeper_start")
+134:         service.credit(ids.hero_id, "gold", 2)
+135:         service.buy_offer(ids.bread_offer_id, ids.hero_id, ids.inventory_id, quantity=1)
+136:         character = service.actor_character(ids.hero_id)
+137:         character.current_hit_points = character.max_hit_points - 2
+138:         healed = service.consume_item(ids.hero_id, ids.inventory_id, "bread")
+139:         self.assertEqual(healed, character.max_hit_points)
+140:         self.assertEqual(
+141:             service.inventory(ids.inventory_id).stocks,
+142:             (),
+143:         )
+144: 
+145:     def test_npc_positions_survive_save_load(self):
+146:         application = GameApplication.create_default()
+147:         service, ids = populate_demo_content(application)
+148:         expected = {
+149:             ids.npc_id: (16, 30),
+150:             ids.carpenter_id: (21, 15),
+151:             ids.innkeeper_id: (20, 23),
+152:         }
+153:         with tempfile.TemporaryDirectory() as directory:
+154:             path = Path(directory) / "npc-positions.json"
+155:             service.save(path)
+156:             service.load(path)
+157: 
+158:         for npc_id, position in expected.items():
+159:             npc = application.holder.current.social.npcs.get(npc_id)
+160:             self.assertEqual((npc.position.x, npc.position.y), position)
+161: 
+162: 
+163: if __name__ == "__main__":
+164:     unittest.main()
+========== tests\test_character\test_equipment.py : 1-100 ==========
+1: import tempfile
+2: import unittest
+3: from pathlib import Path
+4: 
+5: from application import GameApplication
+6: from application.content_pack import populate_demo_content
+7: from character import EquipmentSlot, ItemDefinition
+8: 
+9: 
+10: class TestEquipment(unittest.TestCase):
+11:     def test_equipment_replaces_same_slot_and_applies_stats(self):
+12:         application = GameApplication.create_default()
+13:         service, ids = populate_demo_content(application)
+14:         service.equip_item(ids.hero_id, ids.inventory_id, "iron_sword")
+15:         self.assertEqual(service.equipment(ids.hero_id), {"main_hand": "iron_sword"})
+16:         self.assertEqual(service.actor_stats(ids.hero_id)["weapon_damage"], 4)
+17:         self.assertEqual(service.inventory(ids.inventory_id).items[0][0], "iron_helmet")
+18: 
+19:     def test_equipment_survives_save_load_with_item_catalog(self):
+20:         application = GameApplication.create_default()
+21:         service, ids = populate_demo_content(application)
+22:         service.equip_item(ids.hero_id, ids.inventory_id, "leather_armor")
+23:         with tempfile.TemporaryDirectory() as directory:
+24:             path = Path(directory) / "equipment.json"
+25:             service.save(path)
+26:             service.load(path)
+27:         self.assertEqual(service.equipment(ids.hero_id), {"chest": "leather_armor"})
+28:         self.assertEqual(service.item("leather_armor").slot, EquipmentSlot.CHEST)
+29: 
+30:     def test_non_equipment_item_is_rejected(self):
+31:         application = GameApplication.create_default()
+32:         service, ids = populate_demo_content(application)
+33:         bundle = application.holder.current
+34:         object.__setattr__(
+35:             bundle,
+36:             "items",
+37:             {**bundle.items, "bread_item": ItemDefinition("bread_item", "Ekmek")},
+38:         )
+39:         bundle.inventories[ids.inventory_id].add_item("bread_item")
+40:         with self.assertRaises(ValueError):
+41:             service.equip_item(ids.hero_id, ids.inventory_id, "bread_item")
+42: 
+43: 
+44: if __name__ == "__main__":
+45:     unittest.main()
+========== EŞLEŞMELER: tests\test_application\test_phase_d_quality.py ==========
+SATIR 8
+from pathlib import Path
+from types import SimpleNamespace
+
+from application import GameApplication, GameplayService, migrate_save_data
+from application.content_pack import populate_demo_content
+from combat import calculate_damage, order_initiative, tick_statuses
+from game_ui.game_window import GameWindow
+from game_ui.input import InputMapper, InputState
+from game_ui.window_manager import WindowManager
+from game_ui.screens.character_creation import CharacterCreationScreen
+from game_ui.screens.character_screen import CharacterScreen
+---
+SATIR 33
+        quests = QuestLog((
+            Quest("active", "Aktif Görev", (
+                Objective("a", "İki odun topla", ObjectiveType.COLLECT, required=2, progress=1),
+                Objective("optional", "İsteğe bağlı konuş", ObjectiveType.TALK, optional=True),
+            ), Reward(experience=20, currency=3, items=(("iron_sword", 1),), reputation=(("wardens", 2),)),
+               state=QuestState.ACTIVE),
+            Quest("active-2", "İkinci Aktif Görev", (Objective("a2", "Bir taş topla", ObjectiveType.COLLECT),),
+               state=QuestState.ACTIVE),
+            Quest("available", "Mevcut Görev", (Objective("b", "Köye ulaş", ObjectiveType.REACH),)),
+            Quest("completed", "Biten Görev", (Objective("c", "Tamamlandı", ObjectiveType.CUSTOM, progress=1),),
+               state=QuestState.COMPLETED),
+---
+SATIR 45
+               state=QuestState.FAILED),
+        ))
+        service = SimpleNamespace(
+            application=SimpleNamespace(holder=SimpleNamespace(current=SimpleNamespace(quest_log=quests))),
+            item=lambda item_id: SimpleNamespace(name="Demir Kılıç") if item_id == "iron_sword" else None,
+        )
+        return QuestLogScreen(service)
+
+    def test_quest_log_categories_and_counts_use_quest_log_filters(self):
+        screen = self._quest_screen()
+
+---
+SATIR 125
+        self.assertEqual(quest.objectives[0].required, 2)
+        self.assertTrue(quest.objectives[1].optional)
+        self.assertEqual(quest.reward.experience, 20)
+        self.assertEqual(quest.reward.currency, 3)
+        self.assertEqual(quest.reward.items, (("iron_sword", 1),))
+        self.assertEqual(quest.reward.reputation, (("wardens", 2),))
+
+    def test_quest_log_window_mouse_coordinates_reach_screen(self):
+        class Rect:
+            def __init__(self, *value):
+                self.x, self.y, self.width, self.height = (
+---
+SATIR 186
+    def test_demo_save_is_deterministic(self):
+        payloads = []
+        for _ in range(2):
+            app = GameApplication.create_default()
+            service, ids = populate_demo_content(app)
+            with tempfile.TemporaryDirectory() as directory:
+                path = Path(directory) / "save.json"
+                service.save(path)
+                payloads.append(path.read_text(encoding="utf-8"))
+        self.assertEqual(payloads[0], payloads[1])
+
+---
+SATIR 194
+                payloads.append(path.read_text(encoding="utf-8"))
+        self.assertEqual(payloads[0], payloads[1])
+
+    def test_demo_starts_next_to_eren_at_southern_gate(self):
+        service, ids = populate_demo_content(GameApplication.create_default())
+
+        self.assertEqual(service.actor(ids.hero_id).position.x, 16)
+        self.assertEqual(service.actor(ids.hero_id).position.y, 29)
+
+    def test_combat_primitives_are_deterministic(self):
+        self.assertEqual(calculate_damage(8, 3), 5)
+---
+SATIR 217
+            )
+            self.assertEqual(screen.handle(InputState(actions={"back"})), expected)
+
+    def test_map_screen_routes_to_world_and_supports_map_input(self):
+        from application.content_pack import populate_demo_content
+        service, _ = populate_demo_content(GameApplication.create_default())
+        screen = MapScreen(service)
+        screen.handle(InputState(actions={"down", "confirm"}))
+        self.assertEqual(service.actor("hero").location_id, "village")
+        self.assertIn("yalnızca konumları gösterir", screen.message)
+        self.assertEqual(screen.handle(InputState(actions={"back"})), "local_map")
+---
+SATIR 218
+            self.assertEqual(screen.handle(InputState(actions={"back"})), expected)
+
+    def test_map_screen_routes_to_world_and_supports_map_input(self):
+        from application.content_pack import populate_demo_content
+        service, _ = populate_demo_content(GameApplication.create_default())
+        screen = MapScreen(service)
+        screen.handle(InputState(actions={"down", "confirm"}))
+        self.assertEqual(service.actor("hero").location_id, "village")
+        self.assertIn("yalnızca konumları gösterir", screen.message)
+        self.assertEqual(screen.handle(InputState(actions={"back"})), "local_map")
+
+---
+SATIR 226
+        self.assertIn("yalnızca konumları gösterir", screen.message)
+        self.assertEqual(screen.handle(InputState(actions={"back"})), "local_map")
+
+    def test_locations_expose_meaningful_context_and_gate_actions(self):
+        from application.content_pack import populate_demo_content
+        service, _ = populate_demo_content(GameApplication.create_default())
+        screen = __import__("game_ui.screens.world_screen", fromlist=["WorldScreen"]).WorldScreen(service)
+        self.assertEqual(screen.handle(InputState(actions={"market"})), "market")
+        screen.handle(InputState(actions={"right"}))
+        self.assertIsNone(screen.handle(InputState(actions={"market"})))
+        self.assertIn("Pazar", screen.message)
+---
+SATIR 227
+        self.assertEqual(screen.handle(InputState(actions={"back"})), "local_map")
+
+    def test_locations_expose_meaningful_context_and_gate_actions(self):
+        from application.content_pack import populate_demo_content
+        service, _ = populate_demo_content(GameApplication.create_default())
+        screen = __import__("game_ui.screens.world_screen", fromlist=["WorldScreen"]).WorldScreen(service)
+        self.assertEqual(screen.handle(InputState(actions={"market"})), "market")
+        screen.handle(InputState(actions={"right"}))
+        self.assertIsNone(screen.handle(InputState(actions={"market"})))
+        self.assertIn("Pazar", screen.message)
+
+---
+SATIR 235
+        self.assertIsNone(screen.handle(InputState(actions={"market"})))
+        self.assertIn("Pazar", screen.message)
+
+    def test_local_map_is_reachable_from_world_map(self):
+        from application.content_pack import populate_demo_content
+        service, _ = populate_demo_content(GameApplication.create_default())
+        map_screen = MapScreen(service)
+        self.assertEqual(map_screen.handle(InputState(actions={"confirm"})), "local_map")
+        local_screen = LocalMapScreen(service)
+        self.assertIsNone(local_screen.handle(InputState(actions={"confirm"})))
+
+---
+SATIR 236
+        self.assertIn("Pazar", screen.message)
+
+    def test_local_map_is_reachable_from_world_map(self):
+        from application.content_pack import populate_demo_content
+        service, _ = populate_demo_content(GameApplication.create_default())
+        map_screen = MapScreen(service)
+        self.assertEqual(map_screen.handle(InputState(actions={"confirm"})), "local_map")
+        local_screen = LocalMapScreen(service)
+        self.assertIsNone(local_screen.handle(InputState(actions={"confirm"})))
+
+    def test_local_map_finds_safe_paths_and_blocks_static_landmarks(self):
+---
+SATIR 243
+        local_screen = LocalMapScreen(service)
+        self.assertIsNone(local_screen.handle(InputState(actions={"confirm"})))
+
+    def test_local_map_finds_safe_paths_and_blocks_static_landmarks(self):
+        from application.content_pack import populate_demo_content
+        service, _ = populate_demo_content(GameApplication.create_default())
+        local_screen = LocalMapScreen(service)
+        path = local_screen._path_to((16, 16), (8, 8))
+        self.assertTrue(path)
+        self.assertEqual(path[0], (16, 16))
+        self.assertEqual(path[-1], (8, 8))
+---
+SATIR 244
+        self.assertIsNone(local_screen.handle(InputState(actions={"confirm"})))
+
+    def test_local_map_finds_safe_paths_and_blocks_static_landmarks(self):
+        from application.content_pack import populate_demo_content
+        service, _ = populate_demo_content(GameApplication.create_default())
+        local_screen = LocalMapScreen(service)
+        path = local_screen._path_to((16, 16), (8, 8))
+        self.assertTrue(path)
+        self.assertEqual(path[0], (16, 16))
+        self.assertEqual(path[-1], (8, 8))
+        self.assertFalse(local_screen._is_walkable((7, 10)))
+---
+SATIR 253
+        self.assertEqual(path[-1], (8, 8))
+        self.assertFalse(local_screen._is_walkable((7, 10)))
+
+    def test_mine_landmark_collects_iron_ore(self):
+        service, ids = populate_demo_content(GameApplication.create_default())
+        service.move_actor(ids.hero_id, ids.forest_id)
+        service.advance_by(1)
+        service.move_actor(ids.hero_id, "north_mine")
+        service.advance_by(1)
+
+        local_screen = LocalMapScreen(service)
+---
+SATIR 266
+        service.advance_by(service.gathering_duration(ids.hero_id))
+        self.assertEqual(service.inventory(ids.inventory_id).stocks, (("iron_ore", 1, "item"),))
+
+    def test_dialogue_prompt_uses_selected_npc_name(self):
+        from application.content_pack import populate_demo_content
+        service, ids = populate_demo_content(GameApplication.create_default())
+        screen = DialogueScreen(service)
+        screen.set_target_npc(ids.carpenter_id)
+        self.assertIn("Marangoz Hilmi", screen.message)
+
+    def test_inn_dialogue_opens_trade_window(self):
+---
+SATIR 267
+        self.assertEqual(service.inventory(ids.inventory_id).stocks, (("iron_ore", 1, "item"),))
+
+    def test_dialogue_prompt_uses_selected_npc_name(self):
+        from application.content_pack import populate_demo_content
+        service, ids = populate_demo_content(GameApplication.create_default())
+        screen = DialogueScreen(service)
+        screen.set_target_npc(ids.carpenter_id)
+        self.assertIn("Marangoz Hilmi", screen.message)
+
+    def test_inn_dialogue_opens_trade_window(self):
+        from application.content_pack import populate_demo_content
+---
+SATIR 269
+    def test_dialogue_prompt_uses_selected_npc_name(self):
+        from application.content_pack import populate_demo_content
+        service, ids = populate_demo_content(GameApplication.create_default())
+        screen = DialogueScreen(service)
+        screen.set_target_npc(ids.carpenter_id)
+        self.assertIn("Marangoz Hilmi", screen.message)
+
+    def test_inn_dialogue_opens_trade_window(self):
+        from application.content_pack import populate_demo_content
+        service, ids = populate_demo_content(GameApplication.create_default())
+        screen = DialogueScreen(service)
+---
+SATIR 273
+        screen.set_target_npc(ids.carpenter_id)
+        self.assertIn("Marangoz Hilmi", screen.message)
+
+    def test_inn_dialogue_opens_trade_window(self):
+        from application.content_pack import populate_demo_content
+        service, ids = populate_demo_content(GameApplication.create_default())
+        screen = DialogueScreen(service)
+        screen.set_target_npc(ids.innkeeper_id)
+        screen.handle(InputState(actions={"confirm"}))
+        self.assertEqual(screen.handle(InputState(actions={"confirm"})), "market")
+
+---
+SATIR 274
+        self.assertIn("Marangoz Hilmi", screen.message)
+
+    def test_inn_dialogue_opens_trade_window(self):
+        from application.content_pack import populate_demo_content
+        service, ids = populate_demo_content(GameApplication.create_default())
+        screen = DialogueScreen(service)
+        screen.set_target_npc(ids.innkeeper_id)
+        screen.handle(InputState(actions={"confirm"}))
+        self.assertEqual(screen.handle(InputState(actions={"confirm"})), "market")
+
+    def test_inventory_and_market_windows_close_to_local_map(self):
+---
+SATIR 276
+    def test_inn_dialogue_opens_trade_window(self):
+        from application.content_pack import populate_demo_content
+        service, ids = populate_demo_content(GameApplication.create_default())
+        screen = DialogueScreen(service)
+        screen.set_target_npc(ids.innkeeper_id)
+        screen.handle(InputState(actions={"confirm"}))
+        self.assertEqual(screen.handle(InputState(actions={"confirm"})), "market")
+
+    def test_inventory_and_market_windows_close_to_local_map(self):
+        from application.content_pack import populate_demo_content
+        service, _ = populate_demo_content(GameApplication.create_default())
+---
+SATIR 281
+        screen.handle(InputState(actions={"confirm"}))
+        self.assertEqual(screen.handle(InputState(actions={"confirm"})), "market")
+
+    def test_inventory_and_market_windows_close_to_local_map(self):
+        from application.content_pack import populate_demo_content
+        service, _ = populate_demo_content(GameApplication.create_default())
+        self.assertEqual(
+            InventoryScreen(service).handle(InputState(actions={"back"})),
+            "local_map",
+        )
+        self.assertEqual(
+---
+SATIR 282
+        self.assertEqual(screen.handle(InputState(actions={"confirm"})), "market")
+
+    def test_inventory_and_market_windows_close_to_local_map(self):
+        from application.content_pack import populate_demo_content
+        service, _ = populate_demo_content(GameApplication.create_default())
+        self.assertEqual(
+            InventoryScreen(service).handle(InputState(actions={"back"})),
+            "local_map",
+        )
+        self.assertEqual(
+            MarketScreen(service).handle(InputState(actions={"back"})),
+---
+SATIR 293
+            "local_map",
+        )
+
+    def test_character_window_preserves_skill_selection_and_close_input(self):
+        service, _ = populate_demo_content(GameApplication.create_default())
+        screen = CharacterScreen(service)
+        character = service.actor_character("hero")
+        skills = tuple(character.skills.to_dict())
+        self.assertTrue(skills)
+        screen.handle(InputState(actions={"down"}))
+        self.assertEqual(screen.selected_skill, 1 % len(skills))
+---
+SATIR 333
+        )()
+        self.assertEqual(dispatched, [])
+
+    def test_village_gate_opens_eren_dialogue(self):
+        from application.content_pack import populate_demo_content
+        service, ids = populate_demo_content(GameApplication.create_default())
+        local_screen = LocalMapScreen(service)
+        local_screen.selected = (16, 30)
+        self.assertEqual(local_screen.handle(InputState(actions={"confirm"})), "dialogue")
+        self.assertEqual(local_screen.selected_npc_id, ids.npc_id)
+
+---
+SATIR 334
+        self.assertEqual(dispatched, [])
+
+    def test_village_gate_opens_eren_dialogue(self):
+        from application.content_pack import populate_demo_content
+        service, ids = populate_demo_content(GameApplication.create_default())
+        local_screen = LocalMapScreen(service)
+        local_screen.selected = (16, 30)
+        self.assertEqual(local_screen.handle(InputState(actions={"confirm"})), "dialogue")
+        self.assertEqual(local_screen.selected_npc_id, ids.npc_id)
+
+    def test_save_load_keys_are_part_of_the_input_contract(self):
+---
+SATIR 487
+            )
+            self.assertEqual(selected, [(0, path, True)])
+
+    def test_new_game_rebuilds_session_and_opens_creation_flow(self):
+        old_service, _ = populate_demo_content(GameApplication.create_default())
+        old_service.application.customize_character(
+            "hero",
+            "Eski Kahraman",
+            30,
+            {
+                attribute: 10
+---
+SATIR 1272
+        RectType = Rect
+        class Backend:
+            Rect = RectType
+
+        service, _ = populate_demo_content(GameApplication.create_default())
+        screen = InventoryScreen(service)
+        manager = WindowManager(Backend(), 960, 640)
+        manager.register("inventory", screen, (100, 100, 500, 470))
+        manager.open("inventory")
+
+        # Source tab 2 is at (190, 190); the window content starts below its title bar.
+---
+SATIR 1315
+            def inventory(self, inventory_id):
+                return type(
+                    "InventoryView",
+                    (),
+                    {"items": (("iron_sword", 1), ("bread_item", 2)), "stocks": ()},
+                )()
+            def item(self, item_id):
+                return None
+
+        RectType = Rect
+        class Backend:
+---
+SATIR 1341
+        manager.handle_input(InputState(
+            mouse_pos=target, mouse_button_up=True,
+        ))
+        self.assertEqual(screen.slot_order[:2], [
+            ("item", "bread_item"), ("item", "iron_sword"),
+        ])
+
+        empty_target = (source[0] + 66 * 4, source[1])
+        manager.handle_input(InputState(
+            mouse_pos=(target[0], target[1]), mouse_clicked=True,
+            mouse_button_down=True,
+---
+SATIR 1356
+        manager.handle_input(InputState(
+            mouse_pos=empty_target, mouse_button_up=True,
+        ))
+        self.assertEqual(screen.slot_order[1], None)
+        self.assertEqual(screen.slot_order[4], ("item", "iron_sword"))
+
+        before = list(screen.slot_order)
+        manager.handle_input(InputState(
+            mouse_pos=empty_target, mouse_clicked=True, mouse_button_down=True,
+        ))
+        manager.handle_input(InputState(
+---
+========== EŞLEŞMELER: tests\test_application\test_social_combat_integration.py ==========
+========== EŞLEŞMELER: application\gameplay_service.py ==========
+SATIR 258
+
+    def _rebind_content_quests(self) -> None:
+        """Reconnect optional content aliases to the restored canonical quest log."""
+        quest_log = self._current_bundle().quest_log
+        for attribute in ("available_forest_quest", "carpenter_quest", "inn_quest", "blacksmith_quest"):
+            current = getattr(self, attribute, None)
+            quest_id = getattr(current, "quest_id", None)
+            if quest_id is None:
+                continue
+            restored = quest_log.get(quest_id)
+            if restored is not None:
+---
+SATIR 266
+                continue
+            restored = quest_log.get(quest_id)
+            if restored is not None:
+                setattr(self, attribute, restored)
+                if attribute in ("carpenter_quest", "inn_quest"):
+                    self._quest_reward_accounts.setdefault(quest_id, "hero")
+                    self._quest_reward_inventories.setdefault(quest_id, "player")
+
+    def register_actor(self, actor_id: str, role: str, world_id: str | None = None, active: bool = True, character_id: str | None = None) -> ActorView:
+        bundle = self._current_bundle()
+        target_world = world_id
+---
+SATIR 535
+        character = self.actor_character(actor_id)
+        if character is None:
+            raise GameplayServiceError("Actor must be linked to a character to consume items.")
+        resource = ResourceType(resource_id)
+        effects = {"bread": 2, "water": 1}
+        healing = effects.get(resource.value)
+        if healing is None:
+            raise GameplayServiceError(f"Resource is not consumable: {resource_id}")
+        inventory = self._inventory(bundle, inventory_id)
+        return self._complete_timed_action(
+            ActionType.CONSUME_ITEM,
+---
+SATIR 737
+        }
+
+    def _run_dialogue_action(self, action: str, actor_id: str, npc_id: str) -> None:
+        actions = {
+            "accept_carpenter_quest": lambda: self.accept_carpenter_quest(actor_id, "player"),
+            "deliver_carpenter_wood": lambda: self.deliver_carpenter_wood(actor_id, npc_id, "player"),
+            "accept_inn_quest": lambda: self.accept_inn_quest(actor_id, "player"),
+            "deliver_inn_supplies": lambda: self.deliver_inn_supplies(actor_id, npc_id, "player"),
+            "accept_blacksmith_quest": lambda: self.accept_blacksmith_quest(actor_id, "player"),
+            "deliver_blacksmith_ore": lambda: self.deliver_blacksmith_ore(actor_id, npc_id, "player"),
+        }
+---
+SATIR 738
+
+    def _run_dialogue_action(self, action: str, actor_id: str, npc_id: str) -> None:
+        actions = {
+            "accept_carpenter_quest": lambda: self.accept_carpenter_quest(actor_id, "player"),
+            "deliver_carpenter_wood": lambda: self.deliver_carpenter_wood(actor_id, npc_id, "player"),
+            "accept_inn_quest": lambda: self.accept_inn_quest(actor_id, "player"),
+            "deliver_inn_supplies": lambda: self.deliver_inn_supplies(actor_id, npc_id, "player"),
+            "accept_blacksmith_quest": lambda: self.accept_blacksmith_quest(actor_id, "player"),
+            "deliver_blacksmith_ore": lambda: self.deliver_blacksmith_ore(actor_id, npc_id, "player"),
+        }
+        handler = actions.get(action)
+---
+SATIR 740
+        actions = {
+            "accept_carpenter_quest": lambda: self.accept_carpenter_quest(actor_id, "player"),
+            "deliver_carpenter_wood": lambda: self.deliver_carpenter_wood(actor_id, npc_id, "player"),
+            "accept_inn_quest": lambda: self.accept_inn_quest(actor_id, "player"),
+            "deliver_inn_supplies": lambda: self.deliver_inn_supplies(actor_id, npc_id, "player"),
+            "accept_blacksmith_quest": lambda: self.accept_blacksmith_quest(actor_id, "player"),
+            "deliver_blacksmith_ore": lambda: self.deliver_blacksmith_ore(actor_id, npc_id, "player"),
+        }
+        handler = actions.get(action)
+        if handler is not None:
+            handler()
+---
+SATIR 741
+            "accept_carpenter_quest": lambda: self.accept_carpenter_quest(actor_id, "player"),
+            "deliver_carpenter_wood": lambda: self.deliver_carpenter_wood(actor_id, npc_id, "player"),
+            "accept_inn_quest": lambda: self.accept_inn_quest(actor_id, "player"),
+            "deliver_inn_supplies": lambda: self.deliver_inn_supplies(actor_id, npc_id, "player"),
+            "accept_blacksmith_quest": lambda: self.accept_blacksmith_quest(actor_id, "player"),
+            "deliver_blacksmith_ore": lambda: self.deliver_blacksmith_ore(actor_id, npc_id, "player"),
+        }
+        handler = actions.get(action)
+        if handler is not None:
+            handler()
+
+---
+SATIR 742
+            "deliver_carpenter_wood": lambda: self.deliver_carpenter_wood(actor_id, npc_id, "player"),
+            "accept_inn_quest": lambda: self.accept_inn_quest(actor_id, "player"),
+            "deliver_inn_supplies": lambda: self.deliver_inn_supplies(actor_id, npc_id, "player"),
+            "accept_blacksmith_quest": lambda: self.accept_blacksmith_quest(actor_id, "player"),
+            "deliver_blacksmith_ore": lambda: self.deliver_blacksmith_ore(actor_id, npc_id, "player"),
+        }
+        handler = actions.get(action)
+        if handler is not None:
+            handler()
+
+    def start_quest(self, quest: Quest, context=None, owner_id: str | None = None, reward_inventory_id: str | None = None) -> Quest:
+---
+SATIR 762
+        if reward_inventory_id is not None:
+            self._quest_reward_inventories[quest.quest_id] = reward_inventory_id
+        return quest
+
+    def accept_carpenter_quest(self, owner_id: str, inventory_id: str):
+        quest = getattr(self, "carpenter_quest", None)
+        if quest is None:
+            raise RuntimeError("Marangoz görevi bulunamadı.")
+        if quest.state.value == "active":
+            return quest
+        if quest.state.value == "completed":
+---
+SATIR 763
+            self._quest_reward_inventories[quest.quest_id] = reward_inventory_id
+        return quest
+
+    def accept_carpenter_quest(self, owner_id: str, inventory_id: str):
+        quest = getattr(self, "carpenter_quest", None)
+        if quest is None:
+            raise RuntimeError("Marangoz görevi bulunamadı.")
+        if quest.state.value == "active":
+            return quest
+        if quest.state.value == "completed":
+            raise ValueError("Marangoz görevi zaten tamamlandı.")
+---
+SATIR 774
+        return self.start_quest(
+            quest, owner_id=owner_id, reward_inventory_id=inventory_id,
+        )
+
+    def deliver_carpenter_wood(self, actor_id: str, npc_id: str, inventory_id: str):
+        quest = getattr(self, "carpenter_quest", None)
+        if quest is None or quest.state.value != "active":
+            raise ValueError("Hilmi'nin aktif bir odun görevi yok.")
+        if npc_id != "village_carpenter":
+            raise ValueError("Odun yalnızca Marangoz Hilmi'ye teslim edilebilir.")
+        inventory = self._inventory(self._current_bundle(), inventory_id)
+---
+SATIR 775
+            quest, owner_id=owner_id, reward_inventory_id=inventory_id,
+        )
+
+    def deliver_carpenter_wood(self, actor_id: str, npc_id: str, inventory_id: str):
+        quest = getattr(self, "carpenter_quest", None)
+        if quest is None or quest.state.value != "active":
+            raise ValueError("Hilmi'nin aktif bir odun görevi yok.")
+        if npc_id != "village_carpenter":
+            raise ValueError("Odun yalnızca Marangoz Hilmi'ye teslim edilebilir.")
+        inventory = self._inventory(self._current_bundle(), inventory_id)
+        wood = ResourceType("wood")
+---
+SATIR 778
+    def deliver_carpenter_wood(self, actor_id: str, npc_id: str, inventory_id: str):
+        quest = getattr(self, "carpenter_quest", None)
+        if quest is None or quest.state.value != "active":
+            raise ValueError("Hilmi'nin aktif bir odun görevi yok.")
+        if npc_id != "village_carpenter":
+            raise ValueError("Odun yalnızca Marangoz Hilmi'ye teslim edilebilir.")
+        inventory = self._inventory(self._current_bundle(), inventory_id)
+        wood = ResourceType("wood")
+        stock = inventory.get(wood)
+        if stock is None or stock.value < 3:
+            raise ValueError("Teslim etmek için en az 3 odun gerekli.")
+---
+SATIR 799
+        if quest.state.value == "active":
+            return quest
+        if quest.state.value == "completed":
+            raise ValueError("Han görevi zaten tamamlandı.")
+        carpenter = getattr(self, "carpenter_quest", None)
+        if carpenter is None or carpenter.state.value != "completed":
+            raise ValueError("Önce Hilmi'nin odun görevini tamamlamalısın.")
+        return self.start_quest(
+            quest, owner_id=owner_id, reward_inventory_id=inventory_id,
+        )
+
+---
+SATIR 800
+            return quest
+        if quest.state.value == "completed":
+            raise ValueError("Han görevi zaten tamamlandı.")
+        carpenter = getattr(self, "carpenter_quest", None)
+        if carpenter is None or carpenter.state.value != "completed":
+            raise ValueError("Önce Hilmi'nin odun görevini tamamlamalısın.")
+        return self.start_quest(
+            quest, owner_id=owner_id, reward_inventory_id=inventory_id,
+        )
+
+    def accept_blacksmith_quest(self, owner_id: str, inventory_id: str):
+---
+SATIR 806
+        return self.start_quest(
+            quest, owner_id=owner_id, reward_inventory_id=inventory_id,
+        )
+
+    def accept_blacksmith_quest(self, owner_id: str, inventory_id: str):
+        quest = getattr(self, "blacksmith_quest", None)
+        if quest is None:
+            raise RuntimeError("Demirci görevi bulunamadı.")
+        if quest.state.value == "active":
+            return quest
+        if quest.state.value == "completed":
+---
+SATIR 807
+            quest, owner_id=owner_id, reward_inventory_id=inventory_id,
+        )
+
+    def accept_blacksmith_quest(self, owner_id: str, inventory_id: str):
+        quest = getattr(self, "blacksmith_quest", None)
+        if quest is None:
+            raise RuntimeError("Demirci görevi bulunamadı.")
+        if quest.state.value == "active":
+            return quest
+        if quest.state.value == "completed":
+            raise ValueError("Demirci görevi zaten tamamlandı.")
+---
+SATIR 816
+        if quest.state.value == "completed":
+            raise ValueError("Demirci görevi zaten tamamlandı.")
+        return self.start_quest(quest, owner_id=owner_id, reward_inventory_id=inventory_id)
+
+    def deliver_blacksmith_ore(self, actor_id: str, npc_id: str, inventory_id: str):
+        quest = getattr(self, "blacksmith_quest", None)
+        if quest is None or quest.state.value != "active":
+            raise ValueError("Demircinin aktif bir cevher görevi yok.")
+        if npc_id != "village_blacksmith":
+            raise ValueError("Demir cevheri yalnızca demirciye teslim edilebilir.")
+        inventory = self._inventory(self._current_bundle(), inventory_id)
+---
+SATIR 817
+            raise ValueError("Demirci görevi zaten tamamlandı.")
+        return self.start_quest(quest, owner_id=owner_id, reward_inventory_id=inventory_id)
+
+    def deliver_blacksmith_ore(self, actor_id: str, npc_id: str, inventory_id: str):
+        quest = getattr(self, "blacksmith_quest", None)
+        if quest is None or quest.state.value != "active":
+            raise ValueError("Demircinin aktif bir cevher görevi yok.")
+        if npc_id != "village_blacksmith":
+            raise ValueError("Demir cevheri yalnızca demirciye teslim edilebilir.")
+        inventory = self._inventory(self._current_bundle(), inventory_id)
+        ore = ResourceType("iron_ore")
+---
+SATIR 820
+    def deliver_blacksmith_ore(self, actor_id: str, npc_id: str, inventory_id: str):
+        quest = getattr(self, "blacksmith_quest", None)
+        if quest is None or quest.state.value != "active":
+            raise ValueError("Demircinin aktif bir cevher görevi yok.")
+        if npc_id != "village_blacksmith":
+            raise ValueError("Demir cevheri yalnızca demirciye teslim edilebilir.")
+        inventory = self._inventory(self._current_bundle(), inventory_id)
+        ore = ResourceType("iron_ore")
+        stock = inventory.get(ore)
+        if stock is None or stock.value < 3:
+            raise ValueError("Teslim etmek için en az 3 demir cevheri gerekli.")
+---
+SATIR 833
+            quest.quest_id, "deliver_iron_ore", 1, actor_id, inventory_id,
+        )
+        return quest
+
+    def deliver_inn_supplies(self, actor_id: str, npc_id: str, inventory_id: str):
+        quest = getattr(self, "inn_quest", None)
+        if quest is None or quest.state.value != "active":
+            raise ValueError("Hilmi'nin aktif bir han görevi yok.")
+        if npc_id != "village_carpenter":
+            raise ValueError("Erzaklar Hilmi'ye teslim edilmelidir.")
+        inventory = self._inventory(self._current_bundle(), inventory_id)
+---
+SATIR 837
+    def deliver_inn_supplies(self, actor_id: str, npc_id: str, inventory_id: str):
+        quest = getattr(self, "inn_quest", None)
+        if quest is None or quest.state.value != "active":
+            raise ValueError("Hilmi'nin aktif bir han görevi yok.")
+        if npc_id != "village_carpenter":
+            raise ValueError("Erzaklar Hilmi'ye teslim edilmelidir.")
+        inventory = self._inventory(self._current_bundle(), inventory_id)
+        bread = inventory.get(ResourceType("bread"))
+        water = inventory.get(ResourceType("water"))
+        if bread is None or bread.value < 1 or water is None or water.value < 1:
+            raise ValueError("Teslim etmek için 1 ekmek ve 1 su gerekli.")
+---
+SATIR 840
+            raise ValueError("Hilmi'nin aktif bir han görevi yok.")
+        if npc_id != "village_carpenter":
+            raise ValueError("Erzaklar Hilmi'ye teslim edilmelidir.")
+        inventory = self._inventory(self._current_bundle(), inventory_id)
+        bread = inventory.get(ResourceType("bread"))
+        water = inventory.get(ResourceType("water"))
+        if bread is None or bread.value < 1 or water is None or water.value < 1:
+            raise ValueError("Teslim etmek için 1 ekmek ve 1 su gerekli.")
+        inventory.remove(ResourceType("bread"), Quantity(1, ResourceUnit.ITEM))
+        inventory.remove(ResourceType("water"), Quantity(1, ResourceUnit.ITEM))
+        self.update_quest_objective(
+---
+SATIR 841
+        if npc_id != "village_carpenter":
+            raise ValueError("Erzaklar Hilmi'ye teslim edilmelidir.")
+        inventory = self._inventory(self._current_bundle(), inventory_id)
+        bread = inventory.get(ResourceType("bread"))
+        water = inventory.get(ResourceType("water"))
+        if bread is None or bread.value < 1 or water is None or water.value < 1:
+            raise ValueError("Teslim etmek için 1 ekmek ve 1 su gerekli.")
+        inventory.remove(ResourceType("bread"), Quantity(1, ResourceUnit.ITEM))
+        inventory.remove(ResourceType("water"), Quantity(1, ResourceUnit.ITEM))
+        self.update_quest_objective(
+            quest.quest_id, "deliver_supplies", 1, actor_id, inventory_id,
+---
+SATIR 842
+            raise ValueError("Erzaklar Hilmi'ye teslim edilmelidir.")
+        inventory = self._inventory(self._current_bundle(), inventory_id)
+        bread = inventory.get(ResourceType("bread"))
+        water = inventory.get(ResourceType("water"))
+        if bread is None or bread.value < 1 or water is None or water.value < 1:
+            raise ValueError("Teslim etmek için 1 ekmek ve 1 su gerekli.")
+        inventory.remove(ResourceType("bread"), Quantity(1, ResourceUnit.ITEM))
+        inventory.remove(ResourceType("water"), Quantity(1, ResourceUnit.ITEM))
+        self.update_quest_objective(
+            quest.quest_id, "deliver_supplies", 1, actor_id, inventory_id,
+        )
+---
+SATIR 844
+        bread = inventory.get(ResourceType("bread"))
+        water = inventory.get(ResourceType("water"))
+        if bread is None or bread.value < 1 or water is None or water.value < 1:
+            raise ValueError("Teslim etmek için 1 ekmek ve 1 su gerekli.")
+        inventory.remove(ResourceType("bread"), Quantity(1, ResourceUnit.ITEM))
+        inventory.remove(ResourceType("water"), Quantity(1, ResourceUnit.ITEM))
+        self.update_quest_objective(
+            quest.quest_id, "deliver_supplies", 1, actor_id, inventory_id,
+        )
+        return quest
+
+---
+SATIR 845
+        water = inventory.get(ResourceType("water"))
+        if bread is None or bread.value < 1 or water is None or water.value < 1:
+            raise ValueError("Teslim etmek için 1 ekmek ve 1 su gerekli.")
+        inventory.remove(ResourceType("bread"), Quantity(1, ResourceUnit.ITEM))
+        inventory.remove(ResourceType("water"), Quantity(1, ResourceUnit.ITEM))
+        self.update_quest_objective(
+            quest.quest_id, "deliver_supplies", 1, actor_id, inventory_id,
+        )
+        return quest
+
+    def update_quest_objective(self, quest_id: str, objective_id: str, amount: int = 1, owner_id: str | None = None, inventory_id: str | None = None):
+---
+========== EŞLEŞMELER: application\game_application.py ==========
+SATIR 36
+from application.actor_system import WorldActor
+from economy import Economy, EconomySnapshot
+from application.extended_persistence import SocialSnapshot, CombatSnapshot
+from core.domain.spatial import Position
+
+
+class GameApplication:
+    """Run application operations against the currently published bundle.
+
+---
+SATIR 125
+            combat=document.combat.restore() if document.combat is not None else None,
+        )
+
+        # Older saves did not persist NPC tile positions. Restore the demo
+        # defaults for those records so existing slots remain interactive.
+        legacy_npc_positions = {
+            "warden_lyra": Position(16, 30),
+            "village_carpenter": Position(21, 15),
+            "village_innkeeper": Position(20, 23),
+---
+SATIR 127
+
+        # Older saves did not persist NPC tile positions. Restore the demo
+        # defaults for those records so existing slots remain interactive.
+        legacy_npc_positions = {
+            "warden_lyra": Position(16, 30),
+            "village_carpenter": Position(21, 15),
+            "village_innkeeper": Position(20, 23),
+        }
+        for npc_id, position in legacy_npc_positions.items():
+---
+SATIR 128
+        # Older saves did not persist NPC tile positions. Restore the demo
+        # defaults for those records so existing slots remain interactive.
+        legacy_npc_positions = {
+            "warden_lyra": Position(16, 30),
+            "village_carpenter": Position(21, 15),
+            "village_innkeeper": Position(20, 23),
+        }
+        for npc_id, position in legacy_npc_positions.items():
+            npc = candidate.social.npcs.get(npc_id)
+---
+SATIR 129
+        # defaults for those records so existing slots remain interactive.
+        legacy_npc_positions = {
+            "warden_lyra": Position(16, 30),
+            "village_carpenter": Position(21, 15),
+            "village_innkeeper": Position(20, 23),
+        }
+        for npc_id, position in legacy_npc_positions.items():
+            npc = candidate.social.npcs.get(npc_id)
+            if npc is not None and npc.position == Position():
+---
+SATIR 130
+        legacy_npc_positions = {
+            "warden_lyra": Position(16, 30),
+            "village_carpenter": Position(21, 15),
+            "village_innkeeper": Position(20, 23),
+        }
+        for npc_id, position in legacy_npc_positions.items():
+            npc = candidate.social.npcs.get(npc_id)
+            if npc is not None and npc.position == Position():
+                npc.position = position
+---
+SATIR 132
+            "village_carpenter": Position(21, 15),
+            "village_innkeeper": Position(20, 23),
+        }
+        for npc_id, position in legacy_npc_positions.items():
+            npc = candidate.social.npcs.get(npc_id)
+            if npc is not None and npc.position == Position():
+                npc.position = position
+        
+    
+---
+SATIR 134
+        }
+        for npc_id, position in legacy_npc_positions.items():
+            npc = candidate.social.npcs.get(npc_id)
+            if npc is not None and npc.position == Position():
+                npc.position = position
+        
+    
+        from application.content_pack import build_demo_world_map
+
+---
+SATIR 135
+        for npc_id, position in legacy_npc_positions.items():
+            npc = candidate.social.npcs.get(npc_id)
+            if npc is not None and npc.position == Position():
+                npc.position = position
+        
+    
+        from application.content_pack import build_demo_world_map
+
+        # Rebuild demo maps only when they match saved actor locations.
+---
+SATIR 161
+
+            candidate.movement.register_map(world_map)
+
+        # Restore actor positions only when their locations exist in the map.
+        if candidate.actors is not None:
+            for actor_view in candidate.actors.actors():
+                if actor_view.location_id is None:
+                    continue
+
+---
+SATIR 174
+                if world_map.get(actor_view.location_id) is None:
+                    continue
+
+                candidate.movement.set_position(
+                    actor_view.actor_id,
+                    actor_view.location_id,
+                )
+                if actor_view.position is not None:
+                    candidate.movement.set_tile_position(
+---
+SATIR 178
+                    actor_view.actor_id,
+                    actor_view.location_id,
+                )
+                if actor_view.position is not None:
+                    candidate.movement.set_tile_position(
+                        actor_view.actor_id,
+                        int(actor_view.position.x),
+                        int(actor_view.position.y),
+                    )
+---
+SATIR 179
+                    actor_view.location_id,
+                )
+                if actor_view.position is not None:
+                    candidate.movement.set_tile_position(
+                        actor_view.actor_id,
+                        int(actor_view.position.x),
+                        int(actor_view.position.y),
+                    )
+
+---
+SATIR 181
+                if actor_view.position is not None:
+                    candidate.movement.set_tile_position(
+                        actor_view.actor_id,
+                        int(actor_view.position.x),
+                        int(actor_view.position.y),
+                    )
+
+        self.holder.publish(candidate)
+        return self.holder.current
+---
+SATIR 182
+                    candidate.movement.set_tile_position(
+                        actor_view.actor_id,
+                        int(actor_view.position.x),
+                        int(actor_view.position.y),
+                    )
+
+        self.holder.publish(candidate)
+        return self.holder.current
+
+---
+========== EŞLEŞMELER: application\playtest.py ==========
+SATIR 11
+import sys
+import tempfile
+from dataclasses import asdict, dataclass
+from pathlib import Path
+
+from .content_pack import populate_demo_content
+from .game_application import GameApplication
+from resources import Quantity, ResourceUnit
+
+
+DEFAULT_BALANCE_PATH = Path(__file__).resolve().parent.parent / "data" / "playtest_balance.json"
+
+
+class PlaytestFailure(AssertionError):
+---
+SATIR 67
+
+def run_demo_playtest(balance_path: str | Path | None = None) -> PlaytestReport:
+    """Play the demo slice from a fresh session and validate its balance profile."""
+    profile = load_balance_profile(balance_path)
+    application = GameApplication.create_default()
+    service, ids = populate_demo_content(application)
+    steps = []
+
+    service.talk_to_npc(ids.hero_id, ids.carpenter_id, "carpenter_intro")
+    service.choose_dialogue(
+        ids.hero_id, ids.carpenter_id, "carpenter_intro",
+        "carpenter_start", "accept_carpenter_quest",
+    )
+    steps.append("dialogue_and_quest")
+---

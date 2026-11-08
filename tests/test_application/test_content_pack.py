@@ -4,13 +4,56 @@ import unittest
 from pathlib import Path
 
 from application import GameApplication
-from application.content_pack import ContentDefinitionError, load_demo_content, populate_demo_content
+from application.content_pack import (
+    ContentDefinitionError,
+    load_demo_content,
+    populate_demo_content,
+    populate_opening_content,
+)
 from application.playtest import run_demo_playtest, run_determinism_check
+from game_ui.input import InputState
+from game_ui.screens.dialogue_screen import DialogueScreen
 from resources import Quantity, ResourceUnit
 from combat import Combatant
 
 
 class TestContentPack(unittest.TestCase):
+    def test_opening_content_excludes_demo_runtime_entities(self):
+        application = GameApplication.create_default()
+        service, ids = populate_opening_content(application)
+        bundle = application.holder.current
+
+        self.assertEqual(
+            tuple(npc.npc_id for npc in bundle.social.npcs.all()),
+            (ids.npc_id,),
+        )
+        self.assertEqual(tuple(bundle.social.dialogues), ("warden_intro",))
+        self.assertEqual(tuple(bundle.quest_log.all()), ())
+        self.assertEqual(tuple(service.market_offers()), ())
+        self.assertEqual(tuple(bundle.combat.all()), ())
+        self.assertEqual(tuple(bundle.inventories), ())
+
+    def test_opening_content_preserves_eren_dialogue_and_character_creation_factory(self):
+        application = GameApplication.create_default()
+        service, ids = populate_opening_content(application)
+        node = service.talk_to_npc(ids.hero_id, ids.npc_id, "warden_intro")
+
+        self.assertEqual(node.node_id, "start")
+        self.assertEqual(node.speaker_id, ids.npc_id)
+        self.assertIn("warden", service._character_factory.classes)
+        self.assertIn("human", service._character_factory.races)
+
+    def test_opening_dialogue_routes_to_character_creation(self):
+        application = GameApplication.create_default()
+        service, ids = populate_opening_content(application)
+        screen = DialogueScreen(service)
+        screen.set_target_npc(ids.npc_id)
+
+        result = screen.handle(InputState(actions={"confirm"}))
+
+        self.assertEqual(result, "character_creation")
+        self.assertTrue(service._creation_from_eren)
+
     def test_demo_quest_chain_is_reproducible_end_to_end(self):
         application = GameApplication.create_default()
         service, ids = populate_demo_content(application)

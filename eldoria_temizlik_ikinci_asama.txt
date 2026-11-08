@@ -1,0 +1,1961 @@
+﻿========== application\gameplay_service.py ==========
+   1: """Application-level playable gameplay loop orchestration.
+   2: 
+   3: This service deliberately owns no canonical gameplay state.  It resolves the
+   4: current SessionBundle for each operation and delegates mutations to the
+   5: resource, production and canonical simulation components that already own
+   6: those rules.
+   7: """
+   8: 
+   9: from __future__ import annotations
+  10: 
+  11: from dataclasses import dataclass
+  12: from typing import Iterable
+  13: 
+  14: from core.time import Tick
+  15: from core.actions import ActionType, action_tick_cost
+  16: from core.foundation import Identifier
+  17: 
+  18: from resources import Inventory, Quantity, Recipe, ResourceType, ResourceUnit
+  19: from economy import Currency, MarketOffer, Money, TradeService, Merchant
+  20: 
+  21: from .game_application import GameApplication
+  22: from .production_chain import ProductionChain, ProductionChainStage
+  23: from .actor_system import ActivityView, ActorView, WorldActor
+  24: from character import EquipmentSlot, ItemDefinition
+  25: from .movement import MovementManager
+  26: from world import WorldMap
+  27: from npc import Faction, NPC
+  28: from quests import Dialogue, Quest
+  29: from .social_runtime import SocialRuntimeError
+  30: from .combat_runtime import Combatant
+  31: 
+  32: 
+  33: class GameplayServiceError(RuntimeError):
+  34:     """Controlled failure at the playable application boundary."""
+  35: 
+  36: 
+  37: @dataclass(frozen=True)
+  38: class GameplayChainStage:
+  39:     """Stable request for one application-level chain stage."""
+  40: 
+  41:     recipe_id: str
+  42:     inventory_id: str
+  43:     facility_id: str
+  44: 
+  45: 
+  46: @dataclass(frozen=True)
+  47: class InventoryView:
+  48:     inventory_id: str
+  49:     stocks: tuple[tuple[str, int, str], ...]
+  50:     items: tuple[tuple[str, int], ...] = ()
+  51:     weight: float = 0.0
+  52: 
+  53: 
+  54: @dataclass(frozen=True)
+  55: class ResourceNodeView:
+  56:     node_id: str
+  57:     world_id: str
+  58:     resource_type: str
+  59:     quantity: tuple[int, str]
+  60:     capacity: tuple[int, str]
+  61:     regeneration_rate: tuple[int, str]
+  62:     last_simulation_tick: int
+  63:     location_id: str | None = None
+  64: 
+  65: 
+  66: @dataclass(frozen=True)
+  67: class LocationInteractionView:
+  68:     actor_id: str
+  69:     location_id: str
+  70:     location_name: str
+  71:     character_id: str | None
+  72:     resource_node_ids: tuple[str, ...]
+  73:     actor_ids: tuple[str, ...]
+  74: 
+  75: 
+  76: @dataclass(frozen=True)
+  77: class FacilityView:
+  78:     facility_id: str
+  79:     facility_type: str
+  80:     active: bool
+  81:     capabilities: tuple[str, ...]
+  82:     capacity: int
+  83:     reserved: int
+  84:     active_job_ids: tuple[str, ...]
+  85: 
+  86: 
+  87: @dataclass(frozen=True)
+  88: class JobView:
+  89:     job_id: str
+  90:     recipe_id: str
+  91:     inventory_id: str
+  92:     state: str
+  93:     start_tick: int
+  94:     end_tick: int
+  95: 
+  96: 
+  97: @dataclass(frozen=True)
+  98: class ChainView:
+  99:     chain_id: str
+ 100:     state: str
+ 101:     current_stage_index: int | None
+ 102:     job_ids: tuple[str, ...]
+ 103: 
+ 104: 
+ 105: @dataclass(frozen=True)
+ 106: class GameplaySnapshotView:
+ 107:     world_id: str | None
+ 108:     simulation_tick: int
+ 109:     inventories: tuple[InventoryView, ...]
+ 110:     nodes: tuple[ResourceNodeView, ...]
+ 111:     facilities: tuple[FacilityView, ...]
+ 112:     jobs: tuple[JobView, ...]
+ 113:     chains: tuple[ChainView, ...]
+ 114:     actors: tuple[ActorView, ...] = ()
+ 115:     activities: tuple[ActivityView, ...] = ()
+ 116:     movements: tuple = ()
+ 117: 
+ 118: 
+ 119: class GameplayService:
+ 120:     """Coordinate the existing gameplay components for a playable loop."""
+ 121: 
+ 122:     def __init__(self, application: GameApplication) -> None:
+ 123:         if not isinstance(application, GameApplication):
+ 124:             raise TypeError("application must be GameApplication.")
+ 125:         self._application = application
+ 126:         self._chains: dict[str, ProductionChain] = {}
+ 127:         self._bundle = None
+ 128:         self._character_factory = None
+ 129:         self._quest_reward_accounts: dict[str, str] = {}
+ 130:         self._quest_reward_inventories: dict[str, str] = {}
+ 131: 
+ 132:     @property
+ 133:     def application(self) -> GameApplication:
+ 134:         return self._application
+ 135: 
+ 136:     def register_character_factory(self, factory) -> None:
+ 137:         self._character_factory = factory
+ 138: 
+ 139:     def collect(self, node_id: str, inventory_id: str, quantity: Quantity) -> None:
+ 140:         """Atomically extract from an active-world node into a registered inventory."""
+ 141:         bundle = self._current_bundle()
+ 142:         world = bundle.session.worlds.get_active()
+ 143:         if world is None:
+ 144:             raise GameplayServiceError("An active world is required for collection.")
+ 145:         inventory = self._inventory(bundle, inventory_id)
+ 146:         node = bundle.resource_nodes.get(node_id)
+ 147:         if node is None:
+ 148:             raise KeyError(f"Resource node not found: {node_id}")
+ 149:         if node.world_id != world.world_id:
+ 150:             raise GameplayServiceError(
+ 151:                 f"Resource node {node_id} does not belong to the active world."
+ 152:             )
+ 153:         bundle.resource_nodes.extract(node_id, inventory, quantity)
+ 154: 
+ 155:     def action_cost(self, action_type: ActionType | str) -> int:
+ 156:         """Return a fixed gameplay action's canonical cost in ticks."""
+ 157:         return action_tick_cost(action_type).value
+ 158: 
+ 159:     def _complete_timed_action(self, action_type: ActionType, owner_id: str, callback):
+ 160:         """Run an immediate gameplay operation through the canonical action runtime."""
+ 161:         bundle = self._current_bundle()
+ 162:         duration = action_tick_cost(action_type)
+ 163:         action = bundle.simulation.actions.create(
+ 164:             Identifier(owner_id),
+ 165:             duration,
+ 166:             context={"action_type": action_type.value},
+ 167:         )
+ 168:         bundle.simulation.actions.schedule(
+ 169:             action.action_id,
+ 170:             bundle.simulation.current_tick,
+ 171:         )
+ 172:         bundle.production_jobs.advance_by(duration)
+ 173:         if action.state.value != "completed":
+ 174:             raise GameplayServiceError(
+ 175:                 f"Timed action did not complete: {action.action_id}"
+ 176:             )
+ 177:         return callback()
+ 178: 
+ 179:     def start_production(
+ 180:         self,
+ 181:         recipe_id: str,
+ 182:         inventory_id: str,
+ 183:         facility_id: str,
+ 184:     ):
+ 185:         """Start one job through the existing facility and job managers."""
+ 186:         bundle = self._current_bundle()
+ 187:         self._require_active_world(bundle)
+ 188:         recipe = self._recipe(bundle, recipe_id)
+ 189:         inventory = self._inventory(bundle, inventory_id)
+ 190:         facility = bundle.facilities.get(facility_id)
+ 191:         if facility is None:
+ 192:             raise KeyError(f"Production facility not found: {facility_id}")
+ 193:         return facility.start(bundle.production_jobs, recipe, inventory)
+ 194: 
+ 195:     def start_chain(
+ 196:         self,
+ 197:         chain_id: str,
+ 198:         stages: Iterable[GameplayChainStage | tuple[str, str, str]],
+ 199:     ) -> ProductionChain:
+ 200:         """Start an explicit-facility sequential chain using existing jobs."""
+ 201:         bundle = self._current_bundle()
+ 202:         self._require_active_world(bundle)
+ 203:         if not isinstance(chain_id, str) or not chain_id.strip():
+ 204:             raise ValueError("chain_id cannot be empty.")
+ 205:         if chain_id in self._chains:
+ 206:             raise ValueError(f"Gameplay chain already exists: {chain_id}")
+ 207: 
+ 208:         requests = tuple(self._normalize_stage(stage) for stage in stages)
+ 209:         if not requests:
+ 210:             raise ValueError("A gameplay chain must contain at least one stage.")
+ 211:         normalized = tuple(
+ 212:             ProductionChainStage(
+ 213:                 recipe=self._recipe(bundle, request.recipe_id),
+ 214:                 inventory=self._inventory(bundle, request.inventory_id),
+ 215:                 facility_id=request.facility_id,
+ 216:             )
+ 217:             for request in requests
+ 218:         )
+ 219:         chain = ProductionChain(
+ 220:             bundle.production_jobs,
+ 221:             normalized,
+ 222:             chain_id=chain_id,
+ 223:             facilities=bundle.facilities,
+ 224:         )
+ 225:         try:
+ 226:             chain.start()
+ 227:         except Exception:
+ 228:             chain.dispose()
+ 229:             raise
+ 230:         self._chains[chain_id] = chain
+ 231:         return chain
+ 232: 
+ 233:     def advance_to(self, target_tick: Tick | int):
+ 234:         """Advance canonical simulation and dispatch production events."""
+ 235:         bundle = self._current_bundle()
+ 236:         self._require_active_world(bundle)
+ 237:         return bundle.production_jobs.advance_to(target_tick)
+ 238: 
+ 239:     def advance_by(self, delta: Tick | int):
+ 240:         bundle = self._current_bundle()
+ 241:         self._require_active_world(bundle)
+ 242:         return bundle.production_jobs.advance_by(delta)
+ 243: 
+ 244:     def save(self, path):
+ 245:         return self._application.save(path)
+ 246: 
+ 247:     def load(self, path):
+ 248:         result = self._application.load(path)
+ 249:         self._chains.clear()
+ 250:         self._bundle = result
+ 251:         result.actor_activities.bind_gameplay_service(self)
+ 252:         self._rebind_content_quests()
+ 253:         return result
+ 254: 
+ 255:     def _rebind_content_quests(self) -> None:
+ 256:         """Reconnect optional content aliases to the restored canonical quest log."""
+ 257:         quest_log = self._current_bundle().quest_log
+ 258:         for attribute in ("available_forest_quest", "carpenter_quest", "inn_quest", "blacksmith_quest"):
+ 259:             current = getattr(self, attribute, None)
+ 260:             quest_id = getattr(current, "quest_id", None)
+ 261:             if quest_id is None:
+ 262:                 continue
+ 263:             restored = quest_log.get(quest_id)
+ 264:             if restored is not None:
+ 265:                 setattr(self, attribute, restored)
+ 266:                 if attribute in ("carpenter_quest", "inn_quest"):
+ 267:                     self._quest_reward_accounts.setdefault(quest_id, "hero")
+ 268:                     self._quest_reward_inventories.setdefault(quest_id, "player")
+ 269: 
+ 270:     def register_actor(self, actor_id: str, role: str, world_id: str | None = None, active: bool = True, character_id: str | None = None) -> ActorView:
+ 271:         bundle = self._current_bundle()
+ 272:         target_world = world_id
+ 273:         if target_world is None:
+ 274:             world = bundle.session.worlds.get_active()
+ 275:             if world is None:
+ 276:                 raise GameplayServiceError("An active world is required to register an actor.")
+ 277:             target_world = world.world_id
+ 278:         character = None
+ 279:         if character_id is not None:
+ 280:             character = bundle.characters.get(character_id)
+ 281:             if character is None:
+ 282:                 raise KeyError(f"Character not found: {character_id}")
+ 283:             if character.actor_id is not None and character.actor_id != actor_id:
+ 284:                 raise ValueError(
+ 285:                     f"Character already references another actor: {character_id}"
+ 286:                 )
+ 287:         actor = WorldActor(actor_id, target_world, role, active)
+ 288:         bundle.actors.add(actor)
+ 289:         if character is not None:
+ 290:             bundle.actors.bind_character(actor_id, character)
+ 291:         bundle.validate()
+ 292:         return actor.view()
+ 293: 
+ 294:     def bind_actor_character(self, actor_id: str, character_id: str) -> ActorView:
+ 295:         """Bind an existing actor and character while checking both sides."""
+ 296:         bundle = self._current_bundle()
+ 297:         character = bundle.characters.get(character_id)
+ 298:         if character is None:
+ 299:             raise KeyError(f"Character not found: {character_id}")
+ 300:         bundle.actors.bind_character(actor_id, character)
+ 301:         bundle.validate()
+ 302:         return bundle.actors.get(actor_id)
+ 303: 
+ 304:     def register_world_map(self, world_map: WorldMap) -> None:
+ 305:         """Register the application movement graph for a world."""
+ 306:         self._current_bundle().movement.register_map(world_map)
+ 307: 
+ 308:     def place_actor(self, actor_id: str, location_id: str) -> ActorView:
+ 309:         self._current_bundle().movement.set_position(actor_id, location_id)
+ 310:         return self._current_bundle().actors.get(actor_id)
+ 311: 
+ 312:     def set_actor_tile_position(self, actor_id: str, x: int, y: int) -> ActorView:
+ 313:         self._current_bundle().movement.set_tile_position(actor_id, x, y)
+ 314:         return self._current_bundle().actors.get(actor_id)
+ 315: 
+ 316:     def move_actor(self, actor_id: str, destination_id: str, action_id: str | None = None):
+ 317:         """Schedule neighbor-based movement; completion occurs on a simulation tick."""
+ 318:         bundle = self._current_bundle()
+ 319:         self._require_actor_in_active_world(bundle, actor_id)
+ 320:         return bundle.movement.move(actor_id, destination_id, action_id)
+ 321: 
+ 322:     def movement(self, action_id: str):
+ 323:         return self._current_bundle().movement.get(action_id)
+ 324: 
+ 325:     def movements_state(self):
+ 326:         return self._current_bundle().movement.movements()
+ 327: 
+ 328:     def actor(self, actor_id: str) -> ActorView | None:
+ 329:         return self._current_bundle().actors.get(actor_id)
+ 330: 
+ 331:     def actor_character(self, actor_id: str):
+ 332:         """Return the character aggregate linked to an actor."""
+ 333:         bundle = self._current_bundle()
+ 334:         actor = bundle.actors.get(actor_id)
+ 335:         if actor is None or actor.character_id is None:
+ 336:             return None
+ 337:         return bundle.characters.get(actor.character_id)
+ 338: 
+ 339:     def actor_stats(self, actor_id: str) -> dict[str, object] | None:
+ 340:         """Read character stats through the actor relationship."""
+ 341:         character = self.actor_character(actor_id)
+ 342:         if character is None:
+ 343:             return None
+ 344:         return {
+ 345:             "character_id": character.character_id,
+ 346:             "name": character.name,
+ 347:             "age": character.age,
+ 348:             "attributes": character.attributes.to_dict(),
+ 349:             "modifiers": {
+ 350:                 attribute: character.attributes.modifier(attribute)
+ 351:                 for attribute in character.attributes.to_dict()
+ 352:             },
+ 353:             "skills": character.skills.to_dict(),
+ 354:             "level": character.progression.level,
+ 355:             "experience": character.progression.experience,
+ 356:             "experience_to_next_level": character.progression.experience_to_next_level,
+ 357:             "unspent_points": character.progression.unspent_points,
+ 358:             "current_hit_points": character.current_hit_points,
+ 359:             "max_hit_points": character.max_hit_points,
+ 360:             "attack_bonus": character.attack_bonus,
+ 361:             "defense_bonus": character.defense_bonus,
+ 362:             "initiative_bonus": character.initiative_bonus,
+ 363:             "weapon_damage": character.weapon_damage,
+ 364:             "equipment": character.equipment.snapshot(),
+ 365:         }
+ 366: 
+ 367:     def item(self, item_id: str) -> ItemDefinition | None:
+ 368:         return self._current_bundle().items.get(item_id)
+ 369: 
+ 370:     def equipment(self, actor_id: str) -> dict[str, str]:
+ 371:         character = self.actor_character(actor_id)
+ 372:         if character is None:
+ 373:             raise GameplayServiceError("Actor must be linked to a character.")
+ 374:         return character.equipment.snapshot()
+ 375: 
+ 376:     def equip_item(self, actor_id: str, inventory_id: str, item_id: str):
+ 377:         """Equip one catalog item, returning the replaced item to the inventory."""
+ 378:         bundle = self._current_bundle()
+ 379:         character = self.actor_character(actor_id)
+ 380:         if character is None:
+ 381:             raise GameplayServiceError("Actor must be linked to a character.")
+ 382:         item = bundle.items.get(item_id)
+ 383:         if item is None:
+ 384:             raise KeyError(f"Item not found: {item_id}")
+ 385:         inventory = self._inventory(bundle, inventory_id)
+ 386:         if inventory.item_quantity(item_id) < 1:
+ 387:             raise ValueError(f"Item is not in inventory: {item_id}")
+ 388: 
+ 389:         def equip():
+ 390:             previous = character.equip(item)
+ 391:             inventory.remove_item(item_id)
+ 392:             if previous is not None:
+ 393:                 inventory.add_item(previous)
+ 394:             character.current_hit_points = min(
+ 395:                 character.max_hit_points,
+ 396:                 character.current_hit_points,
+ 397:             )
+ 398:             return character.equipment.snapshot()
+ 399: 
+ 400:         return self._complete_timed_action(ActionType.INTERACT, actor_id, equip)
+ 401: 
+ 402:     def unequip_item(self, actor_id: str, inventory_id: str, slot: EquipmentSlot | str):
+ 403:         bundle = self._current_bundle()
+ 404:         character = self.actor_character(actor_id)
+ 405:         if character is None:
+ 406:             raise GameplayServiceError("Actor must be linked to a character.")
+ 407:         inventory = self._inventory(bundle, inventory_id)
+ 408: 
+ 409:         def unequip():
+ 410:             item_id = character.unequip(slot)
+ 411:             if item_id is None:
+ 412:                 raise ValueError(f"No item equipped in slot: {slot}")
+ 413:             inventory.add_item(item_id)
+ 414:             return item_id
+ 415: 
+ 416:         return self._complete_timed_action(ActionType.INTERACT, actor_id, unequip)
+ 417: 
+ 418:     def set_actor_active(self, actor_id: str, active: bool) -> ActorView:
+ 419:         bundle = self._current_bundle()
+ 420:         bundle.actors.set_active(actor_id, active)
+ 421:         return bundle.actors.get(actor_id)
+ 422: 
+ 423:     def start_gathering(
+ 424:         self,
+ 425:         actor_id: str,
+ 426:         node_id: str,
+ 427:         inventory_id: str,
+ 428:         quantity: Quantity,
+ 429:         activity_id: str | None = None,
+ 430:     ) -> ActivityView:
+ 431:         bundle = self._current_bundle()
+ 432:         self._require_actor_in_active_world(bundle, actor_id)
+ 433:         result = bundle.actor_activities.start_gathering(
+ 434:             activity_id, actor_id, node_id, inventory_id, quantity, self,
+ 435:         )
+ 436:         self._advance_quests("collect", node_id, quantity.value, actor_id, inventory_id)
+ 437:         return result
+ 438: 
+ 439:     def gathering_duration(self, actor_id: str) -> int:
+ 440:         """Return gathering duration after applying the character skill."""
+ 441:         character = self.actor_character(actor_id)
+ 442:         skill = character.skills.get("gathering") if character is not None else 0
+ 443:         return max(1, 150 - (skill * 15))
+ 444: 
+ 445:     def interact_with_location(self, actor_id: str, location_id: str) -> LocationInteractionView:
+ 446:         """Inspect a location from an actor currently standing there."""
+ 447:         bundle = self._current_bundle()
+ 448:         self._require_actor_in_active_world(bundle, actor_id)
+ 449:         actor = bundle.actors.get(actor_id)
+ 450:         world_map = bundle.movement.map_for(actor.world_id)
+ 451:         if world_map is None:
+ 452:             raise GameplayServiceError(f"No movement map registered for world: {actor.world_id}")
+ 453:         location = world_map.get(location_id)
+ 454:         if location is None:
+ 455:             raise KeyError(f"Location not found: {location_id}")
+ 456:         if actor.location_id != location_id:
+ 457:             raise GameplayServiceError(
+ 458:                 f"Actor {actor_id} is not at location: {location_id}"
+ 459:             )
+ 460:         resource_node_ids = tuple(
+ 461:             node.node_id for node in bundle.resource_nodes.for_world(actor.world_id)
+ 462:             if node.location_id is None or node.location_id == location_id
+ 463:         )
+ 464:         actor_ids = tuple(
+ 465:             other.actor_id
+ 466:             for other in bundle.actors.for_world(actor.world_id)
+ 467:             if other.location_id == location_id
+ 468:         )
+ 469:         return self._complete_timed_action(
+ 470:             ActionType.INTERACT,
+ 471:             actor_id,
+ 472:             lambda: LocationInteractionView(
+ 473:                 actor_id, location.location_id, location.name, actor.character_id,
+ 474:                 resource_node_ids, actor_ids,
+ 475:             ),
+ 476:         )
+ 477: 
+ 478:     def start_gathering_at_location(
+ 479:         self, actor_id: str, location_id: str, node_id: str,
+ 480:         inventory_id: str, quantity: Quantity, activity_id: str | None = None,
+ 481:     ) -> ActivityView:
+ 482:         """Gather only after validating the actor's location interaction."""
+ 483:         self.interact_with_location(actor_id, location_id)
+ 484:         node = self._current_bundle().resource_nodes.get(node_id)
+ 485:         if node is None:
+ 486:             raise KeyError(f"Resource node not found: {node_id}")
+ 487:         if node.location_id is not None and node.location_id != location_id:
+ 488:             raise GameplayServiceError(f"Resource node is not at location: {location_id}")
+ 489:         return self.start_gathering(actor_id, node_id, inventory_id, quantity, activity_id)
+ 490: 
+ 491:     def start_actor_production(
+ 492:         self,
+ 493:         actor_id: str,
+ 494:         recipe_id: str,
+ 495:         inventory_id: str,
+ 496:         facility_id: str,
+ 497:         activity_id: str | None = None,
+ 498:     ) -> ActivityView:
+ 499:         bundle = self._current_bundle()
+ 500:         self._require_actor_in_active_world(bundle, actor_id)
+ 501:         return bundle.actor_activities.start_production(
+ 502:             activity_id, actor_id, recipe_id, inventory_id, facility_id, self,
+ 503:         )
+ 504: 
+ 505:     def cancel_activity(self, activity_id: str, reason: str = "cancelled") -> ActivityView:
+ 506:         return self._current_bundle().actor_activities.cancel(activity_id, reason)
+ 507: 
+ 508:     def activity(self, activity_id: str) -> ActivityView | None:
+ 509:         return self._current_bundle().actor_activities.get(activity_id)
+ 510: 
+ 511:     def actor_activity(self, actor_id: str) -> ActivityView | None:
+ 512:         actor = self._current_bundle().actors.get(actor_id)
+ 513:         if actor is None or actor.activity_id is None:
+ 514:             return None
+ 515:         return self.activity(actor.activity_id)
+ 516: 
+ 517:     def inventory(self, inventory_id: str) -> InventoryView:
+ 518:         bundle = self._current_bundle()
+ 519:         inventory = self._inventory(bundle, inventory_id)
+ 520:         return InventoryView(
+ 521:             inventory_id,
+ 522:             tuple((resource.value, quantity.value, quantity.unit.value)
+ 523:                   for resource, quantity in inventory.snapshot()),
+ 524:             inventory.item_snapshot(),
+ 525:             inventory.total_weight(bundle.items),
+ 526:         )
+ 527: 
+ 528:     def consume_item(self, actor_id: str, inventory_id: str, resource_id: str) -> int:
+ 529:         """Consume one item and apply its supported character effect."""
+ 530:         bundle = self._current_bundle()
+ 531:         character = self.actor_character(actor_id)
+ 532:         if character is None:
+ 533:             raise GameplayServiceError("Actor must be linked to a character to consume items.")
+ 534:         resource = ResourceType(resource_id)
+ 535:         effects = {"bread": 2, "water": 1}
+ 536:         healing = effects.get(resource.value)
+ 537:         if healing is None:
+ 538:             raise GameplayServiceError(f"Resource is not consumable: {resource_id}")
+ 539:         inventory = self._inventory(bundle, inventory_id)
+ 540:         return self._complete_timed_action(
+ 541:             ActionType.CONSUME_ITEM,
+ 542:             actor_id,
+ 543:             lambda: self._consume_and_apply(
+ 544:                 inventory, resource, character, healing,
+ 545:             ),
+ 546:         )
+ 547: 
+ 548:     @staticmethod
+ 549:     def _consume_and_apply(inventory, resource, character, healing: int) -> int:
+ 550:         inventory.remove(resource, Quantity(1, ResourceUnit.ITEM))
+ 551:         character.current_hit_points = min(
+ 552:             character.max_hit_points,
+ 553:             character.current_hit_points + healing,
+ 554:         )
+ 555:         return character.current_hit_points
+ 556: 
+ 557:     def balance(self, account_id: str, currency_id: str) -> Money:
+ 558:         bundle = self._current_bundle()
+ 559:         return bundle.economy.ledger.balance(account_id, Currency(currency_id))
+ 560: 
+ 561:     def credit(self, account_id: str, currency_id: str, amount: int) -> Money:
+ 562:         bundle = self._current_bundle()
+ 563:         bundle.economy.ledger.credit(account_id, Money(amount, Currency(currency_id)), "application credit")
+ 564:         return self.balance(account_id, currency_id)
+ 565: 
+ 566:     def publish_offer(
+ 567:         self, offer_id: str, seller_id: str, seller_inventory_id: str,
+ 568:         resource_type: ResourceType, quantity: int, unit_price: Money, expires_at: int | None = None,
+ 569:     ) -> MarketOffer:
+ 570:         bundle = self._current_bundle()
+ 571:         self._inventory(bundle, seller_inventory_id)
+ 572:         if not isinstance(resource_type, ResourceType):
+ 573:             raise TypeError("resource_type must be ResourceType.")
+ 574:         stock = bundle.inventories[seller_inventory_id].get(resource_type)
+ 575:         reserved = bundle.economy.market.reserved_quantity(seller_inventory_id, resource_type)
+ 576:         if stock is None or stock.value - reserved < quantity:
+ 577:             raise GameplayServiceError("Seller inventory cannot reserve the offered quantity.")
+ 578:         offer = MarketOffer(offer_id, seller_id, resource_type, quantity, unit_price, seller_inventory_id, expires_at)
+ 579:         bundle.economy.market.publish(offer)
+ 580:         return offer
+ 581: 
+ 582:     def register_merchant(self, merchant: Merchant) -> Merchant:
+ 583:         return self._current_bundle().economy.register_merchant(merchant)
+ 584: 
+ 585:     def buy_offer(self, offer_id: str, buyer_id: str, buyer_inventory_id: str, quantity: int | None = None):
+ 586:         bundle = self._current_bundle()
+ 587:         offer = bundle.economy.market.get(offer_id)
+ 588:         if offer is None:
+ 589:             raise KeyError(f"Market offer not found: {offer_id}")
+ 590:         if offer.inventory_id is None:
+ 591:             raise GameplayServiceError("Market offer has no seller inventory.")
+ 592:         buyer_inventory = self._inventory(bundle, buyer_inventory_id)
+ 593:         seller_inventory = self._inventory(bundle, offer.inventory_id)
+ 594:         stock = seller_inventory.get(offer.resource_type)
+ 595:         if stock is None:
+ 596:             raise GameplayServiceError("Seller inventory does not contain the offered resource.")
+ 597:         purchased = offer.quantity if quantity is None else quantity
+ 598:         if isinstance(purchased, bool) or not isinstance(purchased, int) or purchased <= 0 or purchased > offer.quantity:
+ 599:             raise GameplayServiceError("Purchase quantity is invalid for this offer.")
+ 600:         def execute_trade():
+ 601:             trade = TradeService(bundle.economy.ledger).execute(
+ 602:                 buyer_id, offer.seller_id, buyer_inventory, seller_inventory,
+ 603:                 offer.resource_type,
+ 604:                 Quantity(purchased, stock.unit),
+ 605:                 offer.unit_price,
+ 606:             )
+ 607:             bundle.economy.market.withdraw(offer_id)
+ 608:             if purchased < offer.quantity:
+ 609:                 bundle.economy.market.publish(MarketOffer(
+ 610:                     offer.offer_id, offer.seller_id, offer.resource_type,
+ 611:                     offer.quantity - purchased, offer.unit_price,
+ 612:                     offer.inventory_id, offer.expires_at,
+ 613:                 ))
+ 614:             self._advance_quests(
+ 615:                 "collect", offer.resource_type.value, purchased,
+ 616:                 buyer_id, buyer_inventory_id,
+ 617:             )
+ 618:             return trade
+ 619: 
+ 620:         return self._complete_timed_action(ActionType.TRADE, buyer_id, execute_trade)
+ 621: 
+ 622:     def cancel_offer(self, offer_id: str, seller_id: str) -> MarketOffer:
+ 623:         bundle = self._current_bundle()
+ 624:         offer = bundle.economy.market.get(offer_id)
+ 625:         if offer is None:
+ 626:             raise KeyError(f"Market offer not found: {offer_id}")
+ 627:         if offer.seller_id != seller_id:
+ 628:             raise GameplayServiceError("Only the seller can cancel a market offer.")
+ 629:         return bundle.economy.market.withdraw(offer_id)
+ 630: 
+ 631:     def market_offers(self) -> tuple[MarketOffer, ...]:
+ 632:         return self._current_bundle().economy.market.offers()
+ 633: 
+ 634:     def expire_market_offers(self, current_tick: int | None = None):
+ 635:         tick = self._current_bundle().simulation.current_tick.value if current_tick is None else current_tick
+ 636:         return self._current_bundle().economy.market.expire(tick)
+ 637: 
+ 638:     def register_npc(self, npc: NPC) -> NPC:
+ 639:         return self._current_bundle().social.add_npc(npc)
+ 640: 
+ 641:     def register_faction(self, faction: Faction) -> Faction:
+ 642:         return self._current_bundle().social.add_faction(faction)
+ 643: 
+ 644:     def change_reputation(self, faction_id: str, amount: int) -> int:
+ 645:         return self._current_bundle().social.change_reputation(faction_id, amount)
+ 646: 
+ 647:     def reputation(self, faction_id: str) -> tuple[int, str]:
+ 648:         ledger = self._current_bundle().social.reputation
+ 649:         return ledger.get(faction_id), ledger.tier(faction_id)
+ 650: 
+ 651:     def relationship(self, source_id: str, target_id: str):
+ 652:         return self._current_bundle().social.relation(source_id, target_id)
+ 653: 
+ 654:     def register_dialogue(self, dialogue: Dialogue) -> Dialogue:
+ 655:         return self._current_bundle().social.add_dialogue(dialogue)
+ 656: 
+ 657:     def talk_to_npc(self, actor_id: str, npc_id: str, dialogue_id: str, node_id: str | None = None):
+ 658:         bundle = self._current_bundle()
+ 659:         self._require_actor_in_active_world(bundle, actor_id)
+ 660:         actor = bundle.actors.get(actor_id)
+ 661:         npc = bundle.social.npcs.get(npc_id)
+ 662:         if npc is None:
+ 663:             raise KeyError(f"NPC not found: {npc_id}")
+ 664:         if npc.location_id is not None and npc.location_id != actor.location_id:
+ 665:             raise GameplayServiceError("Actor and NPC must be at the same location.")
+ 666:         dialogue = bundle.social.dialogues.get(dialogue_id)
+ 667:         if dialogue is None:
+ 668:             raise KeyError(f"Dialogue not found: {dialogue_id}")
+ 669:         selected_node_id = node_id or dialogue.start_node_id
+ 670: 
+ 671:         def read_node():
+ 672:             result = bundle.social.node_for(
+ 673:                 dialogue_id,
+ 674:                 selected_node_id,
+ 675:                 self._dialogue_context(actor_id, npc_id),
+ 676:             )
+ 677:             self._advance_quests("talk", npc_id, 1, actor_id, None)
+ 678:             return result
+ 679: 
+ 680:         return self._complete_timed_action(ActionType.DIALOGUE, actor_id, read_node)
+ 681: 
+ 682:     def choose_dialogue(self, actor_id: str, npc_id: str, dialogue_id: str, node_id: str, choice_id: str):
+ 683:         bundle = self._current_bundle()
+ 684:         dialogue = bundle.social.dialogues.get(dialogue_id)
+ 685:         if dialogue is None: raise KeyError(f"Dialogue not found: {dialogue_id}")
+ 686:         choice = next(
+ 687:             (
+ 688:                 item for item in dialogue.available_choices(
+ 689:                     node_id, self._dialogue_context(actor_id, npc_id)
+ 690:                 )
+ 691:                 if item.choice_id == choice_id
+ 692:             ),
+ 693:             None,
+ 694:         )
+ 695:         if choice is None: raise ValueError(f"Dialogue choice not available: {choice_id}")
+ 696:         def choose():
+ 697:             bundle.social.change_relationship(actor_id, npc_id, value=2, trust=1)
+ 698:             self._run_dialogue_action(choice.action or choice_id, actor_id, npc_id)
+ 699:             if choice.next_node_id is None:
+ 700:                 return None
+ 701:             return bundle.social.node_for(
+ 702:                 dialogue_id,
+ 703:                 choice.next_node_id,
+ 704:                 self._dialogue_context(actor_id, npc_id),
+ 705:             )
+ 706: 
+ 707:         return self._complete_timed_action(ActionType.DIALOGUE_CHOICE, actor_id, choose)
+ 708: 
+ 709:     def _dialogue_context(self, actor_id: str, npc_id: str) -> dict:
+ 710:         bundle = self._current_bundle()
+ 711:         objectives = {
+ 712:             objective.objective_id: objective.progress
+ 713:             for quest in bundle.quest_log.all()
+ 714:             for objective in quest.objectives
+ 715:         }
+ 716:         items = {}
+ 717:         try:
+ 718:             items = {
+ 719:                 getattr(resource, "value", str(resource)): amount
+ 720:                 for resource, amount, _unit in self.inventory("player").stocks
+ 721:             }
+ 722:         except (KeyError, ValueError, RuntimeError):
+ 723:             pass
+ 724:         return {
+ 725:             "actor_id": actor_id,
+ 726:             "npc_id": npc_id,
+ 727:             "objectives": objectives,
+ 728:             "items": items,
+ 729:             "flags": {
+ 730:                 f"quest:{quest.quest_id}": quest.state.value
+ 731:                 for quest in bundle.quest_log.all()
+ 732:             },
+ 733:         }
+ 734: 
+ 735:     def _run_dialogue_action(self, action: str, actor_id: str, npc_id: str) -> None:
+ 736:         actions = {
+ 737:             "accept_carpenter_quest": lambda: self.accept_carpenter_quest(actor_id, "player"),
+ 738:             "deliver_carpenter_wood": lambda: self.deliver_carpenter_wood(actor_id, npc_id, "player"),
+ 739:             "accept_inn_quest": lambda: self.accept_inn_quest(actor_id, "player"),
+ 740:             "deliver_inn_supplies": lambda: self.deliver_inn_supplies(actor_id, npc_id, "player"),
+ 741:             "accept_blacksmith_quest": lambda: self.accept_blacksmith_quest(actor_id, "player"),
+ 742:             "deliver_blacksmith_ore": lambda: self.deliver_blacksmith_ore(actor_id, npc_id, "player"),
+ 743:         }
+ 744:         handler = actions.get(action)
+ 745:         if handler is not None:
+ 746:             handler()
+ 747: 
+ 748:     def start_quest(self, quest: Quest, context=None, owner_id: str | None = None, reward_inventory_id: str | None = None) -> Quest:
+ 749:         bundle = self._current_bundle()
+ 750:         quest.start(context or {})
+ 751:         registered = bundle.quest_log.get(quest.quest_id)
+ 752:         if registered is None:
+ 753:             bundle.quest_log.add(quest)
+ 754:         elif registered is not quest:
+ 755:             raise ValueError(f"Quest ID is already registered: {quest.quest_id}")
+ 756:         if owner_id is not None:
+ 757:             self._quest_reward_accounts[quest.quest_id] = owner_id
+ 758:         if reward_inventory_id is not None:
+ 759:             self._quest_reward_inventories[quest.quest_id] = reward_inventory_id
+ 760:         return quest
+ 761: 
+ 762:     def accept_carpenter_quest(self, owner_id: str, inventory_id: str):
+ 763:         quest = getattr(self, "carpenter_quest", None)
+ 764:         if quest is None:
+ 765:             raise RuntimeError("Marangoz gÃ¶revi bulunamadÄ±.")
+ 766:         if quest.state.value == "active":
+ 767:             return quest
+ 768:         if quest.state.value == "completed":
+ 769:             raise ValueError("Marangoz gÃ¶revi zaten tamamlandÄ±.")
+ 770:         return self.start_quest(
+ 771:             quest, owner_id=owner_id, reward_inventory_id=inventory_id,
+ 772:         )
+ 773: 
+ 774:     def deliver_carpenter_wood(self, actor_id: str, npc_id: str, inventory_id: str):
+ 775:         quest = getattr(self, "carpenter_quest", None)
+ 776:         if quest is None or quest.state.value != "active":
+ 777:             raise ValueError("Hilmi'nin aktif bir odun gÃ¶revi yok.")
+ 778:         if npc_id != "village_carpenter":
+ 779:             raise ValueError("Odun yalnÄ±zca Marangoz Hilmi'ye teslim edilebilir.")
+ 780:         inventory = self._inventory(self._current_bundle(), inventory_id)
+ 781:         wood = ResourceType("wood")
+ 782:         stock = inventory.get(wood)
+ 783:         if stock is None or stock.value < 3:
+ 784:             raise ValueError("Teslim etmek iÃ§in en az 3 odun gerekli.")
+ 785:         inventory.remove(wood, Quantity(3, ResourceUnit.ITEM))
+ 786:         self.update_quest_objective(
+ 787:             quest.quest_id, "deliver_wood", 1, actor_id, inventory_id,
+ 788:         )
+ 789:         return quest
+ 790: 
+ 791:     def accept_inn_quest(self, owner_id: str, inventory_id: str):
+ 792:         quest = getattr(self, "inn_quest", None)
+ 793:         if quest is None:
+ 794:             raise RuntimeError("Han gÃ¶revi bulunamadÄ±.")
+ 795:         if quest.state.value == "active":
+ 796:             return quest
+ 797:         if quest.state.value == "completed":
+ 798:             raise ValueError("Han gÃ¶revi zaten tamamlandÄ±.")
+ 799:         carpenter = getattr(self, "carpenter_quest", None)
+ 800:         if carpenter is None or carpenter.state.value != "completed":
+ 801:             raise ValueError("Ã–nce Hilmi'nin odun gÃ¶revini tamamlamalÄ±sÄ±n.")
+ 802:         return self.start_quest(
+ 803:             quest, owner_id=owner_id, reward_inventory_id=inventory_id,
+ 804:         )
+ 805: 
+ 806:     def accept_blacksmith_quest(self, owner_id: str, inventory_id: str):
+ 807:         quest = getattr(self, "blacksmith_quest", None)
+ 808:         if quest is None:
+ 809:             raise RuntimeError("Demirci gÃ¶revi bulunamadÄ±.")
+ 810:         if quest.state.value == "active":
+ 811:             return quest
+ 812:         if quest.state.value == "completed":
+ 813:             raise ValueError("Demirci gÃ¶revi zaten tamamlandÄ±.")
+ 814:         return self.start_quest(quest, owner_id=owner_id, reward_inventory_id=inventory_id)
+ 815: 
+ 816:     def deliver_blacksmith_ore(self, actor_id: str, npc_id: str, inventory_id: str):
+ 817:         quest = getattr(self, "blacksmith_quest", None)
+ 818:         if quest is None or quest.state.value != "active":
+ 819:             raise ValueError("Demircinin aktif bir cevher gÃ¶revi yok.")
+ 820:         if npc_id != "village_blacksmith":
+ 821:             raise ValueError("Demir cevheri yalnÄ±zca demirciye teslim edilebilir.")
+ 822:         inventory = self._inventory(self._current_bundle(), inventory_id)
+ 823:         ore = ResourceType("iron_ore")
+ 824:         stock = inventory.get(ore)
+ 825:         if stock is None or stock.value < 3:
+ 826:             raise ValueError("Teslim etmek iÃ§in en az 3 demir cevheri gerekli.")
+ 827:         inventory.remove(ore, Quantity(3, ResourceUnit.ITEM))
+ 828:         self.update_quest_objective(
+ 829:             quest.quest_id, "deliver_iron_ore", 1, actor_id, inventory_id,
+ 830:         )
+ 831:         return quest
+ 832: 
+ 833:     def deliver_inn_supplies(self, actor_id: str, npc_id: str, inventory_id: str):
+ 834:         quest = getattr(self, "inn_quest", None)
+ 835:         if quest is None or quest.state.value != "active":
+ 836:             raise ValueError("Hilmi'nin aktif bir han gÃ¶revi yok.")
+ 837:         if npc_id != "village_carpenter":
+ 838:             raise ValueError("Erzaklar Hilmi'ye teslim edilmelidir.")
+ 839:         inventory = self._inventory(self._current_bundle(), inventory_id)
+ 840:         bread = inventory.get(ResourceType("bread"))
+ 841:         water = inventory.get(ResourceType("water"))
+ 842:         if bread is None or bread.value < 1 or water is None or water.value < 1:
+ 843:             raise ValueError("Teslim etmek iÃ§in 1 ekmek ve 1 su gerekli.")
+ 844:         inventory.remove(ResourceType("bread"), Quantity(1, ResourceUnit.ITEM))
+ 845:         inventory.remove(ResourceType("water"), Quantity(1, ResourceUnit.ITEM))
+ 846:         self.update_quest_objective(
+ 847:             quest.quest_id, "deliver_supplies", 1, actor_id, inventory_id,
+ 848:         )
+ 849:         return quest
+ 850: 
+ 851:     def update_quest_objective(self, quest_id: str, objective_id: str, amount: int = 1, owner_id: str | None = None, inventory_id: str | None = None):
+ 852:         bundle = self._current_bundle()
+ 853:         quest = bundle.quest_log.get(quest_id)
+ 854:         if quest is None:
+ 855:             raise KeyError(f"Quest not found: {quest_id}")
+ 856:         previous = quest.state
+ 857:         quest.update(objective_id, amount)
+ 858:         if previous != quest.state and quest.state.value == "completed":
+ 859:             self._grant_quest_reward(quest, owner_id, inventory_id)
+ 860:         return quest.state
+ 861: 
+ 862:     def grant_experience(self, actor_id: str, amount: int) -> int:
+ 863:         """Award XP through the canonical character progression model."""
+ 864:         if isinstance(amount, bool) or not isinstance(amount, int) or amount < 0:
+ 865:             raise ValueError("Experience must be a non-negative integer.")
+ 866:         character = self.actor_character(actor_id)
+ 867:         if character is None:
+ 868:             raise KeyError(f"Character not found for actor: {actor_id}")
+ 869:         return character.progression.add_experience(amount)
+ 870: 
+ 871:     def improve_skill(self, actor_id: str, skill: str) -> int:
+ 872:         """Spend one earned progression point on a class skill."""
+ 873:         character = self.actor_character(actor_id)
+ 874:         if character is None:
+ 875:             raise KeyError(f"Character not found for actor: {actor_id}")
+ 876:         character.progression.spend_point()
+ 877:         try:
+ 878:             character.skills = character.skills.improve(skill)
+ 879:         except (KeyError, TypeError, ValueError):
+ 880:             character.progression.unspent_points += 1
+ 881:             raise
+ 882:         return character.skills.get(skill)
+ 883: 
+ 884:     def add_combatant(self, combatant: Combatant) -> Combatant:
+ 885:         self._current_bundle().combat.add(combatant)
+ 886:         return combatant
+ 887: 
+ 888:     def create_combat_encounter(self, encounter_id: str, combatant_ids, initiative_scores=None):
+ 889:         return self._current_bundle().combat.create_encounter(encounter_id, combatant_ids, initiative_scores)
+ 890: 
+ 891:     def next_combat_turn(self, encounter_id: str):
+ 892:         return self._complete_timed_action(
+ 893:             ActionType.COMBAT_TURN,
+ 894:             "combat",
+ 895:             lambda: self._current_bundle().combat.next_turn(encounter_id),
+ 896:         )
+ 897: 
+ 898:     def combat_attack(self, attacker_id: str, defender_id: str):
+ 899:         def attack():
+ 900:             combat = self._current_bundle().combat
+ 901:             attacker = combat.get(attacker_id)
+ 902:             defender = combat.get(defender_id)
+ 903:             if attacker is None:
+ 904:                 raise KeyError(f"Combatant not found: {attacker_id}")
+ 905:             if defender is None:
+ 906:                 raise KeyError(f"Combatant not found: {defender_id}")
+ 907:             attacker_character = self.actor_character(attacker_id)
+ 908:             defender_character = self.actor_character(defender_id)
+ 909:             weapon_bonus = attacker_character.weapon_damage if attacker_character else 0
+ 910:             armor_bonus = defender_character.defense_bonus if defender_character else 0
+ 911:             attacker.attack += weapon_bonus
+ 912:             defender.defense += armor_bonus
+ 913:             try:
+ 914:                 result = combat.attack_once(attacker_id, defender_id)
+ 915:             finally:
+ 916:                 attacker.attack -= weapon_bonus
+ 917:                 defender.defense -= armor_bonus
+ 918:             if result.defender_defeated:
+ 919:                 self._advance_quests("kill", defender_id, 1, attacker_id, None)
+ 920:             return result
+ 921: 
+ 922:         return self._complete_timed_action(ActionType.COMBAT_ATTACK, attacker_id, attack)
+ 923: 
+ 924:     def advance_combat_round(self, actor_id: str = "combat") -> None:
+ 925:         self._complete_timed_action(
+ 926:             ActionType.COMBAT_TURN,
+ 927:             actor_id,
+ 928:             self._current_bundle().combat.advance_round,
+ 929:         )
+ 930: 
+ 931:     def _advance_quests(self, objective_type: str, target_id: str, amount: int, owner_id: str | None, inventory_id: str | None):
+ 932:         for quest in self._current_bundle().quest_log.active():
+ 933:             for objective in quest.objectives:
+ 934:                 target_matches = objective.target_id is None or objective.target_id == target_id
+ 935:                 if (
+ 936:                     objective_type == "collect"
+ 937:                     and not target_matches
+ 938:                     and objective.target_id is not None
+ 939:                 ):
+ 940:                     source = self._current_bundle().resource_nodes.get(objective.target_id)
+ 941:                     gathered = self._current_bundle().resource_nodes.get(target_id)
+ 942:                     target_matches = (
+ 943:                         source is not None
+ 944:                         and gathered is not None
+ 945:                         and source.resource_type == gathered.resource_type
+ 946:                     )
+ 947:                 if objective.objective_type.value == objective_type and target_matches:
+ 948:                     self.update_quest_objective(quest.quest_id, objective.objective_id, amount, owner_id, inventory_id)
+ 949: 
+ 950:     def _grant_quest_reward(self, quest: Quest, owner_id: str | None, inventory_id: str | None) -> None:
+ 951:         bundle = self._current_bundle()
+ 952:         account_id = owner_id or self._quest_reward_accounts.get(quest.quest_id)
+ 953:         if quest.reward.experience and account_id:
+ 954:             self.grant_experience(account_id, quest.reward.experience)
+ 955:         if quest.reward.currency and account_id:
+ 956:             bundle.economy.ledger.credit(account_id, Money(quest.reward.currency, Currency("gold")), "quest reward")
+ 957:         target_inventory_id = inventory_id or self._quest_reward_inventories.get(quest.quest_id)
+ 958:         if target_inventory_id and quest.reward.items:
+ 959:             inventory = self._inventory(bundle, target_inventory_id)
+ 960:             for resource_id, amount in quest.reward.items:
+ 961:                 inventory.add(ResourceType(resource_id), Quantity(amount, ResourceUnit.ITEM))
+ 962:         for faction_id, amount in quest.reward.reputation:
+ 963:             bundle.social.change_reputation(faction_id, amount)
+ 964: 
+ 965:     def state(self) -> GameplaySnapshotView:
+ 966:         """Return a deterministic read-only view without mutating the session."""
+ 967:         bundle = self._current_bundle()
+ 968:         world = bundle.session.worlds.get_active()
+ 969:         inventories = tuple(self.inventory(inventory_id) for inventory_id in sorted(bundle.inventories))
+ 970:         nodes = tuple(
+ 971:             ResourceNodeView(
+ 972:                 node.node_id,
+ 973:                 node.world_id,
+ 974:                 node.resource_type.value,
+ 975:                 (node.quantity.value, node.quantity.unit.value),
+ 976:                 (node.capacity.value, node.capacity.unit.value),
+ 977:                 (node.regeneration_rate.value, node.regeneration_rate.unit.value),
+ 978:                 node.last_simulation_tick.value,
+ 979:                 node.location_id,
+ 980:             )
+ 981:             for node in bundle.resource_nodes.nodes()
+ 982:         )
+ 983:         facilities = tuple(
+ 984:             FacilityView(
+ 985:                 facility.facility_id,
+ 986:                 facility.facility_type,
+ 987:                 facility.active,
+ 988:                 facility.capabilities,
+ 989:                 facility.capacity.capacity,
+ 990:                 facility.capacity.reserved,
+ 991:                 facility.active_job_ids,
+ 992:             )
+ 993:             for facility in bundle.facilities.facilities()
+ 994:         )
+ 995:         inventory_ids = {id(inventory): inventory_id for inventory_id, inventory in bundle.inventories.items()}
+ 996:         jobs = tuple(
+ 997:             JobView(
+ 998:                 job.job_id,
+ 999:                 job.recipe.recipe_id,
+1000:                 inventory_ids[id(job.inventory)],
+1001:                 job.state.value,
+1002:                 job.start_tick.value,
+1003:                 job.end_tick.value,
+1004:             )
+1005:             for job in bundle.production_jobs.jobs()
+1006:         )
+1007:         chains = tuple(
+1008:             ChainView(
+1009:                 chain.chain_id,
+1010:                 chain.state.value,
+1011:                 chain.current_stage_index,
+1012:                 tuple(job.job_id for job in chain.jobs),
+1013:             )
+1014:             for chain in (self._chains[key] for key in sorted(self._chains))
+1015:         )
+1016:         return GameplaySnapshotView(
+1017:             None if world is None else world.world_id,
+1018:             bundle.simulation.current_tick.value,
+1019:             inventories,
+1020:             nodes,
+1021:             facilities,
+1022:             jobs,
+1023:             chains,
+1024:             self._current_bundle().actors.actors(),
+1025:             self._current_bundle().actor_activities.activities(),
+1026:             self._current_bundle().movement.movements(),
+1027:         )
+1028: 
+1029:     def actors_state(self) -> tuple[ActorView, ...]:
+1030:         return self._current_bundle().actors.actors()
+1031: 
+1032:     def activities_state(self) -> tuple[ActivityView, ...]:
+1033:         return self._current_bundle().actor_activities.activities()
+1034: 
+1035:     def _current_bundle(self):
+1036:         bundle = self._application.holder.current
+1037:         if bundle is not self._bundle:
+1038:             for chain in self._chains.values():
+1039:                 chain.dispose()
+1040:             self._chains.clear()
+1041:             self._bundle = bundle
+1042:         return bundle
+1043: 
+1044:     @staticmethod
+1045:     def _require_active_world(bundle):
+1046:         if bundle.session.worlds.get_active() is None:
+1047:             raise GameplayServiceError("An active world is required.")
+1048: 
+1049:     @staticmethod
+1050:     def _inventory(bundle, inventory_id: str) -> Inventory:
+1051:         if not isinstance(inventory_id, str) or not inventory_id.strip():
+1052:             raise TypeError("inventory_id must be a non-empty string.")
+1053:         inventory = bundle.inventories.get(inventory_id)
+1054:         if inventory is None:
+1055:             raise KeyError(f"Inventory not found: {inventory_id}")
+1056:         return inventory
+1057: 
+1058:     @staticmethod
+1059:     def _recipe(bundle, recipe_id: str) -> Recipe:
+1060:         if not isinstance(recipe_id, str) or not recipe_id.strip():
+1061:             raise TypeError("recipe_id must be a non-empty string.")
+1062:         recipe = bundle.recipes.get(recipe_id)
+1063:         if recipe is None:
+1064:             raise KeyError(f"Recipe not found: {recipe_id}")
+1065:         return recipe
+1066: 
+1067:     @staticmethod
+1068:     def _require_actor_in_active_world(bundle, actor_id: str):
+1069:         world = bundle.session.worlds.get_active()
+1070:         if world is None:
+1071:             raise GameplayServiceError("An active world is required.")
+1072:         actor = bundle.actors.get(actor_id)
+1073:         if actor is None:
+1074:             raise KeyError(f"Actor not found: {actor_id}")
+1075:         if not actor.active:
+1076:             raise GameplayServiceError(f"Actor is inactive: {actor_id}")
+1077:         if actor.world_id != world.world_id:
+1078:             raise GameplayServiceError(
+1079:                 f"Actor {actor_id} does not belong to the active world."
+1080:             )
+1081: 
+1082:     @staticmethod
+1083:     def _normalize_stage(stage) -> GameplayChainStage:
+1084:         if isinstance(stage, GameplayChainStage):
+1085:             return stage
+1086:         if isinstance(stage, (tuple, list)) and len(stage) == 3:
+1087:             return GameplayChainStage(*stage)
+1088:         raise TypeError(
+1089:             "chain stages must be GameplayChainStage or (recipe_id, inventory_id, facility_id)."
+1090:         )
+1091: 
+1092: 
+1093: __all__ = [
+1094:     "GameplayService",
+1095:     "GameplayServiceError",
+1096:     "GameplayChainStage",
+1097:     "InventoryView",
+1098:     "ResourceNodeView",
+1099:     "LocationInteractionView",
+1100:     "FacilityView",
+1101:     "JobView",
+1102:     "ChainView",
+1103:     "GameplaySnapshotView",
+1104: ]
+========== game_ui\demo.py ==========
+   1: """Deterministic content used by the vertical-slice executable."""
+   2: 
+   3: from application.content_pack import populate_demo_content
+   4: 
+   5: 
+   6: def create_demo_service(game):
+   7:     service, _ = populate_demo_content(game)
+   8:     return service
+========== game_ui\game_window.py ==========
+   1: """Pygame application shell for the playable vertical slice."""
+   2: 
+   3: from pathlib import Path
+   4: 
+   5: from .input import InputMapper
+   6: from .renderer import GOLD, NAV_ALIASES, Renderer
+   7: from .screens.character_screen import CharacterScreen
+   8: from .screens.inventory_screen import InventoryScreen
+   9: from .screens.main_menu import MainMenu
+  10: from .screens.map_screen import MapScreen
+  11: from .screens.local_map_screen import LocalMapScreen
+  12: from .screens.world_screen import WorldScreen
+  13: from .screens.market_screen import MarketScreen
+  14: from .screens.dialogue_screen import DialogueScreen
+  15: from .screens.combat_screen import CombatScreen
+  16: from .screens.character_creation import CharacterCreationScreen
+  17: from .screens.production_screen import ProductionScreen
+  18: from .screens.opening_screen import OpeningScreen
+  19: from .screens.save_slots_screen import SaveSlotsScreen
+  20: from .screens.quest_log_screen import QuestLogScreen
+  21: from .window_manager import WindowManager
+  22: from application.save_storage import SaveStorage, SaveStorageError
+  23: 
+  24: # Screens that show the navigation tab bar / resource bar.
+  25: NAV_SCREENS = frozenset(
+  26:     {"world", "inventory", "production", "character", "market", "map", "local_map"}
+  27: )
+  28: NOTICE_FRAMES = 240  # ~4 seconds at 60 fps
+  29: PAUSE_MENU_OPTIONS = (
+  30:     ("resume", "Oyuna DÃ¶n"),
+  31:     ("save", "Kaydet"),
+  32:     ("main_menu", "Ana MenÃ¼"),
+  33:     ("quit", "Oyundan Ã‡Ä±k"),
+  34: )
+  35: 
+  36: 
+  37: class GameWindow:
+  38:     """Own the frame loop and route input between screens.
+  39: 
+  40:     ``backend`` is injected so tests can use a fake pygame-compatible module.
+  41:     """
+  42: 
+  43:     def __init__(
+  44:         self,
+  45:         service,
+  46:         backend,
+  47:         *,
+  48:         width=960,
+  49:         height=640,
+  50:         title="Eldoria",
+  51:         save_path=None,
+  52:         save_storage=None,
+  53:         fullscreen=True,
+  54:     ):
+  55:         self.service = service
+  56:         self.pg = backend
+  57:         self.width, self.height = width, height
+  58: 
+  59:         # The adapter is intentionally import-safe, so initialize pygame only
+  60:         # when an actual window is created.
+  61:         if hasattr(backend, "init"):
+  62:             backend.init()
+  63:         if hasattr(backend, "font") and hasattr(backend.font, "init"):
+  64:             backend.font.init()
+  65: 
+  66:         self.fullscreen = bool(fullscreen)
+  67:         self.screen = self._create_display(width, height, self.fullscreen)
+  68:         actual_size = getattr(self.screen, "get_size", lambda: (width, height))()
+  69:         self.width, self.height = actual_size
+  70:         backend.display.set_caption(title)
+  71:         self.renderer = Renderer(backend, self.screen, self.width, self.height)
+  72:         self.input = InputMapper(backend)
+  73:         self.save_storage = save_storage
+  74:         migration_report = None
+  75:         self._save_storage_failure = None
+  76:         if self.save_storage is None and save_path is None:
+  77:             self.save_storage = SaveStorage()
+  78:         if self.save_storage is not None:
+  79:             try:
+  80:                 migration_report = self.save_storage.prepare()
+  81:             except SaveStorageError as error:
+  82:                 self._save_storage_failure = error
+  83:         self.save_path = (
+  84:             Path(save_path)
+  85:             if save_path is not None
+  86:             else (
+  87:                 self.save_storage.slot_path(0)
+  88:                 if self._save_storage_failure is None
+  89:                 else None
+  90:             )
+  91:         )
+  92: 
+  93:         self.screens = {
+  94:             "menu": MainMenu(width=self.width, height=self.height),
+  95:             "opening": OpeningScreen(),
+  96:             "world": WorldScreen(service),
+  97:             "map": MapScreen(service),
+  98:             "local_map": LocalMapScreen(service),
+  99:             "inventory": InventoryScreen(service),
+ 100:             "production": ProductionScreen(service),
+ 101:             "character": CharacterScreen(service),
+ 102:             "quest_log": QuestLogScreen(service),
+ 103:             "market": MarketScreen(service),
+ 104:             "dialogue": DialogueScreen(service),
+ 105:             "combat": CombatScreen(service),
+ 106:             "character_creation": CharacterCreationScreen(service),
+ 107:         }
+ 108:         self.save_dir = self.save_path.parent if self.save_path is not None else None
+ 109:         self.selected_slot = None
+ 110:         self.screens["save_slots"] = SaveSlotsScreen(
+ 111:             self.save_dir,
+ 112:             self._select_save_slot,
+ 113:             save_available=self._save_storage_failure is None,
+ 114:             unavailable_message=(
+ 115:                 str(self._save_storage_failure)
+ 116:                 if self._save_storage_failure is not None
+ 117:                 else ""
+ 118:             ),
+ 119:         )
+ 120:         self.window_manager = WindowManager(
+ 121:             backend,
+ 122:             self.width,
+ 123:             self.height,
+ 124:             on_result=self._handle_window_result,
+ 125:         )
+ 126:         self.window_manager.register(
+ 127:             "inventory",
+ 128:             self.screens["inventory"],
+ 129:             (24, 110, min(self.width - 48, 912), min(self.height - 110, 470)),
+ 130:             content_origin=(24, 126),
+ 131:             title="Envanter",
+ 132:         )
+ 133:         self.window_manager.register(
+ 134:             "character",
+ 135:             self.screens["character"],
+ 136:             (80, 90, min(self.width - 80, 760), min(self.height - 90, 470)),
+ 137:             content_origin=(24, 126),
+ 138:             title="Karakter",
+ 139:         )
+ 140:         self.window_manager.register(
+ 141:             "quest_log",
+ 142:             self.screens["quest_log"],
+ 143:             (24, 110, min(self.width - 48, 912), min(self.height - 110, 470)),
+ 144:             content_origin=(24, 126),
+ 145:             title="GÃ¶rev GÃ¼nlÃ¼ÄŸÃ¼",
+ 146:         )
+ 147: 
+ 148:         self.current = "menu"
+ 149:         self.gameplay_active = False
+ 150:         self.gameplay_screen = "local_map"
+ 151:         self.pause_menu_open = False
+ 152:         self.pause_menu_selected = 0
+ 153:         self.running = False
+ 154:         self.notice = ""
+ 155:         self.notice_level = "info"
+ 156:         self._notice_frames = 0
+ 157:         if migration_report and (migration_report.conflicts or migration_report.invalid_sources):
+ 158:             self.notice = "Eski kayÄ±tlarla ilgili geÃ§iÅŸ uyarÄ±sÄ± var; kayÄ±t ekranÄ±nÄ± kontrol edin."
+ 159:             self.notice_level = "error"
+ 160:             self._notice_frames = NOTICE_FRAMES
+ 161:         if self._save_storage_failure is not None:
+ 162:             self.notice = f"KayÄ±t sistemi kullanÄ±lamÄ±yor: {self._save_storage_failure}"
+ 163:             self.notice_level = "error"
+ 164:             self._notice_frames = NOTICE_FRAMES
+ 165: 
+ 166:     def _ensure_save_storage(self):
+ 167:         failure = getattr(self, "_save_storage_failure", None)
+ 168:         if failure is not None:
+ 169:             raise SaveStorageError(str(failure))
+ 170: 
+ 171:     def _create_display(self, width, height, fullscreen):
+ 172:         flags = 0
+ 173:         if fullscreen:
+ 174:             flags |= getattr(self.pg, "FULLSCREEN", 0)
+ 175:         try:
+ 176:             return self.pg.display.set_mode((0, 0) if fullscreen else (width, height), flags)
+ 177:         except TypeError:
+ 178:             return self.pg.display.set_mode((width, height))
+ 179: 
+ 180:     def _toggle_fullscreen(self):
+ 181:         self.fullscreen = not self.fullscreen
+ 182:         self.screen = self._create_display(self.width, self.height, self.fullscreen)
+ 183:         self.width, self.height = getattr(
+ 184:             self.screen, "get_size", lambda: (self.width, self.height)
+ 185:         )()
+ 186:         self.renderer.surface = self.screen
+ 187:         self.renderer.width = self.width
+ 188:         self.renderer.height = self.height
+ 189: 
+ 190:     def _select_save_slot(self, index, path, exists):
+ 191:         self.selected_slot = index
+ 192:         self.save_path = path
+ 193:         if self.screens["save_slots"].mode == "save":
+ 194:             try:
+ 195:                 self._ensure_save_storage()
+ 196:                 self.service.save(path)
+ 197:             except (OSError, KeyError, ValueError, RuntimeError) as error:
+ 198:                 self._set_notice(f"KayÄ±t baÅŸarÄ±sÄ±z: {error}", "error")
+ 199:                 return "save_slots"
+ 200:             self._set_notice(f"Slot {index + 1} kaydedildi.", "ok")
+ 201:             return "local_map"
+ 202:         if exists:
+ 203:             try:
+ 204:                 self._ensure_save_storage()
+ 205:                 self.service.load(path)
+ 206:             except (OSError, KeyError, ValueError, RuntimeError) as error:
+ 207:                 self._set_notice(f"KayÄ±t yÃ¼klenemedi: {error}", "error")
+ 208:                 return "save_slots"
+ 209:             return "local_map"
+ 210:         return "opening"
+ 211: 
+ 212:     def _open_save_slots(self, mode, return_target="menu"):
+ 213:         screen = self.screens["save_slots"]
+ 214:         screen.mode = mode
+ 215:         screen.return_target = return_target
+ 216:         screen.selected = 0
+ 217:         screen.message = ""
+ 218:         screen.pending_overwrite = False
+ 219:         return "save_slots"
+ 220: 
+ 221:     def _latest_save_path(self):
+ 222:         if self.save_path is None or self.save_dir is None:
+ 223:             return None
+ 224:         candidates = []
+ 225:         if self.save_path.is_file():
+ 226:             candidates.append(self.save_path)
+ 227:         if self.save_dir.is_dir():
+ 228:             candidates.extend(
+ 229:                 path for path in self.save_dir.glob("slot_*.json")
+ 230:                 if path.is_file()
+ 231:             )
+ 232:         if not candidates:
+ 233:             return None
+ 234:         return max(candidates, key=lambda path: path.stat().st_mtime_ns)
+ 235: 
+ 236:     def _continue_latest_save(self):
+ 237:         try:
+ 238:             self._ensure_save_storage()
+ 239:         except SaveStorageError as error:
+ 240:             self._set_notice(f"KayÄ±t yÃ¼klenemedi: {error}", "error")
+ 241:             return None
+ 242:         try:
+ 243:             path = self._latest_save_path()
+ 244:         except OSError as error:
+ 245:             self._set_notice(f"KayÄ±t yÃ¼klenemedi: kayÄ±t dosyalarÄ± taranamadÄ± ({error})", "error")
+ 246:             return None
+ 247:         if path is None:
+ 248:             self._set_notice("AÃ§Ä±lacak kayÄ±t bulunamadÄ±.", "error")
+ 249:             return None
+ 250:         try:
+ 251:             self._ensure_save_storage()
+ 252:             self.service.load(path)
+ 253:         except (OSError, KeyError, ValueError, RuntimeError) as error:
+ 254:             self._set_notice(f"KayÄ±t yÃ¼klenemedi: {error}", "error")
+ 255:             return None
+ 256:         self.save_path = path
+ 257:         self.selected_slot = (
+ 258:             int(path.stem.removeprefix("slot_")) - 1
+ 259:             if path.stem.startswith("slot_") and path.stem.removeprefix("slot_").isdigit()
+ 260:             else None
+ 261:         )
+ 262:         return "local_map"
+ 263: 
+ 264:     def _set_notice(self, message, level="info"):
+ 265:         self.notice = message
+ 266:         self.notice_level = level
+ 267:         self._notice_frames = NOTICE_FRAMES
+ 268: 
+ 269:     def _start_new_game(self):
+ 270:         from application.content_pack import populate_demo_content
+ 271:         from application.game_application import GameApplication
+ 272: 
+ 273:         service, _ = populate_demo_content(GameApplication.create_default())
+ 274:         self.service = service
+ 275:         self.screens.update({
+ 276:             "opening": OpeningScreen(),
+ 277:             "world": WorldScreen(service),
+ 278:             "map": MapScreen(service),
+ 279:             "local_map": LocalMapScreen(service),
+ 280:             "inventory": InventoryScreen(service),
+ 281:             "production": ProductionScreen(service),
+ 282:             "character": CharacterScreen(service),
+ 283:             "quest_log": QuestLogScreen(service),
+ 284:             "market": MarketScreen(service),
+ 285:             "dialogue": DialogueScreen(service),
+ 286:             "combat": CombatScreen(service),
+ 287:             "character_creation": CharacterCreationScreen(service),
+ 288:         })
+ 289:         self.window_manager.windows["inventory"].screen = self.screens["inventory"]
+ 290:         self.window_manager.windows["character"].screen = self.screens["character"]
+ 291:         self.window_manager.windows["quest_log"].screen = self.screens["quest_log"]
+ 292:         for window_id in tuple(self.window_manager.open_ids):
+ 293:             self.window_manager.close(window_id)
+ 294:         self.pause_menu_open = False
+ 295:         self.current = "opening"
+ 296:         self.gameplay_active = False
+ 297:         self.selected_slot = None
+ 298: 
+ 299:     def _set_current(self, target):
+ 300:         """Change application state without allowing gameplay to close."""
+ 301:         if target == "world":
+ 302:             target = self.gameplay_screen
+ 303: 
+ 304:         if target in self.window_manager.windows:
+ 305:             self.window_manager.open(target)
+ 306:             return True
+ 307: 
+ 308:         if target == "menu" and self.gameplay_active:
+ 309:             self._set_notice("Oyun ekranÄ± aÃ§Ä±k kalmalÄ±dÄ±r.", "info")
+ 310:             return False
+ 311: 
+ 312:         if target not in self.screens:
+ 313:             return False
+ 314: 
+ 315:         if target == self.gameplay_screen:
+ 316:             self.gameplay_active = True
+ 317:         elif target == "menu":
+ 318:             self.gameplay_active = False
+ 319: 
+ 320:         self.current = target
+ 321:         return True
+ 322: 
+ 323:     def _handle_window_result(self, result, window_id):
+ 324:         if result in self.window_manager.windows:
+ 325:             self.window_manager.open(result)
+ 326:         elif result in {"local_map", "world"}:
+ 327:             self.window_manager.close(window_id)
+ 328: 
+ 329:     def _pause_menu_rects(self):
+ 330:         width, height = 360, 48
+ 331:         left = (self.width - width) // 2
+ 332:         top = max(120, (self.height - (len(PAUSE_MENU_OPTIONS) * 58 + 76)) // 2 + 54)
+ 333:         return tuple(
+ 334:             self.pg.Rect(left, top + index * 58, width, height)
+ 335:             for index in range(len(PAUSE_MENU_OPTIONS))
+ 336:         )
+ 337: 
+ 338:     def _open_pause_menu(self):
+ 339:         self.pause_menu_open = True
+ 340:         self.pause_menu_selected = 0
+ 341: 
+ 342:     def _close_pause_menu(self):
+ 343:         self.pause_menu_open = False
+ 344: 
+ 345:     def _handle_pause_menu(self, state):
+ 346:         if state.pressed("back"):
+ 347:             self._close_pause_menu()
+ 348:             return
+ 349:         if state.pressed("up"):
+ 350:             self.pause_menu_selected = (self.pause_menu_selected - 1) % len(PAUSE_MENU_OPTIONS)
+ 351:         if state.pressed("down"):
+ 352:             self.pause_menu_selected = (self.pause_menu_selected + 1) % len(PAUSE_MENU_OPTIONS)
+ 353: 
+ 354:         selected = None
+ 355:         if state.mouse_pos is not None:
+ 356:             for index, rect in enumerate(self._pause_menu_rects()):
+ 357:                 if rect.collidepoint(state.mouse_pos):
+ 358:                     self.pause_menu_selected = index
+ 359:                     if state.mouse_clicked:
+ 360:                         selected = PAUSE_MENU_OPTIONS[index][0]
+ 361:                     break
+ 362:         if state.pressed("confirm"):
+ 363:             selected = PAUSE_MENU_OPTIONS[self.pause_menu_selected][0]
+ 364: 
+ 365:         if selected == "resume":
+ 366:             self._close_pause_menu()
+ 367:         elif selected == "save":
+ 368:             self._close_pause_menu()
+ 369:             self.gameplay_active = False
+ 370:             self.current = self._open_save_slots("save", "local_map")
+ 371:         elif selected == "main_menu":
+ 372:             self._close_pause_menu()
+ 373:             self.gameplay_active = False
+ 374:             self.current = "menu"
+ 375:         elif selected == "quit":
+ 376:             self.running = False
+ 377: 
+ 378:     def _save_game(self):
+ 379:         try:
+ 380:             self._ensure_save_storage()
+ 381:             self.save_path.parent.mkdir(parents=True, exist_ok=True)
+ 382:             self.service.save(self.save_path)
+ 383:             self._set_notice(
+ 384:                 f"Slot {self.selected_slot + 1 if self.selected_slot is not None else '?'} kaydedildi.",
+ 385:                 "ok",
+ 386:             )
+ 387:         except (OSError, KeyError, ValueError, RuntimeError) as error:
+ 388:             self._set_notice(f"Kaydetme baÅŸarÄ±sÄ±z: {error}", "error")
+ 389: 
+ 390:     def _render_pause_menu(self):
+ 391:         overlay = self.pg.Rect(0, 0, self.width, self.height)
+ 392:         self.pg.draw.rect(self.screen, (5, 8, 14), overlay)
+ 393:         panel_width = 420
+ 394:         panel_height = len(PAUSE_MENU_OPTIONS) * 58 + 110
+ 395:         panel = self.pg.Rect(
+ 396:             (self.width - panel_width) // 2,
+ 397:             (self.height - panel_height) // 2,
+ 398:             panel_width,
+ 399:             panel_height,
+ 400:         )
+ 401:         self.renderer.panel(panel, (23, 29, 43), (145, 118, 70))
+ 402:         self.renderer.text(
+ 403:             "Oyun MenÃ¼sÃ¼",
+ 404:             panel.centerx - self.renderer.text_width("Oyun MenÃ¼sÃ¼", title=True) // 2,
+ 405:             panel.y + 22,
+ 406:             GOLD,
+ 407:             title=True,
+ 408:         )
+ 409:         for index, (_action, label) in enumerate(PAUSE_MENU_OPTIONS):
+ 410:             rect = self._pause_menu_rects()[index]
+ 411:             self.renderer.button(rect, label, selected=index == self.pause_menu_selected)
+ 412: 
+ 413:     def _nav_enabled(self):
+ 414:         """Which navigation tabs may be used from the current location."""
+ 415:         enabled = {}
+ 416:         try:
+ 417:             actors = self.service.state().actors
+ 418:             _, location = self.screens["world"]._current_location(actors)
+ 419:             enabled["market"] = location is not None and "market" in location.activities
+ 420:         except (KeyError, ValueError, RuntimeError, AttributeError):
+ 421:             enabled["market"] = True
+ 422:         return enabled
+ 423: 
+ 424:     def _handle_nav_click(self, state):
+ 425:         """Switch screens when a tab is clicked; the click is then consumed."""
+ 426:         if not (state.mouse_clicked and state.mouse_pos is not None):
+ 427:             return
+ 428:         if self.current not in NAV_SCREENS:
+ 429:             return
+ 430:         if self.current == "local_map" and not self.screens["local_map"].menu_open:
+ 431:             return
+ 432:         target = self.renderer.nav_hit(state.mouse_pos)
+ 433:         if target is None:
+ 434:             return
+ 435:         state.mouse_clicked = False
+ 436:         if target == "quest_log":
+ 437:             self.window_manager.toggle("quest_log")
+ 438:             return
+ 439:         if target == "world":
+ 440:             target = "local_map"
+ 441:         if not self._nav_enabled().get(target, True):
+ 442:             self._set_notice("Pazar yalnÄ±zca yerleÅŸim yerlerinde kullanÄ±labilir.", "error")
+ 443:             return
+ 444:         if target in self.screens:
+ 445:             self._set_current(target)
+ 446: 
+ 447:     def _render_current(self):
+ 448:         """Render the persistent world before the current gameplay surface."""
+ 449:         if self.gameplay_active:
+ 450:             world = self.screens[self.gameplay_screen]
+ 451:             world.render(self.renderer)
+ 452:             self.window_manager.render(self.renderer)
+ 453:             dialogue = self.screens.get("dialogue")
+ 454:             if dialogue is not None and getattr(dialogue, "is_active", lambda: False)():
+ 455:                 dialogue.render(self.renderer)
+ 456:             return
+ 457: 
+ 458:         self.screens[self.current].render(self.renderer)
+ 459: 
+ 460:     def step(self, events=()):
+ 461:         state = self.input.collect(events)
+ 462: 
+ 463:         if state.mouse_pos is not None:
+ 464:             self.renderer.mouse_pos = state.mouse_pos
+ 465: 
+ 466:         if state.quit_requested:
+ 467:             self.running = False
+ 468:             return
+ 469: 
+ 470:         if state.pressed("fullscreen"):
+ 471:             self._toggle_fullscreen()
+ 472: 
+ 473:         # While a screen collects typed text (e.g. the name prompt), letters such
+ 474:         # as "q" belong to the text, not to the global shortcuts.
+ 475:         capturing_text = getattr(self.screens[self.current], "name_entry_active", False)
+ 476: 
+ 477:         if state.pressed("quit") and not capturing_text:
+ 478:             self.running = False
+ 479:             return
+ 480: 
+ 481:         if self.gameplay_active and state.pressed("back"):
+ 482:             if self.pause_menu_open:
+ 483:                 self._close_pause_menu()
+ 484:             else:
+ 485:                 self._open_pause_menu()
+ 486:             self._render_current()
+ 487:             if self.pause_menu_open:
+ 488:                 self._render_pause_menu()
+ 489:             return
+ 490: 
+ 491:         if state.pressed("save"):
+ 492:             try:
+ 493:                 self._ensure_save_storage()
+ 494:                 self.save_path.parent.mkdir(parents=True, exist_ok=True)
+ 495:                 self.service.save(self.save_path)
+ 496:                 self._set_notice(f"Slot {self.selected_slot + 1 if self.selected_slot is not None else '?'} kaydedildi.", "ok")
+ 497:             except (OSError, KeyError, ValueError, RuntimeError) as error:
+ 498:                 self._set_notice(f"Kaydetme baÅŸarÄ±sÄ±z: {error}", "error")
+ 499: 
+ 500:         if state.pressed("load"):
+ 501:             try:
+ 502:                 self._ensure_save_storage()
+ 503:                 self.service.load(self.save_path)
+ 504:                 self._set_notice(f"Oyun yÃ¼klendi: {self.save_path}", "ok")
+ 505:             except (OSError, KeyError, ValueError, RuntimeError) as error:
+ 506:                 self._set_notice(f"Oyun yÃ¼klenemedi: {error}", "error")
+ 507: 
+ 508:         if self.pause_menu_open:
+ 509:             self._handle_pause_menu(state)
+ 510:             self._render_current()
+ 511:             if self.pause_menu_open:
+ 512:                 self._render_pause_menu()
+ 513:             return
+ 514: 
+ 515:         self._handle_nav_click(state)
+ 516:         current_screen = self.screens[self.current]
+ 517:         dialogue_screen = self.screens.get("dialogue")
+ 518:         dialogue_active = (
+ 519:             dialogue_screen is not None
+ 520:             and dialogue_screen.is_active()
+ 521:         )
+ 522:         if dialogue_active and state.pressed("dialogue_history"):
+ 523:             dialogue_screen.handle(state)
+ 524:             next_screen = None
+ 525:             window_consumed = True
+ 526:             dialogue_input = True
+ 527:         elif dialogue_active and (
+ 528:             state.pressed("confirm")
+ 529:             or state.pressed("up")
+ 530:             or state.pressed("down")
+ 531:             or state.mouse_clicked
+ 532:             or state.mouse_wheel
+ 533:         ):
+ 534:             next_screen = dialogue_screen.handle(state)
+ 535:             window_consumed = True
+ 536:             dialogue_input = True
+ 537:         else:
+ 538:             window_consumed = self.gameplay_active and self.window_manager.handle_input(state)
+ 539:             dialogue_input = False
+ 540: 
+ 541:         if self.current == "world" and not window_consumed:
+ 542:             current_screen._inject_mouse_action(state, self.renderer)
+ 543: 
+ 544:         if self.current == "opening":
+ 545:               current_screen.update()
+ 546: 
+ 547:         next_screen = next_screen if dialogue_input else (None if window_consumed else (
+ 548:             current_screen.handle(state, self.renderer)
+ 549:             if self.current == "menu"
+ 550:             else current_screen.handle(state)
+ 551:         ))
+ 552: 
+ 553:         if next_screen == "quit":
+ 554:             self.running = False
+ 555:             return
+ 556:         if next_screen == "continue":
+ 557:             next_screen = self._open_save_slots("load")
+ 558:         elif next_screen == "new_game":
+ 559:             self._start_new_game()
+ 560:             next_screen = "opening"
+ 561:         elif next_screen == "load_slots":
+ 562:             next_screen = self._open_save_slots("load")
+ 563: 
+ 564:         if self.current == "menu" and next_screen in {"settings", "guide", "about"}:
+ 565:             notices = {
+ 566:                 "settings": "Ayarlar ekranÄ± arayÃ¼z geliÅŸtirmesinin sonraki adÄ±mÄ±nda aÃ§Ä±lacak.",
+ 567:                 "guide": "Oyun rehberi arayÃ¼z geliÅŸtirmesinin sonraki adÄ±mÄ±nda aÃ§Ä±lacak.",
+ 568:                 "about": "Eldoria: Kaynak YÃ¶netimi â€” v1.0.0",
+ 569:             }
+ 570:             self._set_notice(notices[next_screen])
+ 571:             next_screen = None
+ 572: 
+ 573:         if next_screen == "world":
+ 574:             next_screen = self.gameplay_screen
+ 575: 
+ 576:         if next_screen in self.screens:
+ 577:             if next_screen == "dialogue":
+ 578:                 if self.current == "character_creation":
+ 579:                     self.screens["dialogue"].resume_after_creation()
+ 580:                 self.screens["dialogue"].set_target_npc(
+ 581:                     getattr(current_screen, "selected_npc_id", None)
+ 582:                 )
+ 583:             self._set_current(next_screen)
+ 584: 
+ 585:         # Tell the renderer which chrome to draw for the screen shown this frame.
+ 586:         shown = self.current
+ 587:         if shown in NAV_SCREENS and (
+ 588:             shown != "local_map" or self.screens["local_map"].menu_open
+ 589:         ):
+ 590:             self.renderer.nav_current = NAV_ALIASES.get(shown, shown)
+ 591:             self.renderer.nav_enabled = self._nav_enabled()
+ 592:         else:
+ 593:             self.renderer.nav_current = None
+ 594:         self._render_current()
+ 595:         if self.pause_menu_open:
+ 596:             self._render_pause_menu()
+ 597: 
+ 598:         if self.notice:
+ 599:             self.renderer.toast(self.notice, self.notice_level)
+ 600:             self._notice_frames -= 1
+ 601:             if self._notice_frames <= 0:
+ 602:                 self.notice = ""
+ 603: 
+ 604:     def run(self, *, fps=60):
+ 605:         self.running = True
+ 606:         clock = self.pg.time.Clock()
+ 607: 
+ 608:         while self.running:
+ 609:             self.step(self.pg.event.get())
+ 610:             self.pg.display.flip()
+ 611:             clock.tick(fps)
+ 612: 
+ 613:         self.pg.quit()
+ 614: 
+ 615: 
+ 616: def launch(service, backend=None, **kwargs):
+ 617:     """Create and run a window; importing this module remains headless-safe."""
+ 618:     if backend is None:
+ 619:         raise RuntimeError(
+ 620:             "Pygame backend bulunamadÄ±. `pip install pygame-ce` sonrasÄ± "
+ 621:             "launch(service, backend=pygame) kullanÄ±n."
+ 622:         )
+ 623: 
+ 624:     window = GameWindow(service, backend, **kwargs)
+ 625:     window.run()
+ 626:     return window
+========== tests\test_application\test_content_pack.py ==========
+   1: import json
+   2: import tempfile
+   3: import unittest
+   4: from pathlib import Path
+   5: 
+   6: from application import GameApplication
+   7: from application.content_pack import ContentDefinitionError, load_demo_content, populate_demo_content
+   8: from application.playtest import run_demo_playtest, run_determinism_check
+   9: from resources import Quantity, ResourceUnit
+  10: from combat import Combatant
+  11: 
+  12: 
+  13: class TestContentPack(unittest.TestCase):
+  14:     def test_demo_quest_chain_is_reproducible_end_to_end(self):
+  15:         application = GameApplication.create_default()
+  16:         service, ids = populate_demo_content(application)
+  17: 
+  18:         service.talk_to_npc(ids.hero_id, ids.carpenter_id, "carpenter_intro")
+  19:         service.choose_dialogue(
+  20:             ids.hero_id, ids.carpenter_id, "carpenter_intro",
+  21:             "carpenter_start", "accept_carpenter_quest",
+  22:         )
+  23:         service.move_actor(ids.hero_id, ids.forest_id)
+  24:         service.advance_by(1)
+  25:         for _ in range(3):
+  26:             service.start_gathering_at_location(
+  27:                 ids.hero_id, ids.forest_id, ids.node_id, ids.inventory_id,
+  28:                 Quantity(1, ResourceUnit.ITEM),
+  29:             )
+  30:             service.advance_by(service.gathering_duration(ids.hero_id))
+  31:         service.move_actor(ids.hero_id, ids.village_id)
+  32:         service.advance_by(1)
+  33:         service.talk_to_npc(ids.hero_id, ids.carpenter_id, "carpenter_intro")
+  34:         service.choose_dialogue(
+  35:             ids.hero_id, ids.carpenter_id, "carpenter_intro",
+  36:             "carpenter_start", "deliver_carpenter_wood",
+  37:         )
+  38: 
+  39:         quest = application.holder.current.quest_log.get(ids.carpenter_quest_id)
+  40:         self.assertEqual(quest.state.value, "completed")
+  41:         self.assertEqual(service.balance(ids.hero_id, "gold").amount, 15)
+  42:         self.assertEqual(service.reputation(ids.faction_id), (5, "neutral"))
+  43:         self.assertNotIn("wood", {resource for resource, _amount, _unit in service.inventory(ids.inventory_id).stocks})
+  44: 
+  45:     def test_demo_market_and_combat_are_ready_for_play(self):
+  46:         application = GameApplication.create_default()
+  47:         service, ids = populate_demo_content(application)
+  48: 
+  49:         self.assertIn(ids.market_offer_id, {offer.offer_id for offer in service.market_offers()})
+  50:         service.credit(ids.hero_id, "gold", 2)
+  51:         service.buy_offer(ids.market_offer_id, ids.hero_id, ids.inventory_id, quantity=1)
+  52:         self.assertEqual(service.inventory(ids.inventory_id).stocks[-1][0], "plank")
+  53: 
+  54:         combatants = application.holder.current.combat.all()
+  55:         self.assertEqual(tuple(item.combatant_id for item in combatants), (ids.enemy_id, ids.hero_id))
+  56:         service.combat_attack(ids.hero_id, ids.enemy_id)
+  57:         self.assertEqual(application.holder.current.combat.get(ids.enemy_id).hit_points, 4)
+  58: 
+  59:     def test_demo_content_can_be_changed_without_python_code(self):
+  60:         definition = load_demo_content()
+  61:         definition["quest"]["title"] = "Yeni Erzak GÃ¶revi"
+  62:         with tempfile.TemporaryDirectory() as directory:
+  63:             path = Path(directory) / "content.json"
+  64:             path.write_text(json.dumps(definition, ensure_ascii=False), encoding="utf-8")
+  65:             application = GameApplication.create_default()
+  66:             populate_demo_content(application, definition_path=path)
+  67:         self.assertEqual(application.holder.current.quest_log.get("forest_supplies").title, "Yeni Erzak GÃ¶revi")
+  68: 
+  69:     def test_content_resource_order_does_not_change_node_setup(self):
+  70:         definition = load_demo_content()
+  71:         definition["resources"] = list(reversed(definition["resources"]))
+  72:         with tempfile.TemporaryDirectory() as directory:
+  73:             path = Path(directory) / "reordered-content.json"
+  74:             path.write_text(json.dumps(definition, ensure_ascii=False), encoding="utf-8")
+  75:             application = GameApplication.create_default()
+  76:             service, ids = populate_demo_content(application, definition_path=path)
+  77: 
+  78:         node = application.holder.current.resource_nodes.get(ids.node_id)
+  79:         self.assertEqual(node.resource_type.value, "wood")
+  80:         self.assertIn(
+  81:             "plank",
+  82:             {resource for resource, _amount, _unit in service.inventory(ids.merchant_inventory_id).stocks},
+  83:         )
+  84: 
+  85:     def test_future_content_schema_is_rejected(self):
+  86:         definition = load_demo_content()
+  87:         definition["schema_version"] = 99
+  88:         with tempfile.TemporaryDirectory() as directory:
+  89:             path = Path(directory) / "future.json"
+  90:             path.write_text(json.dumps(definition), encoding="utf-8")
+  91:             with self.assertRaises(ContentDefinitionError):
+  92:                 load_demo_content(path)
+  93: 
+  94:     def test_demo_playtest_covers_the_full_loop(self):
+  95:         report = run_demo_playtest()
+  96:         self.assertEqual(report.completed_steps[-1], "save_load_restore")
+  97:         self.assertTrue(report.enemy_defeated)
+  98:         self.assertEqual(report.restored_quest_state, "completed")
+  99:         self.assertGreaterEqual(report.gold_after_purchase, 0)
+ 100:         self.assertEqual(report.plank_count_after_purchase, 1)
+ 101: 
+ 102:     def test_demo_playtest_is_deterministic(self):
+ 103:         first, second = run_determinism_check()
+ 104:         self.assertEqual(first, second)
+ 105: 
+ 106:     def test_hilmi_quest_aliases_and_progress_survive_save_load(self):
+ 107:         application = GameApplication.create_default()
+ 108:         service, ids = populate_demo_content(application)
+ 109:         service.talk_to_npc(ids.hero_id, ids.carpenter_id, "carpenter_intro")
+ 110:         service.choose_dialogue(
+ 111:             ids.hero_id, ids.carpenter_id, "carpenter_intro",
+ 112:             "carpenter_start", "accept_carpenter_quest",
+ 113:         )
+ 114:         with tempfile.TemporaryDirectory() as directory:
+ 115:             path = Path(directory) / "active-quest.json"
+ 116:             service.save(path)
+ 117:             service.load(path)
+ 118: 
+ 119:         restored = application.holder.current.quest_log.get(ids.carpenter_quest_id)
+ 120:         self.assertIs(service.carpenter_quest, restored)
+ 121:         self.assertEqual(restored.state.value, "active")
+ 122:         self.assertEqual(
+ 123:             service.carpenter_quest_reward_inventory_id,
+ 124:             ids.inventory_id,
+ 125:         )
+ 126: 
+ 127:     def test_innkeeper_dialogue_and_consumable_food(self):
+ 128:         application = GameApplication.create_default()
+ 129:         service, ids = populate_demo_content(application)
+ 130:         node = service.talk_to_npc(
+ 131:             ids.hero_id, ids.innkeeper_id, "innkeeper_intro",
+ 132:         )
+ 133:         self.assertEqual(node.node_id, "innkeeper_start")
+ 134:         service.credit(ids.hero_id, "gold", 2)
+ 135:         service.buy_offer(ids.bread_offer_id, ids.hero_id, ids.inventory_id, quantity=1)
+ 136:         character = service.actor_character(ids.hero_id)
+ 137:         character.current_hit_points = character.max_hit_points - 2
+ 138:         healed = service.consume_item(ids.hero_id, ids.inventory_id, "bread")
+ 139:         self.assertEqual(healed, character.max_hit_points)
+ 140:         self.assertEqual(
+ 141:             service.inventory(ids.inventory_id).stocks,
+ 142:             (),
+ 143:         )
+ 144: 
+ 145:     def test_npc_positions_survive_save_load(self):
+ 146:         application = GameApplication.create_default()
+ 147:         service, ids = populate_demo_content(application)
+ 148:         expected = {
+ 149:             ids.npc_id: (16, 30),
+ 150:             ids.carpenter_id: (21, 15),
+ 151:             ids.innkeeper_id: (20, 23),
+ 152:         }
+ 153:         with tempfile.TemporaryDirectory() as directory:
+ 154:             path = Path(directory) / "npc-positions.json"
+ 155:             service.save(path)
+ 156:             service.load(path)
+ 157: 
+ 158:         for npc_id, position in expected.items():
+ 159:             npc = application.holder.current.social.npcs.get(npc_id)
+ 160:             self.assertEqual((npc.position.x, npc.position.y), position)
+ 161: 
+ 162: 
+ 163: if __name__ == "__main__":
+ 164:     unittest.main()
+========== tests\test_application\test_social_combat_integration.py ==========
+   1: import tempfile
+   2: import unittest
+   3: from pathlib import Path
+   4: 
+   5: from application import Combatant, GameApplication, GameplayService
+   6: from character import CharacterClass, CharacterFactory, Race
+   7: from npc import NPC
+   8: from quests import Dialogue, DialogueChoice, DialogueNode, Objective, ObjectiveType, Quest
+   9: from world import Location, WorldMap
+  10: 
+  11: 
+  12: class TestSocialCombatIntegration(unittest.TestCase):
+  13:     def setUp(self):
+  14:         self.application = GameApplication.create_default()
+  15:         self.application.dunya_olustur("Town", world_id="town")
+  16:         factory = CharacterFactory({"human": Race("human", "Human")}, {"fighter": CharacterClass("fighter", "Fighter", 10)})
+  17:         self.application.karakter_olustur(factory, "hero", "Hero", "human", "fighter")
+  18:         self.service = GameplayService(self.application)
+  19:         world_map = WorldMap("town")
+  20:         world_map.add_location(Location("square", "Square"))
+  21:         self.service.register_world_map(world_map)
+  22:         self.service.place_actor("hero", "square")
+  23: 
+  24:     def test_npc_dialogue_requires_same_location_and_quest_can_start(self):
+  25:         self.service.register_npc(NPC("elder", "Elder", location_id="square"))
+  26:         self.service.register_dialogue(Dialogue("intro", (DialogueNode("start", "elder", "Welcome", (DialogueChoice("accept", "Accept"),)),), "start"))
+  27:         node = self.service.talk_to_npc("hero", "elder", "intro")
+  28:         self.assertEqual(node.text, "Welcome")
+  29:         self.assertEqual(self.service.state().simulation_tick, 1)
+  30:         quest = Quest("intro-quest", "First Task", (Objective("talk", "Talk", ObjectiveType.TALK, "elder"),))
+  31:         self.service.start_quest(quest)
+  32:         self.assertEqual(self.application.holder.current.quest_log.active()[0].quest_id, "intro-quest")
+  33: 
+  34:     def test_combat_damage_status_and_persistence(self):
+  35:         self.service.register_npc(NPC("elder", "Elder", location_id="square"))
+  36:         self.service.add_combatant(Combatant("hero", 20, attack=7, defense=2))
+  37:         self.service.add_combatant(Combatant("slime", 10, attack=2, defense=1))
+  38:         self.application.holder.current.combat.get("slime").add_status("poison", 2)
+  39:         result = self.service.combat_attack("hero", "slime")
+  40:         self.assertEqual(result.damage, 6)
+  41:         self.assertEqual(self.service.state().simulation_tick, 1)
+  42:         self.service.advance_combat_round()
+  43:         self.assertEqual(self.service.state().simulation_tick, 2)
+  44:         self.assertEqual(self.application.holder.current.combat.get("slime").statuses["poison"], 1)
+  45:         with tempfile.TemporaryDirectory() as directory:
+  46:             path = Path(directory) / "social-combat.json"
+  47:             self.service.save(path)
+  48:             self.service.load(path)
+  49:         self.assertEqual(self.application.holder.current.combat.get("slime").hit_points, 4)
+  50:         self.assertIsNotNone(self.application.holder.current.social.npcs.get("elder"))
+  51: 
+  52: 
+  53: if __name__ == "__main__":
+  54:     unittest.main()

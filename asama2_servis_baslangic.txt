@@ -1,0 +1,367 @@
+
+========== application\gameplay_service.py [1-100] ==========
+
+1: """Application-level playable gameplay loop orchestration.
+2: 
+3: This service deliberately owns no canonical gameplay state.  It resolves the
+4: current SessionBundle for each operation and delegates mutations to the
+5: resource, production and canonical simulation components that already own
+6: those rules.
+7: """
+8: 
+9: from __future__ import annotations
+10: 
+11: from dataclasses import dataclass
+12: from typing import Iterable
+13: 
+14: from core.time import Tick
+15: from core.actions import ActionType, action_tick_cost
+16: from core.foundation import Identifier
+17: 
+18: from resources import Inventory, Quantity, Recipe, ResourceType, ResourceUnit
+19: from economy import Currency, MarketOffer, Money, TradeService, Merchant
+20: 
+21: from .game_application import GameApplication
+22: from .production_chain import ProductionChain, ProductionChainStage
+23: from .actor_system import ActivityView, ActorView, WorldActor
+24: from character import EquipmentSlot, ItemDefinition
+25: from .movement import MovementManager
+26: from world import WorldMap
+27: from npc import Faction, NPC
+28: from quests import Dialogue, Quest
+29: from .social_runtime import SocialRuntimeError
+30: from .combat_runtime import Combatant
+31: 
+32: 
+33: class GameplayServiceError(RuntimeError):
+34:     """Controlled failure at the playable application boundary."""
+35: 
+36: 
+37: @dataclass(frozen=True)
+38: class GameplayChainStage:
+39:     """Stable request for one application-level chain stage."""
+40: 
+41:     recipe_id: str
+42:     inventory_id: str
+43:     facility_id: str
+44: 
+45: 
+46: @dataclass(frozen=True)
+47: class InventoryView:
+48:     inventory_id: str
+49:     stocks: tuple[tuple[str, int, str], ...]
+50:     items: tuple[tuple[str, int], ...] = ()
+51:     weight: float = 0.0
+52: 
+53: 
+54: @dataclass(frozen=True)
+55: class ResourceNodeView:
+56:     node_id: str
+57:     world_id: str
+58:     resource_type: str
+59:     quantity: tuple[int, str]
+60:     capacity: tuple[int, str]
+61:     regeneration_rate: tuple[int, str]
+62:     last_simulation_tick: int
+63:     location_id: str | None = None
+64: 
+65: 
+66: @dataclass(frozen=True)
+67: class LocationInteractionView:
+68:     actor_id: str
+69:     location_id: str
+70:     location_name: str
+71:     character_id: str | None
+72:     resource_node_ids: tuple[str, ...]
+73:     actor_ids: tuple[str, ...]
+74: 
+75: 
+76: @dataclass(frozen=True)
+77: class FacilityView:
+78:     facility_id: str
+79:     facility_type: str
+80:     active: bool
+81:     capabilities: tuple[str, ...]
+82:     capacity: int
+83:     reserved: int
+84:     active_job_ids: tuple[str, ...]
+85: 
+86: 
+87: @dataclass(frozen=True)
+88: class JobView:
+89:     job_id: str
+90:     recipe_id: str
+91:     inventory_id: str
+92:     state: str
+93:     start_tick: int
+94:     end_tick: int
+95: 
+96: 
+97: @dataclass(frozen=True)
+98: class ChainView:
+99:     chain_id: str
+100:     state: str
+
+========== application\content_pack.py [1-120] ==========
+
+1: """Data-driven content loading for the playable demo slice."""
+2: 
+3: from __future__ import annotations
+4: 
+5: import json
+6: import sys
+7: from dataclasses import dataclass, fields
+8: from pathlib import Path
+9: from types import MappingProxyType
+10: 
+11: from application import GameplayService
+12: from application import ProductionFacility
+13: from character import Ability, CharacterClass, CharacterFactory, EquipmentSlot, ItemDefinition, Race
+14: from combat import Combatant
+15: from core.domain.spatial import Position
+16: from economy import Currency, Merchant, Money
+17: from npc import Faction, NPC
+18: from quests import Dialogue, DialogueChoice, DialogueNode, Objective, ObjectiveType, Quest, Reward
+19: from resources import Inventory, Quantity, Recipe, ResourceType, ResourceUnit, WorldResourceNode
+20: from world import Location, WorldMap
+21: 
+22: 
+23: DEFAULT_CONTENT_PATH = Path(__file__).resolve().parent.parent / "data" / "demo_content.json"
+24: CONTENT_SCHEMA_VERSION = 1
+25: 
+26: 
+27: @dataclass(frozen=True)
+28: class DemoContentIds:
+29:     world_id: str = "demo_valley"
+30:     hero_id: str = "hero"
+31:     village_id: str = "village"
+32:     forest_id: str = "forest"
+33:     faction_id: str = "wardens"
+34:     npc_id: str = "warden_lyra"
+35:     quest_id: str = "forest_supplies"
+36:     carpenter_id: str = "village_carpenter"
+37:     carpenter_quest_id: str = "carpenter_repair"
+38:     blacksmith_id: str = "village_blacksmith"
+39:     blacksmith_quest_id: str = "blacksmith_iron"
+40:     iron_node_id: str = "north_iron_mine"
+41:     inn_quest_id: str = "inn_supplies"
+42:     node_id: str = "forest_wood"
+43:     inventory_id: str = "player"
+44:     merchant_id: str = "village_merchant"
+45:     merchant_inventory_id: str = "merchant"
+46:     market_offer_id: str = "market_plank"
+47:     bread_offer_id: str = "market_bread"
+48:     water_offer_id: str = "market_water"
+49:     innkeeper_id: str = "village_innkeeper"
+50:     enemy_id: str = "forest_wolf"
+51:     encounter_id: str = "forest_wolf_encounter"
+52:     
+53: 
+54: 
+55: class ContentDefinitionError(ValueError):
+56:     """Raised when a content definition cannot safely enter the runtime."""
+57: 
+58: 
+59: def load_demo_content(path: str | Path | None = None) -> dict:
+60:     """Load and validate a JSON content definition without mutating it."""
+61:     if path is None:
+62:         candidates = (
+63:             DEFAULT_CONTENT_PATH,
+64:             Path(sys.prefix) / "data" / "demo_content.json",
+65:             Path(sys.prefix) / "demo_content.json",
+66:         )
+67:         source = next((candidate for candidate in candidates if candidate.exists()), candidates[0])
+68:     else:
+69:         source = Path(path)
+70:     try:
+71:         definition = json.loads(source.read_text(encoding="utf-8"))
+72:     except (OSError, json.JSONDecodeError) as error:
+73:         raise ContentDefinitionError(f"Content definition could not be loaded: {source}") from error
+74:     if not isinstance(definition, dict):
+75:         raise ContentDefinitionError("Content definition must be a JSON object.")
+76:     if definition.get("schema_version") != CONTENT_SCHEMA_VERSION:
+77:         raise ContentDefinitionError("Unsupported content definition schema version.")
+78:     required = {"ids", "world", "character", "resources", "recipe", "locations", "faction", "npc", "dialogue", "quest", "merchant", "market_offer", "combat"}
+79:     missing = sorted(required - definition.keys())
+80:     if missing:
+81:         raise ContentDefinitionError(f"Content definition is missing sections: {', '.join(missing)}")
+82:     return definition
+83: 
+84: 
+85: def load_opening_content(path: str | Path | None = None) -> dict:
+86:     """Load only the definition sections required before character creation."""
+87:     if path is None:
+88:         candidates = (
+89:             DEFAULT_CONTENT_PATH,
+90:             Path(sys.prefix) / "data" / "demo_content.json",
+91:             Path(sys.prefix) / "demo_content.json",
+92:         )
+93:         source = next((candidate for candidate in candidates if candidate.exists()), candidates[0])
+94:     else:
+95:         source = Path(path)
+96:     try:
+97:         definition = json.loads(source.read_text(encoding="utf-8"))
+98:     except (OSError, json.JSONDecodeError) as error:
+99:         raise ContentDefinitionError(f"Opening content definition could not be loaded: {source}") from error
+100:     if not isinstance(definition, dict):
+101:         raise ContentDefinitionError("Opening content definition must be a JSON object.")
+102:     if definition.get("schema_version") != CONTENT_SCHEMA_VERSION:
+103:         raise ContentDefinitionError("Unsupported content definition schema version.")
+104:     required = {"ids", "world", "character", "locations", "faction", "npc", "dialogue"}
+105:     missing = sorted(required - definition.keys())
+106:     if missing:
+107:         raise ContentDefinitionError(
+108:             f"Opening content definition is missing sections: {', '.join(missing)}"
+109:         )
+110:     return definition
+111: 
+112: 
+113: def _id_resolver(definition: dict, ids: DemoContentIds):
+114:     configured = definition["ids"]
+115:     valid_fields = {field.name for field in fields(DemoContentIds)}
+116:     if set(configured) != valid_fields:
+117:         raise ContentDefinitionError("Content ids must match DemoContentIds fields.")
+118:     replacements = {key: getattr(ids, key) for key in valid_fields}
+119:     return lambda key: replacements.get(key, key)
+120: 
+
+========== application\content_pack.py [690-820] ==========
+
+690:     service.add_combatant(Combatant(resolve_id("enemy_id"), combat_data["enemy"]["hp"], attack=combat_data["enemy"]["attack"], defense=combat_data["enemy"]["defense"]))
+691:     service.create_combat_encounter(resolve_id("encounter_id"), (resolve_id("hero_id"), resolve_id("enemy_id")), {resolve_id("hero_id"): combat_data["hero"]["initiative"], resolve_id("enemy_id"): combat_data["enemy"]["initiative"]})
+692:     return service, ids
+693: 
+694: 
+695: __all__ = [
+696:     "CONTENT_SCHEMA_VERSION",
+697:     "ContentDefinitionError",
+698:     "DemoContentIds",
+699:     "load_demo_content",
+700:     "load_opening_content",
+701:     "populate_opening_content",
+702:     "populate_demo_content",
+703:     "build_demo_world_map",
+704: ]
+
+========== application\playtest.py [1-120] ==========
+
+1: """Deterministic playtest and balance checks for the first playable slice."""
+2: 
+3: from __future__ import annotations
+4: 
+5: import json
+6: import sys
+7: import tempfile
+8: from dataclasses import asdict, dataclass
+9: from pathlib import Path
+10: 
+11: from .content_pack import populate_demo_content
+12: from .game_application import GameApplication
+13: from resources import Quantity, ResourceUnit
+14: 
+15: 
+16: DEFAULT_BALANCE_PATH = Path(__file__).resolve().parent.parent / "data" / "playtest_balance.json"
+17: 
+18: 
+19: class PlaytestFailure(AssertionError):
+20:     """Raised when the playable slice fails a balance or continuity check."""
+21: 
+22: 
+23: @dataclass(frozen=True)
+24: class PlaytestReport:
+25:     completed_steps: tuple[str, ...]
+26:     travel_ticks: int
+27:     quest_reward_gold: int
+28:     gold_after_purchase: int
+29:     plank_count_after_purchase: int
+30:     combat_attacks: int
+31:     combat_damage_taken: int
+32:     enemy_defeated: bool
+33:     restored_quest_state: str
+34: 
+35:     def as_dict(self) -> dict:
+36:         return asdict(self)
+37: 
+38: 
+39: def load_balance_profile(path: str | Path | None = None) -> dict:
+40:     if path is None:
+41:         candidates = (
+42:             DEFAULT_BALANCE_PATH,
+43:             Path(sys.prefix) / "data" / "playtest_balance.json",
+44:             Path(sys.prefix) / "playtest_balance.json",
+45:         )
+46:         source = next((candidate for candidate in candidates if candidate.exists()), candidates[0])
+47:     else:
+48:         source = Path(path)
+49:     try:
+50:         profile = json.loads(source.read_text(encoding="utf-8"))
+51:     except (OSError, json.JSONDecodeError) as error:
+52:         raise PlaytestFailure(f"Balance profile could not be loaded: {source}") from error
+53:     if profile.get("schema_version") != 1:
+54:         raise PlaytestFailure("Unsupported balance profile schema version.")
+55:     return profile
+56: 
+57: 
+58: def _require(condition: bool, message: str) -> None:
+59:     if not condition:
+60:         raise PlaytestFailure(message)
+61: 
+62: 
+63: def run_demo_playtest(balance_path: str | Path | None = None) -> PlaytestReport:
+64:     """Play the demo slice from a fresh session and validate its balance profile."""
+65:     profile = load_balance_profile(balance_path)
+66:     application = GameApplication.create_default()
+67:     service, ids = populate_demo_content(application)
+68:     steps = []
+69: 
+70:     service.talk_to_npc(ids.hero_id, ids.carpenter_id, "carpenter_intro")
+71:     service.choose_dialogue(
+72:         ids.hero_id, ids.carpenter_id, "carpenter_intro",
+73:         "carpenter_start", "accept_carpenter_quest",
+74:     )
+75:     steps.append("dialogue_and_quest")
+76: 
+77:     travel_start_tick = service.state().simulation_tick
+78:     service.move_actor(ids.hero_id, ids.forest_id)
+79:     service.advance_by(1)
+80:     travel_ticks = service.state().simulation_tick - travel_start_tick
+81:     steps.append("travel")
+82: 
+83:     for _ in range(3):
+84:         service.start_gathering_at_location(
+85:             ids.hero_id, ids.forest_id, ids.node_id, ids.inventory_id,
+86:             Quantity(1, ResourceUnit.ITEM),
+87:         )
+88:         service.advance_by(service.gathering_duration(ids.hero_id))
+89:     quest = application.holder.current.quest_log.get(ids.carpenter_quest_id)
+90:     service.move_actor(ids.hero_id, ids.village_id)
+91:     service.advance_by(1)
+92:     service.talk_to_npc(ids.hero_id, ids.carpenter_id, "carpenter_intro")
+93:     service.choose_dialogue(
+94:         ids.hero_id, ids.carpenter_id, "carpenter_intro",
+95:         "carpenter_start", "deliver_carpenter_wood",
+96:     )
+97:     _require(quest.state.value == "completed", "Quest did not complete after the required gathering action.")
+98:     reward_gold = service.balance(ids.hero_id, "gold").amount
+99:     steps.append("gather_and_reward")
+100: 
+101:     service.choose_dialogue(
+102:         ids.hero_id, ids.carpenter_id, "carpenter_intro",
+103:         "carpenter_start", "accept_inn_quest",
+104:     )
+105:     service.credit(ids.hero_id, "gold", 3)
+106:     service.buy_offer(ids.bread_offer_id, ids.hero_id, ids.inventory_id, quantity=1)
+107:     service.buy_offer(ids.water_offer_id, ids.hero_id, ids.inventory_id, quantity=1)
+108:     service.talk_to_npc(ids.hero_id, ids.carpenter_id, "carpenter_intro")
+109:     service.choose_dialogue(
+110:         ids.hero_id, ids.carpenter_id, "carpenter_intro",
+111:         "carpenter_start", "deliver_inn_supplies",
+112:     )
+113:     service.buy_offer(ids.market_offer_id, ids.hero_id, ids.inventory_id, quantity=1)
+114:     gold_after_purchase = service.balance(ids.hero_id, "gold").amount
+115:     plank_count = next(
+116:         amount for resource, amount, _unit in service.inventory(ids.inventory_id).stocks
+117:         if resource == "plank"
+118:     )
+119:     steps.append("market_purchase")
+120: 
