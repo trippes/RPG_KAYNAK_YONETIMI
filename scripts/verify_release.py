@@ -51,7 +51,7 @@ def main() -> int:
         "quests",
         "resources",
         "world",
-        "pygame",
+        "game_ui",
         "tests",
     )
     run("application smoke", PYTHON, "main.py")

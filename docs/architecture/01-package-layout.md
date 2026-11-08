@@ -48,7 +48,7 @@ Gameplay, persistence ve UI bu ağacın dışında kalır:
 
 ```text
 gameplay/{character,combat,economy,inventory,npc,quests,resources}/
-adapters/{save,pygame,cli,logging}/
+adapters/{save,game_ui,cli,logging}/
 ```
 
 Bu aşamada bu paketler implement edilmeyecektir. Layout, Core 2.0 için hedef

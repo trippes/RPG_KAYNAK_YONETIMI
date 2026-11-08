@@ -7,20 +7,20 @@ from types import SimpleNamespace
 from application import GameApplication, GameplayService, migrate_save_data
 from application.content_pack import populate_demo_content
 from combat import calculate_damage, order_initiative, tick_statuses
-from pygame.game_window import GameWindow
-from pygame.input import InputMapper, InputState
-from pygame.window_manager import WindowManager
-from pygame.screens.character_creation import CharacterCreationScreen
-from pygame.screens.character_screen import CharacterScreen
-from pygame.screens.combat_screen import CombatScreen
-from pygame.screens.dialogue_screen import DialogueScreen
-from pygame.screens.market_screen import MarketScreen
-from pygame.screens.main_menu import MainMenu
-from pygame.screens.inventory_screen import InventoryScreen
-from pygame.screens.map_screen import MapScreen
-from pygame.screens.local_map_screen import LocalMapScreen
-from pygame.screens.quest_log_screen import QuestLogScreen
-from pygame.screens.save_slots_screen import SaveSlotsScreen
+from game_ui.game_window import GameWindow
+from game_ui.input import InputMapper, InputState
+from game_ui.window_manager import WindowManager
+from game_ui.screens.character_creation import CharacterCreationScreen
+from game_ui.screens.character_screen import CharacterScreen
+from game_ui.screens.combat_screen import CombatScreen
+from game_ui.screens.dialogue_screen import DialogueScreen
+from game_ui.screens.market_screen import MarketScreen
+from game_ui.screens.main_menu import MainMenu
+from game_ui.screens.inventory_screen import InventoryScreen
+from game_ui.screens.map_screen import MapScreen
+from game_ui.screens.local_map_screen import LocalMapScreen
+from game_ui.screens.quest_log_screen import QuestLogScreen
+from game_ui.screens.save_slots_screen import SaveSlotsScreen
 from quests import Objective, ObjectiveType, Quest, QuestLog, QuestState, Reward
 
 
@@ -225,7 +225,7 @@ class TestPhaseDQuality(unittest.TestCase):
     def test_locations_expose_meaningful_context_and_gate_actions(self):
         from application.content_pack import populate_demo_content
         service, _ = populate_demo_content(GameApplication.create_default())
-        screen = __import__("pygame.screens.world_screen", fromlist=["WorldScreen"]).WorldScreen(service)
+        screen = __import__("game_ui.screens.world_screen", fromlist=["WorldScreen"]).WorldScreen(service)
         self.assertEqual(screen.handle(InputState(actions={"market"})), "market")
         screen.handle(InputState(actions={"right"}))
         self.assertIsNone(screen.handle(InputState(actions={"market"})))

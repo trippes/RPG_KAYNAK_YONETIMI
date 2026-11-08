@@ -37,6 +37,7 @@ class GameSaveFileAdapter:
         payload = SaveJsonCodec.encode(document)
         temporary_path: Path | None = None
         try:
+            target.parent.mkdir(parents=True, exist_ok=True)
             if target.exists():
                 shutil.copy2(target, GameSaveFileAdapter.backup_path(target))
             with tempfile.NamedTemporaryFile(

@@ -29,13 +29,13 @@ def main():
         print(game.bilgi())
         return
     game = oyun_olustur("Başlangıç Vadisi", width=24, height=16)
-    from pygame.demo import create_demo_service
-    from pygame.game_window import launch
-    from pygame import load_backend
+    from game_ui.demo import create_demo_service
+    from game_ui.game_window import launch
+    from game_ui import load_backend
     try:
         pygame = load_backend()
     except RuntimeError as error:
-        raise SystemExit("Oynatmak için pygame kurulmalı: pip install pygame") from error
+        raise SystemExit("Oynatmak için pygame-ce kurulmalı: pip install pygame-ce") from error
     try:
         launch(create_demo_service(game), pygame)
     except Exception as error:

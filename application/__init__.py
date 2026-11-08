@@ -4,6 +4,7 @@ from .game_application import GameApplication
 from .save_document import GameSaveDocument
 from .save_codec import SaveJsonCodec
 from .save_file_adapter import GameSaveFileAdapter
+from .save_storage import MigrationReport, SaveStorage, SaveStorageError, documents_directory
 from .session_bundle import SessionBundle, SessionHolder
 from .production_chain import ProductionChain, ProductionChainStage, ProductionChainState
 from .production_capacity import ProductionCapacity, ProductionCapacityError
@@ -61,6 +62,10 @@ __all__ = [
     "GameSaveDocument",
     "GameSaveFileAdapter",
     "SaveJsonCodec",
+    "SaveStorage",
+    "SaveStorageError",
+    "MigrationReport",
+    "documents_directory",
     "SessionBundle",
     "SessionHolder",
     "ProductionChain",

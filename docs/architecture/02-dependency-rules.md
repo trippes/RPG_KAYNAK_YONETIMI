@@ -45,7 +45,7 @@ katmanında bulunur.
 ## Yasaklı Core importları
 
 `character`, `combat`, `economy`, `inventory`, `npc`, `quests`, `resources`,
-`pygame`, `save`, `gameplay` ve `adapters` isimleri Core kaynaklarında yasaktır.
+`game_ui`, `pygame`, `save`, `gameplay` ve `adapters` isimleri Core kaynaklarında yasaktır.
 ## Phase 4 event transport boundary
 
 `core.simulation.transport` yalnızca Foundation/Time ve canonical event

@@ -13,7 +13,7 @@ FORBIDDEN_CORE_ROOTS = {
     "npc",
     "quests",
     "resources",
-    "pygame",
+    "game_ui",
     "save",
     "gameplay",
     "adapters",
@@ -211,7 +211,7 @@ class TestCoreArchitectureBaseline(unittest.TestCase):
         forbidden = {
             "core.events", "core.event_bus", "core.event_manager", "time_system",
             "core.clock", "core.actions", "core.entity.position", "character", "combat",
-            "economy", "inventory", "npc", "quests", "resources", "pygame", "save",
+            "economy", "inventory", "npc", "quests", "resources", "game_ui", "save",
         }
         violations = []
         persistence_root = CORE_ROOT / "persistence"

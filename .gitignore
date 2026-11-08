@@ -6,3 +6,8 @@ dist/
 build/
 *.egg-info/
 logs/
+
+/save/slot_*.json
+/save/slot_*.json.bak
+/save/eldoria_save.json
+/save/eldoria_save.json.bak

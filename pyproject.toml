@@ -17,7 +17,7 @@ include-package-data = true
 py-modules = ["main"]
 
 [tool.setuptools.package-data]
-pygame = ["assets/*.png"]
+game_ui = ["assets/*.png"]
 
 [tool.setuptools.data-files]
 "." = ["data/demo_content.json", "data/playtest_balance.json"]
@@ -35,7 +35,7 @@ include = [
     "economy*",
     "inventory*",
     "npc*",
-    "pygame*",
+    "game_ui*",
     "quests*",
     "resources*",
     "save*",

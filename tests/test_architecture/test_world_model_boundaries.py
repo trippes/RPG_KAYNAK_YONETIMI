@@ -31,7 +31,7 @@ class TestWorldModelBoundaries(unittest.TestCase):
             "core.clock",
             "time_system",
             "scheduler",
-            "pygame",
+            "game_ui",
             "character",
             "combat",
             "economy",
