@@ -67,11 +67,12 @@ başlıca `collect`, `start_production`, `start_chain`, `advance_to`,
 `start_actor_production`, `register_world_map`, `place_actor`, `move_actor`,
 `publish_offer`, `buy_offer`, `cancel_offer`, `register_npc`, `talk_to_npc`,
 `start_quest`, `add_combatant` ve encounter işlemlerini sağlar. Bu API'ler
-deterministik tick ve candidate restore sözleşmelerini kullanır. Demo içeriği
-`application.content_pack.populate_demo_content()` ile yeniden kurulabilir.
-Demo görev, NPC, diyalog, kaynak, pazar ve combat tanımları
-`data/demo_content.json` dosyasından yüklenir; içerik sözleşmesi için
-`docs/architecture/34-content-data-contract.md` belgesine bakın.
+deterministik tick ve candidate restore sözleşmelerini kullanır. Başlangıç
+dünyası, karakter oluşturma ve açılış diyaloğu `data/starter_content.json`
+dosyasından yüklenir. Bu başlangıç paketi, oynanış sistemlerinin test
+senaryolarından ve gelecekte hazırlanacak içerik paketlerinden ayrı tutulur.
+İçerik sözleşmesi için `docs/architecture/34-content-data-contract.md`
+belgesine bakın.
 
 Ekonomi sınırı: `resources` fiziksel `ResourceType`, `Quantity`, `Inventory`,
 node, reçete ve üretim state'ini taşır. `economy` ise `Currency`/`Money`,
