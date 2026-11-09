@@ -1,44 +1,111 @@
+
 import tempfile
 import unittest
 from pathlib import Path
+from types import MappingProxyType
 
-from application import GameApplication
-from application.content_pack import populate_demo_content
-from character import EquipmentSlot, ItemDefinition
+from application import GameApplication, GameplayService
+from character import (
+    CharacterClass,
+    CharacterFactory,
+    EquipmentSlot,
+    ItemDefinition,
+    Race,
+)
+from resources import Inventory
 
 
 class TestEquipment(unittest.TestCase):
-    def test_equipment_replaces_same_slot_and_applies_stats(self):
-        application = GameApplication.create_default()
-        service, ids = populate_demo_content(application)
-        service.equip_item(ids.hero_id, ids.inventory_id, "iron_sword")
-        self.assertEqual(service.equipment(ids.hero_id), {"main_hand": "iron_sword"})
-        self.assertEqual(service.actor_stats(ids.hero_id)["weapon_damage"], 4)
-        self.assertEqual(service.inventory(ids.inventory_id).items[0][0], "iron_helmet")
+    def setUp(self):
+        self.application = GameApplication.create_default()
+        self.application.dunya_olustur("Test World", world_id="test_world")
 
-    def test_equipment_survives_save_load_with_item_catalog(self):
-        application = GameApplication.create_default()
-        service, ids = populate_demo_content(application)
-        service.equip_item(ids.hero_id, ids.inventory_id, "leather_armor")
-        with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "equipment.json"
-            service.save(path)
-            service.load(path)
-        self.assertEqual(service.equipment(ids.hero_id), {"chest": "leather_armor"})
-        self.assertEqual(service.item("leather_armor").slot, EquipmentSlot.CHEST)
+        factory = CharacterFactory(
+            {"human": Race("human", "İnsan")},
+            {"fighter": CharacterClass("fighter", "Savaşçı", hit_points=10)},
+        )
+        self.application.karakter_olustur(
+            factory, "hero", "Arin", "human", "fighter"
+        )
 
-    def test_non_equipment_item_is_rejected(self):
-        application = GameApplication.create_default()
-        service, ids = populate_demo_content(application)
-        bundle = application.holder.current
+        bundle = self.application.holder.current
+
+        self.items = {
+            "iron_sword": ItemDefinition(
+                "iron_sword",
+                "Demir Kılıç",
+                slot=EquipmentSlot.MAIN_HAND,
+                damage=4,
+            ),
+            "iron_helmet": ItemDefinition(
+                "iron_helmet",
+                "Demir Miğfer",
+                slot=EquipmentSlot.HEAD,
+                defense=2,
+            ),
+            "leather_armor": ItemDefinition(
+                "leather_armor",
+                "Deri Zırh",
+                slot=EquipmentSlot.CHEST,
+                defense=3,
+            ),
+            "bread_item": ItemDefinition("bread_item", "Ekmek"),
+        }
+
+        object.__setattr__(
+            bundle, "items", MappingProxyType(dict(self.items))
+        )
+        bundle.characters["hero"].bind_item_catalog(bundle.items)
+
+        inventory = Inventory()
+        inventory.add_item("iron_sword")
+        inventory.add_item("iron_helmet")
+        inventory.add_item("leather_armor")
+        inventory.add_item("bread_item")
+
         object.__setattr__(
             bundle,
-            "items",
-            {**bundle.items, "bread_item": ItemDefinition("bread_item", "Ekmek")},
+            "inventories",
+            MappingProxyType({"main": inventory}),
         )
-        bundle.inventories[ids.inventory_id].add_item("bread_item")
+
+        self.service = GameplayService(self.application)
+
+    def test_equipment_replaces_same_slot_and_applies_stats(self):
+        self.service.equip_item("hero", "main", "iron_sword")
+
+        self.assertEqual(
+            self.service.equipment("hero"),
+            {"main_hand": "iron_sword"},
+        )
+        self.assertEqual(
+            self.service.actor_stats("hero")["weapon_damage"], 4
+        )
+        self.assertEqual(
+            self.service.inventory("main").items[0][0],
+            "iron_helmet",
+        )
+
+    def test_equipment_survives_save_load_with_item_catalog(self):
+        self.service.equip_item("hero", "main", "leather_armor")
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "equipment.json"
+            self.service.save(path)
+            self.service.load(path)
+
+        self.assertEqual(
+            self.service.equipment("hero"),
+            {"chest": "leather_armor"},
+        )
+        self.assertEqual(
+            self.service.item("leather_armor").slot,
+            EquipmentSlot.CHEST,
+        )
+
+    def test_non_equipment_item_is_rejected(self):
         with self.assertRaises(ValueError):
-            service.equip_item(ids.hero_id, ids.inventory_id, "bread_item")
+            self.service.equip_item("hero", "main", "bread_item")
 
 
 if __name__ == "__main__":
