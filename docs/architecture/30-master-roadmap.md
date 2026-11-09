@@ -70,8 +70,9 @@ snapshot'larının sorumluluğundadır.
    ödülü.
 9. World, market, dialogue, combat ve character creation ekranlarında seyahat,
    seçim, hata/başarı geri bildirimi ve temel keyboard navigation eklendi.
-10. `DemoContentIds` ve `populate_demo_content()` ile demo içerik sözleşmesi
-    yeniden kurulabilir hale getirildi.
+10. Başlangıç dünyası, karakter oluşturma ve açılış diyaloğu için
+    `StarterContentIds` ve `populate_opening_content()` sözleşmesi oluşturuldu.
+    Başlangıç içeriği `data/starter_content.json` üzerinden yüklenir.
 
 ### Faz D — Kalite ve yayın hazırlığı — TAMAMLANDI
 
