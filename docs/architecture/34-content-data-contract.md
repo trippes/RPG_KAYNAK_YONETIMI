@@ -1,34 +1,45 @@
-# Veri Odaklı İçerik Sözleşmesi
+Başlangıç İçeriği Veri Sözleşmesi
 
-Oynanış kuralları application/domain katmanında kalır; görev, NPC, diyalog,
-kaynak, reçete, pazar ve karşılaşma değerleri içerik tanımlarından yüklenir.
+Oynanış kuralları application/domain katmanında kalır. Başlangıç dünyası, karakter oluşturma ve açılış diyaloğu gibi ilk oyun deneyimine ait tanımlar veri dosyasından yüklenir.
 
-## Demo içeriği
+Başlangıç içerik dosyası
 
 Kaynak dosya:
 
-```text
-data/demo_content.json
-```
+data/starter_content.json
 
 Yükleme giriş noktası:
 
-```python
-from application.content_pack import load_demo_content, populate_demo_content
-```
+from application.content_pack import load_starter_content, populate_opening_content
 
-`populate_demo_content()` mevcut çağrı sözleşmesini korur. Alternatif bir içerik
-dosyası test veya mod desteği için `definition_path` ile verilebilir.
+"load_starter_content()" başlangıç içerik tanımını yükler ve doğrular.
 
-## Sürümleme ve güvenlik
+"populate_opening_content()" doğrulanmış başlangıç içeriğini yeni oyun oturumuna kaydeder.
 
-- İçerik tanımı `schema_version` taşır.
-- Bilinmeyen gelecek sürümler reddedilir.
+İçerik kapsamı
+
+Başlangıç paketi şu öğeleri kapsar:
+
+- Başlangıç dünyası ve harita bağlantıları
+- Oyuncu karakterinin başlangıç tanımı
+- Başlangıç lokasyonları
+- Açılışta karşılaşılan NPC
+- Açılış diyaloğu
+- Karakter oluşturma için gerekli tanımlar
+
+Başlangıç paketi, görev zincirleri, pazar senaryoları, savaş karşılaşmaları ve diğer oynanış testlerinden ayrı tutulur.
+
+Sürümleme ve doğrulama
+
+- İçerik tanımı "schema_version" taşır.
+- Desteklenmeyen gelecek sürümler reddedilir.
 - Zorunlu bölümler eksikse içerik runtime'a alınmaz.
-- Kimlik anahtarları `DemoContentIds` ile aynı sözleşmeyi takip eder.
+- Kimlikler içerik tanımı içindeki "ids" alanından alınır.
 - İçerik tanımı Core canonical state'e eklenmez.
+- Oyun kuralları veri dosyasına taşınmaz; ilgili domain ve application katmanlarında kalır.
 
-Mevcut demo paketinin görev, NPC, diyalog, kaynak ve denge değerleri JSON'dan
-değiştirilebilir. Yeni bir içerik türü veya birden fazla içerik örneği için
-önce yükleyicide ilgili liste sözleşmesi genişletilir; oyun kuralları yine
-application/domain katmanında kalır.
+Gelecekteki içerik paketleri
+
+Yeni görevler, NPC'ler, diyaloglar, kaynaklar, pazarlar ve karşılaşmalar ayrı içerik paketleri olarak tasarlanacaktır.
+
+Bu paketler başlangıç içeriğine bağımlı olmak zorunda değildir. Her paket kendi kimliklerini, sürümünü ve doğrulama kurallarını taşımalıdır.
