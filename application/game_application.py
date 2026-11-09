@@ -122,12 +122,10 @@ class GameApplication:
             combat=document.combat.restore() if document.combat is not None else None,
         )
 
-        # Older saves did not persist NPC tile positions. Restore the demo
+        # Older saves did not persist NPC tile positions. Restore the starter
         # defaults for those records so existing slots remain interactive.
         legacy_npc_positions = {
             "warden_lyra": Position(16, 30),
-            "village_carpenter": Position(21, 15),
-            "village_innkeeper": Position(20, 23),
         }
         for npc_id, position in legacy_npc_positions.items():
             npc = candidate.social.npcs.get(npc_id)
@@ -135,11 +133,11 @@ class GameApplication:
                 npc.position = position
         
     
-        from application.content_pack import build_demo_world_map
+        from application.content_pack import build_starter_world_map
 
-        # Rebuild demo maps only when they match saved actor locations.
+        # Rebuild starter maps only when they match saved actor locations.
         for world in candidate.session.worlds.get_all():
-            world_map = build_demo_world_map(world.world_id)
+            world_map = build_starter_world_map(world.world_id)
 
             saved_location_ids = {
                 actor.location_id
@@ -148,12 +146,12 @@ class GameApplication:
                 and actor.location_id is not None
             } if candidate.actors is not None else set()
 
-            demo_location_ids = {
+            starter_location_ids = {
                 location.location_id
                 for location in world_map.locations()
             }
 
-            if saved_location_ids and not saved_location_ids.issubset(demo_location_ids):
+            if saved_location_ids and not saved_location_ids.issubset(starter_location_ids):
                 continue
 
             candidate.movement.register_map(world_map)

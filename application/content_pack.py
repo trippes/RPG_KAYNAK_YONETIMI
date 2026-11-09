@@ -1,4 +1,4 @@
-"""Data-driven content loading for the playable demo slice."""
+"""Data-driven content loading for the playable starter slice."""
 
 from __future__ import annotations
 
@@ -9,60 +9,38 @@ from pathlib import Path
 from types import MappingProxyType
 
 from application import GameplayService
-from application import ProductionFacility
-from character import Ability, CharacterClass, CharacterFactory, EquipmentSlot, ItemDefinition, Race
-from combat import Combatant
+from character import Ability, CharacterClass, CharacterFactory, Race
 from core.domain.spatial import Position
-from economy import Currency, Merchant, Money
 from npc import Faction, NPC
-from quests import Dialogue, DialogueChoice, DialogueNode, Objective, ObjectiveType, Quest, Reward
-from resources import Inventory, Quantity, Recipe, ResourceType, ResourceUnit, WorldResourceNode
+from quests import Dialogue, DialogueChoice, DialogueNode
 from world import Location, WorldMap
 
 
-DEFAULT_CONTENT_PATH = Path(__file__).resolve().parent.parent / "data" / "demo_content.json"
+DEFAULT_CONTENT_PATH = Path(__file__).resolve().parent.parent / "data" / "starter_content.json"
 CONTENT_SCHEMA_VERSION = 1
 
 
 @dataclass(frozen=True)
-class DemoContentIds:
+class StarterContentIds:
     world_id: str = "demo_valley"
     hero_id: str = "hero"
     village_id: str = "village"
     forest_id: str = "forest"
     faction_id: str = "wardens"
     npc_id: str = "warden_lyra"
-    quest_id: str = "forest_supplies"
-    carpenter_id: str = "village_carpenter"
-    carpenter_quest_id: str = "carpenter_repair"
-    blacksmith_id: str = "village_blacksmith"
-    blacksmith_quest_id: str = "blacksmith_iron"
-    iron_node_id: str = "north_iron_mine"
-    inn_quest_id: str = "inn_supplies"
-    node_id: str = "forest_wood"
-    inventory_id: str = "player"
-    merchant_id: str = "village_merchant"
-    merchant_inventory_id: str = "merchant"
-    market_offer_id: str = "market_plank"
-    bread_offer_id: str = "market_bread"
-    water_offer_id: str = "market_water"
-    innkeeper_id: str = "village_innkeeper"
-    enemy_id: str = "forest_wolf"
-    encounter_id: str = "forest_wolf_encounter"
-    
 
 
 class ContentDefinitionError(ValueError):
     """Raised when a content definition cannot safely enter the runtime."""
 
 
-def load_demo_content(path: str | Path | None = None) -> dict:
+def load_starter_content(path: str | Path | None = None) -> dict:
     """Load and validate a JSON content definition without mutating it."""
     if path is None:
         candidates = (
             DEFAULT_CONTENT_PATH,
-            Path(sys.prefix) / "data" / "demo_content.json",
-            Path(sys.prefix) / "demo_content.json",
+            Path(sys.prefix) / "data" / "starter_content.json",
+            Path(sys.prefix) / "starter_content.json",
         )
         source = next((candidate for candidate in candidates if candidate.exists()), candidates[0])
     else:
@@ -75,7 +53,7 @@ def load_demo_content(path: str | Path | None = None) -> dict:
         raise ContentDefinitionError("Content definition must be a JSON object.")
     if definition.get("schema_version") != CONTENT_SCHEMA_VERSION:
         raise ContentDefinitionError("Unsupported content definition schema version.")
-    required = {"ids", "world", "character", "resources", "recipe", "locations", "faction", "npc", "dialogue", "quest", "merchant", "market_offer", "combat"}
+    required = {"ids", "world", "character", "locations", "faction", "npc", "dialogue"}
     missing = sorted(required - definition.keys())
     if missing:
         raise ContentDefinitionError(f"Content definition is missing sections: {', '.join(missing)}")
@@ -87,8 +65,8 @@ def load_opening_content(path: str | Path | None = None) -> dict:
     if path is None:
         candidates = (
             DEFAULT_CONTENT_PATH,
-            Path(sys.prefix) / "data" / "demo_content.json",
-            Path(sys.prefix) / "demo_content.json",
+            Path(sys.prefix) / "data" / "starter_content.json",
+            Path(sys.prefix) / "starter_content.json",
         )
         source = next((candidate for candidate in candidates if candidate.exists()), candidates[0])
     else:
@@ -110,41 +88,13 @@ def load_opening_content(path: str | Path | None = None) -> dict:
     return definition
 
 
-def _id_resolver(definition: dict, ids: DemoContentIds):
+def _id_resolver(definition: dict, ids: StarterContentIds):
     configured = definition["ids"]
-    valid_fields = {field.name for field in fields(DemoContentIds)}
+    valid_fields = {field.name for field in fields(StarterContentIds)}
     if set(configured) != valid_fields:
-        raise ContentDefinitionError("Content ids must match DemoContentIds fields.")
+        raise ContentDefinitionError("Content ids must match StarterContentIds fields.")
     replacements = {key: getattr(ids, key) for key in valid_fields}
     return lambda key: replacements.get(key, key)
-
-
-def _quantity(raw: dict) -> Quantity:
-    return Quantity(int(raw["amount"]), ResourceUnit(raw.get("unit", "item")))
-
-
-def _resource_with_role(definition: dict, role: str) -> dict:
-    matches = [
-        resource for resource in definition["resources"]
-        if resource.get("role") == role
-    ]
-    if len(matches) != 1:
-        raise ContentDefinitionError(
-            f"Content must define exactly one resource with role: {role}"
-        )
-    return matches[0]
-
-
-def _recipe_output_for_resource(recipe: dict, resource_id: str) -> dict:
-    matches = [
-        output for output in recipe["outputs"]
-        if output["resource"] == resource_id
-    ]
-    if len(matches) != 1:
-        raise ContentDefinitionError(
-            f"Recipe must define exactly one output for resource: {resource_id}"
-        )
-    return matches[0]
 
 
 def _build_character_factory(character_data: dict) -> CharacterFactory:
@@ -189,7 +139,7 @@ def _build_character_factory(character_data: dict) -> CharacterFactory:
     )
 
 
-def _register_opening_content(application, definition: dict, ids: DemoContentIds):
+def _register_opening_content(application, definition: dict, ids: StarterContentIds):
     resolve_id = _id_resolver(definition, ids)
     world_data = definition["world"]
     world = application.aktif_dunya() or application.dunya_olustur(
@@ -259,7 +209,7 @@ def _register_opening_content(application, definition: dict, ids: DemoContentIds
 
 
 def populate_opening_content(
-    application, ids: DemoContentIds = DemoContentIds(), definition_path=None
+    application, ids: StarterContentIds = StarterContentIds(), definition_path=None
 ):
     """Build only the opening session used before character creation."""
     return _register_opening_content(
@@ -270,7 +220,7 @@ def populate_opening_content(
 
 
 def _build_world_map_from_definition(
-    definition: dict, world_id: str, ids: DemoContentIds
+    definition: dict, world_id: str, ids: StarterContentIds
 ):
     resolve_id = _id_resolver(definition, ids)
     world_map = WorldMap(world_id)
@@ -302,416 +252,23 @@ def _build_world_map_from_definition(
     return world_map
 
 
-def build_demo_world_map(
+def build_starter_world_map(
     world_id: str,
-    ids: DemoContentIds = DemoContentIds(),
+    ids: StarterContentIds = StarterContentIds(),
     definition_path=None,
 ):
-    """Rebuild the static demo map without resetting saved gameplay state."""
-    definition = load_demo_content(definition_path)
+    """Rebuild the static starter map without resetting saved gameplay state."""
+    definition = load_starter_content(definition_path)
 
     return _build_world_map_from_definition(definition, world_id, ids)
-
-
-def populate_demo_content(application, ids: DemoContentIds = DemoContentIds(), definition_path=None):
-    """Build a deterministic playable session from a JSON content definition."""
-    definition = load_demo_content(definition_path)
-    resolve_id = _id_resolver(definition, ids)
-    world_data = definition["world"]
-    world = application.aktif_dunya() or application.dunya_olustur(
-        world_data["name"], width=world_data["width"], height=world_data["height"], world_id=resolve_id("world_id")
-    )
-    bundle = application.holder.current
-
-    resource_types = {item["id"]: ResourceType(item["id"]) for item in definition["resources"]}
-    inventory = Inventory()
-    merchant_inventory = Inventory()
-    starter_items = {
-        "iron_sword": ItemDefinition(
-            "iron_sword", "Demir Kılıç", EquipmentSlot.MAIN_HAND,
-            weight=2.0, attack=3, damage=4, description="Dengeli tek elli kılıç.",
-        ),
-        "leather_armor": ItemDefinition(
-            "leather_armor", "Deri Zırh", EquipmentSlot.CHEST,
-            weight=5.0, defense=2, description="Hafif ve hareketli zırh.",
-        ),
-        "iron_helmet": ItemDefinition(
-            "iron_helmet", "Demir Miğfer", EquipmentSlot.HEAD,
-            weight=2.0, defense=1, max_hit_points=2,
-        ),
-    }
-    inventory.add_item("iron_sword")
-    inventory.add_item("leather_armor")
-    inventory.add_item("iron_helmet")
-    object.__setattr__(bundle, "items", MappingProxyType(starter_items))
-    recipe_data = definition["recipe"]
-    market_resource = definition["market_offer"]["resource"]
-    output_data = _recipe_output_for_resource(recipe_data, market_resource)
-    output = _quantity(output_data)
-    merchant_inventory.add(
-        resource_types[output_data["resource"]],
-        Quantity(definition["merchant"]["stock_amount"], output.unit),
-    )
-    for offer in definition.get("market_offers", ()):
-        merchant_inventory.add(
-            resource_types[offer["resource"]],
-            Quantity(offer.get("stock_amount", offer["quantity"]), ResourceUnit.ITEM),
-        )
-    object.__setattr__(bundle, "inventories", MappingProxyType({
-        ids.inventory_id: inventory,
-        ids.merchant_inventory_id: merchant_inventory,
-    }))
-    inputs = tuple((resource_types[item["resource"]], _quantity(item)) for item in recipe_data["inputs"])
-    outputs = tuple((resource_types[item["resource"]], _quantity(item)) for item in recipe_data["outputs"])
-    object.__setattr__(bundle, "recipes", MappingProxyType({
-        recipe_data["id"]: Recipe(recipe_data["id"], inputs, outputs, recipe_data["duration"], recipe_data["output_tag"]),
-    }))
-    facility_data = recipe_data["facility"]
-    if bundle.facilities.get(facility_data["id"]) is None:
-        bundle.facilities.add(ProductionFacility(facility_data["id"], facility_data["type"], facility_data["capacity"]))
-
-    node_data = _resource_with_role(definition, "primary_gathering")
-    zero_regeneration = Quantity(0, _quantity(node_data["regeneration_rate"]).unit)
-    bundle.resource_nodes.add(WorldResourceNode(
-        resolve_id("node_id"), world.world_id, resource_types[node_data["id"]], _quantity(node_data["node_quantity"]),
-        _quantity(node_data["node_capacity"]), zero_regeneration,
-        location_id=resolve_id(node_data["location_id"]),
-    ))
-    for location in definition["locations"]:
-        resource_landmarks = [
-            landmark for landmark in location.get("landmarks", ())
-            if (
-                "tree" in landmark["id"]
-                or "ağaç" in landmark["name"].lower()
-                or "mine" in landmark["id"]
-                or "maden" in landmark["name"].lower()
-            )
-        ]
-        for index, landmark in enumerate(resource_landmarks):
-            is_iron = "mine" in landmark["id"] or "maden" in landmark["name"].lower()
-            resource_data = _resource_with_role(
-                definition, "iron_ore" if is_iron else "primary_gathering",
-            )
-            node_id = (
-                resolve_id("node_id")
-                if location["id"] == "forest_id" and not is_iron and index == 0
-                else (
-                    resolve_id("iron_node_id")
-                    if location["id"] == "forest_id" and is_iron
-                    else landmark["id"] if is_iron else f"{landmark['id']}_wood"
-                )
-            )
-            if bundle.resource_nodes.get(node_id) is not None:
-                continue
-            bundle.resource_nodes.add(WorldResourceNode(
-                node_id,
-                world.world_id,
-                resource_types[resource_data["id"]],
-                _quantity(resource_data["node_quantity"]),
-                _quantity(resource_data["node_capacity"]),
-                Quantity(0, _quantity(resource_data["regeneration_rate"]).unit),
-                location_id=resolve_id(location["id"]),
-            ))
-
-    character_data = definition["character"]
-    factory = _build_character_factory(character_data)
-    race_data = character_data["race"]
-    class_data = character_data["class"]
-    if not bundle.characters:
-        application.karakter_olustur(factory, resolve_id("hero_id"), character_data["name"], race_data["id"], class_data["id"], resolve_id("hero_id"))
-        bundle.characters[resolve_id("hero_id")].bind_item_catalog(starter_items)
-    service = GameplayService(application)
-    service.register_character_factory(factory)
-
-    faction_data = definition["faction"]
-    service.register_faction(Faction(resolve_id("faction_id"), faction_data["name"]))
-    npc_data = definition["npc"]
-    service.register_npc(
-        NPC(
-            resolve_id("npc_id"),
-            npc_data["name"],
-            npc_data["role"],
-            (resolve_id("faction_id"),),
-            resolve_id(npc_data["location_id"]),
-            position=Position(*(npc_data.get("position") or (16, 30))),
-        )
-    )
-    service.register_npc(
-        NPC(
-            resolve_id("innkeeper_id"),
-            definition.get("innkeeper_npc", {}).get("name", "Han İşletmecisi Ayşe"),
-            "innkeeper",
-            (resolve_id("faction_id"),),
-            resolve_id("village_id"),
-            position=Position(*(definition.get("innkeeper_npc", {}).get("position") or (20, 23))),
-        )
-    )
-    carpenter_data = definition.get("carpenter_npc", {})
-    service.register_npc(
-        NPC(
-            resolve_id("carpenter_id"),
-            carpenter_data.get("name", "Marangoz Hilmi"),
-            carpenter_data.get("role", "carpenter"),
-            (resolve_id("faction_id"),),
-            resolve_id(carpenter_data.get("location_id", "village_id")),
-            position=Position(*(carpenter_data.get("position") or (21, 15))),
-        )
-    )
-    blacksmith_data = definition.get("blacksmith_npc", {})
-    service.register_npc(
-        NPC(
-            resolve_id("blacksmith_id"),
-            blacksmith_data.get("name", "Demirci Usta"),
-            blacksmith_data.get("role", "blacksmith"),
-            (resolve_id("faction_id"),),
-            resolve_id(blacksmith_data.get("location_id", "village_id")),
-            position=Position(*(blacksmith_data.get("position") or (27, 15))),
-        )
-    )
-
-    dialogue_data = definition["dialogue"]
-    nodes = []
-    for node_data in dialogue_data["nodes"]:
-        choices = tuple(
-            DialogueChoice(
-        choice["id"],
-        choice["text"],
-        choice.get("next"),
-        action=choice.get("action"),
-    )
-    for choice in node_data.get("choices", ())
-)
-        nodes.append(DialogueNode(node_data["id"], resolve_id("npc_id"), node_data["text"], choices))
-    service.register_dialogue(Dialogue(dialogue_data["id"], tuple(nodes), dialogue_data["start_node"]))
-    carpenter_dialogue = Dialogue(
-        "carpenter_intro",
-        (
-            DialogueNode(
-                "carpenter_start",
-                resolve_id("carpenter_id"),
-                "Ben köyün marangoz ustasıyım. Yardım edecek birini arıyordum. "
-                "Benim için çalışmak ister misin?",
-                (
-                    DialogueChoice(
-                        "accept_carpenter_quest",
-                        "Evet, işi kabul ediyorum.",
-                        action="accept_carpenter_quest",
-                    ),
-                    DialogueChoice(
-                        "deliver_carpenter_wood",
-                        "İstediğin odunları getirdim.",
-                        action="deliver_carpenter_wood",
-                    ),
-                    DialogueChoice(
-                        "accept_inn_quest",
-                        "Han için ekmek ve su alabilirim.",
-                        action="accept_inn_quest",
-                    ),
-                    DialogueChoice(
-                        "deliver_inn_supplies",
-                        "Ekmek ve suyu getirdim.",
-                        action="deliver_inn_supplies",
-                    ),
-                    DialogueChoice(
-                        "decline_carpenter_quest",
-                        "Şimdilik hayır.",
-                    ),
-                ),
-            ),
-        ),
-        "carpenter_start",
-    )
-    service.register_dialogue(carpenter_dialogue)
-    service.register_dialogue(Dialogue(
-        "blacksmith_intro",
-        (
-            DialogueNode(
-                "blacksmith_start",
-                resolve_id("blacksmith_id"),
-                "Demir ocağından demir cevheri getirirsen onu dövüp sana sağlam bir demir kılıç yapabilirim.",
-                (
-                    DialogueChoice(
-                        "accept_blacksmith_quest",
-                        "Demir cevheri toplamaya gidiyorum.",
-                        action="accept_blacksmith_quest",
-                    ),
-                    DialogueChoice(
-                        "deliver_blacksmith_ore",
-                        "İstediğin demir cevherini getirdim.",
-                        action="deliver_blacksmith_ore",
-                    ),
-                ),
-            ),
-        ),
-        "blacksmith_start",
-    ))
-    service.register_dialogue(Dialogue(
-        "innkeeper_intro",
-        (
-            DialogueNode(
-                "innkeeper_start",
-                resolve_id("innkeeper_id"),
-                "Hoş geldin. Hanımızda taze ekmek ve temiz su bulunur.",
-                (
-                    DialogueChoice(
-                        "open_inn_market",
-                        "Ekmek ve su satın almak istiyorum.",
-                        action="open_market",
-                    ),
-                    DialogueChoice("leave_inn", "Teşekkürler, birazdan bakarım."),
-                ),
-            ),
-        ),
-        "innkeeper_start",
-    ))
-
-    quest_data = definition["quest"]
-    objectives = tuple(
-        Objective(item["id"], item["description"], ObjectiveType(item["type"]), resolve_id(item["target_id"]))
-        for item in quest_data["objectives"]
-    )
-    reward_data = quest_data["reward"]
-    quest = Quest(
-        resolve_id("quest_id"), quest_data["title"], objectives,
-        Reward(
-            experience=reward_data.get("experience", 0),
-            currency=reward_data["currency"],
-            items=tuple(tuple(item) for item in reward_data["items"]),
-            reputation=((resolve_id("faction_id"), reward_data["reputation"]),),
-        ),
-    )
-    service.available_forest_quest = quest
-    carpenter_quest = Quest(
-        resolve_id("carpenter_quest_id"),
-        "Marangozun Yardımcısı",
-        (
-            Objective(
-                "collect_wood",
-                "Marangoz için odun topla",
-                ObjectiveType.COLLECT,
-                resolve_id("node_id"),
-                required=3,
-            ),
-            Objective(
-                "deliver_wood",
-                "Odunları Marangoz Hilmi'ye teslim et",
-                ObjectiveType.CUSTOM,
-                resolve_id("carpenter_id"),
-                required=1,
-            ),
-        ),
-        Reward(
-            experience=150,
-            currency=15,
-            items=(),
-            reputation=((resolve_id("faction_id"), 5),),
-        ),
-    )
-    service.carpenter_quest = carpenter_quest
-    service.carpenter_quest_reward_inventory_id = resolve_id("inventory_id")
-    service.inn_quest = Quest(
-        resolve_id("inn_quest_id"),
-        "Handan Erzak Al",
-        (
-            Objective("buy_bread", "Handan ekmek al", ObjectiveType.COLLECT, "bread"),
-            Objective("buy_water", "Handan su al", ObjectiveType.COLLECT, "water"),
-            Objective("deliver_supplies", "Ekmek ve suyu Hilmi'ye teslim et", ObjectiveType.CUSTOM, "carpenter_id"),
-        ),
-        Reward(experience=100, currency=10),
-    )
-    service.blacksmith_quest = Quest(
-        resolve_id("blacksmith_quest_id"),
-        "Demirciye Cevher Getir",
-        (
-            Objective(
-                "collect_iron_ore",
-                "Demir madenlerinden demir cevheri topla",
-                ObjectiveType.COLLECT,
-                resolve_id("iron_node_id"),
-                required=3,
-            ),
-            Objective(
-                "deliver_iron_ore",
-                "Demir cevherini demirciye teslim et",
-                ObjectiveType.CUSTOM,
-                resolve_id("blacksmith_id"),
-                required=1,
-            ),
-        ),
-        Reward(experience=200, items=(("iron_sword", 1),)),
-    )
-    bundle.quest_log.add(quest)
-    bundle.quest_log.add(carpenter_quest)
-    bundle.quest_log.add(service.inn_quest)
-    bundle.quest_log.add(service.blacksmith_quest)
-    
-    world_map = WorldMap(world.world_id)
-    for location in definition["locations"]:
-        world_map.add_location(Location(
-            resolve_id(location["id"]), location["name"],
-            tuple(location["position"]) if location.get("position") is not None else None,
-            location.get("description", ""),
-            location.get("type", "unknown"),
-            tuple(location.get("activities", ())),
-            tuple(
-                (
-                    landmark["id"], landmark["name"], tuple(landmark.get("position", (180, 180))),
-                    tuple(landmark.get("activities", ())), landmark.get("description", ""),
-                )
-                for landmark in location.get("landmarks", ())
-            ),
-        ))
-    for connection in definition.get("connections", ()):
-        world_map.connect(resolve_id(connection[0]), resolve_id(connection[1]))
-    service.register_world_map(world_map)
-    service.place_actor(resolve_id("hero_id"), resolve_id("village_id"))
-    start_position = character_data.get("starting_position") or (16, 29)
-    if (
-        not isinstance(start_position, (list, tuple))
-        or len(start_position) != 2
-        or not all(isinstance(value, int) for value in start_position)
-    ):
-        raise ContentDefinitionError(
-            "Character starting_position must contain two integer tile coordinates."
-        )
-    service.set_actor_tile_position(
-        resolve_id("hero_id"),
-        start_position[0],
-        start_position[1],
-    )
-
-    merchant_data = definition["merchant"]
-    service.register_merchant(Merchant(resolve_id("merchant_id"), account_id=resolve_id("merchant_id"), inventory_id=resolve_id("merchant_inventory_id")))
-    offer_data = definition["market_offer"]
-    service.publish_offer(
-        resolve_id("market_offer_id"), resolve_id("merchant_id"), resolve_id("merchant_inventory_id"),
-        resource_types[offer_data["resource"]], offer_data["quantity"],
-        Money(offer_data["price"], Currency(offer_data["currency"])),
-    )
-    for offer in definition.get("market_offers", ()):
-        service.publish_offer(
-            resolve_id(offer["id"]),
-            resolve_id("merchant_id"),
-            resolve_id("merchant_inventory_id"),
-            resource_types[offer["resource"]],
-            offer["quantity"],
-            Money(offer["price"], Currency(offer["currency"])),
-        )
-
-    combat_data = definition["combat"]
-    service.add_combatant(Combatant(resolve_id("hero_id"), combat_data["hero"]["hp"], attack=combat_data["hero"]["attack"], defense=combat_data["hero"]["defense"]))
-    service.add_combatant(Combatant(resolve_id("enemy_id"), combat_data["enemy"]["hp"], attack=combat_data["enemy"]["attack"], defense=combat_data["enemy"]["defense"]))
-    service.create_combat_encounter(resolve_id("encounter_id"), (resolve_id("hero_id"), resolve_id("enemy_id")), {resolve_id("hero_id"): combat_data["hero"]["initiative"], resolve_id("enemy_id"): combat_data["enemy"]["initiative"]})
-    return service, ids
 
 
 __all__ = [
     "CONTENT_SCHEMA_VERSION",
     "ContentDefinitionError",
-    "DemoContentIds",
-    "load_demo_content",
+    "StarterContentIds",
+    "load_starter_content",
     "load_opening_content",
     "populate_opening_content",
-    "populate_demo_content",
-    "build_demo_world_map",
+    "build_starter_world_map",
 ]
