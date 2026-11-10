@@ -105,7 +105,7 @@ ACTIVITY_LABELS = {
 
 # --- navigation ----------------------------------------------------------------
 NAV_TABS = (
-    ("world", "Yerel"),
+    ("world", "Ana Ekran"),
     ("inventory", "Çanta"),
     ("production", "Üretim"),
     ("character", "Karakter"),

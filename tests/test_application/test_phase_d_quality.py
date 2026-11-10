@@ -260,7 +260,7 @@ class TestPhaseDQuality(unittest.TestCase):
         local_screen = MainScreen(service)
         self.assertIsNone(local_screen.handle(InputState(actions={"confirm"})))
 
-    def test_local_map_finds_safe_paths_and_blocks_static_landmarks(self):
+    def test_main_screen_finds_safe_paths_and_blocks_static_landmarks(self):
         from application.content_pack import populate_opening_content
         service, _ = populate_opening_content(GameApplication.create_default())
         local_screen = MainScreen(service)
