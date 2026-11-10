@@ -257,7 +257,10 @@ class TestPhaseDQuality(unittest.TestCase):
         window = object.__new__(GameWindow)
         window.current = "main"
         window.gameplay_active = True
-        window.screens = {"main": SimpleNamespace(menu_open=False)}
+        window.screens = {
+            "main": SimpleNamespace(menu_open=False),
+            "map": object(),
+        }
         window.renderer = SimpleNamespace(nav_hit=lambda _position: "map")
         window.window_manager = SimpleNamespace(
             windows={"map": object()},
