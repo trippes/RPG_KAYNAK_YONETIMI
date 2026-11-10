@@ -10,8 +10,9 @@ from .resource import Quantity, ResourceType
 
 RecipeComponent = tuple[ResourceType, Quantity]
 
+from core.errors import RPGError
 
-class RecipeError(ValueError):
+class RecipeError(ValueError, RPGError):
     """Invalid recipe definition."""
 
 
