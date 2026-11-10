@@ -727,9 +727,9 @@ class GameplayService:
         if isinstance(initial_gold, bool) or not isinstance(initial_gold, int) or initial_gold < 0:
             raise ValueError("initial_gold must be a non-negative integer.")
         if is_new_partner and initial_gold:
-                bundle.economy.ledger.credit(
-                    merchant.account_id, Money(initial_gold, currency), "trade_partner_funding",
-                )
+            bundle.economy.ledger.credit(
+                merchant.account_id, Money(initial_gold, currency), "trade_partner_funding",
+            )
         for resource_id, amount in (unit_prices or {}).items():
             if isinstance(amount, bool) or not isinstance(amount, int) or amount <= 0:
                 raise ValueError("Trade unit prices must be positive integers.")
