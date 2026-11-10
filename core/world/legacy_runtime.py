@@ -2,7 +2,7 @@
 
 from core.clock import GameClock
 from core.events import Event, EventQueue
-from time_system.scheduler import Scheduler
+from core.compatibility.legacy_scheduler_adapter import LegacyCallbackSchedulerAdapter
 
 
 class LegacyWorldRuntime:
@@ -11,7 +11,7 @@ class LegacyWorldRuntime:
     def __init__(self, start_tick: int) -> None:
         self.clock = GameClock(start_tick=start_tick)
         self.event_queue = EventQueue()
-        self.scheduler = Scheduler()
+        self.scheduler = LegacyCallbackSchedulerAdapter(start_tick=start_tick)
         self.clock.attach_scheduler(self.scheduler)
 
     def create_event(self, event_type, payload=None):
