@@ -1,44 +1,78 @@
-# Core Sertleştirme Raporu
+# Core Sertleştirme ve Legacy Kullanım Raporu
 
-## Ölçüm
+## Güncel statik envanter
 
-`python -m core.compatibility.usage .` ile yapılan statik tarama, test ve dokümantasyon klasörleri hariç 13 legacy başlıkta başlangıçta 62 kullanım tespit etmişti. Geçiş sonrası toplam statik kullanım 59'a indi; uygulama doğrudan `ActionManager` kullanmıyor ve bu başlığın statik kullanım sayısı **0** oldu. Runtime sayaçları temiz başlangıçta sıfırdır; deprecation ile işaretlenmiş çağrılar çalıştığında sayaç artar.
+Ölçüm, GitHub Actions Linux doğrulama işi içinde
+`python -m core.compatibility.usage .` komutuyla alınmıştır.
 
-Başlıca yoğunluklar:
+- Ölçüm commit'i: `39e69d486fdf31fc5a951816f7febe3d95094c15`
+- Python: 3.11
+- Test sonucu: 880 test, 0 hata
+- Rapor: 13 legacy API başlığı, toplam 63 statik kullanım kaydı
+- Runtime sayaçları: rapor adımının temiz süreçte çalışması nedeniyle 0
 
-- `World._entities`: 17
-- `core.entity.position.Position`: 9
-- `core.constants event constants`: 8
-- `Entity.world_id`: 6
-- `core.events.EventQueue`: 5
-- `core.actions.ActionManager`: 4
+| Legacy API | Statik kullanım | Canonical karşılık |
+|---|---:|---|
+| `World._entities` | 17 | `EntityRepository` |
+| `core.entity.position.Position` | 14 | `core.domain.spatial.Position` |
+| `Entity.world_id` | 6 | `WorldMembershipService` |
+| `core.constants event constants` | 8 | `CanonicalEventType` |
+| `core.events.EventQueue` | 5 | `CanonicalEventTransport` |
+| `core.actions.Action` | 4 | `core.simulation.Action` |
+| `time_system.Scheduler` | 3 | `CanonicalScheduler` |
+| `core.clock.GameClock` | 2 | `WorldRuntimeBoundary.advance_world` |
+| `core.event_bus.EventBus` | 2 | `CanonicalEventDispatcher` |
+| `core.event_types.EventType` | 2 | `CanonicalEventType` |
+| `Game.dunya_olaylarini_aktar` | 0 | `Game.dunya_olaylarini_canonical_aktar` |
+| `core.actions.ActionManager` | 0 | `CanonicalActionAdapter` |
+| `time_system.Tick` | 0 | `core.time.Tick` |
 
-Güncel ölçümde `core.actions.ActionManager`: **0**.
+Bu sayılar benzersiz dosya veya çağıran sayısı değil, tarayıcının bulduğu
+import, construction, inheritance, method ve projection referanslarının
+sayısıdır. Scanner; import alias, modül alias ve alias üzerinden construction
+ile inheritance biçimlerini kapsar. Dinamik import, reflection ve runtime'da
+oluşturulan isimler statik AST taramasının kapsamı dışındadır.
 
-Bu sonuç, eski API'lerin uygulama davranışından tamamen çıkarılmadığını; ancak canonical runtime'ın sahiplik, zaman, action ve event akışının yeni giriş noktası olduğunu gösterir.
+Önceki rapordaki 62/59 değerleri eski scanner davranışına aittir; yeni
+tarayıcı daha fazla kullanım biçimini tanıdığı için doğrudan karşılaştırma
+yapılmamalıdır.
 
-## Uygulanan sınır
+## Aşama 3'te uygulanan sınırlar
 
-- Yeni simulation testleri yalnızca `GameSession` ve `SimulationRuntime` üzerinden çalışır.
-- World olayları için uygulama katmanındaki legacy aktarım metodu deprecation ölçümüne bağlandı; yeni yol `dunya_olaylarini_canonical_aktar` olarak kalır.
-- Canonical event akışını kaydetmek ve aynı akışla karşılaştırmak için `SimulationReplay` eklendi.
-- Restore sonrası simulation tick'in korunması migration/restore testine bağlandı.
-- `ActionManager` için `CanonicalActionAdapter` eklendi; Game ve GameApplication bu adapter üzerinden canonical `ActionProcessor`a bağlandı.
-- World tick ilerletmesi `WorldRuntimeBoundary.advance_world` içine alındı; `SimulationRuntime` authoritative tick olarak kullanılıyor.
+- `time_system.Tick`, canonical `core.time.Tick` sınıfının geriye dönük
+  uyumlu export'udur. `core.clock.GameClock` canonical Tick'i doğrudan alır.
+- Mutable legacy Entity Position, canonical immutable Position değerini
+  saklayan adaptördür. Yeni kod canonical Position kullanmalıdır.
+- `WorldRuntimeBoundary`, canonical `SimulationRuntime` zamanını
+  authoritative kaynak olarak ilerletir; eski World saatini yalnızca
+  compatibility projection olarak eşitler.
+- `LegacyWorldRuntime`, eski callback scheduler ve event queue sahipliğini
+  izole eder. Eski tüketiciler bulunduğu için bu API'ler silinmemiştir.
+- `EntityRepository` ve `WorldMembershipService` canonical sahiplik
+  kaynaklarıdır. `Entity.world_id` ve `World._entities` eski public World
+  API'sini destekleyen projection alanlarıdır; save/restore kaynağı değildir.
+- Architecture testleri canonical domain/time/simulation katmanlarının
+  legacy runtime bağımlılıklarını engeller.
 
-## Sonraki daraltma
+## Önceki Core sertleştirme kararları
 
-Legacy `ActionManager` ve 1.x world-clock API'si yalnızca dış 1.x çağıranlar için compatibility katmanında tutuluyor. Uygulama içi çağrılar canonical adapter sınırının arkasında; sonraki temizlik yalnızca dış kullanıcıların migration sürecine bağlı.
-
-## Core kapanış kararı
-
-- Core canonical persistence state'i runtime scheduler, dispatcher, event queue
-  ve aktif aksiyonları içermez. Gameplay continuation snapshot'ları application
-  katmanında tutulur.
-- Application save envelope v0→v1 migrasyonunu yapar. Core persistence boundary
-  eski Core kayıtlarını dönüştürmez; mevcut Core şemasını doğrular ve gelecek
-  sürümleri reddeder.
+- Core canonical persistence state'i runtime scheduler, dispatcher, event
+  queue ve aktif aksiyonları içermez. Gameplay continuation snapshot'ları
+  application katmanında tutulur.
+- Application save envelope v0→v1 migrasyonunu yapar. Core persistence
+  boundary eski Core kayıtlarını dönüştürmez; mevcut Core şemasını doğrular
+  ve gelecek sürümleri reddeder.
 - Restore sonrasında dispatcher consumer'ları ve tick listener'ları korunur;
   geçici event kuyruğu ve scheduler işleri yeniden üretilmez.
-- Core kapanış doğrulaması unittest, compileall, main smoke ve architecture
-  boundary testlerinin birlikte başarılı olmasına bağlıdır.
+- Save/load ve runtime replacement akışları candidate graph kurup doğrulama
+  tamamlandıktan sonra atomik olarak yayımlar.
+
+## Kalan migration işi
+
+Legacy yüzeyin tamamı kaldırılmış değildir. Sonraki aşamada kaldırma
+değerlendirmesi yapılabilmesi için önce dış/legacy tüketicilerin canonical
+API'lere taşınması gerekir. Özellikle World callback scheduler, World saat ve
+event API'si, mutable Entity Position ve membership projection'ları major
+version uyumluluk kararı olmadan kaldırılmamalıdır.
+
+Ayrıntılı aşama kaydı: `docs/architecture/33-stage-3-architecture-debt.md`.
