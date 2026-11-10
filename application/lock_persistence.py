@@ -36,6 +36,7 @@ class LockSnapshot:
                     "require_skill": p.require_skill,
                     "require_tool": p.require_tool,
                     "minimum_skill": p.minimum_skill,
+                    "difficulty_class": p.difficulty_class,
                 }
                 for p in manager.lockpick_profiles()
             ],
@@ -46,6 +47,7 @@ class LockSnapshot:
                     "minimum_strength": p.minimum_strength,
                     "required_tool_tags": list(p.required_tool_tags),
                     "success_effect": p.success_effect,
+                    "difficulty_class": p.difficulty_class,
                 }
                 for p in manager.force_profiles()
             ],
@@ -167,7 +169,7 @@ class LockSnapshot:
                     LockpickProfile(
                         r["profile_id"], tuple(r.get("allowed_tool_tags", ())),
                         r.get("require_skill", True), r.get("require_tool", False),
-                        r.get("minimum_skill", 0),
+                        r.get("minimum_skill", 0), r.get("difficulty_class", 12),
                     )
                     for r in self.data["lockpick_profiles"]
                 ),
@@ -176,7 +178,7 @@ class LockSnapshot:
                         r["profile_id"], r.get("allowed", True),
                         r.get("minimum_strength", 0),
                         tuple(r.get("required_tool_tags", ())),
-                        r.get("success_effect", "unlock"),
+                        r.get("success_effect", "unlock"), r.get("difficulty_class", 12),
                     )
                     for r in self.data["force_profiles"]
                 ),
