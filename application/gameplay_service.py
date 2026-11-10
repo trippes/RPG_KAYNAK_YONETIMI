@@ -620,6 +620,10 @@ class GameplayService:
                 Quantity(purchased, stock.unit),
                 offer.unit_price,
             )
+            if bundle.economy.market.profile(offer.market_id) is not None:
+                bundle.economy.market.record_purchase(
+                    offer.market_id, offer.resource_type, purchased,
+                )
             bundle.economy.market.withdraw(offer_id)
             if purchased < offer.quantity:
                 bundle.economy.market.publish(MarketOffer(
