@@ -216,22 +216,32 @@ class GameWindow:
         screen.selected = 0
         screen.message = ""
         screen.pending_overwrite = False
+        screen.pending_overwrite_signature = None
+        screen.pending_delete = False
         return "save_slots"
 
     def _latest_save_path(self):
         if self.save_path is None or self.save_dir is None:
             return None
-        candidates = []
+        candidates = {}
         if self.save_path.is_file():
-            candidates.append(self.save_path)
+            candidates[self.save_path] = self.save_path.stat().st_mtime_ns
         if self.save_dir.is_dir():
-            candidates.extend(
-                path for path in self.save_dir.glob("slot_*.json")
-                if path.is_file()
-            )
+            for path in self.save_dir.glob("slot_*.json"):
+                if path.is_file():
+                    candidates[path] = path.stat().st_mtime_ns
+            # A missing primary can still be recovered by the adapter from
+            # its validated .bak file. Keep the primary path as the load target.
+            for backup in self.save_dir.glob("slot_*.json.bak"):
+                if backup.is_file():
+                    primary = backup.with_suffix("")
+                    candidates[primary] = max(
+                        candidates.get(primary, 0),
+                        backup.stat().st_mtime_ns,
+                    )
         if not candidates:
             return None
-        return max(candidates, key=lambda path: path.stat().st_mtime_ns)
+        return max(candidates, key=candidates.get)
 
     def _continue_latest_save(self):
         try:
@@ -491,10 +501,11 @@ class GameWindow:
         if state.pressed("save"):
             try:
                 self._ensure_save_storage()
-                self.save_path.parent.mkdir(parents=True, exist_ok=True)
-                self.service.save(self.save_path)
-                self._set_notice(f"Slot {self.selected_slot + 1 if self.selected_slot is not None else '?'} kaydedildi.", "ok")
-            except (OSError, KeyError, ValueError, RuntimeError) as error:
+                # Route the shortcut through the slot screen so occupied slots
+                # always require an explicit overwrite confirmation.
+                self.gameplay_active = False
+                self.current = self._open_save_slots("save", "local_map")
+            except SaveStorageError as error:
                 self._set_notice(f"Kaydetme başarısız: {error}", "error")
 
         if state.pressed("load"):
