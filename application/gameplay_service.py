@@ -597,6 +597,14 @@ class GameplayService:
             raise KeyError(f"Market offer not found: {offer_id}")
         if offer.inventory_id is None:
             raise GameplayServiceError("Market offer has no seller inventory.")
+        profile = bundle.economy.market.profile(offer.market_id)
+        if profile is not None:
+            self._require_actor_in_active_world(bundle, buyer_id)
+            buyer_actor = bundle.actors.get(buyer_id)
+            if buyer_actor.location_id != profile.location_id:
+                raise GameplayServiceError(
+                    "Buyer must be at the market's registered location."
+                )
         buyer_inventory = self._inventory(bundle, buyer_inventory_id)
         seller_inventory = self._inventory(bundle, offer.inventory_id)
         stock = seller_inventory.get(offer.resource_type)
@@ -683,6 +691,12 @@ class GameplayService:
             profile = bundle.economy.market.profile(market_id)
             if profile is None:
                 raise KeyError(f"Market not found: {market_id}")
+            self._require_actor_in_active_world(bundle, "hero")
+            actor = bundle.actors.get("hero")
+            if actor.location_id != profile.location_id:
+                raise GameplayServiceError(
+                    "Player must be at the market's registered location."
+                )
             inventory = self._inventory(bundle, profile.inventory_id)
             bundle.economy.market.restock(
                 market_id, inventory, bundle.simulation.current_tick.value,
