@@ -186,7 +186,7 @@ class TestGameplayService(unittest.TestCase):
         self.service.register_lock(
             LockInstance("iron_gate_lock_01", entity.entity_id, "iron_gate_lock")
         )
-        self.service.register_actor("hero", "player", character_id="hero_character")
+        self.service.register_actor("hero", "player", character_id="hero_character", inventory_id="main")
         self.inventory.add_item("breaching_tool")
 
         self.assertFalse(self.service.attempt_force_lock(
