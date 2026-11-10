@@ -239,8 +239,8 @@ class GameWindow:
         screen.mode = mode
         screen.return_target = return_target
         screen.selected = (
-            self.selected_slot
-            if mode == "save" and self.selected_slot is not None
+            getattr(self, "selected_slot", None)
+            if mode == "save" and getattr(self, "selected_slot", None) is not None
             else 0
         )
         screen.message = ""
