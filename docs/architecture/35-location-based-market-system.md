@@ -14,11 +14,11 @@ Markets are world content attached to a physical location and a merchant NPC. Th
 
 ## Dynamic stock
 
-A market's restock cycle is derived from simulation ticks:
+A market's restock cycle is derived from the simulation calendar. The current game-time contract uses 60 simulation ticks per second and a 24-minute real-time day:
 
-`cycle = current_tick // restock_interval`
+`cycle = current_tick // (restock_interval_days * 86_400)`
 
-Within a cycle, stock remains stable. When the cycle advances, the market clears its previous resource stock and offers, rotates the configured catalog, and deterministically derives stock quantities and a small price variation from the cycle. This avoids nondeterministic tests while ensuring different locations can expose different assortments and prices.
+Within a cycle, stock remains stable. When the cycle advances, the market clears its previous resource stock and offers, rotates the configured catalog, and deterministically derives stock quantities from the cycle. Prices combine a small cycle variation, available supply, and persisted purchase-demand pressure; demand pressure decays after each restock. This avoids nondeterministic tests while ensuring different locations can expose different assortments and prices. Reopening a market during the same game day never replenishes stock.
 
 ## Content definition
 
@@ -26,7 +26,7 @@ The optional `markets` array in `data/starter_content.json` contains one record 
 
 - `market_id`, `location_id`, `npc_id`, `npc_name`, and `npc_role`
 - `merchant_id` and `inventory_id`
-- `restock_interval` and `visible_products`
+- `restock_interval` (in game days) and `visible_products`
 - `position` and a dialogue definition with a choice whose action is `open_market`
 - `catalog` entries containing `resource_type`, `base_price`, `min_quantity`, and `max_quantity`
 
