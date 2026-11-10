@@ -518,7 +518,7 @@ class GameplayService:
         bundle = self._current_bundle()
         self._require_actor_in_active_world(bundle, actor_id)
         character = self._character_for_actor(bundle, actor_id)
-        inventory = self._inventory(bundle, inventory_id)
+        inventory = self._inventory_for_actor(bundle, actor_id, inventory_id)
         tool_tags = self._carried_tool_tags(bundle, inventory, tool_item_id)
         strength = character.attributes.get("strength")
         return bundle.locks.attempt_force(
