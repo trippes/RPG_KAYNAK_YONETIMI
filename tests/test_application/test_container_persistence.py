@@ -83,6 +83,7 @@ class TestContainerPersistence(unittest.TestCase):
         self.assertEqual(restored_items["iron_sword"], items["iron_sword"])
         self.assertEqual(restored_resources["wood"], resources["wood"])
         self.assertEqual(restored.definition("small_chest").max_slots, 5)
+        self.assertEqual(restored.max_global_nesting_depth, 8)
         self.assertEqual(restored.break_profiles.get("wooden_chest").damage_resistances["fire"], 0.25)
         self.assertEqual(len(restored_placements), 1)
         self.assertEqual(restored_placements[0].occupied_tiles, ((4, 6), (5, 6)))
