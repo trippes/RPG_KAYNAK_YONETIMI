@@ -18,6 +18,8 @@ class ContainerScreen:
         self.message = "Bir eşya seçin. Enter: taşı"
         self._row_rects = ()
         self._action_rects = {}
+        self._drag_item_id = None
+        self._take_all_rect = None
 
     def set_container(self, container_id):
         if not isinstance(container_id, str) or not container_id.strip():
