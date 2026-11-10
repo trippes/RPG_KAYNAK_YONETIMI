@@ -154,7 +154,7 @@ class GameWindow:
         self.window_manager.register(
             "market",
             self.screens["market"],
-            (80, 90, min(self.width - 80, 760), min(self.height - 90, 470)),
+            (24, 110, min(self.width - 48, 912), min(self.height - 110, 470)),
             content_origin=(24, 126),
             title="Pazar",
         )
