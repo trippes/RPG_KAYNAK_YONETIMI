@@ -102,6 +102,36 @@ class DialogueScreen:
         self._reset_dialogue()
         return "local_map"
 
+    @staticmethod
+    def _quest_state(quest):
+        """Return a quest state value without assuming the quest is well-formed."""
+        try:
+            return getattr(getattr(quest, "state", None), "value", None)
+        except (AttributeError, TypeError, ValueError, RuntimeError):
+            return None
+
+    @staticmethod
+    def _find_objective(quest, objective_id):
+        """Find an objective safely; incomplete save/content data is treated as absent."""
+        try:
+            objectives = getattr(quest, "objectives", ()) or ()
+            for objective in objectives:
+                if getattr(objective, "objective_id", None) == objective_id:
+                    return objective
+        except (AttributeError, TypeError, ValueError, RuntimeError):
+            return None
+        return None
+
+    @classmethod
+    def _objective_completed(cls, quest, objective_id):
+        objective = cls._find_objective(quest, objective_id)
+        if objective is None:
+            return False
+        try:
+            return bool(getattr(objective, "completed", False))
+        except (AttributeError, TypeError, ValueError, RuntimeError):
+            return False
+
     def _visible_choices(self):
         """Only show Hilmi actions that match the current quest state."""
         if self.node is None:
@@ -118,7 +148,7 @@ class DialogueScreen:
         if self.context is None or self.context[1] != "village_carpenter":
             if self.context is not None and self.context[1] == "village_blacksmith":
                 quest = getattr(self.service, "blacksmith_quest", None)
-                state = getattr(getattr(quest, "state", None), "value", None)
+                state = self._quest_state(quest)
                 inventory = self.service.inventory("player")
                 ore_amount = next(
                     (
@@ -127,21 +157,16 @@ class DialogueScreen:
                     ),
                     0,
                 )
-                collect = next(
-                    (
-                        item for item in quest.objectives
-                        if item.objective_id == "collect_iron_ore"
-                    ),
-                    None,
-                ) if quest is not None else None
+                collect_completed = self._objective_completed(
+                    quest, "collect_iron_ore",
+                )
                 visible = []
                 for choice in choices:
                     if choice.choice_id == "accept_blacksmith_quest" and state != "available":
                         continue
                     if choice.choice_id == "deliver_blacksmith_ore" and (
                         state != "active"
-                        or collect is None
-                        or not collect.completed
+                        or not collect_completed
                         or ore_amount < 3
                     ):
                         continue
@@ -150,8 +175,8 @@ class DialogueScreen:
             return choices
         quest = getattr(self.service, "carpenter_quest", None)
         inn_quest = getattr(self.service, "inn_quest", None)
-        state = getattr(getattr(quest, "state", None), "value", None)
-        inn_state = getattr(getattr(inn_quest, "state", None), "value", None)
+        state = self._quest_state(quest)
+        inn_state = self._quest_state(inn_quest)
         inventory = self.service.inventory("player")
         wood_amount = next(
             (amount for resource, amount, _unit in inventory.stocks if str(resource) == "wood"),
@@ -164,24 +189,22 @@ class DialogueScreen:
             if choice.choice_id == "decline_carpenter_quest" and state != "available":
                 continue
             if choice.choice_id == "deliver_carpenter_wood":
-                collect = next(
-                    (
-                        item for item in quest.objectives
-                        if item.objective_id == "collect_wood"
-                    ),
-                    None,
-                ) if quest is not None else None
-                if state != "active" or collect is None or not collect.completed or wood_amount < 3:
+                collect_completed = self._objective_completed(
+                    quest, "collect_wood",
+                )
+                if state != "active" or not collect_completed or wood_amount < 3:
                     continue
             if choice.choice_id == "accept_inn_quest" and (
                 state != "completed" or inn_state != "available"
             ):
                 continue
             if choice.choice_id == "deliver_inn_supplies":
-                objectives = {
-                    item.objective_id: item
-                    for item in inn_quest.objectives
-                } if inn_quest is not None else {}
+                bread_completed = self._objective_completed(
+                    inn_quest, "buy_bread",
+                )
+                water_completed = self._objective_completed(
+                    inn_quest, "buy_water",
+                )
                 bread_amount = next(
                     (amount for resource, amount, _unit in inventory.stocks if str(resource) == "bread"),
                     0,
@@ -194,8 +217,8 @@ class DialogueScreen:
                     inn_state != "active"
                     or bread_amount < 1
                     or water_amount < 1
-                    or not objectives.get("buy_bread", ()).completed
-                    or not objectives.get("buy_water", ()).completed
+                    or not bread_completed
+                    or not water_completed
                 ):
                     continue
             visible.append(choice)
