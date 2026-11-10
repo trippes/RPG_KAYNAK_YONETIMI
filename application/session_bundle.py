@@ -16,6 +16,7 @@ from .movement import MovementManager
 from character import Character, ItemDefinition
 from resources import ResourceDefinition
 from containers import ContainerManager
+from locks import LockManager
 from quests import QuestLog
 from economy import Economy
 from .social_runtime import SocialRuntime
@@ -51,6 +52,7 @@ remain mutable domain objects by design; this is not deep immutability.
     world_objects: WorldObjectPlacementRegistry | None = None
     resource_definitions: Mapping[str, ResourceDefinition] | None = None
     containers: ContainerManager | None = None
+    locks: LockManager | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.session, GameSession):
@@ -93,6 +95,16 @@ remain mutable domain objects by design; this is not deep immutability.
         if not isinstance(self.containers, ContainerManager):
             raise TypeError("containers must be ContainerManager.")
         self.containers.bind_catalogs(self.items, self.resource_definitions)
+        if self.locks is None:
+            object.__setattr__(self, "locks", LockManager())
+        if not isinstance(self.locks, LockManager):
+            raise TypeError("locks must be LockManager.")
+        self.locks.validate()
+        for lock in self.locks.instances():
+            if self.session.entities.get(lock.entity_id) is None:
+                raise ValueError(
+                    f"Lock {lock.lock_id} references an unknown Core entity: {lock.entity_id}"
+                )
         for instance in self.containers.instances():
             entity = self.session.entities.get(instance.entity_id)
             if entity is None:
