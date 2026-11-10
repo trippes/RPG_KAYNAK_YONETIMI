@@ -14,8 +14,9 @@ from .equipment import EquipmentLoadout, EquipmentSlot, ItemDefinition
 CHARACTER_SCHEMA = "rpg-characters"
 CHARACTER_SCHEMA_VERSION = 1
 
+from core.errors import RPGError
 
-class CharacterPersistenceError(ValueError):
+class CharacterPersistenceError(ValueError, RPGError):
     pass
 
 
