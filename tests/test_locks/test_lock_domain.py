@@ -36,11 +36,13 @@ class TestLockDomain(unittest.TestCase):
         self.assertTrue(self.manager.get("lock_01").locked)
 
     def test_owner_bound_key_requires_matching_owner(self):
-        self.manager.register_key_definition(KeyDefinition("owner_key", "Owner key", "wood_chest_lock", True))
+        self.manager.register_lock_definition(LockDefinition("owner_lock", "Owner lock", "owner_key"))
+        self.manager.register_key_definition(KeyDefinition("owner_key", "Owner key", "owner_lock", True))
+        self.manager.register(LockInstance("owner_lock_01", "entity_owner_chest", "owner_lock"))
         self.manager.bind_key_owner("owner_key", "actor_1")
-        self.assertFalse(self.manager.unlock_with_key("lock_01", "owner_key", "actor_2"))
-        self.assertTrue(self.manager.get("lock_01").locked)
-        self.assertTrue(self.manager.unlock_with_key("lock_01", "owner_key", "actor_1"))
+        self.assertFalse(self.manager.unlock_with_key("owner_lock_01", "owner_key", "actor_2"))
+        self.assertTrue(self.manager.get("owner_lock_01").locked)
+        self.assertTrue(self.manager.unlock_with_key("owner_lock_01", "owner_key", "actor_1"))
 
     def test_lockpick_requires_skill_and_tool(self):
         self.assertFalse(self.manager.attempt_lockpick("lock_01", skill=5, tool_tags=(), success=True))
