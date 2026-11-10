@@ -45,7 +45,16 @@ is at least seven days old. Recent staging files, primary saves, backups and
 unrelated files are retained. Cleanup is scoped to the save's parent directory
 and is followed by a directory fsync on POSIX when files were removed.
 
-The adapter does not provide a lock or concurrent-writer ordering guarantee.
+Every operation on one primary save and its `.bak` recovery copy is protected by
+a per-slot lock. A process-local reentrant lock serializes threads, while a stable
+sidecar lock file serializes separate processes (POSIX `flock`; Windows
+`msvcrt.locking`). Save, load/recovery and stale-temp cleanup hold the same lock
+for the complete critical section, including backup creation, primary replacement
+and directory durability work. Different slots use different locks and can proceed
+independently. Sidecar lock files are intentionally retained after release;
+the operating system releases the lock when a process exits, including after an
+abnormal process termination. Lock guarantees depend on the filesystem honoring
+the platform's advisory/file-region locking semantics; network shares may differ.
 
 ## Save-slot lifecycle and overwrite protection
 
@@ -122,7 +131,7 @@ Persistence-related verification includes:
 
 - unified document and deterministic codec tests,
 - interrupted final-replace recovery tests, including primary/backup preservation,
-- stale staging-file cleanup tests covering age, exact naming, primary/backup retention and unrelated files,
+- stale staging-file cleanup tests covering age, exact naming, primary/backup retention and unrelated files,\n- concurrent thread/process save tests, load-save exclusion, independent-slot behavior and lock release after exceptions,
 - POSIX directory-fsync ordering and failure-contract tests,
 - legacy version-0 envelope migration and input immutability tests,
 - atomic adapter failure tests,
