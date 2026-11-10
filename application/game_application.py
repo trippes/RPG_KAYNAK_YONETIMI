@@ -96,6 +96,7 @@ class GameApplication:
         container_placements = ()
         if document.containers is not None:
             containers, container_items, container_resources, container_placements = document.containers.restore()
+        locks = document.locks.restore() if document.locks is not None else None
         item_catalog = document.characters.item_definitions() if document.characters is not None else {}
         for item_id, definition in container_items.items():
             existing = item_catalog.get(item_id)
@@ -236,6 +237,10 @@ class GameApplication:
                 bundle.containers, bundle.world_objects, bundle.items, bundle.resource_definitions
             )
             if bundle.containers.instances() else None
+        )
+        lock_snapshot = (
+            LockSnapshot.from_runtime(bundle.locks)
+            if bundle.locks.instances() else None
         )
         document = GameSaveDocument(
             core=core_document,
