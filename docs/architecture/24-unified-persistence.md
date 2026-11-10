@@ -28,9 +28,12 @@ snapshots from that same `SessionBundle`:
 5. `GameSaveFileAdapter.save(...)` writes the outer document.
 
 The adapter writes a same-directory temporary file, flushes and fsyncs it,
-then replaces the target with `os.replace()`. A failure before replacement
-leaves the previous target file in place. The adapter does not provide a lock
-or concurrent-writer ordering guarantee.
+then validates the staged document before replacing the target with
+`os.replace()`. When the current target is valid, it first creates a validated
+backup through its own temporary file and atomic replacement. A corrupt primary
+never overwrites an existing backup. On load, an invalid or missing primary
+falls back to a valid `.bak` file and attempts to repair the primary atomically.
+The adapter does not provide a lock or concurrent-writer ordering guarantee.
 
 ## Load and candidate publication
 
@@ -58,6 +61,9 @@ this path.
 - Gameplay schema/state failures use `GameplayPersistenceError`.
 - Candidate world/reference failures use application validation errors.
 - Atomic write failures produce `SaveFileWriteError`.
+- If both the primary save and its backup are invalid or unreadable, loading
+  produces `SaveFileReadError`; a valid backup is loaded and used to repair
+  the primary when possible.
 
 Errors are propagated to the caller; they are not converted into successful
 save/load results.
