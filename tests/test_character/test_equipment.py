@@ -123,6 +123,7 @@ class TestEquipment(unittest.TestCase):
         character.equip(self.items["iron_sword"])
         with self.assertRaisesRegex(ValueError, "missing from the catalog"):
             character.bind_item_catalog({})
+        del character._item_catalog
         with self.assertRaises(RuntimeError):
             character.weapon_damage
 
