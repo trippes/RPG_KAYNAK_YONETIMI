@@ -6,6 +6,7 @@ from types import SimpleNamespace
 from game_ui.input import InputMapper
 from game_ui.renderer import NAV_TABS
 from game_ui.screens.main_screen import MainScreen
+from game_ui.screens.dialogue_screen import DialogueScreen
 from game_ui.window_manager import WindowManager
 
 
@@ -43,6 +44,31 @@ class GameplayNavigationTests(unittest.TestCase):
         ])
         self.assertNotIn("market", state.actions)
         self.assertNotIn("market", dict(NAV_TABS))
+
+    def test_market_opens_from_vendor_dialogue_action(self):
+        choice = SimpleNamespace(
+            choice_id="open_market",
+            text="Pazar ürünlerini görmek istiyorum.",
+            action="open_market",
+        )
+        service = SimpleNamespace(
+            application=SimpleNamespace(
+                holder=SimpleNamespace(
+                    current=SimpleNamespace(
+                        social=SimpleNamespace(dialogues={})
+                    )
+                )
+            ),
+            choose_dialogue=lambda *_args: None,
+        )
+        screen = DialogueScreen(service)
+        screen.context = ("hero", "market_vendor", "market_dialogue")
+        screen.node = SimpleNamespace(node_id="start", choices=(choice,))
+        screen.opening_stage = "dialogue"
+
+        result = screen.handle(InputState(actions={"confirm"}))
+
+        self.assertEqual(result, "market")
 
     def test_main_screen_quick_menu_does_not_open_market(self):
         screen = MainScreen(service=None)
