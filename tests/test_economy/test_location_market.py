@@ -1,5 +1,7 @@
 import unittest
+from types import MappingProxyType
 
+from application import GameApplication, GameplayService
 from economy import (
     Currency, Economy, Market, MarketCatalogEntry, MarketProfile, Money,
 )
@@ -28,10 +30,8 @@ class TestLocationMarket(unittest.TestCase):
         ))
 
     def test_market_offers_are_scoped_to_their_market(self):
-        village_inventory = Inventory()
-        inn_inventory = Inventory()
-        village = self.market.restock("village", village_inventory, 0)
-        inn = self.market.restock("inn", inn_inventory, 0)
+        village = self.market.restock("village", Inventory(), 0)
+        inn = self.market.restock("inn", Inventory(), 0)
 
         self.assertEqual({offer.market_id for offer in village}, {"village"})
         self.assertEqual({offer.market_id for offer in inn}, {"inn"})
@@ -68,6 +68,28 @@ class TestLocationMarket(unittest.TestCase):
         self.assertEqual(restored_market.profile("village").last_restock_cycle, 0)
         self.assertEqual(restored_market.offers("village"), self.market.offers("village"))
         self.assertEqual(restored_ledger.accounts(), ())
+
+    def test_gameplay_service_restock_and_purchase_use_selected_market(self):
+        application = GameApplication.create_default()
+        application.dunya_olustur("Market test", world_id="market_test")
+        bundle = application.holder.current
+        inventories = dict(bundle.inventories)
+        inventories["player"] = Inventory()
+        object.__setattr__(bundle, "inventories", MappingProxyType(inventories))
+        service = GameplayService(application)
+        profile = MarketProfile(
+            "village", "village", "trader_village", "merchant_village",
+            "inventory_village", 10, self.catalog, visible_products=2,
+        )
+        service.register_market_profile(profile)
+        service.credit("hero", "gold", 100)
+
+        offers = service.market_offers("village")
+        trade = service.buy_offer(offers[0].offer_id, "hero", "player", quantity=1)
+
+        self.assertEqual(trade.quantity.value, 1)
+        self.assertEqual(service.market_offers("village")[0].market_id, "village")
+        self.assertGreater(service.balance("merchant_village", "gold").amount, 0)
 
 
 if __name__ == "__main__":
