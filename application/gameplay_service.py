@@ -88,6 +88,25 @@ class LockView:
     required_key_id: str | None = None
     lockpick_profile_id: str | None = None
     force_profile_id: str | None = None
+    lockpick_difficulty_class: int | None = None
+    lockpick_allowed_tool_tags: tuple[str, ...] = ()
+    lockpick_requires_tool: bool = False
+    lockpick_minimum_skill: int = 0
+    force_difficulty_class: int | None = None
+    force_required_tool_tags: tuple[str, ...] = ()
+    force_minimum_strength: int = 0
+
+
+@dataclass(frozen=True)
+class LockAttemptResult:
+    action: str
+    roll: int | None
+    modifier: int
+    difficulty_class: int | None
+    total: int | None
+    success: bool
+    attempted: bool
+    message: str
 
 
 @dataclass(frozen=True)
@@ -494,11 +513,20 @@ class GameplayService:
         if instance is None:
             raise KeyError(f"Lock not found: {lock_id}")
         definition = bundle.locks.definition(instance.definition_id)
+        lockpick = bundle.locks.lockpick_profile(definition.lockpick_profile_id) if definition.lockpick_profile_id else None
+        force = bundle.locks.force_profile(definition.force_profile_id) if definition.force_profile_id else None
         return LockView(
             instance.lock_id, instance.entity_id, instance.definition_id,
             definition.name, instance.locked, instance.jammed, instance.broken,
             definition.required_key_id, definition.lockpick_profile_id,
             definition.force_profile_id,
+            lockpick.difficulty_class if lockpick else None,
+            lockpick.allowed_tool_tags if lockpick else (),
+            lockpick.require_tool if lockpick else False,
+            lockpick.minimum_skill if lockpick else 0,
+            force.difficulty_class if force else None,
+            force.required_tool_tags if force else (),
+            force.minimum_strength if force else 0,
         )
 
     def bind_key_owner(self, key_id: str, actor_id: str) -> None:
