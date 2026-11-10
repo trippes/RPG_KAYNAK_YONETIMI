@@ -92,6 +92,24 @@ remain mutable domain objects by design; this is not deep immutability.
         if not isinstance(self.containers, ContainerManager):
             raise TypeError("containers must be ContainerManager.")
         self.containers.bind_catalogs(self.items, self.resource_definitions)
+        for instance in self.containers.instances():
+            entity = self.session.entities.get(instance.entity_id)
+            if entity is None:
+                raise ValueError(
+                    f"Container {instance.container_id} references an unknown Core entity: {instance.entity_id}"
+                )
+            placement = self.world_objects.get(instance.entity_id)
+            if placement is not None and placement.world_id != entity.world_id:
+                raise ValueError(
+                    f"Container placement world does not match its Core entity: {instance.container_id}"
+                )
+            if placement is not None and (
+                self.containers.parent_of(instance.container_id) is not None
+                or self.containers.inventory_custody(instance.container_id) is not None
+            ):
+                raise ValueError(
+                    f"Container cannot be placed while nested or inventory-held: {instance.container_id}"
+                )
         if self.characters is None:
             object.__setattr__(self, "characters", {})
         if not isinstance(self.characters, Mapping) or any(not isinstance(value, Character) for value in self.characters.values()):
