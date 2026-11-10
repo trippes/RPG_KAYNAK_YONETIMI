@@ -141,6 +141,117 @@ def _build_character_factory(character_data: dict) -> CharacterFactory:
     )
 
 
+
+def _build_dialogue_from_definition(dialogue_data: dict, speaker_id: str) -> Dialogue:
+    """Validate untrusted JSON dialogue records before creating runtime objects."""
+    if not isinstance(dialogue_data, dict):
+        raise ContentDefinitionError("Dialogue definition must be an object.")
+
+    dialogue_id = dialogue_data.get("id")
+    start_node_id = dialogue_data.get("start_node")
+    raw_nodes = dialogue_data.get("nodes")
+    if not isinstance(dialogue_id, str) or not dialogue_id.strip():
+        raise ContentDefinitionError("Dialogue id must be a non-empty string.")
+    if not isinstance(start_node_id, str) or not start_node_id.strip():
+        raise ContentDefinitionError("Dialogue start_node must be a non-empty string.")
+    if not isinstance(raw_nodes, list) or not raw_nodes:
+        raise ContentDefinitionError("Dialogue nodes must be a non-empty list.")
+
+    node_ids: set[str] = set()
+    pending_next_ids: set[str] = set()
+    nodes: list[DialogueNode] = []
+
+    for node_index, node_data in enumerate(raw_nodes):
+        if not isinstance(node_data, dict):
+            raise ContentDefinitionError(
+                f"Dialogue node at index {node_index} must be an object."
+            )
+        node_id = node_data.get("id")
+        text = node_data.get("text")
+        raw_choices = node_data.get("choices", [])
+        if not isinstance(node_id, str) or not node_id.strip():
+            raise ContentDefinitionError(
+                f"Dialogue node at index {node_index} has an invalid id."
+            )
+        if node_id in node_ids:
+            raise ContentDefinitionError(f"Duplicate dialogue node id: {node_id}")
+        if not isinstance(text, str) or not text.strip():
+            raise ContentDefinitionError(f"Dialogue node {node_id} has no text.")
+        if not isinstance(raw_choices, list):
+            raise ContentDefinitionError(
+                f"Dialogue choices for node {node_id} must be a list."
+            )
+
+        node_ids.add(node_id)
+        choice_ids: set[str] = set()
+        choices: list[DialogueChoice] = []
+        for choice_index, choice_data in enumerate(raw_choices):
+            if not isinstance(choice_data, dict):
+                raise ContentDefinitionError(
+                    f"Choice {choice_index} in node {node_id} must be an object."
+                )
+            choice_id = choice_data.get("id")
+            choice_text = choice_data.get("text")
+            next_node_id = choice_data.get("next")
+            action = choice_data.get("action")
+            if not isinstance(choice_id, str) or not choice_id.strip():
+                raise ContentDefinitionError(
+                    f"Choice {choice_index} in node {node_id} has an invalid id."
+                )
+            if choice_id in choice_ids:
+                raise ContentDefinitionError(
+                    f"Duplicate choice id {choice_id} in dialogue node {node_id}."
+                )
+            if not isinstance(choice_text, str) or not choice_text.strip():
+                raise ContentDefinitionError(
+                    f"Choice {choice_id} in node {node_id} has no text."
+                )
+            if next_node_id is not None and (
+                not isinstance(next_node_id, str) or not next_node_id.strip()
+            ):
+                raise ContentDefinitionError(
+                    f"Choice {choice_id} in node {node_id} has an invalid next node."
+                )
+            if action is not None and (
+                not isinstance(action, str) or not action.strip()
+            ):
+                raise ContentDefinitionError(
+                    f"Choice {choice_id} in node {node_id} has an invalid action."
+                )
+            choice_ids.add(choice_id)
+            if next_node_id is not None:
+                pending_next_ids.add(next_node_id)
+            choices.append(
+                DialogueChoice(
+                    choice_id=choice_id,
+                    text=choice_text,
+                    next_node_id=next_node_id,
+                    action=action,
+                )
+            )
+
+        nodes.append(
+            DialogueNode(
+                node_id=node_id,
+                speaker_id=speaker_id,
+                text=text,
+                choices=tuple(choices),
+            )
+        )
+
+    missing_nodes = sorted(pending_next_ids - node_ids)
+    if start_node_id not in node_ids:
+        raise ContentDefinitionError(
+            f"Dialogue start node does not exist: {start_node_id}"
+        )
+    if missing_nodes:
+        raise ContentDefinitionError(
+            "Dialogue choices reference missing nodes: " + ", ".join(missing_nodes)
+        )
+
+    return Dialogue(dialogue_id, tuple(nodes), start_node_id)
+
+
 def _register_opening_content(application, definition: dict, ids: StarterContentIds):
     resolve_id = _id_resolver(definition, ids)
     world_data = definition["world"]
@@ -178,27 +289,11 @@ def _register_opening_content(application, definition: dict, ids: StarterContent
             position=Position(*(npc_data.get("position") or (16, 30))),
         )
     )
-    dialogue_data = definition["dialogue"]
-    nodes = tuple(
-        DialogueNode(
-            node_data["id"],
-            resolve_id("npc_id"),
-            node_data["text"],
-            tuple(
-        DialogueChoice(
-            choice["id"],
-            choice["text"],
-            choice.get("next"),
-            action=choice.get("action"),
-)
-                for choice in node_data.get("choices", ())
-            ),
-        )
-        for node_data in dialogue_data["nodes"]
+    dialogue = _build_dialogue_from_definition(
+        definition["dialogue"],
+        resolve_id("npc_id"),
     )
-    service.register_dialogue(
-        Dialogue(dialogue_data["id"], nodes, dialogue_data["start_node"])
-    )
+    service.register_dialogue(dialogue)
     world_map = _build_world_map_from_definition(
         definition, world.world_id, ids
     )
