@@ -222,24 +222,21 @@ class ProductionScreen:
         return None
 
     def render(self, renderer):
+        """Draw production content inside the managed window viewport."""
         self._frame_snapshot = self.service.state()
         recipes = self._get_recipes()
 
-        renderer.frame("Üretim")
-        renderer.hud(self.service)
-
-        renderer.panel(renderer.pg.Rect(50, 130, 290, 350))
-        renderer.panel(renderer.pg.Rect(350, 130, 560, 350))
-        renderer.quest_panel(self.service, renderer.pg.Rect(50, 500, 860, 110))
-
-        renderer.text("Tarifler", 70, 150, title=True)
+        # WindowManager owns the outer frame, title bar, and close control.
+        # Keep every production element inside its 912x438 content viewport.
+        renderer.panel(renderer.pg.Rect(36, 136, 292, 402))
+        renderer.panel(renderer.pg.Rect(340, 136, 584, 402))
+        renderer.text("Tarifler", 56, 154, title=True)
 
         if not recipes:
             renderer.text(
                 "Tarif bulunamadı.",
-                75, 205, (230, 130, 120),
+                60, 205, (230, 130, 120),
             )
-            renderer.footer("Esc: Dünyaya dön")
             return
 
         self.selected_index = max(
@@ -254,7 +251,6 @@ class ProductionScreen:
                 len(recipes) - self.VISIBLE_RECIPES,
             ),
         )
-
         visible_recipes = recipes[
             first_visible:first_visible + self.VISIBLE_RECIPES
         ]
@@ -262,20 +258,22 @@ class ProductionScreen:
         for row, recipe in enumerate(visible_recipes):
             index = first_visible + row
             selected = index == self.selected_index
-            rect = renderer.pg.Rect(
-                62, 188 + row * 38, 266, 34
-            )
-
+            rect = renderer.pg.Rect(48, 190 + row * 38, 268, 34)
             renderer.panel(
                 rect,
                 (55, 75, 105) if selected else (38, 49, 69),
                 (245, 210, 120) if selected else (62, 78, 101),
             )
-
             startable, _why = self._can_start(recipe)
             busy = bool(self._active_jobs(recipe))
-            dot = (110, 170, 230) if busy else (140, 220, 160) if startable else (230, 130, 120)
-            renderer.pg.draw.circle(renderer.surface, dot, (rect.x + 14, rect.centery), 6)
+            dot = (
+                (110, 170, 230) if busy
+                else (140, 220, 160) if startable
+                else (230, 130, 120)
+            )
+            renderer.pg.draw.circle(
+                renderer.surface, dot, (rect.x + 14, rect.centery), 6,
+            )
             renderer.text(
                 renderer.fit_text(self._recipe_title(recipe), rect.width - 40),
                 rect.x + 28, rect.y + 8,
@@ -285,61 +283,56 @@ class ProductionScreen:
         if len(recipes) > self.VISIBLE_RECIPES:
             renderer.text(
                 f"{self.selected_index + 1}/{len(recipes)} tarif",
-                75, 390, (155, 172, 196),
+                58, 390, (155, 172, 196),
             )
 
         renderer.action_button(
-            renderer.pg.Rect(60, 420, 220, 42),
+            renderer.pg.Rect(48, 430, 268, 42),
             "ESC",
-            "Dünyaya dön",
+            "Pencereyi kapat",
         )
 
         recipe = recipes[self.selected_index]
         renderer.text(
             renderer.fit_text(self._recipe_title(recipe), 520, title=True),
-            375, 150,
+            364, 154,
             title=True,
         )
-
-        renderer.text("Girdiler", 375, 205, (170, 195, 230))
+        renderer.text("Girdiler", 364, 205, (170, 195, 230))
 
         stocks = self._inventory_stocks()
         y = 235
-
         for resource, quantity in recipe.inputs:
             resource_id = self._resource_id(resource)
             available = stocks.get(
                 resource_id, (0, quantity.unit.value)
             )[0]
             enough = available >= quantity.value
-
-            renderer.resource_icon(378, y + 2, resource)
+            renderer.resource_icon(367, y + 2, resource)
             renderer.text(
                 f"{self._resource_name(resource)}: "
                 f"{quantity.value} {unit_label(quantity.unit)} "
                 f"(envanter: {available})",
-                402, y,
+                391, y,
                 (140, 220, 160) if enough else (230, 130, 120),
             )
             y += 28
 
-        renderer.text("Çıktılar", 375, y + 5, (170, 195, 230))
+        renderer.text("Çıktılar", 364, y + 5, (170, 195, 230))
         y += 35
-
         for resource, quantity in recipe.outputs:
-            renderer.resource_icon(378, y + 2, resource)
+            renderer.resource_icon(367, y + 2, resource)
             renderer.text(
                 f"{self._resource_name(resource)}: "
                 f"{quantity.value} {unit_label(quantity.unit)}",
-                402, y,
+                391, y,
             )
             y += 28
 
         renderer.text(
             f"Süre: {duration_label(recipe.processing_time.value)}",
-            375, min(y + 5, 385),
+            364, min(y + 5, 385),
         )
-
         facility = self._get_facility(recipe)
         facility_text = (
             f"Tesis: {facility.facility_id}"
@@ -348,24 +341,27 @@ class ProductionScreen:
         )
         renderer.text(
             facility_text,
-            375, 395,
+            364, 395,
             (140, 220, 160) if facility else (230, 130, 120),
         )
 
         can_start, reason = self._can_start(recipe)
-
         running = self._active_jobs(recipe)
         if running:
             elapsed, total = self._job_progress(running[0])
             renderer.text(
-                f"Üretiliyor: {duration_label(elapsed)} / {duration_label(total)}", 375, 421, (130, 180, 235),
+                f"Üretiliyor: {duration_label(elapsed)} / "
+                f"{duration_label(total)}",
+                364, 421, (130, 180, 235),
             )
             renderer.bar(
-                renderer.pg.Rect(375, 443, 200, 14), elapsed / total, (110, 170, 230),
+                renderer.pg.Rect(364, 443, 200, 14),
+                elapsed / total,
+                (110, 170, 230),
             )
 
         renderer.action_button(
-            renderer.pg.Rect(600, 425, 280, 42),
+            renderer.pg.Rect(620, 430, 280, 42),
             "ENTER",
             "Üretimi başlat",
             enabled=can_start,
@@ -374,17 +370,13 @@ class ProductionScreen:
 
         if self.message:
             renderer.text(
-                renderer.fit_text(self.message, 540),
-                355, 485,
+                renderer.fit_text(self.message, 520),
+                364, 490,
                 (230, 190, 110),
             )
         elif not can_start:
             renderer.text(
-                renderer.fit_text(reason, 540),
-                355, 485,
+                renderer.fit_text(reason, 520),
+                364, 490,
                 (230, 130, 120),
             )
-
-        renderer.footer(
-            "Tarife tıkla: Seç   Enter / Buton: Üret   Esc: Dön"
-        )
