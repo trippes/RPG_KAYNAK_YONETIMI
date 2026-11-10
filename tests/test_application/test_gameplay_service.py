@@ -143,6 +143,43 @@ class TestGameplayService(unittest.TestCase):
         ))
         self.assertFalse(self.service.lock_state("pick_chest_lock_01").locked)
 
+
+    def test_lock_and_key_state_survives_game_application_save_load(self):
+        self.service.register_container_definition(ContainerDefinition("saved_chest", "Saved chest"))
+        entity = Entity(EntityType.ESYA, "Saved chest", entity_id="saved_chest_entity")
+        self.application.varlik_ekle(entity)
+        self.service.register_container(ContainerInstance("saved_chest_01", entity.entity_id, "saved_chest"))
+        self.service.register_lock_definition(
+            LockDefinition("saved_chest_lock", "Saved chest lock", "saved_chest_key")
+        )
+        self.service.register_key_definition(
+            KeyDefinition("saved_chest_key", "Saved chest key", "saved_chest_lock", True)
+        )
+        self.service.register_lock(
+            LockInstance("saved_chest_lock_01", entity.entity_id, "saved_chest_lock")
+        )
+        self.service.register_actor("hero", "player")
+        self.service.bind_key_owner("saved_chest_key", "hero")
+        self.inventory.add_item("saved_chest_key")
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "locked-save.json"
+            self.application.save(path)
+            restored = GameApplication.create_default()
+            bundle = restored.load(path)
+
+        self.assertEqual(bundle.locks.for_entity(entity.entity_id).lock_id, "saved_chest_lock_01")
+        restored_service = GameplayService(restored)
+        with self.assertRaises(GameplayServiceError):
+            restored_service.open_container("hero", "main", "saved_chest_01")
+        self.assertTrue(restored_service.unlock_with_key(
+            "hero", "main", "saved_chest_lock_01", "saved_chest_key"
+        ))
+        self.assertEqual(
+            restored_service.open_container("hero", "main", "saved_chest_01").container_id,
+            "saved_chest_01",
+        )
+
     def test_world_object_placement_uses_registered_core_entity_and_map(self):
         world = self.application.aktif_dunya()
         world_map = WorldMap(world.world_id)
