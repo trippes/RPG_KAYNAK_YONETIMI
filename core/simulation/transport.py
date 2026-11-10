@@ -56,6 +56,10 @@ class CanonicalEventTransport:
     def count(self) -> int:
         return len(self._events)
 
+    def snapshot(self) -> tuple[SimulationEvent, ...]:
+        """Return queued events in transport order without consuming them."""
+        return tuple(self._events)
+
     def drain(self) -> tuple[SimulationEvent, ...]:
         result = tuple(self._events)
         self._events.clear()
