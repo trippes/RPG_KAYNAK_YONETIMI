@@ -1347,5 +1347,52 @@ class TestPhaseDQuality(unittest.TestCase):
         self.assertEqual(screen.slot_order, before)
 
 
+    def test_dialogue_objective_lookup_treats_missing_or_malformed_data_as_incomplete(self):
+        screen = DialogueScreen(SimpleNamespace())
+
+        self.assertFalse(screen._objective_completed(None, "missing"))
+        self.assertFalse(screen._objective_completed(
+            SimpleNamespace(objectives=None), "missing",
+        ))
+        self.assertFalse(screen._objective_completed(
+            SimpleNamespace(objectives=object()), "missing",
+        ))
+        self.assertFalse(screen._objective_completed(
+            SimpleNamespace(objectives=(None, object())), "missing",
+        ))
+
+    def test_dialogue_hides_inn_delivery_when_objectives_are_missing_or_malformed(self):
+        from quests import QuestState
+
+        choices = (
+            SimpleNamespace(choice_id="deliver_inn_supplies", text="Malzemeleri teslim et"),
+        )
+        for objectives in ((), None, object(), (None,)):
+            with self.subTest(objectives=type(objectives).__name__):
+                inn_quest = SimpleNamespace(
+                    state=QuestState.ACTIVE,
+                    objectives=objectives,
+                )
+                service = SimpleNamespace(
+                    application=SimpleNamespace(
+                        holder=SimpleNamespace(
+                            current=SimpleNamespace(
+                                social=SimpleNamespace(dialogues={}),
+                            ),
+                        ),
+                    ),
+                    carpenter_quest=None,
+                    inn_quest=inn_quest,
+                    inventory=lambda _inventory_id: SimpleNamespace(
+                        stocks=(("bread", 1, "unit"), ("water", 1, "unit")),
+                    ),
+                )
+                screen = DialogueScreen(service)
+                screen.context = ("hero", "village_carpenter", "carpenter_dialogue")
+                screen.node = SimpleNamespace(node_id="start", choices=choices)
+
+                self.assertEqual(screen._visible_choices(), ())
+
+
 if __name__ == "__main__":
     unittest.main()
