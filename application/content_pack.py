@@ -295,17 +295,6 @@ def _register_opening_content(application, definition: dict, ids: StarterContent
         resolve_id("npc_id"),
     )
     service.register_dialogue(dialogue)
-    for market_data in definition.get("markets", ()):
-        market_npc_id = market_data["npc_id"]
-        service.register_npc(NPC(
-            market_npc_id, market_data["npc_name"], market_data.get("npc_role", "merchant"),
-            tuple(market_data.get("faction_ids", ())),
-            resolve_id(market_data["location_id"]),
-            position=Position(*(market_data.get("position") or (20, 20))),
-        ))
-        service.register_dialogue(_build_dialogue_from_definition(
-            market_data["dialogue"], market_npc_id,
-        ))
     world_map = _build_world_map_from_definition(
         definition, world.world_id, ids
     )
@@ -344,7 +333,22 @@ def populate_gameplay_resources(service, definition_path=None):
         world.world_id,
     )
     resolve_id = _id_resolver(definition, ids)
+    bundle = service.application.holder.current
     for market_data in definition.get("markets", ()):
+        market_npc_id = market_data["npc_id"]
+        if bundle.social.npcs.get(market_npc_id) is None:
+            service.register_npc(NPC(
+                market_npc_id, market_data["npc_name"],
+                market_data.get("npc_role", "merchant"),
+                tuple(market_data.get("faction_ids", ())),
+                resolve_id(market_data["location_id"]),
+                position=Position(*(market_data.get("position") or (20, 20))),
+            ))
+        dialogue_data = market_data["dialogue"]
+        if bundle.social.dialogues.get(dialogue_data["id"]) is None:
+            service.register_dialogue(_build_dialogue_from_definition(
+                dialogue_data, market_npc_id,
+            ))
         catalog = tuple(MarketCatalogEntry(
             ResourceType(entry["resource_type"]),
             Money(entry["base_price"], Currency(entry.get("currency", "gold"))),
