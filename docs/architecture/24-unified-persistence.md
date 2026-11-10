@@ -111,6 +111,8 @@ is an explicit scope boundary, not a claim that legacy state is restored.
 Persistence-related verification includes:
 
 - unified document and deterministic codec tests,
+- interrupted final-replace recovery tests, including primary/backup preservation,
+- legacy version-0 envelope migration and input immutability tests,
 - atomic adapter failure tests,
 - candidate restore and publication tests,
 - Core persistence/restore tests,
