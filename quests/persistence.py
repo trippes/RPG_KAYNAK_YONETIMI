@@ -8,8 +8,9 @@ from .reward import Reward
 
 QUEST_SCHEMA = "rpg-quests"
 QUEST_SCHEMA_VERSION = 1
+from core.errors import RPGError
 
-class QuestPersistenceError(ValueError): pass
+class QuestPersistenceError(ValueError, RPGError): pass
 
 @dataclass(frozen=True)
 class QuestSnapshot:
