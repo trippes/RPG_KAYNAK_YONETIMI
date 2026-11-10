@@ -330,6 +330,16 @@ class TestUnifiedSaveDocument(unittest.TestCase):
                     path, older_than_seconds=0
                 )
 
+    def test_legacy_version_one_envelope_migrates_to_v2_without_container_data(self):
+        data = self._document().to_dict()
+        data["schema_version"] = 1
+
+        migrated = GameSaveDocument.from_dict(data)
+
+        self.assertEqual(data["schema_version"], 1)
+        self.assertEqual(migrated.schema_version, 2)
+        self.assertIsNone(migrated.containers)
+
     def test_legacy_version_zero_envelope_migrates_without_mutating_input(self):
         data = self._document().to_dict()
         data["schema_version"] = 0
