@@ -10,6 +10,7 @@ from application.content_pack import (
     load_starter_content,
     populate_opening_content,
     populate_gameplay_resources,
+    _build_dialogue_from_definition,
 )
 from game_ui.input import InputState
 from game_ui.screens.dialogue_screen import DialogueScreen
@@ -135,6 +136,44 @@ class TestContentPack(unittest.TestCase):
 
             with self.assertRaises(ContentDefinitionError):
                 load_starter_content(path)
+
+    def test_dialogue_builder_rejects_duplicate_node_ids(self):
+        definition = {
+            "id": "invalid_dialogue",
+            "start_node": "start",
+            "nodes": [
+                {"id": "start", "text": "First", "choices": []},
+                {"id": "start", "text": "Duplicate", "choices": []},
+            ],
+        }
+        with self.assertRaisesRegex(ContentDefinitionError, "Duplicate dialogue node"):
+            _build_dialogue_from_definition(definition, "npc")
+
+    def test_dialogue_builder_rejects_missing_choice_targets(self):
+        definition = {
+            "id": "invalid_dialogue",
+            "start_node": "start",
+            "nodes": [
+                {
+                    "id": "start",
+                    "text": "Start",
+                    "choices": [
+                        {"id": "continue", "text": "Continue", "next": "missing"},
+                    ],
+                },
+            ],
+        }
+        with self.assertRaisesRegex(ContentDefinitionError, "missing nodes"):
+            _build_dialogue_from_definition(definition, "npc")
+
+    def test_dialogue_builder_rejects_malformed_choice_records(self):
+        definition = {
+            "id": "invalid_dialogue",
+            "start_node": "start",
+            "nodes": [{"id": "start", "text": "Start", "choices": ["not-an-object"]}],
+        }
+        with self.assertRaisesRegex(ContentDefinitionError, "must be an object"):
+            _build_dialogue_from_definition(definition, "npc")
 
 
 if __name__ == "__main__":
