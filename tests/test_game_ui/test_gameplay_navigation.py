@@ -45,6 +45,19 @@ class GameplayNavigationTests(unittest.TestCase):
         self.assertNotIn("market", state.actions)
         self.assertNotIn("market", dict(NAV_TABS))
 
+    def test_gameplay_shortcuts_use_the_approved_keymap(self):
+        mapper = InputMapper()
+        production = mapper.collect([
+            SimpleNamespace(type="KEYDOWN", key="p", unicode="p")
+        ])
+        world_map = mapper.collect([
+            SimpleNamespace(type="KEYDOWN", key="m", unicode="m")
+        ])
+        self.assertIn("production", production.actions)
+        self.assertNotIn("character", production.actions)
+        self.assertIn("map", world_map.actions)
+        self.assertNotIn("market", world_map.actions)
+
     def test_market_opens_from_vendor_dialogue_action(self):
         choice = SimpleNamespace(
             choice_id="open_market",
