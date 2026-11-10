@@ -7,7 +7,7 @@ from typing import Mapping
 
 from character import EquipmentSlot, ItemDefinition
 from resources import Inventory, Quantity, ResourceDefinition, ResourceType, ResourceUnit
-from .world_object_placement import WorldObjectPlacement
+from .world_object_placement import WorldObjectPlacement, WorldObjectPlacementRegistry
 from containers import (
     BreakProfile, BreakProfileRegistry, ContainerDefinition, ContainerInstance,
     ContainerManager, ContainerManagerError,
@@ -33,7 +33,10 @@ class ContainerSnapshot:
             raise TypeError("manager must be ContainerManager.")
         if not isinstance(item_catalog, Mapping) or not isinstance(resource_catalog, Mapping):
             raise TypeError("Physical catalogs must be mappings.")
+        if not isinstance(placements, WorldObjectPlacementRegistry):
+            raise TypeError("placements must be WorldObjectPlacementRegistry.")
         manager.validate()
+        placements.validate()
         instances = manager.instances()
         if not instances:
             raise ContainerPersistenceError("An empty container registry has no snapshot.")
@@ -131,7 +134,7 @@ class ContainerSnapshot:
         }
         if set(data) != expected:
             raise ContainerPersistenceError("Container snapshot has missing or unknown fields.")
-        if data.get("schema") != CONTAINER_SCHEMA or data.get("schema_version") != CONTAINER_SCHEMA_VERSION:
+        if data.get("schema") != CONTAINER_SCHEMA or isinstance(data.get("schema_version"), bool) or data.get("schema_version") != CONTAINER_SCHEMA_VERSION:
             raise ContainerPersistenceError("Unsupported container persistence schema.")
         for key in expected - {"schema", "schema_version"}:
             if not isinstance(data[key], list):
@@ -236,6 +239,8 @@ class ContainerSnapshot:
 
 
 def _unique(records, key):
+    if any(not isinstance(record, Mapping) for record in records):
+        raise ContainerPersistenceError("Snapshot record collections must contain objects.")
     values = [record.get(key) for record in records]
     if any(not isinstance(value, str) or not value.strip() for value in values) or len(values) != len(set(values)):
         raise ContainerPersistenceError(f"Invalid or duplicate {key} values.")
