@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import errno
 import os
 import threading
 import time
@@ -60,7 +61,13 @@ def save_path_lock(path: str | os.PathLike[str]) -> Iterator[None]:
                                 1,
                             )
                             acquired = True
-                        except OSError:
+                        except OSError as error:
+                            if error.errno not in (
+                                errno.EACCES,
+                                errno.EAGAIN,
+                                errno.EDEADLK,
+                            ):
+                                raise
                             time.sleep(0.05)
                 else:
                     import fcntl
