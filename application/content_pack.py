@@ -13,6 +13,7 @@ from character import Ability, CharacterClass, CharacterFactory, Race
 from core.domain.spatial import Position
 from npc import Faction, NPC
 from quests import Dialogue, DialogueChoice, DialogueNode
+from resources import Inventory, Quantity, ResourceType, ResourceUnit, WorldResourceNode
 from world import Location, WorldMap
 
 
@@ -28,6 +29,7 @@ class StarterContentIds:
     forest_id: str = "forest"
     faction_id: str = "wardens"
     npc_id: str = "warden_lyra"
+    inventory_id: str = "player"
 
 
 class ContentDefinitionError(ValueError):
@@ -200,6 +202,7 @@ def _register_opening_content(application, definition: dict, ids: StarterContent
         definition, world.world_id, ids
     )
     service.register_world_map(world_map)
+    _register_opening_resources(bundle, definition, resolve_id, ids, world.world_id)
     service.place_actor(resolve_id("hero_id"), resolve_id("village_id"))
     start_position = character_data.get("starting_position") or (16, 29)
     service.set_actor_tile_position(
@@ -217,6 +220,55 @@ def populate_opening_content(
         load_opening_content(definition_path),
         ids,
     )
+
+
+def _register_opening_resources(bundle, definition, resolve_id, ids, world_id):
+    """Register the starter inventory and every gatherable landmark as a resource node."""
+    inventories = dict(bundle.inventories)
+    inventories.setdefault(ids.inventory_id, Inventory())
+    object.__setattr__(bundle, "inventories", MappingProxyType(inventories))
+
+    for location_data in definition["locations"]:
+        location_id = resolve_id(location_data["id"])
+        for landmark in location_data.get("landmarks", ()):
+            activities = tuple(landmark.get("activities", ()))
+            if "gather" not in activities:
+                continue
+
+            landmark_id = landmark["id"]
+            landmark_name = landmark["name"].lower()
+            normalized_id = landmark_id.lower()
+            if "tree" in normalized_id or "ağaç" in landmark_name:
+                node_id = (
+                    "forest_wood"
+                    if landmark_id == "forest_tree_01"
+                    else f"{landmark_id}_wood"
+                )
+                resource_id = "wood"
+            elif "mine" in normalized_id or "maden" in landmark_name:
+                node_id = (
+                    "north_iron_mine"
+                    if location_id == ids.forest_id
+                    else landmark_id
+                )
+                resource_id = "iron_ore"
+            else:
+                continue
+
+            if bundle.resource_nodes.get(node_id) is not None:
+                continue
+            quantity = Quantity(20, ResourceUnit.ITEM)
+            bundle.resource_nodes.add(
+                WorldResourceNode(
+                    node_id,
+                    world_id,
+                    ResourceType(resource_id),
+                    quantity,
+                    quantity,
+                    Quantity(0, ResourceUnit.ITEM),
+                    location_id=location_id,
+                )
+            )
 
 
 def _build_world_map_from_definition(
