@@ -1,119 +1,108 @@
 import math
+from dataclasses import FrozenInstanceError
+
+import pytest
+
+from core.domain.spatial import Position
 
 
-class Position:
-    """
-    Entity'nin dünya üzerindeki konumunu temsil eder.
-    """
+def test_position_defaults_to_origin():
+    assert Position() == Position(x=0, y=0)
 
-    def __init__(self, x=0, y=0):
-        self._validate_coordinate(x, "x")
-        self._validate_coordinate(y, "y")
 
-        self.x = x
-        self.y = y
+@pytest.mark.parametrize(
+    ("x", "y"),
+    [(3, 4), (-2, 7), (1.5, -0.25)],
+)
+def test_position_stores_numeric_coordinates(x, y):
+    position = Position(x=x, y=y)
 
-    @staticmethod
-    def _validate_coordinate(value, name):
-        """
-        Koordinat değerinin geçerli olup olmadığını kontrol eder.
-        """
+    assert (position.x, position.y) == (x, y)
 
-        if isinstance(value, bool) or not isinstance(
-            value,
-            (int, float)
-        ):
-            raise TypeError(
-                f"{name} koordinatı int veya float olmalıdır."
-            )
 
-    @staticmethod
-    def _validate_movement(value, name):
-        """
-        Hareket değerinin geçerli olup olmadığını kontrol eder.
-        """
+@pytest.mark.parametrize("value", [True, False, "1", None, object()])
+def test_position_rejects_non_numeric_coordinates(value):
+    with pytest.raises(TypeError):
+        Position(x=value, y=0)
 
-        if isinstance(value, bool) or not isinstance(
-            value,
-            (int, float)
-        ):
-            raise TypeError(
-                f"{name} hareket değeri int veya float olmalıdır."
-            )
+    with pytest.raises(TypeError):
+        Position(x=0, y=value)
 
-    def set_position(self, x, y):
-        """
-        Entity'nin konumunu doğrudan değiştirir.
-        """
 
-        self._validate_coordinate(x, "x")
-        self._validate_coordinate(y, "y")
+@pytest.mark.parametrize("value", [math.nan, math.inf, -math.inf])
+def test_position_rejects_non_finite_coordinates(value):
+    with pytest.raises(ValueError):
+        Position(x=value, y=0)
 
-        self.x = x
-        self.y = y
+    with pytest.raises(ValueError):
+        Position(x=0, y=value)
 
-    def get_position(self):
-        """
-        Mevcut konumu tuple olarak döndürür.
-        """
 
-        return (self.x, self.y)
+def test_position_is_immutable():
+    position = Position(2, 5)
 
-    def move(self, dx=0, dy=0):
-        """
-        Entity'yi verilen miktarda hareket ettirir.
-        """
+    with pytest.raises(FrozenInstanceError):
+        position.x = 10
 
-        self._validate_movement(dx, "dx")
-        self._validate_movement(dy, "dy")
 
-        self.x += dx
-        self.y += dy
+def test_position_supports_ordering():
+    assert sorted([Position(2, 0), Position(1, 5), Position(1, 2)]) == [
+        Position(1, 2),
+        Position(1, 5),
+        Position(2, 0),
+    ]
 
-    def distance_to(self, other):
-        """
-        Başka bir Position nesnesine olan Öklid mesafesini döndürür.
-        """
 
-        if not isinstance(other, Position):
-            raise TypeError(
-                "Mesafe hesaplamak için Position nesnesi gereklidir."
-            )
+def test_translated_returns_a_new_position_without_mutating_original():
+    original = Position(2, 3)
 
-        return math.hypot(
-            self.x - other.x,
-            self.y - other.y
-        )
+    translated = original.translated(dx=-1, dy=4)
 
-    def same_as(self, other):
-        """
-        Başka bir Position nesnesiyle aynı konumda olup olmadığını döndürür.
-        """
+    assert translated == Position(1, 7)
+    assert original == Position(2, 3)
+    assert translated is not original
 
-        if not isinstance(other, Position):
-            return False
 
-        return (
-            self.x == other.x
-            and self.y == other.y
-        )
+@pytest.mark.parametrize("value", [True, "1", None, math.nan, math.inf])
+def test_translated_rejects_invalid_offsets(value):
+    position = Position(1, 2)
 
-    def copy(self):
-        """
-        Position nesnesinin bağımsız bir kopyasını döndürür.
-        """
+    with pytest.raises((TypeError, ValueError)):
+        position.translated(dx=value)
 
-        return Position(
-            self.x,
-            self.y
-        )
+    with pytest.raises((TypeError, ValueError)):
+        position.translated(dy=value)
 
-    def to_dict(self):
-        """
-        Konumu sözlük olarak döndürür.
-        """
 
-        return {
-            "x": self.x,
-            "y": self.y,
-        }
+def test_distance_to_returns_euclidean_distance():
+    assert Position(0, 0).distance_to(Position(3, 4)) == 5.0
+
+
+def test_distance_to_rejects_non_position_values():
+    with pytest.raises(TypeError, match="other must be a Position"):
+        Position().distance_to((0, 0))
+
+
+def test_to_dict_and_to_persistence_return_coordinate_data():
+    position = Position(2.5, -4)
+
+    assert position.to_dict() == {"x": 2.5, "y": -4}
+    assert position.to_persistence() == {"x": 2.5, "y": -4}
+
+
+def test_from_dict_and_from_persistence_restore_position():
+    data = {"x": 2.5, "y": -4}
+
+    assert Position.from_dict(data) == Position(2.5, -4)
+    assert Position.from_persistence(data) == Position(2.5, -4)
+
+
+def test_from_dict_rejects_non_dictionary_data():
+    with pytest.raises(TypeError, match="Position data must be a dictionary"):
+        Position.from_dict([1, 2])
+
+
+@pytest.mark.parametrize("data", [{"x": 1}, {"y": 2}, {}])
+def test_from_dict_rejects_missing_coordinate_fields(data):
+    with pytest.raises(ValueError, match="Missing position field"):
+        Position.from_dict(data)
