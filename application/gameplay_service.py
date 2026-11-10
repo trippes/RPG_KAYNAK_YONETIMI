@@ -728,28 +728,46 @@ class GameplayService:
 
     def _dialogue_context(self, actor_id: str, npc_id: str) -> dict:
         bundle = self._current_bundle()
-        objectives = {
-            objective.objective_id: objective.progress
-            for quest in bundle.quest_log.all()
-            for objective in quest.objectives
-        }
+        objectives = {}
+        quests = bundle.quest_log.all()
+        for quest in quests:
+            try:
+                quest_objectives = getattr(quest, "objectives", ()) or ()
+                for objective in quest_objectives:
+                    objective_id = getattr(objective, "objective_id", None)
+                    progress = getattr(objective, "progress", None)
+                    if (
+                        isinstance(objective_id, str)
+                        and objective_id
+                        and isinstance(progress, int)
+                        and not isinstance(progress, bool)
+                    ):
+                        objectives[objective_id] = progress
+            except (AttributeError, TypeError, ValueError, RuntimeError):
+                continue
+
         items = {}
         try:
             items = {
                 getattr(resource, "value", str(resource)): amount
                 for resource, amount, _unit in self.inventory("player").stocks
             }
-        except (KeyError, ValueError, RuntimeError):
+        except (KeyError, ValueError, RuntimeError, AttributeError, TypeError):
             pass
+
+        flags = {}
+        for quest in quests:
+            quest_id = getattr(quest, "quest_id", None)
+            state = getattr(getattr(quest, "state", None), "value", None)
+            if isinstance(quest_id, str) and quest_id and isinstance(state, str):
+                flags[f"quest:{quest_id}"] = state
+
         return {
             "actor_id": actor_id,
             "npc_id": npc_id,
             "objectives": objectives,
             "items": items,
-            "flags": {
-                f"quest:{quest.quest_id}": quest.state.value
-                for quest in bundle.quest_log.all()
-            },
+            "flags": flags,
         }
 
     def _run_dialogue_action(self, action: str, actor_id: str, npc_id: str) -> None:
