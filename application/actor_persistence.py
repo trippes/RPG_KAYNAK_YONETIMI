@@ -284,6 +284,8 @@ class ActorSnapshot:
 
         try:
             for record in self.actors:
+                if record.inventory_id is not None and record.inventory_id not in inventories:
+                    raise ActorPersistenceError("Actor references unknown inventory.")
                 registry.add(
                     WorldActor(
                         record.actor_id,
