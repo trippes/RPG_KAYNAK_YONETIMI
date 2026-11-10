@@ -279,6 +279,7 @@ class TestPhaseDQuality(unittest.TestCase):
         opened = []
         window = object.__new__(GameWindow)
         window.current = "main"
+        window.gameplay_screen = "main"
         window.gameplay_active = True
         window.screens = {
             "main": SimpleNamespace(menu_open=False),
