@@ -47,10 +47,14 @@ değiştirilmez; warning ve kaldırma ayrı bir major migration kararına bağl�
 ## Warning policy
 
 `DeprecationWarning` yalnızca metadata'da `deprecated=True` olan API'lerde
-çağrı sırasında üretilir. FAZ 6'da bu API `Game.dunya_olaylarini_aktar()`'dır.
-Warning mesajı canonical replacement'ı içerir. Python'ın warning filtreleri
-aynı çağrı noktası için spam'i kontrol eder; compatibility API'leri sessizce
-kaldırılmaz.
+çağrı sırasında üretilir. Stage D kapsamındaki tek kayıt
+`Game.dunya_olaylarini_aktar()`'dır; `GameApplication` üzerindeki eşdeğer 1.x
+façade aynı metadata kimliğini kullanır. Warning; deprecated sürümünü,
+canonical replacement'ı ve en erken removal fazını bildirir. Removal tarihi
+vaat etmez: ayrı major-version kararı, duyurulmuş geçiş dönemi, güncel
+regression kanıtı ve harici tüketici kontrolü gerekir. `compatibility`, `alias`
+ve `projection` kayıtları otomatik warning üretmez. Warning'ler CI'da test
+kapsamında yakalanır; tüm warning'ler topluca error'a çevrilmez.
 
 ## Usage reporting
 
