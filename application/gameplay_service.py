@@ -706,6 +706,7 @@ class GameplayService:
             inventories[inventory_id] = inventory
             object.__setattr__(bundle, "inventories", MappingProxyType(inventories))
         existing = bundle.economy.merchants.get(merchant_id)
+        is_new_partner = existing is None
         if existing is None:
             merchant = Merchant(
                 merchant_id, inventory, account_id=merchant_id,
@@ -723,10 +724,9 @@ class GameplayService:
                 raise ValueError(f"Conflicting trade partner profile: {npc_id}")
             merchant = existing
         currency = Currency("gold")
-        if bundle.economy.ledger.balance(merchant.account_id, currency).amount == 0:
-            if isinstance(initial_gold, bool) or not isinstance(initial_gold, int) or initial_gold < 0:
-                raise ValueError("initial_gold must be a non-negative integer.")
-            if initial_gold:
+        if isinstance(initial_gold, bool) or not isinstance(initial_gold, int) or initial_gold < 0:
+            raise ValueError("initial_gold must be a non-negative integer.")
+        if is_new_partner and initial_gold:
                 bundle.economy.ledger.credit(
                     merchant.account_id, Money(initial_gold, currency), "trade_partner_funding",
                 )
