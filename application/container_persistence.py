@@ -107,6 +107,7 @@ class ContainerSnapshot:
         payload = {
             "schema": CONTAINER_SCHEMA,
             "schema_version": CONTAINER_SCHEMA_VERSION,
+            "max_global_nesting_depth": manager.max_global_nesting_depth,
             "definitions": [definitions[key] for key in sorted(definitions)],
             "break_profiles": [profiles[key] for key in sorted(profiles)],
             "instances": sorted(instance_records, key=lambda value: value["container_id"]),
@@ -129,14 +130,17 @@ class ContainerSnapshot:
         if not isinstance(data, Mapping):
             raise ContainerPersistenceError("Container snapshot must be an object.")
         expected = {
-            "schema", "schema_version", "definitions", "break_profiles", "instances",
+            "schema", "schema_version", "max_global_nesting_depth", "definitions", "break_profiles", "instances",
             "inventories", "parents", "custodies", "placements", "item_catalog", "resource_catalog",
         }
         if set(data) != expected:
             raise ContainerPersistenceError("Container snapshot has missing or unknown fields.")
         if data.get("schema") != CONTAINER_SCHEMA or isinstance(data.get("schema_version"), bool) or data.get("schema_version") != CONTAINER_SCHEMA_VERSION:
             raise ContainerPersistenceError("Unsupported container persistence schema.")
-        for key in expected - {"schema", "schema_version"}:
+        depth = data.get("max_global_nesting_depth")
+        if isinstance(depth, bool) or not isinstance(depth, int) or depth < 1:
+            raise ContainerPersistenceError("max_global_nesting_depth must be a positive integer.")
+        for key in expected - {"schema", "schema_version", "max_global_nesting_depth"}:
             if not isinstance(data[key], list):
                 raise ContainerPersistenceError(f"{key} must be a list.")
         try:
@@ -210,7 +214,10 @@ class ContainerSnapshot:
                 BreakProfile(value["profile_id"], value["max_durability"], value.get("damage_resistances", {}), value.get("breakable", True))
                 for value in self.data["break_profiles"]
             )
-            manager = ContainerManager(item_catalog, resource_catalog, profiles)
+            manager = ContainerManager(
+                item_catalog, resource_catalog, profiles,
+                max_global_nesting_depth=self.data["max_global_nesting_depth"],
+            )
             for value in self.data["definitions"]:
                 manager.register_definition(_definition_from_dict(value))
             inventory_records = {value["container_id"]: value for value in self.data["inventories"]}
