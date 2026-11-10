@@ -158,18 +158,18 @@ class TestGameplayService(unittest.TestCase):
                 tool_item_id="lockpick",
             )
         self.assertFalse(self.service.attempt_lockpick(
-            "hero", "main", "pick_chest_lock_01", tool_item_id="lockpick", success=True
+            "hero", "main", "pick_chest_lock_01", tool_item_id="lockpick", 
         ))
         self.assertTrue(self.service.lock_state("pick_chest_lock_01").locked)
 
         self.application.holder.current.characters["hero_character"].skills = Skills({"lockpicking": 3})
         self.inventory.remove_item("lockpick")
         self.assertFalse(self.service.attempt_lockpick(
-            "hero", "main", "pick_chest_lock_01", tool_item_id="lockpick", success=True
+            "hero", "main", "pick_chest_lock_01", tool_item_id="lockpick", 
         ))
         self.inventory.add_item("lockpick")
         self.assertTrue(self.service.attempt_lockpick(
-            "hero", "main", "pick_chest_lock_01", tool_item_id="lockpick", success=True
+            "hero", "main", "pick_chest_lock_01", tool_item_id="lockpick", 
         ))
         self.assertFalse(self.service.lock_state("pick_chest_lock_01").locked)
 
@@ -194,18 +194,18 @@ class TestGameplayService(unittest.TestCase):
 
         self.assertFalse(self.service.attempt_force_lock(
             "hero", "main", "iron_gate_lock_01",
-            tool_item_id="breaching_tool", success=True,
+            tool_item_id="breaching_tool", ,
         ))
         self.application.holder.current.characters["hero_character"].attributes = Attributes({"strength": 14})
         self.inventory.remove_item("breaching_tool")
         self.assertFalse(self.service.attempt_force_lock(
             "hero", "main", "iron_gate_lock_01",
-            tool_item_id="breaching_tool", success=True,
+            tool_item_id="breaching_tool", ,
         ))
         self.inventory.add_item("breaching_tool")
         self.assertTrue(self.service.attempt_force_lock(
             "hero", "main", "iron_gate_lock_01",
-            tool_item_id="breaching_tool", success=True,
+            tool_item_id="breaching_tool", ,
         ))
         state = self.service.lock_state("iron_gate_lock_01")
         self.assertTrue(state.broken)
@@ -228,7 +228,7 @@ class TestGameplayService(unittest.TestCase):
             "hero", "player", character_id="hero_character", inventory_id="main"
         )
         self.assertTrue(self.service.attempt_force_lock(
-            "hero", "main", "wooden_door_lock_01", success=True,
+            "hero", "main", "wooden_door_lock_01", ,
         ))
         state = self.service.lock_state("wooden_door_lock_01")
         self.assertFalse(state.locked)
