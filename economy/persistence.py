@@ -52,6 +52,7 @@ class EconomySnapshot:
             "inventory_id": profile.inventory_id, "restock_interval": profile.restock_interval,
             "visible_products": profile.visible_products,
             "last_restock_cycle": profile.last_restock_cycle,
+            "demand": dict(profile.demand),
             "catalog": [{
                 "resource_type": entry.resource_type.value,
                 "currency": entry.base_price.currency.value,
@@ -89,6 +90,7 @@ class EconomySnapshot:
                 int(data["restock_interval"]), catalog,
                 int(data.get("visible_products", 4)),
                 int(data.get("last_restock_cycle", -1)),
+                dict(data.get("demand", {})),
             ))
         for data in self.offers:
             currency_id = str(data["currency"])
