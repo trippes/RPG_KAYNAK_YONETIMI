@@ -210,9 +210,9 @@ class ContainerScreen:
 
             player_items = self._player_items(inventory_id)
             container_items = self._container_items(view)
-            outer = renderer.pg.Rect(40, 140, 724, 400)
+            outer = renderer.pg.Rect(40, 140, 724, 410)
             renderer.panel(outer, (25, 20, 18), (166, 119, 61))
-            inner = renderer.pg.Rect(46, 146, 712, 388)
+            inner = renderer.pg.Rect(46, 146, 712, 398)
             renderer.panel(inner, (34, 29, 27), (91, 68, 45))
             self._draw_chest_emblem(renderer, 680, 151)
             renderer.text(view.name.upper(), 62, 154, GOLD, title=True, max_width=560)
@@ -224,8 +224,8 @@ class ContainerScreen:
             self._capacity_bar(renderer, 292, 267, 205, "Yuvalar", float(view.contents_slots), slot_max, "slot")
             self._capacity_bar(renderer, 522, 267, 205, "Hacim", view.contents_volume_liters, view.max_contents_volume_liters, "L")
 
-            left_panel = renderer.pg.Rect(54, 344, 338, 180)
-            right_panel = renderer.pg.Rect(412, 344, 338, 180)
+            left_panel = renderer.pg.Rect(54, 344, 338, 200)
+            right_panel = renderer.pg.Rect(412, 344, 338, 200)
             renderer.panel(left_panel, (27, 23, 22), GOLD if self.active_side == "container" else (105, 82, 59))
             renderer.panel(right_panel, (27, 23, 22), GOLD if self.active_side == "player" else (105, 82, 59))
             renderer.text("SANDIK", 68, 352, GOLD if self.active_side == "container" else TEXT_SOFT)
@@ -271,7 +271,7 @@ class ContainerScreen:
                 renderer.text("Çantada eşya yok.", 430, 402, TEXT_SOFT)
                 renderer.text("Taşınabilir eşya bulunmuyor.", 430, 430, MUTED, max_width=280)
 
-            renderer.text(self.message, 62, 545, GOOD if "aktarıldı" in self.message else TEXT_SOFT, max_width=680)
+            renderer.text(self.message, 62, 555, GOOD if "aktarıldı" in self.message else TEXT_SOFT, max_width=680)
             renderer.footer("Sol/Sağ: taraf değiştir   Slot seç + Enter: 1 adet taşı")
         except (KeyError, ValueError, RuntimeError, GameplayServiceError) as error:
             renderer.text(f"Sandık görüntülenemedi: {error}", 52, 170, WARN)
