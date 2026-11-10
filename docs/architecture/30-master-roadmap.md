@@ -85,6 +85,25 @@ snapshot'larının sorumluluğundadır.
     test edilebilir API’lerle dolduruldu; README ve public API envanteri
     güncellendi.
 
+### Faz E — Mimari borcun daraltılması — TAMAMLANDI (10 Kasım 2026)
+
+14. Legacy API tarayıcısı import alias, modül alias, alias üzerinden
+    construction ve inheritance kullanımını kapsayacak şekilde genişletildi;
+    CI çıktısına güncel kullanım raporu eklendi.
+15. `time_system.Tick` canonical `core.time.Tick` sınıfının geriye dönük
+    uyumlu export'u oldu; `GameClock` canonical Tick'i doğrudan kullanır.
+16. Mutable legacy Entity Position, immutable canonical Position üzerinde
+    çalışan bir adaptöre dönüştürüldü.
+17. World clock/event/scheduler runtime'ı compatibility sınırında tutuldu.
+    Canonical SimulationRuntime authoritative zaman kaynağı olmaya devam eder.
+18. EntityRepository ve WorldMembershipService authoritative sahipliktir;
+    Entity.world_id ve World._entities yalnızca eski World API'si için
+    projection olarak korunur.
+19. Core katman sınırları, migration taraması, Tick/Position adaptörleri ve
+    World projection davranışları testlerle güvence altına alındı.
+20. Kalan compatibility borcu ve kaldırma önkoşulları
+    `docs/architecture/33-stage-3-architecture-debt.md` belgesine kaydedildi.
+
 ## Bilinçli sınırlar
 
 Yeni gameplay state Core canonical state'e eklenmez. Her sistem kendi
