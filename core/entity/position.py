@@ -1,119 +1,70 @@
-import math
+"""Mutable 1.x Position adapter backed by the canonical immutable value object.
+
+New simulation and actor code should use :mod:`core.domain.spatial` directly.
+This adapter preserves the mutable Entity-facing API while keeping its stored
+coordinate value canonical.
+"""
+
+from core.domain.spatial import Position as CanonicalPosition
 
 
 class Position:
-    """
-    Entity'nin dünya üzerindeki konumunu temsil eder.
-    """
+    """Compatibility adapter for legacy Entity.position callers."""
 
     def __init__(self, x=0, y=0):
-        self._validate_coordinate(x, "x")
-        self._validate_coordinate(y, "y")
+        self._position = CanonicalPosition(x, y)
 
-        self.x = x
-        self.y = y
+    @property
+    def x(self):
+        return self._position.x
+
+    @x.setter
+    def x(self, value):
+        self._position = CanonicalPosition(value, self._position.y)
+
+    @property
+    def y(self):
+        return self._position.y
+
+    @y.setter
+    def y(self, value):
+        self._position = CanonicalPosition(self._position.x, value)
 
     @staticmethod
     def _validate_coordinate(value, name):
-        """
-        Koordinat değerinin geçerli olup olmadığını kontrol eder.
-        """
-
-        if isinstance(value, bool) or not isinstance(
-            value,
-            (int, float)
-        ):
-            raise TypeError(
-                f"{name} koordinatı int veya float olmalıdır."
-            )
+        CanonicalPosition._validate_coordinate(value, name)
 
     @staticmethod
     def _validate_movement(value, name):
-        """
-        Hareket değerinin geçerli olup olmadığını kontrol eder.
-        """
-
-        if isinstance(value, bool) or not isinstance(
-            value,
-            (int, float)
-        ):
-            raise TypeError(
-                f"{name} hareket değeri int veya float olmalıdır."
-            )
+        CanonicalPosition._validate_coordinate(value, name)
 
     def set_position(self, x, y):
-        """
-        Entity'nin konumunu doğrudan değiştirir.
-        """
-
-        self._validate_coordinate(x, "x")
-        self._validate_coordinate(y, "y")
-
-        self.x = x
-        self.y = y
+        self._position = CanonicalPosition(x, y)
 
     def get_position(self):
-        """
-        Mevcut konumu tuple olarak döndürür.
-        """
-
         return (self.x, self.y)
 
     def move(self, dx=0, dy=0):
-        """
-        Entity'yi verilen miktarda hareket ettirir.
-        """
-
-        self._validate_movement(dx, "dx")
-        self._validate_movement(dy, "dy")
-
-        self.x += dx
-        self.y += dy
+        self._position = self._position.translated(dx, dy)
 
     def distance_to(self, other):
-        """
-        Başka bir Position nesnesine olan Öklid mesafesini döndürür.
-        """
-
-        if not isinstance(other, Position):
-            raise TypeError(
-                "Mesafe hesaplamak için Position nesnesi gereklidir."
-            )
-
-        return math.hypot(
-            self.x - other.x,
-            self.y - other.y
-        )
+        if isinstance(other, Position):
+            other = other.to_canonical()
+        if not isinstance(other, CanonicalPosition):
+            raise TypeError("Mesafe hesaplamak için Position nesnesi gereklidir.")
+        return self._position.distance_to(other)
 
     def same_as(self, other):
-        """
-        Başka bir Position nesnesiyle aynı konumda olup olmadığını döndürür.
-        """
-
-        if not isinstance(other, Position):
-            return False
-
-        return (
-            self.x == other.x
-            and self.y == other.y
-        )
+        if isinstance(other, Position):
+            other = other.to_canonical()
+        return isinstance(other, CanonicalPosition) and self._position == other
 
     def copy(self):
-        """
-        Position nesnesinin bağımsız bir kopyasını döndürür.
-        """
-
-        return Position(
-            self.x,
-            self.y
-        )
+        return Position(self.x, self.y)
 
     def to_dict(self):
-        """
-        Konumu sözlük olarak döndürür.
-        """
+        return self._position.to_dict()
 
-        return {
-            "x": self.x,
-            "y": self.y,
-        }
+    def to_canonical(self):
+        """Return the immutable canonical coordinate value."""
+        return self._position
