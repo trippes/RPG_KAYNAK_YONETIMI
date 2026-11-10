@@ -58,7 +58,7 @@ class CharacterScreen:
         width = min(self.CONTENT_WIDTH, max(480, renderer.width - 80))
         height = min(self.CONTENT_HEIGHT, max(330, renderer.height - 180))
         gap = 12
-        usable = width - 2 * gap
+        usable = width - 56
         attribute_width = int(usable * 0.30)
         skill_width = int(usable * 0.36)
         equipment_width = usable - attribute_width - skill_width
@@ -69,7 +69,7 @@ class CharacterScreen:
         return {
             "width": width,
             "height": height,
-            "identity": renderer.pg.Rect(left, self.CONTENT_Y + 42, int((width - 32) * 0.39), 82),
+            "identity": renderer.pg.Rect(left, self.CONTENT_Y + 50, int((width - 32) * 0.39), 72),
             "combat": renderer.pg.Rect(
                 left + int((width - 32) * 0.39) + gap,
                 self.CONTENT_Y + 42,
@@ -143,7 +143,7 @@ class CharacterScreen:
         renderer.text("KARAKTER", outer.x + 16, outer.y + 9, GOLD, title=True, max_width=outer.width - 32)
         renderer.text(
             "Kimlik  /  Savaş  /  Nitelikler  /  Beceriler  /  Ekipman",
-            outer.x + 18, outer.y + 76, MUTED, max_width=outer.width - 36,
+            outer.x + 18, outer.y + 30, MUTED, max_width=outer.width - 36,
         )
         self._render_identity(renderer, layout["identity"], character, stats)
         self._render_combat(renderer, layout["combat"], stats)
@@ -158,7 +158,7 @@ class CharacterScreen:
             rect.x + 12, rect.y + 8, GOLD, title=True, max_width=rect.width - 24,
         )
         identity = f"{character.race.name} · {character.character_class.name} · {character.age} yaş"
-        renderer.wrapped_text(identity, rect.x + 12, rect.y + 42, rect.width - 24, TEXT_SOFT, line_height=19, max_lines=2)
+        renderer.wrapped_text(identity, rect.x + 12, rect.y + 32, rect.width - 24, TEXT_SOFT, line_height=17, max_lines=1)
         level = stats.get("level", character.progression.level)
         xp = stats.get("experience", character.progression.experience)
         required = stats.get("experience_to_next_level", character.progression.experience_to_next_level)
