@@ -146,13 +146,14 @@ class TestActorSystem(unittest.TestCase):
         self.assertEqual(after.activities[0].activity_id, "gather")
 
     def test_actor_and_active_production_restore_without_duplicate_output(self):
-        self.service.register_actor("worker", "worker")
+        self.service.register_actor("worker", "worker", inventory_id="main")
         self.service.collect("node", "main", Quantity(2, ResourceUnit.ITEM))
         self.service.start_actor_production("worker", "tool", "main", "workshop", "persisted")
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "actor-save.json"
             self.service.save(path)
             self.service.load(path)
+            self.assertEqual(self.service.actor("worker").inventory_id, "main")
             self.assertEqual(self.service.actor("worker").activity_id, "persisted")
             self.assertEqual(self.service.activity("persisted").state, ActivityState.RUNNING.value)
             self.service.advance_to(3)
