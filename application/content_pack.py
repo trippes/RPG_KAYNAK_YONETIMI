@@ -359,6 +359,26 @@ def populate_gameplay_resources(service, definition_path=None):
             market_data["npc_id"], market_data["merchant_id"], market_data["inventory_id"],
             market_data["restock_interval"], catalog, market_data.get("visible_products", 4),
         ))
+    for trade_data in definition.get("trade_partners", ()):
+        trade_npc_id = trade_data["npc_id"]
+        if bundle.social.npcs.get(trade_npc_id) is None:
+            service.register_npc(NPC(
+                trade_npc_id, trade_data["npc_name"],
+                trade_data.get("npc_role", "civilian"),
+                tuple(trade_data.get("faction_ids", ())),
+                resolve_id(trade_data["location_id"]),
+                position=Position(*(trade_data.get("position") or (20, 20))),
+            ))
+        dialogue_data = trade_data["dialogue"]
+        if bundle.social.dialogues.get(dialogue_data["id"]) is None:
+            service.register_dialogue(_build_dialogue_from_definition(
+                dialogue_data, trade_npc_id,
+            ))
+        service.register_trade_partner(
+            trade_npc_id, trade_data["merchant_id"], trade_data["inventory_id"],
+            trade_data["accepted_resources"], trade_data["initial_gold"],
+            trade_data.get("buyback_rate", 50), trade_data.get("unit_prices", {}),
+        )
     if service.balance("hero", "gold").amount == 0:
         service.credit("hero", "gold", 100)
 
