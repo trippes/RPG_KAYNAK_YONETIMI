@@ -29,6 +29,7 @@ class TestGame(unittest.TestCase):
             game.events,
             game.event_manager.event_queue
         )
+        self.assertEqual(game.event_manager.event_transport.count(), 0)
 
         self.assertEqual(
             game.bekleyen_olay_sayisi(),
@@ -196,6 +197,7 @@ class TestGame(unittest.TestCase):
             game.events.bekleyen_sayi(),
             1
         )
+        self.assertEqual(game.event_manager.event_transport.count(), 1)
 
         event = game.events.al()
 
