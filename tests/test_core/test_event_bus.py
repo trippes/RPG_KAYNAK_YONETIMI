@@ -361,5 +361,89 @@ class TestEventBus(unittest.TestCase):
             bus.dispatch_queue("gecersiz")
 
 
+    def test_dispatch_uses_subscription_snapshot(self):
+        bus = EventBus()
+        received = []
+        second = EventHandler("test", lambda event: received.append("second"))
+
+        def first_callback(event):
+            received.append("first")
+            bus.unsubscribe(second)
+
+        bus.subscribe(EventHandler("test", first_callback))
+        bus.subscribe(second)
+
+        bus.publish(Event("test"))
+        bus.publish(Event("test"))
+
+        self.assertEqual(received, ["first", "second", "first"])
+
+    def test_handler_added_during_dispatch_starts_on_next_publish(self):
+        bus = EventBus()
+        received = []
+        second = EventHandler("test", lambda event: received.append("second"))
+        added = False
+
+        def first_callback(event):
+            nonlocal added
+            received.append("first")
+            if not added:
+                bus.subscribe(second)
+                added = True
+
+        bus.subscribe(EventHandler("test", first_callback))
+
+        bus.publish(Event("test"))
+        self.assertEqual(received, ["first"])
+
+        bus.publish(Event("test"))
+        self.assertEqual(received, ["first", "first", "second"])
+
+    def test_reentrant_publish_completes_nested_dispatch_before_outer_continues(self):
+        bus = EventBus()
+        received = []
+
+        bus.subscribe(EventHandler(
+            "outer",
+            lambda event: (
+                received.append("outer-start"),
+                bus.publish(Event("inner")),
+                received.append("outer-end"),
+            ),
+        ))
+        bus.subscribe(EventHandler("inner", lambda event: received.append("inner")))
+
+        bus.publish(Event("outer"))
+
+        self.assertEqual(received, ["outer-start", "inner", "outer-end"])
+
+    def test_handler_exception_consumes_current_event_and_preserves_later_queue_items(self):
+        bus = EventBus()
+        queue = EventQueue()
+        received = []
+
+        failing = EventHandler(
+            "test",
+            lambda event: (_ for _ in ()).throw(RuntimeError("handler failed")),
+        )
+        later = EventHandler("test", lambda event: received.append(event.veri["id"]))
+        bus.subscribe(failing)
+        bus.subscribe(later)
+        queue.ekle(Event("test", {"id": 1}))
+        queue.ekle(Event("test", {"id": 2}))
+
+        with self.assertRaisesRegex(RuntimeError, "handler failed"):
+            bus.dispatch_queue(queue)
+
+        self.assertEqual(queue.bekleyen_sayi(), 1)
+        self.assertEqual(received, [])
+
+        bus.unsubscribe(failing)
+        bus.dispatch_queue(queue)
+
+        self.assertEqual(received, [2])
+        self.assertTrue(queue.bos_mu())
+
+
 if __name__ == "__main__":
     unittest.main()

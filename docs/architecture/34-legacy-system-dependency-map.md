@@ -265,7 +265,9 @@ sistem kaldırma onayı alamaz.
   sayaçlarını kapsıyor. Scanner dinamik/reflection ve harici tüketicileri
   kanıtlayamaz; CI çıktısının bu branch head için ayrıca doğrulanması gerekir.
 - **B — Davranış sözleşmesi:** EventManager FIFO kuyruk/handler dispatch
-  regresyonuna ek olarak legacy Scheduler için FIFO, callback içinden iptal,
+  regresyonuna ek olarak EventBus abonelik snapshot'ı, dispatch sırasında
+  subscribe/unsubscribe, re-entrant publish ve handler exception/queue
+  devamlılığı testleri eklendi. Legacy Scheduler için FIFO, callback içinden iptal,
   callback ekleme, exception sonrası tekrar çalıştırmama ve iptal idempotency
   testleri eklendi. Scheduler, callback öncesi olayı kuyruktan çıkarır; hata
   halinde henüz çalışmamış hazır olayları sonraki çağrıya bırakır. Canonical
