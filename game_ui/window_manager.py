@@ -149,7 +149,7 @@ class WindowManager:
     def _clamp(self, window, x, y):
         return (
             max(0, min(x, self.width - window.bounds.width)),
-            max(0, min(y, self.height - self.TITLE_HEIGHT)),
+            max(0, min(y, self.height - window.bounds.height)),
         )
 
     def _dispatch(self, window, state):

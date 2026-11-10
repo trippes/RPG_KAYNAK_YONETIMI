@@ -106,6 +106,29 @@ class QuestWindowManagerTests(unittest.TestCase):
         )
         self.assertFalse(window.dragging)
 
+    def test_resize_keeps_window_fully_inside_viewport(self):
+        self.manager.resize(800, 500)
+        window = self.manager.windows["quest_log"]
+        self.assertLessEqual(window.bounds.right, 800)
+        self.assertLessEqual(window.bounds.bottom, 500)
+        self.assertGreaterEqual(window.bounds.x, 0)
+        self.assertGreaterEqual(window.bounds.y, 0)
+
+    def test_drag_clamps_bottom_edge_to_viewport(self):
+        self.manager.open("quest_log")
+        window = self.manager.windows["quest_log"]
+        self.manager.handle_input(
+            InputState(
+                mouse_pos=(100, 120),
+                mouse_clicked=True,
+                mouse_button_down=True,
+            )
+        )
+        self.manager.handle_input(
+            InputState(mouse_pos=(100, 900), mouse_motion=True)
+        )
+        self.assertEqual(window.bounds.bottom, 640)
+
     def test_content_click_is_translated_to_screen_coordinates(self):
         self.manager.open("quest_log")
         self.manager.handle_input(
