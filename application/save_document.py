@@ -115,7 +115,7 @@ class GameSaveDocument:
             raise SaveDocumentError(
                 f"Game save document is missing required fields: {sorted(missing)}"
             )
-        unexpected = set(data) - required - {"production", "actors", "characters", "quests", "economy", "social", "combat", "containers"}
+        unexpected = set(data) - required - {"production", "actors", "characters", "quests", "economy", "social", "combat", "containers", "locks"}
         if unexpected:
             raise SaveDocumentError(
                 f"Game save document contains unknown fields: {sorted(unexpected)}"
