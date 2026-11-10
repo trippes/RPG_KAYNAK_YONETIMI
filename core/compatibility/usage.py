@@ -48,6 +48,7 @@ class UsageReportEntry:
 _SIMPLE_NAMES = {
     "EventBus": "core.event_bus.EventBus",
     "EventQueue": "core.events.EventQueue",
+    "EventManager": "core.event_manager.EventManager",
     "EventType": "core.event_types.EventType",
     "GameClock": "core.clock.GameClock",
     "Scheduler": "time_system.Scheduler",
@@ -62,6 +63,7 @@ _IMPORT_ALIASES = {
     ("core.actions.action", "Action"): "core.actions.Action",
     ("core.actions.action_manager", "ActionManager"): "core.actions.ActionManager",
     ("core.entity.position", "Position"): "core.entity.position.Position",
+    ("core.event_manager", "EventManager"): "core.event_manager.EventManager",
 }
 
 
