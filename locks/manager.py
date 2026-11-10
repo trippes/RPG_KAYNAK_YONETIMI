@@ -74,6 +74,13 @@ class LockManager:
     def get(self, lock_id):
         return self._instances.get(lock_id)
 
+    def for_entity(self, entity_id):
+        """Return the lock capability attached to one Core entity, if any."""
+        return next(
+            (instance for instance in self._instances.values() if instance.entity_id == entity_id),
+            None,
+        )
+
     def definition(self, definition_id):
         return self._lock_definitions.get(definition_id)
 
