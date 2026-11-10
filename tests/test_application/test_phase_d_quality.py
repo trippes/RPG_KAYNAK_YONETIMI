@@ -1060,11 +1060,11 @@ class TestPhaseDQuality(unittest.TestCase):
         self.assertEqual(window.current, "main")
         self.assertEqual(window.window_manager.opened, ["inventory"])
 
-    def test_gameplay_window_ids_are_the_six_supported_tool_windows(self):
+    def test_gameplay_window_ids_include_separate_market_and_trade_tools(self):
         from game_ui.game_window import GAMEPLAY_WINDOW_IDS
 
         self.assertEqual(GAMEPLAY_WINDOW_IDS, {
-            "character", "inventory", "quest_log", "map", "production", "market",
+            "character", "inventory", "quest_log", "map", "production", "market", "trade",
         })
 
     def test_gameplay_world_renders_before_active_surface(self):
