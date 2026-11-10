@@ -118,6 +118,19 @@ class TestEquipment(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.service.equip_item("hero", "main", "bread_item")
 
+    def test_equipped_item_without_catalog_fails_loudly(self):
+        character = self.application.holder.current.characters["hero"]
+        character.equip(self.items["iron_sword"])
+        with self.assertRaisesRegex(ValueError, "missing from the catalog"):
+            character.bind_item_catalog({})
+        with self.assertRaises(RuntimeError):
+            character.weapon_damage
+
+    def test_item_catalog_rejects_mismatched_registry_keys(self):
+        character = self.application.holder.current.characters["hero"]
+        with self.assertRaisesRegex(ValueError, "catalog key"):
+            character.bind_item_catalog({"wrong_id": self.items["iron_sword"]})
+
 
 if __name__ == "__main__":
     unittest.main()
