@@ -227,7 +227,7 @@ class TestPhaseDQuality(unittest.TestCase):
             self.assertEqual(screen.handle(InputState(actions={"back"})), expected)
 
     def test_market_window_does_not_own_window_close_navigation(self):
-        service = SimpleNamespace(market_offers=lambda: ())
+        service = SimpleNamespace(market_offers=lambda _market_id=None: ())
         screen = MarketScreen(service)
 
         self.assertIsNone(screen.handle(InputState(actions={"back", "world", "inventory", "character"})))
@@ -241,16 +241,11 @@ class TestPhaseDQuality(unittest.TestCase):
         self.assertIn("yalnızca konumları gösterir", screen.message)
         self.assertIsNone(screen.handle(InputState(actions={"back"})))
 
-    def test_market_navigation_uses_current_location_without_legacy_world_screen(self):
+    def test_market_is_not_exposed_as_global_navigation(self):
         service, _ = populate_opening_content(GameApplication.create_default())
         window = object.__new__(GameWindow)
         window.service = service
-        location = window._current_location()
-        self.assertIsNotNone(location)
-        self.assertEqual(
-            window._nav_enabled()["market"],
-            "market" in location.activities,
-        )
+        self.assertNotIn("market", window._nav_enabled())
 
     def test_gameplay_navigation_opens_windows_without_legacy_main_menu(self):
         opened = []
@@ -274,7 +269,7 @@ class TestPhaseDQuality(unittest.TestCase):
         self.assertEqual(opened, ["map"])
         self.assertFalse(state.mouse_clicked)
 
-    def test_gameplay_navigation_shortcuts_open_map_and_market_windows(self):
+    def test_gameplay_navigation_shortcuts_do_not_open_market(self):
         opened = []
         window = object.__new__(GameWindow)
         window.current = "main"
@@ -294,9 +289,9 @@ class TestPhaseDQuality(unittest.TestCase):
         window._handle_nav_click(InputState(actions={"map"}))
         window._handle_nav_click(InputState(actions={"market"}))
 
-        self.assertEqual(opened, ["map", "market"])
+        self.assertEqual(opened, ["map"])
 
-    def test_market_shortcut_respects_current_location_availability(self):
+    def test_market_shortcut_is_not_a_supported_navigation_action(self):
         notices = []
         opened = []
         window = object.__new__(GameWindow)
@@ -308,13 +303,13 @@ class TestPhaseDQuality(unittest.TestCase):
             windows={"market": object()},
             open=lambda window_id: opened.append(window_id),
         )
-        window._nav_enabled = lambda: {"market": False}
+        window._nav_enabled = lambda: {}
         window._set_notice = lambda message, level: notices.append((message, level))
 
         window._handle_nav_click(InputState(actions={"market"}))
 
         self.assertEqual(opened, [])
-        self.assertEqual(notices[0][1], "error")
+        self.assertEqual(notices, [])
 
     def test_main_screen_is_reachable_from_world_map(self):
         from application.content_pack import populate_opening_content
@@ -405,7 +400,7 @@ class TestPhaseDQuality(unittest.TestCase):
             item=lambda _item_id: None,
             actor_activity=lambda _actor_id: None,
             state=lambda: SimpleNamespace(simulation_tick=0),
-            market_offers=lambda: (),
+            market_offers=lambda _market_id=None: (),
         )
         self.assertIsNone(
             InventoryScreen(service).handle(InputState(actions={"back", "world", "market", "character"}))
