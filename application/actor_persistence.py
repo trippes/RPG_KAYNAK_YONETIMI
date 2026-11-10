@@ -40,6 +40,7 @@ class ActorRecord:
     character_id: str | None = None
     location_id: str | None = None
     position: Position | None = None
+    inventory_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -90,6 +91,7 @@ class ActorSnapshot:
                 view.character_id,
                 view.location_id,
                 view.position,
+                view.inventory_id,
             )
             for view in registry.actors()
         )
@@ -156,6 +158,7 @@ class ActorSnapshot:
                         record.position.to_dict()
                         if record.position is not None else None
                     ),
+                    "inventory_id": record.inventory_id,
                 }
                 for record in self.actors
             ],
@@ -290,6 +293,7 @@ class ActorSnapshot:
                         record.character_id,
                         record.location_id,
                         record.position,
+                        record.inventory_id,
                     )
                 )
 
@@ -448,6 +452,7 @@ def _actor_record(data) -> ActorRecord:
         _optional_text(data.get("character_id"), "character_id"),
         _optional_text(data.get("location_id"), "location_id"),
         _position(data.get("position")),
+        _optional_text(data.get("inventory_id"), "inventory_id"),
     )
 
 
