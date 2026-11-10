@@ -18,8 +18,9 @@ PERSISTENCE_EXCLUSIONS = (
     "transient runtime objects",
 )
 
+from core.errors import RPGError
 
-class PersistenceSchemaError(ValueError):
+class PersistenceSchemaError(ValueError, RPGError):
     """Malformed persistence contract data."""
 
 
