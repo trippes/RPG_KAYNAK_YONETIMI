@@ -12,6 +12,7 @@ from application import GameplayService
 from character import Ability, CharacterClass, CharacterFactory, Race
 from core.domain.spatial import Position
 from npc import Faction, NPC
+from economy import Currency, Money, MarketProfile, MarketCatalogEntry
 from quests import Dialogue, DialogueChoice, DialogueNode
 from resources import Inventory, Quantity, ResourceType, ResourceUnit, WorldResourceNode
 from world import Location, WorldMap
@@ -294,6 +295,17 @@ def _register_opening_content(application, definition: dict, ids: StarterContent
         resolve_id("npc_id"),
     )
     service.register_dialogue(dialogue)
+    for market_data in definition.get("markets", ()):
+        market_npc_id = market_data["npc_id"]
+        service.register_npc(NPC(
+            market_npc_id, market_data["npc_name"], market_data.get("npc_role", "merchant"),
+            tuple(market_data.get("faction_ids", ())),
+            resolve_id(market_data["location_id"]),
+            position=Position(*(market_data.get("position") or (20, 20))),
+        ))
+        service.register_dialogue(_build_dialogue_from_definition(
+            market_data["dialogue"], market_npc_id,
+        ))
     world_map = _build_world_map_from_definition(
         definition, world.world_id, ids
     )
@@ -331,6 +343,20 @@ def populate_gameplay_resources(service, definition_path=None):
         ids,
         world.world_id,
     )
+    resolve_id = _id_resolver(definition, ids)
+    for market_data in definition.get("markets", ()):
+        catalog = tuple(MarketCatalogEntry(
+            ResourceType(entry["resource_type"]),
+            Money(entry["base_price"], Currency(entry.get("currency", "gold"))),
+            entry["min_quantity"], entry["max_quantity"],
+        ) for entry in market_data["catalog"])
+        service.register_market_profile(MarketProfile(
+            market_data["market_id"], resolve_id(market_data["location_id"]),
+            market_data["npc_id"], market_data["merchant_id"], market_data["inventory_id"],
+            market_data["restock_interval"], catalog, market_data.get("visible_products", 4),
+        ))
+    if service.balance("hero", "gold").amount == 0:
+        service.credit("hero", "gold", 100)
 
 
 def _register_opening_resources(bundle, definition, resolve_id, ids, world_id):
