@@ -186,7 +186,7 @@ class TestPhaseDQuality(unittest.TestCase):
             service.load(path) if False else None
             migrated = migrate_save_data(data)
             self.assertEqual(data, original)
-            self.assertEqual(migrated["schema_version"], 1)
+            self.assertEqual(migrated["schema_version"], 2)
             path.write_text(json.dumps(migrated), encoding="utf-8")
             service.load(path)
 
