@@ -1,7 +1,7 @@
 """Aggregate character entity."""
 from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Mapping
 from .abilities import Ability
 from .attributes import Attributes
 from .skills import Skills
@@ -40,6 +40,7 @@ class Character:
             raise TypeError("appearance must be a string mapping.")
         if isinstance(self.age, bool) or not isinstance(self.age, int) or not 13 <= self.age <= 120:
             raise ValueError("Character age must be between 13 and 120.")
+        self._item_catalog: dict[str, ItemDefinition] = {}
         self.attributes = self.attributes.with_modifiers(self.race.attribute_modifiers)
         self.skills = self.skills.with_ranks(self.character_class.skill_ranks)
         if self.current_hit_points is None:
@@ -74,14 +75,38 @@ class Character:
         return self.equipment.unequip(slot)
 
     def _equipment_bonus(self, field: str) -> int:
-        return sum(
-            getattr(item, field)
-            for item in getattr(self, "_item_catalog", {}).values()
-            if self.equipment.contains(item.item_id)
-        )
+        equipped_ids = tuple(self.equipment.snapshot().values())
+        if not equipped_ids:
+            return 0
+        catalog = getattr(self, "_item_catalog", None)
+        if catalog is None:
+            raise RuntimeError(
+                "Equipped item bonuses cannot be calculated without an item catalog."
+            )
+        missing = sorted(set(equipped_ids) - set(catalog))
+        if missing:
+            raise RuntimeError(
+                "Equipped item definitions are missing from the catalog: "
+                + ", ".join(missing)
+            )
+        return sum(getattr(catalog[item_id], field) for item_id in equipped_ids)
 
-    def bind_item_catalog(self, catalog) -> None:
-        self._item_catalog = dict(catalog)
+    def bind_item_catalog(self, catalog: Mapping[str, ItemDefinition]) -> None:
+        if not isinstance(catalog, Mapping):
+            raise TypeError("catalog must be a mapping of ItemDefinition values.")
+        normalized = dict(catalog)
+        for item_id, item in normalized.items():
+            if not isinstance(item, ItemDefinition):
+                raise TypeError("catalog values must be ItemDefinition instances.")
+            if item_id != item.item_id:
+                raise ValueError("catalog key must match item.item_id.")
+        missing = sorted(set(self.equipment.snapshot().values()) - set(normalized))
+        if missing:
+            raise ValueError(
+                "Equipped item definitions are missing from the catalog: "
+                + ", ".join(missing)
+            )
+        self._item_catalog = normalized
 
     @property
     def abilities(self) -> tuple[Ability, ...]:
