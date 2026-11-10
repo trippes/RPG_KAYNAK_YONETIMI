@@ -69,6 +69,24 @@ class GameplayNavigationTests(unittest.TestCase):
         result = screen.handle(InputState(actions={"confirm"}))
 
         self.assertEqual(result, "market")
+        self.assertFalse(screen.is_active())
+
+    def test_opening_market_from_dialogue_restores_world_as_current_screen(self):
+        from game_ui.game_window import GameWindow
+
+        opened = []
+        window = GameWindow.__new__(GameWindow)
+        window.gameplay_active = True
+        window.gameplay_screen = "main"
+        window.current = "dialogue"
+        window.window_manager = SimpleNamespace(
+            windows={"market": object()},
+            open=lambda window_id: opened.append(window_id),
+        )
+
+        self.assertTrue(window._set_current("market"))
+        self.assertEqual(window.current, "main")
+        self.assertEqual(opened, ["market"])
 
     def test_main_screen_quick_menu_does_not_open_market(self):
         screen = MainScreen(service=None)

@@ -340,6 +340,7 @@ class GameWindow:
             if not self.gameplay_active or target not in self.window_manager.windows:
                 return False
             self.window_manager.open(target)
+            self.current = self.gameplay_screen
             return True
 
         if target == "menu" and self.gameplay_active:

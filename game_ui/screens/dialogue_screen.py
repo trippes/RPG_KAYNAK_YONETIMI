@@ -484,7 +484,8 @@ class DialogueScreen:
                     self.selected = 0
                     if self.node is None:
                         if choice.action == "open_market":
-                            self.message = "Han ürünleri açıldı."
+                            self._reset_dialogue()
+                            self.message = "Pazar ekranı açıldı."
                             return "market"
                         return self._close_dialogue()
                     self._record_current_node()
