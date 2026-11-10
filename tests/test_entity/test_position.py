@@ -1,119 +1,54 @@
-import math
+"""Tests for the mutable Position used by the legacy Entity aggregate."""
+
+import unittest
+
+from core.entity.position import Position
 
 
-class Position:
-    """
-    Entity'nin dünya üzerindeki konumunu temsil eder.
-    """
+class TestEntityPosition(unittest.TestCase):
+    def test_default_position(self):
+        position = Position()
+        self.assertEqual(position.get_position(), (0, 0))
 
-    def __init__(self, x=0, y=0):
-        self._validate_coordinate(x, "x")
-        self._validate_coordinate(y, "y")
+    def test_initial_coordinates(self):
+        position = Position(10, 20)
+        self.assertEqual(position.get_position(), (10, 20))
 
-        self.x = x
-        self.y = y
+    def test_invalid_coordinates_are_rejected(self):
+        for value in (True, "1", None):
+            with self.subTest(value=value):
+                with self.assertRaises(TypeError):
+                    Position(value, 0)
 
-    @staticmethod
-    def _validate_coordinate(value, name):
-        """
-        Koordinat değerinin geçerli olup olmadığını kontrol eder.
-        """
+    def test_set_position(self):
+        position = Position()
+        position.set_position(3, 7)
+        self.assertEqual(position.get_position(), (3, 7))
 
-        if isinstance(value, bool) or not isinstance(
-            value,
-            (int, float)
-        ):
-            raise TypeError(
-                f"{name} koordinatı int veya float olmalıdır."
-            )
+    def test_move(self):
+        position = Position(2, 4)
+        position.move(3, -1)
+        self.assertEqual(position.get_position(), (5, 3))
 
-    @staticmethod
-    def _validate_movement(value, name):
-        """
-        Hareket değerinin geçerli olup olmadığını kontrol eder.
-        """
+    def test_distance_to(self):
+        first = Position(0, 0)
+        second = Position(3, 4)
+        self.assertEqual(first.distance_to(second), 5.0)
 
-        if isinstance(value, bool) or not isinstance(
-            value,
-            (int, float)
-        ):
-            raise TypeError(
-                f"{name} hareket değeri int veya float olmalıdır."
-            )
+    def test_same_as(self):
+        self.assertTrue(Position(2, 5).same_as(Position(2, 5)))
+        self.assertFalse(Position(2, 5).same_as(Position(5, 2)))
 
-    def set_position(self, x, y):
-        """
-        Entity'nin konumunu doğrudan değiştirir.
-        """
+    def test_copy_is_independent(self):
+        original = Position(1, 2)
+        copied = original.copy()
+        copied.move(3, 4)
+        self.assertEqual(original.get_position(), (1, 2))
+        self.assertEqual(copied.get_position(), (4, 6))
 
-        self._validate_coordinate(x, "x")
-        self._validate_coordinate(y, "y")
+    def test_to_dict(self):
+        self.assertEqual(Position(8, 9).to_dict(), {"x": 8, "y": 9})
 
-        self.x = x
-        self.y = y
 
-    def get_position(self):
-        """
-        Mevcut konumu tuple olarak döndürür.
-        """
-
-        return (self.x, self.y)
-
-    def move(self, dx=0, dy=0):
-        """
-        Entity'yi verilen miktarda hareket ettirir.
-        """
-
-        self._validate_movement(dx, "dx")
-        self._validate_movement(dy, "dy")
-
-        self.x += dx
-        self.y += dy
-
-    def distance_to(self, other):
-        """
-        Başka bir Position nesnesine olan Öklid mesafesini döndürür.
-        """
-
-        if not isinstance(other, Position):
-            raise TypeError(
-                "Mesafe hesaplamak için Position nesnesi gereklidir."
-            )
-
-        return math.hypot(
-            self.x - other.x,
-            self.y - other.y
-        )
-
-    def same_as(self, other):
-        """
-        Başka bir Position nesnesiyle aynı konumda olup olmadığını döndürür.
-        """
-
-        if not isinstance(other, Position):
-            return False
-
-        return (
-            self.x == other.x
-            and self.y == other.y
-        )
-
-    def copy(self):
-        """
-        Position nesnesinin bağımsız bir kopyasını döndürür.
-        """
-
-        return Position(
-            self.x,
-            self.y
-        )
-
-    def to_dict(self):
-        """
-        Konumu sözlük olarak döndürür.
-        """
-
-        return {
-            "x": self.x,
-            "y": self.y,
-        }
+if __name__ == "__main__":
+    unittest.main()
