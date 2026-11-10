@@ -73,7 +73,7 @@ the player must review and confirm the new state; if it disappears, the stale
 confirmation is cancelled. The actual write still goes through the atomic file
 adapter, which preserves a validated previous primary as `.bak`.
 
-Deleting a slot requires confirmation and removes both the primary and backup.
+Deleting a slot requires confirmation and removes both the primary and backup while holding the same per-slot lock, so deletion cannot race with save or recovery.
 The primary is removed first; if backup removal fails, the backup remains
 available for recovery and the UI reports the deletion error. Empty slots can
 be selected for a new save without an overwrite prompt.
