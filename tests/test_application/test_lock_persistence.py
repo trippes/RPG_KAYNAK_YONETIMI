@@ -16,10 +16,10 @@ class TestLockPersistence(unittest.TestCase):
     def _manager(self):
         manager = LockManager(
             lockpick_profiles=(LockpickProfile(
-                "fine_pick", ("lockpick",), True, True, 4,
+                "fine_pick", ("lockpick",), True, True, 4, 17,
             ),),
             force_profiles=(ForceProfile(
-                "wood_force", True, 6, ("axe",), "break",
+                "wood_force", True, 6, ("axe",), "break", 19,
             ),),
         )
         manager.register_lock_definition(LockDefinition(
@@ -42,7 +42,9 @@ class TestLockPersistence(unittest.TestCase):
         self.assertEqual(restored.lock_definitions()[0].definition_id, "vault_lock")
         self.assertEqual(restored.key_definitions()[0].key_id, "vault_key")
         self.assertEqual(restored.lockpick_profiles()[0].minimum_skill, 4)
+        self.assertEqual(restored.lockpick_profiles()[0].difficulty_class, 17)
         self.assertEqual(restored.force_profiles()[0].success_effect, "break")
+        self.assertEqual(restored.force_profiles()[0].difficulty_class, 19)
         self.assertEqual(restored.instances()[0].entity_id, "vault_entity")
         self.assertTrue(restored.instances()[0].broken)
         self.assertEqual(restored.owner_bindings(), (("vault_key", "actor_01"),))
