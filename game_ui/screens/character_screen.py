@@ -5,6 +5,25 @@ from ..renderer import (
 
 
 class CharacterScreen:
+    """Character-sheet content rendered inside the movable gameplay window."""
+
+    CONTENT_X = 24
+    CONTENT_Y = 126
+    CONTENT_WIDTH = 760
+    CONTENT_HEIGHT = 430
+    PADDING = 16
+    HEADER_HEIGHT = 42
+    GAP = 12
+
+    ATTRIBUTE_LABELS = {
+        "strength": "Güç",
+        "dexterity": "Çeviklik",
+        "constitution": "Dayanıklılık",
+        "intelligence": "Zekâ",
+        "wisdom": "Bilgelik",
+        "charisma": "Karizma",
+    }
+
     def __init__(self, service):
         self.service = service
         self.selected_skill = 0
@@ -15,9 +34,11 @@ class CharacterScreen:
             return "world"
         if state.pressed("inventory"):
             return "inventory"
+
         character = self.service.actor_character("hero")
         skills = tuple(character.skills.to_dict()) if character is not None else ()
         if skills:
+            self.selected_skill %= len(skills)
             if state.pressed("up"):
                 self.selected_skill = (self.selected_skill - 1) % len(skills)
             if state.pressed("down"):
@@ -28,82 +49,160 @@ class CharacterScreen:
                     self.message = f"{skills[self.selected_skill]} becerisi {value} oldu."
                 except (KeyError, ValueError, RuntimeError) as error:
                     self.message = str(error)
+        else:
+            self.selected_skill = 0
         return None
 
+    def _layout(self):
+        x, y = self.CONTENT_X, self.CONTENT_Y
+        width, height = self.CONTENT_WIDTH, self.CONTENT_HEIGHT
+        pad, gap = self.PADDING, self.GAP
+        inner_width = width - pad * 2
+        top_height = 126
+        lower_y = y + self.HEADER_HEIGHT + top_height + gap
+        lower_height = height - self.HEADER_HEIGHT - top_height - gap - pad
+        left_width = 344
+        return {
+            "outer": (x, y, width, height),
+            "summary": (x + pad, y + self.HEADER_HEIGHT, 242, top_height - 10),
+            "attributes": (x + pad + 242 + gap, y + self.HEADER_HEIGHT,
+                           inner_width - 242 - gap, top_height - 10),
+            "skills": (x + pad, lower_y, left_width, lower_height),
+            "quests": (x + pad + left_width + gap, lower_y,
+                       inner_width - left_width - gap, lower_height),
+        }
+
     def render(self, renderer):
+        # The WindowManager draws the title bar and owns the outer window frame.
         snapshot = self.service.state()
-        renderer.frame("Karakter")
-        renderer.hud(self.service)
+        layout = self._layout()
+        outer = renderer.pg.Rect(*layout["outer"])
+        renderer.panel(outer, (25, 31, 43), (145, 118, 70))
+        renderer.text("KARAKTER PROFİLİ", outer.x + 18, outer.y + 10, GOLD)
+        renderer.text(
+            "Özellikler, gelişim ve macera durumu",
+            outer.x + 18, outer.y + 26, MUTED,
+        )
+
         if not snapshot.actors:
-            renderer.panel(renderer.pg.Rect(24, 126, 760, 430), (25, 31, 43), (145, 118, 70))
-            renderer.text("Karakter kaydı bulunamadı.", 50, 180, MUTED)
+            renderer.text(
+                "Karakter kaydı bulunamadı.",
+                outer.x + 24, outer.y + 92, MUTED,
+            )
             return
 
         actor = snapshot.actors[0]
         stats = self.service.actor_stats(actor.actor_id) or {}
-        renderer.panel(renderer.pg.Rect(24, 126, 760, 430), (25, 31, 43), (145, 118, 70))
+        character = self.service.actor_character("hero")
+        self._render_summary(renderer, renderer.pg.Rect(*layout["summary"]), stats)
+        self._render_attributes(
+            renderer, renderer.pg.Rect(*layout["attributes"]), stats.get("attributes", {})
+        )
+        self._render_skills(renderer, renderer.pg.Rect(*layout["skills"]), character)
+        quest_rect = renderer.pg.Rect(*layout["quests"])
+        renderer.panel(quest_rect, (27, 35, 50), PANEL_BORDER)
+        renderer.text("GÖREV DURUMU", quest_rect.x + 14, quest_rect.y + 12, GOLD)
+        renderer.quest_panel(
+            self.service,
+            renderer.pg.Rect(
+                quest_rect.x + 8, quest_rect.y + 34,
+                quest_rect.width - 16, quest_rect.height - 42,
+            ),
+        )
 
-        # Summary card: identity and combat readiness.
-        summary = renderer.pg.Rect(40, 146, 246, 166)
-        renderer.panel(summary, (32, 40, 54), PANEL_BORDER)
-        renderer.text(stats.get("name", actor.actor_id), 56, 160, GOLD, title=True, max_width=210)
+    def _render_summary(self, renderer, rect, stats):
+        renderer.panel(rect, (32, 40, 54), PANEL_BORDER)
+        name = stats.get("name") or "Gezgin"
         renderer.text(
-            f"Seviye {stats.get('level', 1)}   {stats.get('age', 0)} yaş",
-            58, 202, TEXT_SOFT,
+            renderer.fit_text(name, rect.width - 28),
+            rect.x + 14, rect.y + 12, GOLD, title=True,
+            max_width=rect.width - 28,
+        )
+        renderer.text(
+            f"SEVİYE {stats.get('level', 1)}  ·  {stats.get('age', 0)} yaş",
+            rect.x + 14, rect.y + 42, TEXT_SOFT,
         )
         current_hp = stats.get("current_hit_points", 0)
         max_hp = stats.get("max_hit_points", 0)
-        renderer.text("Can", 58, 234, MUTED)
-        renderer.bar(renderer.pg.Rect(96, 238, 140, 13), current_hp / max_hp if max_hp else 0, GOOD)
-        renderer.text(f"{current_hp}/{max_hp}", 58, 258, TEXT_SOFT)
+        renderer.text("CAN", rect.x + 14, rect.y + 70, MUTED)
+        renderer.bar(
+            renderer.pg.Rect(rect.x + 54, rect.y + 73, rect.width - 126, 12),
+            current_hp / max_hp if max_hp else 0,
+            GOOD,
+        )
+        renderer.text(
+            f"{current_hp}/{max_hp}",
+            rect.right - 62, rect.y + 68, TEXT_SOFT,
+        )
         renderer.text(
             f"Saldırı +{stats.get('attack_bonus', 0)}   Savunma +{stats.get('defense_bonus', 0)}",
-            58, 280, TEXT_SOFT, max_width=210,
+            rect.x + 14, rect.y + 94, TEXT_SOFT,
+            max_width=rect.width - 28,
         )
 
-        # Attribute cards preserve the existing values while making them scannable.
-        attributes = tuple(stats.get("attributes", {}).items())
-        attributes_panel = renderer.pg.Rect(304, 146, 464, 166)
-        renderer.panel(attributes_panel, (27, 35, 50), PANEL_BORDER)
-        renderer.text("Temel Özellikler", 322, 158, GOLD)
-        attribute_labels = {
-            "strength": "Güç", "dexterity": "Çeviklik",
-            "constitution": "Dayanıklılık", "intelligence": "Zeka",
-            "wisdom": "Bilgelik", "charisma": "Karizma",
-        }
-        for index, (attribute, value) in enumerate(attributes[:6]):
-            column, row = index % 3, index // 3
-            rect = renderer.pg.Rect(320 + column * 145, 190 + row * 52, 132, 40)
-            hovered = renderer.hovered(rect)
-            fill = BUTTON_HOVER if hovered else (BUTTON_SELECTED if value >= 14 else (35, 44, 60))
-            border = HIGHLIGHT if hovered else PANEL_BORDER
-            renderer.panel(rect, fill, border)
-            label = attribute_labels.get(str(getattr(attribute, "value", attribute)), str(attribute))
-            renderer.text(label, rect.x + 10, rect.y + 6, TEXT_SOFT, max_width=92)
-            renderer.text(str(value), rect.right - 28, rect.y + 6, GOLD, max_width=20)
+    def _render_attributes(self, renderer, rect, attributes):
+        renderer.panel(rect, (27, 35, 50), PANEL_BORDER)
+        renderer.text("TEMEL ÖZELLİKLER", rect.x + 14, rect.y + 12, GOLD)
+        values = tuple(attributes.items())[:6]
+        columns = 3
+        gap = 7
+        card_width = (rect.width - 28 - gap * (columns - 1)) // columns
+        for index, (attribute, value) in enumerate(values):
+            column, row = index % columns, index // columns
+            card = renderer.pg.Rect(
+                rect.x + 14 + column * (card_width + gap),
+                rect.y + 42 + row * 34,
+                card_width, 29,
+            )
+            hovered = renderer.hovered(card)
+            renderer.panel(
+                card,
+                BUTTON_HOVER if hovered else (35, 44, 60),
+                HIGHLIGHT if hovered else PANEL_BORDER,
+            )
+            key = str(getattr(attribute, "value", attribute))
+            label = self.ATTRIBUTE_LABELS.get(key, key.replace("_", " ").title())
+            renderer.text(label, card.x + 7, card.y + 6, TEXT_SOFT,
+                          max_width=card.width - 35)
+            renderer.text(str(value), card.right - 25, card.y + 6, GOLD)
 
-        character = self.service.actor_character("hero")
-        skill_values = tuple(character.skills.to_dict().items()) if character is not None else ()
-        skill_panel = renderer.pg.Rect(40, 330, 350, 210)
-        renderer.panel(skill_panel, (27, 35, 50), PANEL_BORDER)
-        renderer.text(
-            f"Beceriler   Puan: {character.progression.unspent_points if character else 0}",
-            58, 346, GOLD,
-        )
-        if skill_values:
-            for index, (skill, value) in enumerate(skill_values[:6]):
-                color = GOOD if index == self.selected_skill else TEXT_SOFT
-                row = renderer.pg.Rect(56, 378 + index * 25, 318, 22)
-                if index == self.selected_skill:
+    def _render_skills(self, renderer, rect, character):
+        renderer.panel(rect, (27, 35, 50), PANEL_BORDER)
+        points = character.progression.unspent_points if character else 0
+        renderer.text("BECERİ GELİŞİMİ", rect.x + 14, rect.y + 12, GOLD)
+        renderer.text(f"Kullanılabilir puan: {points}",
+                      rect.x + 14, rect.y + 31, MUTED)
+
+        skills = tuple(character.skills.to_dict().items()) if character else ()
+        if not skills:
+            renderer.text("Geliştirilebilir beceri bulunmuyor.",
+                          rect.x + 14, rect.y + 66, MUTED)
+        else:
+            visible = skills[:6]
+            for index, (skill, value) in enumerate(visible):
+                row = renderer.pg.Rect(
+                    rect.x + 12, rect.y + 56 + index * 25,
+                    rect.width - 24, 22,
+                )
+                selected = index == self.selected_skill
+                if selected:
                     renderer.panel(row, BUTTON_SELECTED, HIGHLIGHT)
                 renderer.text(
-                    f"{'> ' if index == self.selected_skill else '  '}{skill}",
-                    66, 380 + index * 25, color, max_width=230,
+                    f"{'› ' if selected else '  '}{skill}",
+                    row.x + 8, row.y + 3,
+                    GOOD if selected else TEXT_SOFT,
+                    max_width=row.width - 56,
                 )
-                renderer.text(str(value), 342, 380 + index * 25, color)
-        else:
-            renderer.text("Sınıf becerisi bulunmuyor.", 58, 390, MUTED)
+                renderer.text(str(value), row.right - 26, row.y + 3,
+                              GOLD if selected else TEXT_SOFT)
+
         if self.message:
-            renderer.text(renderer.fit_text(self.message, 320), 58, 510, GOOD)
-        renderer.quest_panel(self.service, renderer.pg.Rect(410, 330, 358, 210))
-        renderer.text("↑/↓ Beceri seç   Enter Puan harca   Esc Kapat", 410, 548, MUTED, max_width=358)
+            renderer.text(
+                renderer.fit_text(self.message, rect.width - 28),
+                rect.x + 14, rect.bottom - 42, GOOD,
+                max_width=rect.width - 28,
+            )
+        renderer.text(
+            "↑ / ↓ Seç   Enter: Puan harca",
+            rect.x + 14, rect.bottom - 22, MUTED,
+        )
