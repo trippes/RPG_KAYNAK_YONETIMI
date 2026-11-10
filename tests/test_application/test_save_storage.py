@@ -557,5 +557,129 @@ class TestSaveStorage(unittest.TestCase):
             self.assertTrue(screen.pending_overwrite)
             self.assertIn("Kayıt klasörü hazırlanamadı", screen.message)
 
+
+    def test_backup_only_slot_is_treated_as_occupied_and_requires_confirmation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            save_dir = Path(directory)
+            backup = save_dir / "slot_1.json.bak"
+            backup.write_text("recoverable-save", encoding="utf-8")
+            callback = mock.Mock()
+            screen = SaveSlotsScreen(save_dir, callback, mode="save")
+            state = type(
+                "State",
+                (),
+                {
+                    "pressed": lambda self, action: action == "confirm",
+                    "mouse_pos": None,
+                    "mouse_clicked": False,
+                },
+            )()
+
+            self.assertIsNone(screen.handle(state))
+            self.assertTrue(screen.pending_overwrite)
+            callback.assert_not_called()
+
+            self.assertEqual(screen.handle(state), callback.return_value)
+            callback.assert_called_once_with(0, save_dir / "slot_1.json", True)
+
+    def test_overwrite_confirmation_is_repeated_when_slot_changes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            save_dir = Path(directory)
+            target = save_dir / "slot_1.json"
+            target.write_text("old", encoding="utf-8")
+            callback = mock.Mock()
+            screen = SaveSlotsScreen(save_dir, callback, mode="save")
+            state = type(
+                "State",
+                (),
+                {
+                    "pressed": lambda self, action: action == "confirm",
+                    "mouse_pos": None,
+                    "mouse_clicked": False,
+                },
+            )()
+
+            screen.handle(state)
+            target.write_text("new save contents", encoding="utf-8")
+            self.assertIsNone(screen.handle(state))
+
+            self.assertTrue(screen.pending_overwrite)
+            self.assertIn("Kayıt değişti", screen.message)
+            callback.assert_not_called()
+
+            screen.handle(state)
+            callback.assert_called_once_with(0, target, True)
+
+    def test_overwrite_confirmation_is_cancelled_when_slot_disappears(self):
+        with tempfile.TemporaryDirectory() as directory:
+            save_dir = Path(directory)
+            target = save_dir / "slot_1.json"
+            target.write_text("existing", encoding="utf-8")
+            callback = mock.Mock()
+            screen = SaveSlotsScreen(save_dir, callback, mode="save")
+            state = type(
+                "State",
+                (),
+                {
+                    "pressed": lambda self, action: action == "confirm",
+                    "mouse_pos": None,
+                    "mouse_clicked": False,
+                },
+            )()
+
+            screen.handle(state)
+            target.unlink()
+            self.assertIsNone(screen.handle(state))
+
+            self.assertFalse(screen.pending_overwrite)
+            self.assertIn("artık mevcut değil", screen.message)
+            callback.assert_not_called()
+
+    def test_confirmed_slot_delete_removes_primary_and_backup(self):
+        with tempfile.TemporaryDirectory() as directory:
+            save_dir = Path(directory)
+            primary = save_dir / "slot_1.json"
+            backup = Path(f"{primary}.bak")
+            primary.write_text("primary", encoding="utf-8")
+            backup.write_text("backup", encoding="utf-8")
+            screen = SaveSlotsScreen(save_dir, mock.Mock(), mode="load")
+            delete_state = type(
+                "State",
+                (),
+                {
+                    "pressed": lambda self, action: action == "delete",
+                    "mouse_pos": None,
+                    "mouse_clicked": False,
+                },
+            )()
+            confirm_state = type(
+                "State",
+                (),
+                {
+                    "pressed": lambda self, action: action == "confirm",
+                    "mouse_pos": None,
+                    "mouse_clicked": False,
+                },
+            )()
+
+            screen.handle(delete_state)
+            self.assertTrue(screen.pending_delete)
+            screen.handle(confirm_state)
+
+            self.assertFalse(primary.exists())
+            self.assertFalse(backup.exists())
+            self.assertIn("silindi", screen.message)
+
+    def test_latest_save_finds_backup_only_slot(self):
+        with tempfile.TemporaryDirectory() as directory:
+            save_dir = Path(directory)
+            primary = save_dir / "slot_4.json"
+            Path(f"{primary}.bak").write_text("recoverable", encoding="utf-8")
+            window = object.__new__(GameWindow)
+            window.save_path = save_dir / "slot_1.json"
+            window.save_dir = save_dir
+
+            self.assertEqual(window._latest_save_path(), primary)
+
 if __name__ == "__main__":
     unittest.main()
