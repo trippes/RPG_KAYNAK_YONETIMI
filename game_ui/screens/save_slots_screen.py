@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from application.save_lock import save_path_lock
+
 from ..renderer import GOLD, MUTED, TEXT_SOFT
 
 
@@ -162,10 +164,13 @@ class SaveSlotsScreen:
             return
         paths = (self.slot_path(self.selected), self.slot_backup_path(self.selected))
         try:
-            # Remove the primary first. If backup removal fails, the backup
-            # remains loadable and the slot is still visibly occupied.
-            for path in paths:
-                path.unlink(missing_ok=True)
+            # Deletion shares the same slot lock as save/load so it cannot
+            # remove a primary or backup while another operation is using it.
+            with save_path_lock(paths[0]):
+                # Remove the primary first. If backup removal fails, the backup
+                # remains loadable and the slot is still visibly occupied.
+                for path in paths:
+                    path.unlink(missing_ok=True)
         except OSError as error:
             self.message = f"Kayıt silinemedi: {error}"
         else:
