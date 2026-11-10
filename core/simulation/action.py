@@ -1,3 +1,4 @@
+from copy import deepcopy
 from enum import Enum
 from types import MappingProxyType
 from typing import Mapping
@@ -16,7 +17,11 @@ class ActionState(Enum):
 
 
 class Action:
-    """Canonical deterministic action with guarded lifecycle transitions."""
+    """Canonical action with guarded transitions and a read-only context mapping.
+
+The context is deep-copied on construction, but nested containers are not
+recursively frozen and must be treated as immutable by consumers.
+"""
 
     def __init__(
         self,
@@ -36,7 +41,7 @@ class Action:
         self._owner_id = owner_id
         self._created_tick = created_tick
         self._duration = duration
-        self._context = MappingProxyType(dict(context or {}))
+        self._context = MappingProxyType(deepcopy(dict(context or {})))
         self._state = ActionState.CREATED
         self._scheduled_tick = None
         self._started_tick = None
