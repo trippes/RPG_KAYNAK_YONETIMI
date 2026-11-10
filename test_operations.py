@@ -1,42 +1,18 @@
-from core.math.operations import *
+"""Unit tests for arithmetic helpers."""
+import unittest
+from core.math.operations import topla, cikar, carp, bol, mod, minimum, maksimum
 
+class TestOperations(unittest.TestCase):
+    def test_basic_arithmetic(self):
+        self.assertEqual(topla(10, 5), 15); self.assertEqual(cikar(10, 5), 5)
+        self.assertEqual(carp(10, 5), 50); self.assertEqual(bol(10, 5), 2)
+        self.assertEqual(mod(10, 3), 1)
+    def test_minimum_and_maximum(self):
+        self.assertEqual(minimum(10, 5), 5); self.assertEqual(maksimum(10, 5), 10)
+    def test_invalid_operands_and_zero_divisors(self):
+        with self.assertRaises(TypeError): topla(10, "5")
+        with self.assertRaises(TypeError): carp(True, 2)
+        with self.assertRaises(ZeroDivisionError): bol(10, 0)
+        with self.assertRaises(ZeroDivisionError): mod(10, 0)
 
-print("=== TOPLAMA ===")
-print("10 + 5 =", topla(10, 5))
-
-print()
-print("=== ÇIKARMA ===")
-print("10 - 5 =", cikar(10, 5))
-
-print()
-print("=== ÇARPMA ===")
-print("10 * 5 =", carp(10, 5))
-
-print()
-print("=== BÖLME ===")
-print("10 / 5 =", bol(10, 5))
-
-print()
-print("=== MODULO ===")
-print("10 % 3 =", mod(10, 3))
-
-print()
-print("=== MINIMUM ===")
-print("10 ve 5 ->", minimum(10, 5))
-
-print()
-print("=== MAKSIMUM ===")
-print("10 ve 5 ->", maksimum(10, 5))
-
-print()
-print("=== HATA KONTROLLER ===")
-
-try:
-    bol(10, 0)
-except ZeroDivisionError as hata:
-    print("Sıfıra bölme kontrolü OK:", hata)
-
-try:
-    topla(10, "5")
-except TypeError as hata:
-    print("Geçersiz sayı kontrolü OK:", hata)
+if __name__ == "__main__": unittest.main()
