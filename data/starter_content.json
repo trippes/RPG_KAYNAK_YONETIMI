@@ -791,7 +791,7 @@
       "merchant_id": "merchant_inn",
       "inventory_id": "market_inn_inventory",
       "restock_interval": 360,
-      "visible_products": 3,
+      "visible_products": 2,
       "position": [
         20,
         23
