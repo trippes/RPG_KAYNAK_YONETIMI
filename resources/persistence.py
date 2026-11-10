@@ -24,12 +24,13 @@ from .resource import Quantity, ResourceType, ResourceUnit
 GAMEPLAY_SCHEMA = "rpg-gameplay"
 GAMEPLAY_SCHEMA_VERSION = 1
 
+from core.errors import RPGError
 
-class GameplayPersistenceError(ValueError):
+class GameplayPersistenceError(ValueError, RPGError):
     """Invalid gameplay snapshot or restore input."""
 
 
-class GameplayFileError(OSError):
+class GameplayFileError(OSError, RPGError):
     """Gameplay snapshot filesystem failure."""
 
 
