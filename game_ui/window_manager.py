@@ -199,6 +199,13 @@ class WindowManager:
             state.mouse_clicked = False
             return True
 
+        if state.mouse_pos is not None and state.mouse_wheel:
+            window = self._top_at(state.mouse_pos)
+            if window is not None:
+                self.focus(window.window_id)
+                self._dispatch(window, state)
+                return True
+
         if state.mouse_pos is not None and (
             state.mouse_button_down or state.mouse_clicked
         ):
@@ -228,7 +235,7 @@ class WindowManager:
             if (
                 state.mouse_motion
                 or state.mouse_button_up
-                or (state.mouse_wheel and state.mouse_pos is None)
+                or state.mouse_wheel
             ) and (
                 inside or pointer_capture or (state.mouse_wheel and state.mouse_pos is None)
             ):
@@ -237,7 +244,7 @@ class WindowManager:
 
         if self.focused_id is not None:
             window = self.windows[self.focused_id]
-            if state.actions:
+            if state.actions or state.text:
                 self._dispatch(window, state)
                 return True
         return False

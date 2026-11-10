@@ -22,6 +22,10 @@ from application.save_storage import SaveStorage, SaveStorageError
 
 # Screens that show the navigation tab bar / resource bar.
 NAV_SCREENS = frozenset({"local_map"})
+# Gameplay tools are windows owned by the persistent LocalMapScreen surface.
+GAMEPLAY_WINDOW_IDS = frozenset({
+    "character", "inventory", "quest_log", "map", "production", "market",
+})
 NOTICE_FRAMES = 240  # ~4 seconds at 60 fps
 PAUSE_MENU_OPTIONS = (
     ("resume", "Oyuna Dön"),
@@ -330,7 +334,9 @@ class GameWindow:
         if target == "world":
             target = self.gameplay_screen
 
-        if target in self.window_manager.windows:
+        if target in GAMEPLAY_WINDOW_IDS:
+            if not self.gameplay_active or target not in self.window_manager.windows:
+                return False
             self.window_manager.open(target)
             return True
 

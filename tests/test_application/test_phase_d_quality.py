@@ -973,6 +973,38 @@ class TestPhaseDQuality(unittest.TestCase):
         self.assertFalse(window._set_current("menu"))
         self.assertEqual(window.current, "local_map")
 
+    def test_gameplay_tool_routes_open_windows_without_replacing_main_screen(self):
+        class Manager:
+            def __init__(self):
+                self.windows = {"inventory": object()}
+                self.opened = []
+
+            def open(self, window_id):
+                self.opened.append(window_id)
+
+        window = object.__new__(GameWindow)
+        window.gameplay_active = True
+        window.gameplay_screen = "local_map"
+        window.current = "local_map"
+        window.window_manager = Manager()
+
+        self.assertTrue(window._set_current("inventory"))
+        self.assertEqual(window.window_manager.opened, ["inventory"])
+        self.assertEqual(window.current, "local_map")
+        self.assertTrue(window.gameplay_active)
+
+        window.gameplay_active = False
+        self.assertFalse(window._set_current("inventory"))
+        self.assertEqual(window.current, "local_map")
+        self.assertEqual(window.window_manager.opened, ["inventory"])
+
+    def test_gameplay_window_ids_are_the_six_supported_tool_windows(self):
+        from game_ui.game_window import GAMEPLAY_WINDOW_IDS
+
+        self.assertEqual(GAMEPLAY_WINDOW_IDS, {
+            "character", "inventory", "quest_log", "map", "production", "market",
+        })
+
     def test_gameplay_world_renders_before_active_surface(self):
         calls = []
 
@@ -1280,6 +1312,51 @@ class TestPhaseDQuality(unittest.TestCase):
             ),
             (344, 190),
         )
+
+    def test_window_manager_routes_focused_keyboard_text_and_wheel_input(self):
+        class Rect:
+            def __init__(self, value):
+                self.x, self.y, self.width, self.height = value
+            @property
+            def right(self):
+                return self.x + self.width
+            @property
+            def bottom(self):
+                return self.y + self.height
+            @property
+            def topleft(self):
+                return self.x, self.y
+            @topleft.setter
+            def topleft(self, value):
+                self.x, self.y = value
+            def collidepoint(self, point):
+                return self.x <= point[0] < self.right and self.y <= point[1] < self.bottom
+
+        class Backend:
+            Rect = Rect
+
+        class Screen:
+            def __init__(self):
+                self.states = []
+            def handle(self, state):
+                self.states.append(state)
+
+        screen = Screen()
+        manager = WindowManager(Backend(), 960, 640)
+        manager.register("inventory", screen, (100, 100, 300, 240))
+        manager.open("inventory")
+
+        self.assertTrue(manager.handle_input(InputState(actions={"up"})))
+        self.assertEqual(screen.states[-1].actions, {"up"})
+
+        self.assertTrue(manager.handle_input(InputState(text="a")))
+        self.assertEqual(screen.states[-1].text, "a")
+
+        self.assertTrue(manager.handle_input(InputState(
+            mouse_pos=(150, 150), mouse_wheel=1,
+        )))
+        self.assertEqual(screen.states[-1].mouse_wheel, 1)
+        self.assertEqual(len(screen.states), 3)
 
     def test_window_manager_close_preserves_gameplay_owner(self):
         class Rect:
