@@ -11,8 +11,9 @@ from resources import Inventory, ProductionJob, ProductionJobManager, Recipe
 
 from .production_capacity import ProductionCapacity, ProductionCapacityError
 
+from core.errors import RPGError
 
-class ProductionFacilityError(ValueError):
+class ProductionFacilityError(ValueError, RPGError):
     """Invalid facility, recipe compatibility or facility lifecycle operation."""
 
 
