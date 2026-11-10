@@ -179,7 +179,7 @@ class GameWindow:
         self.window_manager.register(
             "container",
             self.screens["container"],
-            (100, 100, min(self.width - 100, 820), min(self.height - 100, 470)),
+            (40, 70, min(self.width - 80, 920), min(self.height - 80, 560)),
             content_origin=(24, 126),
             title="Konteyner",
         )
