@@ -1,7 +1,9 @@
 import unittest
+import tempfile
+from pathlib import Path
 
 from application import (
-    ContainerSnapshot, GameSaveDocument, SaveJsonCodec,
+    ContainerSnapshot, GameApplication, GameSaveDocument, GameplayService, SaveJsonCodec,
     WorldObjectPlacement, WorldObjectPlacementRegistry,
 )
 from character import ItemDefinition
@@ -16,6 +18,9 @@ from resources import (
 from core.application import GameSession
 from core.persistence import CanonicalSessionState, PersistenceDocument
 from world.local_map import LocalMapDefinition
+from core.entity.entity import Entity
+from core.entity import EntityType
+from application.content_pack import build_starter_world_map
 
 
 class TestContainerPersistence(unittest.TestCase):
@@ -117,6 +122,37 @@ class TestContainerPersistence(unittest.TestCase):
         self.assertEqual(decoded.schema_version, 2)
         self.assertEqual(decoded.containers.to_dict(), container_snapshot.to_dict())
         self.assertEqual(SaveJsonCodec.encode(decoded), encoded)
+
+    def test_game_application_save_load_restores_world_container_placement(self):
+        application = GameApplication.create_default()
+        world = application.dunya_olustur("Main", world_id="world_main")
+        service = GameplayService(application)
+        world_map = build_starter_world_map(world.world_id)
+        service.register_world_map(world_map)
+        location_id = world_map.locations()[0].location_id
+        entity = Entity(EntityType.ESYA, "Chest", entity_id="chest_entity")
+        application.varlik_ekle(entity)
+        service.register_container_definition(ContainerDefinition(
+            "basic_chest", "Basic chest", max_contents_weight_kg=10,
+            max_slots=5, max_contents_volume_liters=10,
+        ))
+        service.register_container(ContainerInstance(
+            "chest_01", entity.entity_id, "basic_chest",
+        ))
+        service.place_container("chest_01", location_id, 2, 3)
+
+        restored_application = GameApplication.create_default()
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "save.json"
+            application.save(path)
+            restored_bundle = restored_application.load(path)
+
+        restored_instance = restored_bundle.containers.get("chest_01")
+        self.assertIsNotNone(restored_instance)
+        self.assertEqual(restored_instance.entity_id, "chest_entity")
+        placement = restored_bundle.world_objects.get("chest_entity")
+        self.assertIsNotNone(placement)
+        self.assertEqual((placement.location_id, placement.x, placement.y), (location_id, 2, 3))
 
     def test_snapshot_rejects_duplicate_or_unknown_relationships(self):
         manager, placements, items, resources = self._runtime()
