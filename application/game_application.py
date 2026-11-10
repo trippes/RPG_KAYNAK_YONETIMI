@@ -9,7 +9,7 @@ from core.constants import (
     OLAY_OYUN_DURAKLATILDI,
 )
 from core.entity.entity import Entity
-from core.event_manager import EventManager
+from core.compatibility.event_manager_adapter import CanonicalEventManagerAdapter
 from core.event_types import EventType
 from core.game_state import GameState
 from core.compatibility import CanonicalActionAdapter, deprecated_api
@@ -48,7 +48,7 @@ class GameApplication:
     def __init__(self, holder: SessionHolder | None = None) -> None:
         self.holder = holder if holder is not None else SessionHolder()
         self.state = GameState()
-        self.event_manager = EventManager()
+        self.event_manager = CanonicalEventManagerAdapter()
         self._action_adapters = {}
         self.events = self.event_manager.event_queue
 
