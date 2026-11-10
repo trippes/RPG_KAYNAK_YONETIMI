@@ -2,7 +2,9 @@
 
 import os
 import shutil
+import stat
 import tempfile
+import time
 from pathlib import Path
 from typing import Union
 
@@ -11,6 +13,7 @@ from .save_document import GameSaveDocument, SaveDocumentError, UnsupportedSaveS
 
 
 PathLike = Union[str, os.PathLike[str]]
+ORPHAN_TEMP_MAX_AGE_SECONDS = 7 * 24 * 60 * 60
 
 
 class SaveFileError(OSError):
@@ -38,6 +41,7 @@ class GameSaveFileAdapter:
         temporary_path: Path | None = None
         try:
             target.parent.mkdir(parents=True, exist_ok=True)
+            GameSaveFileAdapter.cleanup_orphaned_temporary_files(target)
             with tempfile.NamedTemporaryFile(
                 mode="w",
                 encoding="utf-8",
@@ -70,6 +74,7 @@ class GameSaveFileAdapter:
 
             os.replace(temporary_path, target)
             temporary_path = None
+            GameSaveFileAdapter._fsync_directory(target.parent)
             return target
         except OSError as error:
             raise SaveFileWriteError(
@@ -87,6 +92,52 @@ class GameSaveFileAdapter:
         """Return the recoverable backup path for a save slot."""
         target = Path(path)
         return target.with_name(f"{target.name}.bak")
+
+    @staticmethod
+    def cleanup_orphaned_temporary_files(
+        path: PathLike,
+        *,
+        older_than_seconds: int = ORPHAN_TEMP_MAX_AGE_SECONDS,
+        now: float | None = None,
+    ) -> tuple[Path, ...]:
+        """Remove only old regular temp files belonging to this save and backup.
+
+        The seven-day default age limit deliberately leaves recent files alone,
+        including files that may belong to an in-progress save in another process.
+        Primary saves, backups, symlinks and unrelated files are never candidates.
+        """
+        if older_than_seconds < 1:
+            raise ValueError("older_than_seconds must be at least 1.")
+
+        target = Path(path)
+        directory = target.parent
+        if not directory.is_dir():
+            return ()
+
+        backup = GameSaveFileAdapter.backup_path(target)
+        prefixes = (f".{target.name}.", f".{backup.name}.")
+        cutoff = (time.time() if now is None else now) - older_than_seconds
+        removed: list[Path] = []
+
+        for candidate in directory.iterdir():
+            name = candidate.name
+            if not name.endswith(".tmp") or not name.startswith(prefixes):
+                continue
+            try:
+                metadata = candidate.lstat()
+                if not stat.S_ISREG(metadata.st_mode):
+                    continue
+                if metadata.st_mtime > cutoff:
+                    continue
+                candidate.unlink()
+                removed.append(candidate)
+            except FileNotFoundError:
+                # Another cleanup or process already removed the candidate.
+                continue
+
+        if removed:
+            GameSaveFileAdapter._fsync_directory(directory)
+        return tuple(removed)
 
     @staticmethod
     def load(path: PathLike) -> GameSaveDocument:
@@ -114,6 +165,7 @@ class GameSaveFileAdapter:
         except OSError:
             pass
         return document
+
     @staticmethod
     def _read_document(path: PathLike) -> GameSaveDocument:
         target = Path(path)
@@ -124,6 +176,19 @@ class GameSaveFileAdapter:
                 f"Could not read game save file: {target}"
             ) from error
         return SaveJsonCodec.decode(payload)
+
+    @staticmethod
+    def _fsync_directory(directory: Path) -> None:
+        """Persist directory-entry changes where directory fsync is supported."""
+        if os.name != "posix":
+            return
+
+        flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0)
+        descriptor = os.open(directory, flags)
+        try:
+            os.fsync(descriptor)
+        finally:
+            os.close(descriptor)
 
     @staticmethod
     def _copy_atomically(source: Path, target: Path) -> None:
@@ -145,6 +210,7 @@ class GameSaveFileAdapter:
             GameSaveFileAdapter._read_document(temporary_path)
             os.replace(temporary_path, target)
             temporary_path = None
+            GameSaveFileAdapter._fsync_directory(target.parent)
         finally:
             if temporary_path is not None:
                 try:
