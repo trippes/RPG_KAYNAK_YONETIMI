@@ -3,9 +3,24 @@
 import unittest
 
 from core.entity.position import Position
+from core.domain.spatial import Position as CanonicalPosition
 
 
 class TestEntityPosition(unittest.TestCase):
+    def test_mutable_compatibility_position_is_backed_by_canonical_value(self):
+        position = Position(1, 2)
+        canonical = position.to_canonical()
+        self.assertIsInstance(canonical, CanonicalPosition)
+        position.move(3, 4)
+        self.assertEqual(canonical.to_dict(), {"x": 1, "y": 2})
+        self.assertEqual(position.to_canonical().to_dict(), {"x": 4, "y": 6})
+
+    def test_coordinate_properties_replace_immutable_value(self):
+        position = Position(1, 2)
+        position.x = 5
+        position.y = 8
+        self.assertEqual(position.to_canonical(), CanonicalPosition(5, 8))
+
     def test_default_position(self):
         position = Position()
         self.assertEqual(position.get_position(), (0, 0))
