@@ -83,7 +83,6 @@ class InputMapper:
                 "c": "character",
                 "i": "inventory",
                 "p": "character",
-                "m": "market",
                 "d": "dialogue_history",
                 "b": "combat",
                 "n": "character_creation",
