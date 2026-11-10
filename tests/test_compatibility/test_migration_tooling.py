@@ -15,6 +15,7 @@ from core.compatibility import (
     usage_report,
 )
 from core.event_bus import EventBus
+from core.event_manager import EventManager
 from core.events import EventQueue
 from core.game import Game
 
@@ -53,9 +54,11 @@ class TestMigrationTooling(unittest.TestCase):
     def test_runtime_usage_counter_tracks_legacy_construction(self):
         EventQueue()
         EventBus()
+        EventManager()
         counts = runtime_usage_counts()
         self.assertEqual(counts["core.events.EventQueue"], 1)
-        self.assertEqual(counts["core.event_bus.EventBus"], 1)
+        self.assertEqual(counts["core.event_bus.EventBus"], 2)
+        self.assertEqual(counts["core.event_manager.EventManager"], 1)
 
     def test_static_scanner_is_ast_based_and_ignores_non_source_areas(self):
         root = Path(__file__).parents[2]
@@ -101,7 +104,7 @@ core.events.EventQueue()
 
     def test_migration_matrix_is_complete(self):
         required = {
-            "core.event_bus.EventBus", "core.events.EventQueue", "core.event_types.EventType",
+            "core.event_bus.EventBus", "core.events.EventQueue", "core.event_manager.EventManager", "core.event_types.EventType",
             "core.constants event constants", "Game.dunya_olaylarini_aktar", "core.clock.GameClock",
             "time_system.Scheduler", "core.actions.Action", "core.actions.ActionManager",
             "Entity.world_id", "World._entities", "core.entity.position.Position", "time_system.Tick",
