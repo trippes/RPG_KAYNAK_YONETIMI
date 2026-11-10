@@ -1,4 +1,9 @@
-"""Serialization-ready value and document contracts without persistence I/O."""
+"""Serialization-ready value and document contracts without persistence I/O.
+
+PersistenceDocument.state is a read-only top-level mapping over a defensive
+copy. Nested containers are detached from the caller but are not recursively
+frozen; callers must treat the snapshot graph as immutable by convention.
+"""
 
 from copy import deepcopy
 from dataclasses import dataclass
