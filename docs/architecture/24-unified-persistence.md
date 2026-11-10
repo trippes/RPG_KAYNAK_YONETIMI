@@ -8,9 +8,10 @@ document and the gameplay snapshot without changing either inner schema.
 The outer document is:
 
 - `schema`: `rpg-game-save`
-- `schema_version`: `1`
+- `schema_version`: `2`
 - `core`: a `PersistenceDocument` using `rpg-core`
 - `gameplay`: a `GameplaySnapshot` using `rpg-gameplay`
+- optional `containers`: a `ContainerSnapshot` using `rpg-containers` v1
 
 The outer document requires equal Core and gameplay simulation ticks. Core and
 gameplay versions remain independently validated by their existing contracts.
@@ -24,8 +25,9 @@ snapshots from that same `SessionBundle`:
 2. `PersistenceDocument.from_state(...)` creates the Core document.
 3. `GameplaySnapshot.from_runtime(...)` receives the bundle inventory,
    resource-node, production-job and recipe registries.
-4. `GameSaveDocument` validates the two ticks.
-5. `GameSaveFileAdapter.save(...)` writes the outer document.
+4. `ContainerSnapshot.from_runtime(...)` captures container definitions, break profiles, instance durability, independent contents, nesting/custody and world placements when containers exist.
+5. `GameSaveDocument` validates the combined document and the two simulation ticks.
+6. `GameSaveFileAdapter.save(...)` writes the outer document.
 
 The adapter writes a same-directory temporary file, flushes and fsyncs it,
 then validates the staged document before replacing the target with
@@ -102,6 +104,7 @@ this path.
 - Unsupported outer schema versions produce `UnsupportedSaveSchemaError`.
 - Core schema/state failures use the existing Core persistence exceptions.
 - Gameplay schema/state failures use `GameplayPersistenceError`.
+- Container schema/state failures use `ContainerPersistenceError`.
 - Candidate world/reference failures use application validation errors.
 - Atomic write failures produce `SaveFileWriteError`.
 - If both the primary save and its backup are invalid or unreadable, loading
@@ -113,7 +116,7 @@ save/load results.
 
 ## Persistence boundaries
 
-The unified document covers Core session state and gameplay bundle state. It
+The unified document covers Core session state, gameplay bundle state and optional container runtime state. Container contents remain separate from actor inventories and are restored into their own inventories. It
 does not include:
 
 - legacy `ActionManager` state,
@@ -133,7 +136,8 @@ Persistence-related verification includes:
 - interrupted final-replace recovery tests, including primary/backup preservation,
 - stale staging-file cleanup tests covering age, exact naming, primary/backup retention and unrelated files,\n- concurrent thread/process save tests, load-save exclusion, independent-slot behavior and lock release after exceptions,
 - POSIX directory-fsync ordering and failure-contract tests,
-- legacy version-0 envelope migration and input immutability tests,
+- legacy version-0 and version-1 envelope migration and input immutability tests,
+- container definition, physical catalog, inventory contents, durability, nesting, custody and world-placement round-trip tests,
 - atomic adapter failure tests,
 - candidate restore and publication tests,
 - Core persistence/restore tests,
