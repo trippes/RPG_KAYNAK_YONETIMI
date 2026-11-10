@@ -1,6 +1,7 @@
 import unittest
 
 from core.clock import GameClock
+from core.time import Tick as CanonicalTick
 from time_system import (
     Tick,
     GameTime,
@@ -25,6 +26,10 @@ class TestTick(unittest.TestCase):
         self.assertGreaterEqual(game_time.year, 100)
         self.assertLessEqual(game_time.year, 9999)
         self.assertGreater(tick, 0)
+
+    def test_legacy_tick_is_the_canonical_tick_type(self):
+        self.assertIs(Tick, CanonicalTick)
+        self.assertIsInstance(Tick(60), CanonicalTick)
 
     def test_tick_creation(self):
         tick = Tick(60)
