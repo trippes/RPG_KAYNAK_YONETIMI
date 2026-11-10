@@ -38,7 +38,7 @@ class Inventory:
         return tuple(sorted(self._items.items()))
 
     def total_weight(self, item_catalog=None, resource_catalog=None) -> float:
-        """Combined weight in kg. Missing physical definitions are errors."""
+        """Item weight in kg; include resources when their catalog is supplied."""
         total = 0.0
         if self._items:
             if not isinstance(item_catalog, Mapping):
@@ -48,9 +48,9 @@ class Inventory:
                 if definition is None:
                     raise ValueError(f"Missing item definition for weight calculation: {item_id}")
                 total += definition.weight * quantity
-        if self._stocks:
+        if self._stocks and resource_catalog is not None:
             if not isinstance(resource_catalog, Mapping):
-                raise ValueError("A resource catalog is required to calculate resource weight.")
+                raise TypeError("resource_catalog must be a mapping.")
             for resource, quantity in self._stocks.items():
                 definition = resource_catalog.get(resource.value)
                 if definition is None:
@@ -71,9 +71,9 @@ class Inventory:
                 if definition is None:
                     raise ValueError(f"Missing item definition for volume calculation: {item_id}")
                 total += definition.volume_liters * quantity
-        if self._stocks:
+        if self._stocks and resource_catalog is not None:
             if not isinstance(resource_catalog, Mapping):
-                raise ValueError("A resource catalog is required to calculate resource volume.")
+                raise TypeError("resource_catalog must be a mapping.")
             for resource, quantity in self._stocks.items():
                 definition = resource_catalog.get(resource.value)
                 if definition is None:
