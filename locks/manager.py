@@ -37,6 +37,12 @@ class LockManager:
         self._force_profiles[profile.profile_id] = profile
         return profile
 
+    def lockpick_profile(self, profile_id):
+        return self._lockpick_profiles.get(profile_id)
+
+    def force_profile(self, profile_id):
+        return self._force_profiles.get(profile_id)
+
     def register_lock_definition(self, definition):
         if not isinstance(definition, LockDefinition):
             raise TypeError("definition must be LockDefinition.")
