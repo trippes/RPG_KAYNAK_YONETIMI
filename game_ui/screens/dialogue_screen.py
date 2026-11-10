@@ -194,8 +194,8 @@ class DialogueScreen:
                     inn_state != "active"
                     or bread_amount < 1
                     or water_amount < 1
-                    or not objectives.get("buy_bread", ()).completed
-                    or not objectives.get("buy_water", ()).completed
+                    or not getattr(objectives.get("buy_bread"), "completed", False)
+                    or not getattr(objectives.get("buy_water"), "completed", False)
                 ):
                     continue
             visible.append(choice)
