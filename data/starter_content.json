@@ -722,5 +722,117 @@
         "choices": []
       }
     ]
-  }
+  },
+  "markets": [
+    {
+      "market_id": "village_stalls",
+      "location_id": "village_id",
+      "npc_id": "village_trader",
+      "npc_name": "Tüccar Selim",
+      "npc_role": "merchant",
+      "merchant_id": "merchant_village",
+      "inventory_id": "market_village_inventory",
+      "restock_interval": 600,
+      "visible_products": 3,
+      "position": [
+        24,
+        20
+      ],
+      "dialogue": {
+        "id": "village_trader_dialogue",
+        "start_node": "greeting",
+        "nodes": [
+          {
+            "id": "greeting",
+            "text": "Hoş geldin yolcu. Köyün ihtiyaçlarını karşılayacak mallarım var. Ne ararsın?",
+            "choices": [
+              {
+                "id": "open_village_market",
+                "text": "Malları görmek istiyorum.",
+                "action": "open_market"
+              }
+            ]
+          }
+        ]
+      },
+      "catalog": [
+        {
+          "resource_type": "wood",
+          "base_price": 3,
+          "min_quantity": 5,
+          "max_quantity": 12
+        },
+        {
+          "resource_type": "iron_ore",
+          "base_price": 8,
+          "min_quantity": 2,
+          "max_quantity": 7
+        },
+        {
+          "resource_type": "water",
+          "base_price": 2,
+          "min_quantity": 4,
+          "max_quantity": 10
+        },
+        {
+          "resource_type": "bread",
+          "base_price": 4,
+          "min_quantity": 3,
+          "max_quantity": 8
+        }
+      ]
+    },
+    {
+      "market_id": "village_inn",
+      "location_id": "village_id",
+      "npc_id": "innkeeper_mira",
+      "npc_name": "Hancı Mira",
+      "npc_role": "innkeeper",
+      "merchant_id": "merchant_inn",
+      "inventory_id": "market_inn_inventory",
+      "restock_interval": 360,
+      "visible_products": 3,
+      "position": [
+        20,
+        23
+      ],
+      "dialogue": {
+        "id": "innkeeper_dialogue",
+        "start_node": "greeting",
+        "nodes": [
+          {
+            "id": "greeting",
+            "text": "Yol yorgunluğunu biraz olsun hafifletecek yiyecek ve içeceklerim var. Buyur, göz at.",
+            "choices": [
+              {
+                "id": "open_inn_market",
+                "text": "Han ürünlerini görmek istiyorum.",
+                "action": "open_market"
+              }
+            ]
+          }
+        ]
+      },
+      "catalog": [
+        {
+          "resource_type": "bread",
+          "base_price": 5,
+          "min_quantity": 5,
+          "max_quantity": 14
+        },
+        {
+          "resource_type": "water",
+          "base_price": 2,
+          "min_quantity": 6,
+          "max_quantity": 16
+        },
+        {
+          "resource_type": "wood",
+          "base_price": 5,
+          "min_quantity": 1,
+          "max_quantity": 3
+        }
+      ]
+    }
+  ]
 }
