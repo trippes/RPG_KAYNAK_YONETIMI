@@ -382,6 +382,10 @@ def populate_gameplay_resources(service, definition_path=None):
     if service.balance("hero", "gold").amount == 0:
         service.credit("hero", "gold", 100)
 
+    # Temporary fixture used only for the in-game Container/Lock UI playtest.
+    from application.container_playtest_content import register_container_playtest_fixture
+    register_container_playtest_fixture(service)
+
 
 def _register_opening_resources(bundle, definition, resolve_id, ids, world_id):
     """Register the starter inventory and every gatherable landmark as a resource node."""
