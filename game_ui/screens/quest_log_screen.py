@@ -162,7 +162,10 @@ class QuestLogScreen:
         x = self.CONTENT_X
         y = self.CONTENT_Y
         available_width = max(420, width - x * 2)
-        available_height = max(280, height - y - 24)
+        # WindowManager clips content to the registered window height minus its title bar.
+        # The quest window is 470 px high with a 32 px title bar, so its content
+        # viewport is 438 px; keep the layout inside that source surface.
+        available_height = max(280, min(height - y - 76, 438))
         return {
             "outer": (x, y, available_width, available_height),
             "body_y": y + self.HEADER_HEIGHT + self.TAB_HEIGHT + 10,
