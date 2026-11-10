@@ -88,6 +88,28 @@ class CanonicalScheduler:
         self._current_tick = target
         return self._current_tick
 
+    def ready_snapshot(self) -> tuple[ScheduledWork, ...]:
+        """Return ready work in deterministic order without consuming it."""
+        return tuple(sorted(
+            (
+                work for work in self._pending.values()
+                if not work.cancelled and work.trigger_tick <= self._current_tick
+            ),
+            key=lambda work: (work.trigger_tick, work.sequence),
+        ))
+
+    def pop_work(self, work_id: str) -> ScheduledWork | None:
+        """Consume one ready item, allowing adapters to cancel later items."""
+        work = self._pending.get(work_id)
+        if work is None:
+            return None
+        if work.cancelled:
+            self._pending.pop(work_id, None)
+            return None
+        if work.trigger_tick > self._current_tick:
+            return None
+        return self._pending.pop(work_id)
+
     def pop_ready(self) -> tuple[ScheduledWork, ...]:
         ready = sorted(
             (
