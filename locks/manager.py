@@ -95,6 +95,21 @@ class LockManager:
     def instances(self):
         return tuple(self._instances[key] for key in sorted(self._instances))
 
+    def lock_definitions(self):
+        return tuple(self._lock_definitions[key] for key in sorted(self._lock_definitions))
+
+    def key_definitions(self):
+        return tuple(self._key_definitions[key] for key in sorted(self._key_definitions))
+
+    def lockpick_profiles(self):
+        return tuple(self._lockpick_profiles[key] for key in sorted(self._lockpick_profiles))
+
+    def force_profiles(self):
+        return tuple(self._force_profiles[key] for key in sorted(self._force_profiles))
+
+    def owner_bindings(self):
+        return tuple(sorted(self._owner_bindings.items()))
+
     def bind_key_owner(self, key_id, actor_id):
         key = self._key_definitions.get(key_id)
         if key is None:
