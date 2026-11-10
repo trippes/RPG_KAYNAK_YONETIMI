@@ -4,6 +4,7 @@ from pathlib import Path
 from types import MappingProxyType
 
 from application import GameApplication, GameplayService
+from application.content_pack import populate_opening_content
 from economy import (
     Currency, Economy, Market, MarketCatalogEntry, MarketProfile, Money,
 )
@@ -73,12 +74,11 @@ class TestLocationMarket(unittest.TestCase):
 
     def test_gameplay_service_restock_and_purchase_use_selected_market(self):
         application = GameApplication.create_default()
-        application.dunya_olustur("Market test", world_id="market_test")
+        service, _ids = populate_opening_content(application)
         bundle = application.holder.current
         inventories = dict(bundle.inventories)
         inventories["player"] = Inventory()
         object.__setattr__(bundle, "inventories", MappingProxyType(inventories))
-        service = GameplayService(application)
         profile = MarketProfile(
             "village", "village", "trader_village", "merchant_village",
             "inventory_village", 600, self.catalog, visible_products=2,
