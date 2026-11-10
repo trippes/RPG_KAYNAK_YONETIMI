@@ -5,6 +5,7 @@ from types import SimpleNamespace
 
 from game_ui.input import InputMapper, InputState
 from game_ui.renderer import NAV_TABS
+from game_ui.game_window import NAV_SCREENS
 from game_ui.screens.main_screen import MainScreen
 from game_ui.screens.dialogue_screen import DialogueScreen
 from game_ui.window_manager import WindowManager
@@ -45,6 +46,9 @@ class GameplayNavigationTests(unittest.TestCase):
         self.assertNotIn("market", state.actions)
         self.assertNotIn("market", dict(NAV_TABS))
 
+    def test_main_gameplay_has_no_navigation_tab_bar(self):
+        self.assertEqual(NAV_SCREENS, frozenset())
+
     def test_gameplay_shortcuts_use_the_approved_keymap(self):
         mapper = InputMapper()
         production = mapper.collect([
@@ -57,6 +61,18 @@ class GameplayNavigationTests(unittest.TestCase):
         self.assertNotIn("character", production.actions)
         self.assertIn("map", world_map.actions)
         self.assertNotIn("market", world_map.actions)
+        self.assertNotIn("map", mapper.collect([SimpleNamespace(type="KEYDOWN", key="x", unicode="x")]).actions)
+
+    def test_map_and_production_shortcuts_toggle_their_windows(self):
+        backend = type("Backend", (), {"Rect": FakeRect})
+        manager = WindowManager(backend, 960, 640)
+        manager.register("map", object(), (20, 20, 400, 300))
+        manager.register("production", object(), (20, 20, 400, 300))
+
+        self.assertTrue(manager.handle_input(InputState(actions={"map"})))
+        self.assertTrue(manager.is_open("map"))
+        self.assertTrue(manager.handle_input(InputState(actions={"production"})))
+        self.assertTrue(manager.is_open("production"))
 
     def test_market_opens_from_vendor_dialogue_action(self):
         choice = SimpleNamespace(
