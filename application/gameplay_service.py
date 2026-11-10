@@ -19,6 +19,7 @@ from core.entity import EntityType
 
 from resources import Inventory, Quantity, Recipe, ResourceType, ResourceUnit
 from containers import ContainerDefinition, ContainerInstance
+from locks import ForceProfile, KeyDefinition, LockDefinition, LockInstance, LockpickProfile
 from economy import Currency, MarketOffer, Money, TradeService, Merchant, MarketProfile
 
 from .game_application import GameApplication
@@ -70,6 +71,17 @@ class ContainerView:
     durability: float | None
     broken: bool
     custody_inventory_id: str | None = None
+
+
+@dataclass(frozen=True)
+class LockView:
+    lock_id: str
+    entity_id: str
+    definition_id: str
+    name: str
+    locked: bool
+    jammed: bool
+    broken: bool
 
 
 @dataclass(frozen=True)
@@ -421,6 +433,113 @@ class GameplayService:
             instance.durability, instance.broken,
             bundle.containers.inventory_custody(container_id),
         )
+
+    def register_lockpick_profile(self, profile: LockpickProfile) -> LockpickProfile:
+        return self._current_bundle().locks.register_lockpick_profile(profile)
+
+    def register_force_profile(self, profile: ForceProfile) -> ForceProfile:
+        return self._current_bundle().locks.register_force_profile(profile)
+
+    def register_lock_definition(self, definition: LockDefinition) -> LockDefinition:
+        return self._current_bundle().locks.register_lock_definition(definition)
+
+    def register_key_definition(self, definition: KeyDefinition) -> KeyDefinition:
+        return self._current_bundle().locks.register_key_definition(definition)
+
+    def register_lock(self, instance: LockInstance) -> LockInstance:
+        """Attach a lock capability to an existing Core entity without changing its type."""
+        bundle = self._current_bundle()
+        if not isinstance(instance, LockInstance):
+            raise TypeError("instance must be LockInstance.")
+        if bundle.session.entities.get(instance.entity_id) is None:
+            raise KeyError(f"Entity not found: {instance.entity_id}")
+        if bundle.containers.for_entity(instance.entity_id) is not None:
+            # Containers may also be locked; this is deliberately not an error.
+            pass
+        return bundle.locks.register(instance)
+
+    def lock_state(self, lock_id: str) -> LockView:
+        bundle = self._current_bundle()
+        instance = bundle.locks.get(lock_id)
+        if instance is None:
+            raise KeyError(f"Lock not found: {lock_id}")
+        definition = bundle.locks.definition(instance.definition_id)
+        return LockView(
+            instance.lock_id, instance.entity_id, instance.definition_id,
+            definition.name, instance.locked, instance.jammed, instance.broken,
+        )
+
+    def bind_key_owner(self, key_id: str, actor_id: str) -> None:
+        bundle = self._current_bundle()
+        if bundle.actors.get(actor_id) is None:
+            raise KeyError(f"Actor not found: {actor_id}")
+        bundle.locks.bind_key_owner(key_id, actor_id)
+
+    def unlock_with_key(
+        self, actor_id: str, inventory_id: str, lock_id: str, key_id: str
+    ) -> bool:
+        """Unlock only when the exact key item is present in the supplied actor inventory."""
+        bundle = self._current_bundle()
+        self._require_actor_in_active_world(bundle, actor_id)
+        inventory = self._inventory(bundle, inventory_id)
+        if inventory.item_quantity(key_id) < 1:
+            return False
+        return bundle.locks.unlock_with_key(
+            lock_id, key_id, actor_id, key_available=True
+        )
+
+    def attempt_lockpick(
+        self, actor_id: str, inventory_id: str, lock_id: str, *,
+        skill: int, tool_item_id: str | None = None, success: bool = False
+    ) -> bool:
+        """Resolve lockpicking against actor context and an actually carried tool."""
+        bundle = self._current_bundle()
+        self._require_actor_in_active_world(bundle, actor_id)
+        inventory = self._inventory(bundle, inventory_id)
+        tool_tags = ()
+        if tool_item_id is not None:
+            if inventory.item_quantity(tool_item_id) < 1:
+                return False
+            item = bundle.items.get(tool_item_id)
+            if item is None:
+                raise KeyError(f"Item definition not found: {tool_item_id}")
+            tool_tags = item.tags
+        return bundle.locks.attempt_lockpick(
+            lock_id, skill=skill, tool_tags=tool_tags, success=success
+        )
+
+    def attempt_force_lock(
+        self, actor_id: str, inventory_id: str, lock_id: str, *,
+        strength: int, tool_item_id: str | None = None, success: bool = False
+    ) -> bool:
+        """Resolve forced opening using explicit strength and carried tool evidence."""
+        bundle = self._current_bundle()
+        self._require_actor_in_active_world(bundle, actor_id)
+        inventory = self._inventory(bundle, inventory_id)
+        tool_tags = ()
+        if tool_item_id is not None:
+            if inventory.item_quantity(tool_item_id) < 1:
+                return False
+            item = bundle.items.get(tool_item_id)
+            if item is None:
+                raise KeyError(f"Item definition not found: {tool_item_id}")
+            tool_tags = item.tags
+        return bundle.locks.attempt_force(
+            lock_id, strength=strength, tool_tags=tool_tags, success=success
+        )
+
+    def open_container(self, actor_id: str, inventory_id: str, container_id: str) -> ContainerView:
+        """Expose container contents only after its attached lock has been opened."""
+        bundle = self._current_bundle()
+        self._require_actor_in_active_world(bundle, actor_id)
+        self._inventory(bundle, inventory_id)
+        container = bundle.containers.get(container_id)
+        if container is None:
+            raise KeyError(f"Container not found: {container_id}")
+        lock = bundle.locks.for_entity(container.entity_id)
+        if lock is not None and (lock.locked or lock.jammed or lock.broken):
+            raise GameplayServiceError("Container is not accessible while its lock is locked, jammed, or broken.")
+        return self.container_state(container_id)
 
     def place_container(self, container_id: str, location_id: str, x: int, y: int, *,
                         width: int = 1, height: int = 1, blocks_movement: bool = True,
