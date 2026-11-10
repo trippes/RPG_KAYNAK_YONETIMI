@@ -17,6 +17,7 @@ from economy import EconomySnapshot
 from .extended_persistence import SocialSnapshot, CombatSnapshot
 from .migrations import migrate_save_data
 from .container_persistence import ContainerSnapshot
+from .lock_persistence import LockSnapshot
 
 
 SAVE_SCHEMA = "rpg-game-save"
@@ -47,6 +48,7 @@ class GameSaveDocument:
     social: SocialSnapshot | None = None
     combat: CombatSnapshot | None = None
     containers: ContainerSnapshot | None = None
+    locks: LockSnapshot | None = None
 
     def __post_init__(self) -> None:
         if self.schema != SAVE_SCHEMA:
@@ -78,6 +80,7 @@ class GameSaveDocument:
         if self.social is not None and not isinstance(self.social, SocialSnapshot): raise TypeError("social must be SocialSnapshot or None.")
         if self.combat is not None and not isinstance(self.combat, CombatSnapshot): raise TypeError("combat must be CombatSnapshot or None.")
         if self.containers is not None and not isinstance(self.containers, ContainerSnapshot): raise TypeError("containers must be ContainerSnapshot or None.")
+        if self.locks is not None and not isinstance(self.locks, LockSnapshot): raise TypeError("locks must be LockSnapshot or None.")
         if self.core.simulation_tick.value != self.gameplay.simulation_tick:
             raise SaveDocumentError("Core/gameplay simulation tick mismatch.")
 
@@ -101,6 +104,7 @@ class GameSaveDocument:
         if self.social is not None: result["social"] = self.social.to_dict()
         if self.combat is not None: result["combat"] = self.combat.to_dict()
         if self.containers is not None: result["containers"] = self.containers.to_dict()
+        if self.locks is not None: result["locks"] = self.locks.to_dict()
         return result
 
     @classmethod
@@ -162,6 +166,7 @@ class GameSaveDocument:
         social = SocialSnapshot.from_dict(data["social"]) if "social" in data else None
         combat = CombatSnapshot.from_dict(data["combat"]) if "combat" in data else None
         containers = ContainerSnapshot.from_dict(data["containers"]) if "containers" in data and data["containers"] is not None else None
+        locks = LockSnapshot.from_dict(data["locks"]) if "locks" in data and data["locks"] is not None else None
         return cls(
             core=core,
             gameplay=gameplay,
@@ -173,6 +178,7 @@ class GameSaveDocument:
             social=social,
             combat=combat,
             containers=containers,
+            locks=locks,
             schema=data["schema"],
             schema_version=version,
         )
