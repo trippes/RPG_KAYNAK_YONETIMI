@@ -23,6 +23,7 @@ class ContainerManager:
         self._instances = {}
         self._inventories = {}
         self._parents = {}
+        self._inventory_custody = {}
         self._item_catalog = dict(item_catalog or {})
         self._resource_catalog = dict(resource_catalog or {})
         self.break_profiles = break_profiles or BreakProfileRegistry()
@@ -31,6 +32,10 @@ class ContainerManager:
         if isinstance(max_global_nesting_depth, bool) or not isinstance(max_global_nesting_depth, int) or max_global_nesting_depth < 1:
             raise ValueError("max_global_nesting_depth must be a positive integer.")
         self.max_global_nesting_depth = max_global_nesting_depth
+
+    def for_entity(self, entity_id):
+        """Return the container capability attached to a Core entity, if any."""
+        return next((instance for instance in self._instances.values() if instance.entity_id == entity_id), None)
 
     def bind_catalogs(self, item_catalog=None, resource_catalog=None):
         """Bind the authoritative physical metadata catalogs for this session."""
@@ -113,7 +118,7 @@ class ContainerManager:
         self._require(child_id)
         if parent_id == child_id:
             raise ContainerManagerError("A container cannot contain itself.")
-        if child_id in self._parents:
+        if child_id in self._parents or child_id in self._inventory_custody:
             raise ContainerManagerError("Container already has a custody location.")
         if parent_id in self._descendants(child_id):
             raise ContainerManagerError("Containment would create a cycle.")
@@ -134,6 +139,33 @@ class ContainerManager:
             del self._parents[child_id]
             raise
         return self._instances[child_id]
+
+    def set_inventory_custody(self, container_id, inventory_id):
+        """Assign a unique container instance to one registered actor/NPC inventory."""
+        self._require(container_id)
+        if not isinstance(inventory_id, str) or not inventory_id.strip():
+            raise ValueError("inventory_id must be a non-empty string.")
+        if container_id in self._parents or container_id in self._inventory_custody:
+            raise ContainerManagerError("Container already has a custody location.")
+        self._inventory_custody[container_id] = inventory_id
+        return inventory_id
+
+    def clear_inventory_custody(self, container_id, expected_inventory_id=None):
+        self._require(container_id)
+        current = self._inventory_custody.get(container_id)
+        if current is None:
+            raise ContainerManagerError("Container is not held by an inventory.")
+        if expected_inventory_id is not None and current != expected_inventory_id:
+            raise ContainerManagerError("Container custody owner does not match.")
+        del self._inventory_custody[container_id]
+        return current
+
+    def inventory_custody(self, container_id):
+        self._require(container_id)
+        return self._inventory_custody.get(container_id)
+
+    def inventory_custodies(self):
+        return tuple(sorted(self._inventory_custody.items()))
 
     def release(self, child_id):
         self._require(child_id)
@@ -201,6 +233,12 @@ class ContainerManager:
         for child_id, parent_id in self._parents.items():
             self._require(child_id)
             self._require(parent_id)
+            if child_id in self._inventory_custody:
+                raise ContainerManagerError("Container cannot be nested and inventory-held simultaneously.")
+        for container_id, inventory_id in self._inventory_custody.items():
+            self._require(container_id)
+            if not isinstance(inventory_id, str) or not inventory_id.strip():
+                raise ContainerManagerError("Invalid inventory custody reference.")
         for container_id in self._instances:
             self._validate_nesting(container_id)
             self._validate_capacity_chain(container_id)

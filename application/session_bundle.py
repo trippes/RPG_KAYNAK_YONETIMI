@@ -174,6 +174,11 @@ remain mutable domain objects by design; this is not deep immutability.
         for inventory_id in self.inventories:
             if not isinstance(inventory_id, str) or not inventory_id.strip():
                 raise ValueError("inventory IDs must be non-empty strings.")
+        for container_id, inventory_id in self.containers.inventory_custodies():
+            if inventory_id not in self.inventories:
+                raise ValueError(
+                    f"Container {container_id} references an unregistered custody inventory: {inventory_id}"
+                )
 
         for merchant in self.economy.merchants.values():
             if merchant.inventory_id is None:

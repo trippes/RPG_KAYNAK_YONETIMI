@@ -69,6 +69,7 @@ class ContainerView:
     contents_volume_liters: float
     durability: float | None
     broken: bool
+    custody_inventory_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -346,6 +347,12 @@ class GameplayService:
             raise KeyError(f"Entity not found: {object_id}")
         if entity.world_id is None:
             raise GameplayServiceError("World objects must belong to a Core World.")
+        container = bundle.containers.for_entity(object_id)
+        if container is not None and (
+            bundle.containers.parent_of(container.container_id) is not None
+            or bundle.containers.inventory_custody(container.container_id) is not None
+        ):
+            raise GameplayServiceError("A container with existing custody cannot be independently placed in the world.")
         world_map = bundle.movement.map_for(entity.world_id)
         if world_map is None or world_map.get(location_id) is None:
             raise KeyError(f"Location is not registered in the object's world: {location_id}")
@@ -412,6 +419,7 @@ class GameplayService:
                   for resource, quantity in inventory.snapshot()),
             usage.weight_kg, usage.slots, usage.volume_liters,
             instance.durability, instance.broken,
+            bundle.containers.inventory_custody(container_id),
         )
 
     def place_container(self, container_id: str, location_id: str, x: int, y: int, *,
@@ -424,10 +432,92 @@ class GameplayService:
             raise KeyError(f"Container not found: {container_id}")
         if bundle.containers.parent_of(container_id) is not None:
             raise GameplayServiceError("A nested container cannot also be placed in the world.")
+        if bundle.containers.inventory_custody(container_id) is not None:
+            raise GameplayServiceError("A carried container must be dropped before world placement.")
         return self.place_world_object(
             instance.entity_id, location_id, x, y, width=width, height=height,
             blocks_movement=blocks_movement, layer=layer, tags=tags,
         )
+
+
+    def carry_container(self, container_id: str, inventory_id: str) -> None:
+        """Assign a unique container instance to a registered character/NPC inventory."""
+        bundle = self._current_bundle()
+        self._inventory(bundle, inventory_id)
+        instance = bundle.containers.get(container_id)
+        if instance is None:
+            raise KeyError(f"Container not found: {container_id}")
+        if bundle.world_objects.get(instance.entity_id) is not None:
+            raise GameplayServiceError("A world-placed container must be picked up before it can be carried.")
+        bundle.containers.set_inventory_custody(container_id, inventory_id)
+        try:
+            bundle.validate()
+        except Exception:
+            bundle.containers.clear_inventory_custody(container_id, inventory_id)
+            raise
+
+    def pickup_container(self, container_id: str, inventory_id: str) -> None:
+        """Pick up a world-placed container into a registered inventory."""
+        bundle = self._current_bundle()
+        self._inventory(bundle, inventory_id)
+        instance = bundle.containers.get(container_id)
+        if instance is None:
+            raise KeyError(f"Container not found: {container_id}")
+        placement = bundle.world_objects.get(instance.entity_id)
+        if placement is None:
+            raise GameplayServiceError("Container is not placed in the world.")
+        bundle.containers.set_inventory_custody(container_id, inventory_id)
+        try:
+            bundle.world_objects.remove(instance.entity_id)
+            bundle.validate()
+        except Exception:
+            if bundle.world_objects.get(instance.entity_id) is None:
+                bundle.world_objects.place(placement)
+            bundle.containers.clear_inventory_custody(container_id, inventory_id)
+            raise
+
+    def transfer_container_custody(self, container_id: str, source_inventory_id: str,
+                                   target_inventory_id: str) -> None:
+        """Transfer a unique container instance between registered inventories."""
+        bundle = self._current_bundle()
+        self._inventory(bundle, source_inventory_id)
+        self._inventory(bundle, target_inventory_id)
+        bundle.containers.clear_inventory_custody(container_id, source_inventory_id)
+        try:
+            bundle.containers.set_inventory_custody(container_id, target_inventory_id)
+            bundle.validate()
+        except Exception:
+            if bundle.containers.inventory_custody(container_id) == target_inventory_id:
+                bundle.containers.clear_inventory_custody(container_id, target_inventory_id)
+            if bundle.containers.inventory_custody(container_id) is None:
+                bundle.containers.set_inventory_custody(container_id, source_inventory_id)
+            raise
+
+    def drop_container(self, container_id: str, location_id: str, x: int, y: int, *,
+                       width: int = 1, height: int = 1, blocks_movement: bool = True,
+                       layer: int = 0, tags: tuple[str, ...] = ("container",)) -> WorldObjectPlacement:
+        """Drop a carried container into the world without losing custody on failure."""
+        bundle = self._current_bundle()
+        owner_inventory_id = bundle.containers.inventory_custody(container_id)
+        if owner_inventory_id is None:
+            raise GameplayServiceError("Container is not currently carried by an inventory.")
+        instance = bundle.containers.get(container_id)
+        bundle.containers.clear_inventory_custody(container_id, owner_inventory_id)
+        try:
+            placement = self.place_world_object(
+                instance.entity_id, location_id, x, y, width=width, height=height,
+                blocks_movement=blocks_movement, layer=layer, tags=tags,
+            )
+        except Exception:
+            bundle.containers.set_inventory_custody(container_id, owner_inventory_id)
+            raise
+        try:
+            bundle.validate()
+        except Exception:
+            bundle.world_objects.remove(placement.object_id)
+            bundle.containers.set_inventory_custody(container_id, owner_inventory_id)
+            raise
+        return placement
 
     def contain_container(self, parent_id: str, child_id: str) -> ContainerInstance:
         """Move a placed child container into another container."""

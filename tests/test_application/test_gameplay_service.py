@@ -166,6 +166,34 @@ class TestGameplayService(unittest.TestCase):
         )
         self.assertEqual(self.inventory.get(wood), Quantity(2, ResourceUnit.ITEM))
 
+
+    def test_container_can_be_picked_up_and_dropped_with_single_custody(self):
+        self.service.register_container_definition(ContainerDefinition(
+            "portable_chest", "Portable chest", max_contents_weight_kg=10,
+            max_slots=5, max_contents_volume_liters=10,
+        ))
+        world = self.application.aktif_dunya()
+        world_map = WorldMap(world.world_id)
+        world_map.add_location(Location("village", "Village"))
+        self.service.register_world_map(world_map)
+        entity = Entity(EntityType.ESYA, "Portable chest", entity_id="portable_chest_entity")
+        self.application.varlik_ekle(entity)
+        self.service.register_container(ContainerInstance(
+            "portable_chest_01", entity.entity_id, "portable_chest"
+        ))
+        self.service.place_container("portable_chest_01", "village", 4, 4)
+
+        self.service.pickup_container("portable_chest_01", "main")
+        self.assertEqual(self.service.container_state("portable_chest_01").custody_inventory_id, "main")
+        self.assertIsNone(self.application.holder.current.world_objects.get(entity.entity_id))
+
+        with self.assertRaises(GameplayServiceError):
+            self.service.place_world_object(entity.entity_id, "village", 5, 5)
+
+        self.service.drop_container("portable_chest_01", "village", 5, 5)
+        self.assertIsNone(self.service.container_state("portable_chest_01").custody_inventory_id)
+        self.assertIsNotNone(self.application.holder.current.world_objects.get(entity.entity_id))
+
     def test_container_can_be_placed_and_nested_without_duplicate_world_placement(self):
         self.service.register_container_definition(ContainerDefinition(
             "chest", "Chest", max_contents_weight_kg=10, max_slots=10,
