@@ -14,6 +14,7 @@ class ContainerScreen:
         self.selected_index = 0
         self.message = "Bir eşya seçin. Enter: taşı"
         self._row_rects = ()
+        self._action_rects = {}
 
     def set_container(self, container_id):
         if not isinstance(container_id, str) or not container_id.strip():
@@ -45,6 +46,25 @@ class ContainerScreen:
             else self._player_items(inventory_id)
         )
 
+    def _find_tool(self, inventory_id, allowed_tags):
+        if not allowed_tags:
+            return None
+        for item_id, quantity in self._player_items(inventory_id):
+            if quantity < 1:
+                continue
+            item = self.service.item(item_id)
+            if item is not None and set(item.tags).intersection(allowed_tags):
+                return item_id
+        return None
+
+    @staticmethod
+    def _format_attempt(result):
+        if not result.attempted:
+            return result.message
+        verdict = "BAŞARILI" if result.success else "BAŞARISIZ"
+        return (
+            f"{verdict} — d20: {result.roll}  +  {result.modifier}  =  {result.total}  /  DC {result.difficulty_class}"
+        )
     def handle(self, state):
         if self.container_id is None:
             return None
@@ -56,24 +76,36 @@ class ContainerScreen:
                     actor_id, inventory_id, self.container_id
                 )
             except GameplayServiceError:
-                if (
-                    lock is not None
-                    and lock.locked
-                    and lock.required_key_id
-                    and state.pressed("confirm")
-                ):
-                    if self.service.unlock_with_key(
-                        actor_id, inventory_id, lock.lock_id,
-                        lock.required_key_id,
-                    ):
+                action = None
+                if state.mouse_clicked and state.mouse_pos is not None:
+                    for action_name, rect in self._action_rects.items():
+                        if rect.collidepoint(state.mouse_pos):
+                            action = action_name
+                            break
+                if state.pressed("lockpick"):
+                    action = "lockpick"
+                elif state.pressed("force_lock"):
+                    action = "force"
+                elif state.pressed("confirm") and lock is not None and lock.required_key_id:
+                    action = "key"
+                if lock is not None and lock.locked and action == "key":
+                    if self.service.unlock_with_key(actor_id, inventory_id, lock.lock_id, lock.required_key_id):
                         self.message = "Kilit anahtarla açıldı."
                     else:
                         self.message = "Uygun anahtar bulunamadı veya anahtar size ait değil."
+                elif lock is not None and lock.locked and not lock.jammed and not lock.broken and action == "lockpick":
+                    tool_id = self._find_tool(inventory_id, lock.lockpick_allowed_tool_tags)
+                    result = self.service.resolve_lockpick(actor_id, inventory_id, lock.lock_id, tool_item_id=tool_id)
+                    self.message = self._format_attempt(result)
+                elif lock is not None and lock.locked and not lock.jammed and not lock.broken and action == "force":
+                    tool_id = self._find_tool(inventory_id, lock.force_required_tool_tags)
+                    result = self.service.resolve_force_lock(actor_id, inventory_id, lock.lock_id, tool_item_id=tool_id)
+                    self.message = self._format_attempt(result)
                 elif lock is not None and lock.jammed:
                     self.message = "Kilit sıkışmış. Önce kilidin durumunu çözmelisiniz."
                 elif lock is not None and lock.broken and lock.locked:
                     self.message = "Kilit hasarlı ve kapalı durumda."
-                else:
+                elif action is None:
                     self.message = "Konteyner kilitli."
                 return None
 
