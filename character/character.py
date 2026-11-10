@@ -43,10 +43,14 @@ class Character:
         self._item_catalog: dict[str, ItemDefinition] = {}
         self.attributes = self.attributes.with_modifiers(self.race.attribute_modifiers)
         self.skills = self.skills.with_ranks(self.character_class.skill_ranks)
-        if self.current_hit_points is None:
+        has_equipped_items = bool(self.equipment.snapshot())
+        if self.current_hit_points is None and not has_equipped_items:
             self.current_hit_points = self.max_hit_points
-        if not 0 <= self.current_hit_points <= self.max_hit_points:
-            raise ValueError("current_hit_points is out of range.")
+        elif self.current_hit_points is not None:
+            if self.current_hit_points < 0:
+                raise ValueError("current_hit_points is out of range.")
+            if not has_equipped_items and self.current_hit_points > self.max_hit_points:
+                raise ValueError("current_hit_points is out of range.")
 
     @property
     def max_hit_points(self) -> int:
@@ -107,6 +111,10 @@ class Character:
                 + ", ".join(missing)
             )
         self._item_catalog = normalized
+        if self.current_hit_points is None:
+            self.current_hit_points = self.max_hit_points
+        elif not 0 <= self.current_hit_points <= self.max_hit_points:
+            raise ValueError("current_hit_points is out of range.")
 
     @property
     def abilities(self) -> tuple[Ability, ...]:
