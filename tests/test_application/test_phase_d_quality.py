@@ -464,7 +464,7 @@ class TestPhaseDQuality(unittest.TestCase):
         self.assertTrue(mapper.collect([save_event]).pressed("save"))
         self.assertTrue(mapper.collect([load_event]).pressed("load"))
 
-    def test_trade_and_inventory_keys_are_mapped_by_backend(self):
+    def test_market_is_not_keyboard_mapped_but_inventory_is(self):
         class Backend:
             KEYDOWN = "KEYDOWN"
             K_m = 1
@@ -476,7 +476,7 @@ class TestPhaseDQuality(unittest.TestCase):
         mapper = InputMapper(Backend())
         market_event = type("Event", (), {"type": "KEYDOWN", "key": 1})()
         inventory_event = type("Event", (), {"type": "KEYDOWN", "key": 2})()
-        self.assertTrue(mapper.collect([market_event]).pressed("market"))
+        self.assertFalse(mapper.collect([market_event]).pressed("market"))
         self.assertTrue(mapper.collect([inventory_event]).pressed("inventory"))
 
     def test_c_key_maps_to_character_action(self):
