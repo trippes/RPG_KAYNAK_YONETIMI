@@ -548,36 +548,66 @@ class GameplayService:
             lock_id, key_id, actor_id, key_available=True
         )
 
-    def attempt_lockpick(
-        self, actor_id: str, inventory_id: str, lock_id: str, *,
-        tool_item_id: str | None = None, success: bool = False
-    ) -> bool:
-        """Resolve lockpicking from the actor's registered character and inventory."""
+    def resolve_lockpick(self, actor_id: str, inventory_id: str, lock_id: str, *, tool_item_id: str | None = None) -> LockAttemptResult:
+        """Roll a d20 lockpicking check using the actor skill and carried tools."""
+        from core.dice import zar_at
         bundle = self._current_bundle()
         self._require_actor_in_active_world(bundle, actor_id)
         character = self._character_for_actor(bundle, actor_id)
         inventory = self._inventory_for_actor(bundle, actor_id, inventory_id)
-        tool_tags = self._carried_tool_tags(bundle, inventory, tool_item_id)
+        instance = bundle.locks.get(lock_id)
+        if instance is None:
+            raise KeyError(f"Lock not found: {lock_id}")
+        definition = bundle.locks.definition(instance.definition_id)
+        profile = bundle.locks.lockpick_profile(definition.lockpick_profile_id) if definition.lockpick_profile_id else None
+        if profile is None:
+            return LockAttemptResult("lockpick", None, 0, None, None, False, False, "Bu kilit maymuncukla açılamaz.")
         skill = character.skills.get("lockpicking")
-        return bundle.locks.attempt_lockpick(
-            lock_id, skill=skill, tool_tags=tool_tags, success=success
-        )
+        tool_tags = self._carried_tool_tags(bundle, inventory, tool_item_id)
+        if profile.require_skill and skill < profile.minimum_skill:
+            return LockAttemptResult("lockpick", None, skill, profile.difficulty_class, None, False, False, "Maymuncuk becerisi yetersiz.")
+        if profile.require_tool and not set(tool_tags).intersection(profile.allowed_tool_tags):
+            return LockAttemptResult("lockpick", None, skill, profile.difficulty_class, None, False, False, "Uygun maymuncuk aleti envanterde bulunamadı.")
+        roll = zar_at(20)
+        total = roll + skill
+        success = roll == 20 or (roll != 1 and total >= profile.difficulty_class)
+        bundle.locks.attempt_lockpick(lock_id, skill=skill, tool_tags=tool_tags, success=success)
+        message = "Kilit başarıyla açıldı." if success else "Maymuncuk denemesi başarısız."
+        return LockAttemptResult("lockpick", roll, skill, profile.difficulty_class, total, success, True, message)
 
-    def attempt_force_lock(
-        self, actor_id: str, inventory_id: str, lock_id: str, *,
-        tool_item_id: str | None = None, success: bool = False
-    ) -> bool:
-        """Resolve forced opening from the actor's registered strength and inventory."""
+    def attempt_lockpick(self, actor_id: str, inventory_id: str, lock_id: str, *, tool_item_id: str | None = None) -> bool:
+        return self.resolve_lockpick(actor_id, inventory_id, lock_id, tool_item_id=tool_item_id).success
+
+    def resolve_force_lock(self, actor_id: str, inventory_id: str, lock_id: str, *, tool_item_id: str | None = None) -> LockAttemptResult:
+        """Roll a d20 forced-opening check using the actor strength modifier."""
+        from core.dice import zar_at
         bundle = self._current_bundle()
         self._require_actor_in_active_world(bundle, actor_id)
         character = self._character_for_actor(bundle, actor_id)
         inventory = self._inventory_for_actor(bundle, actor_id, inventory_id)
+        instance = bundle.locks.get(lock_id)
+        if instance is None:
+            raise KeyError(f"Lock not found: {lock_id}")
+        definition = bundle.locks.definition(instance.definition_id)
+        profile = bundle.locks.force_profile(definition.force_profile_id) if definition.force_profile_id else None
+        if profile is None or not profile.allowed:
+            return LockAttemptResult("force", None, 0, None, None, False, False, "Bu kilit zorlanarak açılamaz.")
+        strength_score = character.attributes.get("strength")
+        modifier = character.attributes.modifier("strength")
         tool_tags = self._carried_tool_tags(bundle, inventory, tool_item_id)
-        strength = character.attributes.get("strength")
-        return bundle.locks.attempt_force(
-            lock_id, strength=strength, tool_tags=tool_tags, success=success
-        )
+        if strength_score < profile.minimum_strength:
+            return LockAttemptResult("force", None, modifier, profile.difficulty_class, None, False, False, "Karakterin gücü bu kilidi zorlamak için yetersiz.")
+        if profile.required_tool_tags and not set(tool_tags).intersection(profile.required_tool_tags):
+            return LockAttemptResult("force", None, modifier, profile.difficulty_class, None, False, False, "Gerekli zorlama aleti envanterde bulunamadı.")
+        roll = zar_at(20)
+        total = roll + modifier
+        success = roll == 20 or (roll != 1 and total >= profile.difficulty_class)
+        bundle.locks.attempt_force(lock_id, strength=strength_score, tool_tags=tool_tags, success=success)
+        message = "Kilit zorlanarak açıldı." if success else "Zorlama denemesi başarısız."
+        return LockAttemptResult("force", roll, modifier, profile.difficulty_class, total, success, True, message)
 
+    def attempt_force_lock(self, actor_id: str, inventory_id: str, lock_id: str, *, tool_item_id: str | None = None) -> bool:
+        return self.resolve_force_lock(actor_id, inventory_id, lock_id, tool_item_id=tool_item_id).success
     @staticmethod
     def _inventory_for_actor(bundle, actor_id: str, inventory_id: str) -> Inventory:
         actor = bundle.actors.get(actor_id)
@@ -1845,4 +1875,5 @@ __all__ = [
     "ChainView",
     "GameplaySnapshotView",
     "ContainerView",
+    "LockAttemptResult",
 ]
