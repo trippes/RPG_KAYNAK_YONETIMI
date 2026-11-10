@@ -5,8 +5,9 @@ from dataclasses import dataclass
 from npc import Faction, FactionRegistry, NPC, NPCRegistry, Relationship, RelationshipGraph, ReputationLedger
 from quests import Dialogue, DialogueChoice, DialogueNode
 
+from core.errors import RPGError
 
-class SocialRuntimeError(ValueError):
+class SocialRuntimeError(ValueError, RPGError):
     pass
 
 
