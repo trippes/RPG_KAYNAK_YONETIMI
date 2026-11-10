@@ -71,10 +71,12 @@ class TestMigrationTooling(unittest.TestCase):
             (root / "sample.py").write_text(
                 """from core.events import EventQueue as Queue
 import core.events as event_module
+import core.events
 class Wrapped(Queue):
     pass
 Queue()
 event_module.EventQueue()
+core.events.EventQueue()
 """,
                 encoding="utf-8",
             )
@@ -85,7 +87,7 @@ event_module.EventQueue()
             if item.legacy_name == "core.events.EventQueue"
         ]
         self.assertEqual(
-            ["construction", "construction", "import", "inheritance"],
+            ["construction", "construction", "construction", "import", "inheritance"],
             sorted(item.usage_kind for item in matches),
         )
 
