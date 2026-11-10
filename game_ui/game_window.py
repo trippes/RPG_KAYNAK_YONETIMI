@@ -458,11 +458,9 @@ class GameWindow:
         """Which navigation tabs may be used from the current location."""
         try:
             location = self._current_location()
-            return {
-                "market": location is not None and "market" in location.activities
-            }
+            return {}
         except (KeyError, ValueError, RuntimeError, AttributeError):
-            return {"market": True}
+            return {}
 
     def _handle_nav_click(self, state):
         """Route gameplay navigation from the visible tabs and mapped shortcuts."""
@@ -470,7 +468,7 @@ class GameWindow:
             return
 
         target = None
-        for action in ("map", "market"):
+        for action in ("map",):
             if action in state.actions:
                 state.actions.discard(action)
                 target = action
