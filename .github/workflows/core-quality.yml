@@ -15,7 +15,15 @@ jobs:
       - name: Install project dependencies
         run: python -m pip install -r requirements.txt
       - name: Report legacy API usage
-        run: python -m core.compatibility.usage .
+        run: python -m core.compatibility.usage . | tee legacy-api-usage.json
+      - name: Upload legacy API usage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: legacy-api-usage-linux
+          path: legacy-api-usage.json
+          if-no-files-found: warn
+          retention-days: 30
       - name: Run release-candidate verification
         run: python scripts/verify_release.py
 
@@ -28,5 +36,16 @@ jobs:
           python-version: "3.12"
       - name: Install project dependencies
         run: python -m pip install -r requirements.txt
+      - name: Report legacy API usage
+        shell: bash
+        run: python -m core.compatibility.usage . | tee legacy-api-usage.json
+      - name: Upload legacy API usage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: legacy-api-usage-windows
+          path: legacy-api-usage.json
+          if-no-files-found: warn
+          retention-days: 30
       - name: Run release-candidate verification
         run: python scripts/verify_release.py
