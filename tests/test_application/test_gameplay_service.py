@@ -3,6 +3,9 @@ import unittest
 from pathlib import Path
 
 from core.entity import Entity, EntityType
+from character import ItemDefinition
+from containers import ContainerDefinition, ContainerInstance
+from resources import ResourceDefinition
 from world import Location, WorldMap
 
 from application import (
@@ -74,6 +77,8 @@ class TestGameplayService(unittest.TestCase):
             inventories={"main": inventory},
             recipes=self.recipes,
             facilities=facilities,
+            items={"bread": ItemDefinition("bread", "Bread", weight=0.5, volume_liters=0.25, tags=("food",))},
+            resource_definitions={"wood": ResourceDefinition("wood", "Wood", ResourceUnit.ITEM, 0.5, 0.25, "raw", ("wood",))},
         )
         self.application = GameApplication(SessionHolder(bundle))
         self.service = GameplayService(self.application)
@@ -93,6 +98,99 @@ class TestGameplayService(unittest.TestCase):
         moved = self.service.transfer_world_object("chest_01", "forest", 1, 1)
         self.assertEqual(moved.location_id, "forest")
         self.assertEqual(self.service.world_objects_for_location(world.world_id, "forest"), (moved,))
+
+
+    def test_container_registration_and_item_transfer_are_application_owned(self):
+        self.service.register_container_definition(ContainerDefinition(
+            "chest", "Chest", max_contents_weight_kg=2, max_slots=2,
+            max_contents_volume_liters=2,
+        ))
+        entity = Entity(EntityType.ESYA, "Chest", entity_id="entity_chest")
+        self.application.varlik_ekle(entity)
+        instance = self.service.register_container(
+            ContainerInstance("chest_01", entity.entity_id, "chest")
+        )
+        self.inventory.add_item("bread", 3)
+
+        self.service.transfer_item_to_container("main", "chest_01", "bread", 2)
+        view = self.service.container_state("chest_01")
+
+        self.assertEqual(instance.entity_id, "entity_chest")
+        self.assertEqual(self.inventory.item_quantity("bread"), 1)
+        self.assertEqual(view.items, (("bread", 2),))
+        self.assertEqual(view.contents_slots, 1)
+        self.service.transfer_item_from_container("chest_01", "main", "bread", 1)
+        self.assertEqual(self.inventory.item_quantity("bread"), 2)
+        self.assertEqual(self.service.container_state("chest_01").items, (("bread", 1),))
+
+    def test_container_transfer_rolls_back_source_when_capacity_rejects(self):
+        self.service.register_container_definition(ContainerDefinition(
+            "tiny_chest", "Tiny chest", max_contents_weight_kg=0.5,
+            max_slots=1, max_contents_volume_liters=0.25,
+        ))
+        entity = Entity(EntityType.ESYA, "Tiny chest", entity_id="entity_tiny_chest")
+        self.application.varlik_ekle(entity)
+        self.service.register_container(ContainerInstance(
+            "tiny_chest_01", entity.entity_id, "tiny_chest"
+        ))
+        self.inventory.add_item("bread", 2)
+
+        with self.assertRaises(ValueError):
+            self.service.transfer_item_to_container("main", "tiny_chest_01", "bread", 2)
+
+        self.assertEqual(self.inventory.item_quantity("bread"), 2)
+        self.assertEqual(self.service.container_state("tiny_chest_01").items, ())
+
+    def test_container_resource_transfer_uses_resource_physical_catalog(self):
+        self.service.register_container_definition(ContainerDefinition(
+            "resource_crate", "Resource crate", max_contents_weight_kg=5,
+            max_slots=2, max_contents_volume_liters=5,
+        ))
+        entity = Entity(EntityType.ESYA, "Resource crate", entity_id="entity_resource_crate")
+        self.application.varlik_ekle(entity)
+        self.service.register_container(ContainerInstance(
+            "resource_crate_01", entity.entity_id, "resource_crate"
+        ))
+        wood = ResourceType("wood")
+        self.inventory.add(wood, Quantity(3, ResourceUnit.ITEM))
+
+        self.service.transfer_resource_to_container(
+            "main", "resource_crate_01", wood, Quantity(2, ResourceUnit.ITEM)
+        )
+        view = self.service.container_state("resource_crate_01")
+        self.assertEqual(self.inventory.get(wood), Quantity(1, ResourceUnit.ITEM))
+        self.assertEqual(view.stocks, (("wood", 2, "item"),))
+
+        self.service.transfer_resource_from_container(
+            "resource_crate_01", "main", wood, Quantity(1, ResourceUnit.ITEM)
+        )
+        self.assertEqual(self.inventory.get(wood), Quantity(2, ResourceUnit.ITEM))
+
+    def test_container_can_be_placed_and_nested_without_duplicate_world_placement(self):
+        self.service.register_container_definition(ContainerDefinition(
+            "chest", "Chest", max_contents_weight_kg=10, max_slots=10,
+            max_contents_volume_liters=10, max_nesting_depth=2,
+        ))
+        self.service.register_container_definition(ContainerDefinition(
+            "bag", "Bag", max_contents_weight_kg=5, max_slots=5,
+            max_contents_volume_liters=5, max_nesting_depth=1,
+        ))
+        world = self.application.aktif_dunya()
+        world_map = WorldMap(world.world_id)
+        world_map.add_location(Location("village", "Village"))
+        self.service.register_world_map(world_map)
+        parent_entity = Entity(EntityType.ESYA, "Chest", entity_id="nested_parent_entity")
+        child_entity = Entity(EntityType.ESYA, "Bag", entity_id="nested_child_entity")
+        self.application.varlik_ekle(parent_entity)
+        self.application.varlik_ekle(child_entity)
+        self.service.register_container(ContainerInstance("parent", parent_entity.entity_id, "chest"))
+        self.service.register_container(ContainerInstance("child", child_entity.entity_id, "bag"))
+        self.service.place_container("child", "village", 2, 2)
+
+        self.service.contain_container("parent", "child")
+
+        self.assertIsNotNone(self.application.holder.current.containers.parent_of("child"))
+        self.assertEqual(self.service.world_objects_for_location(world.world_id, "village"), ())
 
     def test_collects_from_active_world_atomically(self):
         self.service.collect("ore-node", "main", Quantity(4, ResourceUnit.ITEM))

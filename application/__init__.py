@@ -21,6 +21,7 @@ from .production_persistence import (
     ProductionSnapshot,
 )
 from .gameplay_service import (
+    ContainerView,
     ChainView,
     FacilityView,
     GameplayChainStage,
@@ -82,6 +83,7 @@ __all__ = [
     "ProductionPersistenceError",
     "FacilityRecord",
     "FacilityJobRecord",
+    "ContainerView",
     "GameplayService",
     "GameplayServiceError",
     "GameplayChainStage",

@@ -23,6 +23,8 @@ class TestSessionBundle(unittest.TestCase):
         self.assertEqual(bundle.simulation.dispatcher.consumer_count(), 1)
         self.assertEqual(bundle.inventories, {})
         self.assertIsInstance(bundle.resource_nodes, WorldResourceNodeManager)
+        from containers import ContainerManager
+        self.assertIsInstance(bundle.containers, ContainerManager)
 
     def test_production_job_runs_on_bundle_runtime(self):
         bundle = SessionBundle.create_default()

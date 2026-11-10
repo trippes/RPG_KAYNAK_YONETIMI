@@ -15,8 +15,10 @@ from typing import Callable, Iterable
 from core.time import Tick
 from core.actions import ActionType, action_tick_cost
 from core.foundation import Identifier
+from core.entity import EntityType
 
 from resources import Inventory, Quantity, Recipe, ResourceType, ResourceUnit
+from containers import ContainerDefinition, ContainerInstance
 from economy import Currency, MarketOffer, Money, TradeService, Merchant, MarketProfile
 
 from .game_application import GameApplication
@@ -52,6 +54,21 @@ class InventoryView:
     stocks: tuple[tuple[str, int, str], ...]
     items: tuple[tuple[str, int], ...] = ()
     weight: float = 0.0
+
+
+@dataclass(frozen=True)
+class ContainerView:
+    container_id: str
+    entity_id: str
+    definition_id: str
+    name: str
+    items: tuple[tuple[str, int], ...]
+    stocks: tuple[tuple[str, int, str], ...]
+    contents_weight_kg: float
+    contents_slots: int
+    contents_volume_liters: float
+    durability: float | None
+    broken: bool
 
 
 @dataclass(frozen=True)
@@ -355,6 +372,151 @@ class GameplayService:
 
     def blocked_world_object_tiles(self, world_id: str, location_id: str) -> frozenset[tuple[int, int]]:
         return self._current_bundle().world_objects.blocked_tiles(world_id, location_id)
+
+    def register_container_definition(self, definition: ContainerDefinition) -> ContainerDefinition:
+        """Register one immutable content definition in the active session."""
+        if not isinstance(definition, ContainerDefinition):
+            raise TypeError("definition must be ContainerDefinition.")
+        return self._current_bundle().containers.register_definition(definition)
+
+    def register_container(self, instance: ContainerInstance, inventory: Inventory | None = None) -> ContainerInstance:
+        """Attach a container capability to an existing Core item entity."""
+        bundle = self._current_bundle()
+        if not isinstance(instance, ContainerInstance):
+            raise TypeError("instance must be ContainerInstance.")
+        entity = bundle.session.entities.get(instance.entity_id)
+        if entity is None:
+            raise KeyError(f"Entity not found: {instance.entity_id}")
+        if entity.entity_type != EntityType.ESYA:
+            raise GameplayServiceError("A container capability can only be attached to an ESYA entity.")
+        if inventory is not None and (
+            any(inventory is existing for existing in bundle.inventories.values())
+            or any(inventory is existing for existing in bundle.containers.all_inventories())
+        ):
+            raise GameplayServiceError("A container must own an independent Inventory.")
+        return bundle.containers.register(instance, inventory)
+
+    def container_state(self, container_id: str) -> ContainerView:
+        """Return a read-only projection of a container and its contents."""
+        bundle = self._current_bundle()
+        instance = bundle.containers.get(container_id)
+        if instance is None:
+            raise KeyError(f"Container not found: {container_id}")
+        definition = bundle.containers.definition(instance.definition_id)
+        inventory = bundle.containers.inventory(container_id)
+        usage = bundle.containers.usage(container_id)
+        return ContainerView(
+            instance.container_id, instance.entity_id, instance.definition_id,
+            definition.name, inventory.item_snapshot(),
+            tuple((resource.value, quantity.value, quantity.unit.value)
+                  for resource, quantity in inventory.snapshot()),
+            usage.weight_kg, usage.slots, usage.volume_liters,
+            instance.durability, instance.broken,
+        )
+
+    def place_container(self, container_id: str, location_id: str, x: int, y: int, *,
+                        width: int = 1, height: int = 1, blocks_movement: bool = True,
+                        layer: int = 0, tags: tuple[str, ...] = ("container",)) -> WorldObjectPlacement:
+        """Place a registered container entity on its world's local map."""
+        bundle = self._current_bundle()
+        instance = bundle.containers.get(container_id)
+        if instance is None:
+            raise KeyError(f"Container not found: {container_id}")
+        if bundle.containers.parent_of(container_id) is not None:
+            raise GameplayServiceError("A nested container cannot also be placed in the world.")
+        return self.place_world_object(
+            instance.entity_id, location_id, x, y, width=width, height=height,
+            blocks_movement=blocks_movement, layer=layer, tags=tags,
+        )
+
+    def contain_container(self, parent_id: str, child_id: str) -> ContainerInstance:
+        """Move a placed child container into another container."""
+        bundle = self._current_bundle()
+        child = bundle.containers.get(child_id)
+        if child is None:
+            raise KeyError(f"Container not found: {child_id}")
+        placement = bundle.world_objects.get(child.entity_id)
+        result = bundle.containers.contain(parent_id, child_id)
+        if placement is not None:
+            bundle.world_objects.remove(placement.object_id)
+        return result
+
+    def transfer_item_to_container(self, source_inventory_id: str, container_id: str,
+                                   item_id: str, quantity: int = 1) -> None:
+        """Atomically transfer item quantity from a registered inventory into a container."""
+        bundle = self._current_bundle()
+        source = self._inventory(bundle, source_inventory_id)
+        target = bundle.containers.inventory(container_id)
+        Inventory._validate_item(item_id, quantity)
+        if source.item_quantity(item_id) < quantity:
+            raise ValueError("Insufficient item stock in source inventory.")
+        source_before, target_before = source.item_snapshot(), target.item_snapshot()
+        try:
+            source.remove_item(item_id, quantity)
+            bundle.containers.add_item(container_id, item_id, quantity)
+        except Exception:
+            source._restore_item_snapshot(source_before)
+            target._restore_item_snapshot(target_before)
+            raise
+
+    def transfer_item_from_container(self, container_id: str, target_inventory_id: str,
+                                     item_id: str, quantity: int = 1) -> None:
+        """Atomically transfer item quantity from a container into a registered inventory."""
+        bundle = self._current_bundle()
+        source = bundle.containers.inventory(container_id)
+        target = self._inventory(bundle, target_inventory_id)
+        Inventory._validate_item(item_id, quantity)
+        if source.item_quantity(item_id) < quantity:
+            raise ValueError("Insufficient item stock in container.")
+        source_before, target_before = source.item_snapshot(), target.item_snapshot()
+        try:
+            source.remove_item(item_id, quantity)
+            target.add_item(item_id, quantity)
+        except Exception:
+            source._restore_item_snapshot(source_before)
+            target._restore_item_snapshot(target_before)
+            raise
+
+    def transfer_resource_to_container(self, source_inventory_id: str, container_id: str,
+                                       resource_type: ResourceType, quantity: Quantity) -> None:
+        """Atomically transfer resource stock into a container."""
+        bundle = self._current_bundle()
+        source = self._inventory(bundle, source_inventory_id)
+        target = bundle.containers.inventory(container_id)
+        if not isinstance(resource_type, ResourceType) or not isinstance(quantity, Quantity):
+            raise TypeError("resource_type and quantity must be ResourceType and Quantity.")
+        current = source.get(resource_type)
+        if current is None or current.unit != quantity.unit or current.value < quantity.value:
+            raise ValueError("Insufficient or incompatible resource stock in source inventory.")
+        source_before, target_before = source.snapshot(), target.snapshot()
+        try:
+            source.remove(resource_type, quantity)
+            bundle.containers.add_resource(container_id, resource_type, quantity)
+        except Exception:
+            source._restore_snapshot(source_before)
+            target._restore_snapshot(target_before)
+            raise
+
+    def transfer_resource_from_container(self, container_id: str, target_inventory_id: str,
+                                         resource_type: ResourceType, quantity: Quantity) -> None:
+        """Atomically transfer resource stock from a container into a registered inventory."""
+        bundle = self._current_bundle()
+        source = bundle.containers.inventory(container_id)
+        target = self._inventory(bundle, target_inventory_id)
+        if not isinstance(resource_type, ResourceType) or not isinstance(quantity, Quantity):
+            raise TypeError("resource_type and quantity must be ResourceType and Quantity.")
+        current = source.get(resource_type)
+        if current is None or current.unit != quantity.unit or current.value < quantity.value:
+            raise ValueError("Insufficient or incompatible resource stock in container.")
+        source_before, target_before = source.snapshot(), target.snapshot()
+        try:
+            source.remove(resource_type, quantity)
+            target.add(resource_type, quantity)
+        except Exception:
+            source._restore_snapshot(source_before)
+            target._restore_snapshot(target_before)
+            raise
+
 
     def place_actor(self, actor_id: str, location_id: str) -> ActorView:
         self._current_bundle().movement.set_position(actor_id, location_id)
@@ -1363,4 +1525,5 @@ __all__ = [
     "JobView",
     "ChainView",
     "GameplaySnapshotView",
+    "ContainerView",
 ]

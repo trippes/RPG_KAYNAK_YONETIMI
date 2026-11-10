@@ -32,6 +32,27 @@ class ContainerManager:
             raise ValueError("max_global_nesting_depth must be a positive integer.")
         self.max_global_nesting_depth = max_global_nesting_depth
 
+    def bind_catalogs(self, item_catalog=None, resource_catalog=None):
+        """Bind the authoritative physical metadata catalogs for this session."""
+        if item_catalog is not None and not isinstance(item_catalog, Mapping):
+            raise TypeError("item_catalog must be a mapping.")
+        if resource_catalog is not None and not isinstance(resource_catalog, Mapping):
+            raise TypeError("resource_catalog must be a mapping.")
+        previous_items = self._item_catalog
+        previous_resources = self._resource_catalog
+        self._item_catalog = dict(item_catalog or {})
+        self._resource_catalog = dict(resource_catalog or {})
+        try:
+            self.validate()
+        except Exception:
+            self._item_catalog = previous_items
+            self._resource_catalog = previous_resources
+            raise
+
+    def all_inventories(self):
+        """Return the distinct inventories owned by registered containers."""
+        return tuple(self._inventories[key] for key in sorted(self._inventories))
+
     def register_definition(self, definition):
         if not isinstance(definition, ContainerDefinition):
             raise TypeError("definition must be ContainerDefinition.")
@@ -56,6 +77,8 @@ class ContainerManager:
             inventory = Inventory()
         if not isinstance(inventory, Inventory):
             raise TypeError("inventory must be Inventory.")
+        if any(existing is inventory for existing in self._inventories.values()):
+            raise ContainerManagerError("An Inventory cannot be owned by multiple containers.")
         if definition.break_profile_id:
             profile = self.break_profiles.get(definition.break_profile_id)
             if instance.durability is None:

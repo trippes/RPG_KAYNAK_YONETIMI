@@ -13,6 +13,8 @@ from .production_facility import ProductionFacilityRegistry
 from .actor_system import ActorActivityManager, WorldActorRegistry
 from .movement import MovementManager
 from character import Character, ItemDefinition
+from resources import ResourceDefinition
+from containers import ContainerManager
 from quests import QuestLog
 from economy import Economy
 from .social_runtime import SocialRuntime
@@ -46,6 +48,8 @@ remain mutable domain objects by design; this is not deep immutability.
     combat: CombatRuntime | None = None
     items: Mapping[str, ItemDefinition] | None = None
     world_objects: WorldObjectPlacementRegistry | None = None
+    resource_definitions: Mapping[str, ResourceDefinition] | None = None
+    containers: ContainerManager | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.session, GameSession):
@@ -74,6 +78,20 @@ remain mutable domain objects by design; this is not deep immutability.
         for item_id, item in self.items.items():
             if item_id != item.item_id:
                 raise ValueError("item registry key must match item.item_id.")
+        if self.resource_definitions is None:
+            object.__setattr__(self, "resource_definitions", {})
+        if not isinstance(self.resource_definitions, Mapping) or any(
+            not isinstance(value, ResourceDefinition) for value in self.resource_definitions.values()
+        ):
+            raise TypeError("resource_definitions must map IDs to ResourceDefinition values.")
+        for resource_id, definition in self.resource_definitions.items():
+            if resource_id != definition.resource_id:
+                raise ValueError("resource definition registry key must match resource_id.")
+        if self.containers is None:
+            object.__setattr__(self, "containers", ContainerManager(self.items, self.resource_definitions))
+        if not isinstance(self.containers, ContainerManager):
+            raise TypeError("containers must be ContainerManager.")
+        self.containers.bind_catalogs(self.items, self.resource_definitions)
         if self.characters is None:
             object.__setattr__(self, "characters", {})
         if not isinstance(self.characters, Mapping) or any(not isinstance(value, Character) for value in self.characters.values()):
@@ -147,6 +165,12 @@ remain mutable domain objects by design; this is not deep immutability.
             raise TypeError("inventories must contain Inventory values.")
         if len({id(inventory) for inventory in inventory_values}) != len(inventory_values):
             raise ValueError("An Inventory cannot be registered under multiple IDs.")
+        container_inventories = self.containers.all_inventories()
+        container_inventory_ids = {id(inventory) for inventory in container_inventories}
+        if container_inventory_ids.intersection(id(inventory) for inventory in inventory_values):
+            raise ValueError("Container inventories cannot alias registered actor/merchant inventories.")
+        if len(container_inventory_ids) != len(container_inventories):
+            raise ValueError("A container inventory cannot be registered under multiple containers.")
         for inventory_id in self.inventories:
             if not isinstance(inventory_id, str) or not inventory_id.strip():
                 raise ValueError("inventory IDs must be non-empty strings.")
@@ -177,6 +201,7 @@ remain mutable domain objects by design; this is not deep immutability.
         object.__setattr__(self, "recipes", MappingProxyType(dict(self.recipes)))
         object.__setattr__(self, "characters", MappingProxyType(dict(self.characters)))
         object.__setattr__(self, "items", MappingProxyType(dict(self.items)))
+        object.__setattr__(self, "resource_definitions", MappingProxyType(dict(self.resource_definitions)))
 
     @classmethod
     def create_default(cls, start_tick=0) -> "SessionBundle":
@@ -251,6 +276,13 @@ class SessionHolder:
             or first.social is second.social
             or first.combat is second.combat
             or first.world_objects is second.world_objects
+            or first.containers is second.containers
+        ):
+            return True
+        if any(
+            inventory is other_inventory
+            for inventory in first.containers.all_inventories()
+            for other_inventory in second.containers.all_inventories()
         ):
             return True
         return any(
