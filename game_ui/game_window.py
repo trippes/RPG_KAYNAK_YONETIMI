@@ -21,7 +21,7 @@ from .window_manager import WindowManager
 from application.save_storage import SaveStorage, SaveStorageError
 
 # Screens that show the navigation tab bar / resource bar.
-NAV_SCREENS = frozenset({"main"})
+NAV_SCREENS = frozenset()
 # Gameplay tools are windows owned by the persistent MainScreen surface.
 GAMEPLAY_WINDOW_IDS = frozenset({
     "character", "inventory", "quest_log", "map", "production", "market",
