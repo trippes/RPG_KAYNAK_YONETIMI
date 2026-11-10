@@ -3,9 +3,9 @@ import unittest
 from pathlib import Path
 
 from core.entity import Entity, EntityType
-from character import ItemDefinition
+from character import Attributes, Character, CharacterClass, ItemDefinition, Race, Skills
 from containers import ContainerDefinition, ContainerInstance
-from locks import KeyDefinition, LockDefinition, LockInstance, LockpickProfile
+from locks import ForceProfile, KeyDefinition, LockDefinition, LockInstance, LockpickProfile
 from resources import ResourceDefinition
 from world import Location, WorldMap
 
@@ -78,7 +78,19 @@ class TestGameplayService(unittest.TestCase):
             inventories={"main": inventory},
             recipes=self.recipes,
             facilities=facilities,
-            items={"bread": ItemDefinition("bread", "Bread", weight=0.5, volume_liters=0.25, tags=("food",))},
+            items={
+                "bread": ItemDefinition("bread", "Bread", weight=0.5, volume_liters=0.25, tags=("food",)),
+                "lockpick": ItemDefinition("lockpick", "Lockpick", tags=("lockpick",)),
+                "breaching_tool": ItemDefinition("breaching_tool", "Breaching tool", tags=("breaching_tool",)),
+            },
+            characters={
+                "hero_character": Character(
+                    "hero_character", "Hero", Race("human", "Human"),
+                    CharacterClass("rogue", "Rogue"),
+                    attributes=Attributes({"strength": 10}),
+                    skills=Skills({"lockpicking": 1}),
+                )
+            },
             resource_definitions={"wood": ResourceDefinition("wood", "Wood", ResourceUnit.ITEM, 0.5, 0.25, "raw", ("wood",))},
         )
         self.application = GameApplication(SessionHolder(bundle))
@@ -100,7 +112,7 @@ class TestGameplayService(unittest.TestCase):
         self.service.register_lock(
             LockInstance("locked_chest_lock_01", entity.entity_id, "locked_chest_lock")
         )
-        self.service.register_actor("hero", "player")
+        self.service.register_actor("hero", "player", character_id="hero_character")
         self.inventory.add_item("chest_key")
 
         with self.assertRaises(GameplayServiceError):
@@ -118,13 +130,16 @@ class TestGameplayService(unittest.TestCase):
             "locked_chest_01",
         )
 
-    def test_lockpick_action_uses_actor_context_and_skill_profile(self):
+    def test_lockpick_uses_character_skill_and_inventory_tool(self):
         self.service.register_container_definition(ContainerDefinition("pick_chest", "Pick chest"))
         entity = Entity(EntityType.ESYA, "Pick chest", entity_id="pick_chest_entity")
         self.application.varlik_ekle(entity)
         self.service.register_container(ContainerInstance("pick_chest_01", entity.entity_id, "pick_chest"))
         self.service.register_lockpick_profile(
-            LockpickProfile("basic_pick", require_skill=True, minimum_skill=2)
+            LockpickProfile(
+                "basic_pick", allowed_tool_tags=("lockpick",),
+                require_skill=True, require_tool=True, minimum_skill=2,
+            )
         )
         self.service.register_lock_definition(
             LockDefinition("pick_chest_lock", "Pickable lock", lockpick_profile_id="basic_pick")
@@ -132,17 +147,61 @@ class TestGameplayService(unittest.TestCase):
         self.service.register_lock(
             LockInstance("pick_chest_lock_01", entity.entity_id, "pick_chest_lock")
         )
-        self.service.register_actor("hero", "player")
+        self.service.register_actor("hero", "player", character_id="hero_character")
+        self.inventory.add_item("lockpick")
 
         self.assertFalse(self.service.attempt_lockpick(
-            "hero", "main", "pick_chest_lock_01", skill=1, success=True
+            "hero", "main", "pick_chest_lock_01", tool_item_id="lockpick", success=True
         ))
         self.assertTrue(self.service.lock_state("pick_chest_lock_01").locked)
+
+        self.application.holder.current.characters["hero_character"].skills = Skills({"lockpicking": 3})
+        self.inventory.remove_item("lockpick")
+        self.assertFalse(self.service.attempt_lockpick(
+            "hero", "main", "pick_chest_lock_01", tool_item_id="lockpick", success=True
+        ))
+        self.inventory.add_item("lockpick")
         self.assertTrue(self.service.attempt_lockpick(
-            "hero", "main", "pick_chest_lock_01", skill=3, success=True
+            "hero", "main", "pick_chest_lock_01", tool_item_id="lockpick", success=True
         ))
         self.assertFalse(self.service.lock_state("pick_chest_lock_01").locked)
 
+    def test_force_open_uses_character_strength_and_carried_tool(self):
+        entity = Entity(EntityType.ESYA, "Iron gate", entity_id="iron_gate_entity")
+        self.application.varlik_ekle(entity)
+        self.service.register_force_profile(
+            ForceProfile(
+                "heavy_force", minimum_strength=14,
+                required_tool_tags=("breaching_tool",), success_effect="break",
+            )
+        )
+        self.service.register_lock_definition(
+            LockDefinition("iron_gate_lock", "Iron gate lock", force_profile_id="heavy_force")
+        )
+        self.service.register_lock(
+            LockInstance("iron_gate_lock_01", entity.entity_id, "iron_gate_lock")
+        )
+        self.service.register_actor("hero", "player", character_id="hero_character")
+        self.inventory.add_item("breaching_tool")
+
+        self.assertFalse(self.service.attempt_force_lock(
+            "hero", "main", "iron_gate_lock_01",
+            tool_item_id="breaching_tool", success=True,
+        ))
+        self.application.holder.current.characters["hero_character"].attributes = Attributes({"strength": 14})
+        self.inventory.remove_item("breaching_tool")
+        self.assertFalse(self.service.attempt_force_lock(
+            "hero", "main", "iron_gate_lock_01",
+            tool_item_id="breaching_tool", success=True,
+        ))
+        self.inventory.add_item("breaching_tool")
+        self.assertTrue(self.service.attempt_force_lock(
+            "hero", "main", "iron_gate_lock_01",
+            tool_item_id="breaching_tool", success=True,
+        ))
+        state = self.service.lock_state("iron_gate_lock_01")
+        self.assertTrue(state.broken)
+        self.assertFalse(state.locked)
 
     def test_lock_and_key_state_survives_game_application_save_load(self):
         self.service.register_container_definition(ContainerDefinition("saved_chest", "Saved chest"))
