@@ -58,6 +58,10 @@ class TestWorldRuntimeSeparation(unittest.TestCase):
         found = world.get_entities_by_position(CanonicalPosition(3, 4))
         self.assertEqual(found, [entity])
 
+    def test_entity_position_compatibility_projection_uses_canonical_value(self):
+        entity = Entity(EntityType.KARAKTER, "Guard")
+        self.assertIsInstance(entity.position.to_canonical(), CanonicalPosition)
+
     def test_position_remains_bounds_independent(self):
         position = CanonicalPosition(1000, 1000)
         self.assertEqual(position.to_dict(), {"x": 1000, "y": 1000})
