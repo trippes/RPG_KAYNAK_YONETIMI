@@ -300,10 +300,16 @@ koşulları sağlanmamıştır ve hiçbir legacy sistem kaldırma onayı alamaz.
   implementasyonlara taşınmıştır. Public 1.x yüzeyleri adapter olarak
   korunmuştur; dış istemci/reflection/plugin kullanımı statik taramayla
   kanıtlanamayacağı için silme veya toplu deprecation yapılmamıştır.
-- **D — Deprecation:** Yeni toplu deprecation yapılmadı. Adapter'lar
-  uyumluluk sınırı olarak kalır; doğrudan dış kullanıcıların varlığı
-  doğrulanmadan EventManager/EventBus/EventQueue/Scheduler deprecated
-  durumuna geçirilmez.
+- **D — Deprecation:** Tek kontrollü deprecation sınırı
+  `Game.dunya_olaylarini_aktar` olarak tutulur; aynı metadata kimliği
+  `GameApplication` içindeki 1.x forwarding façade'ına da uygulanır.
+  Warning mesajı deprecated sürümünü, canonical replacement'ı ve en erken
+  removal fazını bildirir; kaldırmanın ayrı major-version kararı ve harici
+  tüketici kontrolü gerektirdiğini açıkça söyler. Testler iki façade'da da
+  tek warning üretildiğini ve runtime sayacının arttığını doğrular.
+  EventManager/EventBus/EventQueue/Scheduler, mutable Position ve projection
+  API'leri dış kullanıcı kapsamı bilinmediği için compatibility/alias/projection
+  durumunda kalır; toplu deprecation yapılmaz.
 - **E — Emeklilik kapısı:** Sonuç KEEP / kaldırma yok. Public API ve
   harici tüketici kapsamı için yazılı doğrulama bulunmadığından hiçbir legacy
   API silinmeye uygun değil.
@@ -315,9 +321,9 @@ ilgili commit SHA'larına bağlı GitHub Actions kayıtlarından doğrulanır.
 ## 10. Şimdiki karar
 
 Aşama C'nin uygulama içi tüketici göçü canonical-backed adapter'larla
-tamamlandı. EventManager/EventBus/EventQueue ve callback Scheduler'ın public
-1.x davranışı korunarak canonical transport/scheduler altyapısına bağlandı.
-Mutable Entity Position ve diğer açıkça kayıtlı projection'lar mevcut
-compatibility sınırlarında tutulur. Aşama D/E ayrı sürüm ve harici tüketici
-kanıtı gerektirir; bu aşamada hiçbir legacy API topluca deprecated ilan
-edilmez veya kaldırılmaz.
+tamamlandı. Aşama D'de yalnızca önceden tanımlanmış World-event forwarding
+sınırı kontrollü deprecation altında tutulur; Game ve GameApplication
+façadeleri aynı warning kimliğini kullanır. Warning mesajı replacement,
+deprecated sürümü ve removal kapısını belirtir. Diğer public 1.x API'leri
+harici tüketici kapsamı kanıtlanamadığı için korunur. Aşama E'nin kaldırma
+kapısı kapalıdır: hiçbir legacy API bu değişiklikte silinmez.
