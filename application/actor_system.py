@@ -14,12 +14,13 @@ from core.domain.spatial import Position
 
 from .production_facility import ProductionFacilityRegistry
 
+from core.errors import RPGError
 
-class ActorError(ValueError):
+class ActorError(ValueError, RPGError):
     """Invalid actor or actor registry operation."""
 
 
-class ActivityError(ValueError):
+class ActivityError(ValueError, RPGError):
     """Invalid activity lifecycle or target operation."""
 
 
