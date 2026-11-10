@@ -18,7 +18,7 @@ class SaveFileError(OSError):
 
 
 class SaveFileReadError(SaveFileError):
-    """The unified save file could not be read."""
+    """The unified save file and its recovery copy could not be read."""
 
 
 class SaveFileWriteError(SaveFileError):
@@ -26,7 +26,7 @@ class SaveFileWriteError(SaveFileError):
 
 
 class GameSaveFileAdapter:
-    """Read and atomically replace one unified game save file."""
+    """Read, recover and atomically replace one unified game save file."""
 
     @staticmethod
     def save(document: GameSaveDocument, path: PathLike) -> Path:
@@ -38,8 +38,6 @@ class GameSaveFileAdapter:
         temporary_path: Path | None = None
         try:
             target.parent.mkdir(parents=True, exist_ok=True)
-            if target.exists():
-                shutil.copy2(target, GameSaveFileAdapter.backup_path(target))
             with tempfile.NamedTemporaryFile(
                 mode="w",
                 encoding="utf-8",
@@ -52,6 +50,24 @@ class GameSaveFileAdapter:
                 temporary.write(payload)
                 temporary.flush()
                 os.fsync(temporary.fileno())
+
+            # Validate the staged bytes before touching either the primary save
+            # or its recovery copy.
+            GameSaveFileAdapter._read_document(temporary_path)
+
+            if target.exists():
+                try:
+                    GameSaveFileAdapter._read_document(target)
+                except (OSError, ValueError, TypeError):
+                    # Never replace a potentially good backup with a corrupt
+                    # primary file. The new staged document can still replace it.
+                    pass
+                else:
+                    GameSaveFileAdapter._copy_atomically(
+                        target,
+                        GameSaveFileAdapter.backup_path(target),
+                    )
+
             os.replace(temporary_path, target)
             temporary_path = None
             return target
@@ -76,9 +92,58 @@ class GameSaveFileAdapter:
     def load(path: PathLike) -> GameSaveDocument:
         target = Path(path)
         try:
+            return GameSaveFileAdapter._read_document(target)
+        except (OSError, ValueError, TypeError) as primary_error:
+            backup = GameSaveFileAdapter.backup_path(target)
+            try:
+                document = GameSaveFileAdapter._read_document(backup)
+            except (OSError, ValueError, TypeError) as backup_error:
+                raise SaveFileReadError(
+                    f"Could not read a valid save or recovery copy: {target}"
+                ) from primary_error
+
+            # A valid backup is enough to continue loading even if the damaged
+            # primary cannot be repaired (for example, due to read-only media).
+            try:
+                GameSaveFileAdapter._copy_atomically(backup, target)
+            except OSError:
+                pass
+            return document
+
+    @staticmethod
+    def _read_document(path: PathLike) -> GameSaveDocument:
+        target = Path(path)
+        try:
             payload = target.read_text(encoding="utf-8")
         except (OSError, UnicodeError) as error:
             raise SaveFileReadError(
                 f"Could not read game save file: {target}"
             ) from error
         return SaveJsonCodec.decode(payload)
+
+    @staticmethod
+    def _copy_atomically(source: Path, target: Path) -> None:
+        temporary_path: Path | None = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="wb",
+                dir=target.parent,
+                prefix=f".{target.name}.",
+                suffix=".tmp",
+                delete=False,
+            ) as temporary:
+                temporary_path = Path(temporary.name)
+                with source.open("rb") as source_file:
+                    shutil.copyfileobj(source_file, temporary)
+                temporary.flush()
+                os.fsync(temporary.fileno())
+
+            GameSaveFileAdapter._read_document(temporary_path)
+            os.replace(temporary_path, target)
+            temporary_path = None
+        finally:
+            if temporary_path is not None:
+                try:
+                    temporary_path.unlink(missing_ok=True)
+                except OSError:
+                    pass
