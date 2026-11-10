@@ -29,7 +29,7 @@ _ENTRIES = (
     CompatibilityEntry("core.event_manager.EventManager", "CanonicalEventManagerAdapter", "compatibility", False, "1.x", None, "Phase 7+", "Game and GameApplication now use a canonical-transport-backed adapter; EventBus and Event/EventQueue-shaped views remain for public 1.x behavior.", "external 1.x callers and direct EventBus consumers"),
     CompatibilityEntry("core.event_types.EventType", "CanonicalEventType", "alias", False, "1.x", None, "Phase 6+", "Canonical type aliases remain available.", "public imports"),
     CompatibilityEntry("core.constants event constants", "CanonicalEventType", "alias", False, "1.x", None, "Phase 6+", "Do not remove public constants yet.", "public imports"),
-    CompatibilityEntry("Game.dunya_olaylarini_aktar", "Game.dunya_olaylarini_canonical_aktar", "deprecated", True, "1.x", "2.0", "Phase 6+", "Route new code through the runtime dispatcher.", "legacy queue consumers"),
+    CompatibilityEntry("Game.dunya_olaylarini_aktar", "Game.dunya_olaylarini_canonical_aktar", "deprecated", True, "1.x", "2.0", "Phase 6+", "Route new code through the runtime dispatcher. The same warning identity covers the Game and GameApplication compatibility façades.", "legacy queue consumers and external 1.x callers"),
     CompatibilityEntry("core.clock.GameClock", "WorldRuntimeBoundary.advance_world", "compatibility", False, "1.x", None, "Phase 7+", "Only the World compatibility projection may own this adapter.", "1.x world clock callers"),
     CompatibilityEntry("time_system.Scheduler", "CanonicalScheduler via LegacyCallbackSchedulerAdapter", "compatibility", False, "1.x", None, "Phase 7+", "World runtime callback scheduling is backed by typed canonical work; callable execution stays in the compatibility adapter.", "direct external Scheduler callers"),
     CompatibilityEntry("core.actions.Action", "core.simulation.Action", "compatibility", False, "1.x", None, "Phase 7+", "Preserve mutable action behavior.", "1.x action callers"),
@@ -54,7 +54,12 @@ def warn_deprecated(api_name: str, stacklevel: int = 2) -> None:
     from .usage import record_usage
     record_usage(api_name)
     warnings.warn(
-        f"{api_name} is a legacy compatibility API; use {entry.canonical_replacement}.",
+        (
+            f"{api_name} was deprecated in {entry.deprecated_version}; use "
+            f"{entry.canonical_replacement}. Removal is not scheduled before "
+            f"{entry.planned_removal_phase} and requires a separate major-version "
+            "decision after compatibility and external-consumer checks."
+        ),
         DeprecationWarning,
         stacklevel=stacklevel,
     )
