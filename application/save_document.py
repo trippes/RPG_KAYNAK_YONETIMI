@@ -16,10 +16,11 @@ from quests import QuestSnapshot
 from economy import EconomySnapshot
 from .extended_persistence import SocialSnapshot, CombatSnapshot
 from .migrations import migrate_save_data
+from .container_persistence import ContainerSnapshot
 
 
 SAVE_SCHEMA = "rpg-game-save"
-SAVE_SCHEMA_VERSION = 1
+SAVE_SCHEMA_VERSION = 2
 
 
 class SaveDocumentError(PersistenceSchemaError):
@@ -45,6 +46,7 @@ class GameSaveDocument:
     economy: EconomySnapshot | None = None
     social: SocialSnapshot | None = None
     combat: CombatSnapshot | None = None
+    containers: ContainerSnapshot | None = None
 
     def __post_init__(self) -> None:
         if self.schema != SAVE_SCHEMA:
@@ -75,6 +77,7 @@ class GameSaveDocument:
             raise TypeError("economy must be EconomySnapshot or None.")
         if self.social is not None and not isinstance(self.social, SocialSnapshot): raise TypeError("social must be SocialSnapshot or None.")
         if self.combat is not None and not isinstance(self.combat, CombatSnapshot): raise TypeError("combat must be CombatSnapshot or None.")
+        if self.containers is not None and not isinstance(self.containers, ContainerSnapshot): raise TypeError("containers must be ContainerSnapshot or None.")
         if self.core.simulation_tick.value != self.gameplay.simulation_tick:
             raise SaveDocumentError("Core/gameplay simulation tick mismatch.")
 
@@ -97,6 +100,7 @@ class GameSaveDocument:
             result["economy"] = self.economy.to_dict()
         if self.social is not None: result["social"] = self.social.to_dict()
         if self.combat is not None: result["combat"] = self.combat.to_dict()
+        if self.containers is not None: result["containers"] = self.containers.to_dict()
         return result
 
     @classmethod
@@ -111,7 +115,7 @@ class GameSaveDocument:
             raise SaveDocumentError(
                 f"Game save document is missing required fields: {sorted(missing)}"
             )
-        unexpected = set(data) - required - {"production", "actors", "characters", "quests", "economy", "social", "combat"}
+        unexpected = set(data) - required - {"production", "actors", "characters", "quests", "economy", "social", "combat", "containers"}
         if unexpected:
             raise SaveDocumentError(
                 f"Game save document contains unknown fields: {sorted(unexpected)}"
@@ -157,6 +161,7 @@ class GameSaveDocument:
             economy = EconomySnapshot.from_dict(data["economy"])
         social = SocialSnapshot.from_dict(data["social"]) if "social" in data else None
         combat = CombatSnapshot.from_dict(data["combat"]) if "combat" in data else None
+        containers = ContainerSnapshot.from_dict(data["containers"]) if "containers" in data and data["containers"] is not None else None
         return cls(
             core=core,
             gameplay=gameplay,
@@ -167,6 +172,7 @@ class GameSaveDocument:
             economy=economy,
             social=social,
             combat=combat,
+            containers=containers,
             schema=data["schema"],
             schema_version=version,
         )
