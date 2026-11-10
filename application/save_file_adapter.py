@@ -10,6 +10,7 @@ from typing import Union
 
 from .save_codec import SaveJsonCodec
 from .save_document import GameSaveDocument, SaveDocumentError, UnsupportedSaveSchemaError
+from .save_lock import save_path_lock
 
 
 PathLike = Union[str, os.PathLike[str]]
@@ -37,11 +38,20 @@ class GameSaveFileAdapter:
             raise TypeError("document must be GameSaveDocument.")
 
         target = Path(path)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        with save_path_lock(target):
+            return GameSaveFileAdapter._save_locked(document, target)
+
+    @staticmethod
+    def _save_locked(document: GameSaveDocument, target: Path) -> Path:
         payload = SaveJsonCodec.encode(document)
         temporary_path: Path | None = None
         try:
-            target.parent.mkdir(parents=True, exist_ok=True)
-            GameSaveFileAdapter.cleanup_orphaned_temporary_files(target)
+            GameSaveFileAdapter._cleanup_orphaned_temporary_files(
+                target,
+                older_than_seconds=ORPHAN_TEMP_MAX_AGE_SECONDS,
+                now=None,
+            )
             with tempfile.NamedTemporaryFile(
                 mode="w",
                 encoding="utf-8",
@@ -102,14 +112,27 @@ class GameSaveFileAdapter:
     ) -> tuple[Path, ...]:
         """Remove only old regular temp files belonging to this save and backup.
 
-        The seven-day default age limit deliberately leaves recent files alone,
-        including files that may belong to an in-progress save in another process.
-        Primary saves, backups, symlinks and unrelated files are never candidates.
+        Cleanup shares the slot lock with save/load so it cannot remove staging
+        files while another process is actively replacing the same slot.
         """
         if older_than_seconds < 1:
             raise ValueError("older_than_seconds must be at least 1.")
 
         target = Path(path)
+        with save_path_lock(target):
+            return GameSaveFileAdapter._cleanup_orphaned_temporary_files(
+                target,
+                older_than_seconds=older_than_seconds,
+                now=now,
+            )
+
+    @staticmethod
+    def _cleanup_orphaned_temporary_files(
+        target: Path,
+        *,
+        older_than_seconds: int,
+        now: float | None,
+    ) -> tuple[Path, ...]:
         directory = target.parent
         if not directory.is_dir():
             return ()
@@ -142,6 +165,11 @@ class GameSaveFileAdapter:
     @staticmethod
     def load(path: PathLike) -> GameSaveDocument:
         target = Path(path)
+        with save_path_lock(target):
+            return GameSaveFileAdapter._load_locked(target)
+
+    @staticmethod
+    def _load_locked(target: Path) -> GameSaveDocument:
         primary_error = None
         try:
             return GameSaveFileAdapter._read_document(target)
