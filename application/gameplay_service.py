@@ -686,8 +686,112 @@ class GameplayService:
             ))
         return profile
 
-    def market_for_npc(self, npc_id: str):
-        return self._current_bundle().economy.market.profile_for_npc(npc_id)
+    def register_trade_partner(
+        self, npc_id: str, merchant_id: str, inventory_id: str,
+        accepted_resources, initial_gold: int, buyback_rate: int = 50,
+        unit_prices=None,
+    ) -> Merchant:
+        bundle = self._current_bundle()
+        npc = bundle.social.npcs.get(npc_id)
+        if npc is None:
+            raise KeyError(f"Trade partner NPC not found: {npc_id}")
+        resources = tuple(
+            value if isinstance(value, ResourceType) else ResourceType(value)
+            for value in accepted_resources
+        )
+        inventories = dict(bundle.inventories)
+        inventory = inventories.get(inventory_id)
+        if inventory is None:
+            inventory = Inventory()
+            inventories[inventory_id] = inventory
+            object.__setattr__(bundle, "inventories", MappingProxyType(inventories))
+        existing = bundle.economy.merchants.get(merchant_id)
+        if existing is None:
+            merchant = Merchant(
+                merchant_id, inventory, account_id=merchant_id,
+                inventory_id=inventory_id, npc_id=npc_id,
+                accepted_resources=resources, buyback_rate=buyback_rate,
+            )
+            bundle.economy.register_merchant(merchant)
+        else:
+            if (
+                existing.npc_id != npc_id
+                or existing.inventory_id != inventory_id
+                or existing.accepted_resources != resources
+                or existing.buyback_rate != buyback_rate
+            ):
+                raise ValueError(f"Conflicting trade partner profile: {npc_id}")
+            merchant = existing
+        currency = Currency("gold")
+        if bundle.economy.ledger.balance(merchant.account_id, currency).amount == 0:
+            if isinstance(initial_gold, bool) or not isinstance(initial_gold, int) or initial_gold < 0:
+                raise ValueError("initial_gold must be a non-negative integer.")
+            if initial_gold:
+                bundle.economy.ledger.credit(
+                    merchant.account_id, Money(initial_gold, currency), "trade_partner_funding",
+                )
+        for resource_id, amount in (unit_prices or {}).items():
+            if isinstance(amount, bool) or not isinstance(amount, int) or amount <= 0:
+                raise ValueError("Trade unit prices must be positive integers.")
+            bundle.economy.market.prices.set(
+                ResourceType(resource_id), Money(amount, currency),
+            )
+        return merchant
+
+    def trade_partner_for_npc(self, npc_id: str) -> Merchant | None:
+        return next(
+            (merchant for merchant in self._current_bundle().economy.merchants.values()
+             if merchant.npc_id == npc_id and merchant.accepted_resources),
+            None,
+        )
+
+    def trade_sellable_items(self, npc_id: str, inventory_id: str = "player"):
+        bundle = self._current_bundle()
+        merchant = self.trade_partner_for_npc(npc_id)
+        if merchant is None:
+            raise KeyError(f"NPC has no trade profile: {npc_id}")
+        inventory = self._inventory(bundle, inventory_id)
+        currency = Currency("gold")
+        quotes = []
+        for resource_type in merchant.accepted_resources:
+            stock = inventory.get(resource_type)
+            price = bundle.economy.market.prices.get(resource_type, currency)
+            if stock is None or stock.value <= 0 or price is None:
+                continue
+            amount = max(1, price.money.amount * merchant.buyback_rate // 100)
+            quotes.append((resource_type, stock.value, Money(amount, currency)))
+        return tuple(quotes)
+
+    def sell_to_npc(
+        self, npc_id: str, resource_type: ResourceType, quantity: int = 1,
+        actor_id: str = "hero", inventory_id: str = "player",
+    ):
+        bundle = self._current_bundle()
+        merchant = self.trade_partner_for_npc(npc_id)
+        if merchant is None:
+            raise KeyError(f"NPC has no trade profile: {npc_id}")
+        npc = bundle.social.npcs.get(npc_id)
+        self._require_actor_in_active_world(bundle, actor_id)
+        actor = bundle.actors.get(actor_id)
+        if actor.location_id != npc.location_id:
+            raise GameplayServiceError("Player must be at the NPC's location to trade.")
+        if resource_type not in merchant.accepted_resources:
+            raise GameplayServiceError("This NPC does not buy that resource.")
+        seller_inventory = self._inventory(bundle, inventory_id)
+        stock = seller_inventory.get(resource_type)
+        if stock is None or quantity <= 0 or quantity > stock.value:
+            raise GameplayServiceError("Trade quantity exceeds available player stock.")
+        quote = bundle.economy.market.prices.get(resource_type, Currency("gold"))
+        if quote is None:
+            raise GameplayServiceError("No trade price is configured for this resource.")
+        unit_price = Money(
+            max(1, quote.money.amount * merchant.buyback_rate // 100),
+            quote.money.currency,
+        )
+        return TradeService(bundle.economy.ledger).execute(
+            merchant.account_id, actor_id, merchant.inventory, seller_inventory,
+            resource_type, Quantity(quantity, stock.unit), unit_price,
+        )
 
     def market_offers(self, market_id: str | None = None) -> tuple[MarketOffer, ...]:
         bundle = self._current_bundle()
