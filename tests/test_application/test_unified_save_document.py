@@ -49,7 +49,7 @@ class TestUnifiedSaveDocument(unittest.TestCase):
         data = document.to_dict()
 
         self.assertEqual(data["schema"], "rpg-game-save")
-        self.assertEqual(data["schema_version"], 1)
+        self.assertEqual(data["schema_version"], 2)
         self.assertEqual(data["core"]["schema"], "rpg-core")
         self.assertEqual(data["gameplay"]["schema"], "rpg-gameplay")
 
@@ -60,7 +60,7 @@ class TestUnifiedSaveDocument(unittest.TestCase):
             GameSaveDocument.from_dict(data)
 
         data = self._document().to_dict()
-        data["schema_version"] = 2
+        data["schema_version"] = 3
         with self.assertRaises(UnsupportedSaveSchemaError):
             GameSaveDocument.from_dict(data)
 
@@ -337,7 +337,7 @@ class TestUnifiedSaveDocument(unittest.TestCase):
         migrated = GameSaveDocument.from_dict(data)
 
         self.assertEqual(data["schema_version"], 0)
-        self.assertEqual(migrated.schema_version, 1)
+        self.assertEqual(migrated.schema_version, 2)
         self.assertEqual(
             SaveJsonCodec.encode(migrated),
             SaveJsonCodec.encode(self._document()),
