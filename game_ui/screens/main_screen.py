@@ -5,7 +5,7 @@ from resources import Quantity, ResourceUnit
 from collections import deque
 
 
-class LocalMapScreen:
+class MainScreen:
     GRID_SIZE = 32
     TILE_SIZE = 16
     RIVER_TILES = frozenset((18, 19))
@@ -20,7 +20,7 @@ class LocalMapScreen:
         self.menu_selected = 0
         self.menu_rects = ()
         self.menu_options = (
-            ("local_map", "Yerel Haritaya Dön"),
+            ("main", "Yerel Haritaya Dön"),
             ("inventory", "Çanta"),
             ("production", "Üretim"),
             ("character", "Karakter"),
@@ -369,7 +369,7 @@ class LocalMapScreen:
                         ):
                             self.message = "Han ve pazar yalnızca köyde kullanılabilir."
                             return None
-                        if target == "close" or target == "local_map":
+                        if target == "close" or target == "main":
                             self.menu_open = False
                             return None
                         if target == "menu":
@@ -388,7 +388,7 @@ class LocalMapScreen:
                 ):
                     self.message = "Han ve pazar yalnızca köyde kullanılabilir."
                     return None
-                if target == "close" or target == "local_map":
+                if target == "close" or target == "main":
                     self.menu_open = False
                     return None
                 if target == "menu":

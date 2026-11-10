@@ -100,7 +100,7 @@ class DialogueScreen:
 
     def _close_dialogue(self):
         self._reset_dialogue()
-        return "local_map"
+        return "main"
 
     @staticmethod
     def _quest_state(quest):

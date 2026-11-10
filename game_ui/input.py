@@ -99,7 +99,7 @@ class InputMapper:
                 "f9": "load",
                 "f11": "fullscreen",
                 "x": "map",
-                "l": "local_map",
+                "l": "main",
                 "j": "quest_log",
                 "e": "equip",
             }

@@ -18,7 +18,7 @@ from game_ui.screens.market_screen import MarketScreen
 from game_ui.screens.main_menu import MainMenu
 from game_ui.screens.inventory_screen import InventoryScreen
 from game_ui.screens.map_screen import MapScreen
-from game_ui.screens.local_map_screen import LocalMapScreen
+from game_ui.screens.main_screen import MainScreen
 from game_ui.screens.quest_log_screen import QuestLogScreen
 from game_ui.screens.save_slots_screen import SaveSlotsScreen
 from quests import Objective, ObjectiveType, Quest, QuestLog, QuestState, Reward
@@ -218,7 +218,7 @@ class TestPhaseDQuality(unittest.TestCase):
         for screen in screens:
             screen.handle(InputState(actions={"confirm"}))
             expected = (
-                "local_map"
+                "main"
                 if isinstance(screen, DialogueScreen)
                 else "world"
                 if isinstance(screen, (CombatScreen, CharacterCreationScreen))
@@ -252,18 +252,18 @@ class TestPhaseDQuality(unittest.TestCase):
             "market" in location.activities,
         )
 
-    def test_local_map_is_reachable_from_world_map(self):
+    def test_main_screen_is_reachable_from_world_map(self):
         from application.content_pack import populate_opening_content
         service, _ = populate_opening_content(GameApplication.create_default())
         map_screen = MapScreen(service)
         self.assertIsNone(map_screen.handle(InputState(actions={"confirm"})))
-        local_screen = LocalMapScreen(service)
+        local_screen = MainScreen(service)
         self.assertIsNone(local_screen.handle(InputState(actions={"confirm"})))
 
     def test_local_map_finds_safe_paths_and_blocks_static_landmarks(self):
         from application.content_pack import populate_opening_content
         service, _ = populate_opening_content(GameApplication.create_default())
-        local_screen = LocalMapScreen(service)
+        local_screen = MainScreen(service)
         path = local_screen._path_to((16, 16), (8, 8))
         self.assertTrue(path)
         self.assertEqual(path[0], (16, 16))
@@ -279,7 +279,7 @@ class TestPhaseDQuality(unittest.TestCase):
         service.move_actor(ids.hero_id, "north_mine")
         service.advance_by(1)
 
-        local_screen = LocalMapScreen(service)
+        local_screen = MainScreen(service)
         local_screen.selected = (15, 15)
         self.assertTrue(local_screen._gather_at_selected_tree())
         service.advance_by(service.gathering_duration(ids.hero_id))
@@ -328,7 +328,7 @@ class TestPhaseDQuality(unittest.TestCase):
 
     def test_village_menu_opens_market(self):
         service, _ids = populate_opening_content(GameApplication.create_default())
-        screen = LocalMapScreen(service)
+        screen = MainScreen(service)
         screen.menu_open = True
         screen.menu_selected = 4
         self.assertEqual(screen.handle(InputState(actions={"confirm"})), "market")
@@ -392,7 +392,7 @@ class TestPhaseDQuality(unittest.TestCase):
     def test_village_gate_opens_eren_dialogue(self):
         from application.content_pack import populate_opening_content
         service, ids = populate_opening_content(GameApplication.create_default())
-        local_screen = LocalMapScreen(service)
+        local_screen = MainScreen(service)
         local_screen.selected = (16, 30)
         self.assertEqual(local_screen.handle(InputState(actions={"confirm"})), "dialogue")
         self.assertEqual(local_screen.selected_npc_id, ids.npc_id)
@@ -498,7 +498,7 @@ class TestPhaseDQuality(unittest.TestCase):
         window.notice_level = "info"
         window._notice_frames = 0
         window.current = "menu"
-        window.gameplay_screen = "local_map"
+        window.gameplay_screen = "main"
         window.screens = {
             "menu": menu,
             "save_slots": type(
@@ -526,7 +526,7 @@ class TestPhaseDQuality(unittest.TestCase):
                 directory,
                 lambda index, path, exists: selected.append(
                     (index, path, exists)
-                ) or "local_map",
+                ) or "main",
                 mode="save",
             )
             path = screen.slot_path(0)
@@ -539,7 +539,7 @@ class TestPhaseDQuality(unittest.TestCase):
 
             self.assertEqual(
                 screen.handle(InputState(actions={"confirm"})),
-                "local_map",
+                "main",
             )
             self.assertEqual(selected, [(0, path, True)])
 
@@ -636,7 +636,7 @@ class TestPhaseDQuality(unittest.TestCase):
         window.notice_level = "info"
         window._notice_frames = 0
         window.current = "dialogue"
-        window.gameplay_screen = "local_map"
+        window.gameplay_screen = "main"
         window.screens = {"dialogue": dialogue}
         window.window_manager = Manager()
         window.renderer = type("Renderer", (), {"mouse_pos": None})()
@@ -653,7 +653,7 @@ class TestPhaseDQuality(unittest.TestCase):
         self.assertFalse(dialogue.history_open)
         self.assertIsNotNone(dialogue.node)
 
-    def test_dialogue_overlay_routes_d_when_local_map_is_current(self):
+    def test_dialogue_overlay_routes_d_when_main_screen_is_current(self):
         class Backend:
             KEYDOWN = "KEYDOWN"
             K_d = 7
@@ -676,10 +676,10 @@ class TestPhaseDQuality(unittest.TestCase):
         window.notice = ""
         window.notice_level = "info"
         window._notice_frames = 0
-        window.current = "local_map"
-        window.gameplay_screen = "local_map"
+        window.current = "main"
+        window.gameplay_screen = "main"
         window.screens = {
-            "local_map": type("World", (), {"menu_open": False})(),
+            "main": type("World", (), {"menu_open": False})(),
             "dialogue": dialogue,
         }
         window.window_manager = Manager()
@@ -763,10 +763,10 @@ class TestPhaseDQuality(unittest.TestCase):
         window.notice = ""
         window.notice_level = "info"
         window._notice_frames = 0
-        window.current = "local_map"
-        window.gameplay_screen = "local_map"
+        window.current = "main"
+        window.gameplay_screen = "main"
         window.screens = {
-            "local_map": type("World", (), {"menu_open": False, "name_entry_active": False})(),
+            "main": type("World", (), {"menu_open": False, "name_entry_active": False})(),
         }
         window.window_manager = manager
         window.renderer = type("Renderer", (), {"mouse_pos": None})()
@@ -811,10 +811,10 @@ class TestPhaseDQuality(unittest.TestCase):
         window.notice = ""
         window.notice_level = "info"
         window._notice_frames = 0
-        window.current = "local_map"
-        window.gameplay_screen = "local_map"
+        window.current = "main"
+        window.gameplay_screen = "main"
         window.screens = {
-            "local_map": type("World", (), {"menu_open": False, "name_entry_active": False})(),
+            "main": type("World", (), {"menu_open": False, "name_entry_active": False})(),
         }
         window.window_manager = manager
         window.renderer = type("Renderer", (), {"mouse_pos": None})()
@@ -858,8 +858,8 @@ class TestPhaseDQuality(unittest.TestCase):
         window.notice = ""
         window.notice_level = "info"
         window._notice_frames = 0
-        window.current = "local_map"
-        window.screens = {"local_map": object()}
+        window.current = "main"
+        window.screens = {"main": object()}
         window.window_manager = manager
         window._handle_pause_menu = lambda state: None
         window._render_current = lambda: None
@@ -902,10 +902,10 @@ class TestPhaseDQuality(unittest.TestCase):
         window.notice = ""
         window.notice_level = "info"
         window._notice_frames = 0
-        window.current = "local_map"
-        window.gameplay_screen = "local_map"
+        window.current = "main"
+        window.gameplay_screen = "main"
         window.screens = {
-            "local_map": type("World", (), {"menu_open": False, "name_entry_active": False})(),
+            "main": type("World", (), {"menu_open": False, "name_entry_active": False})(),
         }
         window.window_manager = manager
         window.renderer = type("Renderer", (), {"mouse_pos": None})()
@@ -944,8 +944,8 @@ class TestPhaseDQuality(unittest.TestCase):
         window.notice = ""
         window.notice_level = "info"
         window._notice_frames = 0
-        window.current = "local_map"
-        window.screens = {"local_map": object()}
+        window.current = "main"
+        window.screens = {"main": object()}
         window.window_manager = manager
         window._handle_pause_menu = lambda state: None
         window._render_current = lambda: None
@@ -958,9 +958,9 @@ class TestPhaseDQuality(unittest.TestCase):
     def test_gameplay_world_is_persistent_and_cannot_return_to_menu(self):
         window = object.__new__(GameWindow)
         window.gameplay_active = False
-        window.gameplay_screen = "local_map"
+        window.gameplay_screen = "main"
         window.current = "menu"
-        window.screens = {"local_map": object(), "menu": object()}
+        window.screens = {"main": object(), "menu": object()}
         window.window_manager = type(
             "Manager", (), {"windows": {}, "render": lambda self, renderer: None}
         )()
@@ -968,10 +968,10 @@ class TestPhaseDQuality(unittest.TestCase):
         window.notice_level = "info"
         window._notice_frames = 0
 
-        self.assertTrue(window._set_current("local_map"))
+        self.assertTrue(window._set_current("main"))
         self.assertTrue(window.gameplay_active)
         self.assertFalse(window._set_current("menu"))
-        self.assertEqual(window.current, "local_map")
+        self.assertEqual(window.current, "main")
 
     def test_gameplay_tool_routes_open_windows_without_replacing_main_screen(self):
         class Manager:
@@ -984,18 +984,18 @@ class TestPhaseDQuality(unittest.TestCase):
 
         window = object.__new__(GameWindow)
         window.gameplay_active = True
-        window.gameplay_screen = "local_map"
-        window.current = "local_map"
+        window.gameplay_screen = "main"
+        window.current = "main"
         window.window_manager = Manager()
 
         self.assertTrue(window._set_current("inventory"))
         self.assertEqual(window.window_manager.opened, ["inventory"])
-        self.assertEqual(window.current, "local_map")
+        self.assertEqual(window.current, "main")
         self.assertTrue(window.gameplay_active)
 
         window.gameplay_active = False
         self.assertFalse(window._set_current("inventory"))
-        self.assertEqual(window.current, "local_map")
+        self.assertEqual(window.current, "main")
         self.assertEqual(window.window_manager.opened, ["inventory"])
 
     def test_gameplay_window_ids_are_the_six_supported_tool_windows(self):
@@ -1017,14 +1017,14 @@ class TestPhaseDQuality(unittest.TestCase):
 
         window = object.__new__(GameWindow)
         window.gameplay_active = True
-        window.gameplay_screen = "local_map"
+        window.gameplay_screen = "main"
         window.current = "inventory"
         window.renderer = object()
         window.window_manager = type(
             "Manager", (), {"render": lambda self, renderer: calls.append("inventory")}
         )()
         window.screens = {
-            "local_map": Surface("world"),
+            "main": Surface("world"),
             "inventory": Surface("inventory"),
         }
 
@@ -1083,14 +1083,14 @@ class TestPhaseDQuality(unittest.TestCase):
 
         window = object.__new__(GameWindow)
         window.gameplay_active = True
-        window.gameplay_screen = "local_map"
+        window.gameplay_screen = "main"
         window.current = "dialogue"
         window.renderer = object()
         window.window_manager = type(
             "Manager", (), {"render": lambda self, renderer: calls.append("windows")}
         )()
         window.screens = {
-            "local_map": Surface(),
+            "main": Surface(),
             "dialogue": Dialogue(),
         }
 

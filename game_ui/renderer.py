@@ -114,7 +114,7 @@ NAV_TABS = (
     ("map", "Harita"),
 )
 # Screens that highlight another screen's tab.
-NAV_ALIASES = {"local_map": "world"}
+NAV_ALIASES = {"main": "world"}
 
 
 class Renderer:

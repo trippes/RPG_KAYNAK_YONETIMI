@@ -8,7 +8,7 @@ from .screens.character_screen import CharacterScreen
 from .screens.inventory_screen import InventoryScreen
 from .screens.main_menu import MainMenu
 from .screens.map_screen import MapScreen
-from .screens.local_map_screen import LocalMapScreen
+from .screens.main_screen import MainScreen
 from .screens.market_screen import MarketScreen
 from .screens.dialogue_screen import DialogueScreen
 from .screens.combat_screen import CombatScreen
@@ -21,8 +21,8 @@ from .window_manager import WindowManager
 from application.save_storage import SaveStorage, SaveStorageError
 
 # Screens that show the navigation tab bar / resource bar.
-NAV_SCREENS = frozenset({"local_map"})
-# Gameplay tools are windows owned by the persistent LocalMapScreen surface.
+NAV_SCREENS = frozenset({"main"})
+# Gameplay tools are windows owned by the persistent MainScreen surface.
 GAMEPLAY_WINDOW_IDS = frozenset({
     "character", "inventory", "quest_log", "map", "production", "market",
 })
@@ -95,7 +95,7 @@ class GameWindow:
             "menu": MainMenu(width=self.width, height=self.height),
             "opening": OpeningScreen(),
             "map": MapScreen(service),
-            "local_map": LocalMapScreen(service),
+            "main": MainScreen(service),
             "inventory": InventoryScreen(service),
             "production": ProductionScreen(service),
             "character": CharacterScreen(service),
@@ -168,7 +168,7 @@ class GameWindow:
 
         self.current = "menu"
         self.gameplay_active = False
-        self.gameplay_screen = "local_map"
+        self.gameplay_screen = "main"
         self.pause_menu_open = False
         self.pause_menu_selected = 0
         self.running = False
@@ -219,7 +219,7 @@ class GameWindow:
                 self._set_notice(f"Kayıt başarısız: {error}", "error")
                 return "save_slots"
             self._set_notice(f"Slot {index + 1} kaydedildi.", "ok")
-            return "local_map"
+            return "main"
         if exists:
             try:
                 self._ensure_save_storage()
@@ -227,7 +227,7 @@ class GameWindow:
             except (OSError, KeyError, ValueError, RuntimeError) as error:
                 self._set_notice(f"Kayıt yüklenemedi: {error}", "error")
                 return "save_slots"
-            return "local_map"
+            return "main"
         return "opening"
 
     def _open_save_slots(self, mode, return_target="menu"):
@@ -290,7 +290,7 @@ class GameWindow:
             if path.stem.startswith("slot_") and path.stem.removeprefix("slot_").isdigit()
             else None
         )
-        return "local_map"
+        return "main"
 
     def _set_notice(self, message, level="info"):
         self.notice = message
@@ -306,7 +306,7 @@ class GameWindow:
         self.screens.update({
             "opening": OpeningScreen(),
             "map": MapScreen(service),
-            "local_map": LocalMapScreen(service),
+            "main": MainScreen(service),
             "inventory": InventoryScreen(service),
             "production": ProductionScreen(service),
             "character": CharacterScreen(service),
@@ -358,7 +358,7 @@ class GameWindow:
     def _handle_window_result(self, result, window_id):
         if result in self.window_manager.windows:
             self.window_manager.open(result)
-        elif result in {"local_map", "world"}:
+        elif result in {"main", "world"}:
             self.window_manager.close(window_id)
 
     def _pause_menu_rects(self):
@@ -402,7 +402,7 @@ class GameWindow:
         elif selected == "save":
             self._close_pause_menu()
             self.gameplay_active = False
-            self.current = self._open_save_slots("save", "local_map")
+            self.current = self._open_save_slots("save", "main")
         elif selected == "main_menu":
             self._close_pause_menu()
             self.gameplay_active = False
@@ -419,7 +419,7 @@ class GameWindow:
         # Never write directly to the last-used slot from a shortcut/helper.
         # All writes must pass through the slot picker and its overwrite prompt.
         self.gameplay_active = False
-        self.current = self._open_save_slots("save", "local_map")
+        self.current = self._open_save_slots("save", "main")
 
     def _render_pause_menu(self):
         overlay = self.pg.Rect(0, 0, self.width, self.height)
@@ -470,7 +470,7 @@ class GameWindow:
             return
         if self.current not in NAV_SCREENS:
             return
-        if self.current == "local_map" and not self.screens["local_map"].menu_open:
+        if self.current == "main" and not self.screens["main"].menu_open:
             return
         target = self.renderer.nav_hit(state.mouse_pos)
         if target is None:
@@ -480,7 +480,7 @@ class GameWindow:
             self.window_manager.toggle("quest_log")
             return
         if target == "world":
-            target = "local_map"
+            target = "main"
         if not self._nav_enabled().get(target, True):
             self._set_notice("Pazar yalnızca yerleşim yerlerinde kullanılabilir.", "error")
             return
@@ -537,7 +537,7 @@ class GameWindow:
                 # Route the shortcut through the slot screen so occupied slots
                 # always require an explicit overwrite confirmation.
                 self.gameplay_active = False
-                self.current = self._open_save_slots("save", "local_map")
+                self.current = self._open_save_slots("save", "main")
             except SaveStorageError as error:
                 self._set_notice(f"Kaydetme başarısız: {error}", "error")
 
@@ -636,7 +636,7 @@ class GameWindow:
         # Tell the renderer which chrome to draw for the screen shown this frame.
         shown = self.current
         if shown in NAV_SCREENS and (
-            shown != "local_map" or self.screens["local_map"].menu_open
+            shown != "main" or self.screens["main"].menu_open
         ):
             self.renderer.nav_current = NAV_ALIASES.get(shown, shown)
             self.renderer.nav_enabled = self._nav_enabled()
