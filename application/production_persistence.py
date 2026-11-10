@@ -13,8 +13,9 @@ from .production_facility import ProductionFacility, ProductionFacilityRegistry,
 PRODUCTION_SCHEMA = "rpg-production"
 PRODUCTION_SCHEMA_VERSION = 1
 
+from core.errors import RPGError
 
-class ProductionPersistenceError(ValueError):
+class ProductionPersistenceError(ValueError, RPGError):
     """Invalid facility or facility-job persistence data."""
 
 
