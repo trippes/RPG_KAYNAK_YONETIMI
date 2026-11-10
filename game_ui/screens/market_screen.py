@@ -8,8 +8,14 @@ class MarketScreen:
 
     def __init__(self, service):
         self.service = service
+        self.market_id = None
         self.selected = 0
         self.message = "Enter ile seçili teklifi satın al."
+
+    def set_market(self, market_id):
+        self.market_id = market_id
+        self.selected = 0
+        self.message = "Pazarın güncel ürünleri yüklendi."
 
     def _first_visible(self, offers):
         return max(0, min(self.selected - self.VISIBLE_OFFERS + 1, len(offers) - self.VISIBLE_OFFERS))
@@ -23,7 +29,7 @@ class MarketScreen:
             self.message = f"Satın alma başarısız: {error}"
 
     def handle(self, state):
-        offers = self.service.market_offers()
+        offers = self.service.market_offers(self.market_id)
         if offers:
             self.selected %= len(offers)
 
