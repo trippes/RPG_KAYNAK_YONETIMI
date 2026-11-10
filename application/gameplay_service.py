@@ -9,6 +9,7 @@ those rules.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from types import MappingProxyType
 from typing import Callable, Iterable
 
 from core.time import Tick
