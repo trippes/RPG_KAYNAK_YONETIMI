@@ -82,6 +82,7 @@ class InputMapper:
                 "g": "gather",
                 "c": "character",
                 "i": "inventory",
+                "m": "map",
                 "p": "character",
                 "d": "dialogue_history",
                 "b": "combat",
