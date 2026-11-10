@@ -487,43 +487,60 @@ class GameplayService:
 
     def attempt_lockpick(
         self, actor_id: str, inventory_id: str, lock_id: str, *,
-        skill: int, tool_item_id: str | None = None, success: bool = False
+        tool_item_id: str | None = None, success: bool = False
     ) -> bool:
-        """Resolve lockpicking against actor context and an actually carried tool."""
+        """Resolve lockpicking from the actor's registered character and inventory."""
         bundle = self._current_bundle()
         self._require_actor_in_active_world(bundle, actor_id)
+        character = self._character_for_actor(bundle, actor_id)
         inventory = self._inventory(bundle, inventory_id)
-        tool_tags = ()
-        if tool_item_id is not None:
-            if inventory.item_quantity(tool_item_id) < 1:
-                return False
-            item = bundle.items.get(tool_item_id)
-            if item is None:
-                raise KeyError(f"Item definition not found: {tool_item_id}")
-            tool_tags = item.tags
+        tool_tags = self._carried_tool_tags(bundle, inventory, tool_item_id)
+        skill = character.skills.get("lockpicking")
         return bundle.locks.attempt_lockpick(
             lock_id, skill=skill, tool_tags=tool_tags, success=success
         )
 
     def attempt_force_lock(
         self, actor_id: str, inventory_id: str, lock_id: str, *,
-        strength: int, tool_item_id: str | None = None, success: bool = False
+        tool_item_id: str | None = None, success: bool = False
     ) -> bool:
-        """Resolve forced opening using explicit strength and carried tool evidence."""
+        """Resolve forced opening from the actor's registered strength and inventory."""
         bundle = self._current_bundle()
         self._require_actor_in_active_world(bundle, actor_id)
+        character = self._character_for_actor(bundle, actor_id)
         inventory = self._inventory(bundle, inventory_id)
-        tool_tags = ()
-        if tool_item_id is not None:
-            if inventory.item_quantity(tool_item_id) < 1:
-                return False
-            item = bundle.items.get(tool_item_id)
-            if item is None:
-                raise KeyError(f"Item definition not found: {tool_item_id}")
-            tool_tags = item.tags
+        tool_tags = self._carried_tool_tags(bundle, inventory, tool_item_id)
+        strength = character.attributes.get("strength")
         return bundle.locks.attempt_force(
             lock_id, strength=strength, tool_tags=tool_tags, success=success
         )
+
+    @staticmethod
+    def _character_for_actor(bundle, actor_id: str):
+        actor = bundle.actors.get(actor_id)
+        if actor is None:
+            raise KeyError(f"Actor not found: {actor_id}")
+        if actor.character_id is None:
+            raise GameplayServiceError(
+                f"Actor has no registered character for character-based checks: {actor_id}"
+            )
+        character = bundle.characters.get(actor.character_id)
+        if character is None:
+            raise GameplayServiceError(
+                f"Actor character is not registered: {actor.character_id}"
+            )
+        return character
+
+    @staticmethod
+    def _carried_tool_tags(bundle, inventory, tool_item_id: str | None) -> tuple[str, ...]:
+        if tool_item_id is None:
+            return ()
+        if inventory.item_quantity(tool_item_id) < 1:
+            return ()
+        item = bundle.items.get(tool_item_id)
+        if item is None:
+            raise KeyError(f"Item definition not found: {tool_item_id}")
+        return item.tags
 
     def open_container(self, actor_id: str, inventory_id: str, container_id: str) -> ContainerView:
         """Expose container contents only after its attached lock has been opened."""
