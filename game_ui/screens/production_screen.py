@@ -183,7 +183,7 @@ class ProductionScreen:
         if state.mouse_clicked and state.mouse_pos is not None:
             mouse_x, mouse_y = state.mouse_pos
 
-            list_x_min, list_x_max = 60, 330
+            list_x_min, list_x_max = 48, 316
             list_y_min = 190
             row_height = 38
 
@@ -208,11 +208,11 @@ class ProductionScreen:
                     self.message = ""
 
             # Fareyle uretimi baslat.
-            if 600 <= mouse_x <= 880 and 425 <= mouse_y <= 467:
+            if 620 <= mouse_x <= 900 and 430 <= mouse_y <= 472:
                 self._start_production(recipes[self.selected_index])
 
             # Fareyle dunyaya don.
-            if 60 <= mouse_x <= 280 and 420 <= mouse_y <= 462:
+            if 48 <= mouse_x <= 316 and 430 <= mouse_y <= 472:
                 return "world"
 
         # Klavyeyle uretimi baslat.
@@ -288,7 +288,7 @@ class ProductionScreen:
 
         renderer.action_button(
             renderer.pg.Rect(48, 430, 268, 42),
-            "ESC",
+            "KAPAT",
             "Pencereyi kapat",
         )
 
