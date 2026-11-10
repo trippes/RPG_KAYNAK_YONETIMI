@@ -39,6 +39,7 @@ class CharacterScreen:
         self.skill_scroll = 0
         self.message = ""
         self._last_skill_bounds = (0, 0, 0, 23)
+        self._last_visible_skills = 1
 
     def _character(self):
         return self.service.actor_character("hero")
@@ -72,7 +73,7 @@ class CharacterScreen:
             "identity": renderer.pg.Rect(left, self.CONTENT_Y + 50, int((width - 32) * 0.39), 72),
             "combat": renderer.pg.Rect(
                 left + int((width - 32) * 0.39) + gap,
-                self.CONTENT_Y + 42,
+                self.CONTENT_Y + 50,
                 width - 32 - int((width - 32) * 0.39) - gap,
                 82,
             ),
@@ -92,7 +93,7 @@ class CharacterScreen:
             return None
 
         self.selected_skill %= len(skills)
-        visible_count = 7
+        visible_count = self._last_visible_skills
         max_scroll = max(0, len(skills) - visible_count)
         # The same panel geometry is used for mouse selection and rendering.
         # WindowManager translates pointer coordinates into screen coordinates.
@@ -207,7 +208,8 @@ class CharacterScreen:
         renderer.text("BECERİLER", rect.x + 10, rect.y + 9, GOLD, max_width=rect.width - 20)
         renderer.text(f"Gelişim puanı: {character.progression.unspent_points}", rect.x + 10, rect.y + 28, MUTED, max_width=rect.width - 20)
         skills = self._skill_rows(character)
-        visible_count = 7
+        visible_count = max(1, min(7, (rect.height - 76) // 23))
+        self._last_visible_skills = visible_count
         x, y, width, height = self._skill_bounds(rect)
         self._last_skill_bounds = (x, y, width, height)
         if not skills:
