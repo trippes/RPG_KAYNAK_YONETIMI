@@ -415,6 +415,17 @@ class MainScreen:
         self.context_menu_open = True
         self.context_menu_rects = ()
 
+    def _tool_for_tags(self, inventory_id, allowed_tags):
+        if not allowed_tags:
+            return None
+        for item_id, quantity in self.service.inventory(inventory_id).items:
+            if quantity < 1:
+                continue
+            item = self.service.item(item_id)
+            if item is not None and set(item.tags).intersection(allowed_tags):
+                return item_id
+        return None
+
     def _execute_container_action(self, action):
         actors = self._actors()
         if not actors:
@@ -439,10 +450,12 @@ class MainScreen:
             success = self.service.unlock_with_key(actor.actor_id, actor.inventory_id, lock.lock_id, lock.required_key_id)
             self.message = "Kilit anahtarla açıldı." if success else "Uygun anahtar bulunamadı."
         elif action == "lockpick" and lock is not None:
-            result = self.service.resolve_lockpick(actor.actor_id, actor.inventory_id, lock.lock_id)
+            tool_id = self._tool_for_tags(actor.inventory_id, lock.lockpick_allowed_tool_tags)
+            result = self.service.resolve_lockpick(actor.actor_id, actor.inventory_id, lock.lock_id, tool_item_id=tool_id)
             self.message = f"{'Başarılı' if result.success else 'Başarısız'} — d20 {result.total} / DC {result.difficulty_class}"
         elif action == "force" and lock is not None:
-            result = self.service.resolve_force_lock(actor.actor_id, actor.inventory_id, lock.lock_id)
+            tool_id = self._tool_for_tags(actor.inventory_id, lock.force_required_tool_tags)
+            result = self.service.resolve_force_lock(actor.actor_id, actor.inventory_id, lock.lock_id, tool_item_id=tool_id)
             self.message = f"{'Başarılı' if result.success else 'Başarısız'} — d20 {result.total} / DC {result.difficulty_class}"
 
     def render_context_menu(self, renderer):
