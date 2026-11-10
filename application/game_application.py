@@ -34,6 +34,9 @@ from application.actor_system import WorldActor
 from economy import Economy, EconomySnapshot
 from application.extended_persistence import SocialSnapshot, CombatSnapshot
 from core.domain.spatial import Position
+from application.container_persistence import ContainerSnapshot
+from application.world_object_placement import WorldObjectPlacement
+from world.local_map import LocalMapDefinition
 
 
 class GameApplication:
@@ -88,6 +91,20 @@ class GameApplication:
             else ProductionFacilityRegistry()
         )
         characters = document.characters.restore() if document.characters is not None else {}
+        containers = None
+        container_items = {}
+        container_resources = {}
+        container_placements = ()
+        if document.containers is not None:
+            containers, container_items, container_resources, container_placements = document.containers.restore()
+        item_catalog = document.characters.item_definitions() if document.characters is not None else {}
+        for item_id, definition in container_items.items():
+            existing = item_catalog.get(item_id)
+            if existing is not None and existing != definition:
+                raise ValueError(f"Conflicting item definition in save: {item_id}")
+            item_catalog[item_id] = definition
+        for character in characters.values():
+            character.bind_item_catalog(item_catalog)
         actors = None
         actor_activities = None
         if document.actors is not None:
@@ -112,7 +129,9 @@ class GameApplication:
             actors=actors,
             actor_activities=actor_activities,
             characters=characters,
-            items=document.characters.item_definitions() if document.characters is not None else {},
+            items=item_catalog,
+            resource_definitions=container_resources,
+            containers=containers,
             quest_log=document.quests.restore({}) if document.quests is not None else QuestLog(),
             economy=(
                 Economy(*document.economy.restore())
@@ -155,6 +174,14 @@ class GameApplication:
                 continue
 
             candidate.movement.register_map(world_map)
+            for location in world_map.locations():
+                candidate.world_objects.register_local_map(LocalMapDefinition(
+                    world_map.world_id, location.location_id, 32, 32
+                ))
+
+        # Restore container placements only after their local maps are registered.
+        for placement in container_placements:
+            candidate.world_objects.place(placement)
 
         # Restore actor positions only when their locations exist in the map.
         if candidate.actors is not None:
@@ -205,6 +232,12 @@ class GameApplication:
             if bundle.actors.count() or bundle.actor_activities.count()
             else None
         )
+        container_snapshot = (
+            ContainerSnapshot.from_runtime(
+                bundle.containers, bundle.world_objects, bundle.items, bundle.resource_definitions
+            )
+            if bundle.containers.instances() else None
+        )
         document = GameSaveDocument(
             core=core_document,
             gameplay=gameplay_snapshot,
@@ -219,6 +252,7 @@ class GameApplication:
             ),
             social=(SocialSnapshot.from_runtime(bundle.social) if bundle.social.npcs.all() or bundle.social.dialogues or bundle.social.relationships.all() else None),
             combat=(CombatSnapshot.from_runtime(bundle.combat) if bundle.combat.all() else None),
+            containers=container_snapshot,
         )
         return GameSaveFileAdapter.save(document, path)
 
