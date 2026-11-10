@@ -3,7 +3,7 @@
 import unittest
 from types import SimpleNamespace
 
-from game_ui.input import InputMapper
+from game_ui.input import InputMapper, InputState
 from game_ui.renderer import NAV_TABS
 from game_ui.screens.main_screen import MainScreen
 from game_ui.screens.dialogue_screen import DialogueScreen
