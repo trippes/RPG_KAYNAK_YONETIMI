@@ -1,0 +1,2 @@
+GitHub connector read/write test.
+Created on 2026-11-10 and removed after verification.
