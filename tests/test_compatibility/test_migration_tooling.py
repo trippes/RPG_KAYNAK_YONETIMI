@@ -159,5 +159,27 @@ core.events.EventQueue()
         self.assertTrue(required.issubset(LEGACY_API_MATRIX))
 
 
+    def test_stage_e_keeps_legacy_apis_until_retirement_gates_are_proven(self):
+        # External consumers and production runtime use cannot be disproven by
+        # this repository's AST scan, so no public entry is eligible for removal.
+        self.assertFalse(
+            any(entry.status == "removed" for entry in LEGACY_API_MATRIX.values())
+        )
+        self.assertEqual(
+            [
+                entry.legacy_name
+                for entry in LEGACY_API_MATRIX.values()
+                if entry.deprecated
+            ],
+            ["Game.dunya_olaylarini_aktar"],
+        )
+        self.assertTrue(
+            all(
+                entry.status in {"compatibility", "alias", "projection", "deprecated"}
+                for entry in LEGACY_API_MATRIX.values()
+            )
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
