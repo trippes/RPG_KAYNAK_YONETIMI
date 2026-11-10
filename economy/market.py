@@ -155,6 +155,7 @@ class Market:
         if cycle <= profile.last_restock_cycle:
             return self.offers(market_id)
 
+        elapsed_cycles = max(1, cycle - profile.last_restock_cycle)
         for offer in tuple(self._offers.values()):
             if offer.market_id == market_id:
                 self._offers.pop(offer.offer_id, None)
@@ -169,7 +170,10 @@ class Market:
             span = entry.max_quantity - entry.min_quantity + 1
             quantity = entry.min_quantity + ((cycle + index * 3) % span)
             variation = ((cycle + index) % 5 - 2) * 5
-            demand_pressure = min(20, profile.demand.get(entry.resource_type.value, 0) * 5)
+            effective_demand = max(
+                0, profile.demand.get(entry.resource_type.value, 0) - elapsed_cycles + 1,
+            )
+            demand_pressure = min(20, effective_demand * 5)
             supply_pressure = (
                 ((entry.max_quantity - quantity) * 10 // (span - 1)) - 5
                 if span > 1 else 0
@@ -184,9 +188,9 @@ class Market:
             ))
         profile.last_restock_cycle = cycle
         profile.demand = {
-            resource_id: amount - 1
+            resource_id: amount - elapsed_cycles
             for resource_id, amount in profile.demand.items()
-            if amount > 1
+            if amount > elapsed_cycles
         }
         return self.offers(market_id)
 
