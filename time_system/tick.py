@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 import secrets
 
-
+from core.time import Tick
 # ============================================================
 # ZAMAN SABTLER
 # ============================================================
@@ -39,59 +39,6 @@ def random_start_tick(rng=None) -> int:
         + second * TICKS_PER_SECOND
         + tick
     )
-
-
-@dataclass(frozen=True, order=True)
-class Tick:
-    """
-    Oyundaki en küçük zaman birimi.
-
-    Tick doğrudan dünya zamanını ilerletmez.
-    Bir aksiyon tarafından tüketildiğinde GameClock'a aktarılır.
-    """
-
-    value: int
-
-    def __post_init__(self):
-        if not isinstance(self.value, int):
-            raise TypeError("Tick değeri tam sayı olmalıdır.")
-
-        if self.value < 0:
-            raise ValueError("Tick değeri negatif olamaz.")
-
-    def __int__(self):
-        return self.value
-
-    def __add__(self, other):
-        if isinstance(other, Tick):
-            return Tick(self.value + other.value)
-
-        if isinstance(other, int):
-            return Tick(self.value + other)
-
-        return NotImplemented
-
-    def __sub__(self, other):
-        if isinstance(other, Tick):
-            result = self.value - other.value
-        elif isinstance(other, int):
-            result = self.value - other
-        else:
-            return NotImplemented
-
-        if result < 0:
-            raise ValueError("Tick değeri negatif olamaz.")
-
-        return Tick(result)
-
-    def __mul__(self, other):
-        if isinstance(other, int):
-            return Tick(self.value * other)
-
-        return NotImplemented
-
-    def __repr__(self):
-        return f"Tick({self.value})"
 
 
 @dataclass(frozen=True)
