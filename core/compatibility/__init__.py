@@ -3,6 +3,8 @@
 from .deprecation import LEGACY_API_MATRIX, CompatibilityEntry, compatibility_entry, deprecated_api, warn_deprecated
 from .migration import DEFAULT_REGISTRY, canonical_for, get_all_mappings, get_mapping, is_legacy, status_for
 from .action_adapter import CanonicalActionAdapter
+from .event_manager_adapter import CanonicalEventManagerAdapter
+from .legacy_scheduler_adapter import LegacyCallbackSchedulerAdapter
 
 
 def record_usage(*args, **kwargs):
@@ -33,5 +35,5 @@ __all__ = [
     "LEGACY_API_MATRIX", "CompatibilityEntry", "compatibility_entry", "deprecated_api", "warn_deprecated",
     "DEFAULT_REGISTRY", "get_mapping", "get_all_mappings", "is_legacy", "canonical_for", "status_for",
     "record_usage", "reset_runtime_usage", "runtime_usage_counts", "scan_static_usage", "usage_report",
-    "CanonicalActionAdapter",
+    "CanonicalActionAdapter", "CanonicalEventManagerAdapter", "LegacyCallbackSchedulerAdapter",
 ]
