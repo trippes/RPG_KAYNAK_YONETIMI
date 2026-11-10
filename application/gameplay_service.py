@@ -659,21 +659,28 @@ class GameplayService:
     def register_dialogue(self, dialogue: Dialogue) -> Dialogue:
         return self._current_bundle().social.add_dialogue(dialogue)
     def register_dialogue_action(
-    self,
-    action_id: str,
-    handler: Callable[[str, str], None],
-) -> None:
-    """Register a reusable handler for a dialogue action."""
-    if not isinstance(action_id, str) or not action_id.strip():
-        raise ValueError("action_id must be a non-empty string.")
-    if not callable(handler):
-        raise TypeError("handler must be callable.")
-    if action_id in self._dialogue_actions:
-        raise ValueError(f"Dialogue action already registered: {action_id}")
+        self,
+        action_id: str,
+        handler: Callable[[str, str], None],
+    ) -> None:
+        """Register a reusable handler for a dialogue action."""
+        if not isinstance(action_id, str) or not action_id.strip():
+            raise ValueError("action_id must be a non-empty string.")
+        if not callable(handler):
+            raise TypeError("handler must be callable.")
+        if action_id in self._dialogue_actions:
+            raise ValueError(f"Dialogue action already registered: {action_id}")
 
-    self._dialogue_actions[action_id] = handler
+        self._dialogue_actions[action_id] = handler
 
-    def talk_to_npc(self, actor_id: str, npc_id: str, dialogue_id: str, node_id: str | None = None):
+    def talk_to_npc(
+        self,
+        actor_id: str,
+        npc_id: str,
+        dialogue_id: str,
+        node_id: str | None = None,
+    ):
+        """Read the current dialogue node for an NPC at the actor's location."""
         bundle = self._current_bundle()
         self._require_actor_in_active_world(bundle, actor_id)
         actor = bundle.actors.get(actor_id)
@@ -698,14 +705,25 @@ class GameplayService:
 
         return self._complete_timed_action(ActionType.DIALOGUE, actor_id, read_node)
 
+    def _visible_choices(
+        self,
+        dialogue: Dialogue,
+        node_id: str,
+        actor_id: str,
+        npc_id: str,
+    ) -> tuple:
+        """Return only dialogue choices whose conditions match safe runtime context."""
+        context = self._dialogue_context(actor_id, npc_id)
+        return tuple(dialogue.available_choices(node_id, context))
+
     def choose_dialogue(self, actor_id: str, npc_id: str, dialogue_id: str, node_id: str, choice_id: str):
         bundle = self._current_bundle()
         dialogue = bundle.social.dialogues.get(dialogue_id)
         if dialogue is None: raise KeyError(f"Dialogue not found: {dialogue_id}")
         choice = next(
             (
-                item for item in dialogue.available_choices(
-                    node_id, self._dialogue_context(actor_id, npc_id)
+                item for item in self._visible_choices(
+                    dialogue, node_id, actor_id, npc_id
                 )
                 if item.choice_id == choice_id
             ),
@@ -727,11 +745,13 @@ class GameplayService:
 
     def _dialogue_context(self, actor_id: str, npc_id: str) -> dict:
         bundle = self._current_bundle()
-        objectives = {
-            objective.objective_id: objective.progress
-            for quest in bundle.quest_log.all()
-            for objective in quest.objectives
-        }
+        objectives = {}
+        for quest in bundle.quest_log.all():
+            for objective in (getattr(quest, "objectives", None) or ()):
+                objective_id = getattr(objective, "objective_id", None)
+                progress = getattr(objective, "progress", None)
+                if isinstance(objective_id, str) and objective_id and isinstance(progress, int):
+                    objectives[objective_id] = progress
         items = {}
         try:
             items = {
