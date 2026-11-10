@@ -274,7 +274,7 @@ class TestPhaseDQuality(unittest.TestCase):
         self.assertEqual(opened, ["map"])
         self.assertFalse(state.mouse_clicked)
 
-    def test_gameplay_navigation_shortcuts_open_map_and_market_windows(self):
+    def test_gameplay_navigation_shortcut_opens_map_but_not_market(self):
         opened = []
         window = object.__new__(GameWindow)
         window.current = "main"
@@ -294,9 +294,9 @@ class TestPhaseDQuality(unittest.TestCase):
         window._handle_nav_click(InputState(actions={"map"}))
         window._handle_nav_click(InputState(actions={"market"}))
 
-        self.assertEqual(opened, ["map", "market"])
+        self.assertEqual(opened, ["map"])
 
-    def test_market_shortcut_respects_current_location_availability(self):
+    def test_market_shortcut_is_ignored(self):
         notices = []
         opened = []
         window = object.__new__(GameWindow)
@@ -314,7 +314,7 @@ class TestPhaseDQuality(unittest.TestCase):
         window._handle_nav_click(InputState(actions={"market"}))
 
         self.assertEqual(opened, [])
-        self.assertEqual(notices[0][1], "error")
+        self.assertEqual(notices, [])
 
     def test_main_screen_is_reachable_from_world_map(self):
         from application.content_pack import populate_opening_content
@@ -391,12 +391,10 @@ class TestPhaseDQuality(unittest.TestCase):
         screen.set_target_npc(ids.npc_id)
         self.assertIn("Eren", screen.message)
 
-    def test_village_menu_opens_market(self):
+    def test_village_quick_menu_does_not_expose_market(self):
         service, _ids = populate_opening_content(GameApplication.create_default())
         screen = MainScreen(service)
-        screen.menu_open = True
-        screen.menu_selected = 4
-        self.assertEqual(screen.handle(InputState(actions={"confirm"})), "market")
+        self.assertNotIn("market", {target for target, _label in screen.menu_options})
 
     def test_inventory_and_market_windows_ignore_legacy_screen_navigation(self):
         inventory = SimpleNamespace(items=(), stocks=(), weight=0)
@@ -481,7 +479,7 @@ class TestPhaseDQuality(unittest.TestCase):
         mapper = InputMapper(Backend())
         market_event = type("Event", (), {"type": "KEYDOWN", "key": 1})()
         inventory_event = type("Event", (), {"type": "KEYDOWN", "key": 2})()
-        self.assertTrue(mapper.collect([market_event]).pressed("market"))
+        self.assertFalse(mapper.collect([market_event]).pressed("market"))
         self.assertTrue(mapper.collect([inventory_event]).pressed("inventory"))
 
     def test_c_key_maps_to_character_action(self):
