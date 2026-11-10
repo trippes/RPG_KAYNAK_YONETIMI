@@ -1,6 +1,6 @@
 """Equipment definitions and loadout rules for the playable RPG layer."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from types import MappingProxyType
 from typing import Mapping
@@ -27,7 +27,7 @@ class ItemDefinition:
     defense: int = 0
     damage: int = 0
     max_hit_points: int = 0
-    attribute_bonuses: Mapping[str, int] = MappingProxyType({})
+    attribute_bonuses: Mapping[str, int] = field(default_factory=dict)
     description: str = ""
 
     def __post_init__(self) -> None:
