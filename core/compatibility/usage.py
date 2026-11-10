@@ -70,6 +70,15 @@ def _files(root: Path):
     return sorted(path for path in root.rglob("*.py") if not any(part in ignored for part in path.parts))
 
 
+def _attribute_path(node: ast.AST) -> str | None:
+    if isinstance(node, ast.Name):
+        return node.id
+    if isinstance(node, ast.Attribute):
+        parent = _attribute_path(node.value)
+        return f"{parent}.{node.attr}" if parent else None
+    return None
+
+
 def scan_static_usage(root: str | Path) -> tuple[StaticUsage, ...]:
     root = Path(root).resolve()
     found = []
@@ -93,7 +102,11 @@ def scan_static_usage(root: str | Path) -> tuple[StaticUsage, ...]:
                         local_names[local_name] = "core.constants event constants"
             elif isinstance(node, ast.Import):
                 for alias in node.names:
-                    module_aliases[alias.asname or alias.name.split(".")[0]] = alias.name
+                    if alias.asname:
+                        module_aliases[alias.asname] = alias.name
+                    else:
+                        root_name = alias.name.split(".")[0]
+                        module_aliases[root_name] = root_name
 
         for node in ast.walk(tree):
             if isinstance(node, ast.ImportFrom) and node.module:
@@ -112,17 +125,22 @@ def scan_static_usage(root: str | Path) -> tuple[StaticUsage, ...]:
                 for base in node.bases:
                     if isinstance(base, ast.Name) and base.id in local_names:
                         found.append(StaticUsage(local_names[base.id], str(path.relative_to(root)), node.lineno, "inheritance"))
-                    elif isinstance(base, ast.Attribute) and isinstance(base.value, ast.Name):
-                        module = module_aliases.get(base.value.id)
-                        identifier = f"{module}.{base.attr}" if module else ""
-                        if identifier in known:
-                            found.append(StaticUsage(identifier, str(path.relative_to(root)), node.lineno, "inheritance"))
+                    elif isinstance(base, ast.Attribute):
+                        dotted = _attribute_path(base)
+                        if dotted:
+                            root_name, *tail = dotted.split(".")
+                            module = module_aliases.get(root_name, root_name)
+                            identifier = ".".join((module, *tail))
+                            if identifier in known:
+                                found.append(StaticUsage(identifier, str(path.relative_to(root)), node.lineno, "inheritance"))
             elif isinstance(node, ast.Call):
                 if isinstance(node.func, ast.Name) and node.func.id in local_names:
                     found.append(StaticUsage(local_names[node.func.id], str(path.relative_to(root)), node.lineno, "construction"))
                 elif isinstance(node.func, ast.Attribute):
-                    module = module_aliases.get(node.func.value.id) if isinstance(node.func.value, ast.Name) else None
-                    identifier = f"{module}.{node.func.attr}" if module else ""
+                    dotted = _attribute_path(node.func)
+                    root_name, *tail = dotted.split(".") if dotted else ("",)
+                    module = module_aliases.get(root_name, root_name)
+                    identifier = ".".join((module, *tail)) if tail else ""
                     if identifier in known:
                         found.append(StaticUsage(identifier, str(path.relative_to(root)), node.lineno, "construction"))
                     elif node.func.attr == "dunya_olaylarini_aktar":
