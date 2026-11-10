@@ -42,7 +42,9 @@ class EconomySnapshot:
         } for offer in market.offers())
         merchant_records = tuple({
             "merchant_id": merchant.merchant_id, "account_id": merchant.account_id,
-            "inventory_id": merchant.inventory_id,
+            "inventory_id": merchant.inventory_id, "npc_id": merchant.npc_id,
+            "accepted_resources": [resource.value for resource in merchant.accepted_resources],
+            "buyback_rate": merchant.buyback_rate,
         } for merchant in (merchants or {}).values())
         profiles = tuple({
             "market_id": profile.market_id, "location_id": profile.location_id,
@@ -100,7 +102,11 @@ class EconomySnapshot:
         merchants = {
             item["merchant_id"]: Merchant(
                 item["merchant_id"], account_id=item.get("account_id"),
-                inventory_id=item.get("inventory_id"),
+                inventory_id=item.get("inventory_id"), npc_id=item.get("npc_id"),
+                accepted_resources=tuple(
+                    ResourceType(value) for value in item.get("accepted_resources", ())
+                ),
+                buyback_rate=int(item.get("buyback_rate", 50)),
             ) for item in self.merchants
         }
         return ledger, market, merchants
