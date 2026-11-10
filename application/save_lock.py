@@ -14,7 +14,7 @@ _path_locks: dict[str, threading.RLock] = {}
 
 
 def _thread_lock_key(path: Path) -> str:
-    return os.path.normcase(str(path.resolve(strict=False)))
+    return os.path.normcase(os.path.abspath(os.fspath(path)))
 
 
 def _get_thread_lock(path: Path) -> threading.RLock:
@@ -35,7 +35,7 @@ def save_path_lock(path: str | os.PathLike[str]) -> Iterator[None]:
     can let different processes lock different file objects for the same slot.
     The operating system releases the actual lock when a process exits.
     """
-    target = Path(path)
+    target = Path(os.path.abspath(os.fspath(path)))
     target.parent.mkdir(parents=True, exist_ok=True)
 
     with _get_thread_lock(target):
@@ -48,7 +48,7 @@ def save_path_lock(path: str | os.PathLike[str]) -> Iterator[None]:
 
                     lock_file.seek(0, os.SEEK_END)
                     if lock_file.tell() == 0:
-                        lock_file.write(b"\\0")
+                        lock_file.write(bytes((0,)))
                         lock_file.flush()
 
                     while not acquired:
