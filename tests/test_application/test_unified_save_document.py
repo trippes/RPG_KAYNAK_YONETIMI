@@ -5,7 +5,8 @@ from pathlib import Path
 from unittest import mock
 
 from application import GameSaveDocument, GameSaveFileAdapter, SaveJsonCodec
-from application.save_file_adapter import SaveFileReadError\nfrom application.save_document import (
+from application.save_file_adapter import SaveFileReadError
+from application.save_document import (
     SaveDocumentError,
     UnsupportedSaveSchemaError,
 )
@@ -185,7 +186,7 @@ class TestUnifiedSaveDocument(unittest.TestCase):
                 "also broken", encoding="utf-8"
             )
 
-            with self.assertRaises(SaveFileReadError):
+            with self.assertRaises(SaveDocumentError):
                 GameSaveFileAdapter.load(path)
 
     def test_write_failure_preserves_existing_target_and_cleans_temp(self):
