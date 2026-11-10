@@ -19,6 +19,7 @@ from core.event_manager import EventManager
 from core.event_handler import EventHandler
 from core.events import EventQueue
 from core.game import Game
+from application.game_application import GameApplication
 
 
 class TestMigrationTooling(unittest.TestCase):
@@ -49,8 +50,39 @@ class TestMigrationTooling(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 game.dunya_olaylarini_aktar()
         self.assertEqual(len(caught), 1)
-        self.assertIn("Game.dunya_olaylarini_canonical_aktar", str(caught[0].message))
+        message = str(caught[0].message)
+        self.assertIn("Game.dunya_olaylarini_canonical_aktar", message)
+        self.assertIn("deprecated in 2.0", message)
+        self.assertIn("Phase 6+", message)
+        self.assertIn("major-version decision", message)
         self.assertEqual(runtime_usage_counts()["Game.dunya_olaylarini_aktar"], 1)
+
+    def test_application_compatibility_facade_uses_same_deprecation_policy(self):
+        application = GameApplication.create_default()
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always", DeprecationWarning)
+            with self.assertRaises(RuntimeError):
+                application.dunya_olaylarini_aktar()
+        self.assertEqual(len(caught), 1)
+        self.assertIn(
+            "Game.dunya_olaylarini_canonical_aktar",
+            str(caught[0].message),
+        )
+        self.assertEqual(
+            runtime_usage_counts()["Game.dunya_olaylarini_aktar"],
+            1,
+        )
+
+    def test_only_explicitly_deprecated_entries_emit_warnings(self):
+        deprecated = [
+            entry.legacy_name
+            for entry in LEGACY_API_MATRIX.values()
+            if entry.deprecated
+        ]
+        self.assertEqual(deprecated, ["Game.dunya_olaylarini_aktar"])
+        for entry in LEGACY_API_MATRIX.values():
+            if entry.status in {"compatibility", "alias", "projection"}:
+                self.assertFalse(entry.deprecated)
 
     def test_runtime_usage_counter_tracks_legacy_construction(self):
         EventQueue()
