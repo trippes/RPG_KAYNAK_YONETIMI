@@ -13,6 +13,7 @@ from typing import Callable
 
 from .save_file_adapter import GameSaveFileAdapter
 
+from core.errors import RPGError
 
 class _Guid(ctypes.Structure):
     _fields_ = (
@@ -23,11 +24,11 @@ class _Guid(ctypes.Structure):
     )
 
 
-class SaveStorageError(OSError):
+class SaveStorageError(OSError, RPGError):
     """The user save directory could not be prepared."""
 
 
-class SaveTargetExistsError(FileExistsError):
+class SaveTargetExistsError(FileExistsError, RPGError):
     """A migration target appeared before the atomic placement completed."""
 
 
