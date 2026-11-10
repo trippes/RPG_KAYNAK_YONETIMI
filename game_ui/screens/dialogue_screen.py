@@ -1,4 +1,6 @@
 
+from quests import DialogueChoice
+
 from ..renderer import GOLD, TEXT_SOFT
 
 
@@ -400,6 +402,13 @@ class DialogueScreen:
             return None
 
         visible_choices = self._visible_choices()
+        if self.context is not None:
+            trade_lookup = getattr(self.service, "trade_partner_for_npc", None)
+            if callable(trade_lookup) and trade_lookup(self.context[1]) is not None:
+                if not any(choice.action == "open_trade" for choice in visible_choices):
+                    visible_choices += (DialogueChoice(
+                        "open_trade", "Ticaret yapmak istiyorum.", action="open_trade",
+                    ),)
         if self.node is not None and visible_choices:
             self.selected %= len(visible_choices)
             clicked = self._choice_at_mouse(state, len(visible_choices))
@@ -422,6 +431,8 @@ class DialogueScreen:
                 try:
                     choice = visible_choices[self.selected]
                     self._add_history("Sen", choice.text)
+                    if choice.action == "open_trade":
+                        return "trade"
                     if (
                         npc_id == "village_carpenter"
                         and choice.choice_id == "accept_carpenter_quest"
