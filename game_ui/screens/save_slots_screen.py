@@ -25,6 +25,7 @@ class SaveSlotsScreen:
         self.message = ""
         self.pending_delete = False
         self.pending_overwrite = False
+        self.pending_overwrite_signature = None
         self.delete_rects = ()
         self._background = None
 
@@ -113,6 +114,24 @@ class SaveSlotsScreen:
             raise OSError(self.unavailable_message or "Kayıt sistemi kullanılamıyor.")
         return self.save_dir / f"slot_{index + 1}.json"
 
+    def slot_backup_path(self, index):
+        return Path(f"{self.slot_path(index)}.bak")
+
+    def slot_exists(self, index):
+        return self.slot_path(index).is_file() or self.slot_backup_path(index).is_file()
+
+    def _slot_signature(self, index):
+        signature = []
+        for path in (self.slot_path(index), self.slot_backup_path(index)):
+            try:
+                stat = path.stat()
+            except FileNotFoundError:
+                continue
+            signature.append((
+                path.name, stat.st_dev, stat.st_ino, stat.st_size, stat.st_mtime_ns,
+            ))
+        return tuple(signature)
+
     def _ensure_save_dir(self):
         if self.save_dir is None:
             self.message = self.unavailable_message or "Kayıt sistemi kullanılamıyor."
@@ -129,7 +148,7 @@ class SaveSlotsScreen:
             self.message = self.unavailable_message or "Kayıt sistemi kullanılamıyor."
             return
         path = self.slot_path(index)
-        if not path.exists():
+        if not self.slot_exists(index):
             self.message = f"Slot {index + 1} zaten boş."
             return
         self.selected = index
@@ -141,9 +160,12 @@ class SaveSlotsScreen:
             self.message = self.unavailable_message or "Kayıt sistemi kullanılamıyor."
             self.pending_delete = False
             return
-        path = self.slot_path(self.selected)
+        paths = (self.slot_path(self.selected), self.slot_backup_path(self.selected))
         try:
-            path.unlink()
+            # Remove the primary first. If backup removal fails, the backup
+            # remains loadable and the slot is still visibly occupied.
+            for path in paths:
+                path.unlink(missing_ok=True)
         except OSError as error:
             self.message = f"Kayıt silinemedi: {error}"
         else:
@@ -154,11 +176,27 @@ class SaveSlotsScreen:
         if self.pending_overwrite:
             if state.pressed("back"):
                 self.pending_overwrite = False
+                self.pending_overwrite_signature = None
                 return None
             if state.pressed("confirm"):
                 if not self._ensure_save_dir():
                     return None
+                try:
+                    current_signature = self._slot_signature(self.selected)
+                except OSError as error:
+                    self.message = f"Kayıt yuvası kontrol edilemedi: {error}"
+                    return None
+                if not current_signature:
+                    self.pending_overwrite = False
+                    self.pending_overwrite_signature = None
+                    self.message = "Kayıt artık mevcut değil. Slotu yeniden seçin."
+                    return None
+                if current_signature != self.pending_overwrite_signature:
+                    self.pending_overwrite_signature = current_signature
+                    self.message = "Kayıt değişti. Yeni durumu kontrol edip tekrar onaylayın."
+                    return None
                 self.pending_overwrite = False
+                self.pending_overwrite_signature = None
                 path = self.slot_path(self.selected)
                 return self.on_selected(self.selected, path, True)
             return None
@@ -199,10 +237,17 @@ class SaveSlotsScreen:
             path = self.slot_path(self.selected)
             if not self._ensure_save_dir():
                 return None
-            if self.mode == "save" and path.exists():
+            exists = self.slot_exists(self.selected)
+            if self.mode == "save" and exists:
+                try:
+                    self.pending_overwrite_signature = self._slot_signature(self.selected)
+                except OSError as error:
+                    self.message = f"Kayıt yuvası kontrol edilemedi: {error}"
+                    return None
                 self.pending_overwrite = True
+                self.message = ""
                 return None
-            return self.on_selected(self.selected, path, path.exists())
+            return self.on_selected(self.selected, path, exists)
         if state.mouse_clicked and state.mouse_pos is not None:
             for index, rect in enumerate(self.delete_rects):
                 if rect.collidepoint(state.mouse_pos):
@@ -217,10 +262,17 @@ class SaveSlotsScreen:
                     path = self.slot_path(self.selected)
                     if not self._ensure_save_dir():
                         return None
-                    if self.mode == "save" and path.exists():
+                    exists = self.slot_exists(self.selected)
+                    if self.mode == "save" and exists:
+                        try:
+                            self.pending_overwrite_signature = self._slot_signature(self.selected)
+                        except OSError as error:
+                            self.message = f"Kayıt yuvası kontrol edilemedi: {error}"
+                            return None
                         self.pending_overwrite = True
+                        self.message = ""
                         return None
-                    return self.on_selected(self.selected, path, path.exists())
+                    return self.on_selected(self.selected, path, exists)
         return None
 
     def render(self, renderer):
@@ -270,7 +322,7 @@ class SaveSlotsScreen:
             )
             self.slot_rects.append(rect)
             self.delete_rects.append(delete_rect)
-            exists = self.save_available and self.slot_path(index).exists()
+            exists = self.save_available and self.slot_exists(index)
             active = index == self.selected
             self._draw_slot(renderer, rect, index, exists, active)
             self._draw_delete(renderer, delete_rect, exists, active)
