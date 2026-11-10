@@ -23,11 +23,11 @@ class TestLocationMarket(unittest.TestCase):
         self.market = Market()
         self.market.register_profile(MarketProfile(
             "village", "village", "trader_village", "merchant_village",
-            "inventory_village", 10, self.catalog, visible_products=2,
+            "inventory_village", 1, self.catalog, visible_products=2,
         ))
         self.market.register_profile(MarketProfile(
             "inn", "village", "innkeeper", "merchant_inn",
-            "inventory_inn", 10,
+            "inventory_inn", 1,
             (self.catalog[2], self.catalog[3], self.catalog[0]),
             visible_products=2,
         ))
@@ -48,19 +48,20 @@ class TestLocationMarket(unittest.TestCase):
     def test_stock_is_stable_within_cycle_and_rotates_on_restock(self):
         inventory = Inventory()
         first = self.market.restock("village", inventory, 0)
-        unchanged = self.market.restock("village", inventory, 9)
-        second = self.market.restock("village", inventory, 10)
+        unchanged = self.market.restock("village", inventory, 86_399)
+        second = self.market.restock("village", inventory, 86_400)
 
         self.assertEqual(first, unchanged)
         self.assertNotEqual(
             {offer.resource_type for offer in first},
             {offer.resource_type for offer in second},
         )
-        self.assertTrue(all(offer.expires_at == 20 for offer in second))
+        self.assertTrue(all(offer.expires_at == 172_800 for offer in second))
 
     def test_market_profiles_and_offer_scope_survive_economy_round_trip(self):
         inventory = Inventory()
         self.market.restock("village", inventory, 0)
+        self.market.record_purchase("village", ResourceType("wood"), 2)
         economy = Economy(market=self.market)
         snapshot = economy.snapshot()
         restored_ledger, restored_market, _merchants = snapshot.from_dict(
@@ -69,8 +70,33 @@ class TestLocationMarket(unittest.TestCase):
 
         self.assertEqual(restored_market.profile("village").location_id, "village")
         self.assertEqual(restored_market.profile("village").last_restock_cycle, 0)
+        self.assertEqual(restored_market.profile("village").demand["wood"], 2)
         self.assertEqual(restored_market.offers("village"), self.market.offers("village"))
         self.assertEqual(restored_ledger.accounts(), ())
+
+    def test_demand_increases_the_next_restock_price(self):
+        demanded = Market()
+        baseline = Market()
+        for market in (demanded, baseline):
+            market.register_profile(MarketProfile(
+                "market", "village", "trader", "merchant", "inventory",
+                1, self.catalog, visible_products=4,
+            ))
+        demanded.restock("market", Inventory(), 0)
+        demanded.record_purchase("market", ResourceType("wood"), 2)
+        demanded.restock("market", Inventory(), 86_400)
+        baseline.restock("market", Inventory(), 0)
+        baseline.restock("market", Inventory(), 86_400)
+
+        demanded_wood = next(
+            offer for offer in demanded.offers("market")
+            if offer.resource_type == ResourceType("wood")
+        )
+        baseline_wood = next(
+            offer for offer in baseline.offers("market")
+            if offer.resource_type == ResourceType("wood")
+        )
+        self.assertGreater(demanded_wood.unit_price.amount, baseline_wood.unit_price.amount)
 
     def test_gameplay_service_restock_and_purchase_use_selected_market(self):
         application = GameApplication.create_default()
@@ -81,7 +107,7 @@ class TestLocationMarket(unittest.TestCase):
         object.__setattr__(bundle, "inventories", MappingProxyType(inventories))
         profile = MarketProfile(
             "village", "village", "trader_village", "merchant_village",
-            "inventory_village", 600, self.catalog, visible_products=2,
+            "inventory_village", 1, self.catalog, visible_products=2,
         )
         service.register_market_profile(profile)
         service.credit("hero", "gold", 100)
