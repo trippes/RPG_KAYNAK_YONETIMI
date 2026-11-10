@@ -258,6 +258,7 @@ class GameApplication:
             social=(SocialSnapshot.from_runtime(bundle.social) if bundle.social.npcs.all() or bundle.social.dialogues or bundle.social.relationships.all() else None),
             combat=(CombatSnapshot.from_runtime(bundle.combat) if bundle.combat.all() else None),
             containers=container_snapshot,
+            locks=lock_snapshot,
         )
         return GameSaveFileAdapter.save(document, path)
 
