@@ -102,7 +102,7 @@ World ──> LegacyWorldRuntime ──> EventQueue
 `core.event_manager.EventManager` başlangıçta migration matrix dışında
 kalmıştı. A aşamasında ayrı compatibility kimliği, AST scanner kaydı ve
 runtime constructor sayacı eklendi. Bu kayıt EventManager'ı deprecated yapmaz;
-Game ve GameApplication tüketicileri göçene kadar compatibility statüsündedir.
+Game ve GameApplication canonical-backed adapter kullanır; public EventBus handler API'si compatibility statüsünde tutulur.
 
 ## 5. ActionManager ve Scheduler
 
@@ -120,7 +120,7 @@ Game ve GameApplication tüketicileri göçene kadar compatibility statüsünded
 
 - Callback tabanlıdır; `GameClock` ilerlediğinde zamanı gelen callback'leri
   çalıştırır.
-- `LegacyWorldRuntime` tarafından oluşturulur ve GameClock'a bağlanır.
+- `LegacyWorldRuntime` tarafından oluşturulan LegacyCallbackSchedulerAdapter ile GameClock'a bağlanır.
 - `WorldRuntimeBoundary.advance_world()`, canonical SimulationRuntime
   tick'ini ilerletip World saatine projection yapar; `world.advance(0)`
   çağrısı aynı tick'teki legacy callback işlerini işler.
@@ -137,8 +137,8 @@ legacy Scheduler, GameClock veya World.advance zinciri devreden çıkarılmaz.
   yüzeyini tutar; action işlemlerinde CanonicalActionAdapter kullanır.
 - `EventManager`: EventBus ve EventQueue varsayılanlarını oluşturur; event
   oluşturma/kuyruklama/işletme facade'ıdır.
-- `LegacyWorldRuntime`: GameClock, EventQueue ve callback Scheduler'ın
-  birlikte yaşadığı compatibility sahibidir.
+- `LegacyWorldRuntime`: GameClock, EventQueue ve canonical-backed callback
+  scheduler adapter'ının birlikte yaşadığı compatibility sahibidir.
 - `WorldRuntimeBoundary`: canonical tick'i authoritative kaynak kabul eder;
   World clock projection'ını eşitler ve legacy callback zincirini aynı tick'te
   işler. Legacy World event'lerini LegacyEventAdapter ile canonical
@@ -251,11 +251,10 @@ harici istemci uyumluluğu ayrıca doğrulanmış olmalı.
 5. Herhangi bir koşul belirsizse sonuç **KEEP** olur: API korunur, blocker
    kaydedilir ve ölçüm sürdürülür.
 
-**E aşamasının sonucu:** Bu çalışma anında Game ve GameApplication hâlâ
-EventManager kullanıyor; World runtime callback Scheduler'a bağlı; mutable
-Entity Position dışa açık. Harici istemci kapsamı da statik taramayla
-kanıtlanamaz. Bu nedenle emeklilik koşulları sağlanmamıştır ve hiçbir legacy
-sistem kaldırma onayı alamaz.
+**E aşamasının sonucu:** Public EventManager/EventBus/EventQueue ve Scheduler
+API'leri adapter'larla korunur; mutable Entity Position da dışa açıktır.
+Harici istemci kapsamı statik taramayla kanıtlanamaz. Bu nedenle emeklilik
+koşulları sağlanmamıştır ve hiçbir legacy sistem kaldırma onayı alamaz.
 
 ## 9. A-E uygulama kaydı
 
