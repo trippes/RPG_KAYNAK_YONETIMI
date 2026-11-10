@@ -1,4 +1,5 @@
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -241,6 +242,93 @@ class TestUnifiedSaveDocument(unittest.TestCase):
             )
             self.assertEqual(list(Path(directory).glob(".save.json.*.tmp")), [])
             self.assertEqual(list(Path(directory).glob(".save.json.bak.*.tmp")), [])
+
+    def test_orphan_cleanup_removes_only_old_save_and_backup_temp_files(self):
+        document = self._document()
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "save.json"
+            backup = GameSaveFileAdapter.backup_path(path)
+            primary_temp = Path(directory) / ".save.json.abandoned.tmp"
+            backup_temp = Path(directory) / ".save.json.bak.abandoned.tmp"
+            recent_temp = Path(directory) / ".save.json.active.tmp"
+            unrelated_temp = Path(directory) / ".other-save.abandoned.tmp"
+            primary_temp.write_text("partial", encoding="utf-8")
+            backup_temp.write_text("partial", encoding="utf-8")
+            recent_temp.write_text("in progress", encoding="utf-8")
+            unrelated_temp.write_text("keep", encoding="utf-8")
+            path.write_text(SaveJsonCodec.encode(document), encoding="utf-8")
+            backup.write_text(SaveJsonCodec.encode(document), encoding="utf-8")
+            old_time = 1_600_000_000
+            for candidate in (primary_temp, backup_temp, unrelated_temp):
+                os.utime(candidate, (old_time, old_time))
+
+            removed = GameSaveFileAdapter.cleanup_orphaned_temporary_files(
+                path, now=old_time + 10_000_000
+            )
+
+            self.assertEqual(set(removed), {primary_temp, backup_temp})
+            self.assertTrue(path.is_file())
+            self.assertTrue(backup.is_file())
+            self.assertTrue(recent_temp.is_file())
+            self.assertTrue(unrelated_temp.is_file())
+
+    def test_save_cleans_stale_orphans_before_creating_new_temp(self):
+        document = self._document()
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "save.json"
+            orphan = Path(directory) / ".save.json.crashed.tmp"
+            orphan.write_text("partial", encoding="utf-8")
+            old_time = 1_600_000_000
+            os.utime(orphan, (old_time, old_time))
+
+            GameSaveFileAdapter.save(document, path)
+
+            self.assertFalse(orphan.exists())
+            self.assertEqual(
+                SaveJsonCodec.encode(GameSaveFileAdapter.load(path)),
+                SaveJsonCodec.encode(document),
+            )
+
+    def test_directory_fsync_failure_is_reported_after_atomic_replace(self):
+        document = self._document()
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "save.json"
+            with mock.patch.object(
+                GameSaveFileAdapter,
+                "_fsync_directory",
+                side_effect=OSError("directory sync failed"),
+            ):
+                with self.assertRaises(SaveFileWriteError):
+                    GameSaveFileAdapter.save(document, path)
+
+            # Replacement already happened atomically; the error means the
+            # directory entry could not be confirmed durable across power loss.
+            self.assertEqual(
+                SaveJsonCodec.encode(GameSaveFileAdapter.load(path)),
+                SaveJsonCodec.encode(document),
+            )
+
+    def test_directory_fsync_runs_after_backup_and_primary_replacements(self):
+        document = self._document()
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "save.json"
+            GameSaveFileAdapter.save(document, path)
+
+            with mock.patch.object(
+                GameSaveFileAdapter, "_fsync_directory"
+            ) as sync_directory:
+                GameSaveFileAdapter.save(document, path)
+
+            self.assertEqual(sync_directory.call_count, 2)
+            self.assertTrue(all(call.args == (Path(directory),) for call in sync_directory.call_args_list))
+
+    def test_orphan_cleanup_rejects_unsafe_age_threshold(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "save.json"
+            with self.assertRaises(ValueError):
+                GameSaveFileAdapter.cleanup_orphaned_temporary_files(
+                    path, older_than_seconds=0
+                )
 
     def test_legacy_version_zero_envelope_migrates_without_mutating_input(self):
         data = self._document().to_dict()
