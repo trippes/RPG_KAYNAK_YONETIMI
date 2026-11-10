@@ -9,6 +9,7 @@ from application.content_pack import (
     ContentDefinitionError,
     load_starter_content,
     populate_opening_content,
+    populate_gameplay_resources,
 )
 from game_ui.input import InputState
 from game_ui.screens.dialogue_screen import DialogueScreen
@@ -33,6 +34,21 @@ class TestContentPack(unittest.TestCase):
         self.assertEqual(tuple(service.market_offers()), ())
         self.assertEqual(tuple(bundle.combat.all()), ())
         self.assertEqual(tuple(bundle.inventories), ())
+
+    def test_gameplay_resources_are_created_after_opening_phase(self):
+        application = GameApplication.create_default()
+        service, _ids = populate_opening_content(application)
+
+        self.assertEqual(tuple(application.holder.current.inventories), ())
+        populate_gameplay_resources(service)
+
+        bundle = application.holder.current
+        self.assertIn("player", bundle.inventories)
+        self.assertIsNotNone(bundle.resource_nodes.get("north_mine_iron"))
+        self.assertEqual(
+            bundle.resource_nodes.get("north_mine_iron").location_id,
+            "north_mine",
+        )
 
     def test_opening_content_preserves_eren_dialogue_and_character_creation_factory(self):
         application = GameApplication.create_default()
