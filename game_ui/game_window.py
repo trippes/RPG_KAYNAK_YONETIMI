@@ -344,7 +344,8 @@ class GameWindow:
         if "trade" in self.window_manager.windows:
             self.window_manager.windows["trade"].screen = self.screens["trade"]
         self.window_manager.windows["map"].screen = self.screens["map"]
-        self.window_manager.windows["container"].screen = self.screens["container"]
+        if "container" in self.window_manager.windows:
+            self.window_manager.windows["container"].screen = self.screens["container"]
         for window_id in tuple(self.window_manager.open_ids):
             self.window_manager.close(window_id)
         self.pause_menu_open = False
