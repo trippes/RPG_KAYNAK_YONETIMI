@@ -26,6 +26,7 @@ class CompatibilityEntry:
 _ENTRIES = (
     CompatibilityEntry("core.event_bus.EventBus", "CanonicalEventDispatcher", "compatibility", False, "1.x", None, "Phase 7+", "Keep handler behavior stable.", "handler API users"),
     CompatibilityEntry("core.events.EventQueue", "CanonicalEventTransport", "compatibility", False, "1.x", None, "Phase 7+", "Use adapter during migration.", "1.x callers"),
+    CompatibilityEntry("core.event_manager.EventManager", "CanonicalEventTransport + CanonicalEventDispatcher", "compatibility", False, "1.x", None, "Phase 7+", "Keep the facade until Game and GameApplication event production and dispatch are migrated with behavior parity.", "Game, GameApplication and external 1.x callers"),
     CompatibilityEntry("core.event_types.EventType", "CanonicalEventType", "alias", False, "1.x", None, "Phase 6+", "Canonical type aliases remain available.", "public imports"),
     CompatibilityEntry("core.constants event constants", "CanonicalEventType", "alias", False, "1.x", None, "Phase 6+", "Do not remove public constants yet.", "public imports"),
     CompatibilityEntry("Game.dunya_olaylarini_aktar", "Game.dunya_olaylarini_canonical_aktar", "deprecated", True, "1.x", "2.0", "Phase 6+", "Route new code through the runtime dispatcher.", "legacy queue consumers"),
