@@ -40,7 +40,7 @@ class TestWorldObjectPlacementRegistry(unittest.TestCase):
         with self.assertRaises(WorldObjectPlacementError):
             self.registry.place(self.placement(x=7, width=2))
         with self.assertRaises(WorldObjectPlacementError):
-            self.registry.place(self.placement(y=5))
+            self.registry.place(self.placement(y=6))
 
     def test_move_is_atomic_when_destination_is_blocked(self):
         self.registry.place(self.placement("chest"))
