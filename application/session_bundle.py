@@ -21,7 +21,12 @@ from .combat_runtime import CombatRuntime
 
 @dataclass(frozen=True)
 class SessionBundle:
-    """One independently owned Core/gameplay runtime composition."""
+    """One independently owned Core/gameplay runtime composition.
+
+Registry mappings are read-only snapshots of their key/value associations.
+Their values (inventories, characters, recipes and other runtime aggregates)
+remain mutable domain objects by design; this is not deep immutability.
+"""
 
     session: GameSession
     simulation: SimulationRuntime
