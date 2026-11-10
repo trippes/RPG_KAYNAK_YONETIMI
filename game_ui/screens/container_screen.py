@@ -247,10 +247,13 @@ class ContainerScreen:
                     if side == self.active_side:
                         self._row_rects.append(rect)
             if not container_items:
-                renderer.text("Sandık boş.", 70, 390, MUTED)
+                self._draw_chest_emblem(renderer, 76, 397)
+                renderer.text("Sandık henüz boş.", 158, 402, TEXT_SOFT)
+                renderer.text("Eşyaları buraya taşıdığınızda görünecek.", 158, 430, MUTED, max_width=220)
             if not player_items:
-                renderer.text("Çanta boş.", 428, 390, MUTED)
-            renderer.text(self.message, 62, 486, GOOD if "aktarıldı" in self.message else TEXT_SOFT)
+                renderer.text("Çantada eşya yok.", 428, 398, TEXT_SOFT)
+                renderer.text("Taşınabilir eşya bulunmuyor.", 428, 426, MUTED, max_width=280)
+            renderer.text(self.message, 62, 500, GOOD if "aktarıldı" in self.message else TEXT_SOFT)
             renderer.footer("Sol/Sağ: taraf değiştir   Yukarı/Aşağı: seç   Enter: 1 adet taşı")
         except (KeyError, ValueError, RuntimeError, GameplayServiceError) as error:
             renderer.text(f"Sandık görüntülenemedi: {error}", 52, 170, WARN)
