@@ -99,10 +99,10 @@ World ──> LegacyWorldRuntime ──> EventQueue
                                                         └─> CanonicalEventDispatcher
 ```
 
-`core.event_manager.EventManager` mevcut migration matrix içinde ayrı bir
-satır olarak kayıtlı değildir. Bu bir envanter/ölçüm boşluğudur; EventManager
-kaldırılmalı anlamına gelmez. Sonraki tooling iyileştirmesinde kendi
-compatibility kimliğiyle izlenmesi değerlendirilmelidir.
+`core.event_manager.EventManager` başlangıçta migration matrix dışında
+kalmıştı. A aşamasında ayrı compatibility kimliği, AST scanner kaydı ve
+runtime constructor sayacı eklendi. Bu kayıt EventManager'ı deprecated yapmaz;
+Game ve GameApplication tüketicileri göçene kadar compatibility statüsündedir.
 
 ## 5. ActionManager ve Scheduler
 
@@ -223,6 +223,20 @@ uyumsuzluk kararı testle belgelenmiş olmalı.
 **Çıkış ölçütü:** Uygulama içi kullanım sıfırlanmış olsa bile public API ve
 harici istemci uyumluluğu ayrıca doğrulanmış olmalı.
 
+### Aşama D — Deprecation ve major-version kararı
+
+1. Ancak tüketici göçü tamamlandıktan sonra ilgili matrix kaydını
+   `compatibility` durumundan `deprecated` durumuna geçir.
+2. Canonical replacement ve sürüm notlarını yayımla; ortak warning
+   mekanizmasını API giriş noktasına uygula.
+3. Warning'leri CI'da kontrollü biçimde doğrula; ilk aşamada warning'i
+   error'a çevirerek mevcut tüketicileri aniden kırma.
+4. Kaldırma için en az bir duyurulmuş deprecation dönemi, sıfır bilinen
+   production/runtime kullanımı, güncel regression testleri ve major-version
+   onayı şartı koy.
+5. Ancak bu şartlar sağlanırsa ayrı bir değişiklikte silme yap.
+
+
 ### Aşama E — Kontrollü emeklilik kapısı
 
 1. A-D çıkış ölçütleri tamamlanmadan hiçbir legacy API, import yolu veya
@@ -242,18 +256,6 @@ EventManager kullanıyor; World runtime callback Scheduler'a bağlı; mutable
 Entity Position dışa açık. Harici istemci kapsamı da statik taramayla
 kanıtlanamaz. Bu nedenle emeklilik koşulları sağlanmamıştır ve hiçbir legacy
 sistem kaldırma onayı alamaz.
-### Aşama D — Deprecation ve major-version kararı
-
-1. Ancak tüketici göçü tamamlandıktan sonra ilgili matrix kaydını
-   `compatibility` durumundan `deprecated` durumuna geçir.
-2. Canonical replacement ve sürüm notlarını yayımla; ortak warning
-   mekanizmasını API giriş noktasına uygula.
-3. Warning'leri CI'da kontrollü biçimde doğrula; ilk aşamada warning'i
-   error'a çevirerek mevcut tüketicileri aniden kırma.
-4. Kaldırma için en az bir duyurulmuş deprecation dönemi, sıfır bilinen
-   production/runtime kullanımı, güncel regression testleri ve major-version
-   onayı şartı koy.
-5. Ancak bu şartlar sağlanırsa ayrı bir değişiklikte silme yap.
 
 ## 9. A-E uygulama kaydı
 
