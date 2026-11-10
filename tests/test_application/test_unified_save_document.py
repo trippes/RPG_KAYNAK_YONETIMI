@@ -5,7 +5,7 @@ from pathlib import Path
 from unittest import mock
 
 from application import GameSaveDocument, GameSaveFileAdapter, SaveJsonCodec
-from application.save_document import (
+from application.save_file_adapter import SaveFileReadError\nfrom application.save_document import (
     SaveDocumentError,
     UnsupportedSaveSchemaError,
 )
@@ -120,23 +120,80 @@ class TestUnifiedSaveDocument(unittest.TestCase):
 
         self.assertEqual(SaveJsonCodec.encode(document), SaveJsonCodec.encode(loaded))
 
-    def test_existing_save_is_backed_up_before_replacement(self):
+    def test_existing_valid_save_is_backed_up_before_replacement(self):
         document = self._document()
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "save.json"
-            path.write_text("previous-valid-save", encoding="utf-8")
+            GameSaveFileAdapter.save(document, path)
 
             GameSaveFileAdapter.save(document, path)
 
             backup = GameSaveFileAdapter.backup_path(path)
-            self.assertEqual(backup.read_text(encoding="utf-8"), "previous-valid-save")
-            self.assertNotEqual(path.read_text(encoding="utf-8"), "previous-valid-save")
+            self.assertEqual(
+                SaveJsonCodec.encode(GameSaveFileAdapter.load(backup)),
+                SaveJsonCodec.encode(document),
+            )
+            self.assertEqual(
+                SaveJsonCodec.encode(GameSaveFileAdapter.load(path)),
+                SaveJsonCodec.encode(document),
+            )
+
+    def test_corrupt_primary_recovers_from_valid_backup_and_repairs_primary(self):
+        document = self._document()
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "save.json"
+            backup = GameSaveFileAdapter.backup_path(path)
+            backup.write_text(SaveJsonCodec.encode(document), encoding="utf-8")
+            path.write_text('{"broken":', encoding="utf-8")
+
+            loaded = GameSaveFileAdapter.load(path)
+
+            self.assertEqual(
+                SaveJsonCodec.encode(loaded),
+                SaveJsonCodec.encode(document),
+            )
+            self.assertEqual(
+                SaveJsonCodec.encode(GameSaveFileAdapter.load(path)),
+                SaveJsonCodec.encode(document),
+            )
+            self.assertTrue(backup.is_file())
+
+    def test_save_does_not_overwrite_valid_backup_with_corrupt_primary(self):
+        document = self._document()
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "save.json"
+            backup = GameSaveFileAdapter.backup_path(path)
+            backup.write_text(SaveJsonCodec.encode(document), encoding="utf-8")
+            path.write_text('{"broken":', encoding="utf-8")
+
+            GameSaveFileAdapter.save(document, path)
+
+            self.assertEqual(
+                SaveJsonCodec.encode(GameSaveFileAdapter.load(backup)),
+                SaveJsonCodec.encode(document),
+            )
+            self.assertEqual(
+                SaveJsonCodec.encode(GameSaveFileAdapter.load(path)),
+                SaveJsonCodec.encode(document),
+            )
+
+    def test_invalid_primary_and_backup_raise_read_error(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "save.json"
+            path.write_text('{"broken":', encoding="utf-8")
+            GameSaveFileAdapter.backup_path(path).write_text(
+                "also broken", encoding="utf-8"
+            )
+
+            with self.assertRaises(SaveFileReadError):
+                GameSaveFileAdapter.load(path)
 
     def test_write_failure_preserves_existing_target_and_cleans_temp(self):
         document = self._document()
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "save.json"
-            path.write_text("previous-valid-save", encoding="utf-8")
+            GameSaveFileAdapter.save(document, path)
+            previous = path.read_text(encoding="utf-8")
 
             with mock.patch(
                 "application.save_file_adapter.os.replace",
@@ -145,7 +202,7 @@ class TestUnifiedSaveDocument(unittest.TestCase):
                 with self.assertRaises(OSError):
                     GameSaveFileAdapter.save(document, path)
 
-            self.assertEqual(path.read_text(encoding="utf-8"), "previous-valid-save")
+            self.assertEqual(path.read_text(encoding="utf-8"), previous)
             self.assertEqual(list(Path(directory).glob(".save.json.*.tmp")), [])
 
 
