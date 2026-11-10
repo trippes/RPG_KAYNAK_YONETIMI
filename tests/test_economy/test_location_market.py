@@ -81,7 +81,7 @@ class TestLocationMarket(unittest.TestCase):
         service = GameplayService(application)
         profile = MarketProfile(
             "village", "village", "trader_village", "merchant_village",
-            "inventory_village", 10, self.catalog, visible_products=2,
+            "inventory_village", 600, self.catalog, visible_products=2,
         )
         service.register_market_profile(profile)
         service.credit("hero", "gold", 100)
