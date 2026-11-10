@@ -29,12 +29,22 @@ snapshots from that same `SessionBundle`:
 
 The adapter writes a same-directory temporary file, flushes and fsyncs it,
 then validates the staged document before replacing the target with
-`os.replace()`. When the current target is valid, it first creates a validated
+`os.replace()`. On POSIX, it fsyncs the containing directory after each atomic
+replacement so the changed directory entry is flushed as well as the file
+contents. Windows keeps the portable file-fsync and atomic-replace path because
+Python does not expose a portable directory-fsync operation there. When the current target is valid, it first creates a validated
 backup through its own temporary file and atomic replacement. A corrupt primary
 never overwrites an existing backup. On load, an invalid or missing primary
 falls back to a valid `.bak` file and attempts to repair the primary atomically.
   Unsupported future schema versions are surfaced directly and never replaced
   by an older backup.
+Before each save, the adapter removes stale temporary files only when their
+names match the exact hidden staging prefixes for that primary save or its
+`.bak` file, they are regular files (not symlinks), and their modification time
+is at least seven days old. Recent staging files, primary saves, backups and
+unrelated files are retained. Cleanup is scoped to the save's parent directory
+and is followed by a directory fsync on POSIX when files were removed.
+
 The adapter does not provide a lock or concurrent-writer ordering guarantee.
 
 ## Save-slot lifecycle and overwrite protection
@@ -112,6 +122,8 @@ Persistence-related verification includes:
 
 - unified document and deterministic codec tests,
 - interrupted final-replace recovery tests, including primary/backup preservation,
+- stale staging-file cleanup tests covering age, exact naming, primary/backup retention and unrelated files,
+- POSIX directory-fsync ordering and failure-contract tests,
 - legacy version-0 envelope migration and input immutability tests,
 - atomic adapter failure tests,
 - candidate restore and publication tests,
