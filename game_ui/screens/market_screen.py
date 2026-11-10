@@ -56,7 +56,7 @@ class MarketScreen:
         renderer.panel(renderer.pg.Rect(36, 136, 888, 402))
         renderer.text("Satın alınabilir teklifler", 60, 154, title=True)
 
-        offers = self.service.market_offers()
+        offers = self.service.market_offers(self.market_id)
         if not offers:
             renderer.text("Aktif market teklifi yok.", 64, 230, MUTED)
         else:
