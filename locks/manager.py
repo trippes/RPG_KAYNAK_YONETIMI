@@ -54,8 +54,13 @@ class LockManager:
             raise TypeError("definition must be KeyDefinition.")
         if definition.key_id in self._key_definitions:
             raise LockManagerError(f"Duplicate key definition: {definition.key_id}")
-        if definition.lock_definition_id not in self._lock_definitions:
+        lock_definition = self._lock_definitions.get(definition.lock_definition_id)
+        if lock_definition is None:
             raise LockManagerError(f"Unknown lock definition: {definition.lock_definition_id}")
+        if lock_definition.required_key_id != definition.key_id:
+            raise LockManagerError(
+                "A key must be the exact key declared by its lock definition."
+            )
         self._key_definitions[definition.key_id] = definition
         return definition
 
