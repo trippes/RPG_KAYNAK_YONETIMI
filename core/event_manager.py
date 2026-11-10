@@ -8,12 +8,14 @@ işletme işlemlerini merkezi olarak yönetir.
 
 from core.events import Event, EventQueue
 from core.event_bus import EventBus
+from core.compatibility.usage import record_usage
 
 
 class EventManager:
     """Olay sisteminin oluşturma, kuyruğa alma ve dağıtım işlemlerini yönetir."""
 
     def __init__(self, event_bus=None, event_queue=None):
+        record_usage("core.event_manager.EventManager")
         if event_bus is not None and not isinstance(event_bus, EventBus):
             raise TypeError(
                 "event_bus yalnızca EventBus nesnesi veya None olabilir."
