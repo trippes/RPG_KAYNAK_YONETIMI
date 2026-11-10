@@ -252,6 +252,25 @@ class TestPhaseDQuality(unittest.TestCase):
             "market" in location.activities,
         )
 
+    def test_gameplay_navigation_opens_windows_without_legacy_main_menu(self):
+        opened = []
+        window = object.__new__(GameWindow)
+        window.current = "main"
+        window.gameplay_active = True
+        window.screens = {"main": SimpleNamespace(menu_open=False)}
+        window.renderer = SimpleNamespace(nav_hit=lambda _position: "map")
+        window.window_manager = SimpleNamespace(
+            windows={"map": object()},
+            open=lambda window_id: opened.append(window_id),
+        )
+        window._nav_enabled = lambda: {"market": True}
+        state = InputState(mouse_clicked=True, mouse_pos=(900, 30))
+
+        window._handle_nav_click(state)
+
+        self.assertEqual(opened, ["map"])
+        self.assertFalse(state.mouse_clicked)
+
     def test_main_screen_is_reachable_from_world_map(self):
         from application.content_pack import populate_opening_content
         service, _ = populate_opening_content(GameApplication.create_default())

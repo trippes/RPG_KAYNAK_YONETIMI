@@ -470,8 +470,6 @@ class GameWindow:
             return
         if self.current not in NAV_SCREENS:
             return
-        if self.current == "main" and not self.screens["main"].menu_open:
-            return
         target = self.renderer.nav_hit(state.mouse_pos)
         if target is None:
             return
@@ -635,9 +633,7 @@ class GameWindow:
 
         # Tell the renderer which chrome to draw for the screen shown this frame.
         shown = self.current
-        if shown in NAV_SCREENS and (
-            shown != "main" or self.screens["main"].menu_open
-        ):
+        if shown in NAV_SCREENS:
             self.renderer.nav_current = NAV_ALIASES.get(shown, shown)
             self.renderer.nav_enabled = self._nav_enabled()
         else:
