@@ -1,3 +1,4 @@
+import tempfile
 import warnings
 import unittest
 from pathlib import Path
@@ -63,6 +64,29 @@ class TestMigrationTooling(unittest.TestCase):
         self.assertTrue(all(not item.path.startswith("tests") for item in usages))
         self.assertTrue(all(not item.path.startswith("docs") for item in usages))
         self.assertTrue(all("__pycache__" not in item.path for item in usages))
+
+    def test_static_scanner_resolves_import_aliases_and_module_calls(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "sample.py").write_text(
+                "from core.events import EventQueue as Queue\\n"
+                "import core.events as event_module\\n"
+                "class Wrapped(Queue):\\n"
+                "    pass\\n"
+                "Queue()\\n"
+                "event_module.EventQueue()\\n",
+                encoding="utf-8",
+            )
+            usages = scan_static_usage(root)
+
+        matches = [
+            item for item in usages
+            if item.legacy_name == "core.events.EventQueue"
+        ]
+        self.assertEqual(
+            ["construction", "construction", "import", "inheritance"],
+            sorted(item.usage_kind for item in matches),
+        )
 
     def test_usage_report_contains_static_and_runtime_columns(self):
         EventQueue()
