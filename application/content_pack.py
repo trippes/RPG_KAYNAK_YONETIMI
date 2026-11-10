@@ -29,7 +29,6 @@ class StarterContentIds:
     forest_id: str = "forest"
     faction_id: str = "wardens"
     npc_id: str = "warden_lyra"
-    inventory_id: str = "player"
 
 
 class ContentDefinitionError(ValueError):
@@ -164,6 +163,7 @@ def _register_opening_content(application, definition: dict, ids: StarterContent
         )
     service = GameplayService(application)
     service.register_character_factory(factory)
+    service._starter_content_ids = ids
     faction_data = definition["faction"]
     service.register_faction(Faction(resolve_id("faction_id"), faction_data["name"]))
     npc_data = definition["npc"]
@@ -202,7 +202,6 @@ def _register_opening_content(application, definition: dict, ids: StarterContent
         definition, world.world_id, ids
     )
     service.register_world_map(world_map)
-    _register_opening_resources(bundle, definition, resolve_id, ids, world.world_id)
     service.place_actor(resolve_id("hero_id"), resolve_id("village_id"))
     start_position = character_data.get("starting_position") or (16, 29)
     service.set_actor_tile_position(
@@ -222,10 +221,26 @@ def populate_opening_content(
     )
 
 
+def populate_gameplay_resources(service, definition_path=None):
+    """Create gameplay inventory and resource nodes after character creation."""
+    world = service.application.aktif_dunya()
+    if world is None:
+        raise RuntimeError("An active world is required for gameplay resources.")
+    ids = getattr(service, "_starter_content_ids", StarterContentIds())
+    definition = load_starter_content(definition_path)
+    _register_opening_resources(
+        service.application.holder.current,
+        definition,
+        _id_resolver(definition, ids),
+        ids,
+        world.world_id,
+    )
+
+
 def _register_opening_resources(bundle, definition, resolve_id, ids, world_id):
     """Register the starter inventory and every gatherable landmark as a resource node."""
     inventories = dict(bundle.inventories)
-    inventories.setdefault(ids.inventory_id, Inventory())
+    inventories.setdefault("player", Inventory())
     object.__setattr__(bundle, "inventories", MappingProxyType(inventories))
 
     for location_data in definition["locations"]:
@@ -322,5 +337,6 @@ __all__ = [
     "load_starter_content",
     "load_opening_content",
     "populate_opening_content",
+    "populate_gameplay_resources",
     "build_starter_world_map",
 ]
