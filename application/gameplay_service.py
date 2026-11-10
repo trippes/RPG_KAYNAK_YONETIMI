@@ -651,7 +651,18 @@ class GameplayService:
             object.__setattr__(bundle, "inventories", MappingProxyType(inventories))
         existing_profile = bundle.economy.market.profile(profile.market_id)
         if existing_profile is not None:
-            if existing_profile != profile:
+            existing_config = (
+                existing_profile.location_id, existing_profile.npc_id,
+                existing_profile.merchant_id, existing_profile.inventory_id,
+                existing_profile.restock_interval, existing_profile.catalog,
+                existing_profile.visible_products,
+            )
+            requested_config = (
+                profile.location_id, profile.npc_id, profile.merchant_id,
+                profile.inventory_id, profile.restock_interval, profile.catalog,
+                profile.visible_products,
+            )
+            if existing_config != requested_config:
                 raise ValueError(f"Conflicting market profile: {profile.market_id}")
             profile = existing_profile
         else:
