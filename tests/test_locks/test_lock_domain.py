@@ -16,7 +16,7 @@ class TestLockDomain(unittest.TestCase):
             "wood_chest_lock", "Wood chest lock", "wood_key",
             "iron_pick", "wood_force",
         ))
-        self.manager.register_lock_definition(LockDefinition("iron_door_lock", "Iron door lock"))
+        self.manager.register_lock_definition(LockDefinition("iron_door_lock", "Iron door lock", "iron_key"))
         self.manager.register_key_definition(KeyDefinition("wood_key", "Wood key", "wood_chest_lock"))
         self.manager.register_key_definition(KeyDefinition("iron_key", "Iron key", "iron_door_lock"))
         self.manager.register(LockInstance("lock_01", "entity_chest", "wood_chest_lock"))
