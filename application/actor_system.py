@@ -237,6 +237,10 @@ class WorldActorRegistry:
     def set_active(self, actor_id: str, active: bool) -> None:
         self._require(actor_id).set_active(active)
 
+    def bind_inventory(self, actor_id: str, inventory_id: str) -> None:
+        """Bind one inventory to an existing actor."""
+        self._require(actor_id).bind_inventory(inventory_id)
+
     def bind_character(self, actor_id: str, character) -> None:
         """Bind a character aggregate to an existing world actor."""
         if not callable(getattr(character, "bind_actor", None)):
