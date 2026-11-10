@@ -639,6 +639,7 @@ class GameWindow:
             else:
                 self.screens["market"].set_market(profile.market_id)
                 self.window_manager.open("market")
+                dialogue._reset_dialogue()
             next_screen = self.gameplay_screen
 
         if next_screen == "world":
