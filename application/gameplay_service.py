@@ -723,6 +723,7 @@ class GameplayService:
             ):
                 raise ValueError(f"Conflicting trade partner profile: {npc_id}")
             merchant = existing
+            merchant.inventory = inventory
         currency = Currency("gold")
         if isinstance(initial_gold, bool) or not isinstance(initial_gold, int) or initial_gold < 0:
             raise ValueError("initial_gold must be a non-negative integer.")
