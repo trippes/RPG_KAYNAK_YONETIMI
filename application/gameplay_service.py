@@ -659,19 +659,19 @@ class GameplayService:
     def register_dialogue(self, dialogue: Dialogue) -> Dialogue:
         return self._current_bundle().social.add_dialogue(dialogue)
     def register_dialogue_action(
-    self,
-    action_id: str,
-    handler: Callable[[str, str], None],
-) -> None:
-    """Register a reusable handler for a dialogue action."""
-    if not isinstance(action_id, str) or not action_id.strip():
-        raise ValueError("action_id must be a non-empty string.")
-    if not callable(handler):
-        raise TypeError("handler must be callable.")
-    if action_id in self._dialogue_actions:
-        raise ValueError(f"Dialogue action already registered: {action_id}")
+        self,
+        action_id: str,
+        handler: Callable[[str, str], None],
+    ) -> None:
+        """Register a reusable handler for a dialogue action."""
+        if not isinstance(action_id, str) or not action_id.strip():
+            raise ValueError("action_id must be a non-empty string.")
+        if not callable(handler):
+            raise TypeError("handler must be callable.")
+        if action_id in self._dialogue_actions:
+            raise ValueError(f"Dialogue action already registered: {action_id}")
 
-    self._dialogue_actions[action_id] = handler
+        self._dialogue_actions[action_id] = handler
 
     def talk_to_npc(self, actor_id: str, npc_id: str, dialogue_id: str, node_id: str | None = None):
         bundle = self._current_bundle()
