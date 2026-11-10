@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Mapping
 
 from character import EquipmentSlot, ItemDefinition
-from resources import Inventory, Quantity, ResourceDefinition, ResourceType, ResourceUnit
+from resources import Quantity, ResourceDefinition, ResourceType, ResourceUnit
 from .world_object_placement import WorldObjectPlacement, WorldObjectPlacementRegistry
 from containers import (
     BreakProfile, BreakProfileRegistry, ContainerDefinition, ContainerInstance,
