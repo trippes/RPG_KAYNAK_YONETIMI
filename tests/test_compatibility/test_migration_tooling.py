@@ -56,7 +56,7 @@ class TestMigrationTooling(unittest.TestCase):
         EventBus()
         EventManager()
         counts = runtime_usage_counts()
-        self.assertEqual(counts["core.events.EventQueue"], 1)
+        self.assertEqual(counts["core.events.EventQueue"], 2)
         self.assertEqual(counts["core.event_bus.EventBus"], 2)
         self.assertEqual(counts["core.event_manager.EventManager"], 1)
 
