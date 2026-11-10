@@ -36,6 +36,32 @@ class TestContentPack(unittest.TestCase):
         self.assertEqual(tuple(bundle.combat.all()), ())
         self.assertEqual(tuple(bundle.inventories), ())
 
+    def test_location_markets_register_after_opening_phase(self):
+        application = GameApplication.create_default()
+        service, _ids = populate_opening_content(application)
+
+        self.assertIsNone(service.market_for_npc("village_trader"))
+        self.assertIsNone(service.market_for_npc("innkeeper_mira"))
+
+        populate_gameplay_resources(service)
+
+        village_profile = service.market_for_npc("village_trader")
+        inn_profile = service.market_for_npc("innkeeper_mira")
+        self.assertEqual(village_profile.market_id, "village_stalls")
+        self.assertEqual(inn_profile.market_id, "village_inn")
+        self.assertEqual(
+            {offer.resource_type.value for offer in service.market_offers("village_stalls")},
+            {"wood", "iron_ore", "water"},
+        )
+        self.assertEqual(
+            {offer.resource_type.value for offer in service.market_offers("village_inn")},
+            {"bread", "water"},
+        )
+        self.assertIs(
+            application.holder.current.economy.merchants["merchant_village"].inventory,
+            application.holder.current.inventories["market_village_inventory"],
+        )
+
     def test_gameplay_resources_are_created_after_opening_phase(self):
         application = GameApplication.create_default()
         service, _ids = populate_opening_content(application)
