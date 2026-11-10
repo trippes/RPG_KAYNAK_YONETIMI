@@ -5,6 +5,7 @@ from pathlib import Path
 from core.entity import Entity, EntityType
 from character import ItemDefinition
 from containers import ContainerDefinition, ContainerInstance
+from locks import KeyDefinition, LockDefinition, LockInstance, LockpickProfile
 from resources import ResourceDefinition
 from world import Location, WorldMap
 
@@ -83,6 +84,64 @@ class TestGameplayService(unittest.TestCase):
         self.application = GameApplication(SessionHolder(bundle))
         self.service = GameplayService(self.application)
         self.inventory = inventory
+
+
+    def test_locked_container_requires_matching_key_before_opening(self):
+        self.service.register_container_definition(ContainerDefinition("locked_chest", "Locked chest"))
+        entity = Entity(EntityType.ESYA, "Locked chest", entity_id="locked_chest_entity")
+        self.application.varlik_ekle(entity)
+        self.service.register_container(ContainerInstance("locked_chest_01", entity.entity_id, "locked_chest"))
+        self.service.register_lock_definition(
+            LockDefinition("locked_chest_lock", "Chest lock", "chest_key")
+        )
+        self.service.register_key_definition(
+            KeyDefinition("chest_key", "Chest key", "locked_chest_lock")
+        )
+        self.service.register_lock(
+            LockInstance("locked_chest_lock_01", entity.entity_id, "locked_chest_lock")
+        )
+        self.service.register_actor("hero", "player")
+        self.inventory.add_item("chest_key")
+
+        with self.assertRaises(GameplayServiceError):
+            self.service.open_container("hero", "main", "locked_chest_01")
+
+        self.assertFalse(self.service.unlock_with_key(
+            "hero", "main", "locked_chest_lock_01", "wrong_key"
+        ))
+        self.assertTrue(self.service.lock_state("locked_chest_lock_01").locked)
+        self.assertTrue(self.service.unlock_with_key(
+            "hero", "main", "locked_chest_lock_01", "chest_key"
+        ))
+        self.assertEqual(
+            self.service.open_container("hero", "main", "locked_chest_01").container_id,
+            "locked_chest_01",
+        )
+
+    def test_lockpick_action_uses_actor_context_and_skill_profile(self):
+        self.service.register_container_definition(ContainerDefinition("pick_chest", "Pick chest"))
+        entity = Entity(EntityType.ESYA, "Pick chest", entity_id="pick_chest_entity")
+        self.application.varlik_ekle(entity)
+        self.service.register_container(ContainerInstance("pick_chest_01", entity.entity_id, "pick_chest"))
+        self.service.register_lockpick_profile(
+            LockpickProfile("basic_pick", require_skill=True, minimum_skill=2)
+        )
+        self.service.register_lock_definition(
+            LockDefinition("pick_chest_lock", "Pickable lock", lockpick_profile_id="basic_pick")
+        )
+        self.service.register_lock(
+            LockInstance("pick_chest_lock_01", entity.entity_id, "pick_chest_lock")
+        )
+        self.service.register_actor("hero", "player")
+
+        self.assertFalse(self.service.attempt_lockpick(
+            "hero", "main", "pick_chest_lock_01", skill=1, success=True
+        ))
+        self.assertTrue(self.service.lock_state("pick_chest_lock_01").locked)
+        self.assertTrue(self.service.attempt_lockpick(
+            "hero", "main", "pick_chest_lock_01", skill=3, success=True
+        ))
+        self.assertFalse(self.service.lock_state("pick_chest_lock_01").locked)
 
     def test_world_object_placement_uses_registered_core_entity_and_map(self):
         world = self.application.aktif_dunya()
