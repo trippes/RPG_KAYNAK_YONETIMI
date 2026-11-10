@@ -84,7 +84,7 @@ class TestGameApplicationSave(unittest.TestCase):
             document = GameSaveFileAdapter.load(result)
 
         self.assertEqual(document.schema, "rpg-game-save")
-        self.assertEqual(document.schema_version, 1)
+        self.assertEqual(document.schema_version, 2)
         self.assertEqual(document.core.simulation_tick.value, document.gameplay.simulation_tick)
         self.assertEqual(document.gameplay.inventories[0].inventory_id, "main")
         self.assertEqual(document.gameplay.nodes[0].node_id, "node_main")
