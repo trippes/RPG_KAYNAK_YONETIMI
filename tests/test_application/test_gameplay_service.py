@@ -147,7 +147,7 @@ class TestGameplayService(unittest.TestCase):
         self.service.register_lock(
             LockInstance("pick_chest_lock_01", entity.entity_id, "pick_chest_lock")
         )
-        self.service.register_actor("hero", "player", character_id="hero_character")
+        self.service.register_actor("hero", "player", character_id="hero_character", inventory_id="main")
         self.inventory.add_item("lockpick")
 
         with self.assertRaises(GameplayServiceError):
