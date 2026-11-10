@@ -162,6 +162,9 @@ class MainScreen:
         location = self._location()
         if location is None:
             return blocked
+        actors = self._actors()
+        if actors:
+            blocked.update(self.service.blocked_world_object_tiles(actors[0].world_id, location.location_id))
         for landmark in location.landmarks:
             landmark_id = str(landmark[0]).lower()
             name = str(landmark[1]).lower()
@@ -600,6 +603,12 @@ class MainScreen:
                         renderer.pg.Rect(window_x, house_body.y + 3, window_size, window_size),
                     )
             renderer.pg.draw.rect(renderer.surface, (102, 72, 43), rect, 1)
+
+        if actor is not None and location is not None:
+            for placement in self.service.world_objects_for_location(actor.world_id, location.location_id):
+                rect = renderer.pg.Rect(origin_x + placement.x * self.TILE_SIZE + 2, origin_y + placement.y * self.TILE_SIZE + 2, max(4, placement.width * self.TILE_SIZE - 4), max(4, placement.height * self.TILE_SIZE - 4))
+                renderer.pg.draw.rect(renderer.surface, (126, 91, 58), rect, border_radius=2)
+                renderer.pg.draw.rect(renderer.surface, (210, 174, 112), rect, 1, border_radius=2)
 
         for npc in self._npcs():
             x, y = self._position(npc.position)

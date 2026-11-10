@@ -56,6 +56,7 @@ from .social_runtime import SocialRuntime, SocialRuntimeError
 from .combat_runtime import Combatant, CombatResult, CombatRuntime
 from .extended_persistence import SocialSnapshot, CombatSnapshot
 from .migrations import CURRENT_SAVE_SCHEMA_VERSION, migrate_save_data
+from .world_object_placement import WorldObjectPlacement, WorldObjectPlacementError, WorldObjectPlacementRegistry
 
 __all__ = [
     "GameApplication",
@@ -110,4 +111,5 @@ __all__ = [
     "SocialRuntime", "SocialRuntimeError", "Combatant", "CombatResult", "CombatRuntime",
     "SocialSnapshot", "CombatSnapshot",
     "CURRENT_SAVE_SCHEMA_VERSION", "migrate_save_data",
+    "WorldObjectPlacement", "WorldObjectPlacementError", "WorldObjectPlacementRegistry",
 ]

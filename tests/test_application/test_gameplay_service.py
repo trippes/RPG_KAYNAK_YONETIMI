@@ -2,6 +2,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from core.entity import Entity, EntityType
+from world import Location, WorldMap
+
 from application import (
     GameApplication,
     GameplayChainStage,
@@ -75,6 +78,21 @@ class TestGameplayService(unittest.TestCase):
         self.application = GameApplication(SessionHolder(bundle))
         self.service = GameplayService(self.application)
         self.inventory = inventory
+
+    def test_world_object_placement_uses_registered_core_entity_and_map(self):
+        world = self.application.aktif_dunya()
+        world_map = WorldMap(world.world_id)
+        world_map.add_location(Location("village", "Village"))
+        world_map.add_location(Location("forest", "Forest"))
+        self.service.register_world_map(world_map)
+        entity = Entity(EntityType.ESYA, "Sandık", entity_id="chest_01")
+        self.application.varlik_ekle(entity)
+        placement = self.service.place_world_object("chest_01", "village", 3, 4, width=2, height=1, tags=("container",))
+        self.assertEqual(placement.object_id, entity.entity_id)
+        self.assertEqual(self.service.blocked_world_object_tiles(world.world_id, "village"), frozenset({(3, 4), (4, 4)}))
+        moved = self.service.transfer_world_object("chest_01", "forest", 1, 1)
+        self.assertEqual(moved.location_id, "forest")
+        self.assertEqual(self.service.world_objects_for_location(world.world_id, "forest"), (moved,))
 
     def test_collects_from_active_world_atomically(self):
         self.service.collect("ore-node", "main", Quantity(4, ResourceUnit.ITEM))

@@ -24,7 +24,8 @@ from .production_chain import ProductionChain, ProductionChainStage
 from .actor_system import ActivityView, ActorView, WorldActor
 from character import EquipmentSlot, ItemDefinition
 from .movement import MovementManager
-from world import WorldMap
+from world import WorldMap, LocalMapDefinition
+from .world_object_placement import WorldObjectPlacement
 from npc import Faction, NPC
 from quests import Dialogue, Quest
 from .social_runtime import SocialRuntimeError
@@ -308,9 +309,52 @@ class GameplayService:
         bundle.validate()
         return bundle.actors.get(actor_id)
 
-    def register_world_map(self, world_map: WorldMap) -> None:
-        """Register the application movement graph for a world."""
-        self._current_bundle().movement.register_map(world_map)
+    def register_world_map(self, world_map: WorldMap, *, local_map_width: int = 32, local_map_height: int = 32) -> None:
+        """Register the movement graph and local tile-map dimensions."""
+        bundle = self._current_bundle()
+        if not isinstance(world_map, WorldMap):
+            raise TypeError("world_map must be WorldMap.")
+        for name, value in (("local_map_width", local_map_width), ("local_map_height", local_map_height)):
+            if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+                raise ValueError(f"{name} must be a positive integer.")
+        bundle.movement.register_map(world_map)
+        for location in world_map.locations():
+            bundle.world_objects.register_local_map(LocalMapDefinition(world_map.world_id, location.location_id, local_map_width, local_map_height))
+
+    def place_world_object(self, object_id: str, location_id: str, x: int, y: int, *, width: int = 1, height: int = 1, blocks_movement: bool = True, layer: int = 0, tags: tuple[str, ...] = ()) -> WorldObjectPlacement:
+        """Place a registered Core Entity on a local map tile footprint."""
+        bundle = self._current_bundle()
+        entity = bundle.session.entities.get(object_id)
+        if entity is None:
+            raise KeyError(f"Entity not found: {object_id}")
+        if entity.world_id is None:
+            raise GameplayServiceError("World objects must belong to a Core World.")
+        world_map = bundle.movement.map_for(entity.world_id)
+        if world_map is None or world_map.get(location_id) is None:
+            raise KeyError(f"Location is not registered in the object's world: {location_id}")
+        return bundle.world_objects.place(WorldObjectPlacement(object_id, entity.world_id, location_id, x, y, width, height, blocks_movement, layer, tags))
+
+    def move_world_object(self, object_id: str, x: int, y: int) -> WorldObjectPlacement:
+        return self._current_bundle().world_objects.move(object_id, x, y)
+
+    def transfer_world_object(self, object_id: str, location_id: str, x: int, y: int) -> WorldObjectPlacement:
+        bundle = self._current_bundle()
+        current = bundle.world_objects.get(object_id)
+        if current is None:
+            raise KeyError(f"World object placement not found: {object_id}")
+        world_map = bundle.movement.map_for(current.world_id)
+        if world_map is None or world_map.get(location_id) is None:
+            raise KeyError(f"Location not found in object's world: {location_id}")
+        return bundle.world_objects.transfer(object_id, location_id, x, y)
+
+    def remove_world_object_placement(self, object_id: str) -> WorldObjectPlacement:
+        return self._current_bundle().world_objects.remove(object_id)
+
+    def world_objects_for_location(self, world_id: str, location_id: str) -> tuple[WorldObjectPlacement, ...]:
+        return self._current_bundle().world_objects.for_location(world_id, location_id)
+
+    def blocked_world_object_tiles(self, world_id: str, location_id: str) -> frozenset[tuple[int, int]]:
+        return self._current_bundle().world_objects.blocked_tiles(world_id, location_id)
 
     def place_actor(self, actor_id: str, location_id: str) -> ActorView:
         self._current_bundle().movement.set_position(actor_id, location_id)

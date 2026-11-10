@@ -17,6 +17,7 @@ from quests import QuestLog
 from economy import Economy
 from .social_runtime import SocialRuntime
 from .combat_runtime import CombatRuntime
+from .world_object_placement import WorldObjectPlacementRegistry
 
 
 @dataclass(frozen=True)
@@ -44,6 +45,7 @@ remain mutable domain objects by design; this is not deep immutability.
     social: SocialRuntime | None = None
     combat: CombatRuntime | None = None
     items: Mapping[str, ItemDefinition] | None = None
+    world_objects: WorldObjectPlacementRegistry | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.session, GameSession):
@@ -58,6 +60,11 @@ remain mutable domain objects by design; this is not deep immutability.
             raise TypeError("inventories must be a mapping.")
         if not isinstance(self.recipes, Mapping):
             raise TypeError("recipes must be a mapping.")
+        if self.world_objects is None:
+            object.__setattr__(self, "world_objects", WorldObjectPlacementRegistry())
+        if not isinstance(self.world_objects, WorldObjectPlacementRegistry):
+            raise TypeError("world_objects must be WorldObjectPlacementRegistry.")
+        self.world_objects.validate()
         if self.items is None:
             object.__setattr__(self, "items", {})
         if not isinstance(self.items, Mapping) or any(
@@ -243,6 +250,7 @@ class SessionHolder:
             or first.economy is second.economy
             or first.social is second.social
             or first.combat is second.combat
+            or first.world_objects is second.world_objects
         ):
             return True
         return any(
