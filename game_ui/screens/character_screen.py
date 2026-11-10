@@ -30,11 +30,6 @@ class CharacterScreen:
         self.message = ""
 
     def handle(self, state):
-        if state.pressed("world") or state.pressed("back"):
-            return "world"
-        if state.pressed("inventory"):
-            return "inventory"
-
         character = self.service.actor_character("hero")
         skills = tuple(character.skills.to_dict()) if character is not None else ()
         if skills:

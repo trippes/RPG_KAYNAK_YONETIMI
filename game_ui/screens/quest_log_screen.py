@@ -42,11 +42,6 @@ class QuestLogScreen:
         self._viewport = (960, 640)
 
     def handle(self, state):
-        if state.pressed("world") or state.pressed("back"):
-            return "world"
-        if state.pressed("character"):
-            return "character"
-
         list_bounds = self._list_bounds()
         detail_bounds = self._details_bounds()
         if state.mouse_wheel and (

@@ -5,7 +5,6 @@ class MarketScreen:
     VISIBLE_OFFERS = 4
     ROW_X, ROW_Y, ROW_W, ROW_H = 96, 206, 760, 44
     BUY_RECT = (636, 408, 220, 42)
-    CLOSE_RECT = (60, 500, 220, 38)
 
     def __init__(self, service):
         self.service = service
@@ -28,12 +27,6 @@ class MarketScreen:
         if offers:
             self.selected %= len(offers)
 
-        if state.mouse_clicked and state.mouse_pos is not None:
-            mx, my = state.mouse_pos
-            cx, cy, cw, ch = self.CLOSE_RECT
-            if cx <= mx <= cx + cw and cy <= my <= cy + ch:
-                return "local_map"
-
         if offers and state.mouse_clicked and state.mouse_pos is not None:
             mx, my = state.mouse_pos
             first = self._first_visible(offers)
@@ -49,12 +42,6 @@ class MarketScreen:
             self.selected = (self.selected + (1 if state.pressed("down") else -1)) % len(offers)
         if offers and state.pressed("confirm"):
             self._buy(offers)
-        if state.pressed("world") or state.pressed("back"):
-            return "local_map"
-        if state.pressed("inventory"):
-            return "inventory"
-        if state.pressed("character"):
-            return "character"
         return None
 
     def render(self, renderer):
@@ -123,9 +110,4 @@ class MarketScreen:
         renderer.text(
             renderer.fit_text(self.message, 760),
             64, 455, GOLD,
-        )
-        renderer.action_button(
-            renderer.pg.Rect(*self.CLOSE_RECT),
-            "KAPAT",
-            "Pencereyi kapat",
         )

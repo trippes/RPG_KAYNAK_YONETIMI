@@ -155,9 +155,6 @@ class ProductionScreen:
         self._frame_snapshot = None
         recipes = self._get_recipes()
 
-        if state.pressed("back"):
-            return "world"
-
         if not recipes:
             self.message = "Kullanılabilir tarif bulunamadı."
             return None
@@ -210,10 +207,6 @@ class ProductionScreen:
             # Fareyle uretimi baslat.
             if 620 <= mouse_x <= 900 and 430 <= mouse_y <= 472:
                 self._start_production(recipes[self.selected_index])
-
-            # Fareyle dunyaya don.
-            if 48 <= mouse_x <= 316 and 430 <= mouse_y <= 472:
-                return "world"
 
         # Klavyeyle uretimi baslat.
         if state.pressed("confirm"):
@@ -285,12 +278,6 @@ class ProductionScreen:
                 f"{self.selected_index + 1}/{len(recipes)} tarif",
                 58, 390, (155, 172, 196),
             )
-
-        renderer.action_button(
-            renderer.pg.Rect(48, 430, 268, 42),
-            "KAPAT",
-            "Pencereyi kapat",
-        )
 
         recipe = recipes[self.selected_index]
         renderer.text(

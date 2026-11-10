@@ -219,23 +219,18 @@ class TestPhaseDQuality(unittest.TestCase):
             screen.handle(InputState(actions={"confirm"}))
             expected = (
                 "local_map"
-                if isinstance(screen, (MarketScreen, DialogueScreen))
+                if isinstance(screen, DialogueScreen)
                 else "world"
+                if isinstance(screen, (CombatScreen, CharacterCreationScreen))
+                else None
             )
             self.assertEqual(screen.handle(InputState(actions={"back"})), expected)
 
-    def test_market_window_close_button_returns_to_world(self):
+    def test_market_window_does_not_own_window_close_navigation(self):
         service = SimpleNamespace(market_offers=lambda: ())
         screen = MarketScreen(service)
-        x, y, width, height = screen.CLOSE_RECT
 
-        self.assertEqual(
-            screen.handle(InputState(
-                mouse_clicked=True,
-                mouse_pos=(x + width // 2, y + height // 2),
-            )),
-            "local_map",
-        )
+        self.assertIsNone(screen.handle(InputState(actions={"back", "world", "inventory", "character"})))
 
     def test_map_screen_routes_to_world_and_supports_map_input(self):
         from application.content_pack import populate_opening_content
@@ -336,16 +331,14 @@ class TestPhaseDQuality(unittest.TestCase):
         screen.menu_selected = 4
         self.assertEqual(screen.handle(InputState(actions={"confirm"})), "market")
 
-    def test_inventory_and_market_windows_close_to_local_map(self):
+    def test_inventory_and_market_windows_ignore_legacy_screen_navigation(self):
         from application.content_pack import populate_opening_content
         service, _ = populate_opening_content(GameApplication.create_default())
-        self.assertEqual(
-            InventoryScreen(service).handle(InputState(actions={"back"})),
-            "local_map",
+        self.assertIsNone(
+            InventoryScreen(service).handle(InputState(actions={"back", "world", "market", "character"}))
         )
-        self.assertEqual(
-            MarketScreen(service).handle(InputState(actions={"back"})),
-            "local_map",
+        self.assertIsNone(
+            MarketScreen(service).handle(InputState(actions={"back", "world", "inventory", "character"}))
         )
 
     def test_character_window_preserves_skill_selection_and_close_input(self):

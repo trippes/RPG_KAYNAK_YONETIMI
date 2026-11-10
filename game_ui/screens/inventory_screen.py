@@ -134,12 +134,6 @@ class InventoryScreen:
         return self.service.item(entry_id) if kind == "item" else None
 
     def handle(self, state):
-        if state.pressed("world") or state.pressed("back"):
-            return "local_map"
-        if state.pressed("market"):
-            return "market"
-        if state.pressed("character"):
-            return "character"
         if state.pressed("left"):
             self.tab = (self.tab - 1) % len(self.TABS)
         if state.pressed("right"):
