@@ -16,7 +16,7 @@ from core.actions import ActionType, action_tick_cost
 from core.foundation import Identifier
 
 from resources import Inventory, Quantity, Recipe, ResourceType, ResourceUnit
-from economy import Currency, MarketOffer, Money, TradeService, Merchant
+from economy import Currency, MarketOffer, Money, TradeService, Merchant, MarketProfile
 
 from .game_application import GameApplication
 from .production_chain import ProductionChain, ProductionChainStage
@@ -572,6 +572,7 @@ class GameplayService:
     def publish_offer(
         self, offer_id: str, seller_id: str, seller_inventory_id: str,
         resource_type: ResourceType, quantity: int, unit_price: Money, expires_at: int | None = None,
+        market_id: str = "default",
     ) -> MarketOffer:
         bundle = self._current_bundle()
         self._inventory(bundle, seller_inventory_id)
@@ -581,7 +582,7 @@ class GameplayService:
         reserved = bundle.economy.market.reserved_quantity(seller_inventory_id, resource_type)
         if stock is None or stock.value - reserved < quantity:
             raise GameplayServiceError("Seller inventory cannot reserve the offered quantity.")
-        offer = MarketOffer(offer_id, seller_id, resource_type, quantity, unit_price, seller_inventory_id, expires_at)
+        offer = MarketOffer(offer_id, seller_id, resource_type, quantity, unit_price, seller_inventory_id, expires_at, market_id)
         bundle.economy.market.publish(offer)
         return offer
 
@@ -615,7 +616,7 @@ class GameplayService:
                 bundle.economy.market.publish(MarketOffer(
                     offer.offer_id, offer.seller_id, offer.resource_type,
                     offer.quantity - purchased, offer.unit_price,
-                    offer.inventory_id, offer.expires_at,
+                    offer.inventory_id, offer.expires_at, offer.market_id,
                 ))
             self._advance_quests(
                 "collect", offer.resource_type.value, purchased,
@@ -634,8 +635,34 @@ class GameplayService:
             raise GameplayServiceError("Only the seller can cancel a market offer.")
         return bundle.economy.market.withdraw(offer_id)
 
-    def market_offers(self) -> tuple[MarketOffer, ...]:
-        return self._current_bundle().economy.market.offers()
+    def register_market_profile(self, profile: MarketProfile, inventory: Inventory | None = None) -> MarketProfile:
+        bundle = self._current_bundle()
+        if not isinstance(profile, MarketProfile):
+            raise TypeError("profile must be MarketProfile.")
+        inventories = dict(bundle.inventories)
+        if profile.inventory_id in inventories:
+            if inventory is not None and inventories[profile.inventory_id] is not inventory:
+                raise ValueError(f"Market inventory already exists: {profile.inventory_id}")
+        else:
+            inventories[profile.inventory_id] = inventory if inventory is not None else Inventory()
+            object.__setattr__(bundle, "inventories", MappingProxyType(inventories))
+        bundle.economy.market.register_profile(profile)
+        return profile
+
+    def market_for_npc(self, npc_id: str):
+        return self._current_bundle().economy.market.profile_for_npc(npc_id)
+
+    def market_offers(self, market_id: str | None = None) -> tuple[MarketOffer, ...]:
+        bundle = self._current_bundle()
+        if market_id is not None:
+            profile = bundle.economy.market.profile(market_id)
+            if profile is None:
+                raise KeyError(f"Market not found: {market_id}")
+            inventory = self._inventory(bundle, profile.inventory_id)
+            bundle.economy.market.restock(
+                market_id, inventory, bundle.simulation.current_tick.value,
+            )
+        return bundle.economy.market.offers(market_id)
 
     def expire_market_offers(self, current_tick: int | None = None):
         tick = self._current_bundle().simulation.current_tick.value if current_tick is None else current_tick
