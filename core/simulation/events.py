@@ -10,7 +10,11 @@ from .event_types import DEFAULT_SCHEMA_VERSION
 
 @dataclass(frozen=True)
 class SimulationEvent:
-    """Typed deterministic event envelope for the canonical runtime."""
+    """Typed event envelope with read-only, detached top-level payload mappings.
+
+Nested payload values are copied on construction but are not recursively frozen;
+consumers must treat those nested values as immutable event data by convention.
+"""
 
     event_type: str
     simulation_tick: Tick
