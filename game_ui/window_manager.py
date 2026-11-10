@@ -193,6 +193,12 @@ class WindowManager:
             state.actions.discard("inventory")
             self.toggle("inventory")
             return True
+
+        for action, window_id in (("map", "map"), ("production", "production")):
+            if action in state.actions:
+                state.actions.discard(action)
+                self.toggle(window_id)
+                return True
         if self.focused_id is None and "character" in state.actions:
             self.open("character")
             state.actions.discard("character")
