@@ -78,8 +78,6 @@ class QuestLogScreen:
     def render(self, renderer):
         self._viewport = (renderer.width, renderer.height)
         # WindowManager owns the outer title bar. This screen renders only its content.
-        renderer.hud(self.service)
-
         layout = self._layout(renderer.width, renderer.height)
         outer = renderer.pg.Rect(*layout["outer"])
         renderer.panel(outer, (25, 31, 43), (145, 118, 70))

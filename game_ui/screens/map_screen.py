@@ -8,7 +8,7 @@ class MapScreen:
         self.service = service
         self.selected = 0
         self._selection_initialized = False
-        self.message = "Bir lokasyon seçip Enter ile seyahat et."
+        self.message = "Bir konum seçerek dünya haritasını incele."
 
     def _context(self):
         actors = self.service.state().actors

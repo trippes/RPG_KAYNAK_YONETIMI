@@ -198,9 +198,6 @@ class InventoryScreen:
         items = self._items()
         entries = self._entries()
         slot_entries = self._slot_entries()
-        renderer.frame("Envanter")
-        renderer.hud(self.service)
-
         # Main parchment-like inventory frame.
         renderer.panel(renderer.pg.Rect(24, 126, renderer.width - 48, 430), (25, 31, 43), (145, 118, 70))
         renderer.text("Envanter", 48, 142, GOLD, title=True)
@@ -317,5 +314,3 @@ class InventoryScreen:
         if activity is not None and activity.state == "running" and activity.end_tick is not None:
             remaining = max(0, activity.end_tick - self.service.state().simulation_tick)
             renderer.text(f"Toplama sürüyor: {duration_label(remaining)} kaldı", 320, 555, GOOD)
-        renderer.text(renderer.fit_text(self.message, 560), 48, 580, GOLD)
-        renderer.footer("←/→ Sekme   ↑/↓ Eşya   E Kuşan   Enter Kullan   M Pazar   Esc Kapat")
