@@ -1,5 +1,6 @@
+from core.time import Tick
+
 from time_system import (
-    Tick,
     GameTime,
     Calendar,
     Scheduler,
