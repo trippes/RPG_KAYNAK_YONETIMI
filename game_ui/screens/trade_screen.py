@@ -101,5 +101,5 @@ class TradeScreen:
                 self.ROW_X + 530, y + 8, GOLD,
             )
         bx, by, bw, bh = self.SELL_RECT
-        renderer.button(renderer.pg.Rect(bx, by, bw, bh), "1 Adet Sat", active=bool(quotes))
+        renderer.button(renderer.pg.Rect(bx, by, bw, bh), "1 Adet Sat", selected=bool(quotes))
         renderer.text(self.message, 64, 526, GOOD if "satıldı" in self.message else MUTED)
