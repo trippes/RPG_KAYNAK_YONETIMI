@@ -6,8 +6,9 @@ from .inventory import Inventory
 from .recipe import Recipe, RecipeComponent, RecipeError
 from .resource import Quantity, ResourceType
 
+from core.errors import RPGError
 
-class ResourceOperationError(ValueError):
+class ResourceOperationError(ValueError, RPGError):
     """Invalid resource consumption or production operation."""
 
 
