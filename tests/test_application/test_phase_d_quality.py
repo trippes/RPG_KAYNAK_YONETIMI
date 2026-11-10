@@ -1332,8 +1332,9 @@ class TestPhaseDQuality(unittest.TestCase):
             def collidepoint(self, point):
                 return self.x <= point[0] < self.right and self.y <= point[1] < self.bottom
 
+        RectType = Rect
         class Backend:
-            Rect = Rect
+            Rect = RectType
 
         class Screen:
             def __init__(self):
