@@ -59,6 +59,7 @@ from .combat_runtime import Combatant, CombatResult, CombatRuntime
 from .extended_persistence import SocialSnapshot, CombatSnapshot
 from .migrations import CURRENT_SAVE_SCHEMA_VERSION, migrate_save_data
 from .container_persistence import CONTAINER_SCHEMA, CONTAINER_SCHEMA_VERSION, ContainerPersistenceError, ContainerSnapshot
+from .lock_persistence import LOCK_SCHEMA, LOCK_SCHEMA_VERSION, LockPersistenceError, LockSnapshot
 from .world_object_placement import WorldObjectPlacement, WorldObjectPlacementError, WorldObjectPlacementRegistry
 
 __all__ = [
@@ -118,4 +119,5 @@ __all__ = [
     "CURRENT_SAVE_SCHEMA_VERSION", "migrate_save_data",
     "WorldObjectPlacement", "WorldObjectPlacementError", "WorldObjectPlacementRegistry",
     "CONTAINER_SCHEMA", "CONTAINER_SCHEMA_VERSION", "ContainerPersistenceError", "ContainerSnapshot",
+    "LOCK_SCHEMA", "LOCK_SCHEMA_VERSION", "LockPersistenceError", "LockSnapshot",
 ]
