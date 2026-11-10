@@ -5,7 +5,7 @@ from pathlib import Path
 from unittest import mock
 
 from application import GameSaveDocument, GameSaveFileAdapter, SaveJsonCodec
-from application.save_file_adapter import SaveFileReadError
+from application.save_file_adapter import SaveFileReadError, SaveFileWriteError
 from application.save_document import (
     SaveDocumentError,
     UnsupportedSaveSchemaError,
@@ -205,6 +205,55 @@ class TestUnifiedSaveDocument(unittest.TestCase):
 
             self.assertEqual(path.read_text(encoding="utf-8"), previous)
             self.assertEqual(list(Path(directory).glob(".save.json.*.tmp")), [])
+
+
+    def test_interrupted_final_replace_keeps_primary_and_recovery_copy(self):
+        document = self._document()
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "save.json"
+            backup = GameSaveFileAdapter.backup_path(path)
+            GameSaveFileAdapter.save(document, path)
+            original_payload = path.read_text(encoding="utf-8")
+
+            real_replace = __import__("os").replace
+            replace_calls = 0
+
+            def interrupt_primary_replace(source, target):
+                nonlocal replace_calls
+                replace_calls += 1
+                if replace_calls == 2:
+                    raise OSError("simulated interruption before primary replace")
+                return real_replace(source, target)
+
+            with mock.patch(
+                "application.save_file_adapter.os.replace",
+                side_effect=interrupt_primary_replace,
+            ):
+                with self.assertRaises(SaveFileWriteError):
+                    GameSaveFileAdapter.save(document, path)
+
+            self.assertEqual(replace_calls, 2)
+            self.assertEqual(path.read_text(encoding="utf-8"), original_payload)
+            self.assertTrue(backup.is_file())
+            self.assertEqual(
+                SaveJsonCodec.encode(GameSaveFileAdapter.load(backup)),
+                original_payload,
+            )
+            self.assertEqual(list(Path(directory).glob(".save.json.*.tmp")), [])
+            self.assertEqual(list(Path(directory).glob(".save.json.bak.*.tmp")), [])
+
+    def test_legacy_version_zero_envelope_migrates_without_mutating_input(self):
+        data = self._document().to_dict()
+        data["schema_version"] = 0
+
+        migrated = GameSaveDocument.from_dict(data)
+
+        self.assertEqual(data["schema_version"], 0)
+        self.assertEqual(migrated.schema_version, 1)
+        self.assertEqual(
+            SaveJsonCodec.encode(migrated),
+            SaveJsonCodec.encode(self._document()),
+        )
 
 
 if __name__ == "__main__":
