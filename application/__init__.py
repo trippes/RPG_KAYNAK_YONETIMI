@@ -23,6 +23,7 @@ from .production_persistence import (
 from .gameplay_service import (
     ContainerView,
     LockView,
+    LockAttemptResult,
     ChainView,
     FacilityView,
     GameplayChainStage,
@@ -88,6 +89,7 @@ __all__ = [
     "FacilityJobRecord",
     "ContainerView",
     "LockView",
+    "LockAttemptResult",
     "GameplayService",
     "GameplayServiceError",
     "GameplayChainStage",
