@@ -264,6 +264,40 @@ class TestPhaseDQuality(unittest.TestCase):
         service.advance_by(service.gathering_duration(ids.hero_id))
         self.assertEqual(service.inventory("player").stocks, (("iron_ore", 1, "item"),))
 
+
+    def test_dialogue_objective_helpers_tolerate_missing_and_malformed_data(self):
+        self.assertIsNone(DialogueScreen._find_objective(None, "missing"))
+        self.assertFalse(DialogueScreen._objective_completed(None, "missing"))
+        self.assertFalse(DialogueScreen._objective_completed(
+            SimpleNamespace(objectives=(SimpleNamespace(objective_id="collect"),)),
+            "collect",
+        ))
+        self.assertFalse(DialogueScreen._objective_completed(
+            SimpleNamespace(objectives=None), "collect",
+        ))
+
+    def test_dialogue_blacksmith_choice_hides_delivery_for_incomplete_objective_data(self):
+        choice = SimpleNamespace(choice_id="deliver_blacksmith_ore", text="Teslim et")
+        ordinary = SimpleNamespace(choice_id="ask_question", text="Soru sor")
+        malformed_quest = SimpleNamespace(
+            state=SimpleNamespace(value="active"),
+            objectives=(SimpleNamespace(objective_id="collect_iron_ore"),),
+        )
+        bundle = SimpleNamespace(social=SimpleNamespace(dialogues={}))
+        service = SimpleNamespace(
+            application=SimpleNamespace(holder=SimpleNamespace(current=bundle)),
+            blacksmith_quest=malformed_quest,
+            inventory=lambda _inventory_id: SimpleNamespace(
+                stocks=(("iron_ore", 3, "item"),)
+            ),
+            _dialogue_context=lambda *_args: {},
+        )
+        screen = DialogueScreen(service)
+        screen.context = ("hero", "village_blacksmith", "missing_dialogue")
+        screen.node = SimpleNamespace(node_id="start", choices=(choice, ordinary))
+
+        self.assertEqual(screen._visible_choices(), (ordinary,))
+
     def test_dialogue_prompt_uses_selected_npc_name(self):
         from application.content_pack import populate_opening_content
         service, ids = populate_opening_content(GameApplication.create_default())
