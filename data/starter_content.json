@@ -732,7 +732,7 @@
       "npc_role": "merchant",
       "merchant_id": "merchant_village",
       "inventory_id": "market_village_inventory",
-      "restock_interval": 600,
+      "restock_interval": 1,
       "visible_products": 3,
       "position": [
         24,
@@ -790,7 +790,7 @@
       "npc_role": "innkeeper",
       "merchant_id": "merchant_inn",
       "inventory_id": "market_inn_inventory",
-      "restock_interval": 360,
+      "restock_interval": 2,
       "visible_products": 2,
       "position": [
         20,
