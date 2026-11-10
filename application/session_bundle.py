@@ -145,6 +145,11 @@ remain mutable domain objects by design; this is not deep immutability.
             raise TypeError("actors must be WorldActorRegistry.")
         self.actors.bind_world_registry(self.session.worlds)
         self._validate_character_actor_links()
+        for key_id, actor_id in self.locks.owner_bindings():
+            if self.actors.get(actor_id) is None:
+                raise ValueError(
+                    f"Owner-bound key {key_id} references an unknown actor: {actor_id}"
+                )
         if self.actor_activities is None:
             object.__setattr__(
                 self,
