@@ -8,8 +8,9 @@ from core.foundation import WorldId
 from .inventory import Inventory
 from .resource import Quantity, ResourceType
 
+from core.errors import RPGError
 
-class ResourceNodeError(ValueError):
+class ResourceNodeError(ValueError, RPGError):
     """Invalid resource-node configuration or operation."""
 
 
