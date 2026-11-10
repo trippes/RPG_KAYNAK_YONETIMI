@@ -258,6 +258,7 @@ class TestPhaseDQuality(unittest.TestCase):
         map_screen = MapScreen(service)
         self.assertIsNone(map_screen.handle(InputState(actions={"confirm"})))
         local_screen = MainScreen(service)
+        self.assertEqual(local_screen.menu_options[0], ("main", "Ana Ekrana Dön"))
         self.assertIsNone(local_screen.handle(InputState(actions={"confirm"})))
 
     def test_main_screen_finds_safe_paths_and_blocks_static_landmarks(self):

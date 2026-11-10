@@ -20,7 +20,7 @@ class MainScreen:
         self.menu_selected = 0
         self.menu_rects = ()
         self.menu_options = (
-            ("main", "Yerel Haritaya Dön"),
+            ("main", "Ana Ekrana Dön"),
             ("inventory", "Çanta"),
             ("production", "Üretim"),
             ("character", "Karakter"),
