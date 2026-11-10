@@ -16,8 +16,9 @@ from .save_lock import save_path_lock
 PathLike = Union[str, os.PathLike[str]]
 ORPHAN_TEMP_MAX_AGE_SECONDS = 7 * 24 * 60 * 60
 
+from core.errors import RPGError
 
-class SaveFileError(OSError):
+class SaveFileError(OSError, RPGError):
     """Base error for unified save filesystem operations."""
 
 
