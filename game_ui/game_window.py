@@ -331,7 +331,8 @@ class GameWindow:
         self.window_manager.windows["quest_log"].screen = self.screens["quest_log"]
         self.window_manager.windows["production"].screen = self.screens["production"]
         self.window_manager.windows["market"].screen = self.screens["market"]
-        self.window_manager.windows["trade"].screen = self.screens["trade"]
+        if "trade" in self.window_manager.windows:
+            self.window_manager.windows["trade"].screen = self.screens["trade"]
         self.window_manager.windows["map"].screen = self.screens["map"]
         for window_id in tuple(self.window_manager.open_ids):
             self.window_manager.close(window_id)
