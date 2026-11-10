@@ -305,7 +305,7 @@ class GameplayService:
                     self._quest_reward_accounts.setdefault(quest_id, "hero")
                     self._quest_reward_inventories.setdefault(quest_id, "player")
 
-    def register_actor(self, actor_id: str, role: str, world_id: str | None = None, active: bool = True, character_id: str | None = None) -> ActorView:
+    def register_actor(self, actor_id: str, role: str, world_id: str | None = None, active: bool = True, character_id: str | None = None, inventory_id: str | None = None) -> ActorView:
         bundle = self._current_bundle()
         target_world = world_id
         if target_world is None:
@@ -322,12 +322,22 @@ class GameplayService:
                 raise ValueError(
                     f"Character already references another actor: {character_id}"
                 )
-        actor = WorldActor(actor_id, target_world, role, active)
+        if inventory_id is not None:
+            self._inventory(bundle, inventory_id)
+        actor = WorldActor(actor_id, target_world, role, active, inventory_id=inventory_id)
         bundle.actors.add(actor)
         if character is not None:
             bundle.actors.bind_character(actor_id, character)
         bundle.validate()
         return actor.view()
+
+    def bind_actor_inventory(self, actor_id: str, inventory_id: str) -> ActorView:
+        """Bind one registered inventory to an actor for possession checks."""
+        bundle = self._current_bundle()
+        self._inventory(bundle, inventory_id)
+        bundle.actors.bind_inventory(actor_id, inventory_id)
+        bundle.validate()
+        return bundle.actors.get(actor_id)
 
     def bind_actor_character(self, actor_id: str, character_id: str) -> ActorView:
         """Bind an existing actor and character while checking both sides."""
@@ -478,7 +488,7 @@ class GameplayService:
         """Unlock only when the exact key item is present in the supplied actor inventory."""
         bundle = self._current_bundle()
         self._require_actor_in_active_world(bundle, actor_id)
-        inventory = self._inventory(bundle, inventory_id)
+        inventory = self._inventory_for_actor(bundle, actor_id, inventory_id)
         if inventory.item_quantity(key_id) < 1:
             return False
         return bundle.locks.unlock_with_key(
@@ -493,7 +503,7 @@ class GameplayService:
         bundle = self._current_bundle()
         self._require_actor_in_active_world(bundle, actor_id)
         character = self._character_for_actor(bundle, actor_id)
-        inventory = self._inventory(bundle, inventory_id)
+        inventory = self._inventory_for_actor(bundle, actor_id, inventory_id)
         tool_tags = self._carried_tool_tags(bundle, inventory, tool_item_id)
         skill = character.skills.get("lockpicking")
         return bundle.locks.attempt_lockpick(
@@ -514,6 +524,21 @@ class GameplayService:
         return bundle.locks.attempt_force(
             lock_id, strength=strength, tool_tags=tool_tags, success=success
         )
+
+    @staticmethod
+    def _inventory_for_actor(bundle, actor_id: str, inventory_id: str) -> Inventory:
+        actor = bundle.actors.get(actor_id)
+        if actor is None:
+            raise KeyError(f"Actor not found: {actor_id}")
+        if actor.inventory_id is None:
+            raise GameplayServiceError(
+                f"Actor has no bound inventory for possession checks: {actor_id}"
+            )
+        if actor.inventory_id != inventory_id:
+            raise GameplayServiceError(
+                f"Inventory {inventory_id} does not belong to actor {actor_id}."
+            )
+        return GameplayService._inventory(bundle, inventory_id)
 
     @staticmethod
     def _character_for_actor(bundle, actor_id: str):
