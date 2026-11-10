@@ -22,6 +22,11 @@ class FakeService:
         self.placement = SimpleNamespace(
             object_id="chest_entity", x=6, y=5, width=1, height=1,
         )
+        self.lock = SimpleNamespace(
+            locked=False, jammed=False, broken=False,
+            lock_id="chest_lock", required_key_id=None,
+            lockpick_profile_id=None, force_profile_id=None,
+        )
         location = SimpleNamespace(location_id="village", landmarks=(), name="Village")
         self.bundle = SimpleNamespace(
             movement=SimpleNamespace(map_for=lambda _world_id: FakeWorldMap(location)),
@@ -39,6 +44,9 @@ class FakeService:
 
     def container_for_entity(self, entity_id):
         return "chest_01" if entity_id == "chest_entity" else None
+
+    def container_lock_state(self, _container_id):
+        return self.lock
 
 
 class MainScreenContainerTargetTests(unittest.TestCase):
@@ -58,6 +66,31 @@ class MainScreenContainerTargetTests(unittest.TestCase):
         ))
         self.assertEqual(self.screen.selected_container_id, "chest_01")
         self.assertEqual(self.screen.handle(InputState(actions={"confirm"})), "container:chest_01")
+
+
+    def test_right_clicking_unlocked_chest_opens_context_actions(self):
+        origin_x, origin_y = self.screen._grid_origin()
+        position = (origin_x + 6 * 16 + 4, origin_y + 5 * 16 + 4)
+        self.screen.handle(InputState(mouse_pos=position, mouse_right_clicked=True))
+        self.assertTrue(self.screen.context_menu_open)
+        self.assertEqual(
+            self.screen.context_menu_actions,
+            (("open", "Sandığı aç"), ("inspect", "İncele")),
+        )
+
+    def test_right_clicking_locked_chest_offers_lock_actions(self):
+        self.service.lock = SimpleNamespace(
+            locked=True, jammed=False, broken=False,
+            lock_id="chest_lock", required_key_id="chest_key",
+            lockpick_profile_id="pick_profile", force_profile_id="force_profile",
+        )
+        origin_x, origin_y = self.screen._grid_origin()
+        position = (origin_x + 6 * 16 + 4, origin_y + 5 * 16 + 4)
+        self.screen.handle(InputState(mouse_pos=position, mouse_right_clicked=True))
+        self.assertEqual(
+            tuple(action for action, _label in self.screen.context_menu_actions),
+            ("key", "lockpick", "force", "inspect"),
+        )
 
     def test_container_cannot_be_opened_from_far_away(self):
         self.service.actor.position = SimpleNamespace(x=1, y=1)
