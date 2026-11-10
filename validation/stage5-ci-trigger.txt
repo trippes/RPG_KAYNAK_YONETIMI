@@ -1,0 +1,1 @@
+Temporary CI trigger for Stage 5 verification. This file is isolated to validation/stage5-ci-trigger and will not be merged into the project branch.
