@@ -5,8 +5,9 @@ from core.simulation.events import SimulationEvent
 
 from resources import Inventory, ProductionJob, ProductionJobManager, ProductionJobState, Recipe
 
+from core.errors import RPGError
 
-class ProductionCapacityError(ValueError):
+class ProductionCapacityError(ValueError, RPGError):
     """Capacity configuration, reservation or lifecycle error."""
 
 
