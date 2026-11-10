@@ -1524,5 +1524,53 @@ class TestPhaseDQuality(unittest.TestCase):
         self.assertEqual(screen.slot_order, before)
 
 
+    def _character_screen_fixture(self, skill_count=3):
+        skills = {f"skill_{index}": index for index in range(skill_count)}
+        character = SimpleNamespace(
+            skills=SimpleNamespace(to_dict=lambda: dict(skills)),
+            progression=SimpleNamespace(unspent_points=2),
+            equipment=SimpleNamespace(snapshot=lambda: {"main_hand": "iron_sword"}),
+            race=SimpleNamespace(name="İnsan"),
+            character_class=SimpleNamespace(name="Savaşçı"),
+            name="Arin",
+            age=24,
+        )
+        calls = []
+        service = SimpleNamespace(
+            actor_character=lambda _actor_id: character,
+            improve_skill=lambda actor_id, skill: calls.append((actor_id, skill)) or 4,
+            item=lambda item_id: SimpleNamespace(name="Demir Kılıç"),
+        )
+        return CharacterScreen(service), calls
+
+    def test_character_screen_skill_mouse_selection_and_improvement(self):
+        screen, calls = self._character_screen_fixture()
+        screen.handle(InputState(mouse_pos=(285, 341), mouse_clicked=True))
+        self.assertEqual(screen.selected_skill, 1)
+        screen.handle(InputState(actions={"confirm"}))
+        self.assertEqual(calls, [("hero", "skill_1")])
+        self.assertIn("skill_1", screen.message)
+
+    def test_character_screen_skill_navigation_keeps_selection_visible(self):
+        screen, _calls = self._character_screen_fixture(skill_count=9)
+        for _ in range(7):
+            screen.handle(InputState(actions={"down"}))
+        self.assertEqual(screen.selected_skill, 7)
+        self.assertEqual(screen.skill_scroll, 3)
+
+    def test_character_screen_equipment_uses_canonical_loadout_slots(self):
+        screen, _calls = self._character_screen_fixture()
+        equipment = dict(screen._equipment_rows())
+        self.assertEqual(equipment["main_hand"], "iron_sword")
+        self.assertIsNone(equipment["head"])
+        self.assertEqual(len(equipment), 8)
+
+    def test_character_screen_handles_missing_character_without_crashing(self):
+        screen = CharacterScreen(SimpleNamespace(actor_character=lambda _actor_id: None))
+        screen.handle(InputState(actions={"down", "confirm"}))
+        self.assertEqual(screen.selected_skill, 0)
+
+
+
 if __name__ == "__main__":
     unittest.main()
