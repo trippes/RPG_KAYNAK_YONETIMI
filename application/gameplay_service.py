@@ -759,6 +759,8 @@ class GameplayService:
             if stock is None or stock.value <= 0 or price is None:
                 continue
             amount = max(1, price.money.amount * merchant.buyback_rate // 100)
+            if bundle.economy.ledger.balance(merchant.account_id, currency).amount < amount:
+                continue
             quotes.append((resource_type, stock.value, Money(amount, currency)))
         return tuple(quotes)
 
