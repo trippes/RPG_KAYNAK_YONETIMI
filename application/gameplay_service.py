@@ -644,10 +644,17 @@ class GameplayService:
         if profile.inventory_id in inventories:
             if inventory is not None and inventories[profile.inventory_id] is not inventory:
                 raise ValueError(f"Market inventory already exists: {profile.inventory_id}")
+            market_inventory = inventories[profile.inventory_id]
         else:
-            inventories[profile.inventory_id] = inventory if inventory is not None else Inventory()
+            market_inventory = inventory if inventory is not None else Inventory()
+            inventories[profile.inventory_id] = market_inventory
             object.__setattr__(bundle, "inventories", MappingProxyType(inventories))
         bundle.economy.market.register_profile(profile)
+        if profile.merchant_id not in bundle.economy.merchants:
+            self.register_merchant(Merchant(
+                profile.merchant_id, market_inventory,
+                account_id=profile.merchant_id, inventory_id=profile.inventory_id,
+            ))
         return profile
 
     def market_for_npc(self, npc_id: str):
