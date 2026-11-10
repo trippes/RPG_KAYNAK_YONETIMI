@@ -553,6 +553,7 @@ class TestPhaseDQuality(unittest.TestCase):
                     "inventory": Window(),
                     "character": Window(),
                     "quest_log": Window(),
+                    "production": Window(),
                 }
 
             def close(self, window_id):
@@ -582,6 +583,10 @@ class TestPhaseDQuality(unittest.TestCase):
         self.assertIs(
             window.window_manager.windows["inventory"].screen,
             window.screens["inventory"],
+        )
+        self.assertIs(
+            window.window_manager.windows["production"].screen,
+            window.screens["production"],
         )
 
     def test_game_window_routes_real_backend_d_key_to_dialogue_history(self):
