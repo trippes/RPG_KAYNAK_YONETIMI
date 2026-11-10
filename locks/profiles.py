@@ -23,6 +23,7 @@ class LockpickProfile:
     require_skill: bool = True
     require_tool: bool = False
     minimum_skill: int = 0
+    difficulty_class: int = 12
 
     def __post_init__(self):
         _identifier(self.profile_id, "profile_id")
@@ -35,6 +36,8 @@ class LockpickProfile:
             raise ValueError("A tool-required profile must define allowed_tool_tags.")
         if isinstance(self.minimum_skill, bool) or not isinstance(self.minimum_skill, int) or self.minimum_skill < 0:
             raise ValueError("minimum_skill must be a non-negative integer.")
+        if isinstance(self.difficulty_class, bool) or not isinstance(self.difficulty_class, int) or not 1 <= self.difficulty_class <= 40:
+            raise ValueError("difficulty_class must be an integer between 1 and 40.")
 
 
 @dataclass(frozen=True)
@@ -44,6 +47,7 @@ class ForceProfile:
     minimum_strength: int = 0
     required_tool_tags: tuple[str, ...] = ()
     success_effect: str = "unlock"
+    difficulty_class: int = 12
 
     def __post_init__(self):
         _identifier(self.profile_id, "profile_id")
@@ -54,3 +58,5 @@ class ForceProfile:
         object.__setattr__(self, "required_tool_tags", _tags(self.required_tool_tags, "required_tool_tags"))
         if self.success_effect not in {"unlock", "break"}:
             raise ValueError("success_effect must be 'unlock' or 'break'.")
+        if isinstance(self.difficulty_class, bool) or not isinstance(self.difficulty_class, int) or not 1 <= self.difficulty_class <= 40:
+            raise ValueError("difficulty_class must be an integer between 1 and 40.")
