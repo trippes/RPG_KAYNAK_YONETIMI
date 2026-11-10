@@ -12,6 +12,7 @@ class FakeContainerService:
         self.lock = None
         self.transfers = []
         self.unlocked = []
+        self.lock_attempts = []
         self.view = SimpleNamespace(
             container_id="chest_01",
             name="Wooden chest",
@@ -47,6 +48,13 @@ class FakeContainerService:
     def transfer_actor_item_to_container(self, *args):
         self.transfers.append(("to", args))
 
+    def resolve_lockpick(self, *args, **kwargs):
+        self.lock_attempts.append(("lockpick", args, kwargs))
+        return SimpleNamespace(attempted=True, success=True, roll=17, modifier=3, total=20, difficulty_class=18, message="opened")
+
+    def resolve_force_lock(self, *args, **kwargs):
+        self.lock_attempts.append(("force", args, kwargs))
+        return SimpleNamespace(attempted=True, success=False, roll=8, modifier=1, total=9, difficulty_class=15, message="failed")
     def unlock_with_key(self, *args):
         self.unlocked.append(args)
         self.lock.locked = False
@@ -86,6 +94,25 @@ class ContainerScreenTests(unittest.TestCase):
         )
         self.assertIn("anahtarla açıldı", self.screen.message)
 
+    def test_lockpick_action_uses_d20_result_from_gameplay_service(self):
+        self.service.lock = SimpleNamespace(
+            locked=True, jammed=False, broken=False, lock_id="chest_lock",
+            required_key_id=None, lockpick_profile_id="pick", force_profile_id=None,
+            lockpick_allowed_tool_tags=(), force_required_tool_tags=(),
+        )
+        self.screen.handle(InputState(actions={"lockpick"}))
+        self.assertEqual(self.service.lock_attempts[0][0], "lockpick")
+        self.assertIn("d20: 17", self.screen.message)
+
+    def test_force_action_reports_failed_d20_check(self):
+        self.service.lock = SimpleNamespace(
+            locked=True, jammed=False, broken=False, lock_id="chest_lock",
+            required_key_id=None, lockpick_profile_id=None, force_profile_id="force",
+            lockpick_allowed_tool_tags=(), force_required_tool_tags=(),
+        )
+        self.screen.handle(InputState(actions={"force_lock"}))
+        self.assertEqual(self.service.lock_attempts[0][0], "force")
+        self.assertIn("BAŞARISIZ", self.screen.message)
     def test_missing_actor_inventory_is_reported_without_transfer(self):
         self.service.actor.inventory_id = None
         self.screen.handle(InputState(actions={"confirm"}))
