@@ -681,5 +681,23 @@ class TestSaveStorage(unittest.TestCase):
 
             self.assertEqual(window._latest_save_path(), primary)
 
+
+    def test_manual_save_helper_opens_slot_picker_instead_of_writing_directly(self):
+        service = mock.Mock()
+        slot_screen = mock.Mock()
+        window = object.__new__(GameWindow)
+        window.service = service
+        window._save_storage_failure = None
+        window.screens = {"save_slots": slot_screen}
+        window.gameplay_active = True
+
+        window._save_game()
+
+        self.assertEqual(window.current, "save_slots")
+        self.assertFalse(window.gameplay_active)
+        self.assertEqual(slot_screen.mode, "save")
+        self.assertEqual(slot_screen.return_target, "local_map")
+        service.save.assert_not_called()
+
 if __name__ == "__main__":
     unittest.main()
