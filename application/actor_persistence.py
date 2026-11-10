@@ -24,8 +24,9 @@ from .production_facility import ProductionFacilityRegistry
 ACTOR_SCHEMA = "rpg-actors"
 ACTOR_SCHEMA_VERSION = 1
 
+from core.errors import RPGError
 
-class ActorPersistenceError(ValueError):
+class ActorPersistenceError(ValueError, RPGError):
     """Invalid actor/activity snapshot."""
 
 
