@@ -1,167 +1,37 @@
-from core.dice import *
+"""Unit tests for dice rolling and expression parsing."""
+import unittest
+from core.dice import (zar_at, zar_havuzu_at, zar_toplami, dusukleri_cikar, yuksekleri_cikar, zar_ifadesi_ayristir, zar_ifadesi_at, dort_d_alti_eksi_en_dusuk, d20, d100)
 from core.random import seed_ayarla
 
+class TestDice(unittest.TestCase):
+    def setUp(self): seed_ayarla(42)
+    def test_single_and_pool_rolls(self):
+        self.assertIn(zar_at(20), range(1, 21))
+        values = zar_havuzu_at(4, 6)
+        self.assertEqual(len(values), 4)
+        self.assertTrue(all(1 <= value <= 6 for value in values))
+        self.assertTrue(2 <= zar_toplami(2, 6) <= 12)
+    def test_drop_lowest_and_highest(self):
+        seed_ayarla(7); low = dusukleri_cikar(4, 6, 1)
+        self.assertEqual(low["kalanlar"], low["sirali_sonuclar"][1:])
+        self.assertEqual(low["toplam"], sum(low["kalanlar"]))
+        seed_ayarla(7); high = yuksekleri_cikar(4, 6, 1)
+        self.assertEqual(high["kalanlar"], high["sirali_sonuclar"][:-1])
+        self.assertEqual(high["toplam"], sum(high["kalanlar"]))
+        self.assertEqual(len(dort_d_alti_eksi_en_dusuk()["kalanlar"]), 3)
+    def test_expression_parsing_and_rolling(self):
+        self.assertEqual(zar_ifadesi_ayristir("2d8+3"), {"adet": 2, "zar": 8, "degistirici": 3})
+        self.assertEqual(zar_ifadesi_ayristir("2d8-1")["degistirici"], -1)
+        result = zar_ifadesi_at("2d6+3")
+        self.assertEqual(result["toplam"], sum(result["sonuclar"]) + 3)
+        self.assertIn(d20(), range(1, 21)); self.assertIn(d100(), range(1, 101))
+    def test_invalid_rolls_and_expressions(self):
+        with self.assertRaises(ValueError): zar_at(7)
+        with self.assertRaises(TypeError): zar_at(True)
+        with self.assertRaises(ValueError): zar_havuzu_at(0, 6)
+        with self.assertRaises(ValueError): dusukleri_cikar(4, 6, 4)
+        with self.assertRaises(ValueError): yuksekleri_cikar(4, 6, 4)
+        with self.assertRaises(ValueError): zar_ifadesi_ayristir("5d7")
+        with self.assertRaises(ValueError): zar_ifadesi_ayristir("abc")
 
-print("=== TEK ZAR TESTLER ===")
-
-seed_ayarla(42)
-
-print("d4  :", zar_at(4))
-print("d6  :", zar_at(6))
-print("d8  :", zar_at(8))
-print("d10 :", zar_at(10))
-print("d12 :", zar_at(12))
-print("d20 :", zar_at(20))
-print("d100:", zar_at(100))
-
-
-print()
-print("=== D20 TEST ===")
-
-seed_ayarla(42)
-
-print("d20:", d20())
-print("d20:", d20())
-print("d20:", d20())
-
-
-print()
-print("=== ZAR HAVUZU TEST ===")
-
-seed_ayarla(42)
-
-sonuclar = zar_havuzu_at(4, 6)
-
-print("4d6 sonuçları:", sonuclar)
-print("Toplam:", sum(sonuclar))
-
-
-print()
-print("=== ZAR TOPLAMI TEST ===")
-
-seed_ayarla(42)
-
-print("2d6 toplamı:", zar_toplami(2, 6))
-print("3d8 toplamı:", zar_toplami(3, 8))
-
-
-print()
-print("=== EN DÜŞÜÜ ÇIKARMA TEST ===")
-
-seed_ayarla(42)
-
-sonuc = dusukleri_cikar(4, 6, 1)
-
-print("Tüm sonuçlar :", sonuc["tum_sonuclar"])
-print("Sıralı       :", sonuc["sirali_sonuclar"])
-print("Çıkarılan    :", sonuc["cikarilanlar"])
-print("Kalanlar     :", sonuc["kalanlar"])
-print("Toplam       :", sonuc["toplam"])
-
-
-print()
-print("=== EN YÜKSE ÇIKARMA TEST ===")
-
-seed_ayarla(42)
-
-sonuc = yuksekleri_cikar(4, 6, 1)
-
-print("Tüm sonuçlar :", sonuc["tum_sonuclar"])
-print("Sıralı       :", sonuc["sirali_sonuclar"])
-print("Çıkarılan    :", sonuc["cikarilanlar"])
-print("Kalanlar     :", sonuc["kalanlar"])
-print("Toplam       :", sonuc["toplam"])
-
-
-print()
-print("=== ZAR FADES AYRIŞTIRMA ===")
-
-print("1d20   ->", zar_ifadesi_ayristir("1d20"))
-print("2d6    ->", zar_ifadesi_ayristir("2d6"))
-print("4d6    ->", zar_ifadesi_ayristir("4d6"))
-print("2d8+3  ->", zar_ifadesi_ayristir("2d8+3"))
-print("2d8-1  ->", zar_ifadesi_ayristir("2d8-1"))
-
-
-print()
-print("=== ZAR FADES ATMA ===")
-
-seed_ayarla(42)
-
-print("1d20  ->", zar_ifadesi_at("1d20"))
-print("2d6   ->", zar_ifadesi_at("2d6"))
-print("2d8+3 ->", zar_ifadesi_at("2d8+3"))
-print("2d8-1 ->", zar_ifadesi_at("2d8-1"))
-
-
-print()
-print("=== 4D6 KARAKTER ÖZELL ===")
-
-seed_ayarla(42)
-
-for i in range(6):
-    sonuc = dort_d_alti_eksi_en_dusuk()
-
-    print(
-        f"Özellik {i + 1}:",
-        sonuc["tum_sonuclar"],
-        "->",
-        sonuc["kalanlar"],
-        "=",
-        sonuc["toplam"]
-    )
-
-
-print()
-print("=== D100 TEST ===")
-
-seed_ayarla(42)
-
-print("d100:", d100())
-
-
-print()
-print("=== SEED TEKRARLAMA TEST ===")
-
-seed_ayarla(12345)
-sonuc_1 = zar_ifadesi_at("2d6+3")
-
-seed_ayarla(12345)
-sonuc_2 = zar_ifadesi_at("2d6+3")
-
-print("lk sonuç   :", sonuc_1)
-print("Tekrar sonuç:", sonuc_2)
-print("Aynı sonuç mu?:", sonuc_1 == sonuc_2)
-
-
-print()
-print("=== HATA KONTROLLER ===")
-
-try:
-    zar_at(7)
-except ValueError as hata:
-    print("Geçersiz zar kontrolü OK:", hata)
-
-
-try:
-    zar_havuzu_at(0, 6)
-except ValueError as hata:
-    print("Geçersiz zar adedi kontrolü OK:", hata)
-
-
-try:
-    zar_ifadesi_ayristir("5d7")
-except ValueError as hata:
-    print("Geçersiz zar ifadesi kontrolü OK:", hata)
-
-
-try:
-    zar_ifadesi_ayristir("abc")
-except ValueError as hata:
-    print("Bozuk ifade kontrolü OK:", hata)
-
-
-try:
-    dusukleri_cikar(4, 6, 4)
-except ValueError as hata:
-    print("Tüm zarları çıkarma kontrolü OK:", hata)
+if __name__ == "__main__": unittest.main()
