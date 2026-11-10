@@ -629,6 +629,20 @@ class GameWindow:
             from application.content_pack import populate_gameplay_resources
             populate_gameplay_resources(self.service)
 
+        if next_screen == "market":
+            dialogue = self.screens["dialogue"]
+            context = getattr(dialogue, "context", None)
+            profile = (
+                self.service.market_for_npc(context[1])
+                if context is not None else None
+            )
+            if profile is None:
+                self._set_notice("Bu NPC için tanımlı bir pazar bulunamadı.", "error")
+            else:
+                self.screens["market"].set_market(profile.market_id)
+                self.window_manager.open("market")
+            next_screen = self.gameplay_screen
+
         if next_screen == "world":
             next_screen = self.gameplay_screen
 
