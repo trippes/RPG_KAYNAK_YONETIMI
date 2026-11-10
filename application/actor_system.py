@@ -42,6 +42,7 @@ class ActorView:
     character_id: str | None = None
     location_id: str | None = None
     position: Position | None = None
+    inventory_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -63,7 +64,7 @@ class ActivityView:
 class WorldActor:
     """Mutable actor record kept outside Core canonical state."""
 
-    def __init__(self, actor_id: str, world_id: str, role: str, active: bool = True, character_id: str | None = None, location_id: str | None = None, position: Position | None = None):
+    def __init__(self, actor_id: str, world_id: str, role: str, active: bool = True, character_id: str | None = None, location_id: str | None = None, position: Position | None = None, inventory_id: str | None = None):
         _text(actor_id, "actor_id")
         _text(world_id, "world_id")
         _text(role, "role")
@@ -71,6 +72,8 @@ class WorldActor:
             raise TypeError("active must be boolean.")
         if character_id is not None:
             _text(character_id, "character_id")
+        if inventory_id is not None:
+            _text(inventory_id, "inventory_id")
         self._actor_id = actor_id
         self._world_id = world_id
         self._role = role
@@ -79,6 +82,7 @@ class WorldActor:
         self._character_id = character_id
         self._location_id = location_id
         self._position = position if position is not None else Position()
+        self._inventory_id = inventory_id
 
     @property
     def actor_id(self) -> str:
@@ -112,6 +116,10 @@ class WorldActor:
     def position(self) -> Position | None:
         return self._position
 
+    @property
+    def inventory_id(self) -> str | None:
+        return self._inventory_id
+
     def set_position(self, location_id: str, position: Position | None = None) -> None:
         _text(location_id, "location_id")
         if position is not None and not isinstance(position, Position):
@@ -125,6 +133,12 @@ class WorldActor:
         if self._character_id is not None and self._character_id != character_id:
             raise ActorError(f"Actor already references character: {self._actor_id}")
         self._character_id = character_id
+
+    def bind_inventory(self, inventory_id: str) -> None:
+        _text(inventory_id, "inventory_id")
+        if self._inventory_id is not None and self._inventory_id != inventory_id:
+            raise ActorError(f"Actor already references another inventory: {self._actor_id}")
+        self._inventory_id = inventory_id
 
     def set_active(self, active: bool) -> None:
         if not isinstance(active, bool):
@@ -150,7 +164,7 @@ class WorldActor:
             self._actor_id, self._world_id, self._role,
             self._active, self._activity_id,
             self._character_id,
-            self._location_id, self._position,
+            self._location_id, self._position, self._inventory_id,
         )
 
 
