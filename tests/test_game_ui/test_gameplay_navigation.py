@@ -79,6 +79,7 @@ class GameplayNavigationTests(unittest.TestCase):
         window.gameplay_active = True
         window.gameplay_screen = "main"
         window.current = "dialogue"
+        window._current_location = lambda: SimpleNamespace(activities=("market",))
         window.window_manager = SimpleNamespace(
             windows={"market": object()},
             open=lambda window_id: opened.append(window_id),
@@ -87,6 +88,26 @@ class GameplayNavigationTests(unittest.TestCase):
         self.assertTrue(window._set_current("market"))
         self.assertEqual(window.current, "main")
         self.assertEqual(opened, ["market"])
+
+    def test_market_window_is_blocked_outside_market_locations(self):
+        from game_ui.game_window import GameWindow
+
+        opened = []
+        notices = []
+        window = GameWindow.__new__(GameWindow)
+        window.gameplay_active = True
+        window.gameplay_screen = "main"
+        window.current = "main"
+        window._current_location = lambda: SimpleNamespace(activities=())
+        window._set_notice = lambda *args: notices.append(args)
+        window.window_manager = SimpleNamespace(
+            windows={"market": object()},
+            open=lambda window_id: opened.append(window_id),
+        )
+
+        self.assertFalse(window._set_current("market"))
+        self.assertEqual(opened, [])
+        self.assertEqual(notices[0][1], "error")
 
     def test_main_screen_quick_menu_does_not_open_market(self):
         screen = MainScreen(service=None)

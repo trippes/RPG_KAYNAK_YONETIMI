@@ -345,6 +345,14 @@ class GameWindow:
         if target in GAMEPLAY_WINDOW_IDS:
             if not self.gameplay_active or target not in self.window_manager.windows:
                 return False
+            if target == "market":
+                try:
+                    location = self._current_location()
+                except (KeyError, ValueError, RuntimeError, AttributeError):
+                    location = None
+                if location is None or "market" not in location.activities:
+                    self._set_notice("Bu konumda pazar bulunmuyor.", "error")
+                    return False
             self.window_manager.open(target)
             self.current = self.gameplay_screen
             return True
