@@ -93,3 +93,10 @@ Kalan borç, compatibility yüzeyinin tümden kaldırılması değil; dış/lega
 tüketicilerin canonical API'lere taşınmasıdır. Özellikle callback scheduler,
 World saat/event API'si, mutable Entity Position ve World membership
 projection'ları sonraki major migration kararı olmadan kaldırılmamalıdır.
+
+## CI doğrulaması
+
+Kod değişikliklerini içeren `3648b91d55267d2323585314c8e36bea8cb37282`
+commit'inde GitHub Actions Linux/Python 3.11 ve Windows/Python 3.12 işleri
+başarılıdır. Release-candidate doğrulaması 880 testin tamamını çalıştırmış,
+0 hata bildirmiş; compileall ve application smoke kontrolleri de geçmiştir.
