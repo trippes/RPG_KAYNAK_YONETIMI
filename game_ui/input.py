@@ -13,6 +13,7 @@ class InputState:
     quit_requested: bool = False
     mouse_pos: tuple[int, int] | None = None
     mouse_clicked: bool = False
+    mouse_right_clicked: bool = False
     mouse_button_down: bool = False
     mouse_button_up: bool = False
     mouse_motion: bool = False
@@ -47,6 +48,11 @@ class InputMapper:
             if event_type == mouse_down_type and getattr(event, "button", None) == 1:
                 state.mouse_clicked = True
                 state.mouse_button_down = True
+                state.mouse_pos = getattr(event, "pos", None)
+                continue
+
+            if event_type == mouse_down_type and getattr(event, "button", None) == 3:
+                state.mouse_right_clicked = True
                 state.mouse_pos = getattr(event, "pos", None)
                 continue
 
