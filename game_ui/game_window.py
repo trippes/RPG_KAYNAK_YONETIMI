@@ -230,13 +230,19 @@ class GameWindow:
                 return "save_slots"
             return "main"
         self._start_new_game()
+        self.selected_slot = index
+        self.save_path = path
         return "opening"
 
     def _open_save_slots(self, mode, return_target="menu"):
         screen = self.screens["save_slots"]
         screen.mode = mode
         screen.return_target = return_target
-        screen.selected = 0
+        screen.selected = (
+            self.selected_slot
+            if mode == "save" and self.selected_slot is not None
+            else 0
+        )
         screen.message = ""
         screen.pending_overwrite = False
         screen.pending_overwrite_signature = None

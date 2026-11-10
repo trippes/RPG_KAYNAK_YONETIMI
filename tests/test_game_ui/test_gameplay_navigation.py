@@ -114,7 +114,7 @@ class GameplayNavigationTests(unittest.TestCase):
         window = GameWindow.__new__(GameWindow)
         window.selected_slot = None
         window.save_path = None
-        window.screens = {"save_slots": SimpleNamespace(mode="load")}
+        window.screens = {"save_slots": SimpleNamespace(mode="load", selected=0)}
         started = []
         window._start_new_game = lambda: started.append(True)
 
@@ -123,7 +123,20 @@ class GameplayNavigationTests(unittest.TestCase):
         self.assertEqual(result, "opening")
         self.assertEqual(window.selected_slot, 2)
         self.assertEqual(window.save_path, Path("slot_3.json"))
+        self.assertEqual(window.selected_slot, 2)
         self.assertEqual(started, [True])
+
+    def test_save_picker_reselects_the_slot_used_to_start_new_game(self):
+        from game_ui.game_window import GameWindow
+
+        window = GameWindow.__new__(GameWindow)
+        window.selected_slot = 6
+        window.screens = {"save_slots": SimpleNamespace(selected=0)}
+
+        result = window._open_save_slots("save", "main")
+
+        self.assertEqual(result, "save_slots")
+        self.assertEqual(window.screens["save_slots"].selected, 6)
 
 
 if __name__ == "__main__":
