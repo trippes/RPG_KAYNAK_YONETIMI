@@ -223,6 +223,25 @@ uyumsuzluk kararı testle belgelenmiş olmalı.
 **Çıkış ölçütü:** Uygulama içi kullanım sıfırlanmış olsa bile public API ve
 harici istemci uyumluluğu ayrıca doğrulanmış olmalı.
 
+### Aşama E — Kontrollü emeklilik kapısı
+
+1. A-D çıkış ölçütleri tamamlanmadan hiçbir legacy API, import yolu veya
+   callback davranışı kaldırılmaz.
+2. Kaldırma öncesi son sürümde static kullanımın sıfır olduğu, runtime
+   sayaçlarında üretim kullanımının bulunmadığı ve harici tüketici/plugin
+   sahiplerinin yazılı olarak doğrulandığı kanıtlanır.
+3. Kayıt/persistence, aynı-tick sıralaması, hata/yeniden-deneme ve eski save
+   uyumluluğu regresyonları geçmeden emeklilik onaylanmaz.
+4. Her API ayrı değişiklik ve ayrı major-version kararıyla emekli edilir;
+   EventManager, EventBus, EventQueue ve Scheduler tek paket halinde silinmez.
+5. Herhangi bir koşul belirsizse sonuç **KEEP** olur: API korunur, blocker
+   kaydedilir ve ölçüm sürdürülür.
+
+**E aşamasının sonucu:** Bu çalışma anında Game ve GameApplication hâlâ
+EventManager kullanıyor; World runtime callback Scheduler'a bağlı; mutable
+Entity Position dışa açık. Harici istemci kapsamı da statik taramayla
+kanıtlanamaz. Bu nedenle emeklilik koşulları sağlanmamıştır ve hiçbir legacy
+sistem kaldırma onayı alamaz.
 ### Aşama D — Deprecation ve major-version kararı
 
 1. Ancak tüketici göçü tamamlandıktan sonra ilgili matrix kaydını
@@ -236,7 +255,34 @@ harici istemci uyumluluğu ayrıca doğrulanmış olmalı.
    onayı şartı koy.
 5. Ancak bu şartlar sağlanırsa ayrı bir değişiklikte silme yap.
 
-## 9. Şimdiki karar
+## 9. A-E uygulama kaydı
+
+- **A — Envanter:** EventManager ayrı compatibility kimliği olarak matrix ve
+  AST scanner kapsamına eklendi. Constructor runtime kullanım sayacıyla
+  izleniyor. Testler matrix kaydını, statik import görünürlüğünü ve runtime
+  sayaçlarını kapsıyor. Scanner dinamik/reflection ve harici tüketicileri
+  kanıtlayamaz; CI çıktısının bu branch head için ayrıca doğrulanması gerekir.
+- **B — Davranış sözleşmesi:** EventManager FIFO kuyruk ve handler dispatch
+  davranışı için regresyon testi eklendi. Mevcut Tick, Position, canonical
+  dispatcher ve scheduler testleri korunuyor. Tüm kapsamlı Aşama B matrisi
+  (özellikle legacy scheduler cancel/re-entrancy ve action lifecycle
+  eşleştirmesi) henüz tam kanıtlanmış değildir.
+- **C — Tüketici göçü:** Bilinçli olarak tamamlanmadı. Game ve
+  GameApplication hâlâ EventManager facade'ını kullanıyor; callback Scheduler
+  LegacyWorldRuntime/WorldRuntimeBoundary zincirinde çalışıyor. Bunları tek
+  seferde taşımak davranış değişikliği riski taşır.
+- **D — Deprecation:** Yeni toplu deprecation yapılmadı. C tamamlanmadığı ve
+  harici kullanıcılar bilinmediği için EventManager/EventBus/EventQueue/
+  Scheduler deprecated durumuna geçirilmedi.
+- **E — Emeklilik kapısı:** Değerlendirildi; sonuç **KEEP / kaldırma yok**.
+  Üretim tüketicileri ve doğrulanmamış dış tüketici kapsamı nedeniyle hiçbir
+  legacy API kaldırılmaya uygun değil.
+
+Bu dalda GitHub connector üzerinden Python komutu çalıştırılamadığı için
+A-E değişikliklerinden sonra test paketi bu oturumda çalıştırılmış sayılmaz.
+GitHub Actions sonucu commit status üzerinden ayrıca doğrulanmalıdır.
+
+## 10. Şimdiki karar
 
 Bu değişiklik bir envanter ve geçiş planıdır. Hiçbir legacy sistem silinmez,
 davranışı değiştirilmez veya topluca deprecated ilan edilmez. Özellikle
