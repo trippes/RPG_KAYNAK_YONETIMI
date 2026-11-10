@@ -35,6 +35,7 @@ from economy import Economy, EconomySnapshot
 from application.extended_persistence import SocialSnapshot, CombatSnapshot
 from core.domain.spatial import Position
 from application.container_persistence import ContainerSnapshot
+from application.lock_persistence import LockSnapshot
 from world.local_map import LocalMapDefinition
 
 
