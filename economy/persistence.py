@@ -5,8 +5,7 @@ from typing import Mapping
 
 from .currency import Currency, Money
 from .ledger import Ledger
-from .market import Market, MarketOffer
-from .prices import PriceBook
+from .market import Market, MarketOffer, MarketProfile, MarketCatalogEntry
 from .merchant import Merchant
 from resources import ResourceType
 
@@ -22,6 +21,7 @@ class EconomySnapshot:
     prices: tuple[tuple[str, str, int], ...]
     offers: tuple[dict[str, object], ...]
     merchants: tuple[dict[str, object], ...] = ()
+    market_profiles: tuple[dict[str, object], ...] = ()
     schema: str = ECONOMY_SCHEMA
     schema_version: int = ECONOMY_SCHEMA_VERSION
 
@@ -33,15 +33,34 @@ class EconomySnapshot:
         prices = tuple((price.resource_type.value, price.money.currency.value, price.money.amount)
                        for price in market.prices.prices())
         currencies = tuple(sorted({currency for _, currency, _ in accounts} | {currency for _, currency, _ in prices}))
-        offers = tuple({"offer_id": offer.offer_id, "seller_id": offer.seller_id,
-                        "resource_type": offer.resource_type.value, "quantity": offer.quantity,
-                        "currency": offer.unit_price.currency.value, "unit_price": offer.unit_price.amount,
-                        "inventory_id": offer.inventory_id, "expires_at": offer.expires_at}
-                       for offer in market.offers())
-        merchants = tuple({"merchant_id": merchant.merchant_id, "account_id": merchant.account_id, "inventory_id": merchant.inventory_id} for merchant in (merchants or {}).values())
-        return cls(accounts, currencies, prices, offers, merchants)
+        offers = tuple({
+            "offer_id": offer.offer_id, "seller_id": offer.seller_id,
+            "resource_type": offer.resource_type.value, "quantity": offer.quantity,
+            "currency": offer.unit_price.currency.value, "unit_price": offer.unit_price.amount,
+            "inventory_id": offer.inventory_id, "expires_at": offer.expires_at,
+            "market_id": offer.market_id,
+        } for offer in market.offers())
+        merchant_records = tuple({
+            "merchant_id": merchant.merchant_id, "account_id": merchant.account_id,
+            "inventory_id": merchant.inventory_id,
+        } for merchant in (merchants or {}).values())
+        profiles = tuple({
+            "market_id": profile.market_id, "location_id": profile.location_id,
+            "npc_id": profile.npc_id, "merchant_id": profile.merchant_id,
+            "inventory_id": profile.inventory_id, "restock_interval": profile.restock_interval,
+            "visible_products": profile.visible_products,
+            "last_restock_cycle": profile.last_restock_cycle,
+            "catalog": [{
+                "resource_type": entry.resource_type.value,
+                "currency": entry.base_price.currency.value,
+                "base_price": entry.base_price.amount,
+                "min_quantity": entry.min_quantity,
+                "max_quantity": entry.max_quantity,
+            } for entry in profile.catalog],
+        } for profile in market.profiles())
+        return cls(accounts, currencies, prices, offers, merchant_records, profiles)
 
-    def restore(self) -> tuple[Ledger, Market]:
+    def restore(self) -> tuple[Ledger, Market, dict[str, Merchant]]:
         """Restore validated economy state into fresh runtime objects."""
         ledger = Ledger()
         market = Market()
@@ -54,23 +73,47 @@ class EconomySnapshot:
         for resource_id, currency_id, amount in self.prices:
             currency = currencies.setdefault(currency_id, Currency(currency_id))
             market.prices.set(ResourceType(resource_id), Money(amount, currency))
+        for data in self.market_profiles:
+            catalog = tuple(MarketCatalogEntry(
+                ResourceType(str(entry["resource_type"])),
+                Money(int(entry["base_price"]), currencies.setdefault(
+                    str(entry["currency"]), Currency(str(entry["currency"]))
+                )),
+                int(entry["min_quantity"]), int(entry["max_quantity"]),
+            ) for entry in data["catalog"])
+            market.register_profile(MarketProfile(
+                str(data["market_id"]), str(data["location_id"]), str(data["npc_id"]),
+                str(data["merchant_id"]), str(data["inventory_id"]),
+                int(data["restock_interval"]), catalog,
+                int(data.get("visible_products", 4)),
+                int(data.get("last_restock_cycle", -1)),
+            ))
         for data in self.offers:
             currency_id = str(data["currency"])
             currency = currencies.setdefault(currency_id, Currency(currency_id))
             market.publish(MarketOffer(
                 str(data["offer_id"]), str(data["seller_id"]),
                 ResourceType(str(data["resource_type"])), int(data["quantity"]),
-                Money(int(data["unit_price"]), currency), data.get("inventory_id"), data.get("expires_at"),
+                Money(int(data["unit_price"]), currency), data.get("inventory_id"),
+                data.get("expires_at"), str(data.get("market_id", "default")),
             ))
-        merchants = {item["merchant_id"]: Merchant(item["merchant_id"], account_id=item.get("account_id"), inventory_id=item.get("inventory_id")) for item in self.merchants}
+        merchants = {
+            item["merchant_id"]: Merchant(
+                item["merchant_id"], account_id=item.get("account_id"),
+                inventory_id=item.get("inventory_id"),
+            ) for item in self.merchants
+        }
         return ledger, market, merchants
 
     def to_dict(self) -> dict[str, object]:
-        return {"schema": self.schema, "schema_version": self.schema_version,
-                "accounts": [{"account_id": a, "currency": c, "amount": n} for a, c, n in self.accounts],
-                "currencies": list(self.currencies),
-                "prices": [{"resource_type": r, "currency": c, "amount": n} for r, c, n in self.prices],
-                "offers": list(self.offers), "merchants": list(self.merchants)}
+        return {
+            "schema": self.schema, "schema_version": self.schema_version,
+            "accounts": [{"account_id": a, "currency": c, "amount": n} for a, c, n in self.accounts],
+            "currencies": list(self.currencies),
+            "prices": [{"resource_type": r, "currency": c, "amount": n} for r, c, n in self.prices],
+            "offers": list(self.offers), "merchants": list(self.merchants),
+            "market_profiles": list(self.market_profiles),
+        }
 
     @classmethod
     def from_dict(cls, data: Mapping[str, object]) -> "EconomySnapshot":
@@ -82,6 +125,7 @@ class EconomySnapshot:
             prices = tuple((str(x["resource_type"]), str(x["currency"]), int(x["amount"])) for x in data["prices"])
             offers = tuple(dict(x) for x in data["offers"])
             merchants = tuple(dict(x) for x in data.get("merchants", ()))
+            profiles = tuple(dict(x) for x in data.get("market_profiles", ()))
         except (KeyError, TypeError, ValueError) as error:
             raise ValueError("Malformed economy snapshot.") from error
-        return cls(accounts, currencies, prices, offers, merchants)
+        return cls(accounts, currencies, prices, offers, merchants, profiles)
