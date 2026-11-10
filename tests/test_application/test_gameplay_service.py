@@ -208,6 +208,28 @@ class TestGameplayService(unittest.TestCase):
         self.assertTrue(state.broken)
         self.assertFalse(state.locked)
 
+    def test_force_open_profile_can_unlock_without_breaking(self):
+        entity = Entity(EntityType.ESYA, "Wooden door", entity_id="wooden_door_entity")
+        self.application.varlik_ekle(entity)
+        self.service.register_force_profile(
+            ForceProfile("push_door", minimum_strength=10, success_effect="unlock")
+        )
+        self.service.register_lock_definition(
+            LockDefinition("wooden_door_lock", "Wooden door lock", force_profile_id="push_door")
+        )
+        self.service.register_lock(
+            LockInstance("wooden_door_lock_01", entity.entity_id, "wooden_door_lock")
+        )
+        self.service.register_actor(
+            "hero", "player", character_id="hero_character", inventory_id="main"
+        )
+        self.assertTrue(self.service.attempt_force_lock(
+            "hero", "main", "wooden_door_lock_01", success=True,
+        ))
+        state = self.service.lock_state("wooden_door_lock_01")
+        self.assertFalse(state.locked)
+        self.assertFalse(state.broken)
+
     def test_lock_and_key_state_survives_game_application_save_load(self):
         self.service.register_container_definition(ContainerDefinition("saved_chest", "Saved chest"))
         entity = Entity(EntityType.ESYA, "Saved chest", entity_id="saved_chest_entity")
