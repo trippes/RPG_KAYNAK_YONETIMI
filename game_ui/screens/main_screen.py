@@ -822,6 +822,7 @@ class MainScreen:
             max_width=renderer.width - 56,
         )
         renderer.footer("Oklar: Tile hareketi   Enter: etkileşim   Esc: Menü")
+        self.render_context_menu(renderer)
         if self.menu_open:
             renderer.pg.draw.rect(
                 renderer.surface, (11, 15, 24),
