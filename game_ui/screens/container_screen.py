@@ -195,6 +195,68 @@ class ContainerScreen:
         renderer.text(self.message, 62, 456, GOOD if "BAŞARILI" in self.message or "açıldı" in self.message else WARN)
         renderer.footer("Enter: anahtar   T: maymuncuk   F: zorla   X: pencereyi kapat")
 
+    @staticmethod
+    def _grid_slot_rects(renderer, origin_x, origin_y):
+        """Return a fixed 5x3 inventory grid, including empty slot positions."""
+        size, step_x, step_y = 62, 74, 78
+        return tuple(
+            renderer.pg.Rect(
+                origin_x + (index % 5) * step_x,
+                origin_y + (index // 5) * step_y,
+                size,
+                size,
+            )
+            for index in range(15)
+        )
+
+    @staticmethod
+    def _draw_empty_slot(renderer, rect, selected=False, hovered=False):
+        pg = renderer.pg
+        border = GOLD if selected else (119, 91, 58) if hovered else (77, 66, 55)
+        fill = (48, 39, 32) if selected else (28, 27, 27)
+        pg.draw.rect(renderer.surface, (12, 12, 14),
+                     pg.Rect(rect.x + 3, rect.y + 4, rect.width, rect.height), border_radius=7)
+        pg.draw.rect(renderer.surface, fill, rect, border_radius=7)
+        pg.draw.rect(renderer.surface, border, rect, 2, border_radius=7)
+        inset = rect.inflate(-8, -8)
+        pg.draw.rect(renderer.surface, (54, 46, 39), inset, 1, border_radius=5)
+        cx, cy = rect.center
+        pg.draw.line(renderer.surface, (67, 57, 47), (cx, cy - 9), (cx + 8, cy), 1)
+        pg.draw.line(renderer.surface, (67, 57, 47), (cx + 8, cy), (cx, cy + 9), 1)
+        pg.draw.line(renderer.surface, (67, 57, 47), (cx, cy + 9), (cx - 8, cy), 1)
+        pg.draw.line(renderer.surface, (67, 57, 47), (cx - 8, cy), (cx, cy - 9), 1)
+
+    @staticmethod
+    def _draw_item_icon(renderer, item, rect):
+        """Draw a compact category silhouette until Content Editor supplies item art."""
+        pg = renderer.pg
+        surface = renderer.surface
+        category = str(getattr(item, "category", "misc")).lower()
+        tags = {str(tag).lower() for tag in getattr(item, "tags", ())}
+        name = str(getattr(item, "name", "")).lower()
+        cx, cy = rect.center
+        gold = (221, 183, 111)
+        light = (222, 210, 181)
+        dark = (89, 58, 36)
+        if any(word in category or word in name for word in ("weapon", "sword", "blade")) or tags.intersection({"weapon", "melee"}):
+            pg.draw.polygon(surface, light, [(cx, cy - 20), (cx + 8, cy + 5), (cx, cy + 12), (cx - 7, cy + 5)])
+            pg.draw.line(surface, gold, (cx, cy + 8), (cx, cy + 23), 4)
+            pg.draw.line(surface, dark, (cx - 9, cy + 11), (cx + 9, cy + 11), 4)
+        elif any(word in category or word in name for word in ("armor", "shield", "armour")) or tags.intersection({"armor", "armour"}):
+            pg.draw.polygon(surface, (119, 143, 151), [(cx - 18, cy - 18), (cx + 18, cy - 18), (cx + 15, cy + 5), (cx, cy + 22), (cx - 15, cy + 5)])
+            pg.draw.polygon(surface, gold, [(cx, cy - 12), (cx + 10, cy - 8), (cx + 8, cy + 4), (cx, cy + 14), (cx - 8, cy + 4), (cx - 10, cy - 8)], 2)
+        elif any(word in category or word in name for word in ("potion", "consum", "drink", "elixir")) or tags.intersection({"consumable", "potion"}):
+            pg.draw.rect(surface, (110, 153, 173), pg.Rect(cx - 8, cy - 13, 16, 27), border_radius=5)
+            pg.draw.rect(surface, gold, pg.Rect(cx - 5, cy - 21, 10, 9), border_radius=2)
+            pg.draw.rect(surface, (191, 91, 75), pg.Rect(cx - 6, cy + 1, 12, 10), border_radius=3)
+        elif any(word in category or word in name for word in ("food", "bread", "meal")) or tags.intersection({"food", "edible"}):
+            pg.draw.ellipse(surface, (180, 128, 75), pg.Rect(cx - 19, cy - 12, 38, 26))
+            pg.draw.ellipse(surface, (230, 193, 126), pg.Rect(cx - 14, cy - 8, 28, 17), 2)
+            pg.draw.line(surface, (102, 76, 49), (cx - 4, cy - 5), (cx + 5, cy + 5), 2)
+        else:
+            pg.draw.polygon(surface, (116, 135, 151), [(cx, cy - 20), (cx + 16, cy - 3), (cx + 9, cy + 17), (cx - 9, cy + 17), (cx - 16, cy - 3)])
+            pg.draw.polygon(surface, gold, [(cx, cy - 12), (cx + 9, cy - 2), (cx + 5, cy + 11), (cx - 5, cy + 11), (cx - 9, cy - 2)], 2)
+
     def render(self, renderer):
         if self.container_id is None:
             renderer.text("Bir sandık seçilmedi.", 52, 154, MUTED)
@@ -208,71 +270,75 @@ class ContainerScreen:
                 self._render_locked(renderer, lock)
                 return
 
-            player_items = self._player_items(inventory_id)
-            container_items = self._container_items(view)
-            outer = renderer.pg.Rect(40, 140, 724, 410)
-            renderer.panel(outer, (25, 20, 18), (166, 119, 61))
-            inner = renderer.pg.Rect(46, 146, 712, 398)
-            renderer.panel(inner, (34, 29, 27), (91, 68, 45))
-            self._draw_chest_emblem(renderer, 680, 151)
-            renderer.text(view.name.upper(), 62, 154, GOLD, title=True, max_width=560)
-            renderer.chip(62, 205, "AÇIK", GOOD)
-            renderer.text("SANDIK KAPASİTESİ", 62, 239, GOLD)
+            container_items = list(self._container_items(view))
+            player_items = list(self._player_items(inventory_id))
+            outer = renderer.pg.Rect(40, 140, 880, 500)
+            renderer.panel(outer, (24, 20, 18), (163, 119, 64))
+            inner = renderer.pg.Rect(46, 146, 868, 488)
+            renderer.panel(inner, (34, 29, 26), (91, 68, 47))
 
-            self._capacity_bar(renderer, 62, 267, 205, "Ağırlık", view.contents_weight_kg, view.max_contents_weight_kg, "kg")
+            # Header: title, state and sorting affordance.
+            self._draw_chest_emblem(renderer, 836, 151)
+            renderer.text(view.name.upper(), 64, 154, GOLD, title=True, max_width=700)
+            renderer.chip(64, 205, "AÇIK", GOOD)
+            renderer.text("SANDIK KAPASİTESİ", 64, 239, GOLD)
+            self._capacity_bar(renderer, 64, 264, 245, "Ağırlık", view.contents_weight_kg, view.max_contents_weight_kg, "kg")
             slot_max = float(view.max_slots) if view.max_slots is not None else None
-            self._capacity_bar(renderer, 292, 267, 205, "Yuvalar", float(view.contents_slots), slot_max, "slot")
-            self._capacity_bar(renderer, 522, 267, 205, "Hacim", view.contents_volume_liters, view.max_contents_volume_liters, "L")
+            self._capacity_bar(renderer, 350, 264, 245, "Yuvalar", float(view.contents_slots), slot_max, "slot")
+            self._capacity_bar(renderer, 636, 264, 245, "Hacim", view.contents_volume_liters, view.max_contents_volume_liters, "L")
 
-            left_panel = renderer.pg.Rect(54, 344, 338, 200)
-            right_panel = renderer.pg.Rect(412, 344, 338, 200)
-            renderer.panel(left_panel, (27, 23, 22), GOLD if self.active_side == "container" else (105, 82, 59))
-            renderer.panel(right_panel, (27, 23, 22), GOLD if self.active_side == "player" else (105, 82, 59))
-            renderer.text("SANDIK", 68, 352, GOLD if self.active_side == "container" else TEXT_SOFT)
-            renderer.text("KARAKTER ÇANTASI", 426, 352, GOLD if self.active_side == "player" else TEXT_SOFT)
-            renderer.text(str(len(container_items)), 354, 352, MUTED)
-            renderer.text(str(len(player_items)), 716, 352, MUTED)
+            # Two independent, always-visible 5x3 item grids.
+            left_panel = renderer.pg.Rect(56, 330, 420, 294)
+            right_panel = renderer.pg.Rect(484, 330, 420, 294)
+            renderer.panel(left_panel, (25, 23, 22), GOLD if self.active_side == "container" else (105, 82, 59))
+            renderer.panel(right_panel, (25, 23, 22), GOLD if self.active_side == "player" else (105, 82, 59))
+            renderer.text("SANDIK", 74, 341, GOLD if self.active_side == "container" else TEXT_SOFT)
+            renderer.text(f"{len(container_items)} eşya türü", 330, 342, MUTED)
+            renderer.text("KARAKTER ÇANTASI", 502, 341, GOLD if self.active_side == "player" else TEXT_SOFT)
+            renderer.text(f"{len(player_items)} eşya türü", 758, 342, MUTED)
 
             self._row_rects = []
-            slot_size, gap, columns = 48, 7, 5
-            for side, entries, origin_x in (
-                ("container", container_items, 68),
-                ("player", player_items, 426),
-            ):
-                for index, (item_id, amount) in enumerate(entries[:15]):
-                    row, column = divmod(index, columns)
-                    x = origin_x + column * (slot_size + gap)
-                    y = 380 + row * (slot_size + gap)
-                    rect = renderer.pg.Rect(x, y, slot_size, slot_size)
+            grid_specs = (
+                ("container", container_items, 82),
+                ("player", player_items, 510),
+            )
+            for side, entries, origin_x in grid_specs:
+                slot_rects = self._grid_slot_rects(renderer, origin_x, 374)
+                for index, rect in enumerate(slot_rects):
+                    entry = entries[index] if index < len(entries) else None
                     selected = side == self.active_side and index == self.selected_index
-                    renderer.panel(
-                        rect,
-                        (76, 52, 34) if selected else (42, 34, 29),
-                        GOLD if selected else (104, 77, 51),
-                    )
+                    hovered = renderer.hovered(rect)
+                    self._draw_empty_slot(renderer, rect, selected=selected and entry is None, hovered=hovered)
+                    if entry is None:
+                        continue
+                    item_id, amount = entry
                     item = self.service.item(item_id)
-                    name = item.name if item is not None else item_id
-                    icon_color = (154, 112, 67)
-                    if item is not None and getattr(item, "tags", None):
-                        icon_color = (91, 119, 94)
-                    icon_rect = renderer.pg.Rect(x + 8, y + 5, 32, 30)
-                    renderer.pg.draw.rect(renderer.surface, icon_color, icon_rect, border_radius=5)
-                    renderer.pg.draw.rect(renderer.surface, (205, 166, 103), icon_rect, 1, border_radius=5)
-                    glyph = name[:1].upper() if name else "?"
-                    renderer.text(glyph, x + 19, y + 10, (245, 225, 184))
-                    renderer.text(str(amount), x + 31, y + 34, GOLD)
+                    if selected:
+                        renderer.pg.draw.rect(renderer.surface, (79, 54, 32), rect, border_radius=7)
+                        renderer.pg.draw.rect(renderer.surface, GOLD, rect, 3, border_radius=7)
+                        renderer.pg.draw.rect(renderer.surface, (206, 169, 103), rect.inflate(-7, -7), 1, border_radius=5)
+                    else:
+                        renderer.pg.draw.rect(renderer.surface, (47, 38, 31), rect, border_radius=7)
+                        renderer.pg.draw.rect(renderer.surface, (119, 89, 56) if hovered else (91, 72, 52), rect, 2, border_radius=7)
+                    icon_rect = rect.inflate(-10, -12)
+                    self._draw_item_icon(renderer, item, icon_rect)
+                    quantity_text = str(amount)
+                    badge_rect = renderer.pg.Rect(rect.right - 25, rect.bottom - 21, 21, 17)
+                    renderer.pg.draw.rect(renderer.surface, (13, 13, 14), badge_rect, border_radius=5)
+                    renderer.pg.draw.rect(renderer.surface, (155, 119, 66), badge_rect, 1, border_radius=5)
+                    renderer.text(quantity_text, badge_rect.x + 4, badge_rect.y, GOLD, max_width=14)
+                    label = item.name if item is not None else str(item_id).replace("_", " ").title()
+                    renderer.text(label, rect.x - 5, rect.bottom + 2, TEXT_SOFT, max_width=rect.width + 10)
                     if side == self.active_side:
                         self._row_rects.append(rect)
-            if not container_items:
-                self._draw_chest_emblem(renderer, 84, 398)
-                renderer.text("Sandık henüz boş.", 164, 402, TEXT_SOFT)
-                renderer.text("Eşyalar buraya yerleştirildiğinde görünecek.", 164, 430, MUTED, max_width=210)
-            if not player_items:
-                renderer.text("Çantada eşya yok.", 430, 402, TEXT_SOFT)
-                renderer.text("Taşınabilir eşya bulunmuyor.", 430, 430, MUTED, max_width=280)
 
-            renderer.text(self.message, 62, 555, GOOD if "aktarıldı" in self.message else TEXT_SOFT, max_width=680)
-            renderer.footer("Sol/Sağ: taraf değiştir   Slot seç + Enter: 1 adet taşı")
+            if not container_items:
+                renderer.text("Sandık boş", 190, 614, MUTED)
+            if not player_items:
+                renderer.text("Çanta boş", 644, 614, MUTED)
+
+            renderer.text(self.message, 64, 632, GOOD if "aktarıldı" in self.message else TEXT_SOFT, max_width=820)
+            renderer.footer("Sol/Sağ: envanter seç   ↑/↓: eşya seç   Enter: 1 adet taşı   Sürükle: aktar")
         except (KeyError, ValueError, RuntimeError, GameplayServiceError) as error:
             renderer.text(f"Sandık görüntülenemedi: {error}", 52, 170, WARN)
 
