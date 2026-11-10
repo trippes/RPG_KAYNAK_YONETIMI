@@ -52,7 +52,7 @@ class MapScreen:
                 else:
                     self.message = (
                     "Dünya haritası yalnızca konumları gösterir. "
-                    "Konum değiştirmek için Yerel Harita'yı kullanın."
+                    "Hareket etmek için harita penceresini kapatıp dünya ekranını kullan."
                 )
         return None
 
