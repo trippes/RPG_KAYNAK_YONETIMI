@@ -144,6 +144,16 @@ remain mutable domain objects by design; this is not deep immutability.
             if not isinstance(inventory_id, str) or not inventory_id.strip():
                 raise ValueError("inventory IDs must be non-empty strings.")
 
+        for merchant in self.economy.merchants.values():
+            if merchant.inventory_id is None:
+                continue
+            merchant_inventory = self.inventories.get(merchant.inventory_id)
+            if merchant_inventory is None:
+                raise ValueError(
+                    f"Merchant inventory is not registered: {merchant.merchant_id}"
+                )
+            merchant.inventory = merchant_inventory
+
         if any(not isinstance(recipe, Recipe) for recipe in self.recipes.values()):
             raise TypeError("recipes must contain Recipe values.")
         for recipe_id, recipe in self.recipes.items():
