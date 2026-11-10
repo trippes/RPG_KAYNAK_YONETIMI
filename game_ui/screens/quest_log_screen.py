@@ -26,7 +26,7 @@ class QuestLogScreen:
         "failed": "Başarısız",
     }
     CONTENT_X = 24
-    CONTENT_Y = 16
+    CONTENT_Y = 126
     CONTENT_MARGIN = 16
     HEADER_HEIGHT = 42
     TAB_HEIGHT = 34
@@ -166,7 +166,7 @@ class QuestLogScreen:
         return {
             "outer": (x, y, available_width, available_height),
             "body_y": y + self.HEADER_HEIGHT + self.TAB_HEIGHT + 10,
-            "body_height": max(120, available_height - self.REWARD_HEIGHT - self.HEADER_HEIGHT - self.TAB_HEIGHT - 44),
+            "body_height": min(self.BODY_HEIGHT, max(120, available_height - self.REWARD_HEIGHT - self.HEADER_HEIGHT - self.TAB_HEIGHT - 44)),
         }
 
     def _tab_bounds(self):
