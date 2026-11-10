@@ -75,7 +75,7 @@ class TestGameplayService(unittest.TestCase):
             simulation=session.simulation,
             production_jobs=ProductionJobManager(session.simulation),
             resource_nodes=nodes,
-            inventories={"main": inventory},
+            inventories={"main": inventory, "other": Inventory()},
             recipes=self.recipes,
             facilities=facilities,
             items={
@@ -112,7 +112,7 @@ class TestGameplayService(unittest.TestCase):
         self.service.register_lock(
             LockInstance("locked_chest_lock_01", entity.entity_id, "locked_chest_lock")
         )
-        self.service.register_actor("hero", "player", character_id="hero_character")
+        self.service.register_actor("hero", "player", character_id="hero_character", inventory_id="main")
         self.inventory.add_item("chest_key")
 
         with self.assertRaises(GameplayServiceError):
@@ -150,6 +150,11 @@ class TestGameplayService(unittest.TestCase):
         self.service.register_actor("hero", "player", character_id="hero_character")
         self.inventory.add_item("lockpick")
 
+        with self.assertRaises(GameplayServiceError):
+            self.service.attempt_lockpick(
+                "hero", "other", "pick_chest_lock_01",
+                tool_item_id="lockpick", success=True,
+            )
         self.assertFalse(self.service.attempt_lockpick(
             "hero", "main", "pick_chest_lock_01", tool_item_id="lockpick", success=True
         ))
@@ -217,7 +222,7 @@ class TestGameplayService(unittest.TestCase):
         self.service.register_lock(
             LockInstance("saved_chest_lock_01", entity.entity_id, "saved_chest_lock")
         )
-        self.service.register_actor("hero", "player")
+        self.service.register_actor("hero", "player", inventory_id="main")
         self.service.bind_key_owner("saved_chest_key", "hero")
         self.inventory.add_item("saved_chest_key")
 
