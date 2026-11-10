@@ -69,12 +69,13 @@ class TestMigrationTooling(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             (root / "sample.py").write_text(
-                "from core.events import EventQueue as Queue\\n"
-                "import core.events as event_module\\n"
-                "class Wrapped(Queue):\\n"
-                "    pass\\n"
-                "Queue()\\n"
-                "event_module.EventQueue()\\n",
+                """from core.events import EventQueue as Queue
+import core.events as event_module
+class Wrapped(Queue):
+    pass
+Queue()
+event_module.EventQueue()
+""",
                 encoding="utf-8",
             )
             usages = scan_static_usage(root)
