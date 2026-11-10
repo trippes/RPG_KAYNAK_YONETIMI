@@ -28,7 +28,7 @@ class TestSaveConcurrency(unittest.TestCase):
         session.simulation.advance_to(3)
         core = PersistenceDocument.from_state(CanonicalSessionState.from_session(session))
         inventory = Inventory()
-        inventory.add(ResourceType("wood"), Quantity(2, ResourceUnit.ITEM))
+        inventory.add(ResourceType("wood"), Quantity(2 if marker == "first" else 3, ResourceUnit.ITEM))
         jobs = ProductionJobManager(SimulationRuntime(start_tick=3))
         gameplay = GameplaySnapshot.from_runtime(
             {"main": inventory},
@@ -62,6 +62,61 @@ class TestSaveConcurrency(unittest.TestCase):
             self.assertIn(SaveJsonCodec.encode(primary), encoded_documents)
             self.assertIn(SaveJsonCodec.encode(backup), encoded_documents)
             self.assertNotEqual(SaveJsonCodec.encode(primary), SaveJsonCodec.encode(backup))
+
+    def test_save_waits_until_an_in_progress_load_finishes(self):
+        from unittest import mock
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "slot_1.json"
+            first = self._document("first")
+            second = self._document("second")
+            GameSaveFileAdapter.save(first, path)
+
+            read_entered = threading.Event()
+            release_read = threading.Event()
+            save_finished = threading.Event()
+            original_read = GameSaveFileAdapter._read_document
+
+            def pause_primary_read(candidate):
+                if Path(candidate) == path:
+                    read_entered.set()
+                    if not release_read.wait(5):
+                        raise TimeoutError("test did not release the load")
+                return original_read(candidate)
+
+            with mock.patch.object(
+                GameSaveFileAdapter,
+                "_read_document",
+                side_effect=pause_primary_read,
+            ):
+                loader = threading.Thread(target=lambda: GameSaveFileAdapter.load(path))
+                loader.start()
+                self.assertTrue(read_entered.wait(5))
+
+                def save_second():
+                    GameSaveFileAdapter.save(second, path)
+                    save_finished.set()
+
+                saver = threading.Thread(target=save_second)
+                saver.start()
+                self.assertFalse(save_finished.wait(0.25))
+                release_read.set()
+                loader.join(5)
+                saver.join(5)
+
+            self.assertFalse(loader.is_alive())
+            self.assertFalse(saver.is_alive())
+            self.assertTrue(save_finished.is_set())
+            self.assertEqual(
+                SaveJsonCodec.encode(GameSaveFileAdapter.load(path)),
+                SaveJsonCodec.encode(second),
+            )
+            self.assertEqual(
+                SaveJsonCodec.encode(
+                    GameSaveFileAdapter.load(GameSaveFileAdapter.backup_path(path))
+                ),
+                SaveJsonCodec.encode(first),
+            )
 
     def test_processes_cannot_hold_the_same_slot_lock_at_once(self):
         with tempfile.TemporaryDirectory() as directory:
