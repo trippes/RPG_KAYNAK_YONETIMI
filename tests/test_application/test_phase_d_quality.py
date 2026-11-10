@@ -105,6 +105,17 @@ class TestPhaseDQuality(unittest.TestCase):
         self.assertEqual(screen.scroll, 0)
         self.assertGreater(screen._detail_content_height(quest), screen._details_bounds()[3])
 
+    def test_quest_log_layout_stays_inside_window_content_viewport(self):
+        screen = self._quest_screen()
+        layout = screen._layout(960, 640)
+        reward = screen._reward_bounds()
+
+        self.assertEqual(layout["outer"][3], 438)
+        self.assertLessEqual(
+            reward[1] + reward[3],
+            layout["outer"][1] + layout["outer"][3],
+        )
+
     def test_quest_log_layout_scales_with_renderer_viewport(self):
         layout = self._quest_screen()._layout(1200, 800)
 
