@@ -696,7 +696,7 @@ class TestSaveStorage(unittest.TestCase):
         self.assertEqual(window.current, "save_slots")
         self.assertFalse(window.gameplay_active)
         self.assertEqual(slot_screen.mode, "save")
-        self.assertEqual(slot_screen.return_target, "local_map")
+        self.assertEqual(slot_screen.return_target, "main")
         service.save.assert_not_called()
 
 if __name__ == "__main__":
