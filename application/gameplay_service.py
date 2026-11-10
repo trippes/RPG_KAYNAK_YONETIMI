@@ -686,6 +686,9 @@ class GameplayService:
             ))
         return profile
 
+    def market_for_npc(self, npc_id: str):
+        return self._current_bundle().economy.market.profile_for_npc(npc_id)
+
     def register_trade_partner(
         self, npc_id: str, merchant_id: str, inventory_id: str,
         accepted_resources, initial_gold: int, buyback_rate: int = 50,
