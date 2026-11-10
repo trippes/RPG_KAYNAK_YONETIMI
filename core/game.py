@@ -7,7 +7,7 @@ Game sınıfı, oyunun temel sistemlerini bir araya getirir.
 
 from core.game_state import GameState
 from core.application.session import GameSession
-from core.event_manager import EventManager
+from core.compatibility.event_manager_adapter import CanonicalEventManagerAdapter
 from core.event_types import EventType
 from core.entity.entity import Entity
 from core.world.world_manager import WorldManager
@@ -34,7 +34,7 @@ class Game:
 
     def __init__(self):
         self.state = GameState()
-        self.event_manager = EventManager()
+        self.event_manager = CanonicalEventManagerAdapter()
 
         # Canonical Core 2.x runtime boundary. The public aliases below keep
         # the existing 1.x Game surface available during migration.
