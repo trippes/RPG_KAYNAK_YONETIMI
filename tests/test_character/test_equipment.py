@@ -127,6 +127,24 @@ class TestEquipment(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             character.weapon_damage
 
+    def test_item_physical_metadata_survives_save_load(self):
+        item = ItemDefinition(
+            "field_pack", "Saha Çantası", weight=1.25,
+            volume_liters=8.5, category="container",
+            tags=("portable", "storage"),
+        )
+        bundle = self.application.holder.current
+        object.__setattr__(bundle, "items", MappingProxyType({"field_pack": item}))
+        bundle.characters["hero"].bind_item_catalog(bundle.items)
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "item-metadata.json"
+            self.service.save(path)
+            self.service.load(path)
+        restored = self.service.item("field_pack")
+        self.assertEqual(restored.volume_liters, 8.5)
+        self.assertEqual(restored.category, "container")
+        self.assertEqual(restored.tags, ("portable", "storage"))
+
     def test_item_catalog_rejects_mismatched_registry_keys(self):
         character = self.application.holder.current.characters["hero"]
         with self.assertRaisesRegex(ValueError, "catalog key"):

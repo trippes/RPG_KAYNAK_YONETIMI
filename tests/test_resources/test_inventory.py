@@ -1,6 +1,7 @@
 import unittest
 
-from resources import Inventory, Quantity, ResourceType, ResourceUnit
+from character import ItemDefinition
+from resources import Inventory, Quantity, ResourceDefinition, ResourceType, ResourceUnit
 
 
 class TestInventory(unittest.TestCase):
@@ -15,6 +16,35 @@ class TestInventory(unittest.TestCase):
         self.assertEqual(self.inventory.resource_type_count(), 0)
         self.assertIsNone(self.inventory.get(self.wood))
         self.assertEqual(self.inventory.snapshot(), ())
+
+    def test_item_only_inventory_is_not_empty(self):
+        self.inventory.add_item("bread")
+        self.assertFalse(self.inventory.is_empty())
+
+    def test_slot_count_counts_distinct_stacks(self):
+        self.inventory.add_item("bread", 12)
+        self.inventory.add_item("potion", 2)
+        self.inventory.add(self.wood, Quantity(20, ResourceUnit.ITEM))
+        self.assertEqual(self.inventory.slot_count(), 3)
+
+    def test_item_weight_and_volume(self):
+        self.inventory.add_item("chest", 2)
+        catalog = {"chest": ItemDefinition("chest", "Sandık", weight=4.5, volume_liters=12)}
+        self.assertAlmostEqual(self.inventory.total_weight(catalog), 9.0)
+        self.assertAlmostEqual(self.inventory.total_volume(catalog), 24.0)
+
+    def test_resource_weight_and_volume(self):
+        self.inventory.add(self.wood, Quantity(3, ResourceUnit.ITEM))
+        catalog = {"wood": ResourceDefinition("wood", "Odun", ResourceUnit.ITEM, 2, 4)}
+        self.assertAlmostEqual(self.inventory.total_weight(resource_catalog=catalog), 6.0)
+        self.assertAlmostEqual(self.inventory.total_volume(resource_catalog=catalog), 12.0)
+
+    def test_missing_physical_definition_fails_loudly(self):
+        self.inventory.add_item("unknown")
+        with self.assertRaisesRegex(ValueError, "Missing item definition"):
+            self.inventory.total_weight({})
+        with self.assertRaisesRegex(ValueError, "Missing item definition"):
+            self.inventory.total_volume({})
 
     def test_first_stock_is_added_and_can_be_queried(self):
         self.inventory.add(self.wood, Quantity(5, ResourceUnit.ITEM))

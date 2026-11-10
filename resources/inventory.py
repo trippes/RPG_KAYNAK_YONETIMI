@@ -1,24 +1,26 @@
-"""Independent resource inventory domain object."""
-
+"""Inventory for resource stock and stackable item quantities."""
+from collections.abc import Mapping
 from .resource import Quantity, ResourceType
 
 
 class Inventory:
-    """Deterministic, single-threaded container for resource stock."""
-
+    """Deterministic, single-threaded inventory."""
     def __init__(self) -> None:
         self._stocks: dict[ResourceType, Quantity] = {}
         self._items: dict[str, int] = {}
 
     def add_item(self, item_id: str, quantity: int = 1) -> None:
         self._validate_item(item_id, quantity)
-        self._items[item_id] = self._items.get(item_id, 0) + quantity
+        if quantity:
+            self._items[item_id] = self._items.get(item_id, 0) + quantity
 
     def remove_item(self, item_id: str, quantity: int = 1) -> None:
         self._validate_item(item_id, quantity)
         current = self._items.get(item_id, 0)
         if current < quantity:
             raise ValueError("Insufficient item stock.")
+        if quantity == 0:
+            return
         if current == quantity:
             del self._items[item_id]
         else:
@@ -28,17 +30,58 @@ class Inventory:
         self._validate_item(item_id, 0)
         return self._items.get(item_id, 0)
 
+    @property
+    def items(self) -> tuple[tuple[str, int], ...]:
+        return self.item_snapshot()
+
     def item_snapshot(self) -> tuple[tuple[str, int], ...]:
         return tuple(sorted(self._items.items()))
 
-    def total_weight(self, item_catalog=None) -> float:
-        if item_catalog is None:
-            return 0.0
-        return sum(
-            item_catalog[item_id].weight * quantity
-            for item_id, quantity in self._items.items()
-            if item_id in item_catalog
-        )
+    def total_weight(self, item_catalog=None, resource_catalog=None) -> float:
+        """Combined weight in kg. Missing physical definitions are errors."""
+        total = 0.0
+        if self._items:
+            if not isinstance(item_catalog, Mapping):
+                raise ValueError("An item catalog is required to calculate item weight.")
+            for item_id, quantity in self._items.items():
+                definition = item_catalog.get(item_id)
+                if definition is None:
+                    raise ValueError(f"Missing item definition for weight calculation: {item_id}")
+                total += definition.weight * quantity
+        if self._stocks:
+            if not isinstance(resource_catalog, Mapping):
+                raise ValueError("A resource catalog is required to calculate resource weight.")
+            for resource, quantity in self._stocks.items():
+                definition = resource_catalog.get(resource.value)
+                if definition is None:
+                    raise ValueError(f"Missing resource definition for weight calculation: {resource.value}")
+                if definition.unit != quantity.unit:
+                    raise ValueError(f"Resource unit mismatch for weight calculation: {resource.value}")
+                total += definition.weight_kg_per_unit * quantity.value
+        return total
+
+    def total_volume(self, item_catalog=None, resource_catalog=None) -> float:
+        """Combined occupied volume in liters. Missing definitions are errors."""
+        total = 0.0
+        if self._items:
+            if not isinstance(item_catalog, Mapping):
+                raise ValueError("An item catalog is required to calculate item volume.")
+            for item_id, quantity in self._items.items():
+                definition = item_catalog.get(item_id)
+                if definition is None:
+                    raise ValueError(f"Missing item definition for volume calculation: {item_id}")
+                total += definition.volume_liters * quantity
+        if self._stocks:
+            if not isinstance(resource_catalog, Mapping):
+                raise ValueError("A resource catalog is required to calculate resource volume.")
+            for resource, quantity in self._stocks.items():
+                definition = resource_catalog.get(resource.value)
+                if definition is None:
+                    raise ValueError(f"Missing resource definition for volume calculation: {resource.value}")
+                if definition.unit != quantity.unit:
+                    raise ValueError(f"Resource unit mismatch for volume calculation: {resource.value}")
+                total += definition.volume_liters_per_unit * quantity.value
+        return total
 
     def add(self, resource_type: ResourceType, quantity: Quantity) -> None:
         self._validate_inputs(resource_type, quantity)
@@ -49,11 +92,8 @@ class Inventory:
             return
         if current is None:
             self._stocks[resource_type] = quantity
-            return
-        self._stocks[resource_type] = Quantity(
-            current.value + quantity.value,
-            current.unit,
-        )
+        else:
+            self._stocks[resource_type] = Quantity(current.value + quantity.value, current.unit)
 
     def remove(self, resource_type: ResourceType, quantity: Quantity) -> None:
         self._validate_inputs(resource_type, quantity)
@@ -80,20 +120,25 @@ class Inventory:
         return self._stocks.get(resource_type)
 
     def is_empty(self) -> bool:
-        return not self._stocks
+        return not self._stocks and not self._items
 
     def resource_type_count(self) -> int:
         return len(self._stocks)
 
+    def item_type_count(self) -> int:
+        return len(self._items)
+
+    def slot_count(self) -> int:
+        """One occupied slot per distinct item stack or resource type."""
+        return len(self._items) + len(self._stocks)
+
     def snapshot(self) -> tuple[tuple[ResourceType, Quantity], ...]:
-        """Return an immutable, resource-identifier-sorted stock view."""
         return tuple(sorted(self._stocks.items(), key=lambda item: item[0].value))
 
-    def _restore_snapshot(self, snapshot: tuple[tuple[ResourceType, Quantity], ...]) -> None:
-        """Restore a snapshot for the package-local atomic transfer operation."""
+    def _restore_snapshot(self, snapshot) -> None:
         self._stocks = dict(snapshot)
 
-    def _restore_item_snapshot(self, snapshot: tuple[tuple[str, int], ...]) -> None:
+    def _restore_item_snapshot(self, snapshot) -> None:
         self._items = dict(snapshot)
 
     @staticmethod

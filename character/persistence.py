@@ -48,6 +48,9 @@ class CharacterSnapshot:
                     "max_hit_points": item.max_hit_points,
                     "attribute_bonuses": dict(item.attribute_bonuses),
                     "description": item.description,
+                    "volume_liters": item.volume_liters,
+                    "category": item.category,
+                    "tags": list(item.tags),
                 }
         return cls(
             tuple(sorted(result, key=lambda item: item["character_id"])),
@@ -94,6 +97,9 @@ class CharacterSnapshot:
                     item.get("max_hit_points", 0),
                     item.get("attribute_bonuses", {}),
                     item.get("description", ""),
+                    item.get("volume_liters", 0.0),
+                    item.get("category", "misc"),
+                    tuple(item.get("tags", ())),
                 )
             except (KeyError, TypeError, ValueError) as error:
                 raise CharacterPersistenceError("Invalid item definition.") from error
@@ -136,5 +142,8 @@ class CharacterSnapshot:
                 item.get("max_hit_points", 0),
                 item.get("attribute_bonuses", {}),
                 item.get("description", ""),
+                item.get("volume_liters", 0.0),
+                item.get("category", "misc"),
+                tuple(item.get("tags", ())),
             ))
         return tuple(result)

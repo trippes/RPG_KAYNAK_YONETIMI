@@ -1,6 +1,6 @@
 import unittest
 
-from resources import Inventory, Quantity, ResourceType, ResourceUnit, transfer_resources
+from resources import Inventory, Quantity, ResourceType, ResourceUnit, transfer_items, transfer_resources
 
 
 class FailingInventory(Inventory):
@@ -9,6 +9,12 @@ class FailingInventory(Inventory):
     def add(self, resource_type, quantity):
         super().add(resource_type, quantity)
         raise RuntimeError("injected target add failure")
+
+
+class FailingItemInventory(Inventory):
+    def add_item(self, item_id, quantity=1):
+        super().add_item(item_id, quantity)
+        raise RuntimeError("injected target item add failure")
 
 
 class TestResourceTransfer(unittest.TestCase):
@@ -124,6 +130,30 @@ class TestResourceTransfer(unittest.TestCase):
 
         self.assertEqual(source.snapshot(), source_before)
         self.assertEqual(target.snapshot(), target_before)
+
+    def test_item_transfer_moves_exact_quantity(self):
+        self.source.add_item("healing_potion", 5)
+        self.target.add_item("healing_potion", 2)
+        transfer_items(self.source, self.target, "healing_potion", 3)
+        self.assertEqual(self.source.item_quantity("healing_potion"), 2)
+        self.assertEqual(self.target.item_quantity("healing_potion"), 5)
+
+    def test_item_transfer_rolls_back_after_target_failure(self):
+        source, target = Inventory(), FailingItemInventory()
+        source.add_item("key", 4)
+        before_source, before_target = source.item_snapshot(), target.item_snapshot()
+        with self.assertRaises(RuntimeError):
+            transfer_items(source, target, "key", 2)
+        self.assertEqual(source.item_snapshot(), before_source)
+        self.assertEqual(target.item_snapshot(), before_target)
+
+    def test_item_transfer_rejects_insufficient_quantity_without_mutation(self):
+        self.source.add_item("key", 1)
+        before_source, before_target = self.source.item_snapshot(), self.target.item_snapshot()
+        with self.assertRaises(ValueError):
+            transfer_items(self.source, self.target, "key", 2)
+        self.assertEqual(self.source.item_snapshot(), before_source)
+        self.assertEqual(self.target.item_snapshot(), before_target)
 
     def test_complete_transfer_preserves_zero_stock_policy(self):
         self.source.add(self.iron, Quantity(3, ResourceUnit.ITEM))
