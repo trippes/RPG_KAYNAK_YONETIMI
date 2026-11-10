@@ -42,6 +42,22 @@ class QuestLogScreen:
         self._viewport = (960, 640)
 
     def handle(self, state):
+        """Handle journal navigation without changing quest lifecycle state."""
+        if state.pressed("left") or state.pressed("right"):
+            direction = -1 if state.pressed("left") else 1
+            self._select_category((self.category + direction) % len(self.CATEGORIES))
+            return None
+
+        quests = self._quests()
+        if state.pressed("up") and quests:
+            self.selected = max(0, self.selected - 1)
+            self.detail_scroll = 0
+            self._ensure_selected_visible()
+        elif state.pressed("down") and quests:
+            self.selected = min(len(quests) - 1, self.selected + 1)
+            self.detail_scroll = 0
+            self._ensure_selected_visible()
+
         list_bounds = self._list_bounds()
         detail_bounds = self._details_bounds()
         if state.mouse_wheel and (
@@ -62,18 +78,44 @@ class QuestLogScreen:
 
         for index, rect in enumerate(self._tab_bounds()):
             if self._contains(rect, state.mouse_pos):
-                self.category = index
-                self.selected = 0
-                self.scroll = 0
-                self.detail_scroll = 0
+                self._select_category(index)
                 return None
 
+        list_x, list_y, list_width, list_height = list_bounds
+        visible_top = list_y + 34
+        visible_bottom = list_y + list_height - 8
+        if not (list_x <= state.mouse_pos[0] < list_x + list_width
+                and visible_top <= state.mouse_pos[1] < visible_bottom):
+            return None
         for index, rect in enumerate(self._row_bounds()):
-            if self._contains(rect, state.mouse_pos):
-                self.selected = index
-                self.detail_scroll = 0
-                return None
+            row_top, row_height = rect[1], rect[3]
+            if row_top < visible_bottom and row_top + row_height > visible_top:
+                if self._contains(rect, state.mouse_pos):
+                    self.selected = index
+                    self.detail_scroll = 0
+                    return None
         return None
+
+    def _select_category(self, index):
+        self.category = index
+        self.selected = 0
+        self.scroll = 0
+        self.detail_scroll = 0
+
+    def _ensure_selected_visible(self):
+        quests = self._quests()
+        if not quests:
+            self.scroll = 0
+            return
+        list_x, list_y, _list_width, list_height = self._list_bounds()
+        visible_top = list_y + 34
+        visible_bottom = list_y + list_height - 8
+        row_top = list_y + 38 + self.selected * 54 - self.scroll
+        if row_top < visible_top:
+            self.scroll -= visible_top - row_top
+        elif row_top + 48 > visible_bottom:
+            self.scroll += row_top + 48 - visible_bottom
+        self._clamp_scroll()
 
     def render(self, renderer):
         self._viewport = (renderer.width, renderer.height)
@@ -122,8 +164,9 @@ class QuestLogScreen:
             self.scroll = 0
             self.detail_scroll = 0
         else:
-            self.selected = min(self.selected, len(quests) - 1)
+            self.selected = max(0, min(self.selected, len(quests) - 1))
         self._clamp_scroll()
+        self._ensure_selected_visible()
         self._clamp_detail_scroll()
 
     def _clamp_scroll(self):
@@ -358,7 +401,10 @@ class QuestLogScreen:
         if reward.currency:
             lines.append(f"Para {reward.currency}")
         for item_id, amount in reward.items:
-            item = self.service.item(item_id)
+            try:
+                item = self.service.item(item_id)
+            except (KeyError, ValueError, RuntimeError):
+                item = None
             name = getattr(item, "name", None) if item is not None else None
             lines.append(f"Eşya: {name or item_id} x{amount}")
         for faction_id, amount in reward.reputation:
