@@ -453,9 +453,6 @@ class GameplayService:
             raise TypeError("instance must be LockInstance.")
         if bundle.session.entities.get(instance.entity_id) is None:
             raise KeyError(f"Entity not found: {instance.entity_id}")
-        if bundle.containers.for_entity(instance.entity_id) is not None:
-            # Containers may also be locked; this is deliberately not an error.
-            pass
         return bundle.locks.register(instance)
 
     def lock_state(self, lock_id: str) -> LockView:
@@ -537,7 +534,7 @@ class GameplayService:
         if container is None:
             raise KeyError(f"Container not found: {container_id}")
         lock = bundle.locks.for_entity(container.entity_id)
-        if lock is not None and (lock.locked or lock.jammed or lock.broken):
+        if lock is not None and (lock.locked or lock.jammed):
             raise GameplayServiceError("Container is not accessible while its lock is locked, jammed, or broken.")
         return self.container_state(container_id)
 
