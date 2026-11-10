@@ -77,10 +77,15 @@ class TestLocationMarket(unittest.TestCase):
     def test_demand_increases_the_next_restock_price(self):
         demanded = Market()
         baseline = Market()
+        gold = Currency("gold")
+        price_catalog = (
+            MarketCatalogEntry(ResourceType("wood"), Money(100, gold), 2, 5),
+            *self.catalog[1:],
+        )
         for market in (demanded, baseline):
             market.register_profile(MarketProfile(
                 "market", "village", "trader", "merchant", "inventory",
-                1, self.catalog, visible_products=4,
+                1, price_catalog, visible_products=4,
             ))
         demanded.restock("market", Inventory(), 0)
         demanded.record_purchase("market", ResourceType("wood"), 2)
