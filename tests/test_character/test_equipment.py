@@ -81,9 +81,12 @@ class TestEquipment(unittest.TestCase):
         self.assertEqual(
             self.service.actor_stats("hero")["weapon_damage"], 4
         )
+        remaining_item_ids = {
+            item_id for item_id, _quantity in self.service.inventory("main").items
+        }
         self.assertEqual(
-            self.service.inventory("main").items[0][0],
-            "iron_helmet",
+            remaining_item_ids,
+            {"iron_helmet", "leather_armor", "bread_item"},
         )
 
     def test_equipment_survives_save_load_with_item_catalog(self):
