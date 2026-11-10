@@ -15,6 +15,8 @@ The outer document is:
 
 The outer document requires equal Core and gameplay simulation ticks. Core and
 gameplay versions remain independently validated by their existing contracts.
+Container state uses its own `rpg-containers` v1 contract and remains optional in
+the outer v2 envelope so older saves can migrate without fabricated containers.
 
 ## Save flow
 
