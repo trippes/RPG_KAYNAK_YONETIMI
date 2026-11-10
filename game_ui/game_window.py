@@ -10,6 +10,7 @@ from .screens.main_menu import MainMenu
 from .screens.map_screen import MapScreen
 from .screens.main_screen import MainScreen
 from .screens.market_screen import MarketScreen
+from .screens.trade_screen import TradeScreen
 from .screens.dialogue_screen import DialogueScreen
 from .screens.combat_screen import CombatScreen
 from .screens.character_creation import CharacterCreationScreen
@@ -24,7 +25,7 @@ from application.save_storage import SaveStorage, SaveStorageError
 NAV_SCREENS = frozenset({"main"})
 # Gameplay tools are windows owned by the persistent MainScreen surface.
 GAMEPLAY_WINDOW_IDS = frozenset({
-    "character", "inventory", "quest_log", "map", "production", "market",
+    "character", "inventory", "quest_log", "map", "production", "market", "trade",
 })
 NOTICE_FRAMES = 240  # ~4 seconds at 60 fps
 PAUSE_MENU_OPTIONS = (
@@ -101,6 +102,7 @@ class GameWindow:
             "character": CharacterScreen(service),
             "quest_log": QuestLogScreen(service),
             "market": MarketScreen(service),
+            "trade": TradeScreen(service),
             "dialogue": DialogueScreen(service),
             "combat": CombatScreen(service),
             "character_creation": CharacterCreationScreen(service),
@@ -157,6 +159,13 @@ class GameWindow:
             (24, 110, min(self.width - 48, 912), min(self.height - 110, 470)),
             content_origin=(24, 126),
             title="Pazar",
+        )
+        self.window_manager.register(
+            "trade",
+            self.screens["trade"],
+            (40, 100, min(self.width - 80, 880), min(self.height - 100, 470)),
+            content_origin=(24, 126),
+            title="Ticaret",
         )
         self.window_manager.register(
             "map",
@@ -312,6 +321,7 @@ class GameWindow:
             "character": CharacterScreen(service),
             "quest_log": QuestLogScreen(service),
             "market": MarketScreen(service),
+            "trade": TradeScreen(service),
             "dialogue": DialogueScreen(service),
             "combat": CombatScreen(service),
             "character_creation": CharacterCreationScreen(service),
@@ -321,6 +331,7 @@ class GameWindow:
         self.window_manager.windows["quest_log"].screen = self.screens["quest_log"]
         self.window_manager.windows["production"].screen = self.screens["production"]
         self.window_manager.windows["market"].screen = self.screens["market"]
+        self.window_manager.windows["trade"].screen = self.screens["trade"]
         self.window_manager.windows["map"].screen = self.screens["map"]
         for window_id in tuple(self.window_manager.open_ids):
             self.window_manager.close(window_id)
@@ -639,6 +650,22 @@ class GameWindow:
             else:
                 self.screens["market"].set_market(profile.market_id)
                 self.window_manager.open("market")
+                dialogue._reset_dialogue()
+            next_screen = self.gameplay_screen
+
+        if next_screen == "trade":
+            dialogue = self.screens["dialogue"]
+            context = getattr(dialogue, "context", None)
+            npc_id = context[1] if context is not None else None
+            partner = (
+                self.service.trade_partner_for_npc(npc_id)
+                if npc_id is not None else None
+            )
+            if partner is None:
+                self._set_notice("Bu NPC ile ticaret yapılamıyor.", "error")
+            else:
+                self.screens["trade"].set_npc(npc_id)
+                self.window_manager.open("trade")
                 dialogue._reset_dialogue()
             next_screen = self.gameplay_screen
 
