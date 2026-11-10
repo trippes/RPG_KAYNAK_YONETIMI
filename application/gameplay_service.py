@@ -71,6 +71,9 @@ class ContainerView:
     durability: float | None
     broken: bool
     custody_inventory_id: str | None = None
+    max_contents_weight_kg: float | None = None
+    max_slots: int | None = None
+    max_contents_volume_liters: float | None = None
 
 
 @dataclass(frozen=True)
