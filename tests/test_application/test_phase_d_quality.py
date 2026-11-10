@@ -274,6 +274,48 @@ class TestPhaseDQuality(unittest.TestCase):
         self.assertEqual(opened, ["map"])
         self.assertFalse(state.mouse_clicked)
 
+    def test_gameplay_navigation_shortcuts_open_map_and_market_windows(self):
+        opened = []
+        window = object.__new__(GameWindow)
+        window.current = "main"
+        window.gameplay_active = True
+        window.screens = {
+            "main": SimpleNamespace(menu_open=False),
+            "map": object(),
+            "market": object(),
+        }
+        window.renderer = SimpleNamespace(nav_hit=lambda _position: None)
+        window.window_manager = SimpleNamespace(
+            windows={"map": object(), "market": object()},
+            open=lambda window_id: opened.append(window_id),
+        )
+        window._nav_enabled = lambda: {"market": True}
+
+        window._handle_nav_click(InputState(actions={"map"}))
+        window._handle_nav_click(InputState(actions={"market"}))
+
+        self.assertEqual(opened, ["map", "market"])
+
+    def test_market_shortcut_respects_current_location_availability(self):
+        notices = []
+        opened = []
+        window = object.__new__(GameWindow)
+        window.current = "main"
+        window.gameplay_active = True
+        window.screens = {"main": SimpleNamespace(menu_open=False), "market": object()}
+        window.renderer = SimpleNamespace(nav_hit=lambda _position: None)
+        window.window_manager = SimpleNamespace(
+            windows={"market": object()},
+            open=lambda window_id: opened.append(window_id),
+        )
+        window._nav_enabled = lambda: {"market": False}
+        window._set_notice = lambda message, level: notices.append((message, level))
+
+        window._handle_nav_click(InputState(actions={"market"}))
+
+        self.assertEqual(opened, [])
+        self.assertEqual(notices[0][1], "error")
+
     def test_main_screen_is_reachable_from_world_map(self):
         from application.content_pack import populate_opening_content
         service, _ = populate_opening_content(GameApplication.create_default())

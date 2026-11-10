@@ -465,15 +465,25 @@ class GameWindow:
             return {"market": True}
 
     def _handle_nav_click(self, state):
-        """Switch screens when a tab is clicked; the click is then consumed."""
-        if not (state.mouse_clicked and state.mouse_pos is not None):
-            return
+        """Route gameplay navigation from the visible tabs and mapped shortcuts."""
         if self.current not in NAV_SCREENS:
             return
-        target = self.renderer.nav_hit(state.mouse_pos)
+
+        target = None
+        for action in ("map", "market"):
+            if action in state.actions:
+                state.actions.discard(action)
+                target = action
+                break
+
         if target is None:
-            return
-        state.mouse_clicked = False
+            if not (state.mouse_clicked and state.mouse_pos is not None):
+                return
+            target = self.renderer.nav_hit(state.mouse_pos)
+            if target is None:
+                return
+            state.mouse_clicked = False
+
         if target == "quest_log":
             self.window_manager.toggle("quest_log")
             return
