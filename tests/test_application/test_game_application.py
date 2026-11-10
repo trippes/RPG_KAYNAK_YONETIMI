@@ -6,6 +6,13 @@ from core.entity.entity_type import EntityType
 
 
 class TestGameApplication(unittest.TestCase):
+    def test_application_event_queue_uses_canonical_transport(self):
+        application = GameApplication.create_default()
+        self.assertEqual(application.event_manager.event_transport.count(), 0)
+        application.baslat()
+        self.assertEqual(application.event_manager.event_transport.count(), 1)
+        self.assertIs(application.events, application.event_manager.event_queue)
+
     def test_create_default_has_one_active_bundle(self):
         application = GameApplication.create_default()
         self.assertIs(application.holder.current, application.holder.current)
