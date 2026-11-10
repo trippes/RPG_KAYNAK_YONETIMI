@@ -224,6 +224,19 @@ class TestPhaseDQuality(unittest.TestCase):
             )
             self.assertEqual(screen.handle(InputState(actions={"back"})), expected)
 
+    def test_market_window_close_button_returns_to_world(self):
+        service = SimpleNamespace(market_offers=lambda: ())
+        screen = MarketScreen(service)
+        x, y, width, height = screen.CLOSE_RECT
+
+        self.assertEqual(
+            screen.handle(InputState(
+                mouse_clicked=True,
+                mouse_pos=(x + width // 2, y + height // 2),
+            )),
+            "local_map",
+        )
+
     def test_map_screen_routes_to_world_and_supports_map_input(self):
         from application.content_pack import populate_opening_content
         service, _ = populate_opening_content(GameApplication.create_default())
@@ -554,6 +567,7 @@ class TestPhaseDQuality(unittest.TestCase):
                     "character": Window(),
                     "quest_log": Window(),
                     "production": Window(),
+                    "market": Window(),
                 }
 
             def close(self, window_id):
@@ -587,6 +601,10 @@ class TestPhaseDQuality(unittest.TestCase):
         self.assertIs(
             window.window_manager.windows["production"].screen,
             window.screens["production"],
+        )
+        self.assertIs(
+            window.window_manager.windows["market"].screen,
+            window.screens["market"],
         )
 
     def test_game_window_routes_real_backend_d_key_to_dialogue_history(self):
