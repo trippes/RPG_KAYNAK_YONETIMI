@@ -103,6 +103,15 @@ class TestEquipment(unittest.TestCase):
             EquipmentSlot.CHEST,
         )
 
+    def test_default_attribute_bonuses_are_independent_and_immutable(self):
+        first = ItemDefinition("first", "Birinci")
+        second = ItemDefinition("second", "İkinci")
+
+        self.assertIsNot(first.attribute_bonuses, second.attribute_bonuses)
+        self.assertEqual(dict(first.attribute_bonuses), {})
+        with self.assertRaises(TypeError):
+            first.attribute_bonuses["strength"] = 1
+
     def test_non_equipment_item_is_rejected(self):
         with self.assertRaises(ValueError):
             self.service.equip_item("hero", "main", "bread_item")
