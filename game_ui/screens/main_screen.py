@@ -16,6 +16,7 @@ class MainScreen:
         self.service = service
         self.selected = (16, 16)
         self.selected_npc_id = None
+        self.selected_container_id = None
         self.menu_open = False
         self.menu_selected = 0
         self.menu_rects = ()
@@ -70,6 +71,45 @@ class MainScreen:
             (npc for npc in self._npcs() if self._position(npc.position) == tile),
             None,
         )
+
+    def _container_placement_at(self, tile):
+        actors = self._actors()
+        location = self._location()
+        if not actors or location is None:
+            return None
+        for placement in self.service.world_objects_for_location(
+            actors[0].world_id, location.location_id,
+        ):
+            if not (
+                placement.x <= tile[0] < placement.x + placement.width
+                and placement.y <= tile[1] < placement.y + placement.height
+            ):
+                continue
+            container_id = self.service.container_for_entity(placement.object_id)
+            if container_id is not None:
+                return container_id, placement
+        return None
+
+    def _container_placement(self, container_id):
+        actors = self._actors()
+        location = self._location()
+        if not actors or location is None:
+            return None
+        for placement in self.service.world_objects_for_location(
+            actors[0].world_id, location.location_id,
+        ):
+            if self.service.container_for_entity(placement.object_id) == container_id:
+                return placement
+        return None
+
+    def _is_adjacent_to_container(self, placement):
+        actors = self._actors()
+        if not actors or placement is None:
+            return False
+        actor_x, actor_y = self._position(actors[0].position)
+        dx = max(placement.x - actor_x, 0, actor_x - (placement.x + placement.width - 1))
+        dy = max(placement.y - actor_y, 0, actor_y - (placement.y + placement.height - 1))
+        return max(dx, dy) <= 1
 
     def _wood_node_id(self):
         location = self._location()
@@ -413,7 +453,13 @@ class MainScreen:
         if state.mouse_clicked and state.mouse_pos is not None:
             tile = self._tile_at(state.mouse_pos)
             if tile is not None:
-                self._move_to_tile(tile)
+                container_target = self._container_placement_at(tile)
+                if container_target is not None:
+                    self.selected_container_id = container_target[0]
+                    self.selected = tile
+                else:
+                    self.selected_container_id = None
+                    self._move_to_tile(tile)
 
         if state.pressed("confirm"):
             npcs = self._npcs()
@@ -422,6 +468,12 @@ class MainScreen:
                 self.selected_npc_id = npc.npc_id
                 self.message = f"{npc.name} ile konuşmak için Enter'a bas."
                 return "dialogue"
+            if self.selected_container_id is not None:
+                placement = self._container_placement(self.selected_container_id)
+                if self._is_adjacent_to_container(placement):
+                    return f"container:{self.selected_container_id}"
+                self.message = "Konteyneri açmak için yanına yaklaşın."
+                return None
             landmark = self._landmark_at(self.selected)
             if self._gather_at_selected_tree():
                 return None
@@ -607,8 +659,13 @@ class MainScreen:
         if actor is not None and location is not None:
             for placement in self.service.world_objects_for_location(actor.world_id, location.location_id):
                 rect = renderer.pg.Rect(origin_x + placement.x * self.TILE_SIZE + 2, origin_y + placement.y * self.TILE_SIZE + 2, max(4, placement.width * self.TILE_SIZE - 4), max(4, placement.height * self.TILE_SIZE - 4))
+                container_id = self.service.container_for_entity(placement.object_id)
+                selected_container = container_id is not None and container_id == self.selected_container_id
                 renderer.pg.draw.rect(renderer.surface, (126, 91, 58), rect, border_radius=2)
-                renderer.pg.draw.rect(renderer.surface, (210, 174, 112), rect, 1, border_radius=2)
+                renderer.pg.draw.rect(
+                    renderer.surface, (245, 210, 120) if selected_container else (210, 174, 112),
+                    rect, 2 if selected_container else 1, border_radius=2,
+                )
 
         for npc in self._npcs():
             x, y = self._position(npc.position)
