@@ -24,12 +24,44 @@ class TestSocialCombatIntegration(unittest.TestCase):
     def test_npc_dialogue_requires_same_location_and_quest_can_start(self):
         self.service.register_npc(NPC("elder", "Elder", location_id="square"))
         self.service.register_dialogue(Dialogue("intro", (DialogueNode("start", "elder", "Welcome", (DialogueChoice("accept", "Accept"),)),), "start"))
+        self.assertTrue(callable(self.service.talk_to_npc))
         node = self.service.talk_to_npc("hero", "elder", "intro")
         self.assertEqual(node.text, "Welcome")
         self.assertEqual(self.service.state().simulation_tick, 1)
         quest = Quest("intro-quest", "First Task", (Objective("talk", "Talk", ObjectiveType.TALK, "elder"),))
         self.service.start_quest(quest)
         self.assertEqual(self.application.holder.current.quest_log.active()[0].quest_id, "intro-quest")
+
+    def test_dialogue_context_and_visible_choices_tolerate_missing_objectives(self):
+        self.service.register_npc(NPC("elder", "Elder", location_id="square"))
+        dialogue = Dialogue(
+            "safe-context",
+            (
+                DialogueNode(
+                    "start",
+                    "elder",
+                    "Need help?",
+                    (DialogueChoice("continue", "Continue"),),
+                ),
+            ),
+            "start",
+        )
+        self.service.register_dialogue(dialogue)
+        quest = Quest(
+            "safe-objectives",
+            "Safe objectives",
+            (Objective("speak", "Speak", ObjectiveType.TALK, "elder"),),
+        )
+        self.service.start_quest(quest)
+        # Restored or legacy quest records may lack their objective collection.
+        quest.objectives = None
+
+        context = self.service._dialogue_context("hero", "elder")
+        self.assertEqual(context["objectives"], {})
+        visible = self.service._visible_choices(
+            dialogue, "start", "hero", "elder"
+        )
+        self.assertEqual(tuple(choice.choice_id for choice in visible), ("continue",))
 
     def test_combat_damage_status_and_persistence(self):
         self.service.register_npc(NPC("elder", "Elder", location_id="square"))
