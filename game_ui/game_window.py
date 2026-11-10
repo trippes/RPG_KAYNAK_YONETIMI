@@ -18,6 +18,7 @@ from .screens.production_screen import ProductionScreen
 from .screens.opening_screen import OpeningScreen
 from .screens.save_slots_screen import SaveSlotsScreen
 from .screens.quest_log_screen import QuestLogScreen
+from .screens.container_screen import ContainerScreen
 from .window_manager import WindowManager
 from application.save_storage import SaveStorage, SaveStorageError
 
@@ -25,7 +26,7 @@ from application.save_storage import SaveStorage, SaveStorageError
 NAV_SCREENS = frozenset({"main"})
 # Gameplay tools are windows owned by the persistent MainScreen surface.
 GAMEPLAY_WINDOW_IDS = frozenset({
-    "character", "inventory", "quest_log", "map", "production", "market", "trade",
+    "character", "inventory", "quest_log", "map", "production", "market", "trade", "container",
 })
 NOTICE_FRAMES = 240  # ~4 seconds at 60 fps
 PAUSE_MENU_OPTIONS = (
@@ -106,6 +107,7 @@ class GameWindow:
             "dialogue": DialogueScreen(service),
             "combat": CombatScreen(service),
             "character_creation": CharacterCreationScreen(service),
+            "container": ContainerScreen(service),
         }
         self.save_dir = self.save_path.parent if self.save_path is not None else None
         self.selected_slot = None
@@ -173,6 +175,13 @@ class GameWindow:
             (24, 110, min(self.width - 48, 912), min(self.height - 110, 470)),
             content_origin=(24, 126),
             title="Harita",
+        )
+        self.window_manager.register(
+            "container",
+            self.screens["container"],
+            (100, 100, min(self.width - 100, 820), min(self.height - 100, 470)),
+            content_origin=(24, 126),
+            title="Konteyner",
         )
 
         self.current = "menu"
@@ -325,6 +334,7 @@ class GameWindow:
             "dialogue": DialogueScreen(service),
             "combat": CombatScreen(service),
             "character_creation": CharacterCreationScreen(service),
+            "container": ContainerScreen(service),
         })
         self.window_manager.windows["inventory"].screen = self.screens["inventory"]
         self.window_manager.windows["character"].screen = self.screens["character"]
@@ -334,6 +344,7 @@ class GameWindow:
         if "trade" in self.window_manager.windows:
             self.window_manager.windows["trade"].screen = self.screens["trade"]
         self.window_manager.windows["map"].screen = self.screens["map"]
+        self.window_manager.windows["container"].screen = self.screens["container"]
         for window_id in tuple(self.window_manager.open_ids):
             self.window_manager.close(window_id)
         self.pause_menu_open = False
@@ -615,6 +626,11 @@ class GameWindow:
         if next_screen == "quit":
             self.running = False
             return
+        if isinstance(next_screen, str) and next_screen.startswith("container:"):
+            container_id = next_screen.split(":", 1)[1]
+            self.screens["container"].set_container(container_id)
+            self.window_manager.open("container")
+            next_screen = None
         if next_screen == "continue":
             next_screen = self._open_save_slots("load")
         elif next_screen == "new_game":
@@ -638,6 +654,9 @@ class GameWindow:
         ):
             from application.content_pack import populate_gameplay_resources
             populate_gameplay_resources(self.service)
+            actors = self.service.state().actors
+            if actors and actors[0].inventory_id is None:
+                self.service.bind_actor_inventory(actors[0].actor_id, "player")
 
         if next_screen == "market":
             dialogue = self.screens["dialogue"]
