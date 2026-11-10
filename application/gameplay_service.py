@@ -82,6 +82,9 @@ class LockView:
     locked: bool
     jammed: bool
     broken: bool
+    required_key_id: str | None = None
+    lockpick_profile_id: str | None = None
+    force_profile_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -442,7 +445,24 @@ class GameplayService:
             usage.weight_kg, usage.slots, usage.volume_liters,
             instance.durability, instance.broken,
             bundle.containers.inventory_custody(container_id),
+            definition.max_contents_weight_kg,
+            definition.max_slots,
+            definition.max_contents_volume_liters,
         )
+
+    def container_for_entity(self, entity_id: str) -> str | None:
+        """Return the container instance attached to a Core entity."""
+        instance = self._current_bundle().containers.for_entity(entity_id)
+        return instance.container_id if instance is not None else None
+
+    def container_lock_state(self, container_id: str) -> LockView | None:
+        """Return lock status for a container without exposing its contents."""
+        bundle = self._current_bundle()
+        container = bundle.containers.get(container_id)
+        if container is None:
+            raise KeyError(f"Container not found: {container_id}")
+        lock = bundle.locks.for_entity(container.entity_id)
+        return self.lock_state(lock.lock_id) if lock is not None else None
 
     def register_lockpick_profile(self, profile: LockpickProfile) -> LockpickProfile:
         return self._current_bundle().locks.register_lockpick_profile(profile)
@@ -474,6 +494,8 @@ class GameplayService:
         return LockView(
             instance.lock_id, instance.entity_id, instance.definition_id,
             definition.name, instance.locked, instance.jammed, instance.broken,
+            definition.required_key_id, definition.lockpick_profile_id,
+            definition.force_profile_id,
         )
 
     def bind_key_owner(self, key_id: str, actor_id: str) -> None:
@@ -571,7 +593,7 @@ class GameplayService:
         """Expose container contents only after its attached lock has been opened."""
         bundle = self._current_bundle()
         self._require_actor_in_active_world(bundle, actor_id)
-        self._inventory(bundle, inventory_id)
+        self._inventory_for_actor(bundle, actor_id, inventory_id)
         container = bundle.containers.get(container_id)
         if container is None:
             raise KeyError(f"Container not found: {container_id}")
@@ -688,6 +710,24 @@ class GameplayService:
         if placement is not None:
             bundle.world_objects.remove(placement.object_id)
         return result
+
+    def transfer_actor_item_to_container(
+        self, actor_id: str, source_inventory_id: str, container_id: str,
+        item_id: str, quantity: int = 1,
+    ) -> None:
+        bundle = self._current_bundle()
+        self._require_actor_in_active_world(bundle, actor_id)
+        self._inventory_for_actor(bundle, actor_id, source_inventory_id)
+        self.transfer_item_to_container(source_inventory_id, container_id, item_id, quantity)
+
+    def transfer_actor_item_from_container(
+        self, actor_id: str, target_inventory_id: str, container_id: str,
+        item_id: str, quantity: int = 1,
+    ) -> None:
+        bundle = self._current_bundle()
+        self._require_actor_in_active_world(bundle, actor_id)
+        self._inventory_for_actor(bundle, actor_id, target_inventory_id)
+        self.transfer_item_from_container(container_id, target_inventory_id, item_id, quantity)
 
     def transfer_item_to_container(self, source_inventory_id: str, container_id: str,
                                    item_id: str, quantity: int = 1) -> None:
