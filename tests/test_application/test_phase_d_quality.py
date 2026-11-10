@@ -476,7 +476,9 @@ class TestPhaseDQuality(unittest.TestCase):
         mapper = InputMapper(Backend())
         market_event = type("Event", (), {"type": "KEYDOWN", "key": 1})()
         inventory_event = type("Event", (), {"type": "KEYDOWN", "key": 2})()
-        self.assertFalse(mapper.collect([market_event]).pressed("market"))
+        map_state = mapper.collect([market_event])
+        self.assertFalse(map_state.pressed("market"))
+        self.assertTrue(map_state.pressed("map"))
         self.assertTrue(mapper.collect([inventory_event]).pressed("inventory"))
 
     def test_c_key_maps_to_character_action(self):
