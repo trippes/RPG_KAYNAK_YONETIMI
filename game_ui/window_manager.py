@@ -151,6 +151,7 @@ class WindowManager:
             quit_requested=state.quit_requested,
             mouse_pos=local_pos,
             mouse_clicked=state.mouse_clicked,
+            mouse_right_clicked=state.mouse_right_clicked,
             mouse_button_down=state.mouse_button_down,
             mouse_button_up=state.mouse_button_up,
             mouse_motion=state.mouse_motion,
