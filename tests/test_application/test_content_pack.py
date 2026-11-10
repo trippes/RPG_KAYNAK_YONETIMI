@@ -104,6 +104,20 @@ class TestContentPack(unittest.TestCase):
             bundle.inventories["trade_arda_inventory"].get(ResourceType("wood")).value,
             1,
         )
+        with tempfile.TemporaryDirectory() as directory:
+            save_path = Path(directory) / "npc-trade-save.json"
+            service.save(save_path)
+            service.load(save_path)
+        restored = application.holder.current
+        restored_partner = restored.economy.merchants["trade_arda"]
+        self.assertEqual(
+            restored_partner.accepted_resources,
+            (ResourceType("wood"), ResourceType("iron_ore")),
+        )
+        self.assertIs(
+            restored_partner.inventory,
+            restored.inventories["trade_arda_inventory"],
+        )
 
     def test_opening_content_preserves_eren_dialogue_and_character_creation_factory(self):
         application = GameApplication.create_default()
