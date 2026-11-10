@@ -1,5 +1,6 @@
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 from core.entity import Entity, EntityType
@@ -130,6 +131,7 @@ class TestGameplayService(unittest.TestCase):
             "locked_chest_01",
         )
 
+    @patch("core.dice.zar_at", new=lambda sides: 20)
     def test_lockpick_uses_character_skill_and_inventory_tool(self):
         self.service.register_container_definition(ContainerDefinition("pick_chest", "Pick chest"))
         entity = Entity(EntityType.ESYA, "Pick chest", entity_id="pick_chest_entity")
@@ -153,7 +155,7 @@ class TestGameplayService(unittest.TestCase):
         with self.assertRaises(GameplayServiceError):
             self.service.attempt_lockpick(
                 "hero", "other", "pick_chest_lock_01",
-                tool_item_id="lockpick", success=True,
+                tool_item_id="lockpick",
             )
         self.assertFalse(self.service.attempt_lockpick(
             "hero", "main", "pick_chest_lock_01", tool_item_id="lockpick", success=True
@@ -171,6 +173,7 @@ class TestGameplayService(unittest.TestCase):
         ))
         self.assertFalse(self.service.lock_state("pick_chest_lock_01").locked)
 
+    @patch("core.dice.zar_at", new=lambda sides: 20)
     def test_force_open_uses_character_strength_and_carried_tool(self):
         entity = Entity(EntityType.ESYA, "Iron gate", entity_id="iron_gate_entity")
         self.application.varlik_ekle(entity)
@@ -208,6 +211,7 @@ class TestGameplayService(unittest.TestCase):
         self.assertTrue(state.broken)
         self.assertFalse(state.locked)
 
+    @patch("core.dice.zar_at", new=lambda sides: 20)
     def test_force_open_profile_can_unlock_without_breaking(self):
         entity = Entity(EntityType.ESYA, "Wooden door", entity_id="wooden_door_entity")
         self.application.varlik_ekle(entity)
