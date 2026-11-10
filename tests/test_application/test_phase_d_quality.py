@@ -332,8 +332,14 @@ class TestPhaseDQuality(unittest.TestCase):
         self.assertEqual(screen.handle(InputState(actions={"confirm"})), "market")
 
     def test_inventory_and_market_windows_ignore_legacy_screen_navigation(self):
-        from application.content_pack import populate_opening_content
-        service, _ = populate_opening_content(GameApplication.create_default())
+        inventory = SimpleNamespace(items=(), stocks=(), weight=0)
+        service = SimpleNamespace(
+            inventory=lambda _inventory_id: inventory,
+            item=lambda _item_id: None,
+            actor_activity=lambda _actor_id: None,
+            state=lambda: SimpleNamespace(simulation_tick=0),
+            market_offers=lambda: (),
+        )
         self.assertIsNone(
             InventoryScreen(service).handle(InputState(actions={"back", "world", "market", "character"}))
         )
@@ -341,7 +347,7 @@ class TestPhaseDQuality(unittest.TestCase):
             MarketScreen(service).handle(InputState(actions={"back", "world", "inventory", "character"}))
         )
 
-    def test_character_window_preserves_skill_selection_and_close_input(self):
+    def test_character_window_preserves_skill_selection_without_legacy_close_route(self):
         service, _ = populate_opening_content(GameApplication.create_default())
         screen = CharacterScreen(service)
         character = service.actor_character("hero")
@@ -349,7 +355,7 @@ class TestPhaseDQuality(unittest.TestCase):
         self.assertTrue(skills)
         screen.handle(InputState(actions={"down"}))
         self.assertEqual(screen.selected_skill, 1 % len(skills))
-        self.assertEqual(screen.handle(InputState(actions={"back"})), "world")
+        self.assertIsNone(screen.handle(InputState(actions={"back"})))
 
     def test_escape_opens_and_closes_central_pause_menu(self):
         window = object.__new__(GameWindow)
