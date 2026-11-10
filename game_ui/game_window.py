@@ -388,14 +388,13 @@ class GameWindow:
     def _save_game(self):
         try:
             self._ensure_save_storage()
-            self.save_path.parent.mkdir(parents=True, exist_ok=True)
-            self.service.save(self.save_path)
-            self._set_notice(
-                f"Slot {self.selected_slot + 1 if self.selected_slot is not None else '?'} kaydedildi.",
-                "ok",
-            )
-        except (OSError, KeyError, ValueError, RuntimeError) as error:
+        except SaveStorageError as error:
             self._set_notice(f"Kaydetme başarısız: {error}", "error")
+            return
+        # Never write directly to the last-used slot from a shortcut/helper.
+        # All writes must pass through the slot picker and its overwrite prompt.
+        self.gameplay_active = False
+        self.current = self._open_save_slots("save", "local_map")
 
     def _render_pause_menu(self):
         overlay = self.pg.Rect(0, 0, self.width, self.height)
