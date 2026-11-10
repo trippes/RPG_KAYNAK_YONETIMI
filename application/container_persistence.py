@@ -215,16 +215,20 @@ class ContainerSnapshot:
                 manager.register_definition(_definition_from_dict(value))
             inventory_records = {value["container_id"]: value for value in self.data["inventories"]}
             for value in self.data["instances"]:
-                inventory = Inventory()
-                record = inventory_records[value["container_id"]]
-                for item in record["items"]:
-                    inventory.add_item(item["item_id"], item["quantity"])
-                for resource in record["resources"]:
-                    inventory.add(ResourceType(resource["resource_id"]), Quantity(resource["value"], ResourceUnit(resource["unit"])))
+                container_id = value["container_id"]
                 manager.register(ContainerInstance(
-                    value["container_id"], value["entity_id"], value["definition_id"],
+                    container_id, value["entity_id"], value["definition_id"],
                     value.get("durability"), value.get("broken", False),
-                ), inventory)
+                ))
+                record = inventory_records[container_id]
+                for item in record["items"]:
+                    manager.add_item(container_id, item["item_id"], item["quantity"])
+                for resource in record["resources"]:
+                    manager.add_resource(
+                        container_id,
+                        ResourceType(resource["resource_id"]),
+                        Quantity(resource["value"], ResourceUnit(resource["unit"])),
+                    )
             for value in self.data["parents"]:
                 manager.contain(value["parent_id"], value["container_id"])
             for value in self.data["custodies"]:
