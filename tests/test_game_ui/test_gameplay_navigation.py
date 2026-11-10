@@ -63,5 +63,24 @@ class GameplayNavigationTests(unittest.TestCase):
         self.assertLessEqual(window.bounds.right, 800)
 
 
+    def test_empty_load_slot_starts_a_fresh_game(self):
+        from pathlib import Path
+        from game_ui.game_window import GameWindow
+
+        window = GameWindow.__new__(GameWindow)
+        window.selected_slot = None
+        window.save_path = None
+        window.screens = {"save_slots": SimpleNamespace(mode="load")}
+        started = []
+        window._start_new_game = lambda: started.append(True)
+
+        result = window._select_save_slot(2, Path("slot_3.json"), False)
+
+        self.assertEqual(result, "opening")
+        self.assertEqual(window.selected_slot, 2)
+        self.assertEqual(window.save_path, Path("slot_3.json"))
+        self.assertEqual(started, [True])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -229,6 +229,7 @@ class GameWindow:
                 self._set_notice(f"Kayıt yüklenemedi: {error}", "error")
                 return "save_slots"
             return "main"
+        self._start_new_game()
         return "opening"
 
     def _open_save_slots(self, mode, return_target="menu"):
