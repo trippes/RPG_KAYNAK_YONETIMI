@@ -3,6 +3,7 @@ import unittest
 from application import SessionBundle, SessionHolder
 from core.application import GameSession
 from core.simulation import SimulationRuntime
+from locks import KeyDefinition, LockDefinition, LockManager
 from resources import (
     Inventory,
     ProductionJobManager,
@@ -66,6 +67,28 @@ class TestSessionBundle(unittest.TestCase):
                 resource_nodes=WorldResourceNodeManager(),
                 inventories={},
                 recipes={},
+            )
+
+    def test_owner_bound_key_must_reference_registered_actor(self):
+        session = GameSession()
+        locks = LockManager()
+        locks.register_lock_definition(
+            LockDefinition("owner_lock", "Owner lock", "owner_key")
+        )
+        locks.register_key_definition(
+            KeyDefinition("owner_key", "Owner key", "owner_lock", True)
+        )
+        locks.bind_key_owner("owner_key", "missing_actor")
+
+        with self.assertRaisesRegex(ValueError, "unknown actor"):
+            SessionBundle(
+                session=session,
+                simulation=session.simulation,
+                production_jobs=ProductionJobManager(session.simulation),
+                resource_nodes=WorldResourceNodeManager(session.worlds),
+                inventories={},
+                recipes={},
+                locks=locks,
             )
 
     def test_candidate_creation_failure_does_not_change_holder(self):
