@@ -114,7 +114,9 @@ class ContainerSnapshot:
             "item_catalog": [_item_to_dict(item_catalog[key]) for key in sorted(item_ids)],
             "resource_catalog": [_resource_to_dict(resource_catalog[key]) for key in sorted(resource_ids)],
         }
-        return cls(payload)
+        snapshot = cls(payload)
+        snapshot._validate_records()
+        return snapshot
 
     def to_dict(self):
         return _copy_json_value(dict(self.data))
@@ -160,9 +162,35 @@ class ContainerSnapshot:
             raise ContainerPersistenceError("Container relationship references an unknown instance.")
         if set(record["container_id"] for record in self.data["parents"]) & set(record["container_id"] for record in self.data["custodies"]):
             raise ContainerPersistenceError("A container cannot be nested and inventory-held simultaneously.")
-        entity_ids = {record["entity_id"] for record in self.data["instances"]}
-        if any(record["object_id"] not in entity_ids for record in self.data["placements"]):
+        entity_ids = [record["entity_id"] for record in self.data["instances"]]
+        if len(entity_ids) != len(set(entity_ids)):
+            raise ContainerPersistenceError("A Core entity cannot have multiple container instances.")
+        known_entity_ids = set(entity_ids)
+        if any(record["object_id"] not in known_entity_ids for record in self.data["placements"]):
             raise ContainerPersistenceError("Placement references an unknown container entity.")
+        entity_by_container = {record["container_id"]: record["entity_id"] for record in self.data["instances"]}
+        unavailable = {entity_by_container[record["container_id"]] for key in ("parents", "custodies") for record in self.data[key]}
+        if unavailable.intersection(record["object_id"] for record in self.data["placements"]):
+            raise ContainerPersistenceError("A nested or carried container cannot also have a world placement.")
+        item_ids = {record["item_id"] for record in self.data["item_catalog"]}
+        resource_ids = {record["resource_id"] for record in self.data["resource_catalog"]}
+        for inventory in self.data["inventories"]:
+            item_records = inventory.get("items")
+            resource_records = inventory.get("resources")
+            if not isinstance(item_records, list) or not isinstance(resource_records, list):
+                raise ContainerPersistenceError("Container inventory item/resource sections must be lists.")
+            _unique(item_records, "item_id")
+            _unique(resource_records, "resource_id")
+            for item in item_records:
+                if item["item_id"] not in item_ids or isinstance(item.get("quantity"), bool) or not isinstance(item.get("quantity"), int) or item["quantity"] <= 0:
+                    raise ContainerPersistenceError("Container inventory references an invalid item stack.")
+            for resource in resource_records:
+                if resource["resource_id"] not in resource_ids or isinstance(resource.get("value"), bool) or not isinstance(resource.get("value"), int) or resource["value"] <= 0:
+                    raise ContainerPersistenceError("Container inventory references an invalid resource stock.")
+                ResourceUnit(resource["unit"])
+        for custody in self.data["custodies"]:
+            if not isinstance(custody.get("inventory_id"), str) or not custody["inventory_id"].strip():
+                raise ContainerPersistenceError("Invalid inventory custody ID.")
         definitions = {record["definition_id"] for record in self.data["definitions"]}
         if any(record["definition_id"] not in definitions for record in self.data["instances"]):
             raise ContainerPersistenceError("Instance references an unknown definition.")
