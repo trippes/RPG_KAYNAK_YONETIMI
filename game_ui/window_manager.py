@@ -200,6 +200,16 @@ class WindowManager:
             state.mouse_clicked = False
             return True
 
+        # Keep drag-release events routed to the window that owns the dragged item,
+        # even when the pointer is released over another open window.
+        if self.focused_id is not None:
+            focused = self.windows[self.focused_id]
+            if getattr(focused.screen, "pointer_capture", False) and (
+                state.mouse_motion or state.mouse_button_up
+            ):
+                self._dispatch(focused, state)
+                return True
+
         if state.mouse_pos is not None and state.mouse_wheel:
             window = self._top_at(state.mouse_pos)
             if window is not None:
