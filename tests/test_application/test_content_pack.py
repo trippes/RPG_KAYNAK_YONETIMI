@@ -14,6 +14,8 @@ from application.content_pack import (
 )
 from game_ui.input import InputState
 from game_ui.screens.dialogue_screen import DialogueScreen
+from game_ui.screens.trade_screen import TradeScreen
+from resources import Quantity, ResourceType, ResourceUnit
 
 
 class TestContentPack(unittest.TestCase):
@@ -75,6 +77,32 @@ class TestContentPack(unittest.TestCase):
         self.assertEqual(
             bundle.resource_nodes.get("north_mine_iron").location_id,
             "north_mine",
+        )
+
+    def test_other_npc_dialogue_opens_separate_trade_window(self):
+        application = GameApplication.create_default()
+        service, _ids = populate_opening_content(application)
+        populate_gameplay_resources(service)
+        bundle = application.holder.current
+        bundle.inventories["player"].add(
+            ResourceType("wood"), Quantity(3, ResourceUnit.ITEM),
+        )
+
+        dialogue = DialogueScreen(service)
+        dialogue.set_target_npc("village_craftsman")
+        self.assertIsNone(dialogue.handle(InputState(actions={"confirm"})))
+        self.assertEqual(dialogue.handle(InputState(actions={"confirm"})), "trade")
+
+        trade = TradeScreen(service)
+        trade.set_npc("village_craftsman")
+        quote = trade._quotes()[0]
+        self.assertEqual(quote[0], ResourceType("wood"))
+        result = service.sell_to_npc("village_craftsman", ResourceType("wood"), 1)
+        self.assertEqual(result.total.amount, 2)
+        self.assertEqual(bundle.inventories["player"].get(ResourceType("wood")).value, 2)
+        self.assertEqual(
+            bundle.inventories["trade_arda_inventory"].get(ResourceType("wood")).value,
+            1,
         )
 
     def test_opening_content_preserves_eren_dialogue_and_character_creation_factory(self):
