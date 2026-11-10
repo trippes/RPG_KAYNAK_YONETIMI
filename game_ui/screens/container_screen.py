@@ -338,7 +338,6 @@ class ContainerScreen:
                 renderer.text("Çanta boş", 644, 614, MUTED)
 
             renderer.text(self.message, 64, 632, GOOD if "aktarıldı" in self.message else TEXT_SOFT, max_width=820)
-            renderer.footer("Sol/Sağ: envanter seç   ↑/↓: eşya seç   Enter: 1 adet taşı   Sürükle: aktar")
         except (KeyError, ValueError, RuntimeError, GameplayServiceError) as error:
             renderer.text(f"Sandık görüntülenemedi: {error}", 52, 170, WARN)
 
