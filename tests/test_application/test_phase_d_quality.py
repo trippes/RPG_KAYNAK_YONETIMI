@@ -251,6 +251,8 @@ class TestPhaseDQuality(unittest.TestCase):
 
     def test_mine_landmark_collects_iron_ore(self):
         service, ids = populate_opening_content(GameApplication.create_default())
+        from application.content_pack import populate_gameplay_resources
+        populate_gameplay_resources(service)
         service.move_actor(ids.hero_id, ids.forest_id)
         service.advance_by(1)
         service.move_actor(ids.hero_id, "north_mine")
@@ -260,7 +262,7 @@ class TestPhaseDQuality(unittest.TestCase):
         local_screen.selected = (15, 15)
         self.assertTrue(local_screen._gather_at_selected_tree())
         service.advance_by(service.gathering_duration(ids.hero_id))
-        self.assertEqual(service.inventory(ids.inventory_id).stocks, (("iron_ore", 1, "item"),))
+        self.assertEqual(service.inventory("player").stocks, (("iron_ore", 1, "item"),))
 
     def test_dialogue_prompt_uses_selected_npc_name(self):
         from application.content_pack import populate_opening_content
@@ -1269,6 +1271,8 @@ class TestPhaseDQuality(unittest.TestCase):
             Rect = RectType
 
         service, _ = populate_opening_content(GameApplication.create_default())
+        from application.content_pack import populate_gameplay_resources
+        populate_gameplay_resources(service)
         screen = InventoryScreen(service)
         manager = WindowManager(Backend(), 960, 640)
         manager.register("inventory", screen, (100, 100, 500, 470))
