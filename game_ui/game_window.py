@@ -9,7 +9,6 @@ from .screens.inventory_screen import InventoryScreen
 from .screens.main_menu import MainMenu
 from .screens.map_screen import MapScreen
 from .screens.local_map_screen import LocalMapScreen
-from .screens.world_screen import WorldScreen
 from .screens.market_screen import MarketScreen
 from .screens.dialogue_screen import DialogueScreen
 from .screens.combat_screen import CombatScreen
@@ -93,7 +92,6 @@ class GameWindow:
         self.screens = {
             "menu": MainMenu(width=self.width, height=self.height),
             "opening": OpeningScreen(),
-            "world": WorldScreen(service),
             "map": MapScreen(service),
             "local_map": LocalMapScreen(service),
             "inventory": InventoryScreen(service),
@@ -157,6 +155,13 @@ class GameWindow:
             (24, 110, min(self.width - 48, 912), min(self.height - 110, 470)),
             content_origin=(24, 126),
             title="Pazar",
+        )
+        self.window_manager.register(
+            "map",
+            self.screens["map"],
+            (24, 110, min(self.width - 48, 912), min(self.height - 110, 470)),
+            content_origin=(24, 126),
+            title="Harita",
         )
 
         self.current = "menu"
@@ -315,6 +320,7 @@ class GameWindow:
         self.window_manager.windows["quest_log"].screen = self.screens["quest_log"]
         self.window_manager.windows["production"].screen = self.screens["production"]
         self.window_manager.windows["market"].screen = self.screens["market"]
+        self.window_manager.windows["map"].screen = self.screens["map"]
         for window_id in tuple(self.window_manager.open_ids):
             self.window_manager.close(window_id)
         self.pause_menu_open = False
@@ -435,16 +441,25 @@ class GameWindow:
             rect = self._pause_menu_rects()[index]
             self.renderer.button(rect, label, selected=index == self.pause_menu_selected)
 
+    def _current_location(self):
+        """Return the active actor's current location without a legacy world screen."""
+        actors = self.service.state().actors
+        if not actors:
+            return None
+        world_map = self.service.application.holder.current.movement.map_for(
+            actors[0].world_id
+        )
+        return world_map.get(actors[0].location_id) if world_map is not None else None
+
     def _nav_enabled(self):
         """Which navigation tabs may be used from the current location."""
-        enabled = {}
         try:
-            actors = self.service.state().actors
-            _, location = self.screens["world"]._current_location(actors)
-            enabled["market"] = location is not None and "market" in location.activities
+            location = self._current_location()
+            return {
+                "market": location is not None and "market" in location.activities
+            }
         except (KeyError, ValueError, RuntimeError, AttributeError):
-            enabled["market"] = True
-        return enabled
+            return {"market": True}
 
     def _handle_nav_click(self, state):
         """Switch screens when a tab is clicked; the click is then consumed."""

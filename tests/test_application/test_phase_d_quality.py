@@ -232,29 +232,31 @@ class TestPhaseDQuality(unittest.TestCase):
 
         self.assertIsNone(screen.handle(InputState(actions={"back", "world", "inventory", "character"})))
 
-    def test_map_screen_routes_to_world_and_supports_map_input(self):
+    def test_map_window_supports_map_input_without_screen_navigation(self):
         from application.content_pack import populate_opening_content
         service, _ = populate_opening_content(GameApplication.create_default())
         screen = MapScreen(service)
         screen.handle(InputState(actions={"down", "confirm"}))
         self.assertEqual(service.actor("hero").location_id, "village")
         self.assertIn("yalnızca konumları gösterir", screen.message)
-        self.assertEqual(screen.handle(InputState(actions={"back"})), "local_map")
+        self.assertIsNone(screen.handle(InputState(actions={"back"})))
 
-    def test_locations_expose_meaningful_context_and_gate_actions(self):
-        from application.content_pack import populate_opening_content
+    def test_market_navigation_uses_current_location_without_legacy_world_screen(self):
         service, _ = populate_opening_content(GameApplication.create_default())
-        screen = __import__("game_ui.screens.world_screen", fromlist=["WorldScreen"]).WorldScreen(service)
-        self.assertEqual(screen.handle(InputState(actions={"market"})), "market")
-        screen.handle(InputState(actions={"right"}))
-        self.assertIsNone(screen.handle(InputState(actions={"market"})))
-        self.assertIn("Pazar", screen.message)
+        window = object.__new__(GameWindow)
+        window.service = service
+        location = window._current_location()
+        self.assertIsNotNone(location)
+        self.assertEqual(
+            window._nav_enabled()["market"],
+            "market" in location.activities,
+        )
 
     def test_local_map_is_reachable_from_world_map(self):
         from application.content_pack import populate_opening_content
         service, _ = populate_opening_content(GameApplication.create_default())
         map_screen = MapScreen(service)
-        self.assertEqual(map_screen.handle(InputState(actions={"confirm"})), "local_map")
+        self.assertIsNone(map_screen.handle(InputState(actions={"confirm"})))
         local_screen = LocalMapScreen(service)
         self.assertIsNone(local_screen.handle(InputState(actions={"confirm"})))
 
@@ -567,6 +569,7 @@ class TestPhaseDQuality(unittest.TestCase):
                     "quest_log": Window(),
                     "production": Window(),
                     "market": Window(),
+                    "map": Window(),
                 }
 
             def close(self, window_id):
@@ -604,6 +607,10 @@ class TestPhaseDQuality(unittest.TestCase):
         self.assertIs(
             window.window_manager.windows["market"].screen,
             window.screens["market"],
+        )
+        self.assertIs(
+            window.window_manager.windows["map"].screen,
+            window.screens["map"],
         )
 
     def test_game_window_routes_real_backend_d_key_to_dialogue_history(self):

@@ -35,7 +35,7 @@ class MapScreen:
             mx, my = state.mouse_pos
             for index, location in enumerate(locations):
                 raw = location.position or (150 + index * 180, 220)
-                x, y = 40 + raw[0], 112 + raw[1]
+                x, y = 40 + raw[0], 118 + raw[1]
                 if (mx - x) ** 2 + (my - y) ** 2 <= 28 ** 2:
                     self.selected = index
                     break
@@ -48,34 +48,30 @@ class MapScreen:
             if state.pressed("confirm") and actor is not None:
                 destination = locations[self.selected]
                 if destination.location_id == actor.location_id:
-                    return "local_map"
-                self.message = (
+                    self.message = "Zaten bu konumdasın."
+                else:
+                    self.message = (
                     "Dünya haritası yalnızca konumları gösterir. "
                     "Konum değiştirmek için Yerel Harita'yı kullanın."
                 )
-
-        if state.pressed("back") or state.pressed("world"):
-            return "local_map"
         return None
 
     def render(self, renderer):
-        snapshot = self.service.state()
-        renderer.frame("Harita", snapshot.simulation_tick)
-        renderer.hud(self.service)
-        renderer.panel(renderer.pg.Rect(24, 110, 912, 410), (22, 30, 43), (62, 78, 101))
+        # WindowManager owns the title bar, frame, and close control.
+        map_rect = renderer.pg.Rect(24, 136, 912, 338)
+        renderer.panel(map_rect, (22, 30, 43), (62, 78, 101))
         actor, world_map, locations = self._context()
         if not locations or world_map is None:
             renderer.text("Bu dünyada harita bulunamadı.", 52, 190)
         else:
             current_id = actor.location_id if actor else None
             selected_id = locations[self.selected].location_id if locations else None
-            renderer.world_map(world_map, current_id, selected_id, renderer.pg.Rect(24, 110, 912, 410))
-        renderer.panel(renderer.pg.Rect(24, 530, 912, 32), (22, 30, 43), (62, 78, 101))
+            renderer.world_map(world_map, current_id, selected_id, map_rect)
+        renderer.panel(renderer.pg.Rect(24, 484, 912, 34), (22, 30, 43), (62, 78, 101))
         if locations:
             selected = locations[self.selected]
             neighbors = world_map.neighbors(selected.location_id) if world_map is not None else ()
             detail = f"{selected.name} — {selected.location_type} — Komşular: "
             detail += ", ".join(item.name for item in neighbors) if neighbors else "yok"
-            renderer.text(renderer.fit_text(detail, 880), 40, 536, TEXT_SOFT)
-        renderer.text(self.message, 28, 500, (220, 190, 120))
-        renderer.footer("↑/↓ Hedef seç   Enter Seyahat   Esc Yerel Harita")
+            renderer.text(renderer.fit_text(detail, 880), 40, 492, TEXT_SOFT)
+        renderer.text(self.message, 28, 526, (220, 190, 120))
