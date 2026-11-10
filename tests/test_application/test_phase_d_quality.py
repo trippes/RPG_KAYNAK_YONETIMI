@@ -6,6 +6,7 @@ from types import SimpleNamespace
 
 from application import GameApplication, GameplayService, migrate_save_data
 from application.content_pack import populate_opening_content
+from resources import Inventory
 from combat import calculate_damage, order_initiative, tick_statuses
 from game_ui.game_window import GameWindow
 from game_ui.input import InputMapper, InputState
@@ -1241,7 +1242,13 @@ class TestPhaseDQuality(unittest.TestCase):
         class Backend:
             Rect = RectType
 
-        service, _ = populate_opening_content(GameApplication.create_default())
+        application = GameApplication.create_default()
+        service, _ = populate_opening_content(application)
+        object.__setattr__(
+            application.holder.current,
+            "inventories",
+            {"player": Inventory()},
+        )
         screen = InventoryScreen(service)
         manager = WindowManager(Backend(), 960, 640)
         manager.register("inventory", screen, (100, 100, 500, 470))
