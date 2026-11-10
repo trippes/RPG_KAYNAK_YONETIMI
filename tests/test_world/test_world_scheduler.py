@@ -1,6 +1,7 @@
 import unittest
 
 from core.world import World
+from core.simulation.scheduler import CanonicalScheduler
 
 
 class TestWorldScheduler(unittest.TestCase):
@@ -14,6 +15,7 @@ class TestWorldScheduler(unittest.TestCase):
         self.assertIsNotNone(
             world.scheduler
         )
+        self.assertIsInstance(world.scheduler.canonical_scheduler, CanonicalScheduler)
 
     def test_baslangicta_zamanlanmis_olay_yoktur(self):
         world = World("Ana Dünya")
@@ -246,6 +248,16 @@ class TestWorldScheduler(unittest.TestCase):
             calisti,
             [True]
         )
+
+    def test_reset_time_resets_canonical_callback_scheduler(self):
+        world = World("Ana Dünya")
+        received = []
+        world.advance(20)
+        world.schedule_event(2, lambda: received.append("stale"))
+        world.reset_time()
+        world.schedule_event(2, lambda: received.append("fresh"))
+        world.advance(2)
+        self.assertEqual(received, ["fresh"])
 
     def test_get_info_scheduler_sayisini_icerir(self):
         world = World("Ana Dünya")
