@@ -16,8 +16,9 @@ from .json_codec import JsonPersistenceCodec
 
 PathLike = Union[str, os.PathLike[str]]
 
+from core.errors import RPGError
 
-class PersistenceFileError(OSError):
+class PersistenceFileError(OSError, RPGError):
     """Base error for filesystem access failures."""
 
 
