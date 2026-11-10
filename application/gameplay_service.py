@@ -29,8 +29,9 @@ from quests import Dialogue, Quest
 from .social_runtime import SocialRuntimeError
 from .combat_runtime import Combatant
 
+from core.errors import RPGError
 
-class GameplayServiceError(RuntimeError):
+class GameplayServiceError(RuntimeError, RPGError):
     """Controlled failure at the playable application boundary."""
 
 
