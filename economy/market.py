@@ -1,9 +1,55 @@
-"""Market offers and explicit market state."""
+"""Location-scoped market offers and deterministic stock rotation."""
 
 from dataclasses import dataclass
-from resources import ResourceType
+
+from resources import Inventory, Quantity, ResourceType, ResourceUnit
 from .currency import Money
-from .prices import PriceBook, Price
+from .prices import PriceBook
+
+
+@dataclass(frozen=True)
+class MarketCatalogEntry:
+    resource_type: ResourceType
+    base_price: Money
+    min_quantity: int
+    max_quantity: int
+
+    def __post_init__(self):
+        if not isinstance(self.resource_type, ResourceType):
+            raise TypeError("resource_type must be ResourceType.")
+        if not isinstance(self.base_price, Money):
+            raise TypeError("base_price must be Money.")
+        if self.min_quantity <= 0 or self.max_quantity < self.min_quantity:
+            raise ValueError("Market catalog quantities must be positive and ordered.")
+
+
+@dataclass
+class MarketProfile:
+    market_id: str
+    location_id: str
+    npc_id: str
+    merchant_id: str
+    inventory_id: str
+    restock_interval: int
+    catalog: tuple[MarketCatalogEntry, ...]
+    visible_products: int = 4
+    last_restock_cycle: int = -1
+
+    def __post_init__(self):
+        for value, name in ((self.market_id, "market_id"), (self.location_id, "location_id"),
+                            (self.npc_id, "npc_id"), (self.merchant_id, "merchant_id"),
+                            (self.inventory_id, "inventory_id")):
+            if not isinstance(value, str) or not value.strip():
+                raise ValueError(f"{name} must be a non-empty string.")
+        if isinstance(self.restock_interval, bool) or not isinstance(self.restock_interval, int) or self.restock_interval <= 0:
+            raise ValueError("restock_interval must be a positive integer.")
+        if isinstance(self.visible_products, bool) or not isinstance(self.visible_products, int) or self.visible_products <= 0:
+            raise ValueError("visible_products must be a positive integer.")
+        self.catalog = tuple(self.catalog)
+        if not self.catalog or any(not isinstance(item, MarketCatalogEntry) for item in self.catalog):
+            raise ValueError("A market profile requires valid catalog entries.")
+        if len({item.resource_type for item in self.catalog}) != len(self.catalog):
+            raise ValueError("Market catalog resource types must be unique.")
 
 
 @dataclass(frozen=True)
@@ -15,6 +61,7 @@ class MarketOffer:
     unit_price: Money
     inventory_id: str | None = None
     expires_at: int | None = None
+    market_id: str = "default"
 
     def __post_init__(self):
         if not self.offer_id or not self.seller_id:
@@ -29,12 +76,34 @@ class MarketOffer:
             raise ValueError("inventory_id must be a non-empty string when provided.")
         if self.expires_at is not None and (isinstance(self.expires_at, bool) or not isinstance(self.expires_at, int) or self.expires_at < 0):
             raise ValueError("expires_at must be a non-negative integer when provided.")
+        if not isinstance(self.market_id, str) or not self.market_id.strip():
+            raise ValueError("market_id must be a non-empty string.")
 
 
 class Market:
-    def __init__(self, prices: PriceBook | None = None):
+    def __init__(self, prices: PriceBook | None = None, profiles=()):
         self.prices = prices if prices is not None else PriceBook()
         self._offers: dict[str, MarketOffer] = {}
+        self._profiles: dict[str, MarketProfile] = {}
+        for profile in profiles:
+            self.register_profile(profile)
+
+    def register_profile(self, profile: MarketProfile) -> MarketProfile:
+        if not isinstance(profile, MarketProfile):
+            raise TypeError("profile must be MarketProfile.")
+        if profile.market_id in self._profiles:
+            raise ValueError(f"Duplicate market profile: {profile.market_id}")
+        self._profiles[profile.market_id] = profile
+        return profile
+
+    def profile(self, market_id: str) -> MarketProfile | None:
+        return self._profiles.get(market_id)
+
+    def profiles(self) -> tuple[MarketProfile, ...]:
+        return tuple(self._profiles[key] for key in sorted(self._profiles))
+
+    def profile_for_npc(self, npc_id: str) -> MarketProfile | None:
+        return next((profile for profile in self._profiles.values() if profile.npc_id == npc_id), None)
 
     def publish(self, offer: MarketOffer) -> MarketOffer:
         if offer.offer_id in self._offers:
@@ -52,17 +121,55 @@ class Market:
             raise KeyError(f"Unknown market offer: {offer_id}") from error
 
     def reserved_quantity(self, inventory_id: str, resource_type: ResourceType, excluding: str | None = None) -> int:
-        return sum(
-            offer.quantity for offer in self._offers.values()
-            if offer.inventory_id == inventory_id
-            and offer.resource_type == resource_type
-            and offer.offer_id != excluding
-        )
+        return sum(offer.quantity for offer in self._offers.values()
+                   if offer.inventory_id == inventory_id and offer.resource_type == resource_type
+                   and offer.offer_id != excluding)
 
     def expire(self, current_tick: int) -> tuple[MarketOffer, ...]:
-        expired = tuple(offer for offer in self._offers.values() if offer.expires_at is not None and offer.expires_at <= current_tick)
-        for offer in expired: self._offers.pop(offer.offer_id, None)
+        expired = tuple(offer for offer in self._offers.values()
+                        if offer.expires_at is not None and offer.expires_at <= current_tick)
+        for offer in expired:
+            self._offers.pop(offer.offer_id, None)
         return tuple(sorted(expired, key=lambda offer: offer.offer_id))
 
-    def offers(self) -> tuple[MarketOffer, ...]:
-        return tuple(sorted(self._offers.values(), key=lambda offer: offer.offer_id))
+    def restock(self, market_id: str, inventory: Inventory, current_tick: int) -> tuple[MarketOffer, ...]:
+        profile = self._profiles.get(market_id)
+        if profile is None:
+            raise KeyError(f"Unknown market profile: {market_id}")
+        if not isinstance(inventory, Inventory):
+            raise TypeError("inventory must be Inventory.")
+        if isinstance(current_tick, bool) or not isinstance(current_tick, int) or current_tick < 0:
+            raise ValueError("current_tick must be a non-negative integer.")
+        cycle = current_tick // profile.restock_interval
+        if cycle <= profile.last_restock_cycle:
+            return self.offers(market_id)
+
+        for offer in tuple(self._offers.values()):
+            if offer.market_id == market_id:
+                self._offers.pop(offer.offer_id, None)
+        for resource_type, quantity in inventory.snapshot():
+            inventory.remove(resource_type, quantity)
+
+        catalog = profile.catalog
+        start = cycle % len(catalog)
+        rotated = catalog[start:] + catalog[:start]
+        expiry = (cycle + 1) * profile.restock_interval
+        for index, entry in enumerate(rotated[:profile.visible_products]):
+            span = entry.max_quantity - entry.min_quantity + 1
+            quantity = entry.min_quantity + ((cycle + index * 3) % span)
+            variation = ((cycle + index) % 5 - 2) * 5
+            price_amount = max(1, entry.base_price.amount * (100 + variation) // 100)
+            inventory.add(entry.resource_type, Quantity(quantity, ResourceUnit.ITEM))
+            self.publish(MarketOffer(
+                f"{market_id}:{cycle}:{entry.resource_type.value}", profile.merchant_id,
+                entry.resource_type, quantity, Money(price_amount, entry.base_price.currency),
+                profile.inventory_id, expiry, market_id,
+            ))
+        profile.last_restock_cycle = cycle
+        return self.offers(market_id)
+
+    def offers(self, market_id: str | None = None) -> tuple[MarketOffer, ...]:
+        values = self._offers.values()
+        if market_id is not None:
+            values = (offer for offer in values if offer.market_id == market_id)
+        return tuple(sorted(values, key=lambda offer: offer.offer_id))
