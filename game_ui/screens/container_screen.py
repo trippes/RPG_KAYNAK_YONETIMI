@@ -170,12 +170,27 @@ class ContainerScreen:
                             f"Anahtar: {lock.required_key_id} — Enter: anahtarla aç",
                             52, 252, TEXT_SOFT,
                         )
+                    self._action_rects = {}
                     if lock.lockpick_profile_id:
-                        renderer.text("Maymuncuk profili mevcut.", 52, 290, TEXT_SOFT)
+                        renderer.text(
+                            f"Maymuncuk: Beceri {lock.lockpick_minimum_skill}+  |  DC {lock.lockpick_difficulty_class}",
+                            52, 292, TEXT_SOFT,
+                        )
+                        pick_rect = renderer.pg.Rect(52, 334, 350, 42)
+                        renderer.panel(pick_rect, (54, 65, 82), (145, 118, 70))
+                        renderer.text("T — Maymuncuk denemesi (d20)", 68, 344, GOLD)
+                        self._action_rects["lockpick"] = pick_rect
                     if lock.force_profile_id:
-                        renderer.text("Zorlama profili mevcut.", 52, 322, TEXT_SOFT)
+                        force_rect = renderer.pg.Rect(430, 334, 350, 42)
+                        renderer.text(
+                            f"Zorlama: Güç {lock.force_minimum_strength}+  |  DC {lock.force_difficulty_class}",
+                            52, 390, TEXT_SOFT,
+                        )
+                        renderer.panel(force_rect, (74, 55, 48), (145, 118, 70))
+                        renderer.text("F — Kilidi zorla (d20)", 446, 344, GOLD)
+                        self._action_rects["force"] = force_rect
                 renderer.text(self.message, 52, 490, WARN)
-                renderer.footer("Enter: anahtarı kullan   X: pencereyi kapat")
+                renderer.footer("Enter: anahtar   T: maymuncuk   F: zorla   X: pencereyi kapat")
                 return
 
             player_items = self._player_items(inventory_id)
