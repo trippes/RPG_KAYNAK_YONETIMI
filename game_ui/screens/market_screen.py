@@ -29,7 +29,7 @@ class MarketScreen:
             self.message = f"Satın alma başarısız: {error}"
 
     def handle(self, state):
-        offers = self.service.market_offers(self.market_id)
+        offers = (\n            self.service.market_offers(self.market_id)\n            if self.market_id is not None else self.service.market_offers()\n        )
         if offers:
             self.selected %= len(offers)
 
