@@ -144,6 +144,13 @@ class GameWindow:
             content_origin=(24, 126),
             title="Görev Günlüğü",
         )
+        self.window_manager.register(
+            "production",
+            self.screens["production"],
+            (24, 110, min(self.width - 48, 912), min(self.height - 110, 470)),
+            content_origin=(24, 126),
+            title="Üretim",
+        )
 
         self.current = "menu"
         self.gameplay_active = False
@@ -299,6 +306,7 @@ class GameWindow:
         self.window_manager.windows["inventory"].screen = self.screens["inventory"]
         self.window_manager.windows["character"].screen = self.screens["character"]
         self.window_manager.windows["quest_log"].screen = self.screens["quest_log"]
+        self.window_manager.windows["production"].screen = self.screens["production"]
         for window_id in tuple(self.window_manager.open_ids):
             self.window_manager.close(window_id)
         self.pause_menu_open = False
