@@ -133,6 +133,7 @@ class GameApplication:
             items=item_catalog,
             resource_definitions=container_resources,
             containers=containers,
+            locks=locks,
             quest_log=document.quests.restore({}) if document.quests is not None else QuestLog(),
             economy=(
                 Economy(*document.economy.restore())
