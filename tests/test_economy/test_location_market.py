@@ -1,4 +1,6 @@
+import tempfile
 import unittest
+from pathlib import Path
 from types import MappingProxyType
 
 from application import GameApplication, GameplayService
@@ -90,6 +92,22 @@ class TestLocationMarket(unittest.TestCase):
         self.assertEqual(trade.quantity.value, 1)
         self.assertEqual(service.market_offers("village")[0].market_id, "village")
         self.assertGreater(service.balance("merchant_village", "gold").amount, 0)
+
+        with tempfile.TemporaryDirectory() as directory:
+            save_path = Path(directory) / "market-save.json"
+            service.save(save_path)
+            service.load(save_path)
+
+        restored = application.holder.current
+        merchant = restored.economy.merchants["merchant_village"]
+        self.assertIs(
+            merchant.inventory,
+            restored.inventories["inventory_village"],
+        )
+        self.assertEqual(
+            restored.economy.market.profile("village").last_restock_cycle,
+            0,
+        )
 
 
 if __name__ == "__main__":
