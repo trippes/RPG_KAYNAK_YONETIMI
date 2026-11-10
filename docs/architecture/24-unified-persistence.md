@@ -33,6 +33,8 @@ then validates the staged document before replacing the target with
 backup through its own temporary file and atomic replacement. A corrupt primary
 never overwrites an existing backup. On load, an invalid or missing primary
 falls back to a valid `.bak` file and attempts to repair the primary atomically.
+  Unsupported future schema versions are surfaced directly and never replaced
+  by an older backup.
 The adapter does not provide a lock or concurrent-writer ordering guarantee.
 
 ## Load and candidate publication
