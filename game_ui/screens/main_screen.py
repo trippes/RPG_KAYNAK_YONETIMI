@@ -24,7 +24,6 @@ class MainScreen:
             ("inventory", "Çanta"),
             ("production", "Üretim"),
             ("character", "Karakter"),
-            ("market", "Han / Pazar"),
             ("map", "Dünya Haritası"),
             ("close", "Oyuna Dön"),
             ("menu", "Ana Menüye Dön"),
@@ -364,11 +363,6 @@ class MainScreen:
                     if rect.collidepoint(state.mouse_pos):
                         self.menu_selected = index
                         target, _label = self.menu_options[index]
-                        if target == "market" and "market" not in getattr(
-                            self._location(), "activities", (),
-                        ):
-                            self.message = "Han ve pazar yalnızca köyde kullanılabilir."
-                            return None
                         if target == "close" or target == "main":
                             self.menu_open = False
                             return None
@@ -383,11 +377,6 @@ class MainScreen:
                 self.menu_selected = (self.menu_selected + 1) % len(self.menu_options)
             if state.pressed("confirm"):
                 target, _label = self.menu_options[self.menu_selected]
-                if target == "market" and "market" not in getattr(
-                    self._location(), "activities", (),
-                ):
-                    self.message = "Han ve pazar yalnızca köyde kullanılabilir."
-                    return None
                 if target == "close" or target == "main":
                     self.menu_open = False
                     return None

@@ -110,7 +110,6 @@ NAV_TABS = (
     ("production", "Üretim"),
     ("character", "Karakter"),
     ("quest_log", "Görevler"),
-    ("market", "Pazar"),
     ("map", "Harita"),
 )
 # Screens that highlight another screen's tab.

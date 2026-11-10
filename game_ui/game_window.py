@@ -207,6 +207,7 @@ class GameWindow:
         self.renderer.surface = self.screen
         self.renderer.width = self.width
         self.renderer.height = self.height
+        self.window_manager.resize(self.width, self.height)
 
     def _select_save_slot(self, index, path, exists):
         self.selected_slot = index
@@ -470,7 +471,7 @@ class GameWindow:
             return
 
         target = None
-        for action in ("map", "market"):
+        for action in ("map",):
             if action in state.actions:
                 state.actions.discard(action)
                 target = action

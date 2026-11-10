@@ -34,6 +34,17 @@ class WindowManager:
         self._drag_origin = None
         self.on_result = on_result
 
+    def resize(self, width, height):
+        """Update the viewport and keep every managed window within it."""
+        self.width = max(1, int(width))
+        self.height = max(self.TITLE_HEIGHT, int(height))
+        for window in self.windows.values():
+            window.bounds.width = min(window.bounds.width, self.width)
+            window.bounds.height = min(window.bounds.height, self.height)
+            window.bounds.topleft = self._clamp(
+                window, window.bounds.x, window.bounds.y
+            )
+
     @property
     def open_ids(self):
         return tuple(
