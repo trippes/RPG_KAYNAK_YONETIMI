@@ -105,7 +105,7 @@ class ContainerManager:
             raise ContainerManagerError("Nested container does not satisfy allowed tags.")
         self._parents[child_id] = parent_id
         try:
-            self._validate_nesting(parent_id)
+            self._validate_nesting_chain(parent_id)
             self._validate_capacity_chain(parent_id)
         except Exception:
             del self._parents[child_id]
@@ -198,6 +198,12 @@ class ContainerManager:
         while current is not None:
             self._validate_capacity(current)
             current = self._parents.get(current)
+
+    def _validate_nesting_chain(self, container_id):
+        current = container_id
+        while self._parents.get(current) is not None:
+            current = self._parents[current]
+        self._validate_nesting(current)
 
     def _validate_nesting(self, container_id):
         definition = self._definitions[self._instances[container_id].definition_id]

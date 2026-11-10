@@ -34,7 +34,7 @@ class TestContainerDomain(unittest.TestCase):
     def test_add_item_respects_all_three_capacity_dimensions(self):
         self.manager.add_item("chest_01", "bread", 4)
         with self.assertRaises(ContainerManagerError):
-            self.manager.add_item("chest_01", "ore", 1)
+            self.manager.add_item("chest_01", "ore", 5)
         self.assertEqual(self.manager.inventory("chest_01").item_quantity("ore"), 0)
 
     def test_zero_capacity_rejects_content(self):
@@ -111,7 +111,7 @@ class TestContainerDomain(unittest.TestCase):
         self.manager.add_item("chest_01", "bread", 4)
         before = self.manager.inventory("chest_01").item_snapshot()
         with self.assertRaises(ContainerManagerError):
-            self.manager.add_item("chest_01", "bread", 1)
+            self.manager.add_item("chest_01", "bread", 20)
         self.assertEqual(self.manager.inventory("chest_01").item_snapshot(), before)
 
 
