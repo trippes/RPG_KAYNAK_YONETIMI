@@ -1,6 +1,6 @@
 """Interactive location graph view for the playable world."""
 
-from ..renderer import ACTIVITY_LABELS, GOLD, MUTED, TEXT_SOFT
+from ..renderer import TEXT_SOFT
 
 
 class MapScreen:

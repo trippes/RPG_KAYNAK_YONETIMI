@@ -21,9 +21,7 @@ from .window_manager import WindowManager
 from application.save_storage import SaveStorage, SaveStorageError
 
 # Screens that show the navigation tab bar / resource bar.
-NAV_SCREENS = frozenset(
-    {"world", "inventory", "production", "character", "market", "map", "local_map"}
-)
+NAV_SCREENS = frozenset({"local_map"})
 NOTICE_FRAMES = 240  # ~4 seconds at 60 fps
 PAUSE_MENU_OPTIONS = (
     ("resume", "Oyuna Dön"),
@@ -303,7 +301,6 @@ class GameWindow:
         self.service = service
         self.screens.update({
             "opening": OpeningScreen(),
-            "world": WorldScreen(service),
             "map": MapScreen(service),
             "local_map": LocalMapScreen(service),
             "inventory": InventoryScreen(service),
