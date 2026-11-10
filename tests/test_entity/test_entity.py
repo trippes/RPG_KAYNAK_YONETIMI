@@ -123,18 +123,18 @@ class TestEntity(unittest.TestCase):
             entity.is_active()
         )
 
-def test_entity_state_degistirme(self):
-    entity = Entity(
-        entity_type="karakter",
-        name="Muhafız"
-    )
+    def test_entity_state_degistirme(self):
+        entity = Entity(
+            entity_type="karakter",
+            name="Muhafız"
+        )
 
-    entity.state.set_status("pasif")
+        entity.state.set_status("pasif")
 
-    self.assertEqual(
-        entity.state.get_status(),
-        "pasif"
-    )
+        self.assertEqual(
+            entity.state.get_status(),
+            "pasif"
+        )
 
     def test_entity_bilgileri(self):
         entity = Entity(
