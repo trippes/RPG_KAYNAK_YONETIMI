@@ -92,3 +92,8 @@ class LegacyCallbackSchedulerAdapter:
         self._scheduler.clear()
         self._callbacks.clear()
         self._work_ids.clear()
+
+    def reset(self, start_tick: int = 0) -> None:
+        self._scheduler = CanonicalScheduler(start_tick)
+        self._callbacks.clear()
+        self._work_ids.clear()
