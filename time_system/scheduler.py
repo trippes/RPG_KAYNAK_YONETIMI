@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Callable, Optional
+from typing import Callable
 
 
 @dataclass
@@ -19,8 +19,9 @@ class Scheduler:
     """
     Oyun zamanına bağlı olay planlayıcısı.
 
-    GameClock zamanı ilerlettiğinde Scheduler,
-    hedef zamana ulaşılmış olayları tetikler.
+    Bir process_until çağrısı başladığında hazır olan olaylar FIFO
+    sırasıyla işlenir. Callback içinden eklenen olaylar bir sonraki
+    process_until çağrısında çalışır.
     """
 
     def __init__(self):
@@ -33,7 +34,6 @@ class Scheduler:
         callback: Callable,
         description: str = "",
     ) -> int:
-
         if trigger_tick < 0:
             raise ValueError("Olay zamanı negatif olamaz.")
 
@@ -49,50 +49,51 @@ class Scheduler:
 
         self._events.append(event)
         self._events.sort(key=lambda item: item.trigger_tick)
-
         self._next_id += 1
-
         return event.event_id
 
     def cancel(self, event_id: int) -> bool:
         for event in self._events:
             if event.event_id == event_id:
+                if event.cancelled:
+                    return False
                 event.cancelled = True
                 return True
-
         return False
 
     def process_until(self, current_tick: int):
         """
-        current_tick'e kadar gerçekleşmesi gereken tüm olayları çalıştırır.
+        Başlangıçta hazır olan olayları FIFO sırasıyla çalıştırır.
+
+        Her olay callback çağrısından önce kuyruktan çıkarılır. Böylece
+        callback hata verirse daha önce çalışmış olaylar tekrar çalışmaz;
+        henüz çalışmamış olaylar sonraki çağrıya kalır. Callback içinden
+        eklenen olaylar da mevcut çağrının hazır kümesine dahil edilmez.
         """
-
-        ready = []
-
-        for event in self._events:
-            if not event.cancelled and event.trigger_tick <= current_tick:
-                ready.append(event)
-
-        for event in ready:
-            event.callback()
-
-        self._events = [
+        ready = [
             event
             for event in self._events
-            if event not in ready and not event.cancelled
+            if not event.cancelled and event.trigger_tick <= current_tick
         ]
+        processed = []
 
-        return ready
+        for event in ready:
+            if event.cancelled:
+                self._events.remove(event)
+                continue
+
+            self._events.remove(event)
+            event.callback()
+            processed.append(event)
+
+        self._events = [
+            event for event in self._events if not event.cancelled
+        ]
+        return processed
 
     @property
     def pending_count(self):
-        return len(
-            [
-                event
-                for event in self._events
-                if not event.cancelled
-            ]
-        )
+        return sum(not event.cancelled for event in self._events)
 
     def clear(self):
         self._events.clear()

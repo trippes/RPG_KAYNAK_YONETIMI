@@ -264,11 +264,15 @@ sistem kaldırma onayı alamaz.
   izleniyor. Testler matrix kaydını, statik import görünürlüğünü ve runtime
   sayaçlarını kapsıyor. Scanner dinamik/reflection ve harici tüketicileri
   kanıtlayamaz; CI çıktısının bu branch head için ayrıca doğrulanması gerekir.
-- **B — Davranış sözleşmesi:** EventManager FIFO kuyruk ve handler dispatch
-  davranışı için regresyon testi eklendi. Mevcut Tick, Position, canonical
-  dispatcher ve scheduler testleri korunuyor. Tüm kapsamlı Aşama B matrisi
-  (özellikle legacy scheduler cancel/re-entrancy ve action lifecycle
-  eşleştirmesi) henüz tam kanıtlanmış değildir.
+- **B — Davranış sözleşmesi:** EventManager FIFO kuyruk/handler dispatch
+  regresyonuna ek olarak legacy Scheduler için FIFO, callback içinden iptal,
+  callback ekleme, exception sonrası tekrar çalıştırmama ve iptal idempotency
+  testleri eklendi. Scheduler, callback öncesi olayı kuyruktan çıkarır; hata
+  halinde henüz çalışmamış hazır olayları sonraki çağrıya bırakır. Canonical
+  ActionProcessor ile 1.x Action görünümü arasındaki ID, start/completion ve
+  failure eşleştirmesi testlerle sabitlendi. Tick/Position mevcut testleri
+  korunuyor. Bu kayıt testlerin CI'da çalıştığı anlamına gelmez; sonuç commit
+  SHA'sına bağlı Actions doğrulamasıyla ayrıca teyit edilmelidir.
 - **C — Tüketici göçü:** Bilinçli olarak tamamlanmadı. Game ve
   GameApplication hâlâ EventManager facade'ını kullanıyor; callback Scheduler
   LegacyWorldRuntime/WorldRuntimeBoundary zincirinde çalışıyor. Bunları tek
@@ -286,8 +290,11 @@ GitHub Actions sonucu commit status üzerinden ayrıca doğrulanmalıdır.
 
 ## 10. Şimdiki karar
 
-Bu değişiklik bir envanter ve geçiş planıdır. Hiçbir legacy sistem silinmez,
-davranışı değiştirilmez veya topluca deprecated ilan edilmez. Özellikle
-callback Scheduler, EventManager/EventBus/EventQueue ve mutable Entity
-Position çalışan compatibility davranışlarıdır; yalnızca yaşları nedeniyle
-kaldırılmaları mimari açıdan güvenli değildir.
+Bu değişiklik bir envanter, davranış sözleşmesi ve geçiş planıdır. Callback
+Scheduler'ın hata/iptal/yeniden giriş davranışı açıkça tanımlanıp regresyon
+testleriyle korunmuştur; EventManager/EventBus/EventQueue ve mutable Entity
+Position ise mevcut compatibility davranışlarıyla tutulur. Game ve
+GameApplication EventManager tüketicileri ile LegacyWorldRuntime callback
+zinciri bu commit'te taşınmamıştır: Aşama C, davranış sözleşmeleri CI'da
+geçtikten sonra ayrı ve küçük değişikliklerle yürütülmelidir. Hiçbir legacy
+API topluca deprecated ilan edilmez veya kaldırılmaz.
