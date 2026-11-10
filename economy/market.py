@@ -1,10 +1,13 @@
 """Location-scoped market offers and deterministic stock rotation."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from resources import Inventory, Quantity, ResourceType, ResourceUnit
 from .currency import Money
 from .prices import PriceBook
+
+
+TICKS_PER_GAME_DAY = 86_400
 
 
 @dataclass(frozen=True)
@@ -34,6 +37,7 @@ class MarketProfile:
     catalog: tuple[MarketCatalogEntry, ...]
     visible_products: int = 4
     last_restock_cycle: int = -1
+    demand: dict[str, int] = field(default_factory=dict)
 
     def __post_init__(self):
         for value, name in ((self.market_id, "market_id"), (self.location_id, "location_id"),
@@ -50,6 +54,12 @@ class MarketProfile:
             raise ValueError("A market profile requires valid catalog entries.")
         if len({item.resource_type for item in self.catalog}) != len(self.catalog):
             raise ValueError("Market catalog resource types must be unique.")
+        if not isinstance(self.demand, dict) or any(
+            not isinstance(key, str) or not key.strip()
+            or isinstance(value, bool) or not isinstance(value, int) or value < 0
+            for key, value in self.demand.items()
+        ):
+            raise ValueError("Market demand must map resource IDs to non-negative integers.")
 
 
 @dataclass(frozen=True)
@@ -140,7 +150,8 @@ class Market:
             raise TypeError("inventory must be Inventory.")
         if isinstance(current_tick, bool) or not isinstance(current_tick, int) or current_tick < 0:
             raise ValueError("current_tick must be a non-negative integer.")
-        cycle = current_tick // profile.restock_interval
+        cycle_length = profile.restock_interval * TICKS_PER_GAME_DAY
+        cycle = current_tick // cycle_length
         if cycle <= profile.last_restock_cycle:
             return self.offers(market_id)
 
@@ -153,12 +164,18 @@ class Market:
         catalog = profile.catalog
         start = cycle % len(catalog)
         rotated = catalog[start:] + catalog[:start]
-        expiry = (cycle + 1) * profile.restock_interval
+        expiry = (cycle + 1) * cycle_length
         for index, entry in enumerate(rotated[:profile.visible_products]):
             span = entry.max_quantity - entry.min_quantity + 1
             quantity = entry.min_quantity + ((cycle + index * 3) % span)
             variation = ((cycle + index) % 5 - 2) * 5
-            price_amount = max(1, entry.base_price.amount * (100 + variation) // 100)
+            demand_pressure = min(20, profile.demand.get(entry.resource_type.value, 0) * 5)
+            supply_pressure = (
+                ((entry.max_quantity - quantity) * 10 // (span - 1)) - 5
+                if span > 1 else 0
+            )
+            price_adjustment = max(-20, min(30, variation + demand_pressure + supply_pressure))
+            price_amount = max(1, entry.base_price.amount * (100 + price_adjustment) // 100)
             inventory.add(entry.resource_type, Quantity(quantity, ResourceUnit.ITEM))
             self.publish(MarketOffer(
                 f"{market_id}:{cycle}:{entry.resource_type.value}", profile.merchant_id,
@@ -166,7 +183,23 @@ class Market:
                 profile.inventory_id, expiry, market_id,
             ))
         profile.last_restock_cycle = cycle
+        profile.demand = {
+            resource_id: amount - 1
+            for resource_id, amount in profile.demand.items()
+            if amount > 1
+        }
         return self.offers(market_id)
+
+    def record_purchase(self, market_id: str, resource_type: ResourceType, quantity: int) -> None:
+        profile = self._profiles.get(market_id)
+        if profile is None:
+            raise KeyError(f"Unknown market profile: {market_id}")
+        if not isinstance(resource_type, ResourceType):
+            raise TypeError("resource_type must be ResourceType.")
+        if isinstance(quantity, bool) or not isinstance(quantity, int) or quantity <= 0:
+            raise ValueError("purchase quantity must be a positive integer.")
+        key = resource_type.value
+        profile.demand[key] = min(100, profile.demand.get(key, 0) + quantity)
 
     def offers(self, market_id: str | None = None) -> tuple[MarketOffer, ...]:
         values = self._offers.values()
