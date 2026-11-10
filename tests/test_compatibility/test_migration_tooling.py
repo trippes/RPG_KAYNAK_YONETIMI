@@ -16,6 +16,7 @@ from core.compatibility import (
 )
 from core.event_bus import EventBus
 from core.event_manager import EventManager
+from core.event_handler import EventHandler
 from core.events import EventQueue
 from core.game import Game
 
@@ -60,10 +61,24 @@ class TestMigrationTooling(unittest.TestCase):
         self.assertEqual(counts["core.event_bus.EventBus"], 2)
         self.assertEqual(counts["core.event_manager.EventManager"], 1)
 
+    def test_event_manager_preserves_fifo_and_handler_dispatch_contract(self):
+        manager = EventManager()
+        received = []
+        manager.event_bus.subscribe(EventHandler("first", received.append))
+        manager.event_bus.subscribe(EventHandler("second", received.append))
+
+        first = manager.ekle("first", {"sequence": 1})
+        second = manager.ekle("second", {"sequence": 2})
+
+        self.assertEqual(manager.islet(), (2, 2))
+        self.assertEqual(received, [first, second])
+        self.assertEqual(manager.bekleyen_sayi(), 0)
+
     def test_static_scanner_is_ast_based_and_ignores_non_source_areas(self):
         root = Path(__file__).parents[2]
         usages = scan_static_usage(root)
         self.assertTrue(any(item.legacy_name == "core.events.EventQueue" for item in usages))
+        self.assertTrue(any(item.legacy_name == "core.event_manager.EventManager" for item in usages))
         self.assertTrue(all(not item.path.startswith("tests") for item in usages))
         self.assertTrue(all(not item.path.startswith("docs") for item in usages))
         self.assertTrue(all("__pycache__" not in item.path for item in usages))
