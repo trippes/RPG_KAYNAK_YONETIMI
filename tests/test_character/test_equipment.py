@@ -82,10 +82,11 @@ class TestEquipment(unittest.TestCase):
             self.service.actor_stats("hero")["weapon_damage"], 4
         )
         inventory = self.service.inventory("main")
-        self.assertEqual(inventory.item_quantity("iron_helmet"), 1)
-        self.assertEqual(inventory.item_quantity("leather_armor"), 1)
-        self.assertEqual(inventory.item_quantity("bread_item"), 1)
-        self.assertEqual(inventory.item_quantity("iron_sword"), 0)
+        remaining_items = dict(inventory.items)
+        self.assertEqual(remaining_items.get("iron_helmet", 0), 1)
+        self.assertEqual(remaining_items.get("leather_armor", 0), 1)
+        self.assertEqual(remaining_items.get("bread_item", 0), 1)
+        self.assertEqual(remaining_items.get("iron_sword", 0), 0)
 
     def test_equipment_survives_save_load_with_item_catalog(self):
         self.service.equip_item("hero", "main", "leather_armor")
