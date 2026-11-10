@@ -320,6 +320,10 @@ class GameWindow:
         from application.game_application import GameApplication
 
         service, _ = populate_opening_content(GameApplication.create_default())
+        # Register the temporary Container/Lock playtest object in the actual
+        # new-game flow, before the opening and character-creation screens.
+        from application.container_playtest_content import register_container_playtest_fixture
+        register_container_playtest_fixture(service)
         self.service = service
         self.screens.update({
             "opening": OpeningScreen(),
