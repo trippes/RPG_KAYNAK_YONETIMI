@@ -834,5 +834,40 @@
         }
       ]
     }
+  ],
+  "trade_partners": [
+    {
+      "npc_id": "village_craftsman",
+      "npc_name": "Köylü Arda",
+      "npc_role": "craftsman",
+      "location_id": "village_id",
+      "position": [
+        18,
+        22
+      ],
+      "dialogue": {
+        "id": "village_craftsman_dialogue",
+        "start_node": "greeting",
+        "nodes": [
+          {
+            "id": "greeting",
+            "text": "Atölyem için kaliteli odun ve demir cevheri arıyorum. Elinde fazlası varsa konuşabiliriz.",
+            "choices": []
+          }
+        ]
+      },
+      "merchant_id": "trade_arda",
+      "inventory_id": "trade_arda_inventory",
+      "initial_gold": 60,
+      "buyback_rate": 50,
+      "accepted_resources": [
+        "wood",
+        "iron_ore"
+      ],
+      "unit_prices": {
+        "wood": 4,
+        "iron_ore": 10
+      }
+    }
   ]
 }
