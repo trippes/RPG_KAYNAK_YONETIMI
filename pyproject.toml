@@ -31,6 +31,7 @@ include = [
     "application*",
     "character*",
     "combat*",
+    "containers*",
     "core*",
     "economy*",
     "npc*",
