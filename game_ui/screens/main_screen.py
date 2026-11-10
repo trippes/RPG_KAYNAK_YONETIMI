@@ -20,6 +20,10 @@ class MainScreen:
         self.menu_open = False
         self.menu_selected = 0
         self.menu_rects = ()
+        self.context_menu_open = False
+        self.context_menu_rects = ()
+        self.context_menu_actions = ()
+        self.context_menu_position = (0, 0)
         self.menu_options = (
             ("main", "Ana Ekrana Dön"),
             ("inventory", "Çanta"),
@@ -393,6 +397,71 @@ class MainScreen:
         )
         return True
 
+    def _open_container_context_menu(self, position):
+        lock = self.service.container_lock_state(self.selected_container_id)
+        actions = []
+        if lock is not None and lock.locked:
+            if lock.required_key_id:
+                actions.append(("key", "Anahtarla aç"))
+            if lock.lockpick_profile_id and not lock.jammed and not lock.broken:
+                actions.append(("lockpick", "Maymunculuk dene"))
+            if lock.force_profile_id and not lock.jammed and not lock.broken:
+                actions.append(("force", "Kilidi zorla"))
+            actions.append(("inspect", "İncele"))
+        else:
+            actions.extend((("open", "Sandığı aç"), ("inspect", "İncele")))
+        self.context_menu_actions = tuple(actions)
+        self.context_menu_position = position
+        self.context_menu_open = True
+        self.context_menu_rects = ()
+
+    def _execute_container_action(self, action):
+        actors = self._actors()
+        if not actors:
+            self.message = "Aktif karakter bulunamadı."
+            return
+        actor = actors[0]
+        lock = self.service.container_lock_state(self.selected_container_id)
+        placement = self._container_placement(self.selected_container_id)
+        if action == "inspect":
+            status = "kilitli" if lock is not None and lock.locked else "kilidi açık"
+            self.message = f"Sandık incelendi: {status}."
+            return
+        if not self._is_adjacent_to_container(placement):
+            self.message = "Sandıkla etkileşmek için yanına yaklaşmalısın."
+            return
+        if actor.inventory_id is None:
+            self.message = "Karakter envanteri bulunamadı."
+            return
+        if action == "open":
+            return
+        if action == "key" and lock is not None and lock.required_key_id:
+            success = self.service.unlock_with_key(actor.actor_id, actor.inventory_id, lock.lock_id, lock.required_key_id)
+            self.message = "Kilit anahtarla açıldı." if success else "Uygun anahtar bulunamadı."
+        elif action == "lockpick" and lock is not None:
+            result = self.service.resolve_lockpick(actor.actor_id, actor.inventory_id, lock.lock_id)
+            self.message = f"{'Başarılı' if result.success else 'Başarısız'} — d20 {result.total} / DC {result.difficulty_class}"
+        elif action == "force" and lock is not None:
+            result = self.service.resolve_force_lock(actor.actor_id, actor.inventory_id, lock.lock_id)
+            self.message = f"{'Başarılı' if result.success else 'Başarısız'} — d20 {result.total} / DC {result.difficulty_class}"
+
+    def render_context_menu(self, renderer):
+        if not self.context_menu_open:
+            return
+        width, row_height = 208, 36
+        x, y = self.context_menu_position
+        height = 14 + len(self.context_menu_actions) * row_height
+        x = max(8, min(x, renderer.width - width - 8))
+        y = max(8, min(y, renderer.height - height - 8))
+        renderer.panel(renderer.pg.Rect(x, y, width, height), (30, 23, 19), (173, 128, 67))
+        rects = []
+        for index, (action, label) in enumerate(self.context_menu_actions):
+            rect = renderer.pg.Rect(x + 7, y + 7 + index * row_height, width - 14, row_height - 2)
+            renderer.panel(rect, (49, 38, 29), (112, 82, 48))
+            renderer.text(label, rect.x + 10, rect.y + 8, GOLD)
+            rects.append((action, rect))
+        self.context_menu_rects = tuple(rects)
+
     def handle(self, state):
         if state.pressed("back"):
             if self.menu_open:
@@ -449,6 +518,32 @@ class MainScreen:
             self._move_player(-1, 0)
         if state.pressed("right"):
             self._move_player(1, 0)
+
+        if self.context_menu_open:
+            if state.mouse_clicked and state.mouse_pos is not None:
+                selected_action = next((action for action, rect in self.context_menu_rects if rect.collidepoint(state.mouse_pos)), None)
+                if selected_action is not None:
+                    self.context_menu_open = False
+                    self._execute_container_action(selected_action)
+                    return None
+                self.context_menu_open = False
+                return None
+            if state.mouse_right_clicked:
+                self.context_menu_open = False
+                return None
+            return None
+
+        if state.mouse_right_clicked and state.mouse_pos is not None:
+            tile = self._tile_at(state.mouse_pos)
+            target = self._container_placement_at(tile) if tile is not None else None
+            if target is not None:
+                self.selected_container_id = target[0]
+                self.selected = tile
+                self._open_container_context_menu(state.mouse_pos)
+            else:
+                self.selected_container_id = None
+                self.message = "Burada bağlamsal aksiyon bulunmuyor."
+            return None
 
         if state.mouse_clicked and state.mouse_pos is not None:
             tile = self._tile_at(state.mouse_pos)
