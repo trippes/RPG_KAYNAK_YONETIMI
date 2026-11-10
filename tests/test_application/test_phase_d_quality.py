@@ -5,7 +5,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from application import GameApplication, GameplayService, migrate_save_data
-from application.content_pack import populate_demo_content
+from application.content_pack import populate_opening_content
 from combat import calculate_damage, order_initiative, tick_statuses
 from game_ui.game_window import GameWindow
 from game_ui.input import InputMapper, InputState
@@ -183,7 +183,7 @@ class TestPhaseDQuality(unittest.TestCase):
         payloads = []
         for _ in range(2):
             app = GameApplication.create_default()
-            service, ids = populate_demo_content(app)
+            service, ids = populate_opening_content(app)
             with tempfile.TemporaryDirectory() as directory:
                 path = Path(directory) / "save.json"
                 service.save(path)
@@ -191,7 +191,7 @@ class TestPhaseDQuality(unittest.TestCase):
         self.assertEqual(payloads[0], payloads[1])
 
     def test_demo_starts_next_to_eren_at_southern_gate(self):
-        service, ids = populate_demo_content(GameApplication.create_default())
+        service, ids = populate_opening_content(GameApplication.create_default())
 
         self.assertEqual(service.actor(ids.hero_id).position.x, 16)
         self.assertEqual(service.actor(ids.hero_id).position.y, 29)
@@ -214,8 +214,8 @@ class TestPhaseDQuality(unittest.TestCase):
             self.assertEqual(screen.handle(InputState(actions={"back"})), expected)
 
     def test_map_screen_routes_to_world_and_supports_map_input(self):
-        from application.content_pack import populate_demo_content
-        service, _ = populate_demo_content(GameApplication.create_default())
+        from application.content_pack import populate_opening_content
+        service, _ = populate_opening_content(GameApplication.create_default())
         screen = MapScreen(service)
         screen.handle(InputState(actions={"down", "confirm"}))
         self.assertEqual(service.actor("hero").location_id, "village")
@@ -223,8 +223,8 @@ class TestPhaseDQuality(unittest.TestCase):
         self.assertEqual(screen.handle(InputState(actions={"back"})), "local_map")
 
     def test_locations_expose_meaningful_context_and_gate_actions(self):
-        from application.content_pack import populate_demo_content
-        service, _ = populate_demo_content(GameApplication.create_default())
+        from application.content_pack import populate_opening_content
+        service, _ = populate_opening_content(GameApplication.create_default())
         screen = __import__("game_ui.screens.world_screen", fromlist=["WorldScreen"]).WorldScreen(service)
         self.assertEqual(screen.handle(InputState(actions={"market"})), "market")
         screen.handle(InputState(actions={"right"}))
@@ -232,16 +232,16 @@ class TestPhaseDQuality(unittest.TestCase):
         self.assertIn("Pazar", screen.message)
 
     def test_local_map_is_reachable_from_world_map(self):
-        from application.content_pack import populate_demo_content
-        service, _ = populate_demo_content(GameApplication.create_default())
+        from application.content_pack import populate_opening_content
+        service, _ = populate_opening_content(GameApplication.create_default())
         map_screen = MapScreen(service)
         self.assertEqual(map_screen.handle(InputState(actions={"confirm"})), "local_map")
         local_screen = LocalMapScreen(service)
         self.assertIsNone(local_screen.handle(InputState(actions={"confirm"})))
 
     def test_local_map_finds_safe_paths_and_blocks_static_landmarks(self):
-        from application.content_pack import populate_demo_content
-        service, _ = populate_demo_content(GameApplication.create_default())
+        from application.content_pack import populate_opening_content
+        service, _ = populate_opening_content(GameApplication.create_default())
         local_screen = LocalMapScreen(service)
         path = local_screen._path_to((16, 16), (8, 8))
         self.assertTrue(path)
@@ -250,7 +250,7 @@ class TestPhaseDQuality(unittest.TestCase):
         self.assertFalse(local_screen._is_walkable((7, 10)))
 
     def test_mine_landmark_collects_iron_ore(self):
-        service, ids = populate_demo_content(GameApplication.create_default())
+        service, ids = populate_opening_content(GameApplication.create_default())
         service.move_actor(ids.hero_id, ids.forest_id)
         service.advance_by(1)
         service.move_actor(ids.hero_id, "north_mine")
@@ -263,23 +263,23 @@ class TestPhaseDQuality(unittest.TestCase):
         self.assertEqual(service.inventory(ids.inventory_id).stocks, (("iron_ore", 1, "item"),))
 
     def test_dialogue_prompt_uses_selected_npc_name(self):
-        from application.content_pack import populate_demo_content
-        service, ids = populate_demo_content(GameApplication.create_default())
+        from application.content_pack import populate_opening_content
+        service, ids = populate_opening_content(GameApplication.create_default())
         screen = DialogueScreen(service)
         screen.set_target_npc(ids.carpenter_id)
         self.assertIn("Marangoz Hilmi", screen.message)
 
     def test_inn_dialogue_opens_trade_window(self):
-        from application.content_pack import populate_demo_content
-        service, ids = populate_demo_content(GameApplication.create_default())
+        from application.content_pack import populate_opening_content
+        service, ids = populate_opening_content(GameApplication.create_default())
         screen = DialogueScreen(service)
         screen.set_target_npc(ids.innkeeper_id)
         screen.handle(InputState(actions={"confirm"}))
         self.assertEqual(screen.handle(InputState(actions={"confirm"})), "market")
 
     def test_inventory_and_market_windows_close_to_local_map(self):
-        from application.content_pack import populate_demo_content
-        service, _ = populate_demo_content(GameApplication.create_default())
+        from application.content_pack import populate_opening_content
+        service, _ = populate_opening_content(GameApplication.create_default())
         self.assertEqual(
             InventoryScreen(service).handle(InputState(actions={"back"})),
             "local_map",
@@ -290,7 +290,7 @@ class TestPhaseDQuality(unittest.TestCase):
         )
 
     def test_character_window_preserves_skill_selection_and_close_input(self):
-        service, _ = populate_demo_content(GameApplication.create_default())
+        service, _ = populate_opening_content(GameApplication.create_default())
         screen = CharacterScreen(service)
         character = service.actor_character("hero")
         skills = tuple(character.skills.to_dict())
@@ -330,8 +330,8 @@ class TestPhaseDQuality(unittest.TestCase):
         self.assertEqual(dispatched, [])
 
     def test_village_gate_opens_eren_dialogue(self):
-        from application.content_pack import populate_demo_content
-        service, ids = populate_demo_content(GameApplication.create_default())
+        from application.content_pack import populate_opening_content
+        service, ids = populate_opening_content(GameApplication.create_default())
         local_screen = LocalMapScreen(service)
         local_screen.selected = (16, 30)
         self.assertEqual(local_screen.handle(InputState(actions={"confirm"})), "dialogue")
@@ -484,7 +484,7 @@ class TestPhaseDQuality(unittest.TestCase):
             self.assertEqual(selected, [(0, path, True)])
 
     def test_new_game_rebuilds_session_and_opens_creation_flow(self):
-        old_service, _ = populate_demo_content(GameApplication.create_default())
+        old_service, _ = populate_opening_content(GameApplication.create_default())
         old_service.application.customize_character(
             "hero",
             "Eski Kahraman",
@@ -1269,7 +1269,7 @@ class TestPhaseDQuality(unittest.TestCase):
         class Backend:
             Rect = RectType
 
-        service, _ = populate_demo_content(GameApplication.create_default())
+        service, _ = populate_opening_content(GameApplication.create_default())
         screen = InventoryScreen(service)
         manager = WindowManager(Backend(), 960, 640)
         manager.register("inventory", screen, (100, 100, 500, 470))
