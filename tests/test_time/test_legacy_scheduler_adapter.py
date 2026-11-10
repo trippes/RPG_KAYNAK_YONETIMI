@@ -77,6 +77,15 @@ class TestLegacyCallbackSchedulerAdapter(unittest.TestCase):
         adapter.process_until(10)
         self.assertEqual(received, [True])
 
+    def test_reset_restarts_the_canonical_timeline(self):
+        adapter = LegacyCallbackSchedulerAdapter(start_tick=20)
+        received = []
+        adapter.schedule(21, lambda: received.append("before reset"))
+        adapter.reset(0)
+        adapter.schedule(2, lambda: received.append("after reset"))
+        adapter.process_until(2)
+        self.assertEqual(received, ["after reset"])
+
     def test_cancel_is_idempotent_and_clear_removes_callbacks(self):
         adapter = LegacyCallbackSchedulerAdapter()
         event_id = adapter.schedule(5, lambda: self.fail("must not run"))
