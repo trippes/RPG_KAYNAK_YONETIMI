@@ -5,6 +5,7 @@ from types import MappingProxyType
 from typing import Mapping
 
 from core.application import GameSession
+from core.entity import EntityType
 from core.simulation import SimulationRuntime
 
 from resources import Inventory, ProductionJobManager, Recipe, WorldResourceNodeManager
@@ -97,6 +98,10 @@ remain mutable domain objects by design; this is not deep immutability.
             if entity is None:
                 raise ValueError(
                     f"Container {instance.container_id} references an unknown Core entity: {instance.entity_id}"
+                )
+            if entity.entity_type != EntityType.ESYA:
+                raise ValueError(
+                    f"Container {instance.container_id} must reference an ESYA Core entity."
                 )
             placement = self.world_objects.get(instance.entity_id)
             if placement is not None and placement.world_id != entity.world_id:
