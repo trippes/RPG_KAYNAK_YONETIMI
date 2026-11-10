@@ -275,28 +275,50 @@ sistem kaldırma onayı alamaz.
   failure eşleştirmesi testlerle sabitlendi. Tick/Position mevcut testleri
   korunuyor. Bu kayıt testlerin CI'da çalıştığı anlamına gelmez; sonuç commit
   SHA'sına bağlı Actions doğrulamasıyla ayrıca teyit edilmelidir.
-- **C — Tüketici göçü:** Bilinçli olarak tamamlanmadı. Game ve
-  GameApplication hâlâ EventManager facade'ını kullanıyor; callback Scheduler
-  LegacyWorldRuntime/WorldRuntimeBoundary zincirinde çalışıyor. Bunları tek
-  seferde taşımak davranış değişikliği riski taşır.
-- **D — Deprecation:** Yeni toplu deprecation yapılmadı. C tamamlanmadığı ve
-  harici kullanıcılar bilinmediği için EventManager/EventBus/EventQueue/
-  Scheduler deprecated durumuna geçirilmedi.
-- **E — Emeklilik kapısı:** Değerlendirildi; sonuç **KEEP / kaldırma yok**.
-  Üretim tüketicileri ve doğrulanmamış dış tüketici kapsamı nedeniyle hiçbir
-  legacy API kaldırılmaya uygun değil.
+- **C — Tüketici göçü:** Uygulama içi event üretim ve kuyruk tüketim
+  yolları CanonicalEventManagerAdapter üzerine taşındı. Game ve
+  GameApplication artık doğrudan EventManager kurmuyor; canonical
+  CanonicalEventTransport kuyruk sahibidir. Legacy Event, EventQueue
+  görünümü ve EventBus handler yüzeyi adapter sınırında korunur. Bu sayede
+  FIFO, aynı Event nesnesi kimliği, re-entrant publish ve handler exception
+  sonrasında kalan kuyruğun korunması sürdürülür.
+- **C — Scheduler göçü:** World'ün callback API'si
+  LegacyCallbackSchedulerAdapter üzerinden CanonicalScheduler typed-work
+  kayıtlarına taşındı. Callable nesneleri canonical work payload'ına konmaz;
+  adapter'ın callback registry'sinde tutulur. Tek tek tüketim sayesinde
+  callback içinden iptal, aynı çağrıda yeni işin ertelenmesi ve exception
+  sonrası kalan işlerin korunması sağlanır. World public schedule_event,
+  cancel, pending count ve clock API'leri korunur; clock reset canonical
+  scheduler zaman çizelgesini de sıfırlar.
+- **C — Action ve World event sınırı:** Game ve GameApplication'ın action
+  yüzeyi zaten CanonicalActionAdapter üzerinden ActionProcessor kullanır.
+  GameApplication World event'lerini WorldRuntimeBoundary üzerinden
+  canonical transport'a yönlendirir. Core Game'in açıkça deprecated legacy
+  forwarding metodu public uyumluluk için tutulur; yeni canonical aktarım
+  metodu mevcuttur.
+- **C çıkış kararı:** Uygulama içindeki Game/GameApplication EventManager
+  kuyruk sahipliği ve World callback scheduler tüketicileri canonical
+  implementasyonlara taşınmıştır. Public 1.x yüzeyleri adapter olarak
+  korunmuştur; dış istemci/reflection/plugin kullanımı statik taramayla
+  kanıtlanamayacağı için silme veya toplu deprecation yapılmamıştır.
+- **D — Deprecation:** Yeni toplu deprecation yapılmadı. Adapter'lar
+  uyumluluk sınırı olarak kalır; doğrudan dış kullanıcıların varlığı
+  doğrulanmadan EventManager/EventBus/EventQueue/Scheduler deprecated
+  durumuna geçirilmez.
+- **E — Emeklilik kapısı:** Sonuç KEEP / kaldırma yok. Public API ve
+  harici tüketici kapsamı için yazılı doğrulama bulunmadığından hiçbir legacy
+  API silinmeye uygun değil.
 
-Bu dalda GitHub connector üzerinden Python komutu çalıştırılamadığı için
-A-E değişikliklerinden sonra test paketi bu oturumda çalıştırılmış sayılmaz.
-GitHub Actions sonucu commit status üzerinden ayrıca doğrulanmalıdır.
+GitHub Actions, bu değişikliklerin her commit'inde otomatik test çalıştırır.
+Bu oturumda yerel Python komutu çalıştırıldığı iddia edilmemektedir; sonuçlar
+ilgili commit SHA'larına bağlı GitHub Actions kayıtlarından doğrulanır.
 
 ## 10. Şimdiki karar
 
-Bu değişiklik bir envanter, davranış sözleşmesi ve geçiş planıdır. Callback
-Scheduler'ın hata/iptal/yeniden giriş davranışı açıkça tanımlanıp regresyon
-testleriyle korunmuştur; EventManager/EventBus/EventQueue ve mutable Entity
-Position ise mevcut compatibility davranışlarıyla tutulur. Game ve
-GameApplication EventManager tüketicileri ile LegacyWorldRuntime callback
-zinciri bu commit'te taşınmamıştır: Aşama C, davranış sözleşmeleri CI'da
-geçtikten sonra ayrı ve küçük değişikliklerle yürütülmelidir. Hiçbir legacy
-API topluca deprecated ilan edilmez veya kaldırılmaz.
+Aşama C'nin uygulama içi tüketici göçü canonical-backed adapter'larla
+tamamlandı. EventManager/EventBus/EventQueue ve callback Scheduler'ın public
+1.x davranışı korunarak canonical transport/scheduler altyapısına bağlandı.
+Mutable Entity Position ve diğer açıkça kayıtlı projection'lar mevcut
+compatibility sınırlarında tutulur. Aşama D/E ayrı sürüm ve harici tüketici
+kanıtı gerektirir; bu aşamada hiçbir legacy API topluca deprecated ilan
+edilmez veya kaldırılmaz.
