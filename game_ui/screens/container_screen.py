@@ -210,53 +210,72 @@ class ContainerScreen:
 
             player_items = self._player_items(inventory_id)
             container_items = self._container_items(view)
-            renderer.panel(renderer.pg.Rect(40, 140, 724, 350), (27, 34, 47), (130, 102, 61))
-            self._draw_chest_emblem(renderer, 680, 145)
-            renderer.text(view.name.upper(), 62, 151, GOLD, title=True, max_width=560)
-            renderer.chip(62, 204, "AÇIK", GOOD)
-            renderer.text("Sandık kapasitesi", 62, 242, TEXT_SOFT)
-            self._capacity_bar(renderer, 62, 270, 205, "Ağırlık", view.contents_weight_kg, view.max_contents_weight_kg, "kg")
-            slot_max = float(view.max_slots) if view.max_slots is not None else None
-            self._capacity_bar(renderer, 292, 270, 205, "Yuvalar", float(view.contents_slots), slot_max, "slot")
-            self._capacity_bar(renderer, 522, 270, 205, "Hacim", view.contents_volume_liters, view.max_contents_volume_liters, "L")
+            outer = renderer.pg.Rect(40, 140, 724, 400)
+            renderer.panel(outer, (25, 20, 18), (166, 119, 61))
+            inner = renderer.pg.Rect(46, 146, 712, 388)
+            renderer.panel(inner, (34, 29, 27), (91, 68, 45))
+            self._draw_chest_emblem(renderer, 680, 151)
+            renderer.text(view.name.upper(), 62, 154, GOLD, title=True, max_width=560)
+            renderer.chip(62, 205, "AÇIK", GOOD)
+            renderer.text("SANDIK KAPASİTESİ", 62, 239, GOLD)
 
-            left_panel = renderer.pg.Rect(54, 342, 338, 132)
-            right_panel = renderer.pg.Rect(412, 342, 338, 132)
-            renderer.panel(left_panel, (34, 43, 58), GOLD if self.active_side == "container" else PANEL_BORDER)
-            renderer.panel(right_panel, (34, 43, 58), GOLD if self.active_side == "player" else PANEL_BORDER)
-            renderer.text("SANDIK", 70, 352, GOLD if self.active_side == "container" else TEXT_SOFT)
-            renderer.text("KARAKTER ÇANTASI", 428, 352, GOLD if self.active_side == "player" else TEXT_SOFT)
-            renderer.text(f"{len(container_items)} eşya türü", 270, 354, MUTED)
-            renderer.text(f"{len(player_items)} eşya türü", 650, 354, MUTED)
+            self._capacity_bar(renderer, 62, 267, 205, "Ağırlık", view.contents_weight_kg, view.max_contents_weight_kg, "kg")
+            slot_max = float(view.max_slots) if view.max_slots is not None else None
+            self._capacity_bar(renderer, 292, 267, 205, "Yuvalar", float(view.contents_slots), slot_max, "slot")
+            self._capacity_bar(renderer, 522, 267, 205, "Hacim", view.contents_volume_liters, view.max_contents_volume_liters, "L")
+
+            left_panel = renderer.pg.Rect(54, 344, 338, 180)
+            right_panel = renderer.pg.Rect(412, 344, 338, 180)
+            renderer.panel(left_panel, (27, 23, 22), GOLD if self.active_side == "container" else (105, 82, 59))
+            renderer.panel(right_panel, (27, 23, 22), GOLD if self.active_side == "player" else (105, 82, 59))
+            renderer.text("SANDIK", 68, 352, GOLD if self.active_side == "container" else TEXT_SOFT)
+            renderer.text("KARAKTER ÇANTASI", 426, 352, GOLD if self.active_side == "player" else TEXT_SOFT)
+            renderer.text(str(len(container_items)), 354, 352, MUTED)
+            renderer.text(str(len(player_items)), 716, 352, MUTED)
 
             self._row_rects = []
-            for side, entries, left in (
-                ("container", container_items, 70),
-                ("player", player_items, 428),
+            slot_size, gap, columns = 48, 7, 5
+            for side, entries, origin_x in (
+                ("container", container_items, 68),
+                ("player", player_items, 426),
             ):
-                for index, (item_id, amount) in enumerate(entries[:3]):
-                    rect = renderer.pg.Rect(left, 384 + index * 27, 304, 24)
-                    if side == self.active_side and index == self.selected_index:
-                        renderer.panel(rect, (61, 75, 96), GOLD)
-                    else:
-                        renderer.panel(rect, (27, 35, 48), STRIP_BORDER)
+                for index, (item_id, amount) in enumerate(entries[:15]):
+                    row, column = divmod(index, columns)
+                    x = origin_x + column * (slot_size + gap)
+                    y = 380 + row * (slot_size + gap)
+                    rect = renderer.pg.Rect(x, y, slot_size, slot_size)
+                    selected = side == self.active_side and index == self.selected_index
+                    renderer.panel(
+                        rect,
+                        (76, 52, 34) if selected else (42, 34, 29),
+                        GOLD if selected else (104, 77, 51),
+                    )
                     item = self.service.item(item_id)
                     name = item.name if item is not None else item_id
-                    renderer.text(name, rect.x + 9, rect.y + 3, TEXT, max_width=220)
-                    renderer.text(f"x{amount}", rect.right - 48, rect.y + 3, GOLD)
+                    icon_color = (154, 112, 67)
+                    if item is not None and getattr(item, "tags", None):
+                        icon_color = (91, 119, 94)
+                    icon_rect = renderer.pg.Rect(x + 8, y + 5, 32, 30)
+                    renderer.pg.draw.rect(renderer.surface, icon_color, icon_rect, border_radius=5)
+                    renderer.pg.draw.rect(renderer.surface, (205, 166, 103), icon_rect, 1, border_radius=5)
+                    glyph = name[:1].upper() if name else "?"
+                    renderer.text(glyph, x + 19, y + 10, (245, 225, 184))
+                    renderer.text(str(amount), x + 31, y + 34, GOLD)
                     if side == self.active_side:
                         self._row_rects.append(rect)
             if not container_items:
-                self._draw_chest_emblem(renderer, 76, 397)
-                renderer.text("Sandık henüz boş.", 158, 402, TEXT_SOFT)
-                renderer.text("Eşyaları buraya taşıdığınızda görünecek.", 158, 430, MUTED, max_width=220)
+                self._draw_chest_emblem(renderer, 84, 398)
+                renderer.text("Sandık henüz boş.", 164, 402, TEXT_SOFT)
+                renderer.text("Eşyalar buraya yerleştirildiğinde görünecek.", 164, 430, MUTED, max_width=210)
             if not player_items:
-                renderer.text("Çantada eşya yok.", 428, 398, TEXT_SOFT)
-                renderer.text("Taşınabilir eşya bulunmuyor.", 428, 426, MUTED, max_width=280)
-            renderer.text(self.message, 62, 500, GOOD if "aktarıldı" in self.message else TEXT_SOFT)
-            renderer.footer("Sol/Sağ: taraf değiştir   Yukarı/Aşağı: seç   Enter: 1 adet taşı")
+                renderer.text("Çantada eşya yok.", 430, 402, TEXT_SOFT)
+                renderer.text("Taşınabilir eşya bulunmuyor.", 430, 430, MUTED, max_width=280)
+
+            renderer.text(self.message, 62, 545, GOOD if "aktarıldı" in self.message else TEXT_SOFT, max_width=680)
+            renderer.footer("Sol/Sağ: taraf değiştir   Slot seç + Enter: 1 adet taşı")
         except (KeyError, ValueError, RuntimeError, GameplayServiceError) as error:
             renderer.text(f"Sandık görüntülenemedi: {error}", 52, 170, WARN)
+
 
 
 __all__ = ["ContainerScreen"]
