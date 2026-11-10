@@ -327,3 +327,41 @@ façadeleri aynı warning kimliğini kullanır. Warning mesajı replacement,
 deprecated sürümü ve removal kapısını belirtir. Diğer public 1.x API'leri
 harici tüketici kapsamı kanıtlanamadığı için korunur. Aşama E'nin kaldırma
 kapısı kapalıdır: hiçbir legacy API bu değişiklikte silinmez.
+
+
+## 11. Aşama E — Nihai emeklilik kararı ve kanıt sınırları
+
+**Karar: KEEP — bu aşamada hiçbir legacy API, import yolu veya callback
+davranışı kaldırılmaz.** Bu karar eksik çalışma değil; tanımlı emeklilik
+kapısının kanıta dayalı sonucudur.
+
+- A-D aşamalarının repository içi uygulama ve regresyon işleri tamamlanmıştır.
+  Stage D'de yalnızca `Game.dunya_olaylarini_aktar` kontrollü deprecation
+  sınırındadır. Diğer kayıtlar compatibility/alias/projection olarak korunur.
+- CI, Linux ve Windows üzerinde `python -m core.compatibility.usage .`
+  raporunu üretir ve 30 gün saklanan ayrı workflow artifact'leri olarak
+  yükler. Rapor; API başına statik AST kullanım sayısını, canonical
+  replacement'ı ve rapor sürecinin runtime counter snapshot'ını içerir.
+- Runtime counter process-local'dır. CI'daki rapor komutu ayrı bir Python
+  sürecinde çalıştığından sıfır runtime sayısı, gerçek üretim ortamında
+  kullanım olmadığına dair kanıt değildir. Üretim telemetry'si/uzun süreli
+  sayaç verisi bu repoda mevcut değildir.
+- AST taraması dinamik import, reflection, dış paketler, yayımlanmış
+  dağıtımlar, plugin/extension tüketicileri veya kullanıcıların yerel
+  entegrasyonlarını kanıtlayamaz. Harici tüketici sahiplerinden yazılı
+  doğrulama da mevcut değildir.
+- Legacy EventManager/EventBus/EventQueue/Scheduler public yüzeyleri,
+  mutable Entity Position adaptörü ve eski import alias'ları korunur.
+  Her biri ayrı ayrı değerlendirilecek; bir grubun topluca kaldırılmasına
+  izin verilmeyecektir.
+- Removal için üretim runtime ölçümü, harici tüketici/plugin sahiplerinin
+  yazılı teyidi, güncel persistence/eski-save ve aynı-tick/hata davranışı
+  regresyon kanıtı, duyurulmuş deprecation dönemi ve ayrı major-version
+  onayı gereklidir. Bu koşullardan biri bile belirsizse karar KEEP olarak
+  kalır.
+
+**Stage E çıkış durumu:** CI raporlarının iki işletim sisteminde üretilip
+artifact olarak saklanması sağlandı. Fakat rapor tek başına üretim veya
+harici tüketici yokluğunu kanıtlamadığından emeklilik kapısı kapalıdır.
+Stage E, güvenli kaldırma yapılmadan ve blocker'lar açıkça kaydedilerek
+tamamlanmıştır.
