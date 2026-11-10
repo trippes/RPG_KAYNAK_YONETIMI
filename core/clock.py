@@ -166,4 +166,8 @@ class GameClock:
         self._running = True
 
         if self._scheduler is not None:
-            self._scheduler.clear()
+            reset = getattr(self._scheduler, "reset", None)
+            if callable(reset):
+                reset(0)
+            else:
+                self._scheduler.clear()
