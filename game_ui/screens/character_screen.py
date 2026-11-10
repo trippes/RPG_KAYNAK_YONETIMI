@@ -38,6 +38,7 @@ class CharacterScreen:
         self.selected_skill = 0
         self.skill_scroll = 0
         self.message = ""
+        self._last_skill_bounds = (0, 0, 0, 23)
 
     def _character(self):
         return self.service.actor_character("hero")
@@ -54,7 +55,7 @@ class CharacterScreen:
         return tuple((slot, equipped.get(slot)) for slot in self.EQUIPMENT_LABELS)
 
     def _layout(self, renderer):
-        width = min(self.CONTENT_WIDTH, max(560, renderer.width - 64))
+        width = min(self.CONTENT_WIDTH, max(480, renderer.width - 80))
         height = min(self.CONTENT_HEIGHT, max(330, renderer.height - 180))
         gap = 12
         usable = width - 2 * gap
