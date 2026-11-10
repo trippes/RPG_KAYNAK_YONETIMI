@@ -524,7 +524,13 @@ class MainScreen:
                 selected_action = next((action for action, rect in self.context_menu_rects if rect.collidepoint(state.mouse_pos)), None)
                 if selected_action is not None:
                     self.context_menu_open = False
-                    self._execute_container_action(selected_action)
+                    if selected_action == "open":
+                        placement = self._container_placement(self.selected_container_id)
+                        if self._is_adjacent_to_container(placement):
+                            return f"container:{self.selected_container_id}"
+                        self.message = "Sandıkla etkileşmek için yanına yaklaşmalısın."
+                    else:
+                        self._execute_container_action(selected_action)
                     return None
                 self.context_menu_open = False
                 return None
