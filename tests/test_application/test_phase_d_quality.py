@@ -266,15 +266,14 @@ class TestPhaseDQuality(unittest.TestCase):
         from application.content_pack import populate_opening_content
         service, ids = populate_opening_content(GameApplication.create_default())
         screen = DialogueScreen(service)
-        screen.set_target_npc(ids.carpenter_id)
-        self.assertIn("Marangoz Hilmi", screen.message)
+        screen.set_target_npc(ids.npc_id)
+        self.assertIn("Eren", screen.message)
 
-    def test_inn_dialogue_opens_trade_window(self):
-        from application.content_pack import populate_opening_content
-        service, ids = populate_opening_content(GameApplication.create_default())
-        screen = DialogueScreen(service)
-        screen.set_target_npc(ids.innkeeper_id)
-        screen.handle(InputState(actions={"confirm"}))
+    def test_village_menu_opens_market(self):
+        service, _ids = populate_opening_content(GameApplication.create_default())
+        screen = LocalMapScreen(service)
+        screen.menu_open = True
+        screen.menu_selected = 4
         self.assertEqual(screen.handle(InputState(actions={"confirm"})), "market")
 
     def test_inventory_and_market_windows_close_to_local_map(self):
