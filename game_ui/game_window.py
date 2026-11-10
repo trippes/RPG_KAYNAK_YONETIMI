@@ -570,6 +570,13 @@ class GameWindow:
             self._set_notice(notices[next_screen])
             next_screen = None
 
+        if (
+            current_screen is self.screens.get("character_creation")
+            and next_screen in {"world", "dialogue"}
+        ):
+            from application.content_pack import populate_gameplay_resources
+            populate_gameplay_resources(self.service)
+
         if next_screen == "world":
             next_screen = self.gameplay_screen
 
