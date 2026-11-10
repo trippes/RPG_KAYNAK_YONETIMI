@@ -1,4 +1,9 @@
-"""Canonical state records independent of runtime implementation objects."""
+"""Canonical state records independent of runtime implementation objects.
+
+MappingProxyType protects each record mapping from key mutation. Nested values
+are defensive copies, not recursively immutable objects; serialized snapshots
+remain detached from the source state but nested containers are mutable.
+"""
 
 from copy import deepcopy
 from dataclasses import dataclass
