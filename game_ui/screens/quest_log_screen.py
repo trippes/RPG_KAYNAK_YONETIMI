@@ -26,9 +26,9 @@ class QuestLogScreen:
         "failed": "Başarısız",
     }
     CONTENT_X = 24
-    CONTENT_Y = 126
+    CONTENT_Y = 16
     CONTENT_MARGIN = 16
-    HEADER_HEIGHT = 48
+    HEADER_HEIGHT = 42
     TAB_HEIGHT = 34
     BODY_HEIGHT = 230
     REWARD_HEIGHT = 76
@@ -82,13 +82,14 @@ class QuestLogScreen:
 
     def render(self, renderer):
         self._viewport = (renderer.width, renderer.height)
-        renderer.frame("Görev Günlüğü")
+        # WindowManager owns the outer title bar. This screen renders only its content.
         renderer.hud(self.service)
 
         layout = self._layout(renderer.width, renderer.height)
         outer = renderer.pg.Rect(*layout["outer"])
         renderer.panel(outer, (25, 31, 43), (145, 118, 70))
-        renderer.text("Görev Günlüğü", outer.x + 20, outer.y + 14, GOLD, title=True)
+        renderer.text("MACERA DEFTERİ", outer.x + 20, outer.y + 12, GOLD)
+        renderer.text("Görevlerini ve ilerlemeni takip et.", outer.x + 20, outer.y + 28, MUTED)
 
         counts = self._counts()
         for index, (_key, label) in enumerate(self.CATEGORIES):
@@ -160,27 +161,33 @@ class QuestLogScreen:
         width, height = self._viewport if width is None or height is None else (width, height)
         x = self.CONTENT_X
         y = self.CONTENT_Y
-        available_width = max(640, width - x * 2)
-        available_height = max(360, height - y - 76)
+        available_width = max(420, width - x * 2)
+        available_height = max(280, height - y - 24)
         return {
             "outer": (x, y, available_width, available_height),
             "body_y": y + self.HEADER_HEIGHT + self.TAB_HEIGHT + 10,
-            "body_height": min(self.BODY_HEIGHT, available_height - 170),
+            "body_height": max(120, available_height - self.REWARD_HEIGHT - self.HEADER_HEIGHT - self.TAB_HEIGHT - 44),
         }
 
     def _tab_bounds(self):
-        x = self.CONTENT_X + self.CONTENT_MARGIN
-        y = self.CONTENT_Y + self.HEADER_HEIGHT
-        width = 210
-        return tuple((x + index * (width + 10), y, width, self.TAB_HEIGHT)
-                     for index in range(len(self.CATEGORIES)))
+        layout = self._layout()
+        outer_x, outer_y, outer_width, _outer_height = layout["outer"]
+        gap = 8
+        x = outer_x + self.CONTENT_MARGIN
+        y = outer_y + self.HEADER_HEIGHT
+        usable_width = outer_width - self.CONTENT_MARGIN * 2 - gap * (len(self.CATEGORIES) - 1)
+        width = max(72, usable_width // len(self.CATEGORIES))
+        return tuple(
+            (x + index * (width + gap), y, width, self.TAB_HEIGHT)
+            for index in range(len(self.CATEGORIES))
+        )
 
     def _list_bounds(self):
         layout = self._layout()
         return (
             self.CONTENT_X + self.CONTENT_MARGIN,
             layout["body_y"],
-            304,
+            max(180, min(304, (self._layout()["outer"][2] - 48) // 3)),
             layout["body_height"],
         )
 
@@ -190,7 +197,7 @@ class QuestLogScreen:
         return (
             list_x + list_width + 12,
             layout["body_y"],
-            self._layout()["outer"][2] - list_width - 3 * self.CONTENT_MARGIN,
+            max(180, self._layout()["outer"][2] - list_width - 3 * self.CONTENT_MARGIN),
             layout["body_height"],
         )
 
