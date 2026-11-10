@@ -76,6 +76,25 @@ def scan_static_usage(root: str | Path) -> tuple[StaticUsage, ...]:
     known = DEFAULT_REGISTRY.as_mapping()
     for path in _files(root):
         tree = ast.parse(path.read_text(encoding="utf-8-sig"), filename=str(path))
+        local_names = dict(_SIMPLE_NAMES)
+        module_aliases = {}
+
+        # Resolve import aliases before inspecting calls. This is deliberately
+        # file-local static analysis; it does not execute or guess dynamic imports.
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ImportFrom) and node.module:
+                for alias in node.names:
+                    full = f"{node.module}.{alias.name}"
+                    identifier = _IMPORT_ALIASES.get((node.module, alias.name), full)
+                    local_name = alias.asname or alias.name
+                    if identifier in known:
+                        local_names[local_name] = identifier
+                    elif node.module == "core.constants" and alias.name.startswith("OLAY_"):
+                        local_names[local_name] = "core.constants event constants"
+            elif isinstance(node, ast.Import):
+                for alias in node.names:
+                    module_aliases[alias.asname or alias.name.split(".")[0]] = alias.name
+
         for node in ast.walk(tree):
             if isinstance(node, ast.ImportFrom) and node.module:
                 for alias in node.names:
@@ -91,13 +110,23 @@ def scan_static_usage(root: str | Path) -> tuple[StaticUsage, ...]:
                         found.append(StaticUsage(alias.name, str(path.relative_to(root)), node.lineno, "import"))
             elif isinstance(node, ast.ClassDef):
                 for base in node.bases:
-                    if isinstance(base, ast.Name) and base.id in _SIMPLE_NAMES:
-                        found.append(StaticUsage(_SIMPLE_NAMES[base.id], str(path.relative_to(root)), node.lineno, "inheritance"))
+                    if isinstance(base, ast.Name) and base.id in local_names:
+                        found.append(StaticUsage(local_names[base.id], str(path.relative_to(root)), node.lineno, "inheritance"))
+                    elif isinstance(base, ast.Attribute) and isinstance(base.value, ast.Name):
+                        module = module_aliases.get(base.value.id)
+                        identifier = f"{module}.{base.attr}" if module else ""
+                        if identifier in known:
+                            found.append(StaticUsage(identifier, str(path.relative_to(root)), node.lineno, "inheritance"))
             elif isinstance(node, ast.Call):
-                if isinstance(node.func, ast.Name) and node.func.id in _SIMPLE_NAMES:
-                    found.append(StaticUsage(_SIMPLE_NAMES[node.func.id], str(path.relative_to(root)), node.lineno, "construction"))
-                elif isinstance(node.func, ast.Attribute) and node.func.attr == "dunya_olaylarini_aktar":
-                    found.append(StaticUsage("Game.dunya_olaylarini_aktar", str(path.relative_to(root)), node.lineno, "method_call"))
+                if isinstance(node.func, ast.Name) and node.func.id in local_names:
+                    found.append(StaticUsage(local_names[node.func.id], str(path.relative_to(root)), node.lineno, "construction"))
+                elif isinstance(node.func, ast.Attribute):
+                    module = module_aliases.get(node.func.value.id) if isinstance(node.func.value, ast.Name) else None
+                    identifier = f"{module}.{node.func.attr}" if module else ""
+                    if identifier in known:
+                        found.append(StaticUsage(identifier, str(path.relative_to(root)), node.lineno, "construction"))
+                    elif node.func.attr == "dunya_olaylarini_aktar":
+                        found.append(StaticUsage("Game.dunya_olaylarini_aktar", str(path.relative_to(root)), node.lineno, "method_call"))
             elif isinstance(node, ast.Attribute) and node.attr == "world_id":
                 # Avoid counting World/WorldManager IDs as Entity.world_id.
                 if (isinstance(node.value, ast.Name) and node.value.id == "entity") or path.name == "entity.py":
