@@ -35,8 +35,8 @@ _ENTRIES = (
     CompatibilityEntry("core.actions.ActionManager", "CanonicalActionAdapter", "compatibility", False, "1.x", None, "Phase 7+", "Only direct 1.x callers may instantiate the manager; application code uses the adapter.", "1.x action callers"),
     CompatibilityEntry("Entity.world_id", "WorldMembershipService", "projection", False, "1.x", None, "Phase 7+", "Ownership migration is deferred.", "entity projection"),
     CompatibilityEntry("World._entities", "EntityRepository", "projection", False, "1.x", None, "Phase 7+", "World projection remains for compatibility.", "world projection"),
-    CompatibilityEntry("core.entity.position.Position", "core.domain.spatial.Position", "compatibility", False, "1.x", None, "Phase 6+", "Position migration is deferred.", "old imports"),
-    CompatibilityEntry("time_system.Tick", "core.time.Tick", "compatibility", False, "1.x", None, "Phase 6+", "Tick migration is deferred.", "old imports"),
+    CompatibilityEntry("core.entity.position.Position", "core.domain.spatial.Position", "compatibility", False, "1.x", None, "Phase 6+", "The mutable 1.x adapter stores an immutable canonical Position; new code should import the canonical type.", "old imports and mutable Entity.position callers"),
+    CompatibilityEntry("time_system.Tick", "core.time.Tick", "alias", False, "1.x", None, "Phase 6+", "time_system re-exports the canonical Tick class; the legacy import path remains stable.", "public legacy imports"),
 )
 
 LEGACY_API_MATRIX = MappingProxyType({entry.legacy_name: entry for entry in _ENTRIES})
