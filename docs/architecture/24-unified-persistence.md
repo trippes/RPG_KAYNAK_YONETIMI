@@ -37,6 +37,28 @@ falls back to a valid `.bak` file and attempts to repair the primary atomically.
   by an older backup.
 The adapter does not provide a lock or concurrent-writer ordering guarantee.
 
+## Save-slot lifecycle and overwrite protection
+
+The user-facing save manager exposes exactly ten slots. A slot is considered
+occupied when either its primary `slot_N.json` file or its recoverable
+`.bak` file exists. This prevents a backup-only slot from being presented as
+empty or accidentally selected as a new game. Continue/latest-save discovery
+also resolves backup-only slots through the primary path, allowing the file
+adapter to perform its normal backup recovery.
+
+Every manual save entry point, including the save shortcut, opens the slot
+picker. Selecting an occupied slot opens an explicit overwrite confirmation.
+The screen records the primary/backup file identities and metadata when the
+prompt is shown, then checks them again on confirmation. If the slot changes,
+the player must review and confirm the new state; if it disappears, the stale
+confirmation is cancelled. The actual write still goes through the atomic file
+adapter, which preserves a validated previous primary as `.bak`.
+
+Deleting a slot requires confirmation and removes both the primary and backup.
+The primary is removed first; if backup removal fails, the backup remains
+available for recovery and the UI reports the deletion error. Empty slots can
+be selected for a new save without an overwrite prompt.
+
 ## Load and candidate publication
 
 `GameApplication.load(path)` never restores into `holder.current`:
