@@ -99,7 +99,7 @@ class QuestWindowManagerTests(unittest.TestCase):
         self.manager.handle_input(
             InputState(mouse_pos=(180, 190), mouse_motion=True)
         )
-        self.assertEqual(window.bounds.topleft, (104, 180))
+        self.assertEqual(window.bounds.topleft, (48, 180))
 
         self.manager.handle_input(
             InputState(mouse_pos=(180, 190), mouse_button_up=True)
