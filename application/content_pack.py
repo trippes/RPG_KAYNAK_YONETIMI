@@ -30,8 +30,9 @@ class StarterContentIds:
     faction_id: str = "wardens"
     npc_id: str = "warden_lyra"
 
+from core.errors import RPGError
 
-class ContentDefinitionError(ValueError):
+class ContentDefinitionError(ValueError, RPGError):
     """Raised when a content definition cannot safely enter the runtime."""
 
 
