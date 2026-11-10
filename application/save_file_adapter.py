@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Union
 
 from .save_codec import SaveJsonCodec
-from .save_document import GameSaveDocument
+from .save_document import GameSaveDocument, SaveDocumentError, UnsupportedSaveSchemaError
 
 
 PathLike = Union[str, os.PathLike[str]]
@@ -91,25 +91,29 @@ class GameSaveFileAdapter:
     @staticmethod
     def load(path: PathLike) -> GameSaveDocument:
         target = Path(path)
+        primary_error = None
         try:
             return GameSaveFileAdapter._read_document(target)
-        except (OSError, ValueError, TypeError) as primary_error:
-            backup = GameSaveFileAdapter.backup_path(target)
-            try:
-                document = GameSaveFileAdapter._read_document(backup)
-            except (OSError, ValueError, TypeError) as backup_error:
-                raise SaveFileReadError(
-                    f"Could not read a valid save or recovery copy: {target}"
-                ) from primary_error
+        except SaveFileReadError as error:
+            primary_error = error
+        except UnsupportedSaveSchemaError:
+            # A future save version is not corruption; never load an older backup.
+            raise
+        except SaveDocumentError as error:
+            primary_error = error
 
-            # A valid backup is enough to continue loading even if the damaged
-            # primary cannot be repaired (for example, due to read-only media).
-            try:
-                GameSaveFileAdapter._copy_atomically(backup, target)
-            except OSError:
-                pass
-            return document
+        backup = GameSaveFileAdapter.backup_path(target)
+        try:
+            document = GameSaveFileAdapter._read_document(backup)
+        except (OSError, ValueError, TypeError):
+            raise primary_error
 
+        # A valid backup can be loaded even if repairing the primary fails.
+        try:
+            GameSaveFileAdapter._copy_atomically(backup, target)
+        except OSError:
+            pass
+        return document
     @staticmethod
     def _read_document(path: PathLike) -> GameSaveDocument:
         target = Path(path)
