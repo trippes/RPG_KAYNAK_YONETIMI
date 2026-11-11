@@ -30,9 +30,11 @@ class CurrencyExchangeScreen:
         (80, 201, 205, 107), (290, 201, 205, 107), (500, 201, 205, 107),
         (80, 315, 205, 107), (290, 315, 205, 107), (500, 315, 205, 107),
     )
-    # The two coin illustrations sit above these matching amount positions.
     CARD_AMOUNT_OFFSETS = (58, 147)
     BALANCE_CENTERS = (230, 414, 598)
+
+    # Only the transparent field directly behind the six exchange cards.
+    EXCHANGE_FIELD = (64, 190, 640, 244)
 
     def __init__(self, service):
         self.service = service
@@ -51,10 +53,14 @@ class CurrencyExchangeScreen:
             self._background = None
         return self._background
 
-    def _fill_inner_palette(self, renderer, target, scale):
-        """Fill transparent artwork areas with a restrained navy-to-blue palette."""
+    def _fill_exchange_field(self, renderer, target, scale):
+        """Color only the transparent area behind the exchange cards."""
         pg = renderer.pg
-        width, height = target.get_size()
+        x, y, width, height = self.EXCHANGE_FIELD
+        field = pg.Rect(
+            round(x * scale), round(y * scale),
+            max(1, round(width * scale)), max(1, round(height * scale)),
+        )
         palette = (
             (12, 22, 39),
             (16, 31, 53),
@@ -63,31 +69,25 @@ class CurrencyExchangeScreen:
             (19, 35, 58),
             (14, 27, 47),
         )
-        band_height = max(1, height // len(palette))
+        band_height = max(1, field.height // len(palette))
         try:
             for index, color in enumerate(palette):
-                top = index * band_height
-                band = pg.Rect(0, top, width, height - top if index == len(palette) - 1 else band_height)
+                top = field.y + index * band_height
+                band = pg.Rect(
+                    field.x, top, field.width,
+                    field.bottom - top if index == len(palette) - 1 else band_height,
+                )
                 pg.draw.rect(target, color, band)
-            # A fine muted-gold accent keeps the palette connected to the frame.
-            accent_y = round(190 * scale)
-            pg.draw.line(
-                target, (91, 72, 48),
-                (round(38 * scale), accent_y),
-                (round(730 * scale), accent_y),
-                max(1, round(scale)),
-            )
         except (AttributeError, TypeError, ValueError, RuntimeError):
-            target.fill(palette[1])
+            pg.draw.rect(target, palette[1], field)
 
     def _draw_background(self, renderer):
         image = self._load_background(renderer.pg)
         if image is None:
-            renderer.surface.fill((13, 20, 34))
             return
         scale = getattr(renderer.surface, "_scale", 1.0)
         target = getattr(renderer.surface, "_surface", renderer.surface)
-        self._fill_inner_palette(renderer, target, scale)
+        self._fill_exchange_field(renderer, target, scale)
         size = (
             max(1, round(self.design_size[0] * scale)),
             max(1, round(self.design_size[1] * scale)),
@@ -134,7 +134,6 @@ class CurrencyExchangeScreen:
         try:
             self.service.exchange_currency("hero", source, target, amount)
         except (KeyError, TypeError, ValueError, RuntimeError):
-            # The screen intentionally has no explanatory/status text.
             return
 
     def handle(self, state):
