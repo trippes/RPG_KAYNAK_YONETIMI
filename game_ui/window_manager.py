@@ -153,10 +153,17 @@ class WindowManager:
     def _screen_position(self, window, position):
         destination_x, destination_y = self._content_destination(window)
         origin_x, origin_y = window.content_origin
-        return (
-            position[0] - destination_x + origin_x,
-            position[1] - destination_y + origin_y,
-        )
+        local_x = position[0] - destination_x
+        local_y = position[1] - destination_y
+        if getattr(window.screen, "scale_to_window", False):
+            design_width, design_height = window.screen.design_size
+            content_width = max(1, window.bounds.width)
+            content_height = max(
+                1, window.bounds.height - (self.TITLE_HEIGHT if window.frame else 0)
+            )
+            local_x = round(local_x * design_width / content_width)
+            local_y = round(local_y * design_height / content_height)
+        return (local_x + origin_x, local_y + origin_y)
 
     def _clamp(self, window, x, y):
         return (
