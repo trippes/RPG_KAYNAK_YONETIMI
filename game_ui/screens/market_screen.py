@@ -102,7 +102,7 @@ class MarketScreen:
             )
             price = (
                 f"{offer.unit_price.amount} "
-                f"{resource_name(offer.unit_price.currency)} / adet"
+                f"{currency_name(offer.unit_price.currency)} / adet"
             )
             renderer.text(
                 price,
