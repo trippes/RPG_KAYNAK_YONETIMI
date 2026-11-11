@@ -1528,6 +1528,7 @@ class GameplayService:
             "deliver_inn_supplies": lambda: self.deliver_inn_supplies(actor_id, npc_id, "player"),
             "accept_blacksmith_quest": lambda: self.accept_blacksmith_quest(actor_id, "player"),
             "deliver_blacksmith_ore": lambda: self.deliver_blacksmith_ore(actor_id, npc_id, "player"),
+            "accept_caravan_quest": lambda: self.accept_caravan_quest(actor_id, "player"),
         }
         handler = actions.get(action)
         if handler is not None:
