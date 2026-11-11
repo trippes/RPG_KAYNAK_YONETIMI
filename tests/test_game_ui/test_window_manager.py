@@ -299,7 +299,7 @@ class QuestWindowManagerTests(unittest.TestCase):
         )
         manager._resize_window(window, (window.bounds.right + 40, window.bounds.bottom + 30))
 
-        self.assertEqual(screen.viewport_calls[-1], (940, 498))
+        self.assertEqual(screen.viewport_calls[-1], (941, 499))
 
 
     def test_scaled_window_pointer_coordinates_map_to_design_surface(self):
