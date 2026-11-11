@@ -1217,7 +1217,7 @@ class TestPhaseDQuality(unittest.TestCase):
 
         self.assertEqual(GAMEPLAY_WINDOW_IDS, {
             "character", "inventory", "quest_log", "map", "production", "market", "trade",
-            "container",
+            "container", "currency_exchange",
         })
 
     def test_gameplay_world_renders_before_active_surface(self):
