@@ -1549,6 +1549,16 @@ class GameplayService:
             self._quest_reward_inventories[quest.quest_id] = reward_inventory_id
         return quest
 
+    def accept_caravan_quest(self, owner_id: str, inventory_id: str):
+        quest = getattr(self, "caravan_quest", None)
+        if quest is None:
+            raise RuntimeError("Kayıp Kervanın İzinde görevi bulunamadı.")
+        if quest.state.value == "active":
+            return quest
+        if quest.state.value == "completed":
+            raise ValueError("Kervan görevi zaten tamamlandı.")
+        return self.start_quest(quest, owner_id=owner_id, reward_inventory_id=inventory_id)
+
     def accept_carpenter_quest(self, owner_id: str, inventory_id: str):
         quest = getattr(self, "carpenter_quest", None)
         if quest is None:
