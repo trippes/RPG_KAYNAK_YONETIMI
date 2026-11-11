@@ -12,6 +12,8 @@ class ManagedWindow:
     bounds: object
     content_origin: tuple[int, int]
     title: str
+    frame: bool = True
+    close_offset: tuple[int, int] | None = None
     visible: bool = False
     dragging: bool = False
     drag_offset: tuple[int, int] = (0, 0)
@@ -41,7 +43,10 @@ class WindowManager:
             if self.windows[window_id].visible
         )
 
-    def register(self, window_id, screen, bounds, *, content_origin=(24, 126), title=None):
+    def register(
+        self, window_id, screen, bounds, *,
+        content_origin=(24, 126), title=None, frame=True, close_offset=None,
+    ):
         if window_id in self.windows:
             raise ValueError(f"Window already registered: {window_id}")
         self.windows[window_id] = ManagedWindow(
@@ -50,6 +55,8 @@ class WindowManager:
             self.pg.Rect(bounds),
             content_origin,
             title or window_id,
+            frame,
+            close_offset,
         )
 
     def open(self, window_id):
@@ -98,6 +105,13 @@ class WindowManager:
         return None
 
     def _close_rect(self, window):
+        if not window.frame and window.close_offset is not None:
+            return self.pg.Rect(
+                window.bounds.x + window.close_offset[0],
+                window.bounds.y + window.close_offset[1],
+                self.CLOSE_SIZE,
+                self.CLOSE_SIZE,
+            )
         return self.pg.Rect(
             window.bounds.right - self.CLOSE_SIZE - 4,
             window.bounds.y + 4,
@@ -110,13 +124,13 @@ class WindowManager:
             window.bounds.x,
             window.bounds.y,
             window.bounds.width,
-            self.TITLE_HEIGHT,
+            self.TITLE_HEIGHT if window.frame else 18,
         )
 
     def _content_destination(self, window):
         return (
             window.bounds.x,
-            window.bounds.y + self.TITLE_HEIGHT,
+            window.bounds.y + (self.TITLE_HEIGHT if window.frame else 0),
         )
 
     def _content_source_rect(self, window):
@@ -124,7 +138,7 @@ class WindowManager:
             window.content_origin[0],
             window.content_origin[1],
             window.bounds.width,
-            max(0, window.bounds.height - self.TITLE_HEIGHT),
+            max(0, window.bounds.height - (self.TITLE_HEIGHT if window.frame else 0)),
         )
 
     def _screen_position(self, window, position):
@@ -284,7 +298,8 @@ class WindowManager:
         original_mouse_pos = renderer.mouse_pos
         for window_id in self.open_ids:
             window = self.windows[window_id]
-            renderer.panel(window.bounds)
+            if window.frame:
+                renderer.panel(window.bounds)
             if original_mouse_pos is not None:
                 renderer.mouse_pos = self._screen_position(window, original_mouse_pos)
             source = self._render_content(renderer, window)
@@ -296,7 +311,8 @@ class WindowManager:
                 )
             renderer.surface = original_surface
             renderer.mouse_pos = original_mouse_pos
-            renderer.text(window.title, window.bounds.x + 12, window.bounds.y + 6)
+            if window.frame:
+                renderer.text(window.title, window.bounds.x + 12, window.bounds.y + 6)
             close = self._close_rect(window)
             renderer.button(close, "X")
         renderer.mouse_pos = original_mouse_pos
