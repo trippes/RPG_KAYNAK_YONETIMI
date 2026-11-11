@@ -24,6 +24,75 @@ def populate_caravan_quest_demo(service) -> Quest:
     if world is None:
         raise RuntimeError("Caravan quest demo requires an active world.")
 
+    # Restore a genuinely playable first quest so the journal has two
+    # independently selectable entries in a fresh game.
+    carpenter = NPC(
+        "village_carpenter",
+        "Marangoz Hilmi",
+        "carpenter",
+        ("wardens",),
+        "village",
+        position=Position(21, 15),
+    )
+    service.register_npc(carpenter)
+    carpenter_quest = Quest(
+        "carpenter_wood",
+        "Marangozun Odun İsteği",
+        (
+            Objective(
+                "collect_wood",
+                "Kuzey Ormanı'ndan marangoz atölyesi için 3 odun topla.",
+                ObjectiveType.COLLECT,
+                target_id="forest_wood",
+                required=3,
+            ),
+            Objective(
+                "deliver_wood",
+                "Topladığın 3 odunu Marangoz Hilmi'ye teslim et.",
+                ObjectiveType.CUSTOM,
+            ),
+        ),
+        Reward(experience=35, currency=12),
+    )
+    bundle.quest_log.add(carpenter_quest)
+    service.carpenter_quest = carpenter_quest
+    service._quest_reward_accounts[carpenter_quest.quest_id] = "hero"
+    service._quest_reward_inventories[carpenter_quest.quest_id] = "player"
+    service.register_dialogue(Dialogue(
+        "carpenter_dialogue",
+        (
+            DialogueNode(
+                "start",
+                "village_carpenter",
+                "Marangoz Hilmi: Atölyenin çatısı fırtınada hasar gördü. "
+                "Onarmak için üç oduna ihtiyacım var. Yardım edebilir misin?",
+                (
+                    DialogueChoice(
+                        "accept_carpenter_quest",
+                        "Elbette. Üç odun getiririm.",
+                        "accepted",
+                        action="accept_carpenter_quest",
+                    ),
+                    DialogueChoice(
+                        "deliver_carpenter_wood",
+                        "İstediğin odunları getirdim.",
+                        None,
+                        action="deliver_carpenter_wood",
+                    ),
+                    DialogueChoice("decline_carpenter_quest", "Şimdi değil.", None),
+                ),
+            ),
+            DialogueNode(
+                "accepted",
+                "village_carpenter",
+                "Harika. Kuzey Ormanı'ndaki ağaçlardan üç odun topla ve "
+                "atölyeye geri dön. Malzemeleri teslim ettiğinde ödülünü alacaksın.",
+                (),
+            ),
+        ),
+        "start",
+    ))
+
     npc = NPC(
         CARAVAN_NPC_ID,
         "Tüccar Yadigar",
