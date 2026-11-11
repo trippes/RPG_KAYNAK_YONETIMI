@@ -6,6 +6,9 @@ from ..renderer import (
 
 class QuestLogScreen:
     """Window content for the four-state quest journal."""
+    scale_to_window = True
+    design_size = (912, 438)
+
 
     CATEGORIES = (
         ("active", "Devam Eden"),
