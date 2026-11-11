@@ -264,18 +264,20 @@ class TestPhaseDQuality(unittest.TestCase):
         )
 
     def test_quest_log_layout_scales_with_renderer_viewport(self):
-        layout = self._quest_screen()._layout(1200, 800)
+        screen = self._quest_screen()
+        screen.set_viewport(1200, 800)
+        layout = screen._layout()
+        quest_list = screen._list_bounds()
+        details = screen._details_bounds()
+        rewards = screen._reward_bounds()
 
         self.assertEqual(layout["outer"], (24, 126, 1176, 674))
         self.assertLessEqual(layout["outer"][0] + layout["outer"][2], 1200)
         self.assertLessEqual(layout["outer"][1] + layout["outer"][3], 800)
-        list_bounds = self._quest_screen()._list_bounds()
-        details_bounds = self._quest_screen()._details_bounds()
-        rewards_bounds = self._quest_screen()._reward_bounds()
-        self.assertLessEqual(list_bounds[0] + list_bounds[2], details_bounds[0])
-        self.assertLessEqual(details_bounds[0] + details_bounds[2], layout["outer"][0] + layout["outer"][2])
-        self.assertLessEqual(details_bounds[1] + details_bounds[3], rewards_bounds[1])
-        self.assertLessEqual(rewards_bounds[1] + rewards_bounds[3], layout["outer"][1] + layout["outer"][3])
+        self.assertLessEqual(quest_list[0] + quest_list[2], details[0])
+        self.assertLessEqual(details[0] + details[2], layout["outer"][0] + layout["outer"][2])
+        self.assertLessEqual(details[1] + details[3], rewards[1])
+        self.assertLessEqual(rewards[1] + rewards[3], layout["outer"][1] + layout["outer"][3])
 
     def test_quest_log_details_use_objective_and_reward_fields(self):
         screen = self._quest_screen()
