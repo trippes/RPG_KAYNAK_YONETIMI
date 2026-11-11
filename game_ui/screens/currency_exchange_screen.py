@@ -20,7 +20,12 @@ class CurrencyExchangeScreen:
         (ALTIN_SIKKE_BRONZ, "bronze", "gold"),
         (1, "gold", "bronze"),
     )
-    DENOMINATION_NAMES = {\n        "bronze": "Bronz",\n        "silver": "Gümüş",\n        "gold": "Altın",\n    }\n    CARD_RECTS = (
+    DENOMINATION_NAMES = {
+        "bronze": "Bronz",
+        "silver": "Gümüş",
+        "gold": "Altın",
+    }
+    CARD_RECTS = (
         (60, 304, 396, 50),
         (480, 304, 396, 50),
         (60, 364, 396, 50),
