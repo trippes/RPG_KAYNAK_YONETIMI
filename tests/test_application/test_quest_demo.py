@@ -3,11 +3,13 @@ import unittest
 from application.content_pack import populate_opening_content
 from application.game_application import GameApplication
 from application.quest_demo import populate_caravan_quest_demo
+from resources import Inventory
 
 
 class TestQuestDemoContent(unittest.TestCase):
     def setUp(self):
-        self.service, _ids = populate_opening_content(GameApplication.create_default())
+        application = GameApplication.create_default(inventories={"player": Inventory()})
+        self.service, _ids = populate_opening_content(application)
         self.quest = populate_caravan_quest_demo(self.service)
 
     def test_fresh_game_has_two_available_quests_and_both_npcs(self):
