@@ -16,14 +16,15 @@ def _service():
     return service
 
 
-def test_quest_playtest_fixture_places_talkable_npc_and_available_quest():
+def test_quest_playtest_fixture_places_talkable_npc_and_hides_unaccepted_quest():
     service = _service()
     bundle = service.application.holder.current
     npc = bundle.social.npcs.get(PLAYTEST_NPC_ID)
     assert npc is not None
     assert npc.location_id == "village"
     assert (int(npc.position.x), int(npc.position.y)) == (14, 29)
-    assert bundle.quest_log.get(PLAYTEST_QUEST_ID).state.value == "available"
+    assert bundle.quest_log.get(PLAYTEST_QUEST_ID) is None
+    assert service.carpenter_quest.state.value == "available"
     assert PLAYTEST_DIALOGUE_ID in bundle.social.dialogues
 
     local_map = MainScreen(service)
@@ -39,6 +40,7 @@ def test_accepting_playtest_dialogue_adds_active_quest_to_journal():
     )
 
     quest = service.application.holder.current.quest_log.get(PLAYTEST_QUEST_ID)
+    assert quest is service.carpenter_quest
     assert quest.state.value == "active"
     assert quest.objectives[0].progress == 0
     assert quest.reward.experience == 35
@@ -52,9 +54,11 @@ def test_accepting_playtest_dialogue_adds_active_quest_to_journal():
 def test_quest_playtest_fixture_is_idempotent():
     service = _service()
     first = register_quest_playtest_fixture(service)
+    quest = service.carpenter_quest
     second = register_quest_playtest_fixture(service)
     bundle = service.application.holder.current
 
     assert first == second == PLAYTEST_QUEST_ID
+    assert service.carpenter_quest is quest
+    assert bundle.quest_log.get(PLAYTEST_QUEST_ID) is None
     assert len([npc for npc in bundle.social.npcs.all() if npc.npc_id == PLAYTEST_NPC_ID]) == 1
-    assert len([quest for quest in bundle.quest_log.all() if quest.quest_id == PLAYTEST_QUEST_ID]) == 1
