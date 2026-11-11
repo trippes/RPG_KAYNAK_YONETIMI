@@ -7,7 +7,6 @@ from core.constants import (
     ALTIN_SIKKE_GUMUS,
     GUMUS_SIKKE_BRONZ,
 )
-from economy import currency_name
 
 
 class CurrencyExchangeScreen:
@@ -31,12 +30,13 @@ class CurrencyExchangeScreen:
         (80, 201, 205, 107), (290, 201, 205, 107), (500, 201, 205, 107),
         (80, 315, 205, 107), (290, 315, 205, 107), (500, 315, 205, 107),
     )
+    # The two coin illustrations sit above these matching amount positions.
+    CARD_AMOUNT_OFFSETS = (58, 147)
     BALANCE_CENTERS = (230, 414, 598)
 
     def __init__(self, service):
         self.service = service
         self.selected = 0
-        self.message = "Bir işlem seç. Enter ile dönüştür."
         self._background = None
         self._background_attempted = False
 
@@ -51,37 +51,34 @@ class CurrencyExchangeScreen:
             self._background = None
         return self._background
 
-    def _draw_panel_backings(self, renderer, target, scale):
-        """Add a subdued royal-blue backing visible through transparent card areas."""
+    def _fill_inner_palette(self, renderer, target, scale):
+        """Fill transparent artwork areas with a restrained navy-to-blue palette."""
         pg = renderer.pg
+        width, height = target.get_size()
+        palette = (
+            (12, 22, 39),
+            (16, 31, 53),
+            (20, 39, 63),
+            (24, 43, 66),
+            (19, 35, 58),
+            (14, 27, 47),
+        )
+        band_height = max(1, height // len(palette))
         try:
-            overlay = pg.Surface(target.get_size(), pg.SRCALPHA)
-            for x, y, width, height in self.CARD_RECTS:
-                rect = pg.Rect(
-                    round((x + 7) * scale),
-                    round((y + 7) * scale),
-                    max(1, round((width - 14) * scale)),
-                    max(1, round((height - 14) * scale)),
-                )
-                pg.draw.rect(
-                    overlay, (10, 23, 42, 178), rect,
-                    border_radius=max(2, round(11 * scale)),
-                )
-                pg.draw.rect(
-                    overlay, (190, 151, 88, 105), rect, width=max(1, round(scale)),
-                    border_radius=max(2, round(11 * scale)),
-                )
-                inset = max(2, round(4 * scale))
-                inner = rect.inflate(-inset * 2, -inset * 2)
-                pg.draw.rect(
-                    overlay, (225, 196, 139, 45), inner,
-                    width=max(1, round(scale)),
-                    border_radius=max(2, round(8 * scale)),
-                )
-            target.blit(overlay, (0, 0))
+            for index, color in enumerate(palette):
+                top = index * band_height
+                band = pg.Rect(0, top, width, height - top if index == len(palette) - 1 else band_height)
+                pg.draw.rect(target, color, band)
+            # A fine muted-gold accent keeps the palette connected to the frame.
+            accent_y = round(190 * scale)
+            pg.draw.line(
+                target, (91, 72, 48),
+                (round(38 * scale), accent_y),
+                (round(730 * scale), accent_y),
+                max(1, round(scale)),
+            )
         except (AttributeError, TypeError, ValueError, RuntimeError):
-            # Keep the screen usable on lightweight test renderers without alpha surfaces.
-            return
+            target.fill(palette[1])
 
     def _draw_background(self, renderer):
         image = self._load_background(renderer.pg)
@@ -90,11 +87,11 @@ class CurrencyExchangeScreen:
             return
         scale = getattr(renderer.surface, "_scale", 1.0)
         target = getattr(renderer.surface, "_surface", renderer.surface)
+        self._fill_inner_palette(renderer, target, scale)
         size = (
             max(1, round(self.design_size[0] * scale)),
             max(1, round(self.design_size[1] * scale)),
         )
-        self._draw_panel_backings(renderer, target, scale)
         try:
             artwork = renderer.pg.transform.smoothscale(image, size)
         except (AttributeError, TypeError, ValueError):
@@ -132,21 +129,13 @@ class CurrencyExchangeScreen:
 
     def _exchange(self, index):
         amount, source, target = self.OPTIONS[index]
-        if not self._has_funds(index):
-            self.message = (
-                f"Yetersiz bakiye: {self._number(amount)} "
-                f"{currency_name(source)} gerekiyor."
-            )
+        if self._balance(source) < amount:
             return
         try:
-            received = self.service.exchange_currency("hero", source, target, amount)
-            self.message = (
-                f"İşlem tamamlandı: {self._number(amount)} "
-                f"{currency_name(source)} → {self._number(received.amount)} "
-                f"{currency_name(target)}."
-            )
-        except (KeyError, TypeError, ValueError, RuntimeError) as error:
-            self.message = f"Döviz işlemi yapılamadı: {error}"
+            self.service.exchange_currency("hero", source, target, amount)
+        except (KeyError, TypeError, ValueError, RuntimeError):
+            # The screen intentionally has no explanatory/status text.
+            return
 
     def handle(self, state):
         if state.pressed("up") or state.pressed("left"):
@@ -165,7 +154,7 @@ class CurrencyExchangeScreen:
         return None
 
     def render(self, renderer):
-        """Draw currency values and interaction feedback over the supplied frame."""
+        """Draw balances and coin-aligned amounts over the supplied frame."""
         self._draw_background(renderer)
         pg = renderer.pg
         for center, currency in zip(self.BALANCE_CENTERS, ("bronze", "silver", "gold")):
@@ -187,28 +176,18 @@ class CurrencyExchangeScreen:
                     pg.Rect(rect.x + 3, rect.y + 3, rect.width - 6, rect.height - 6),
                     2, border_radius=9,
                 )
-            received = self._received_amount(amount, source, target)
-            # Coin artwork already identifies the denominations; show amounts only.
-            label = f"{self._number(amount)}  →  {self._number(received)}"
-            if not available:
-                label = "Bakiye yetersiz"
-            label = renderer.fit_text(label, rect.width - 30)
-            color = (248, 225, 190) if available else (177, 151, 139)
-            renderer.text(
-                label, rect.centerx - renderer.text_width(label) // 2,
-                rect.y + rect.height - 27, color,
-            )
 
-        feedback_color = (
-            (174, 238, 184) if self.message.startswith("İşlem tamamlandı")
-            else (245, 174, 153) if self.message.startswith("Yetersiz")
-            else (239, 220, 183)
-        )
-        feedback = renderer.fit_text(self.message, 560)
-        renderer.text(
-            feedback, 384 - renderer.text_width(feedback) // 2,
-            448, feedback_color,
-        )
+            received = self._received_amount(amount, source, target)
+            values = (amount, received)
+            color = (248, 225, 190) if available else (177, 151, 139)
+            for offset, value in zip(self.CARD_AMOUNT_OFFSETS, values):
+                label = self._number(value)
+                renderer.text(
+                    label,
+                    rect.x + offset - renderer.text_width(label) // 2,
+                    rect.y + rect.height - 27,
+                    color,
+                )
 
 
 __all__ = ["CurrencyExchangeScreen"]
