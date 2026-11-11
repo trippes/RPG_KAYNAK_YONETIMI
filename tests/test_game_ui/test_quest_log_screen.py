@@ -150,6 +150,22 @@ class QuestJournalWindowTests(unittest.TestCase):
         self.assertIn("XP 25", rendered_text)
         self.assertTrue(any(entry[0] == "bar" for entry in renderer.drawn))
 
+    def test_reward_panel_stays_inside_cropped_window_content(self):
+        renderer = FakeRenderer(width=960, height=640)
+        self.screen.render(renderer)
+
+        x, y, width, height = self.screen._reward_bounds()
+        self.assertGreaterEqual(x, 24)
+        self.assertGreaterEqual(y, 126)
+        self.assertLessEqual(x + width, renderer.width)
+        self.assertLessEqual(y + height, renderer.height)
+
+        reward_panels = [
+            rect for kind, rect in renderer.drawn
+            if kind == "panel" and rect.x == x and rect.y == y
+        ]
+        self.assertEqual(len(reward_panels), 1)
+
     def test_empty_category_renders_without_error(self):
         self.screen._select_category(2)
         renderer = FakeRenderer()
