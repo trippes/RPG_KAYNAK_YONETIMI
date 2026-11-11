@@ -172,14 +172,11 @@ class CurrencyExchangeScreen:
             target_label = (
                 f"{received_amount:,}".replace(",", ".")
                 + f" {currency_name(target)}"
+            ) if available else "Bakiye yetersiz"
+            renderer.text(
+                renderer.fit_text(target_label, rect.width - 286),
+                rect.x + 272, rect.y + 16, target_color,
             )
-            renderer.text(target_label, rect.x + 272, rect.y + 16, target_color)
-
-            if not available:
-                renderer.text(
-                    "Yetersiz bakiye", rect.right - 122, rect.y + 2,
-                    (190, 132, 120),
-                )
 
         # Persistent feedback keeps both successful and rejected transactions legible.
         feedback_color = (
