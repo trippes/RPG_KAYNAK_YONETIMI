@@ -319,6 +319,7 @@ class GameplayService:
             "carpenter_quest",
             "inn_quest",
             "blacksmith_quest",
+            "caravan_quest",
         ):
             current = getattr(self, attribute, None)
             quest_id = getattr(current, "quest_id", None)
