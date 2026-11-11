@@ -27,17 +27,6 @@ class CharacterScreen:
         "wisdom": "Bilgelik",
         "charisma": "Karizma",
     }
-    EQUIPMENT_LABELS = {
-        "head": "Baş",
-        "chest": "Gövde",
-        "hands": "Eller",
-        "legs": "Bacak",
-        "feet": "Ayak",
-        "main_hand": "Ana el",
-        "off_hand": "Diğer el",
-        "accessory": "Aksesuar",
-    }
-
     def __init__(self, service):
         self.service = service
         self.selected_skill = 0
@@ -56,18 +45,8 @@ class CharacterScreen:
             return ()
         return tuple(character.skills.to_dict().items())
 
-    def _equipment_rows(self, character=None):
-        character = character or self._character()
-        if character is None:
-            return ()
-        equipped = character.equipment.snapshot()
-        return tuple(
-            (slot, equipped.get(slot))
-            for slot in self.EQUIPMENT_LABELS
-        )
-
     def _skill_bounds(self):
-        return (280, 332, 244, 24)
+        return (280, 332, 480, 24)
 
     def handle(self, state):
         character = self._character()
@@ -122,7 +101,7 @@ class CharacterScreen:
         renderer.panel(outer, (23, 29, 42), (145, 118, 70))
         renderer.text("KARAKTER", outer.x + 16, outer.y + 9, GOLD)
         renderer.text(
-            "Kimlik · nitelikler · gelişim · ekipman",
+            "Kimlik · nitelikler · gelişim",
             outer.x + 132, outer.y + 9, MUTED,
         )
 
@@ -147,7 +126,6 @@ class CharacterScreen:
         self._render_combat(renderer, stats)
         self._render_attributes(renderer, stats)
         self._render_skills(renderer, character)
-        self._render_equipment(renderer, character)
 
     def _render_identity(self, renderer, character, stats):
         """Render the character identity as a compact RPG profile card."""
@@ -260,7 +238,7 @@ class CharacterScreen:
             )
 
     def _render_skills(self, renderer, character):
-        rect = renderer.pg.Rect(272, 268, 260, 174)
+        rect = renderer.pg.Rect(272, 268, 496, 174)
         renderer.panel(rect, (27, 35, 50), PANEL_BORDER)
         points = character.progression.unspent_points
         renderer.text("BECERİLER", rect.x + 12, rect.y + 10, GOLD)
@@ -306,26 +284,3 @@ class CharacterScreen:
             GOOD if self.message else MUTED,
             max_width=rect.width - 20,
         )
-
-    def _render_equipment(self, renderer, character):
-        rect = renderer.pg.Rect(544, 268, 224, 174)
-        renderer.panel(rect, (27, 35, 50), PANEL_BORDER)
-        renderer.text("EKİPMAN", rect.x + 12, rect.y + 10, GOLD)
-        for index, (slot, item_id) in enumerate(self._equipment_rows(character)):
-            column, row = index % 2, index // 2
-            cell = renderer.pg.Rect(
-                rect.x + 8 + column * 106,
-                rect.y + 36 + row * 32,
-                102, 27,
-            )
-            renderer.panel(cell, (35, 44, 60), PANEL_BORDER)
-            item = self.service.item(item_id) if item_id else None
-            item_name = item.name if item is not None else (
-                "Boş" if item_id is None else "Bilinmiyor"
-            )
-            line = f"{self.EQUIPMENT_LABELS[slot]}: {item_name}"
-            renderer.text(
-                renderer.fit_text(line, cell.width - 10),
-                cell.x + 5, cell.y + 2, GOLD if item_id else TEXT_SOFT,
-                max_width=cell.width - 10,
-            )
