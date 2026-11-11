@@ -126,6 +126,27 @@ class InventoryScreen:
         self.slot_order = order[:20]
         self.selected = target_index
 
+    def dragged_item_payload(self):
+        """Return the item stack currently being dragged, if it is transferable."""
+        if self.drag_index is None:
+            return None
+        entries = self._slot_entries()
+        if self.drag_index >= len(entries):
+            return None
+        entry = entries[self.drag_index]
+        if entry is None:
+            return None
+        kind, item_id, quantity = entry
+        if kind != "item":
+            return None
+        return {"item_id": item_id, "quantity": quantity}
+
+    def cancel_drag(self):
+        """Release pointer capture after a drop handled by another window."""
+        self.drag_index = None
+        self.drag_position = None
+        self.drag_moved = False
+
     def _selected_item(self):
         entries = self._slot_entries()
         if self.selected >= len(entries) or entries[self.selected] is None:
