@@ -65,6 +65,9 @@ class QuestSnapshot:
             # Definitions own immutable design data; only player progress/state is restored.
             import copy
             quest = copy.deepcopy(source)
+            quest.sequential_objectives = record.get(
+                "sequential_objectives", quest.sequential_objectives,
+            )
             reward = record.get("reward") or {}
             quest.reward = Reward(
                 reward.get("experience", quest.reward.experience),
