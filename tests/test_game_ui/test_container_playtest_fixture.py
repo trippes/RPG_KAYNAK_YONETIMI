@@ -11,13 +11,14 @@ from application.container_playtest_content import (
     UNLOCKED_CHEST_ENTITY_ID,
     register_container_playtest_fixture,
 )
-from application.content_pack import populate_opening_content
+from application.content_pack import populate_gameplay_resources, populate_opening_content
 from application.game_application import GameApplication
 
 
 def test_playtest_fixture_registers_three_chests_and_keeps_tools_out_of_player_inventory():
     application = GameApplication.create_default()
     service, _ids = populate_opening_content(application)
+    populate_gameplay_resources(service)
 
     result = register_container_playtest_fixture(service)
 
