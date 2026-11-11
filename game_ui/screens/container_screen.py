@@ -12,11 +12,12 @@ class ContainerScreen:
 
     COLUMNS = 6
     MIN_ROWS = 4
-    SLOT_SIZE = 52
-    SLOT_GAP = 8
-    GRID_X = 91
-    GRID_Y = 300
-    GRID_VIEW = (78, 292, 764, 252)
+    SLOT_WIDTH = 104
+    SLOT_HEIGHT = 68
+    SLOT_GAP = 10
+    GRID_X = 123
+    GRID_Y = 236
+    GRID_VIEW = (78, 228, 764, 316)
     CATEGORIES = (
         ("all", "Tümü"),
         ("weapon", "Silah"),
@@ -159,18 +160,19 @@ class ContainerScreen:
 
     def _max_scroll(self, entry_count):
         total_rows = self._visible_rows(entry_count)
-        visible_rows = max(1, self.GRID_VIEW[3] // (self.SLOT_SIZE + self.SLOT_GAP))
+        visible_rows = max(1, self.GRID_VIEW[3] // (self.SLOT_HEIGHT + self.SLOT_GAP))
         return max(0, total_rows - visible_rows)
 
     def _slot_rects(self, renderer, entry_count):
-        pitch = self.SLOT_SIZE + self.SLOT_GAP
+        pitch_x = self.SLOT_WIDTH + self.SLOT_GAP
+        pitch_y = self.SLOT_HEIGHT + self.SLOT_GAP
         first = self.scroll_row * self.COLUMNS
         count = self._visible_rows(entry_count) * self.COLUMNS
         return tuple(
             renderer.pg.Rect(
-                self.GRID_X + (index % self.COLUMNS) * pitch,
-                self.GRID_Y + (index // self.COLUMNS - self.scroll_row) * pitch,
-                self.SLOT_SIZE, self.SLOT_SIZE,
+                self.GRID_X + (index % self.COLUMNS) * pitch_x,
+                self.GRID_Y + (index // self.COLUMNS - self.scroll_row) * pitch_y,
+                self.SLOT_WIDTH, self.SLOT_HEIGHT,
             )
             for index in range(first, first + count)
         )
@@ -341,47 +343,72 @@ class ContainerScreen:
 
     @staticmethod
     def _draw_slot(renderer, rect, *, selected=False, hovered=False, rarity="common"):
-        pg = renderer.pg
+        pg, surface = renderer.pg, renderer.surface
         palette = {
-            "common": ((34, 38, 48), (94, 105, 119)),
-            "uncommon": ((29, 48, 39), (80, 158, 105)),
-            "rare": ((30, 43, 65), (83, 137, 205)),
-            "epic": ((53, 35, 61), (165, 94, 190)),
-            "legendary": ((67, 47, 22), (218, 164, 66)),
+            "common": ((30, 36, 48), (100, 116, 137)),
+            "uncommon": ((23, 49, 40), (77, 174, 116)),
+            "rare": ((24, 42, 69), (87, 151, 225)),
+            "epic": ((52, 34, 66), (176, 111, 218)),
+            "legendary": ((67, 47, 23), (230, 177, 77)),
         }
-        fill, edge = palette.get(rarity, palette["common"])
-        if hovered:
-            fill = tuple(min(255, value + 12) for value in fill)
-        pg.draw.rect(renderer.surface, (9, 11, 16), rect.move(2, 3), border_radius=7)
-        pg.draw.rect(renderer.surface, (17, 20, 27), rect, border_radius=7)
+        fill, edge = palette.get(str(rarity).lower(), palette["common"])
+        if hovered or selected:
+            fill = tuple(min(255, channel + 9) for channel in fill)
+        pg.draw.rect(surface, (5, 8, 14), rect.move(0, 4), border_radius=9)
+        pg.draw.rect(surface, (12, 17, 27), rect, border_radius=9)
         inner = rect.inflate(-4, -4)
-        pg.draw.rect(renderer.surface, fill, inner, border_radius=5)
-        pg.draw.rect(renderer.surface, GOLD if selected else edge, rect, 2 if selected else 1, border_radius=7)
+        pg.draw.rect(surface, fill, inner, border_radius=7)
+        pg.draw.line(surface, tuple(min(255, v + 22) for v in fill),
+                     (inner.x + 8, inner.y + 2), (inner.right - 8, inner.y + 2), 1)
+        pg.draw.rect(surface, edge if not selected else (244, 207, 126),
+                     rect, 2 if selected else 1, border_radius=9)
         if selected:
-            pg.draw.line(renderer.surface, GOLD, (rect.x + 7, rect.y + 4), (rect.right - 7, rect.y + 4), 2)
+            pg.draw.rect(surface, (244, 207, 126), rect.inflate(4, 4), 1, border_radius=11)
 
     @staticmethod
     def _draw_item_icon(renderer, item, rect, category):
         pg, surface = renderer.pg, renderer.surface
         cx, cy = rect.center
+        shadow = (7, 10, 16)
         if category == "weapon":
-            pg.draw.polygon(surface, (222, 224, 225), [(cx, cy - 19), (cx + 6, cy + 2), (cx, cy + 10), (cx - 6, cy + 2)])
-            pg.draw.line(surface, GOLD, (cx, cy + 8), (cx, cy + 20), 4)
-            pg.draw.line(surface, (115, 77, 43), (cx - 9, cy + 12), (cx + 9, cy + 12), 4)
+            blade = [(cx, cy - 23), (cx + 7, cy - 1), (cx + 2, cy + 8),
+                     (cx - 2, cy + 8), (cx - 7, cy - 1)]
+            pg.draw.polygon(surface, shadow, [(x + 2, y + 3) for x, y in blade])
+            pg.draw.polygon(surface, (190, 207, 218), blade)
+            pg.draw.line(surface, (245, 250, 252), (cx, cy - 19), (cx - 3, cy + 1), 2)
+            pg.draw.line(surface, (201, 157, 83), (cx, cy + 7), (cx, cy + 22), 4)
+            pg.draw.line(surface, (231, 198, 126), (cx - 10, cy + 10), (cx + 10, cy + 10), 3)
+            pg.draw.circle(surface, (238, 208, 139), (cx, cy + 22), 3)
         elif category == "armor":
-            pg.draw.polygon(surface, (114, 143, 160), [(cx - 17, cy - 15), (cx + 17, cy - 15), (cx + 13, cy + 5), (cx, cy + 19), (cx - 13, cy + 5)])
-            pg.draw.polygon(surface, GOLD, [(cx, cy - 10), (cx + 8, cy - 6), (cx + 6, cy + 4), (cx, cy + 12), (cx - 6, cy + 4), (cx - 8, cy - 6)], 2)
+            points = [(cx - 19, cy - 16), (cx - 8, cy - 21), (cx, cy - 14),
+                      (cx + 8, cy - 21), (cx + 19, cy - 16), (cx + 15, cy + 8),
+                      (cx, cy + 23), (cx - 15, cy + 8)]
+            pg.draw.polygon(surface, shadow, [(x + 2, y + 3) for x, y in points])
+            pg.draw.polygon(surface, (92, 126, 151), points)
+            pg.draw.line(surface, (178, 204, 218), points[0], points[1], 3)
+            pg.draw.line(surface, (178, 204, 218), points[1], points[2], 3)
+            pg.draw.line(surface, (190, 158, 91), (cx, cy - 12), (cx, cy + 16), 2)
+            pg.draw.line(surface, (190, 158, 91), (cx - 11, cy - 7), (cx + 11, cy - 7), 2)
         elif category == "potion":
-            pg.draw.rect(surface, (105, 168, 199), pg.Rect(cx - 8, cy - 12, 16, 27), border_radius=5)
-            pg.draw.rect(surface, (223, 190, 116), pg.Rect(cx - 5, cy - 19, 10, 9), border_radius=2)
-            pg.draw.rect(surface, (185, 66, 73), pg.Rect(cx - 6, cy + 2, 12, 11), border_radius=3)
-            pg.draw.line(surface, (225, 145, 145), (cx - 3, cy - 5), (cx + 2, cy + 3), 2)
+            pg.draw.rect(surface, shadow, pg.Rect(cx - 9, cy - 12, 20, 31), border_radius=6)
+            pg.draw.rect(surface, (173, 202, 215), pg.Rect(cx - 10, cy - 15, 20, 31), border_radius=6)
+            pg.draw.rect(surface, (152, 48, 66), pg.Rect(cx - 7, cy + 1, 14, 12), border_radius=4)
+            pg.draw.rect(surface, (221, 188, 119), pg.Rect(cx - 6, cy - 23, 12, 9), border_radius=2)
+            pg.draw.line(surface, (246, 248, 231), (cx - 5, cy - 9), (cx - 5, cy + 1), 2)
+            pg.draw.line(surface, (222, 117, 128), (cx - 5, cy + 5), (cx + 4, cy + 5), 2)
         elif category == "food":
-            pg.draw.ellipse(surface, (189, 135, 76), pg.Rect(cx - 17, cy - 10, 34, 23))
-            pg.draw.ellipse(surface, (235, 196, 125), pg.Rect(cx - 17, cy - 10, 34, 23), 2)
+            pg.draw.ellipse(surface, shadow, pg.Rect(cx - 21, cy - 10, 44, 28))
+            pg.draw.ellipse(surface, (171, 112, 58), pg.Rect(cx - 21, cy - 13, 42, 26))
+            pg.draw.ellipse(surface, (236, 190, 119), pg.Rect(cx - 16, cy - 10, 32, 18), 2)
+            pg.draw.arc(surface, (255, 222, 160), pg.Rect(cx - 12, cy - 9, 22, 14), 0.2, 2.7, 2)
         else:
-            pg.draw.polygon(surface, (122, 153, 177), [(cx, cy - 18), (cx + 15, cy - 2), (cx + 8, cy + 16), (cx - 8, cy + 16), (cx - 15, cy - 2)])
-            pg.draw.polygon(surface, GOLD, [(cx, cy - 10), (cx + 8, cy - 1), (cx + 4, cy + 10), (cx - 4, cy + 10), (cx - 8, cy - 1)], 2)
+            pg.draw.polygon(surface, shadow, [(cx + 1, cy - 23), (cx + 20, cy - 2),
+                (cx + 12, cy + 19), (cx - 11, cy + 19), (cx - 20, cy - 2)])
+            pg.draw.polygon(surface, (82, 135, 165), [(cx, cy - 24), (cx + 18, cy - 3),
+                (cx + 10, cy + 17), (cx - 10, cy + 17), (cx - 18, cy - 3)])
+            pg.draw.polygon(surface, (174, 215, 224), [(cx, cy - 17), (cx + 8, cy - 3),
+                (cx + 3, cy + 8), (cx - 5, cy + 5), (cx - 8, cy - 3)])
+            pg.draw.line(surface, (226, 244, 241), (cx, cy - 16), (cx - 5, cy - 4), 2)
 
     def render(self, renderer):
         if self.container_id is None:
@@ -395,44 +422,55 @@ class ContainerScreen:
                 self._render_locked(renderer, lock)
                 return
 
-            pg = renderer.pg
+            pg, surface = renderer.pg, renderer.surface
             outer = pg.Rect(52, 145, 816, 478)
-            renderer.panel(outer, (23, 27, 37), (163, 124, 69))
-            renderer.panel(pg.Rect(59, 152, 802, 464), (29, 31, 39), (91, 78, 61))
-            self._draw_chest_emblem(renderer, 785, 157)
-            renderer.text(view.name.upper(), 82, 166, GOLD, title=True, max_width=650)
-            renderer.text("GANİMET", 84, 211, TEXT_SOFT)
-            renderer.text(f"{sum(amount for _, amount in view.items)} adet • {len(view.items)} tür", 190, 211, MUTED)
+            pg.draw.rect(surface, (7, 9, 14), outer.move(0, 5), border_radius=18)
+            pg.draw.rect(surface, (19, 24, 34), outer, border_radius=18)
+            pg.draw.rect(surface, (153, 119, 68), outer, 2, border_radius=18)
+            inner = outer.inflate(-10, -10)
+            pg.draw.rect(surface, (25, 31, 43), inner, border_radius=14)
+            pg.draw.rect(surface, (68, 81, 101), inner, 1, border_radius=14)
 
-            self._search_rect = pg.Rect(82, 242, 260, 34)
-            pg.draw.rect(renderer.surface, (16, 19, 27), self._search_rect, border_radius=8)
-            pg.draw.rect(renderer.surface, (104, 119, 143) if self.search_text else (74, 82, 96), self._search_rect, 1, border_radius=8)
-            renderer.text("⌕", 94, 248, GOLD)
-            search_label = self.search_text if self.search_text else "Eşya ara..."
-            renderer.text(search_label, 122, 249, TEXT if self.search_text else MUTED, max_width=208)
+            header = pg.Rect(66, 158, 788, 62)
+            pg.draw.rect(surface, (17, 23, 34), header, border_radius=11)
+            pg.draw.line(surface, (184, 143, 78), (82, 219), (838, 219), 1)
+            emblem = pg.Rect(82, 168, 42, 42)
+            pg.draw.rect(surface, (47, 39, 30), emblem, border_radius=10)
+            pg.draw.rect(surface, (184, 143, 78), emblem, 1, border_radius=10)
+            self._draw_chest_emblem(renderer, 88, 161)
+            renderer.text(view.name.upper(), 137, 169, (239, 220, 181), title=True, max_width=360)
+            count = sum(amount for _, amount in view.items)
+            renderer.text(f"{count} eşya  •  {len(view.items)} farklı tür", 139, 196, (151, 165, 184))
 
-            self._category_rects = {}
-            x = 354
-            for category, label in self.CATEGORIES:
-                width = renderer.text_width(label) + 22
-                rect = pg.Rect(x, 242, width, 34)
-                active = self.category == category
-                fill = (76, 59, 39) if active else (37, 42, 53)
-                edge = GOLD if active else (79, 91, 111)
-                pg.draw.rect(renderer.surface, fill, rect, border_radius=9)
-                pg.draw.rect(renderer.surface, edge, rect, 1, border_radius=9)
-                renderer.text(label, rect.x + 11, rect.y + 8, GOLD if active else TEXT_SOFT)
-                self._category_rects[category] = rect
-                x += width + 5
+            self._sort_rect = pg.Rect(558, 170, 270, 38)
+            pg.draw.rect(surface, (9, 13, 21), self._sort_rect, border_radius=10)
+            pg.draw.rect(surface, (103, 119, 143), self._sort_rect, 1, border_radius=10)
+            renderer.text("≡", 572, 177, (220, 184, 111))
+            labels = {"name": "Ada göre", "category": "Türe göre", "rarity": "Nadirliğe göre", "quantity": "Miktara göre"}
+            renderer.text("SIRALA", 600, 174, (130, 146, 166))
+            renderer.text(labels.get(self.sort_mode, "Ada göre"), 600, 190, (235, 226, 207))
+            renderer.text("▾", 802, 180, (220, 184, 111))
 
-            entries = self._filtered_entries(view)
+            entries = list(self._filtered_entries(view))
+            if self.sort_mode == "quantity":
+                entries.sort(key=lambda row: row[1], reverse=True)
+            elif self.sort_mode == "rarity":
+                order = {"legendary": 0, "epic": 1, "rare": 2, "uncommon": 3, "common": 4}
+                entries.sort(key=lambda row: order.get(str(getattr(row[2], "rarity", "common")).lower(), 5))
+            elif self.sort_mode == "category":
+                entries.sort(key=lambda row: (row[3], row[2].name.casefold()))
+            else:
+                entries.sort(key=lambda row: row[2].name.casefold())
+            entries = tuple(entries)
             self._display_entries = entries
             self.scroll_row = max(0, min(self.scroll_row, self._max_scroll(len(entries))))
-            self._grid_rect = pg.Rect(*self.GRID_VIEW)
-            pg.draw.rect(renderer.surface, (15, 18, 25), self._grid_rect, border_radius=8)
-            pg.draw.rect(renderer.surface, (63, 71, 86), self._grid_rect, 1, border_radius=8)
-            previous_clip = renderer.surface.get_clip()
-            renderer.surface.set_clip(self._grid_rect)
+
+            board = pg.Rect(76, 229, 768, 320)
+            pg.draw.rect(surface, (10, 14, 22), board, border_radius=12)
+            pg.draw.rect(surface, (56, 68, 86), board, 1, border_radius=12)
+            self._grid_rect = board
+            previous_clip = surface.get_clip()
+            surface.set_clip(board)
             self._row_rects = []
             slot_rects = self._slot_rects(renderer, len(entries))
             for index, rect in enumerate(slot_rects):
@@ -440,33 +478,47 @@ class ContainerScreen:
                 entry = entries[entry_index] if entry_index < len(entries) else None
                 selected = entry is not None and entry_index == self.selected_index
                 hovered = renderer.hovered(rect)
-                self._draw_slot(renderer, rect, selected=selected, hovered=hovered)
+                rarity = str(getattr(entry[2], "rarity", "common")).lower() if entry else "common"
+                self._draw_slot(renderer, rect, selected=selected, hovered=hovered, rarity=rarity)
                 self._row_rects.append(rect)
                 if entry is None:
                     continue
-                item_id, amount, item, category = entry
-                self._draw_item_icon(renderer, item, rect.inflate(-7, -7), category)
-                badge = pg.Rect(rect.right - 23, rect.bottom - 17, 20, 14)
-                pg.draw.rect(renderer.surface, (9, 12, 18), badge, border_radius=4)
-                renderer.text(str(amount), badge.x + 3, badge.y - 1, (245, 225, 183), max_width=15)
-            renderer.surface.set_clip(previous_clip)
+                _item_id, amount, item, category = entry
+                icon_rect = pg.Rect(rect.x + 8, rect.y + 5, 48, 56)
+                self._draw_item_icon(renderer, item, icon_rect, category)
+                short_name = renderer.fit_text(item.name, 43)
+                renderer.text(short_name, rect.x + 58, rect.y + 12, (226, 230, 237), max_width=42)
+                badge = pg.Rect(rect.right - 29, rect.bottom - 22, 23, 16)
+                pg.draw.rect(surface, (7, 10, 16), badge, border_radius=5)
+                renderer.text(str(amount), badge.x + 4, badge.y, (248, 222, 166), max_width=18)
+            surface.set_clip(previous_clip)
 
             total_rows = self._visible_rows(len(entries))
-            visible_rows = max(1, self.GRID_VIEW[3] // (self.SLOT_SIZE + self.SLOT_GAP))
+            visible_rows = max(1, self.GRID_VIEW[3] // (self.SLOT_HEIGHT + self.SLOT_GAP))
             if total_rows > visible_rows:
-                track = pg.Rect(850, self.GRID_VIEW[1], 5, self.GRID_VIEW[3])
-                pg.draw.rect(renderer.surface, (18, 21, 29), track, border_radius=3)
-                thumb_h = max(28, int(track.height * visible_rows / total_rows))
+                track = pg.Rect(850, board.y + 8, 5, board.height - 16)
+                pg.draw.rect(surface, (19, 25, 35), track, border_radius=3)
+                thumb_h = max(30, int(track.height * visible_rows / total_rows))
                 travel = track.height - thumb_h
                 thumb_y = track.y + int(travel * self.scroll_row / max(1, total_rows - visible_rows))
-                pg.draw.rect(renderer.surface, (171, 135, 81), pg.Rect(track.x, thumb_y, track.width, thumb_h), border_radius=3)
+                pg.draw.rect(surface, (190, 151, 87), pg.Rect(track.x, thumb_y, track.width, thumb_h), border_radius=3)
 
             if not entries:
-                hint = "Bu sandıkta eşya yok." if not view.items else "Aramanızla eşleşen eşya bulunamadı."
-                renderer.text(hint, 96, 398, MUTED)
-            self._take_all_rect = pg.Rect(680, 566, 154, 38)
-            renderer.action_button(self._take_all_rect, "T", "Tümünü Al", enabled=bool(view.items))
-            renderer.text(self.message, 84, 576, GOOD if "aktarıldı" in self.message else TEXT_SOFT, max_width=560)
+                renderer.text("Sandıkta henüz eşya bulunmuyor.", 300, 376, (143, 157, 177))
+
+            footer_y = 562
+            pg.draw.line(surface, (72, 83, 101), (82, footer_y - 8), (838, footer_y - 8), 1)
+            self._take_all_rect = pg.Rect(650, 570, 184, 40)
+            button = self._take_all_rect
+            pg.draw.rect(surface, (7, 10, 16), button.move(0, 3), border_radius=10)
+            pg.draw.rect(surface, (93, 68, 39), button, border_radius=10)
+            pg.draw.rect(surface, (202, 158, 83), button, 1, border_radius=10)
+            if renderer.hovered(button):
+                pg.draw.rect(surface, (119, 88, 47), button.inflate(-4, -4), border_radius=8)
+            renderer.text("TÜMÜNÜ AL", button.x + 48, button.y + 12, (248, 224, 181))
+            renderer.text("›", button.right - 24, button.y + 7, (248, 224, 181), title=True)
+            status_color = (139, 207, 160) if "aktarıldı" in self.message else (151, 165, 184)
+            renderer.text(self.message, 86, 581, status_color, max_width=540)
         except (KeyError, ValueError, RuntimeError, GameplayServiceError) as error:
             renderer.text(f"Sandık görüntülenemedi: {error}", 72, 180, WARN)
 
