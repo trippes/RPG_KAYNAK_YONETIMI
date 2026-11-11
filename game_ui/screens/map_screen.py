@@ -4,6 +4,9 @@ from ..renderer import TEXT_SOFT
 
 
 class MapScreen:
+    scale_to_window = True
+    design_size = (912, 438)
+
     def __init__(self, service):
         self.service = service
         self.selected = 0
