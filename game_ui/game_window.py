@@ -163,12 +163,18 @@ class GameWindow:
             content_origin=(24, 126),
             title="Pazar",
         )
+        exchange_width = min(self.width - 48, int((self.height - 96) * 1.5))
+        exchange_height = int(exchange_width / 1.5)
+        exchange_x = (self.width - exchange_width) // 2
+        exchange_y = (self.height - exchange_height) // 2
         self.window_manager.register(
             "currency_exchange",
             self.screens["currency_exchange"],
-            (24, 110, min(self.width - 48, 912), min(self.height - 110, 520)),
-            content_origin=(24, 126),
-            title="Döviz Bürosu",
+            (exchange_x, exchange_y, exchange_width, exchange_height),
+            content_origin=(0, 0),
+            title="",
+            frame=False,
+            close_offset=(696, 80),
         )
         self.window_manager.register(
             "trade",

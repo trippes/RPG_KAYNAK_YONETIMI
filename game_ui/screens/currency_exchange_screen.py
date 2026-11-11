@@ -1,4 +1,6 @@
-"""Royal Mint currency exchange window."""
+"""Royal Mint currency exchange window using the dedicated fantasy frame asset."""
+
+from pathlib import Path
 
 from core.constants import (
     ALTIN_SIKKE_BRONZ,
@@ -11,8 +13,11 @@ from economy import currency_name
 class CurrencyExchangeScreen:
     scale_to_window = True
     transparent_window_background = True
-    design_size = (912, 438)
+    custom_close_button = True
+    close_size = 48
+    design_size = (768, 512)
 
+    BACKGROUND_NAME = "royal_mint_exchange_frame.png"
     OPTIONS = (
         (GUMUS_SIKKE_BRONZ, "bronze", "silver"),
         (1, "silver", "bronze"),
@@ -21,24 +26,47 @@ class CurrencyExchangeScreen:
         (ALTIN_SIKKE_BRONZ, "bronze", "gold"),
         (1, "gold", "bronze"),
     )
-    DENOMINATION_NAMES = {
-        "bronze": "Bronz",
-        "silver": "Gümüş",
-        "gold": "Altın",
-    }
+    DENOMINATION_NAMES = {"bronze": "Bronz", "silver": "Gümüş", "gold": "Altın"}
     CARD_RECTS = (
-        (60, 304, 396, 50),
-        (480, 304, 396, 50),
-        (60, 364, 396, 50),
-        (480, 364, 396, 50),
-        (60, 424, 396, 50),
-        (480, 424, 396, 50),
+        (80, 201, 205, 107), (290, 201, 205, 107), (500, 201, 205, 107),
+        (80, 315, 205, 107), (290, 315, 205, 107), (500, 315, 205, 107),
     )
+    BALANCE_CENTERS = (230, 414, 598)
 
     def __init__(self, service):
         self.service = service
         self.selected = 0
         self.message = "Bir işlem seç. Enter ile dönüştür."
+        self._background = None
+        self._background_attempted = False
+
+    def _load_background(self, pg):
+        if self._background is not None or self._background_attempted:
+            return self._background
+        self._background_attempted = True
+        try:
+            asset = Path(__file__).resolve().parents[1] / "assets" / self.BACKGROUND_NAME
+            self._background = pg.image.load(str(asset))
+        except (AttributeError, OSError, RuntimeError):
+            self._background = None
+        return self._background
+
+    def _draw_background(self, renderer):
+        image = self._load_background(renderer.pg)
+        if image is None:
+            renderer.surface.fill((13, 20, 34))
+            return
+        scale = getattr(renderer.surface, "_scale", 1.0)
+        target = getattr(renderer.surface, "_surface", renderer.surface)
+        size = (
+            max(1, round(self.design_size[0] * scale)),
+            max(1, round(self.design_size[1] * scale)),
+        )
+        try:
+            artwork = renderer.pg.transform.smoothscale(image, size)
+        except (AttributeError, TypeError, ValueError):
+            artwork = image
+        target.blit(artwork, (0, 0))
 
     def _balance(self, currency):
         try:
@@ -50,18 +78,39 @@ class CurrencyExchangeScreen:
         amount, source, _target = self.OPTIONS[index]
         return self._balance(source) >= amount
 
+    def _received_amount(self, amount, source, target):
+        if source == "bronze" and target == "silver":
+            return amount // GUMUS_SIKKE_BRONZ
+        if source == "silver" and target == "bronze":
+            return amount * GUMUS_SIKKE_BRONZ
+        if source == "silver" and target == "gold":
+            return amount // ALTIN_SIKKE_GUMUS
+        if source == "gold" and target == "silver":
+            return amount * ALTIN_SIKKE_GUMUS
+        if source == "bronze" and target == "gold":
+            return amount // ALTIN_SIKKE_BRONZ
+        if source == "gold" and target == "bronze":
+            return amount * ALTIN_SIKKE_BRONZ
+        return amount
+
+    @staticmethod
+    def _number(value):
+        return f"{value:,}".replace(",", ".")
+
     def _exchange(self, index):
         amount, source, target = self.OPTIONS[index]
         if not self._has_funds(index):
             self.message = (
-                f"Yetersiz bakiye: {amount} {currency_name(source)} gerekiyor."
+                f"Yetersiz bakiye: {self._number(amount)} "
+                f"{currency_name(source)} gerekiyor."
             )
             return
         try:
             received = self.service.exchange_currency("hero", source, target, amount)
             self.message = (
-                f"İşlem tamamlandı: {amount} {currency_name(source)} "
-                f"→ {received.amount} {currency_name(target)}."
+                f"İşlem tamamlandı: {self._number(amount)} "
+                f"{currency_name(source)} → {self._number(received.amount)} "
+                f"{currency_name(target)}."
             )
         except (KeyError, TypeError, ValueError, RuntimeError) as error:
             self.message = f"Döviz işlemi yapılamadı: {error}"
@@ -71,7 +120,6 @@ class CurrencyExchangeScreen:
             self.selected = (self.selected - 1) % len(self.OPTIONS)
         if state.pressed("down") or state.pressed("right"):
             self.selected = (self.selected + 1) % len(self.OPTIONS)
-
         if state.mouse_pos is not None:
             for index, (x, y, width, height) in enumerate(self.CARD_RECTS):
                 if x <= state.mouse_pos[0] <= x + width and y <= state.mouse_pos[1] <= y + height:
@@ -79,119 +127,67 @@ class CurrencyExchangeScreen:
                     if state.mouse_clicked:
                         self._exchange(index)
                     break
-
         if state.pressed("confirm"):
             self._exchange(self.selected)
         return None
 
     def render(self, renderer):
-        """Draw the Royal Mint interface inside the managed window viewport."""
+        """Draw currency values and interaction feedback over the supplied frame."""
+        self._draw_background(renderer)
         pg = renderer.pg
-        # Header: restrained heraldic styling, with a clear information hierarchy.
-        renderer.text("Kraliyet Darphanesi", 60, 150, title=True)
+        title = "KRALİYET DARPHANESİ"
         renderer.text(
-            "Sikkelerini güvenli biçimde daha büyük veya küçük birimlere dönüştür.",
-            62, 194, (177, 188, 205),
+            title, 384 - renderer.text_width(title, title=True) // 2,
+            91, title=True, max_width=430,
         )
-        pg.draw.line(renderer.surface, (112, 91, 57), (60, 216), (876, 216), 1)
+        rates = (
+            f"{GUMUS_SIKKE_BRONZ} BRONZ = 1 GÜMÜŞ"
+            f"     •     {ALTIN_SIKKE_GUMUS} GÜMÜŞ = 1 ALTIN"
+        )
+        renderer.text(rates, 384 - renderer.text_width(rates) // 2, 119, (239, 205, 137))
 
-        # The player's complete balance remains visible above the exchange choices.
-        renderer.panel(
-            pg.Rect(60, 224, 816, 38),
-            (31, 39, 55),
-            (91, 104, 126),
-        )
-        renderer.wallet(self.service, "hero", 76, 232, label="Cüzdan")
+        for center, currency in zip(self.BALANCE_CENTERS, ("bronze", "silver", "gold")):
+            amount = self._number(self._balance(currency))
+            renderer.text(
+                amount, center - renderer.text_width(amount) // 2,
+                160, (248, 226, 190),
+            )
 
-        # Canonical rates are read from core.constants, not duplicated in the UI.
-        renderer.panel(
-            pg.Rect(60, 270, 816, 24),
-            (39, 42, 54),
-            (112, 91, 57),
-        )
-        rate_text = (
-            f"SABİT KURLAR   •   {GUMUS_SIKKE_BRONZ} BRONZ = 1 GÜMÜŞ"
-            f"   •   {ALTIN_SIKKE_GUMUS} GÜMÜŞ = 1 ALTIN"
-        )
-        renderer.text(rate_text, 76, 273, (220, 190, 125))
-
-        # Six exchange directions are presented as paired, tactile transaction cards.
         for index, bounds in enumerate(self.CARD_RECTS):
             amount, source, target = self.OPTIONS[index]
+            rect = pg.Rect(*bounds)
             selected = index == self.selected
             available = self._has_funds(index)
-            rect = pg.Rect(*bounds)
-
-            if selected:
-                fill, border = (57, 65, 83), (230, 190, 112)
-            elif renderer.hovered(rect):
-                fill, border = (43, 54, 73), (135, 151, 177)
-            else:
-                fill, border = (30, 39, 55), (72, 87, 110)
-            if not available and not selected:
-                fill, border = (27, 32, 43), (57, 64, 77)
-            renderer.panel(rect, fill, border)
-
-            icon_y = rect.y + 13
-            renderer.coin_icon(rect.x + 14, icon_y, source, 24)
-            source_color = (232, 235, 242) if available else (125, 133, 146)
-            source_label = f"{amount:,}".replace(",", ".") + f" {self.DENOMINATION_NAMES[source]}"
-            renderer.text(source_label, rect.x + 48, rect.y + 16, source_color)
-
-            arrow_color = (232, 194, 112) if available else (104, 112, 126)
-            arrow_x = rect.x + 207
-            pg.draw.line(
-                renderer.surface, arrow_color,
-                (arrow_x - 10, rect.y + 25), (arrow_x + 10, rect.y + 25), 2,
+            if selected or renderer.hovered(rect):
+                border = (255, 224, 151) if available else (224, 151, 132)
+                pg.draw.rect(
+                    renderer.surface, border,
+                    pg.Rect(rect.x + 3, rect.y + 3, rect.width - 6, rect.height - 6),
+                    2, border_radius=9,
+                )
+            received = self._received_amount(amount, source, target)
+            label = (
+                f"{self._number(amount)} {self.DENOMINATION_NAMES[source]}"
+                f"  →  {self._number(received)} {self.DENOMINATION_NAMES[target]}"
             )
-            pg.draw.polygon(
-                renderer.surface, arrow_color,
-                [
-                    (arrow_x + 10, rect.y + 25),
-                    (arrow_x + 3, rect.y + 20),
-                    (arrow_x + 3, rect.y + 30),
-                ],
-            )
-
-            received_amount = amount
-            if source == "bronze" and target == "silver":
-                received_amount = 1
-            elif source == "silver" and target == "bronze":
-                received_amount = GUMUS_SIKKE_BRONZ
-            elif source == "silver" and target == "gold":
-                received_amount = 1
-            elif source == "gold" and target == "silver":
-                received_amount = ALTIN_SIKKE_GUMUS
-            elif source == "bronze" and target == "gold":
-                received_amount = 1
-            elif source == "gold" and target == "bronze":
-                received_amount = ALTIN_SIKKE_BRONZ
-
-            renderer.coin_icon(rect.x + 238, icon_y, target, 24)
-            target_color = (232, 235, 242) if available else (125, 133, 146)
-            target_label = (
-                f"{received_amount:,}".replace(",", ".")
-                + f" {currency_name(target)}"
-            ) if available else "Bakiye yetersiz"
+            if not available:
+                label = "Bakiye yetersiz"
+            label = renderer.fit_text(label, rect.width - 30)
+            color = (248, 225, 190) if available else (177, 151, 139)
             renderer.text(
-                renderer.fit_text(target_label, rect.width - 286),
-                rect.x + 272, rect.y + 16, target_color,
+                label, rect.centerx - renderer.text_width(label) // 2,
+                rect.y + rect.height - 27, color,
             )
 
-        # Persistent feedback keeps both successful and rejected transactions legible.
         feedback_color = (
-            (145, 220, 165) if self.message.startswith("İşlem tamamlandı")
-            else (224, 157, 135) if self.message.startswith("Yetersiz")
-            else (190, 199, 214)
+            (174, 238, 184) if self.message.startswith("İşlem tamamlandı")
+            else (245, 174, 153) if self.message.startswith("Yetersiz")
+            else (239, 220, 183)
         )
-        renderer.panel(
-            pg.Rect(60, 488, 816, 32),
-            (29, 38, 52),
-            (91, 104, 126),
-        )
+        feedback = renderer.fit_text(self.message, 560)
         renderer.text(
-            renderer.fit_text(self.message, 780),
-            76, 495, feedback_color,
+            feedback, 384 - renderer.text_width(feedback) // 2,
+            448, feedback_color,
         )
 
 

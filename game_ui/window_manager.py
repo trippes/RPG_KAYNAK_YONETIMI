@@ -125,19 +125,20 @@ class WindowManager:
 
     def _close_rect(self, window):
         if not window.frame and window.close_offset is not None:
+            close_size = max(1, int(getattr(window.screen, "close_size", self.CLOSE_SIZE)))
             if getattr(window.screen, "scale_to_window", False):
                 scale, offset_x, offset_y = self._content_transform(window)
                 return self.pg.Rect(
                     window.bounds.x + round(offset_x + window.close_offset[0] * scale),
                     window.bounds.y + round(offset_y + window.close_offset[1] * scale),
-                    max(1, round(self.CLOSE_SIZE * scale)),
-                    max(1, round(self.CLOSE_SIZE * scale)),
+                    max(1, round(close_size * scale)),
+                    max(1, round(close_size * scale)),
                 )
             return self.pg.Rect(
                 window.bounds.x + window.close_offset[0],
                 window.bounds.y + window.close_offset[1],
-                self.CLOSE_SIZE,
-                self.CLOSE_SIZE,
+                close_size,
+                close_size,
             )
         return self.pg.Rect(
             window.bounds.right - self.CLOSE_SIZE - 4,
@@ -488,7 +489,8 @@ class WindowManager:
             if window.frame:
                 renderer.text(window.title, window.bounds.x + 12, window.bounds.y + 6)
             close = self._close_rect(window)
-            renderer.button(close, "X")
+            if not getattr(window.screen, "custom_close_button", False):
+                renderer.button(close, "X")
             if window.frame and hasattr(self.pg, "draw") and hasattr(self.pg.draw, "line"):
                 right = window.bounds.right - 7
                 bottom = window.bounds.bottom - 7
