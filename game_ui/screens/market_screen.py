@@ -2,6 +2,9 @@ from ..renderer import GOLD, MUTED, TEXT, resource_name
 
 
 class MarketScreen:
+    scale_to_window = True
+    design_size = (912, 438)
+
     VISIBLE_OFFERS = 4
     ROW_X, ROW_Y, ROW_W, ROW_H = 96, 206, 760, 44
     BUY_RECT = (636, 408, 220, 42)
