@@ -244,6 +244,49 @@ class QuestWindowManagerTests(unittest.TestCase):
             (404, 345),
         )
 
+    def test_responsive_content_preserves_design_aspect_ratio(self):
+        screen = DummyScreen()
+        screen.scale_to_window = True
+        screen.design_size = (760, 438)
+        manager = WindowManager(self.backend, 960, 640)
+        manager.register(
+            "character", screen, (80, 90, 600, 400),
+            content_origin=(24, 126), title="Karakter",
+        )
+        window = manager.windows["character"]
+
+        scale, offset_x, offset_y = manager._content_transform(window)
+        rendered_width = screen.design_size[0] * scale
+        rendered_height = screen.design_size[1] * scale
+        available_height = window.bounds.height - manager.TITLE_HEIGHT
+
+        self.assertAlmostEqual(rendered_width / rendered_height, 760 / 438)
+        self.assertAlmostEqual(offset_x, 0)
+        self.assertGreater(offset_y, 0)
+        self.assertLessEqual(rendered_height, available_height)
+
+    def test_letterboxed_content_pointer_maps_to_design_center(self):
+        screen = DummyScreen()
+        screen.scale_to_window = True
+        screen.design_size = (760, 438)
+        manager = WindowManager(self.backend, 960, 640)
+        manager.register(
+            "character", screen, (80, 90, 600, 400),
+            content_origin=(24, 126), title="Karakter",
+        )
+        window = manager.windows["character"]
+        scale, offset_x, offset_y = manager._content_transform(window)
+        destination_x, destination_y = manager._content_destination(window)
+        center = (
+            round(destination_x + offset_x + screen.design_size[0] * scale / 2),
+            round(destination_y + offset_y + screen.design_size[1] * scale / 2),
+        )
+
+        self.assertEqual(
+            manager._screen_position(window, center),
+            (24 + 760 // 2, 126 + 438 // 2),
+        )
+
     def test_content_click_is_translated_to_screen_coordinates(self):
         self.manager.open("quest_log")
         self.manager.handle_input(
