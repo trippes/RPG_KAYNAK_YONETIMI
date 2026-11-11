@@ -205,10 +205,14 @@ class QuestLogScreen:
     def _layout(self, width=None, height=None):
         width = self.viewport_width if width is None else max(1, int(width))
         height = self.viewport_height if height is None else max(1, int(height))
-        # Responsive windows render in their own local content viewport.
-        # The old fixed-screen offsets (24, 126) pushed the reward panel
-        # outside the window surface, where WindowManager clipped it away.
-        outer = (0, 0, width, height)
+        # WindowManager's responsive canvas includes the content origin.
+        # Keep layout coordinates aligned with that origin so the cropped
+        # window surface contains the complete journal UI.
+        outer = (
+            self.CONTENT_X, self.CONTENT_Y,
+            max(1, width - self.CONTENT_X * 2),
+            max(1, height - 16),
+        )
         inner = ResponsiveLayout.inset(outer, 16, 0, 16, 16)
         body_y = outer[1] + self.HEADER_HEIGHT + self.TAB_HEIGHT + 10
         reward_height = min(self.REWARD_HEIGHT, max(56, inner[3] // 4))
