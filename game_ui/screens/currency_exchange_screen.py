@@ -33,6 +33,23 @@ class CurrencyExchangeScreen:
     CARD_AMOUNT_OFFSETS = (58, 147)
     BALANCE_CENTERS = (230, 414, 598)
 
+    def __init__(self, service):
+        self.service = service
+        self.selected = 0
+        self._background = None
+        self._background_attempted = False
+
+    def _load_background(self, pg):
+        if self._background is not None or self._background_attempted:
+            return self._background
+        self._background_attempted = True
+        try:
+            asset = Path(__file__).resolve().parents[1] / "assets" / self.BACKGROUND_NAME
+            self._background = pg.image.load(str(asset))
+        except (AttributeError, OSError, RuntimeError):
+            self._background = None
+        return self._background
+
     def _draw_base_layer(self, renderer, target, scale):
         """Draw a full base layer first; the frame PNG masks every opaque region."""
         pg = renderer.pg
