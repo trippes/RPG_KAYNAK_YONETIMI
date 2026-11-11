@@ -349,12 +349,6 @@ class Renderer:
         "silver": ((181, 192, 205), (83, 96, 112), (242, 246, 250), "S"),
         "gold": ((224, 180, 65), (117, 80, 23), (255, 226, 132), "A"),
     }
-    COIN_LABELS = {
-        "bronze": "bronz",
-        "silver": "gümüş",
-        "gold": "altın",
-    }
-
     def coin_icon(self, x, y, currency, size=22):
         """Draw a small embossed coin; x/y identify its top-left corner."""
         currency_id = getattr(currency, "value", str(currency))
@@ -515,8 +509,7 @@ class Renderer:
             self.text("HP —", x, 82, MUTED)
             x += self.text_width("HP —") + 18
 
-        self.pg.draw.circle(self.surface, RESOURCE_COLORS["gold"], (x + 7, 94), 7)
-        self.pg.draw.circle(self.surface, (150, 120, 40), (x + 7, 94), 7, 2)
+        self.coin_icon(x, 85, "gold", 18)
         gold_text = f"{gold}"
         self.text(gold_text, x + 20, 82, GOLD)
         x += 20 + self.text_width(gold_text) + 24
