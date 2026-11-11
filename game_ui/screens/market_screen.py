@@ -1,4 +1,5 @@
 from ..renderer import GOLD, MUTED, TEXT, resource_name
+from economy import currency_name
 
 
 class MarketScreen:
@@ -8,6 +9,7 @@ class MarketScreen:
     VISIBLE_OFFERS = 4
     ROW_X, ROW_Y, ROW_W, ROW_H = 96, 206, 760, 44
     BUY_RECT = (636, 408, 220, 42)
+    EXCHANGE_RECT = (636, 455, 220, 42)
 
     def __init__(self, service):
         self.service = service
@@ -40,6 +42,12 @@ class MarketScreen:
         offers = self._offers()
         if offers:
             self.selected %= len(offers)
+
+        if state.mouse_clicked and state.mouse_pos is not None:
+            mx, my = state.mouse_pos
+            ex, ey, ew, eh = self.EXCHANGE_RECT
+            if ex <= mx <= ex + ew and ey <= my <= ey + eh:
+                return "currency_exchange"
 
         if offers and state.mouse_clicked and state.mouse_pos is not None:
             mx, my = state.mouse_pos
@@ -109,8 +117,17 @@ class MarketScreen:
                 64, 384, MUTED,
             )
         try:
-            balance = self.service.balance("hero", "gold").amount
-            renderer.text(f"Altın: {balance}", 64, 420, GOLD)
+            balances = (
+                self.service.balance("hero", "bronze").amount,
+                self.service.balance("hero", "silver").amount,
+                self.service.balance("hero", "gold").amount,
+            )
+            wallet = (
+                f"Cüzdan: {balances[0]} {currency_name('bronze')}  •  "
+                f"{balances[1]} {currency_name('silver')}  •  "
+                f"{balances[2]} {currency_name('gold')}"
+            )
+            renderer.text(wallet, 64, 420, GOLD)
         except (KeyError, ValueError):
             pass
 
@@ -121,7 +138,5 @@ class MarketScreen:
             enabled=bool(offers),
             selected=True,
         )
-        renderer.text(
-            renderer.fit_text(self.message, 760),
-            64, 455, GOLD,
-        )
+        renderer.button(renderer.pg.Rect(*self.EXCHANGE_RECT), "Para Bozdur", selected=True)
+        renderer.text(renderer.fit_text(self.message, 760), 64, 510, GOLD)
