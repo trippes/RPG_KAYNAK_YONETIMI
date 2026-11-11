@@ -49,8 +49,12 @@ class CharacterScreen:
         if compact:
             identity = (inner[0], inner[1], inner[2], top_height)
             combat = None
-            attributes = (inner[0], bottom_y, inner[2], bottom_height)
-            skills = None
+            attribute_height = max(96, (bottom_height - gap) // 2)
+            attributes = (inner[0], bottom_y, inner[2], attribute_height)
+            skills = (
+                inner[0], bottom_y + attribute_height + gap,
+                inner[2], max(1, bottom_height - attribute_height - gap),
+            )
         else:
             identity, combat = ResponsiveLayout.split_columns(
                 (inner[0], inner[1], inner[2], top_height),
@@ -157,7 +161,7 @@ class CharacterScreen:
         if layout["combat"] is not None:
             self._render_combat(renderer, stats, layout["combat"])
         self._render_attributes(renderer, stats, layout["attributes"])
-        self._render_skills(renderer, character, layout["skills"] or layout["attributes"])
+        self._render_skills(renderer, character, layout["skills"])
 
     def _render_identity(self, renderer, character, stats, bounds):
         rect = renderer.pg.Rect(bounds)
