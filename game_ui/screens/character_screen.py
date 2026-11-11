@@ -62,7 +62,7 @@ class CharacterScreen:
         )
 
     def _skill_bounds(self):
-        return (280, 320, 244, 21)
+        return (280, 320, 244, 24)
 
     def handle(self, state):
         character = self._character()
@@ -73,7 +73,7 @@ class CharacterScreen:
             return None
 
         self.selected_skill %= len(skills)
-        visible_count = 5
+        visible_count = 4
         max_scroll = max(0, len(skills) - visible_count)
         if state.mouse_pos is not None:
             x, y, width, height = self._skill_bounds()
@@ -115,10 +115,10 @@ class CharacterScreen:
             self.CONTENT_WIDTH, self.CONTENT_HEIGHT,
         )
         renderer.panel(outer, (23, 29, 42), (145, 118, 70))
-        renderer.text("KARAKTER", outer.x + 16, outer.y + 9, GOLD, title=True)
+        renderer.text("KARAKTER", outer.x + 16, outer.y + 9, GOLD)
         renderer.text(
             "Kimlik · nitelikler · gelişim · ekipman",
-            outer.x + 132, outer.y + 13, MUTED,
+            outer.x + 132, outer.y + 9, MUTED,
         )
 
         if not snapshot.actors:
@@ -176,7 +176,7 @@ class CharacterScreen:
             f"{character.age} yaş"
         )
         renderer.text(
-            identity, text_x, rect.y + 35, TEXT_SOFT,
+            identity, text_x, rect.y + 38, TEXT_SOFT,
             max_width=text_width,
         )
         level = stats.get("level", character.progression.level)
@@ -185,16 +185,16 @@ class CharacterScreen:
             "experience_to_next_level",
             character.progression.experience_to_next_level,
         )
-        renderer.text(f"SEVİYE {level}", text_x, rect.y + 60, MUTED)
+        renderer.text(f"SEVİYE {level}", text_x, rect.y + 64, MUTED)
         bar_x = text_x + 78
         bar_width = max(30, rect.right - bar_x - 10)
         renderer.text(
             f"{experience}/{required} XP",
-            bar_x, rect.y + 60, MUTED,
+            bar_x, rect.y + 64, MUTED,
             max_width=bar_width,
         )
         renderer.bar(
-            renderer.pg.Rect(bar_x, rect.y + 80, bar_width, 6),
+            renderer.pg.Rect(bar_x, rect.y + 82, bar_width, 6),
             experience / required if required else 0,
             GOLD,
         )
@@ -224,7 +224,7 @@ class CharacterScreen:
             column = index % 2
             row = index // 2
             x = rect.x + 12 + column * 190
-            y = rect.y + 38 + row * 22
+            y = rect.y + 38 + row * 26
             renderer.text(label, x, y, MUTED)
             renderer.text(f"{value:+}" if label != "SİLAH HASARI" else str(value),
                           x + 112, y, GOLD)
@@ -243,18 +243,15 @@ class CharacterScreen:
                 94, 34,
             )
             renderer.panel(card, (35, 44, 60), PANEL_BORDER)
-            renderer.text(
-                self.ATTRIBUTE_LABELS[key], card.x + 6, card.y + 4,
-                TEXT_SOFT, max_width=card.width - 12,
-            )
-            renderer.text(
-                str(attributes.get(key, 10)),
-                card.x + 6, card.y + 19, GOLD,
-            )
             modifier = modifiers.get(key, 0)
+            value = (
+                f"{self.ATTRIBUTE_LABELS[key]}: "
+                f"{attributes.get(key, 10)} ({modifier:+})"
+            )
             renderer.text(
-                f"{modifier:+}",
-                card.right - 30, card.y + 19, GOOD if modifier >= 0 else MUTED,
+                renderer.fit_text(value, card.width - 10),
+                card.x + 5, card.y + 5, TEXT_SOFT,
+                max_width=card.width - 10,
             )
 
     def _render_skills(self, renderer, character):
@@ -265,7 +262,7 @@ class CharacterScreen:
         renderer.text(f"Gelişim puanı: {points}", rect.x + 12, rect.y + 29, MUTED)
 
         skills = self._skill_rows(character)
-        visible_count = 5
+        visible_count = 4
         if not skills:
             renderer.text("Beceri kaydı bulunmuyor.", rect.x + 12, rect.y + 62, MUTED)
         else:
@@ -278,8 +275,8 @@ class CharacterScreen:
             ):
                 index = self.skill_scroll + row_index
                 row = renderer.pg.Rect(
-                    rect.x + 8, rect.y + 52 + row_index * 21,
-                    rect.width - 16, 19,
+                    rect.x + 8, rect.y + 52 + row_index * 25,
+                    rect.width - 16, 23,
                 )
                 selected = index == self.selected_skill
                 if selected:
@@ -288,12 +285,12 @@ class CharacterScreen:
                     renderer.panel(row, BUTTON_HOVER, PANEL_BORDER)
                 renderer.text(
                     skill.replace("_", " ").title(),
-                    row.x + 7, row.y + 2,
+                    row.x + 7, row.y + 1,
                     GOOD if selected else TEXT_SOFT,
                     max_width=row.width - 45,
                 )
                 renderer.text(
-                    str(value), row.right - 27, row.y + 2,
+                    str(value), row.right - 27, row.y + 1,
                     GOLD if selected else TEXT_SOFT,
                 )
 
@@ -320,17 +317,13 @@ class CharacterScreen:
                 102, 27,
             )
             renderer.panel(cell, (35, 44, 60), PANEL_BORDER)
-            renderer.text(
-                self.EQUIPMENT_LABELS[slot],
-                cell.x + 5, cell.y + 3, MUTED,
-                max_width=cell.width - 10,
-            )
             item = self.service.item(item_id) if item_id else None
             item_name = item.name if item is not None else (
                 "Boş" if item_id is None else "Bilinmiyor"
             )
+            line = f"{self.EQUIPMENT_LABELS[slot]}: {item_name}"
             renderer.text(
-                renderer.fit_text(item_name, cell.width - 10),
-                cell.x + 5, cell.y + 15, GOLD if item_id else TEXT_SOFT,
+                renderer.fit_text(line, cell.width - 10),
+                cell.x + 5, cell.y + 2, GOLD if item_id else TEXT_SOFT,
                 max_width=cell.width - 10,
             )
