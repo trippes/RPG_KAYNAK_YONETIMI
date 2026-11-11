@@ -367,6 +367,48 @@ class GameWindow:
         self.gameplay_active = False
         self.selected_slot = None
 
+    def _start_test_world(self):
+        """Start a fresh gameplay session with a deterministic test character."""
+        from application.content_pack import populate_gameplay_resources
+        from character import Attribute
+
+        # Reuse the normal world/content bootstrap, but skip the opening,
+        # dialogue and character-creation flow.
+        self._start_new_game()
+
+        character = self.service.application.holder.current.characters.get("hero")
+        if character is None:
+            raise RuntimeError("Test dünyası için oyuncu karakteri oluşturulamadı.")
+
+        self.service.application.customize_character(
+            "hero",
+            "Test Kahramanı",
+            30,
+            {
+                Attribute.STRENGTH: 12,
+                Attribute.DEXTERITY: 12,
+                Attribute.CONSTITUTION: 12,
+                Attribute.INTELLIGENCE: 12,
+                Attribute.WISDOM: 12,
+                Attribute.CHARISMA: 12,
+            },
+            race=character.race,
+            character_class=character.character_class,
+            appearance={"Ten": "buğday", "Saç": "kahverengi", "Göz": "yeşil", "Yüz": "kararlı"},
+        )
+        populate_gameplay_resources(self.service)
+
+        actors = self.service.state().actors
+        if actors and actors[0].inventory_id is None:
+            self.service.bind_actor_inventory(actors[0].actor_id, "player")
+
+        self.service._player_name_confirmed = True
+        self.service._creation_from_eren = False
+        self.pause_menu_open = False
+        self.current = self.gameplay_screen
+        self.gameplay_active = True
+        self._set_notice("Test dünyası hazır. Test Kahramanı ile maceraya başlayabilirsin.", "ok")
+
     def _set_current(self, target):
         """Change application state without allowing gameplay to close."""
         if target == "world":
@@ -651,6 +693,9 @@ class GameWindow:
         elif next_screen == "new_game":
             self._start_new_game()
             next_screen = "opening"
+        elif next_screen == "test_world":
+            self._start_test_world()
+            next_screen = None
         elif next_screen == "load_slots":
             next_screen = self._open_save_slots("load")
 
