@@ -210,6 +210,7 @@ class GameplayService:
                 f"Resource node {node_id} does not belong to the active world."
             )
         bundle.resource_nodes.extract(node_id, inventory, quantity)
+        self._advance_quests("collect", node_id, quantity.value, "hero", inventory_id)
 
     def action_cost(self, action_type: ActionType | str) -> int:
         """Return a fixed gameplay action's canonical cost in ticks."""
