@@ -345,29 +345,71 @@ class Renderer:
         self.pg.draw.rect(self.surface, (14, 18, 26), rect, 1, border_radius=4)
 
     COIN_STYLES = {
-        "bronze": ((166, 101, 55), (91, 52, 30), (226, 158, 98), "B"),
-        "silver": ((181, 192, 205), (83, 96, 112), (242, 246, 250), "S"),
-        "gold": ((224, 180, 65), (117, 80, 23), (255, 226, 132), "A"),
+        "bronze": ((166, 101, 55), (91, 52, 30), (226, 158, 98)),
+        "silver": ((181, 192, 205), (83, 96, 112), (242, 246, 250)),
+        "gold": ((224, 180, 65), (117, 80, 23), (255, 226, 132)),
     }
+
     def coin_icon(self, x, y, currency, size=22):
-        """Draw a small embossed coin; x/y identify its top-left corner."""
+        """Draw an embossed denomination coin with its own pictorial emblem."""
         currency_id = getattr(currency, "value", str(currency))
-        fill, rim, highlight, symbol = self.COIN_STYLES.get(
+        fill, rim, highlight = self.COIN_STYLES.get(
             currency_id, self.COIN_STYLES["bronze"]
         )
         radius = max(5, int(size) // 2)
         center = (int(x) + radius, int(y) + radius)
-        self.pg.draw.circle(self.surface, (9, 12, 18), (center[0] + 1, center[1] + 2), radius)
+        cx, cy = center
+        motif_shadow = (65, 43, 29) if currency_id == "bronze" else (
+            (58, 68, 80) if currency_id == "silver" else (112, 75, 22)
+        )
+        motif_light = (239, 184, 125) if currency_id == "bronze" else (
+            (250, 252, 255) if currency_id == "silver" else (255, 235, 165)
+        )
+
+        self.pg.draw.circle(self.surface, (9, 12, 18), (cx + 1, cy + 2), radius)
         self.pg.draw.circle(self.surface, rim, center, radius)
         self.pg.draw.circle(self.surface, fill, center, max(1, radius - 2))
         self.pg.draw.circle(self.surface, highlight, center, max(1, radius - 5), 1)
-        font = self.pg.font.Font(None, max(12, int(size * 0.62)))
-        mark = font.render(symbol, True, (48, 39, 28) if currency_id != "silver" else (48, 57, 68))
-        mark_width, mark_height = font.size(symbol)
-        self.surface.blit(
-            mark,
-            (center[0] - mark_width // 2, center[1] - mark_height // 2),
-        )
+
+        # The emblem is drawn twice with a one-pixel offset to create an
+        # engraved shadow/highlight effect without using denomination letters.
+        offset = max(1, int(size) // 14)
+
+        def draw_emblem(color, dx=0, dy=0):
+            if currency_id == "bronze":
+                # Oak leaf: pointed silhouette, central stem and side veins.
+                leaf = [
+                    (cx + dx, cy - 6 + dy),
+                    (cx + 4 + dx, cy - 3 + dy),
+                    (cx + 5 + dx, cy + dy),
+                    (cx + 3 + dx, cy + 4 + dy),
+                    (cx + dx, cy + 6 + dy),
+                    (cx - 3 + dx, cy + 4 + dy),
+                    (cx - 5 + dx, cy + dy),
+                    (cx - 4 + dx, cy - 3 + dy),
+                ]
+                self.pg.draw.polygon(self.surface, color, leaf)
+                self.pg.draw.line(self.surface, color, (cx, cy + 5 + dy), (cx, cy - 4 + dy), 1)
+                self.pg.draw.line(self.surface, color, (cx, cy + 1 + dy), (cx - 3 + dx, cy - 2 + dy), 1)
+                self.pg.draw.line(self.surface, color, (cx, cy - 1 + dy), (cx + 3 + dx, cy - 3 + dy), 1)
+            elif currency_id == "silver":
+                # Crescent: a bright disc partially covered by the coin face.
+                self.pg.draw.circle(self.surface, color, (cx - 1 + dx, cy + dy), 6)
+                self.pg.draw.circle(self.surface, fill, (cx + 2 + dx, cy - 2 + dy), 5)
+            else:
+                # Sun: central disc with eight short rays.
+                self.pg.draw.circle(self.surface, color, (cx + dx, cy + dy), 3)
+                for ray in range(8):
+                    import math
+                    angle = ray * math.pi / 4
+                    start = (cx + int(round(5 * math.cos(angle))) + dx,
+                             cy + int(round(5 * math.sin(angle))) + dy)
+                    end = (cx + int(round(7 * math.cos(angle))) + dx,
+                           cy + int(round(7 * math.sin(angle))) + dy)
+                    self.pg.draw.line(self.surface, color, start, end, 1)
+
+        draw_emblem(motif_shadow, offset, offset)
+        draw_emblem(motif_light)
 
     def wallet(self, service, actor_id="hero", x=64, y=420, *, label="Cüzdan"):
         """Render all three denominations with the shared coin artwork."""
