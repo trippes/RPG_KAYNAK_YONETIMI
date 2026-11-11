@@ -12,6 +12,7 @@ class MainMenu:
         ("Oyun Rehberi", "guide"),
         ("Hakkında", "about"),
         ("Çıkış", "quit"),
+        ("Test Dünyası", "test_world"),
     )
     HINTS = (
         "Yeni bir maceraya atıl",
@@ -20,6 +21,7 @@ class MainMenu:
         "Eldoria oyun rehberini aç",
         "Eldoria hakkında bilgi al",
         "Oyundan çık",
+        "Hazır karakterle doğrudan test et",
     )
     NEW_GAME_OPTIONS = (
         ("Kayıtlı Oyunu Yükle", "load_slots"),
