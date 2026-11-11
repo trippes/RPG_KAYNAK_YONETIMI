@@ -369,7 +369,11 @@ class Renderer:
         self.pg.draw.circle(self.surface, highlight, center, max(1, radius - 5), 1)
         font = self.pg.font.Font(None, max(12, int(size * 0.62)))
         mark = font.render(symbol, True, (48, 39, 28) if currency_id != "silver" else (48, 57, 68))
-        self.surface.blit(mark, mark.get_rect(center=center))
+        mark_width, mark_height = font.size(symbol)
+        self.surface.blit(
+            mark,
+            (center[0] - mark_width // 2, center[1] - mark_height // 2),
+        )
 
     def wallet(self, service, actor_id="hero", x=64, y=420, *, label="Cüzdan"):
         """Render all three denominations with the shared coin artwork."""
