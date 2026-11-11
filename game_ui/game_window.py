@@ -229,10 +229,12 @@ class GameWindow:
         self.renderer.height = self.height
 
     def _ensure_container_playtest_fixture(self):
-        """Keep the temporary chest available in both new and loaded playtest worlds."""
+        """Keep temporary container and quest fixtures available in playtest worlds."""
         from application.container_playtest_content import register_container_playtest_fixture
+        from application.quest_playtest_content import register_quest_playtest_fixture
 
         register_container_playtest_fixture(self.service)
+        register_quest_playtest_fixture(self.service)
 
     def _select_save_slot(self, index, path, exists):
         self.selected_slot = index
@@ -333,7 +335,9 @@ class GameWindow:
         # Register the temporary Container/Lock playtest object in the actual
         # new-game flow, before the opening and character-creation screens.
         from application.container_playtest_content import register_container_playtest_fixture
+        from application.quest_playtest_content import register_quest_playtest_fixture
         register_container_playtest_fixture(service)
+        register_quest_playtest_fixture(service)
         self.service = service
         self.screens.update({
             "opening": OpeningScreen(),
