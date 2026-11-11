@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 from core.domain.spatial import Position
 from npc import NPC
 from quests import Dialogue, DialogueChoice, DialogueNode, Objective, ObjectiveType, Quest, Reward
-from resources import Quantity, ResourceType, ResourceUnit, WorldResourceNode
+from resources import Inventory, Quantity, ResourceType, ResourceUnit, WorldResourceNode
 
 
 CARAVAN_QUEST_ID = "lost_caravan"
@@ -16,6 +18,12 @@ CARAVAN_DIALOGUE_ID = "caravan_merchant_dialogue"
 def populate_caravan_quest_demo(service) -> Quest:
     """Register Yadigar, the long quest, and its test resources in a fresh game."""
     bundle = service.application.holder.current
+    if "player" not in bundle.inventories:
+        bundle = replace(
+            bundle,
+            inventories={**bundle.inventories, "player": Inventory()},
+        )
+        service.application.holder.publish(bundle)
     if bundle.quest_log.get(CARAVAN_QUEST_ID) is not None:
         service.caravan_quest = bundle.quest_log.get(CARAVAN_QUEST_ID)
         return service.caravan_quest
