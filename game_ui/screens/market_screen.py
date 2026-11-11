@@ -116,20 +116,7 @@ class MarketScreen:
                 f"{self.selected + 1}/{len(offers)} teklif",
                 64, 384, MUTED,
             )
-        try:
-            balances = (
-                self.service.balance("hero", "bronze").amount,
-                self.service.balance("hero", "silver").amount,
-                self.service.balance("hero", "gold").amount,
-            )
-            wallet = (
-                f"Cüzdan: {balances[0]} {currency_name('bronze')}  •  "
-                f"{balances[1]} {currency_name('silver')}  •  "
-                f"{balances[2]} {currency_name('gold')}"
-            )
-            renderer.text(wallet, 64, 420, GOLD)
-        except (KeyError, ValueError):
-            pass
+        renderer.wallet(self.service, "hero", 64, 420, label="Cüzdan")
 
         renderer.action_button(
             renderer.pg.Rect(*self.BUY_RECT),
