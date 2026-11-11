@@ -116,6 +116,79 @@ NAV_TABS = (
 NAV_ALIASES = {"main": "world"}
 
 
+
+class ResponsiveLayout:
+    """Shared, resolution-independent layout calculations for gameplay windows.
+
+    Geometry is calculated from the available logical viewport. Screens use
+    these same rectangles for rendering and pointer hit-testing.
+    """
+
+    @staticmethod
+    def grid(bounds, count, *, min_cell=48, max_cell=64, gap=6):
+        x, y, width, height = bounds
+        count = max(0, int(count))
+        if count == 0 or width <= 0 or height <= 0:
+            return (), 0, 0
+
+        columns = max(1, min(count, (width + gap) // (min_cell + gap)))
+        cell = min(max_cell, max(1, (width - gap * (columns - 1)) // columns))
+        rows = (count + columns - 1) // columns
+
+        # Prefer a denser grid when that is necessary to keep every row in
+        # the available height. The caller may add scrolling for larger data.
+        while rows > 1 and rows * cell + (rows - 1) * gap > height and columns < count:
+            columns += 1
+            cell = min(max_cell, max(1, (width - gap * (columns - 1)) // columns))
+            rows = (count + columns - 1) // columns
+
+        rects = tuple(
+            (
+                x + (index % columns) * (cell + gap),
+                y + (index // columns) * (cell + gap),
+                cell,
+                cell,
+            )
+            for index in range(count)
+        )
+        return rects, columns, cell
+
+    @staticmethod
+    def split_columns(bounds, widths, *, gap=12):
+        """Split a rectangle into weighted columns without negative widths."""
+        x, y, width, height = bounds
+        weights = tuple(max(0.0, float(value)) for value in widths)
+        total = sum(weights)
+        if not weights:
+            return ()
+        usable = max(0, width - gap * (len(weights) - 1))
+        if total <= 0:
+            weights = (1.0,) * len(weights)
+            total = float(len(weights))
+        result = []
+        cursor = x
+        remaining = usable
+        for index, weight in enumerate(weights):
+            column_width = (
+                remaining if index == len(weights) - 1
+                else int(usable * weight / total)
+            )
+            result.append((cursor, y, column_width, height))
+            cursor += column_width + gap
+            remaining -= column_width
+        return tuple(result)
+
+    @staticmethod
+    def inset(bounds, left=0, top=0, right=0, bottom=0):
+        x, y, width, height = bounds
+        return (
+            x + left,
+            y + top,
+            max(0, width - left - right),
+            max(0, height - top - bottom),
+        )
+
+
 class Renderer:
     NAV_TOP = 18
     NAV_HEIGHT = 34
