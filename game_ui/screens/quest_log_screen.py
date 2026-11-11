@@ -1,5 +1,6 @@
 """Quest journal window fitted to the dedicated Eldoria quest-frame artwork."""
 
+from collections import deque
 from pathlib import Path
 
 from ..renderer import (
@@ -63,10 +64,59 @@ class QuestLogScreen:
         self._background_attempted = True
         try:
             asset = Path(__file__).resolve().parents[1] / "assets" / self.BACKGROUND_NAME
-            self._background = pg.image.load(str(asset))
+            loaded = pg.image.load(str(asset))
+            self._background = self._clear_edge_checkerboard(pg, loaded)
         except (AttributeError, OSError, RuntimeError):
             self._background = None
         return self._background
+
+    @staticmethod
+    def _clear_edge_checkerboard(pg, image):
+        """Remove the neutral checkerboard baked into the JPG's outer corners."""
+        width, height = image.get_size()
+        if width < 2 or height < 2:
+            return image
+
+        try:
+            transparent = pg.Surface((width, height), pg.SRCALPHA)
+            transparent.blit(image, (0, 0))
+            visited = bytearray(width * height)
+            pending = deque()
+
+            def enqueue(x, y):
+                index = y * width + x
+                if visited[index]:
+                    return
+                visited[index] = 1
+                red, green, blue, _alpha = transparent.get_at((x, y))
+                if (
+                    min(red, green, blue) >= 190
+                    and max(red, green, blue) - min(red, green, blue) <= 24
+                ):
+                    pending.append((x, y))
+
+            for x in range(width):
+                enqueue(x, 0)
+                enqueue(x, height - 1)
+            for y in range(height):
+                enqueue(0, y)
+                enqueue(width - 1, y)
+
+            while pending:
+                x, y = pending.popleft()
+                red, green, blue, _alpha = transparent.get_at((x, y))
+                transparent.set_at((x, y), (red, green, blue, 0))
+                if x:
+                    enqueue(x - 1, y)
+                if x + 1 < width:
+                    enqueue(x + 1, y)
+                if y:
+                    enqueue(x, y - 1)
+                if y + 1 < height:
+                    enqueue(x, y + 1)
+            return transparent
+        except (AttributeError, TypeError, ValueError):
+            return image
 
     def _draw_background(self, renderer, outer):
         image = self._load_background(renderer.pg)
