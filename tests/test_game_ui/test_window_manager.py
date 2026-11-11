@@ -183,6 +183,51 @@ class QuestWindowManagerTests(unittest.TestCase):
         )
         self.assertFalse(window.dragging)
 
+    def test_right_edge_resizes_window_and_stops_at_screen_boundary(self):
+        self.manager.open("quest_log")
+        window = self.manager.windows["quest_log"]
+        start = (window.bounds.right - 2, window.bounds.y + 180)
+
+        self.manager.handle_input(InputState(
+            mouse_pos=start, mouse_clicked=True, mouse_button_down=True,
+        ))
+        self.assertTrue(window.resizing)
+        self.assertEqual(window.resize_edges, ("right",))
+
+        self.manager.handle_input(InputState(
+            mouse_pos=(start[0] + 80, start[1]), mouse_motion=True,
+        ))
+        self.assertEqual(window.bounds.right, 960)
+        self.assertEqual(window.bounds.width, 936)
+
+        self.manager.handle_input(InputState(
+            mouse_pos=(960, start[1]), mouse_button_up=True,
+        ))
+        self.assertFalse(window.resizing)
+
+    def test_bottom_right_corner_resizes_both_dimensions(self):
+        self.manager.open("quest_log")
+        window = self.manager.windows["quest_log"]
+        start = (window.bounds.right - 2, window.bounds.bottom - 2)
+
+        self.manager.handle_input(InputState(
+            mouse_pos=start, mouse_clicked=True, mouse_button_down=True,
+        ))
+        self.assertEqual(set(window.resize_edges), {"right", "bottom"})
+
+        self.manager.handle_input(InputState(
+            mouse_pos=(start[0] - 100, start[1] - 100), mouse_motion=True,
+        ))
+        self.assertEqual(
+            (window.bounds.width, window.bounds.height),
+            (self.manager.MIN_WIDTH, self.manager.MIN_HEIGHT),
+        )
+
+        self.manager.handle_input(InputState(
+            mouse_pos=(start[0] - 100, start[1] - 100), mouse_button_up=True,
+        ))
+        self.assertFalse(window.resizing)
+
     def test_content_click_is_translated_to_screen_coordinates(self):
         self.manager.open("quest_log")
         self.manager.handle_input(
