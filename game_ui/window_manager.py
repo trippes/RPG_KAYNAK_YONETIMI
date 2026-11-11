@@ -76,6 +76,8 @@ class WindowManager:
         window = self._get(window_id)
         window.visible = False
         window.dragging = False
+        window.resizing = False
+        window.resize_edges = ()
         if self.focused_id == window_id:
             self.focused_id = next(reversed(self.open_ids), None)
 
