@@ -1720,7 +1720,12 @@ class GameplayService:
 
     def _advance_quests(self, objective_type: str, target_id: str, amount: int, owner_id: str | None, inventory_id: str | None):
         for quest in self._current_bundle().quest_log.active():
-            for objective in quest.objectives:
+            objectives = quest.objectives
+            if getattr(quest, "sequential_objectives", False):
+                mandatory = tuple(item for item in objectives if not item.optional)
+                current = next((item for item in mandatory if not item.completed), None)
+                objectives = (current,) if current is not None else ()
+            for objective in objectives:
                 target_matches = objective.target_id is None or objective.target_id == target_id
                 if (
                     objective_type == "collect"
