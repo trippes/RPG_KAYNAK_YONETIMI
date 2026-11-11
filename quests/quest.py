@@ -16,6 +16,7 @@ class Quest:
     reward: Reward = Reward()
     prerequisites: AllConditions = AllConditions()
     state: QuestState = QuestState.AVAILABLE
+    sequential_objectives: bool = False
     def __post_init__(self):
         if not self.quest_id or not self.title: raise ValueError("Quest ID and title are required.")
         self.state = QuestState(self.state)
