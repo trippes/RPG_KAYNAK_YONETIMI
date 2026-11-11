@@ -4,6 +4,7 @@ import unittest
 
 from game_ui.input import InputState
 from game_ui.window_manager import WindowManager
+from game_ui.renderer import ResponsiveLayout
 
 
 class FakeRect:
@@ -80,6 +81,30 @@ class DropTargetScreen(DummyScreen):
     def receive_external_item(self, item_id, quantity):
         self.received.append((item_id, quantity))
         return True
+
+class ResponsiveLayoutTests(unittest.TestCase):
+    def test_grid_column_count_tracks_available_width(self):
+        narrow, narrow_columns, _ = ResponsiveLayout.grid(
+            (0, 0, 240, 260), 20, min_cell=48, max_cell=64, gap=6
+        )
+        wide, wide_columns, _ = ResponsiveLayout.grid(
+            (0, 0, 420, 260), 20, min_cell=48, max_cell=64, gap=6
+        )
+
+        self.assertEqual(len(narrow), 20)
+        self.assertEqual(len(wide), 20)
+        self.assertGreater(wide_columns, narrow_columns)
+
+    def test_split_columns_fill_available_width_and_keep_gaps(self):
+        columns = ResponsiveLayout.split_columns(
+            (20, 30, 800, 300), (1, 2, 1), gap=10
+        )
+
+        self.assertEqual(columns[0][0], 20)
+        self.assertEqual(columns[-1][0] + columns[-1][2], 820)
+        self.assertEqual(columns[1][0] - (columns[0][0] + columns[0][2]), 10)
+        self.assertEqual(columns[2][0] - (columns[1][0] + columns[1][2]), 10)
+
 
 class QuestWindowManagerTests(unittest.TestCase):
     def setUp(self):
@@ -242,6 +267,40 @@ class QuestWindowManagerTests(unittest.TestCase):
             mouse_pos=(start[0] - 1000, start[1] - 1000), mouse_button_up=True,
         ))
         self.assertFalse(window.resizing)
+
+    def test_responsive_window_uses_dynamic_pointer_coordinates_and_viewport(self):
+        class ResponsiveScreen(DummyScreen):
+            responsive_layout = True
+
+            def __init__(self):
+                super().__init__()
+                self.viewport_calls = []
+
+            def set_viewport(self, width, height):
+                self.viewport_calls.append((width, height))
+
+        screen = ResponsiveScreen()
+        manager = WindowManager(self.backend, 1200, 800)
+        manager.register(
+            "inventory", screen, (24, 110, 900, 500),
+            content_origin=(24, 126), title="Envanter",
+        )
+        window = manager.windows["inventory"]
+
+        self.assertEqual(screen.viewport_calls[-1], (900, 468))
+        self.assertEqual(
+            manager._screen_position(window, (124, 210)),
+            (124, 194),
+        )
+
+        manager._begin_resize(
+            window, (window.bounds.right - 1, window.bounds.bottom - 1),
+            ("right", "bottom"),
+        )
+        manager._resize_window(window, (window.bounds.right + 40, window.bounds.bottom + 30))
+
+        self.assertEqual(screen.viewport_calls[-1], (940, 498))
+
 
     def test_scaled_window_pointer_coordinates_map_to_design_surface(self):
         screen = DummyScreen()
