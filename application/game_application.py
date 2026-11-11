@@ -53,8 +53,10 @@ class GameApplication:
         self.events = self.event_manager.event_queue
 
     @classmethod
-    def create_default(cls, start_tick=0) -> "GameApplication":
-        return cls(SessionHolder(SessionBundle.create_default(start_tick=start_tick)))
+    def create_default(cls, start_tick=0, *, inventories=None) -> "GameApplication":
+        return cls(SessionHolder(
+            SessionBundle.create_default(start_tick=start_tick, inventories=inventories)
+        ))
 
     @property
     def actions(self):
