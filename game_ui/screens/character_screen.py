@@ -67,7 +67,7 @@ class CharacterScreen:
         )
 
     def _skill_bounds(self):
-        return (280, 320, 244, 24)
+        return (280, 332, 244, 24)
 
     def handle(self, state):
         character = self._character()
@@ -78,7 +78,7 @@ class CharacterScreen:
             return None
 
         self.selected_skill %= len(skills)
-        visible_count = 4
+        visible_count = 3
         max_scroll = max(0, len(skills) - visible_count)
         if state.mouse_pos is not None:
             x, y, width, height = self._skill_bounds()
@@ -264,10 +264,10 @@ class CharacterScreen:
         renderer.panel(rect, (27, 35, 50), PANEL_BORDER)
         points = character.progression.unspent_points
         renderer.text("BECERİLER", rect.x + 12, rect.y + 10, GOLD)
-        renderer.text(f"Gelişim puanı: {points}", rect.x + 12, rect.y + 29, MUTED)
+        renderer.text(f"Gelişim puanı: {points}", rect.x + 12, rect.y + 34, MUTED)
 
         skills = self._skill_rows(character)
-        visible_count = 4
+        visible_count = 3
         if not skills:
             renderer.text("Beceri kaydı bulunmuyor.", rect.x + 12, rect.y + 62, MUTED)
         else:
@@ -280,7 +280,7 @@ class CharacterScreen:
             ):
                 index = self.skill_scroll + row_index
                 row = renderer.pg.Rect(
-                    rect.x + 8, rect.y + 52 + row_index * 25,
+                    rect.x + 8, rect.y + 64 + row_index * 25,
                     rect.width - 16, 23,
                 )
                 selected = index == self.selected_skill
@@ -299,15 +299,12 @@ class CharacterScreen:
                     GOLD if selected else TEXT_SOFT,
                 )
 
-        if self.message:
-            renderer.text(
-                renderer.fit_text(self.message, rect.width - 20),
-                rect.x + 10, rect.bottom - 28, GOOD,
-                max_width=rect.width - 20,
-            )
+        footer = self.message or "↑ / ↓ seç · Enter: puan harca"
         renderer.text(
-            "↑ / ↓ seç · Enter: puan harca",
-            rect.x + 10, rect.bottom - 14, MUTED,
+            renderer.fit_text(footer, rect.width - 20),
+            rect.x + 10, rect.bottom - 24,
+            GOOD if self.message else MUTED,
+            max_width=rect.width - 20,
         )
 
     def _render_equipment(self, renderer, character):
