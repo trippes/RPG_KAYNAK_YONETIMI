@@ -145,7 +145,12 @@ class GameWindow:
         self.window_manager.register(
             "quest_log",
             self.screens["quest_log"],
-            (24, 110, min(self.width - 48, 912), min(self.height - 110, 520)),
+            (
+                max(24, (self.width - min(self.width - 80, 944)) // 2),
+                88,
+                min(self.width - 80, 944),
+                min(self.height - 160, 502),
+            ),
             content_origin=(24, 126),
             title="Görev Günlüğü",
         )
