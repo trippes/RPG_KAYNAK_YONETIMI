@@ -15,7 +15,7 @@ PLAYTEST_QUEST_ID = "ui_playtest_forest_scouting"
 
 
 def register_quest_playtest_fixture(service):
-    """Idempotently add one temporary village quest giver and an accept-able quest."""
+    """Register the temporary quest giver without publishing an unaccepted quest."""
     bundle = service.application.holder.current
 
     npc = bundle.social.npcs.get(PLAYTEST_NPC_ID)
@@ -29,7 +29,11 @@ def register_quest_playtest_fixture(service):
             position=Position(14, 29),
         ))
 
-    quest = bundle.quest_log.get(PLAYTEST_QUEST_ID)
+    # Keep the offer on the service until accepted. Adding an AVAILABLE quest
+    # to QuestLog makes it visible in the journal's "Mevcut" category.
+    quest = getattr(service, "carpenter_quest", None)
+    if quest is None:
+        quest = bundle.quest_log.get(PLAYTEST_QUEST_ID)
     if quest is None:
         quest = Quest(
             PLAYTEST_QUEST_ID,
@@ -45,8 +49,6 @@ def register_quest_playtest_fixture(service):
             Reward(experience=35, currency=12),
             state=QuestState.AVAILABLE,
         )
-        bundle.quest_log.add(quest)
-
     service.carpenter_quest = quest
 
     if PLAYTEST_DIALOGUE_ID not in bundle.social.dialogues:
