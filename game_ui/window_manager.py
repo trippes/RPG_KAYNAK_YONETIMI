@@ -207,6 +207,25 @@ class WindowManager:
             if getattr(focused.screen, "pointer_capture", False) and (
                 state.mouse_motion or state.mouse_button_up
             ):
+                if state.mouse_button_up and state.mouse_pos is not None:
+                    target = self._top_at(state.mouse_pos)
+                    payload_getter = getattr(focused.screen, "dragged_item_payload", None)
+                    cancel_drag = getattr(focused.screen, "cancel_drag", None)
+                    payload = payload_getter() if payload_getter is not None else None
+                    if (
+                        target is not None
+                        and target.window_id != focused.window_id
+                        and payload is not None
+                        and not self._title_rect(target).collidepoint(state.mouse_pos)
+                        and not self._close_rect(target).collidepoint(state.mouse_pos)
+                    ):
+                        receiver = getattr(target.screen, "receive_external_item", None)
+                        if receiver is not None:
+                            receiver(payload["item_id"], payload["quantity"])
+                            if cancel_drag is not None:
+                                cancel_drag()
+                            self.focus(target.window_id)
+                            return True
                 self._dispatch(focused, state)
                 return True
 
