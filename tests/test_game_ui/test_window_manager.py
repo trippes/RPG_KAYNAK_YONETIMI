@@ -259,6 +259,36 @@ class QuestWindowManagerTests(unittest.TestCase):
             (404, 345),
         )
 
+    def test_scaled_content_rect_is_clamped_to_backing_surface(self):
+        class SizedSurface:
+            def __init__(self, size):
+                self.size = size
+
+            def get_size(self):
+                return self.size
+
+        screen = DummyScreen()
+        screen.scale_to_window = True
+        screen.design_size = (913, 439)
+        manager = WindowManager(self.backend, 960, 640)
+        manager.register(
+            "inventory", screen, (24, 110, 700, 400),
+            content_origin=(25, 127),
+        )
+        window = manager.windows["inventory"]
+
+        # This deliberately combines fractional scaling and dimensions whose
+        # independently rounded origin/size can overflow by one pixel.
+        source = SizedSurface((937, 566))
+        rect = manager._scaled_content_rect(window, source, 0.713)
+
+        self.assertGreaterEqual(rect.x, 0)
+        self.assertGreaterEqual(rect.y, 0)
+        self.assertGreaterEqual(rect.width, 0)
+        self.assertGreaterEqual(rect.height, 0)
+        self.assertLessEqual(rect.right, source.size[0])
+        self.assertLessEqual(rect.bottom, source.size[1])
+
     def test_responsive_content_uses_fixed_design_canvas_with_content_origin(self):
         screen = DummyScreen()
         screen.scale_to_window = True
