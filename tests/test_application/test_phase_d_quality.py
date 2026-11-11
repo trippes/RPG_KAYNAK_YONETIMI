@@ -247,7 +247,7 @@ class TestPhaseDQuality(unittest.TestCase):
         window.service = service
         self.assertNotIn("market", window._nav_enabled())
 
-    def test_gameplay_navigation_opens_windows_without_legacy_main_menu(self):
+    def test_legacy_navigation_bar_does_not_open_gameplay_windows(self):
         opened = []
         window = object.__new__(GameWindow)
         window.current = "main"
@@ -266,10 +266,10 @@ class TestPhaseDQuality(unittest.TestCase):
 
         window._handle_nav_click(state)
 
-        self.assertEqual(opened, ["map"])
-        self.assertFalse(state.mouse_clicked)
+        self.assertEqual(opened, [])
+        self.assertTrue(state.mouse_clicked)
 
-    def test_gameplay_navigation_shortcuts_do_not_open_market(self):
+    def test_legacy_navigation_shortcuts_are_not_routed_by_navigation_bar(self):
         opened = []
         window = object.__new__(GameWindow)
         window.current = "main"
@@ -286,10 +286,14 @@ class TestPhaseDQuality(unittest.TestCase):
         )
         window._nav_enabled = lambda: {"market": True}
 
-        window._handle_nav_click(InputState(actions={"map"}))
-        window._handle_nav_click(InputState(actions={"market"}))
+        map_state = InputState(actions={"map"})
+        market_state = InputState(actions={"market"})
+        window._handle_nav_click(map_state)
+        window._handle_nav_click(market_state)
 
-        self.assertEqual(opened, ["map"])
+        self.assertEqual(opened, [])
+        self.assertEqual(map_state.actions, {"map"})
+        self.assertEqual(market_state.actions, {"market"})
 
     def test_market_shortcut_is_not_a_supported_navigation_action(self):
         notices = []
@@ -1490,7 +1494,9 @@ class TestPhaseDQuality(unittest.TestCase):
         populate_gameplay_resources(service)
         screen = InventoryScreen(service)
         manager = WindowManager(Backend(), 960, 640)
-        manager.register("inventory", screen, (100, 100, 500, 470))
+        # Match the 912x438 design canvas at 1:1 so this test isolates
+        # window-origin translation rather than responsive downscaling.
+        manager.register("inventory", screen, (100, 100, 912, 470))
         manager.open("inventory")
 
         # Source tab 2 is at (190, 190); the window content starts below its title bar.
@@ -1541,7 +1547,8 @@ class TestPhaseDQuality(unittest.TestCase):
 
         screen = InventoryScreen(Service())
         manager = WindowManager(Backend(), 960, 640)
-        manager.register("inventory", screen, (100, 100, 500, 470))
+        # Keep the design canvas at 1:1; responsive scaling has dedicated tests.
+        manager.register("inventory", screen, (100, 100, 912, 470))
         manager.open("inventory")
         source = (100 + 296, 100 + 32 + 110)
         target = (source[0] + 66, source[1])
@@ -1607,7 +1614,8 @@ class TestPhaseDQuality(unittest.TestCase):
 
     def test_character_screen_skill_mouse_selection_and_improvement(self):
         screen, calls = self._character_screen_fixture()
-        screen.handle(InputState(mouse_pos=(285, 341), mouse_clicked=True))
+        # The second visible skill row starts 25 logical pixels below the first.
+        screen.handle(InputState(mouse_pos=(285, 357), mouse_clicked=True))
         self.assertEqual(screen.selected_skill, 1)
         screen.handle(InputState(actions={"confirm"}))
         self.assertEqual(calls, [("hero", "skill_1")])
@@ -1618,14 +1626,19 @@ class TestPhaseDQuality(unittest.TestCase):
         for _ in range(7):
             screen.handle(InputState(actions={"down"}))
         self.assertEqual(screen.selected_skill, 7)
-        self.assertEqual(screen.skill_scroll, 3)
+        # Three rows are visible; keeping selected index 7 visible requires offset 5.
+        self.assertEqual(screen.skill_scroll, 5)
 
-    def test_character_screen_equipment_uses_canonical_loadout_slots(self):
+    def test_character_screen_keeps_equipment_out_of_character_sheet(self):
         screen, _calls = self._character_screen_fixture()
-        equipment = dict(screen._equipment_rows())
-        self.assertEqual(equipment["main_hand"], "iron_sword")
-        self.assertIsNone(equipment["head"])
-        self.assertEqual(len(equipment), 8)
+        self.assertFalse(hasattr(screen, "_equipment_rows"))
+        self.assertEqual(
+            tuple(slot for slot, _label in InventoryScreen.SLOTS),
+            (
+                "head", "chest", "hands", "legs", "feet",
+                "main_hand", "off_hand", "accessory",
+            ),
+        )
 
     def test_character_screen_handles_missing_character_without_crashing(self):
         screen = CharacterScreen(SimpleNamespace(actor_character=lambda _actor_id: None))
