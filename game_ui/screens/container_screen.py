@@ -33,6 +33,8 @@ class ContainerScreen:
         self.message = "Sandık incelenmeye hazır."
         self.search_text = ""
         self.category = "all"
+        self.sort_mode = "name"
+        self._sort_rect = None
         self.scroll_row = 0
         self._row_rects = ()
         self._display_entries = ()
@@ -51,6 +53,8 @@ class ContainerScreen:
         self.scroll_row = 0
         self.search_text = ""
         self.category = "all"
+        self.sort_mode = "name"
+        self._sort_rect = None
         self.message = "Sandık incelenmeye hazır."
 
     def _actor_context(self):
