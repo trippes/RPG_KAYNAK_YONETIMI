@@ -246,8 +246,8 @@ class TestPhaseDQuality(unittest.TestCase):
         layout = screen._layout(960, 640)
         reward = screen._reward_bounds()
 
-        self.assertEqual(layout["outer"][0:2], (0, 0))
-        self.assertEqual(layout["outer"][2:4], (960, 640))
+        self.assertEqual(layout["outer"][0:2], (24, 126))
+        self.assertEqual(layout["outer"][2:4], (912, 624))
         self.assertLessEqual(
             reward[1] + reward[3],
             layout["outer"][1] + layout["outer"][3],
@@ -256,9 +256,9 @@ class TestPhaseDQuality(unittest.TestCase):
     def test_quest_log_layout_scales_with_renderer_viewport(self):
         layout = self._quest_screen()._layout(1200, 800)
 
-        self.assertEqual(layout["outer"][0:2], (0, 0))
-        self.assertEqual(layout["outer"][2], 1200)
-        self.assertEqual(layout["outer"][3], 800)
+        self.assertEqual(layout["outer"][0:2], (24, 126))
+        self.assertEqual(layout["outer"][2], 1152)
+        self.assertEqual(layout["outer"][3], 784)
         self.assertLessEqual(layout["body_height"], 230)
 
     def test_quest_log_details_use_objective_and_reward_fields(self):
