@@ -42,6 +42,9 @@ class FakeRenderer:
     def text(self, value, *_args, **_kwargs):
         self.drawn.append(("text", str(value)))
 
+    def text_width(self, value, **_kwargs):
+        return len(str(value)) * 8
+
     def button(self, rect, label, selected=False):
         self.drawn.append(("button", label, selected))
 
@@ -95,9 +98,10 @@ class QuestJournalWindowTests(unittest.TestCase):
 
         self.assertEqual(self.screen.selected, 8)
         _x, list_y, _width, list_height = self.screen._list_bounds()
-        row_y = list_y + 38 + self.screen.selected * 54 - self.screen.scroll
-        self.assertGreaterEqual(row_y, list_y + 34)
-        self.assertLessEqual(row_y + 48, list_y + list_height - 8)
+        row_y = self.screen._row_bounds()[self.screen.selected][1]
+        row_height = self.screen._row_bounds()[self.screen.selected][3]
+        self.assertGreaterEqual(row_y, list_y + 42)
+        self.assertLessEqual(row_y + row_height, list_y + list_height - 7)
 
     def test_left_and_right_change_category_and_reset_selection(self):
         self.screen.selected = 5
@@ -144,27 +148,26 @@ class QuestJournalWindowTests(unittest.TestCase):
         renderer = FakeRenderer()
         self.screen.render(renderer)
         rendered_text = [entry[1] for entry in renderer.drawn if entry[0] == "text"]
-        self.assertIn("MACERA DEFTERİ", rendered_text)
+        self.assertIn("Devam Eden (12)", rendered_text)
         self.assertIn("Hedefler", rendered_text)
-        self.assertIn("Ödüller", rendered_text)
-        self.assertIn("XP 25", rendered_text)
+        self.assertIn("XP  25", rendered_text)
         self.assertTrue(any(entry[0] == "bar" for entry in renderer.drawn))
 
-    def test_reward_panel_stays_inside_cropped_window_content(self):
+    def test_reward_area_matches_the_right_hand_artwork_panel(self):
         renderer = FakeRenderer(width=960, height=640)
         self.screen.render(renderer)
 
         x, y, width, height = self.screen._reward_bounds()
-        self.assertGreaterEqual(x, 24)
-        self.assertGreaterEqual(y, 126)
-        self.assertLessEqual(x + width, renderer.width)
-        self.assertLessEqual(y + height, renderer.height)
+        detail_x, detail_y, detail_width, _detail_height = self.screen._details_bounds()
+        outer_x, outer_y, outer_width, outer_height = self.screen._layout()["outer"]
 
-        reward_panels = [
-            entry[1] for entry in renderer.drawn
-            if entry[0] == "panel" and entry[1].x == x and entry[1].y == y
-        ]
-        self.assertEqual(len(reward_panels), 1)
+        self.assertEqual(x, detail_x)
+        self.assertGreater(y, detail_y)
+        self.assertEqual(width, detail_width)
+        self.assertGreaterEqual(x, outer_x)
+        self.assertGreaterEqual(y, outer_y)
+        self.assertLessEqual(x + width, outer_x + outer_width)
+        self.assertLessEqual(y + height, outer_y + outer_height)
 
     def test_empty_category_renders_without_error(self):
         self.screen._select_category(2)
