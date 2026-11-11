@@ -63,6 +63,18 @@ class TestPhaseDQuality(unittest.TestCase):
         self.assertLessEqual(x + width, skills[0] + skills[2])
         self.assertLessEqual(y + height, skills[1] + skills[3])
 
+    def test_character_attribute_cards_stay_inside_compact_panel(self):
+        service, _ = populate_opening_content(GameApplication.create_default())
+        screen = CharacterScreen(service)
+        screen.set_viewport(600, 440)
+        panel = screen._layout()["attributes"]
+
+        for x, y, width, height in screen._attribute_card_rects(panel):
+            self.assertGreaterEqual(x, panel[0])
+            self.assertGreaterEqual(y, panel[1])
+            self.assertLessEqual(x + width, panel[0] + panel[2])
+            self.assertLessEqual(y + height, panel[1] + panel[3])
+
     def _quest_screen(self):
         quests = QuestLog((
             Quest("active", "Aktif Görev", (
