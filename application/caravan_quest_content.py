@@ -90,6 +90,11 @@ def populate_caravan_quest_demo(service):
                             "decline_caravan_quest",
                             "Şimdilik başka işlerim var.", None,
                         ),
+                        DialogueChoice(
+                            "caravan_report",
+                            "Kervanın izini buldum. Sonuçları anlatayım.",
+                            "report",
+                        ),
                     ),
                 ),
                 DialogueNode(
