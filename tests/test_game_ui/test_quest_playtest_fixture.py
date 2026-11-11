@@ -1,5 +1,6 @@
 from application.content_pack import populate_opening_content
 from application.game_application import GameApplication
+from application.content_pack import populate_gameplay_resources
 from application.quest_playtest_content import (
     PLAYTEST_DIALOGUE_ID,
     PLAYTEST_NPC_ID,
@@ -62,3 +63,21 @@ def test_quest_playtest_fixture_is_idempotent():
     assert service.carpenter_quest is quest
     assert bundle.quest_log.get(PLAYTEST_QUEST_ID) is None
     assert len([npc for npc in bundle.social.npcs.all() if npc.npc_id == PLAYTEST_NPC_ID]) == 1
+
+
+def test_completing_playtest_quest_grants_experience_and_wallet_currency():
+    service = _service()
+    populate_gameplay_resources(service)
+    service.accept_carpenter_quest("hero", "player")
+
+    initial_balance = service.balance("hero", "gold").amount
+    character = service.actor_character("hero")
+    initial_experience = character.progression.experience
+
+    service.update_quest_objective(
+        PLAYTEST_QUEST_ID, "reach_forest_path", 1, "hero", "player",
+    )
+
+    assert service.application.holder.current.quest_log.get(PLAYTEST_QUEST_ID).state.value == "completed"
+    assert character.progression.experience == initial_experience + 35
+    assert service.balance("hero", "gold").amount == initial_balance + 12
