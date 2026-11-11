@@ -356,6 +356,7 @@ class GameWindow:
             "character": CharacterScreen(service),
             "quest_log": QuestLogScreen(service),
             "market": MarketScreen(service),
+            "currency_exchange": CurrencyExchangeScreen(service),
             "trade": TradeScreen(service),
             "dialogue": DialogueScreen(service),
             "combat": CombatScreen(service),
