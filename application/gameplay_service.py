@@ -779,10 +779,16 @@ class GameplayService:
             "deliver_inn_supplies": lambda: self.deliver_inn_supplies(actor_id, npc_id, "player"),
             "accept_blacksmith_quest": lambda: self.accept_blacksmith_quest(actor_id, "player"),
             "deliver_blacksmith_ore": lambda: self.deliver_blacksmith_ore(actor_id, npc_id, "player"),
+            "accept_caravan_quest": lambda: self.start_quest(
+                self.caravan_quest, owner_id=actor_id, reward_inventory_id="player",
+            ),
         }
-        handler = actions.get(action)
+        handler = actions.get(action) or self._dialogue_actions.get(action)
         if handler is not None:
-            handler()
+            try:
+                handler(actor_id, npc_id)
+            except TypeError:
+                handler()
 
     def start_quest(self, quest: Quest, context=None, owner_id: str | None = None, reward_inventory_id: str | None = None) -> Quest:
         bundle = self._current_bundle()
@@ -969,7 +975,13 @@ class GameplayService:
 
     def _advance_quests(self, objective_type: str, target_id: str, amount: int, owner_id: str | None, inventory_id: str | None):
         for quest in self._current_bundle().quest_log.active():
-            for objective in quest.objectives:
+            objectives = quest.objectives
+            if getattr(quest, "sequential_objectives", False):
+                objectives = tuple(
+                    objective for objective in quest.objectives
+                    if not objective.optional and not objective.completed
+                )[:1]
+            for objective in objectives:
                 target_matches = objective.target_id is None or objective.target_id == target_id
                 if (
                     objective_type == "collect"
@@ -985,6 +997,8 @@ class GameplayService:
                     )
                 if objective.objective_type.value == objective_type and target_matches:
                     self.update_quest_objective(quest.quest_id, objective.objective_id, amount, owner_id, inventory_id)
+                    if getattr(quest, "sequential_objectives", False):
+                        break
 
     def _grant_quest_reward(self, quest: Quest, owner_id: str | None, inventory_id: str | None) -> None:
         bundle = self._current_bundle()
