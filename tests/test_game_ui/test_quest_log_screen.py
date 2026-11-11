@@ -161,8 +161,8 @@ class QuestJournalWindowTests(unittest.TestCase):
         self.assertLessEqual(y + height, renderer.height)
 
         reward_panels = [
-            rect for kind, rect in renderer.drawn
-            if kind == "panel" and rect.x == x and rect.y == y
+            entry[1] for entry in renderer.drawn
+            if entry[0] == "panel" and entry[1].x == x and entry[1].y == y
         ]
         self.assertEqual(len(reward_panels), 1)
 
