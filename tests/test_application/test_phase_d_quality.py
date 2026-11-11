@@ -348,6 +348,15 @@ class TestPhaseDQuality(unittest.TestCase):
             "load_slots",
         )
 
+    def test_main_menu_exposes_direct_test_world_option(self):
+        menu = MainMenu()
+
+        self.assertIn(("Test Dünyası", "test_world"), menu.OPTIONS)
+        self.assertEqual(
+            menu.HINTS[menu.OPTIONS.index(("Test Dünyası", "test_world"))],
+            "Hazır karakterle doğrudan test et",
+        )
+
     def test_main_menu_new_game_mouse_click_also_opens_submenu(self):
         class Rect:
             def __init__(self, *value):
