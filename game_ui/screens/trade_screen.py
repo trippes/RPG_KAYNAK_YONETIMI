@@ -4,6 +4,9 @@ from ..renderer import GOLD, GOOD, MUTED, TEXT, TEXT_SOFT, resource_color, resou
 
 
 class TradeScreen:
+    scale_to_window = True
+    design_size = (912, 438)
+
     VISIBLE_OFFERS = 6
     ROW_X, ROW_Y, ROW_W, ROW_H = 72, 208, 790, 42
     SELL_RECT = (636, 470, 220, 42)
