@@ -4,6 +4,8 @@ from .ledger import Ledger
 from .market import Market
 from .persistence import EconomySnapshot
 from .merchant import Merchant
+from .exchange import CurrencyExchange
+from .currency import Currency, Money
 
 
 class Economy:
@@ -13,11 +15,16 @@ class Economy:
         self.ledger = ledger if ledger is not None else Ledger()
         self.market = market if market is not None else Market()
         self.merchants: dict[str, Merchant] = dict(merchants or {})
+        self.exchange = CurrencyExchange()
 
     def register_merchant(self, merchant: Merchant) -> Merchant:
         if merchant.merchant_id in self.merchants: raise ValueError(f"Duplicate merchant ID: {merchant.merchant_id}")
         self.merchants[merchant.merchant_id] = merchant
         return merchant
+
+    def exchange_currency(self, account_id: str, source: Money, target_currency: Currency) -> Money:
+        """Convert an account balance using the fixed game coin rates."""
+        return self.exchange.exchange(self.ledger, account_id, source, target_currency)
 
     def snapshot(self) -> EconomySnapshot:
         return EconomySnapshot.from_runtime(self.ledger, self.market, self.merchants)
