@@ -562,18 +562,21 @@ class GameplayService:
         profile = bundle.locks.lockpick_profile(definition.lockpick_profile_id) if definition.lockpick_profile_id else None
         if profile is None:
             return LockAttemptResult("lockpick", None, 0, None, None, False, False, "Bu kilit maymuncukla açılamaz.")
-        skill = character.skills.get("lockpicking")
+        dexterity_score = character.attributes.get("dexterity")
+        dexterity_modifier = character.attributes.modifier("dexterity")
         tool_tags = self._carried_tool_tags(bundle, inventory, tool_item_id)
-        if profile.require_skill and skill < profile.minimum_skill:
-            return LockAttemptResult("lockpick", None, skill, profile.difficulty_class, None, False, False, "Maymuncuk becerisi yetersiz.")
-        if profile.require_tool and not set(tool_tags).intersection(profile.allowed_tool_tags):
-            return LockAttemptResult("lockpick", None, skill, profile.difficulty_class, None, False, False, "Uygun maymuncuk aleti envanterde bulunamadı.")
+        if dexterity_score < 2:
+            return LockAttemptResult("lockpick", None, dexterity_modifier, profile.difficulty_class, None, False, False, "Çeviklik seviyesi maymuncuk kullanmak için yetersiz (en az 2 olmalı).")
+        if profile.require_skill and dexterity_score < profile.minimum_skill:
+            return LockAttemptResult("lockpick", None, dexterity_modifier, profile.difficulty_class, None, False, False, "Bu kilit için çeviklik seviyesi yetersiz.")
+        if not set(tool_tags).intersection(profile.allowed_tool_tags):
+            return LockAttemptResult("lockpick", None, dexterity_modifier, profile.difficulty_class, None, False, False, "Maymuncuk aleti envanterde bulunamadı.")
         roll = zar_at(20)
-        total = roll + skill
-        success = roll == 20 or (roll != 1 and total >= profile.difficulty_class)
-        bundle.locks.attempt_lockpick(lock_id, skill=skill, tool_tags=tool_tags, success=success)
+        total = roll + dexterity_modifier
+        success = total >= profile.difficulty_class
+        bundle.locks.attempt_lockpick(lock_id, skill=dexterity_score, tool_tags=tool_tags, success=success)
         message = "Kilit başarıyla açıldı." if success else "Maymuncuk denemesi başarısız."
-        return LockAttemptResult("lockpick", roll, skill, profile.difficulty_class, total, success, True, message)
+        return LockAttemptResult("lockpick", roll, dexterity_modifier, profile.difficulty_class, total, success, True, message)
 
     def attempt_lockpick(self, actor_id: str, inventory_id: str, lock_id: str, *, tool_item_id: str | None = None) -> bool:
         return self.resolve_lockpick(actor_id, inventory_id, lock_id, tool_item_id=tool_item_id).success
