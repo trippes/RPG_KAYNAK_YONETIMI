@@ -1,19 +1,19 @@
 from application.content_pack import populate_gameplay_resources, populate_opening_content
 from application.game_application import GameApplication
+from application.carpenter_quest_content import populate_carpenter_quest_demo
 from application.caravan_quest_content import (
     CARAVAN_DIALOGUE_ID,
     CARAVAN_NPC_ID,
     CARAVAN_QUEST_ID,
     populate_caravan_quest_demo,
 )
-from application.quest_playtest_content import register_quest_playtest_fixture
 from quests.persistence import QuestSnapshot
 from resources import Quantity, ResourceUnit
 
 
 def _gameplay_service():
     service, _ = populate_opening_content(GameApplication.create_default())
-    register_quest_playtest_fixture(service)
+    populate_carpenter_quest_demo(service)
     populate_gameplay_resources(service)
     populate_caravan_quest_demo(service)
     return service
@@ -86,3 +86,21 @@ def test_caravan_dialogue_accepts_the_quest_through_the_social_runtime():
 
     assert next_node.node_id == "accepted"
     assert service.caravan_quest.state.value == "active"
+
+
+
+def test_carpenter_quest_collects_and_delivers_wood_for_a_reward():
+    service = _gameplay_service()
+    quest = service.accept_carpenter_quest("hero", "player")
+    initial_balance = service.balance("hero", "gold").amount
+    initial_experience = service.actor_character("hero").progression.experience
+
+    service.collect("forest_wood", "player", Quantity(3, ResourceUnit.ITEM))
+    assert quest.objectives[0].completed
+    assert not quest.objectives[1].completed
+
+    service.deliver_carpenter_wood("hero", "village_carpenter", "player")
+
+    assert quest.state.value == "completed"
+    assert service.balance("hero", "gold").amount == initial_balance + 12
+    assert service.actor_character("hero").progression.experience == initial_experience + 35
