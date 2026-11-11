@@ -368,7 +368,8 @@ class GameWindow:
         self.window_manager.windows["quest_log"].screen = self.screens["quest_log"]
         self.window_manager.windows["production"].screen = self.screens["production"]
         self.window_manager.windows["market"].screen = self.screens["market"]
-        self.window_manager.windows["currency_exchange"].screen = self.screens["currency_exchange"]
+        if "currency_exchange" in self.window_manager.windows:
+            self.window_manager.windows["currency_exchange"].screen = self.screens["currency_exchange"]
         if "trade" in self.window_manager.windows:
             self.window_manager.windows["trade"].screen = self.screens["trade"]
         self.window_manager.windows["map"].screen = self.screens["map"]
