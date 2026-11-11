@@ -29,3 +29,24 @@ Ekonomi snapshot'ı mevcut `rpg-gameplay` snapshot'ına gizlice eklenmez. Core
 canonical state'e de ekonomi runtime'ı eklenmez. Birleşik save kapsamına
 alınması sonraki application entegrasyonunda explicit bir alan, schema sürümü
 ve candidate restore doğrulaması gerektirir.
+
+
+## Oyun para birimleri ve sabit kur
+
+Oynanıştaki standart para birimleri bronze, silver ve gold kimlikli bronz,
+gümüş ve altın sikkelerdir. CurrencyExchange dönüşüm oranlarını bronz sikkeyi
+temel birim alarak uygular:
+
+- 1 bronz = 1 temel birim
+- 1 gümüş = 60 bronz
+- 1 altın = 60 gümüş = 3.600 bronz
+
+Dönüşüm tam sayı ve kayıpsızdır. Daha büyük birime dönüşümde kaynak miktar
+hedef birimin tam katı değilse işlem reddedilir; daha küçük birime dönüşüm
+çarpanla yapılır. Ledger.exchange kaynak bakiyesini düşürüp hedef bakiyesini
+aynı hesapta artırır ve iki yönlü defter kaydı oluşturur. Dönüşüm oranları
+sabit domain kuralıdır; save dosyasına runtime state olarak yazılmaz.
+
+GameplayService.exchange_currency oyun katmanının kullandığı giriş noktasıdır.
+Pazar penceresindeki Para Bozdur düğmesi, oyuncuyu altı standart dönüşüm
+işlemi sunan Döviz Bürosu penceresine götürür.
