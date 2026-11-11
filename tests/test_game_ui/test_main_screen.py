@@ -88,7 +88,7 @@ class MainScreenContainerTargetTests(unittest.TestCase):
         self.assertTrue(self.screen.context_menu_open)
         self.assertEqual(
             self.screen.context_menu_actions,
-            (("open", "Sandığı aç"), ("inspect", "İncele")),
+            (("open", "Aç"), ("inspect", "İncele")),
         )
 
     def test_locked_chest_with_key_offers_open_action(self):
