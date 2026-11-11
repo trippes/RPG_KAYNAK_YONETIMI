@@ -433,21 +433,19 @@ class WindowManager:
                     design_width, design_height = window.screen.design_size
                     scale, offset_x, offset_y = self._content_transform(window)
                     origin_x, origin_y = window.content_origin
-                    physical_rect = self.pg.Rect(
-                        round(origin_x * scale),
-                        round(origin_y * scale),
-                        max(1, round(design_width * scale)),
-                        max(1, round(design_height * scale)),
+                    physical_rect = self._scaled_content_rect(
+                        window, source, scale
                     )
-                    content_surface = source.subsurface(physical_rect)
-                    destination_x, destination_y = self._content_destination(window)
-                    renderer.surface.blit(
-                        content_surface,
-                        (
-                            round(destination_x + offset_x),
-                            round(destination_y + offset_y),
-                        ),
-                    )
+                    if physical_rect.width > 0 and physical_rect.height > 0:
+                        content_surface = source.subsurface(physical_rect)
+                        destination_x, destination_y = self._content_destination(window)
+                        renderer.surface.blit(
+                            content_surface,
+                            (
+                                round(destination_x + offset_x),
+                                round(destination_y + offset_y),
+                            ),
+                        )
                 else:
                     renderer.surface.blit(
                         source,
@@ -469,6 +467,29 @@ class WindowManager:
                         (right - offset, bottom), (right, bottom - offset), 1,
                     )
         renderer.mouse_pos = original_mouse_pos
+
+    def _scaled_content_rect(self, window, source, scale):
+        """Return a source-bounded physical rect for the logical content area.
+
+        Calculate both edges in the same coordinate space. Rounding the origin
+        and the width independently can make the right/bottom edge one pixel
+        larger than the backing surface, causing pygame.subsurface() to fail.
+        Clamp defensively as well, so unusual display scales cannot request an
+        out-of-bounds subsurface.
+        """
+        design_width, design_height = window.screen.design_size
+        origin_x, origin_y = window.content_origin
+        surface_width, surface_height = source.get_size()
+
+        left = max(0, min(surface_width, round(origin_x * scale)))
+        top = max(0, min(surface_height, round(origin_y * scale)))
+        right = max(left, min(
+            surface_width, round((origin_x + design_width) * scale)
+        ))
+        bottom = max(top, min(
+            surface_height, round((origin_y + design_height) * scale)
+        ))
+        return self.pg.Rect(left, top, right - left, bottom - top)
 
     def _content_canvas_size(self, window):
         if not getattr(window.screen, "scale_to_window", False):
