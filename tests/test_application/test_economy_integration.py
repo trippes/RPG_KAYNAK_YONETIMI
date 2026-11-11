@@ -62,7 +62,8 @@ class TestEconomyIntegration(unittest.TestCase):
             self.service.load(path)
         self.assertEqual(self.service.balance("hero", "bronze").amount, 60)
         self.assertEqual(self.service.balance("hero", "silver").amount, 1)
-        self.service.exchange_currency("hero", "silver", "gold", 1)
+        self.service.credit("hero", "silver", 59)
+        self.service.exchange_currency("hero", "silver", "gold", 60)
         self.assertEqual(self.service.balance("hero", "gold").amount, 1)
 
     def test_economy_round_trip_is_persisted(self):
