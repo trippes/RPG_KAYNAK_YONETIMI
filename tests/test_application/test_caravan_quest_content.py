@@ -67,3 +67,17 @@ def test_caravan_sequential_flag_survives_quest_snapshot_round_trip():
     assert restored_quest.sequential_objectives is True
     assert restored_quest.objectives[0].progress == 2
     assert restored_quest.objectives[1].progress == 0
+
+
+
+def test_caravan_dialogue_accepts_the_quest_through_the_social_runtime():
+    service = _gameplay_service()
+    service.talk_to_npc("hero", CARAVAN_NPC_ID, CARAVAN_DIALOGUE_ID)
+
+    next_node = service.choose_dialogue(
+        "hero", CARAVAN_NPC_ID, CARAVAN_DIALOGUE_ID,
+        "start", "accept_caravan_quest",
+    )
+
+    assert next_node.node_id == "accepted"
+    assert service.caravan_quest.state.value == "active"
