@@ -263,10 +263,10 @@ class InventoryScreen:
         renderer.text(f"Seviye {stats.get('level', 1)}", equipment_rect.x + 12,
                       equipment_rect.y + 44, GOLD)
         silhouette_width = min(70, max(36, equipment_rect.width // 3))
-        silhouette_height = min(92, max(54, equipment_rect.height // 3))
+        silhouette_height = min(70, max(44, equipment_rect.height // 4))
         silhouette = renderer.pg.Rect(
             equipment_rect.centerx - silhouette_width // 2,
-            equipment_rect.y + 82, silhouette_width, silhouette_height,
+            equipment_rect.y + 70, silhouette_width, silhouette_height,
         )
         renderer.pg.draw.rect(renderer.surface, (52, 65, 82), silhouette, border_radius=14)
         renderer.pg.draw.circle(
@@ -279,7 +279,7 @@ class InventoryScreen:
              max(1, silhouette_width // 2), max(1, silhouette_height * 3 // 5)),
             border_radius=8,
         )
-        equipment_rows_y = silhouette.bottom + 14
+        equipment_rows_y = silhouette.bottom + 8
         equipment_slot_width = max(1, (equipment_rect.width - 28) // 2)
         for index, (slot, label) in enumerate(self.SLOTS):
             column = index // 4
