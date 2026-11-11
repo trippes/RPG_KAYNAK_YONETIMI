@@ -36,18 +36,26 @@ def populate_caravan_quest_demo(service) -> Quest:
 
     wood_node_id = "forest_wood"
     iron_node_id = "north_iron_mine"
-    if bundle.resource_nodes.get(wood_node_id) is None:
-        bundle.resource_nodes.add(WorldResourceNode(
-            wood_node_id, world.world_id, ResourceType("wood"),
-            Quantity(8, ResourceUnit.ITEM), Quantity(8, ResourceUnit.ITEM),
-            Quantity(0, ResourceUnit.ITEM), location_id="forest",
-        ))
-    if bundle.resource_nodes.get(iron_node_id) is None:
-        bundle.resource_nodes.add(WorldResourceNode(
-            iron_node_id, world.world_id, ResourceType("iron_ore"),
-            Quantity(6, ResourceUnit.ITEM), Quantity(6, ResourceUnit.ITEM),
-            Quantity(0, ResourceUnit.ITEM), location_id="forest",
-        ))
+    wood_node_ids = (wood_node_id,) + tuple(
+        f"forest_tree_{index:02d}_wood" for index in range(2, 6)
+    )
+    for node_id in wood_node_ids:
+        if bundle.resource_nodes.get(node_id) is None:
+            bundle.resource_nodes.add(WorldResourceNode(
+                node_id, world.world_id, ResourceType("wood"),
+                Quantity(8, ResourceUnit.ITEM), Quantity(8, ResourceUnit.ITEM),
+                Quantity(0, ResourceUnit.ITEM), location_id="forest",
+            ))
+    for node_id, location_id in (
+        (iron_node_id, "forest"),
+        ("north_mine_iron", "north_mine"),
+    ):
+        if bundle.resource_nodes.get(node_id) is None:
+            bundle.resource_nodes.add(WorldResourceNode(
+                node_id, world.world_id, ResourceType("iron_ore"),
+                Quantity(6, ResourceUnit.ITEM), Quantity(6, ResourceUnit.ITEM),
+                Quantity(0, ResourceUnit.ITEM), location_id=location_id,
+            ))
 
     objectives = (
         Objective(
