@@ -1774,8 +1774,15 @@ class TestPhaseDQuality(unittest.TestCase):
 
     def test_character_screen_skill_mouse_selection_and_improvement(self):
         screen, calls = self._character_screen_fixture()
-        # The second visible skill row starts 25 logical pixels below the first.
-        screen.handle(InputState(mouse_pos=(285, 357), mouse_clicked=True))
+        row_rect, visible_count = screen._skill_geometry()
+        self.assertGreaterEqual(visible_count, 1)
+        # Use the live responsive row geometry and scroll to the second skill.
+        screen.skill_scroll = 1
+        x, y, width, height = row_rect
+        screen.handle(InputState(
+            mouse_pos=(x + width // 2, y + height // 2),
+            mouse_clicked=True,
+        ))
         self.assertEqual(screen.selected_skill, 1)
         screen.handle(InputState(actions={"confirm"}))
         self.assertEqual(calls, [("hero", "skill_1")])
@@ -1783,11 +1790,17 @@ class TestPhaseDQuality(unittest.TestCase):
 
     def test_character_screen_skill_navigation_keeps_selection_visible(self):
         screen, _calls = self._character_screen_fixture(skill_count=9)
+        _row_rect, visible_count = screen._skill_geometry()
         for _ in range(7):
             screen.handle(InputState(actions={"down"}))
         self.assertEqual(screen.selected_skill, 7)
-        # Three rows are visible; keeping selected index 7 visible requires offset 5.
-        self.assertEqual(screen.skill_scroll, 5)
+        # The selected skill must remain inside the responsive visible range.
+        self.assertLessEqual(screen.skill_scroll, screen.selected_skill)
+        self.assertLess(screen.selected_skill, screen.skill_scroll + visible_count)
+        self.assertEqual(
+            screen.skill_scroll,
+            max(0, screen.selected_skill - visible_count + 1),
+        )
 
     def test_character_screen_keeps_equipment_out_of_character_sheet(self):
         screen, _calls = self._character_screen_fixture()
