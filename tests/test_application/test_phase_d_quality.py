@@ -503,7 +503,7 @@ class TestPhaseDQuality(unittest.TestCase):
 
     def test_main_menu_test_world_starts_directly_without_opening_new_game_submenu(self):
         menu = MainMenu()
-        menu.selected = 6
+        menu.selected = 2
 
         self.assertEqual(
             menu.handle(InputState(actions={"confirm"})),
