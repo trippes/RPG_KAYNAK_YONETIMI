@@ -20,7 +20,7 @@ class CurrencyExchangeScreen:
         (ALTIN_SIKKE_BRONZ, "bronze", "gold"),
         (1, "gold", "bronze"),
     )
-    CARD_RECTS = (
+    DENOMINATION_NAMES = {\n        "bronze": "Bronz",\n        "silver": "Gümüş",\n        "gold": "Altın",\n    }\n    CARD_RECTS = (
         (60, 304, 396, 50),
         (480, 304, 396, 50),
         (60, 364, 396, 50),
@@ -135,7 +135,7 @@ class CurrencyExchangeScreen:
             icon_y = rect.y + 13
             renderer.coin_icon(rect.x + 14, icon_y, source, 24)
             source_color = (232, 235, 242) if available else (125, 133, 146)
-            source_label = f"{amount:,}".replace(",", ".") + f" {currency_name(source)}"
+            source_label = f"{amount:,}".replace(",", ".") + f" {self.DENOMINATION_NAMES[source]}"
             renderer.text(source_label, rect.x + 48, rect.y + 16, source_color)
 
             arrow_color = (232, 194, 112) if available else (104, 112, 126)
