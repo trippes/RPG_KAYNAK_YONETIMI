@@ -12,7 +12,7 @@ class FakeRect:
 
 
 class FakeFont:
-    def __init__(self, size):
+    def __init__(self, _font_file, size):
         self.point_size = size
 
     def size(self, value):
