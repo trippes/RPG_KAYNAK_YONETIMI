@@ -249,6 +249,10 @@ class GameWindow:
 
         register_container_playtest_fixture(self.service)
         register_quest_playtest_fixture(self.service)
+        bundle = self.service.application.holder.current
+        if "player" in bundle.inventories:
+            from application.caravan_quest_content import populate_caravan_quest_demo
+            populate_caravan_quest_demo(self.service)
 
     def _select_save_slot(self, index, path, exists):
         self.selected_slot = index
