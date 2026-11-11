@@ -397,19 +397,34 @@ class MainScreen:
         )
         return True
 
+    def _has_required_key(self, inventory_id, lock):
+        if lock is None or not lock.required_key_id:
+            return False
+        inventory = self.service.inventory(inventory_id)
+        return any(
+            item_id == lock.required_key_id and quantity > 0
+            for item_id, quantity in inventory.items
+        )
+
     def _open_container_context_menu(self, position):
         lock = self.service.container_lock_state(self.selected_container_id)
         actions = []
         if lock is not None and lock.locked:
-            if lock.required_key_id:
-                actions.append(("key", "Anahtarla aç"))
-            if lock.lockpick_profile_id and not lock.jammed and not lock.broken:
-                actions.append(("lockpick", "Maymunculuk dene"))
+            actors = self._actors()
+            has_key = bool(
+                actors
+                and actors[0].inventory_id is not None
+                and self._has_required_key(actors[0].inventory_id, lock)
+            )
+            if has_key:
+                actions.append(("open", "Aç"))
+            elif lock.lockpick_profile_id and not lock.jammed and not lock.broken:
+                actions.append(("unlock", "Kilidi Aç"))
             if lock.force_profile_id and not lock.jammed and not lock.broken:
                 actions.append(("force", "Kilidi zorla"))
             actions.append(("inspect", "İncele"))
         else:
-            actions.extend((("open", "Sandığı aç"), ("inspect", "İncele")))
+            actions.extend((("open", "Aç"), ("inspect", "İncele")))
         self.context_menu_actions = tuple(actions)
         self.context_menu_position = position
         self.context_menu_open = True
@@ -445,11 +460,19 @@ class MainScreen:
             self.message = "Karakter envanteri bulunamadı."
             return
         if action == "open":
-            return
-        if action == "key" and lock is not None and lock.required_key_id:
-            success = self.service.unlock_with_key(actor.actor_id, actor.inventory_id, lock.lock_id, lock.required_key_id)
-            self.message = "Kilit anahtarla açıldı." if success else "Uygun anahtar bulunamadı."
-        elif action == "lockpick" and lock is not None:
+            if lock is not None and lock.locked:
+                if not lock.required_key_id:
+                    self.message = "Bu kilit için uygun anahtar tanımlanmamış."
+                    return None
+                success = self.service.unlock_with_key(
+                    actor.actor_id, actor.inventory_id, lock.lock_id, lock.required_key_id,
+                )
+                if not success:
+                    self.message = "Uygun anahtar bulunamadı."
+                    return None
+                self.message = "Kilit anahtarla açıldı."
+            return f"container:{self.selected_container_id}"
+        if action == "unlock" and lock is not None:
             tool_id = self._tool_for_tags(actor.inventory_id, lock.lockpick_allowed_tool_tags)
             result = self.service.resolve_lockpick(actor.actor_id, actor.inventory_id, lock.lock_id, tool_item_id=tool_id)
             self.message = f"{'Başarılı' if result.success else 'Başarısız'} — d20 {result.total} / DC {result.difficulty_class}"
@@ -537,13 +560,14 @@ class MainScreen:
                 selected_action = next((action for action, rect in self.context_menu_rects if rect.collidepoint(state.mouse_pos)), None)
                 if selected_action is not None:
                     self.context_menu_open = False
-                    if selected_action == "open":
+                    if selected_action in ("open", "unlock", "force", "inspect"):
                         placement = self._container_placement(self.selected_container_id)
-                        if self._is_adjacent_to_container(placement):
-                            return f"container:{self.selected_container_id}"
-                        self.message = "Sandıkla etkileşmek için yanına yaklaşmalısın."
-                    else:
-                        self._execute_container_action(selected_action)
+                        if not self._is_adjacent_to_container(placement) and selected_action != "inspect":
+                            self.message = "Sandıkla etkileşmek için yanına yaklaşmalısın."
+                            return None
+                        result = self._execute_container_action(selected_action)
+                        if result is not None:
+                            return result
                     return None
                 self.context_menu_open = False
                 return None
