@@ -34,7 +34,7 @@ class FakeContainerService:
         return SimpleNamespace(name=item_id.capitalize(), tags=("potion", "consumable") if item_id == "potion" else (), category="potion" if item_id == "potion" else "misc")
 
     def transfer_actor_item_from_container(self, *args):
-        self.transfers.append(("from_container", *args))
+        self.transfers.append(args)
 
     def transfer_actor_item_to_container(self, *args):
         self.transfers.append(("to_container", *args))
