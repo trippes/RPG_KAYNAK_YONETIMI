@@ -167,11 +167,11 @@ class WindowManager:
         bounds = window.bounds
         x, y = position
         edges = []
-        if x - bounds.left <= self.RESIZE_BORDER:
+        if x - bounds.x <= self.RESIZE_BORDER:
             edges.append("left")
         elif bounds.right - x <= self.RESIZE_BORDER:
             edges.append("right")
-        if y - bounds.top <= self.RESIZE_BORDER:
+        if y - bounds.y <= self.RESIZE_BORDER:
             edges.append("top")
         elif bounds.bottom - y <= self.RESIZE_BORDER:
             edges.append("bottom")
