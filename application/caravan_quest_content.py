@@ -15,9 +15,6 @@ def populate_caravan_quest_demo(service):
     if "player" not in bundle.inventories:
         raise RuntimeError("Caravan quest requires the player inventory.")
     existing = bundle.quest_log.get(CARAVAN_QUEST_ID)
-    if existing is not None:
-        service.caravan_quest = existing
-        return existing
 
     npc = bundle.social.npcs.get(CARAVAN_NPC_ID)
     if npc is None:
@@ -26,7 +23,7 @@ def populate_caravan_quest_demo(service):
             ("wardens",), "village", position=Position(20, 20),
         ))
 
-    quest = Quest(
+    quest = existing or Quest(
         CARAVAN_QUEST_ID,
         "Kayıp Kervanın İzinde",
         (
@@ -67,7 +64,8 @@ def populate_caravan_quest_demo(service):
         ),
         sequential_objectives=True,
     )
-    bundle.quest_log.add(quest)
+    if existing is None:
+        bundle.quest_log.add(quest)
     service.caravan_quest = quest
     service._quest_reward_accounts[CARAVAN_QUEST_ID] = "hero"
     service._quest_reward_inventories[CARAVAN_QUEST_ID] = "player"
