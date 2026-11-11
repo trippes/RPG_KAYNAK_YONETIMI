@@ -152,7 +152,9 @@ class WindowManager:
             window.bounds.x,
             window.bounds.y,
             window.bounds.width,
-            self.TITLE_HEIGHT if window.frame else 18,
+            self.TITLE_HEIGHT if window.frame else max(
+                18, int(getattr(window.screen, "title_bar_height", 18))
+            ),
         )
 
     def _content_destination(self, window):

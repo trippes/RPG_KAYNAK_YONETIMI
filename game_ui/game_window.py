@@ -174,7 +174,7 @@ class GameWindow:
             content_origin=(0, 0),
             title="",
             frame=False,
-            close_offset=(696, 80),
+            close_offset=(686, 68),
         )
         self.window_manager.register(
             "trade",

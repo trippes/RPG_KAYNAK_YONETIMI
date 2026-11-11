@@ -15,6 +15,7 @@ class CurrencyExchangeScreen:
     transparent_window_background = True
     custom_close_button = True
     close_size = 48
+    title_bar_height = 130
     design_size = (768, 512)
 
     BACKGROUND_NAME = "royal_mint_exchange_frame.png"
