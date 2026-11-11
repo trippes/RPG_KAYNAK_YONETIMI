@@ -135,7 +135,7 @@ class ScaledDraw:
             # these primitives; zero remains zero because it means filled.
             if name in {"rect", "ellipse", "arc", "line", "aaline", "lines", "aalines", "polygon", "circle"}:
                 width_index = {
-                    "rect": 3, "ellipse": 3, "arc": 6,
+                    "rect": 3, "ellipse": 3, "arc": 5,
                     "line": 4, "aaline": None, "lines": 4,
                     "aalines": None, "polygon": 3, "circle": 4,
                 }[name]
