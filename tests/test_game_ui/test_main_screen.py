@@ -61,9 +61,6 @@ class FakeService:
         self.unlocked_with_key = True
         return True
 
-    def _unused(self):
-        return None
-
 
 class MainScreenContainerTargetTests(unittest.TestCase):
     def setUp(self):
@@ -124,6 +121,22 @@ class MainScreenContainerTargetTests(unittest.TestCase):
             self.screen.context_menu_actions,
             (("unlock", "Kilidi Aç"), ("force", "Kilidi zorla"), ("inspect", "İncele")),
         )
+
+    def test_open_action_uses_inventory_key_and_opens_container(self):
+        self.service.lock = SimpleNamespace(
+            locked=True, jammed=False, broken=False,
+            lock_id="chest_lock", required_key_id="chest_key",
+            lockpick_profile_id="pick_profile", force_profile_id=None,
+            lockpick_allowed_tool_tags=("lockpick",), force_required_tool_tags=(),
+        )
+        self.service.inventory_items = (("chest_key", 1),)
+        self.screen.selected_container_id = "chest_01"
+        self.assertEqual(
+            self.screen._execute_container_action("open"),
+            "container:chest_01",
+        )
+        self.assertTrue(self.service.unlocked_with_key)
+        self.assertFalse(self.service.lock.locked)
 
     def test_container_cannot_be_opened_from_far_away(self):
         self.service.actor.position = SimpleNamespace(x=1, y=1)
