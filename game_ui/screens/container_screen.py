@@ -253,6 +253,11 @@ class ContainerScreen:
                 )
 
             if state.mouse_clicked and state.mouse_pos:
+                if getattr(self, "_sort_rect", None) and self._sort_rect.collidepoint(state.mouse_pos):
+                    modes = ("name", "category", "rarity", "quantity")
+                    self.sort_mode = modes[(modes.index(self.sort_mode) + 1) % len(modes)]
+                    self.scroll_row = 0
+                    return None
                 if self._take_all_rect and self._take_all_rect.collidepoint(state.mouse_pos):
                     self._take_all(actor_id, inventory_id)
                     self._drag_item_id = None
@@ -338,6 +343,7 @@ class ContainerScreen:
             "uncommon": ((29, 48, 39), (80, 158, 105)),
             "rare": ((30, 43, 65), (83, 137, 205)),
             "epic": ((53, 35, 61), (165, 94, 190)),
+            "legendary": ((67, 47, 22), (218, 164, 66)),
         }
         fill, edge = palette.get(rarity, palette["common"])
         if hovered:
