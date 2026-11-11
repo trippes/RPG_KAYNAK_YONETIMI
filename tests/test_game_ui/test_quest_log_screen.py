@@ -1,6 +1,7 @@
 """End-to-end behavior tests for the quest journal window content."""
 
 import unittest
+from pathlib import Path
 from types import SimpleNamespace
 
 from game_ui.input import InputState
@@ -143,6 +144,15 @@ class QuestJournalWindowTests(unittest.TestCase):
             InputState(mouse_pos=(100, 300), mouse_wheel=100)
         )
         self.assertEqual(self.screen.scroll, 0)
+
+    def test_quest_frame_asset_exists_and_window_is_transparent(self):
+        asset = (
+            Path(__file__).resolve().parents[2]
+            / "game_ui" / "assets"
+            / QuestLogScreen.BACKGROUND_NAME
+        )
+        self.assertTrue(asset.is_file())
+        self.assertTrue(QuestLogScreen.transparent_window_background)
 
     def test_render_shows_categories_objectives_and_rewards(self):
         renderer = FakeRenderer()
