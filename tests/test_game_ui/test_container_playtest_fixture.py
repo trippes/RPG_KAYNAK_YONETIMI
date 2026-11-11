@@ -28,8 +28,9 @@ def test_playtest_fixture_registers_three_chests_and_keeps_tools_out_of_player_i
     assert service.container_for_entity(KEYED_CHEST_ENTITY_ID) == KEYED_CHEST_ID
 
     player_inventory = service.inventory("player")
-    assert player_inventory.item_quantity(LOCKPICK_ITEM_ID) == 0
-    assert player_inventory.item_quantity(KEY_ITEM_ID) == 0
+    player_items = dict(player_inventory.items)
+    assert player_items.get(LOCKPICK_ITEM_ID, 0) == 0
+    assert player_items.get(KEY_ITEM_ID, 0) == 0
 
     unlocked = service.container_state(UNLOCKED_CHEST_ID)
     assert unlocked.name == "Açık Sandık"
