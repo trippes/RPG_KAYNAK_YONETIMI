@@ -33,6 +33,9 @@ class CurrencyExchangeScreen:
     CARD_AMOUNT_OFFSETS = (58, 147)
     BALANCE_CENTERS = (230, 414, 598)
 
+    # The checkerboard field visible behind the six exchange panels.
+    EXCHANGE_FIELD = (48, 182, 672, 254)
+
     def __init__(self, service):
         self.service = service
         self.selected = 0
@@ -50,31 +53,46 @@ class CurrencyExchangeScreen:
             self._background = None
         return self._background
 
-    def _draw_base_layer(self, renderer, target, scale):
-        """Draw a full base layer first; the frame PNG masks every opaque region."""
+    def _draw_exchange_overlay(self, renderer, target, scale):
+        """Lay color over the checkerboard, then cut holes for the PNG panels."""
         pg = renderer.pg
         width = max(1, round(self.design_size[0] * scale))
         height = max(1, round(self.design_size[1] * scale))
-        base = pg.Rect(0, 0, width, height)
+        overlay = pg.Surface((width, height), pg.SRCALPHA)
+
+        x, y, field_width, field_height = self.EXCHANGE_FIELD
+        field = pg.Rect(
+            round(x * scale), round(y * scale),
+            round(field_width * scale), round(field_height * scale),
+        )
 
         palette = (
-            (11, 20, 36),
-            (14, 27, 47),
-            (17, 33, 56),
-            (20, 38, 63),
-            (17, 32, 54),
-            (13, 24, 42),
+            (12, 22, 39, 255),
+            (15, 29, 50, 255),
+            (18, 35, 58, 255),
+            (20, 39, 63, 255),
+            (16, 31, 53, 255),
         )
-        band_height = max(1, base.height // len(palette))
+        band_height = max(1, field.height // len(palette))
         for index, color in enumerate(palette):
-            top = base.y + index * band_height
+            top = field.y + index * band_height
             band = pg.Rect(
-                base.x,
-                top,
-                base.width,
-                base.bottom - top if index == len(palette) - 1 else band_height,
+                field.x, top, field.width,
+                field.bottom - top if index == len(palette) - 1 else band_height,
             )
-            pg.draw.rect(target, color, band)
+            pg.draw.rect(overlay, color, band)
+
+        # The original PNG is kept visible through these cut-outs.
+        for x, y, card_width, card_height in self.CARD_RECTS:
+            hole = pg.Rect(
+                round((x - 5) * scale),
+                round((y - 5) * scale),
+                round((card_width + 10) * scale),
+                round((card_height + 10) * scale),
+            )
+            pg.draw.rect(overlay, (0, 0, 0, 0), hole, border_radius=max(4, round(10 * scale)))
+
+        target.blit(overlay, (0, 0))
 
     def _draw_background(self, renderer):
         image = self._load_background(renderer.pg)
@@ -82,11 +100,6 @@ class CurrencyExchangeScreen:
             return
         scale = getattr(renderer.surface, "_scale", 1.0)
         target = getattr(renderer.surface, "_surface", renderer.surface)
-
-        # The solid base is intentionally drawn under the complete frame.
-        # Opaque parts of the PNG cover it; only transparent cut-outs reveal it.
-        self._draw_base_layer(renderer, target, scale)
-
         size = (
             max(1, round(self.design_size[0] * scale)),
             max(1, round(self.design_size[1] * scale)),
@@ -95,7 +108,12 @@ class CurrencyExchangeScreen:
             artwork = renderer.pg.transform.smoothscale(image, size)
         except (AttributeError, TypeError, ValueError):
             artwork = image
+
+        # First draw the complete original artwork.
         target.blit(artwork, (0, 0))
+        # Then place the palette over the checkerboard and reveal the
+        # original PNG again through the panel-shaped cut-outs.
+        self._draw_exchange_overlay(renderer, target, scale)
 
     def _balance(self, currency):
         try:
@@ -152,7 +170,6 @@ class CurrencyExchangeScreen:
         return None
 
     def render(self, renderer):
-        """Draw balances and coin-aligned amounts over the supplied frame."""
         self._draw_background(renderer)
         pg = renderer.pg
         for center, currency in zip(self.BALANCE_CENTERS, ("bronze", "silver", "gold")):
