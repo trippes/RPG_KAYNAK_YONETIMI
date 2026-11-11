@@ -47,6 +47,40 @@ class DummyScreen:
         return None
 
 
+
+class DragSourceScreen(DummyScreen):
+    pointer_capture = False
+
+    def __init__(self):
+        super().__init__()
+        self.payload = {"item_id": "health_potion", "quantity": 2}
+        self.cancelled = False
+
+    def handle(self, state):
+        self.inputs.append(state)
+        if state.mouse_clicked:
+            self.pointer_capture = True
+        if state.mouse_button_up:
+            self.pointer_capture = False
+        return None
+
+    def dragged_item_payload(self):
+        return self.payload if self.pointer_capture else None
+
+    def cancel_drag(self):
+        self.pointer_capture = False
+        self.cancelled = True
+
+
+class DropTargetScreen(DummyScreen):
+    def __init__(self):
+        super().__init__()
+        self.received = []
+
+    def receive_external_item(self, item_id, quantity):
+        self.received.append((item_id, quantity))
+        return True
+
 class QuestWindowManagerTests(unittest.TestCase):
     def setUp(self):
         self.backend = type("Backend", (), {"Rect": FakeRect})
@@ -59,6 +93,31 @@ class QuestWindowManagerTests(unittest.TestCase):
             content_origin=(24, 126),
             title="Görev Günlüğü",
         )
+
+
+    def test_dragged_inventory_item_is_delivered_to_container_window(self):
+        source = DragSourceScreen()
+        target = DropTargetScreen()
+        manager = WindowManager(self.backend, 960, 640)
+        manager.register("inventory", source, (24, 110, 240, 300))
+        manager.register("container", target, (300, 110, 240, 300))
+        manager.open("inventory")
+        manager.open("container")
+        manager.focus("inventory")
+
+        manager.handle_input(InputState(
+            mouse_pos=(100, 170), mouse_clicked=True, mouse_button_down=True
+        ))
+        manager.handle_input(InputState(
+            mouse_pos=(360, 190), mouse_motion=True
+        ))
+        manager.handle_input(InputState(
+            mouse_pos=(360, 190), mouse_button_up=True
+        ))
+
+        self.assertEqual(target.received, [("health_potion", 2)])
+        self.assertTrue(source.cancelled)
+        self.assertEqual(manager.focused_id, "container")
 
     def test_j_shortcut_opens_and_closes_quest_window(self):
         self.assertTrue(
