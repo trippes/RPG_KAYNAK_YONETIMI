@@ -8,20 +8,20 @@ class MainMenu:
     OPTIONS = (
         ("Yeni Oyun", "new_game"),
         ("Devam Et", "continue"),
+        ("Test Dünyası", "test_world"),
         ("Ayarlar", "settings"),
         ("Oyun Rehberi", "guide"),
         ("Hakkında", "about"),
         ("Çıkış", "quit"),
-        ("Test Dünyası", "test_world"),
     )
     HINTS = (
         "Yeni bir maceraya atıl",
         "Macerana devam et",
+        "Hazır karakterle doğrudan test et",
         "Oyun ayarlarını düzenle",
         "Eldoria oyun rehberini aç",
         "Eldoria hakkında bilgi al",
         "Oyundan çık",
-        "Hazır karakterle doğrudan test et",
     )
     NEW_GAME_OPTIONS = (
         ("Kayıtlı Oyunu Yükle", "load_slots"),
@@ -223,10 +223,14 @@ class MainMenu:
             ]
             draw.polygon(renderer.surface, icon_color, icon)
         elif index == 2:
-            draw.circle(renderer.surface, icon_color, (icon_x, center_y), 10, 3)
+            draw.rect(renderer.surface, icon_color, renderer.pg.Rect(icon_x - 9, center_y - 9, 18, 18), 2)
+            draw.line(renderer.surface, icon_color, (icon_x - 5, center_y), (icon_x + 5, center_y), 2)
+            draw.line(renderer.surface, icon_color, (icon_x, center_y - 5), (icon_x, center_y + 5), 2)
         elif index == 3:
-            draw.rect(renderer.surface, icon_color, renderer.pg.Rect(icon_x - 12, center_y - 10, 24, 20), 2)
+            draw.circle(renderer.surface, icon_color, (icon_x, center_y), 10, 3)
         elif index == 4:
+            draw.rect(renderer.surface, icon_color, renderer.pg.Rect(icon_x - 12, center_y - 10, 24, 20), 2)
+        elif index == 5:
             draw.circle(renderer.surface, icon_color, (icon_x, center_y), 11)
             renderer.text("i", icon_x - 3, center_y - 10, (70, 50, 20))
         else:
