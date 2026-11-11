@@ -259,6 +259,42 @@ class QuestWindowManagerTests(unittest.TestCase):
             (404, 345),
         )
 
+    def test_responsive_content_uses_fixed_design_canvas_with_content_origin(self):
+        screen = DummyScreen()
+        screen.scale_to_window = True
+        screen.design_size = (912, 438)
+        manager = WindowManager(self.backend, 960, 640)
+        manager.register(
+            "inventory", screen, (24, 110, 700, 400),
+            content_origin=(24, 126),
+        )
+
+        self.assertEqual(
+            manager._content_canvas_size(manager.windows["inventory"]),
+            (936, 564),
+        )
+
+    def test_responsive_resize_does_not_change_screen_viewport(self):
+        class ViewportScreen(DummyScreen):
+            scale_to_window = True
+            design_size = (912, 438)
+
+            def __init__(self):
+                super().__init__()
+                self.viewport_calls = []
+
+            def set_viewport(self, width, height):
+                self.viewport_calls.append((width, height))
+
+        screen = ViewportScreen()
+        manager = WindowManager(self.backend, 960, 640)
+        manager.register("inventory", screen, (24, 110, 700, 400))
+        window = manager.windows["inventory"]
+        manager._begin_resize(window, (window.bounds.right - 1, window.bounds.bottom - 1), ("right", "bottom"))
+        manager._resize_window(window, (window.bounds.right + 40, window.bounds.bottom + 30))
+
+        self.assertEqual(screen.viewport_calls, [])
+
     def test_responsive_content_preserves_design_aspect_ratio(self):
         screen = DummyScreen()
         screen.scale_to_window = True
