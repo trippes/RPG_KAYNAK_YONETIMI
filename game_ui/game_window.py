@@ -271,6 +271,8 @@ class GameWindow:
         from application.game_application import GameApplication
 
         service, _ = populate_opening_content(GameApplication.create_default())
+        from application.quest_demo import populate_caravan_quest_demo
+        populate_caravan_quest_demo(service)
         self.service = service
         self.screens.update({
             "opening": OpeningScreen(),
