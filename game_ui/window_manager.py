@@ -68,6 +68,13 @@ class WindowManager:
             frame,
             close_offset,
         )
+        if getattr(screen, "responsive_layout", False):
+            viewport = getattr(screen, "set_viewport", None)
+            if viewport is not None:
+                viewport(
+                    self.windows[window_id].bounds.width,
+                    max(0, self.windows[window_id].bounds.height - (self.TITLE_HEIGHT if frame else 0)),
+                )
 
     def open(self, window_id):
         window = self._get(window_id)
@@ -162,7 +169,9 @@ class WindowManager:
         )
 
     def _content_transform(self, window):
-        """Return an aspect-preserving scale and centered offset for window content."""
+        """Return the legacy scale transform, or identity for responsive layouts."""
+        if getattr(window.screen, "responsive_layout", False):
+            return 1.0, 0.0, 0.0
         if not getattr(window.screen, "scale_to_window", False):
             return 1.0, 0.0, 0.0
 
@@ -186,7 +195,10 @@ class WindowManager:
         origin_x, origin_y = window.content_origin
         local_x = position[0] - destination_x
         local_y = position[1] - destination_y
-        if getattr(window.screen, "scale_to_window", False):
+        if (
+            getattr(window.screen, "scale_to_window", False)
+            and not getattr(window.screen, "responsive_layout", False)
+        ):
             scale, offset_x, offset_y = self._content_transform(window)
             local_x = round((local_x - offset_x) / scale)
             local_y = round((local_y - offset_y) / scale)
@@ -249,7 +261,10 @@ class WindowManager:
         window.bounds.width = right - left
         window.bounds.height = bottom - top
         viewport = getattr(window.screen, "set_viewport", None)
-        if viewport is not None and not getattr(window.screen, "scale_to_window", False):
+        if viewport is not None and (
+            getattr(window.screen, "responsive_layout", False)
+            or not getattr(window.screen, "scale_to_window", False)
+        ):
             viewport(
                 window.bounds.width,
                 max(0, window.bounds.height - (self.TITLE_HEIGHT if window.frame else 0)),
@@ -429,7 +444,23 @@ class WindowManager:
             source = self._render_content(renderer, window)
             if source is not None:
                 scale_to_window = getattr(window.screen, "scale_to_window", False)
-                if scale_to_window and hasattr(self.pg, "transform"):
+                if getattr(window.screen, "responsive_layout", False):
+                    origin_x, origin_y = window.content_origin
+                    content_height = max(
+                        0, window.bounds.height - (self.TITLE_HEIGHT if window.frame else 0)
+                    )
+                    physical_rect = self.pg.Rect(
+                        origin_x, origin_y, window.bounds.width, content_height
+                    )
+                    surface_width, surface_height = source.get_size()
+                    physical_rect.width = max(0, min(physical_rect.width, surface_width - physical_rect.x))
+                    physical_rect.height = max(0, min(physical_rect.height, surface_height - physical_rect.y))
+                    if physical_rect.width > 0 and physical_rect.height > 0:
+                        renderer.surface.blit(
+                            source.subsurface(physical_rect),
+                            self._content_destination(window),
+                        )
+                elif scale_to_window and hasattr(self.pg, "transform"):
                     design_width, design_height = window.screen.design_size
                     scale, offset_x, offset_y = self._content_transform(window)
                     origin_x, origin_y = window.content_origin
@@ -492,6 +523,13 @@ class WindowManager:
         return self.pg.Rect(left, top, right - left, bottom - top)
 
     def _content_canvas_size(self, window):
+        if getattr(window.screen, "responsive_layout", False):
+            return (
+                window.content_origin[0] + window.bounds.width,
+                window.content_origin[1] + max(
+                    0, window.bounds.height - (self.TITLE_HEIGHT if window.frame else 0)
+                ),
+            )
         if not getattr(window.screen, "scale_to_window", False):
             return self.width, self.height
         design_width, design_height = window.screen.design_size
@@ -502,6 +540,19 @@ class WindowManager:
 
     def _render_content(self, renderer, window):
         surface_type = getattr(self.pg, "Surface", type(renderer.surface))
+        if getattr(window.screen, "responsive_layout", False):
+            logical_width, logical_height = self._content_canvas_size(window)
+            try:
+                source = surface_type((max(1, logical_width), max(1, logical_height)))
+            except TypeError:
+                window.screen.render(renderer)
+                return None
+            responsive_renderer = copy(renderer)
+            responsive_renderer.width = logical_width
+            responsive_renderer.height = logical_height
+            responsive_renderer.surface = source
+            window.screen.render(responsive_renderer)
+            return source
         responsive = getattr(window.screen, "scale_to_window", False)
         if responsive:
             logical_width, logical_height = self._content_canvas_size(window)
