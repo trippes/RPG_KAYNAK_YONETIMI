@@ -115,6 +115,14 @@ class WindowManager:
 
     def _close_rect(self, window):
         if not window.frame and window.close_offset is not None:
+            if getattr(window.screen, "scale_to_window", False):
+                scale, offset_x, offset_y = self._content_transform(window)
+                return self.pg.Rect(
+                    window.bounds.x + round(offset_x + window.close_offset[0] * scale),
+                    window.bounds.y + round(offset_y + window.close_offset[1] * scale),
+                    max(1, round(self.CLOSE_SIZE * scale)),
+                    max(1, round(self.CLOSE_SIZE * scale)),
+                )
             return self.pg.Rect(
                 window.bounds.x + window.close_offset[0],
                 window.bounds.y + window.close_offset[1],
@@ -467,7 +475,14 @@ class WindowManager:
             window.screen.render(renderer)
             return None
         try:
-            source = surface_type((renderer.width, renderer.height))
+            source_size = (renderer.width, renderer.height)
+            if getattr(window.screen, "scale_to_window", False):
+                design_width, design_height = window.screen.design_size
+                source_size = (
+                    max(renderer.width, window.content_origin[0] + design_width),
+                    max(renderer.height, window.content_origin[1] + design_height),
+                )
+            source = surface_type(source_size)
         except TypeError:
             window.screen.render(renderer)
             return None
