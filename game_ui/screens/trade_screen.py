@@ -1,6 +1,7 @@
 """NPC-specific trade window for selling accepted resources to a trade partner."""
 
 from ..renderer import GOLD, GOOD, MUTED, TEXT, TEXT_SOFT, resource_color, resource_name, unit_label
+from economy import currency_name
 
 
 class TradeScreen:
@@ -39,7 +40,7 @@ class TradeScreen:
             )
             self.message = (
                 f"1 {resource_name(resource_type)} satıldı. "
-                f"+{trade.total.amount} {trade.total.currency.value}"
+                f"+{trade.total.amount} {currency_name(trade.total.currency)}"
             )
         except (KeyError, ValueError, RuntimeError) as error:
             self.message = f"Ticaret başarısız: {error}"
@@ -76,7 +77,7 @@ class TradeScreen:
             if merchant is not None else 0
         )
         renderer.text(f"{npc_name} ile Ticaret", 60, 154, title=True)
-        renderer.text(f"Alım bütçesi: {balance} altın", 60, 192, GOLD)
+        renderer.text(f"Alım bütçesi: {balance} {currency_name('gold')}", 60, 192, GOLD)
         quotes = self._quotes()
         if not quotes:
             renderer.text(
@@ -100,7 +101,7 @@ class TradeScreen:
                 self.ROW_X + 340, y + 8, TEXT_SOFT,
             )
             renderer.text(
-                f"Birim: {unit_price.amount} altın",
+                f"Birim: {unit_price.amount} {currency_name(unit_price.currency)}",
                 self.ROW_X + 530, y + 8, GOLD,
             )
         bx, by, bw, bh = self.SELL_RECT
