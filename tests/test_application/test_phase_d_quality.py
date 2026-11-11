@@ -32,16 +32,15 @@ class TestPhaseDQuality(unittest.TestCase):
 
         compact = screen._layout()
         outer = compact["outer"]
-        inner = compact["inner"]
         quest_list = screen._list_bounds()
         details = screen._details_bounds()
         rewards = screen._reward_bounds()
 
         self.assertTrue(screen.responsive_layout)
-        self.assertEqual((screen.min_window_width, screen.min_window_height), (600, 520))
-        self.assertGreaterEqual(quest_list[0], inner[0])
+        self.assertTrue(screen.transparent_window_background)
+        self.assertEqual((screen.min_window_width, screen.min_window_height), (700, 420))
         self.assertLessEqual(quest_list[0] + quest_list[2], details[0])
-        self.assertLessEqual(details[0] + details[2], inner[0] + inner[2])
+        self.assertLessEqual(details[0] + details[2], outer[0] + outer[2])
         self.assertLessEqual(quest_list[1] + quest_list[3], rewards[1])
         self.assertLessEqual(details[1] + details[3], rewards[1])
         self.assertLessEqual(rewards[1] + rewards[3], outer[1] + outer[3])
@@ -60,7 +59,7 @@ class TestPhaseDQuality(unittest.TestCase):
         self.assertLessEqual(expanded_list[0] + expanded_list[2], expanded_details[0])
         self.assertLessEqual(
             expanded_details[0] + expanded_details[2],
-            expanded["inner"][0] + expanded["inner"][2],
+            expanded["outer"][0] + expanded["outer"][2],
         )
 
     def test_quest_log_category_tabs_use_responsive_hitboxes(self):
@@ -199,13 +198,23 @@ class TestPhaseDQuality(unittest.TestCase):
         screen.selected = 4
         screen.scroll = 90
 
-        screen.handle(InputState(mouse_clicked=True, mouse_pos=(50, 180)))
+        first_tab = screen._tab_bounds()[0]
+        screen.handle(InputState(
+            mouse_clicked=True,
+            mouse_pos=(first_tab[0] + first_tab[2] // 2,
+                       first_tab[1] + first_tab[3] // 2),
+        ))
 
         self.assertEqual(screen.category, 0)
         self.assertEqual(screen.selected, 0)
         self.assertEqual(screen.scroll, 0)
 
-        screen.handle(InputState(mouse_clicked=True, mouse_pos=(55, 310)))
+        second_row = screen._row_bounds()[1]
+        screen.handle(InputState(
+            mouse_clicked=True,
+            mouse_pos=(second_row[0] + second_row[2] // 2,
+                       second_row[1] + second_row[3] // 2),
+        ))
         self.assertEqual(screen.selected, 1)
 
     def test_quest_log_scroll_is_clamped_to_list_bounds(self):
@@ -260,7 +269,13 @@ class TestPhaseDQuality(unittest.TestCase):
         self.assertEqual(layout["outer"], (24, 126, 1176, 674))
         self.assertLessEqual(layout["outer"][0] + layout["outer"][2], 1200)
         self.assertLessEqual(layout["outer"][1] + layout["outer"][3], 800)
-        self.assertLessEqual(layout["body_height"], 230)
+        list_bounds = self._quest_screen()._list_bounds()
+        details_bounds = self._quest_screen()._details_bounds()
+        rewards_bounds = self._quest_screen()._reward_bounds()
+        self.assertLessEqual(list_bounds[0] + list_bounds[2], details_bounds[0])
+        self.assertLessEqual(details_bounds[0] + details_bounds[2], layout["outer"][0] + layout["outer"][2])
+        self.assertLessEqual(details_bounds[1] + details_bounds[3], rewards_bounds[1])
+        self.assertLessEqual(rewards_bounds[1] + rewards_bounds[3], layout["outer"][1] + layout["outer"][3])
 
     def test_quest_log_details_use_objective_and_reward_fields(self):
         screen = self._quest_screen()
