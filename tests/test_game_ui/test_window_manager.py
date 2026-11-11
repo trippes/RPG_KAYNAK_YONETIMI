@@ -161,6 +161,21 @@ class QuestWindowManagerTests(unittest.TestCase):
         ))
         self.assertFalse(manager.is_open("container"))
 
+    def test_responsive_frameless_close_button_scales_with_container(self):
+        screen = DummyScreen()
+        screen.scale_to_window = True
+        screen.design_size = (920, 560)
+        manager = WindowManager(self.backend, 960, 640)
+        manager.register(
+            "container", screen, (40, 70, 460, 280),
+            content_origin=(24, 126), frame=False, close_offset=(808, 25),
+        )
+
+        close = manager._close_rect(manager.windows["container"])
+
+        self.assertEqual(close.topleft, (444, 82))
+        self.assertEqual((close.width, close.height), (12, 12))
+
     def test_title_bar_drag_moves_window_and_releases_pointer(self):
         self.manager.open("quest_log")
         window = self.manager.windows["quest_log"]
