@@ -6,6 +6,9 @@ from ..renderer import (
 
 class InventoryScreen:
     """RPG-style inventory with equipment, item grid and detail panel."""
+    scale_to_window = True
+    design_size = (912, 438)
+
 
     TABS = ("Envanter", "Kuşanımlar", "Görev Eşyaları", "Tüketilebilir", "Diğer")
     SLOTS = (
