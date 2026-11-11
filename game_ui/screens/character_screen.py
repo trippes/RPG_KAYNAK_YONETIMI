@@ -11,7 +11,7 @@ class CharacterScreen:
 
     responsive_layout = True
     min_window_width = 600
-    min_window_height = 470
+    min_window_height = 520
 
     ATTRIBUTE_LABELS = {
         "strength": "Güç",
