@@ -269,18 +269,18 @@ class QuestWindowManagerTests(unittest.TestCase):
 
         screen = DummyScreen()
         screen.scale_to_window = True
-        screen.design_size = (913, 439)
+        screen.design_size = (100, 100)
         manager = WindowManager(self.backend, 960, 640)
         manager.register(
             "inventory", screen, (24, 110, 700, 400),
-            content_origin=(25, 127),
+            content_origin=(1, 1),
         )
         window = manager.windows["inventory"]
 
-        # This deliberately combines fractional scaling and dimensions whose
-        # independently rounded origin/size can overflow by one pixel.
-        source = SizedSurface((937, 566))
-        rect = manager._scaled_content_rect(window, source, 0.713)
+        # At this scale round(1 * scale) + round(100 * scale) is
+        # 52, while the backing surface edge round(101 * scale) is 51.
+        source = SizedSurface((51, 51))
+        rect = manager._scaled_content_rect(window, source, 0.5051)
 
         self.assertGreaterEqual(rect.x, 0)
         self.assertGreaterEqual(rect.y, 0)
