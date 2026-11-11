@@ -25,6 +25,56 @@ from quests import Objective, ObjectiveType, Quest, QuestLog, QuestState, Reward
 
 
 class TestPhaseDQuality(unittest.TestCase):
+    def test_quest_log_uses_shared_responsive_layout_without_panel_overlap(self):
+        service, _ = populate_opening_content(GameApplication.create_default())
+        screen = QuestLogScreen(service)
+        screen.set_viewport(600, 488)
+
+        compact = screen._layout()
+        outer = compact["outer"]
+        inner = compact["inner"]
+        quest_list = screen._list_bounds()
+        details = screen._details_bounds()
+        rewards = screen._reward_bounds()
+
+        self.assertTrue(screen.responsive_layout)
+        self.assertEqual((screen.min_window_width, screen.min_window_height), (600, 520))
+        self.assertGreaterEqual(quest_list[0], inner[0])
+        self.assertLessEqual(quest_list[0] + quest_list[2], details[0])
+        self.assertLessEqual(details[0] + details[2], inner[0] + inner[2])
+        self.assertLessEqual(quest_list[1] + quest_list[3], rewards[1])
+        self.assertLessEqual(details[1] + details[3], rewards[1])
+        self.assertLessEqual(rewards[1] + rewards[3], outer[1] + outer[3])
+        for tab in screen._tab_bounds():
+            self.assertGreaterEqual(tab[0], outer[0])
+            self.assertGreaterEqual(tab[1], outer[1])
+            self.assertLessEqual(tab[0] + tab[2], outer[0] + outer[2])
+            self.assertLessEqual(tab[1] + tab[3], outer[1] + outer[3])
+
+        screen.set_viewport(1200, 700)
+        expanded = screen._layout()
+        self.assertGreater(expanded["outer"][2], outer[2])
+        self.assertGreater(expanded["outer"][3], outer[3])
+        expanded_list = screen._list_bounds()
+        expanded_details = screen._details_bounds()
+        self.assertLessEqual(expanded_list[0] + expanded_list[2], expanded_details[0])
+        self.assertLessEqual(
+            expanded_details[0] + expanded_details[2],
+            expanded["inner"][0] + expanded["inner"][2],
+        )
+
+    def test_quest_log_category_tabs_use_responsive_hitboxes(self):
+        service, _ = populate_opening_content(GameApplication.create_default())
+        screen = QuestLogScreen(service)
+        screen.set_viewport(600, 488)
+        tab = screen._tab_bounds()[1]
+        screen.handle(InputState(
+            mouse_pos=(tab[0] + tab[2] // 2, tab[1] + tab[3] // 2),
+            mouse_clicked=True,
+        ))
+        self.assertEqual(screen.category, 1)
+        self.assertEqual(screen.selected, 0)
+
     def test_character_screen_uses_responsive_viewport_layout(self):
         service, _ = populate_opening_content(GameApplication.create_default())
         screen = CharacterScreen(service)
