@@ -60,7 +60,8 @@ class QuestSnapshot:
                             record.get("reward", {}).get("currency", 0),
                             tuple(tuple(item) for item in record.get("reward", {}).get("items", ())),
                             tuple(tuple(item) for item in record.get("reward", {}).get("reputation", ())),
-                        ), state=QuestState(record["state"])
+                        ), state=QuestState(record["state"]),
+                        sequential_objectives=record.get("sequential_objectives", False),
                     )
                 except (KeyError, TypeError, ValueError) as error:
                     raise QuestPersistenceError("Invalid quest definition in snapshot.") from error
