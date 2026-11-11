@@ -145,6 +145,14 @@ class DialogueScreen:
                     self.node.node_id,
                     self.service._dialogue_context(actor_id, npc_id),
                 )
+        if self.context is not None and self.context[1] == "caravan_merchant":
+            quest = getattr(self.service, "caravan_quest", None)
+            if self._quest_state(quest) == "available":
+                return tuple(
+                    choice for choice in choices
+                    if choice.choice_id in {"accept_caravan_quest", "decline_caravan_quest"}
+                )
+            return ()
         if self.context is None or self.context[1] != "village_carpenter":
             if self.context is not None and self.context[1] == "village_blacksmith":
                 quest = getattr(self.service, "blacksmith_quest", None)
@@ -263,6 +271,19 @@ class DialogueScreen:
             )
 
             self.node = self.service.talk_to_npc(*self.context)
+            if npc.npc_id == "caravan_merchant":
+                quest = getattr(self.service, "caravan_quest", None)
+                quest_state = self._quest_state(quest)
+                next_node = (
+                    "report" if quest_state == "completed"
+                    else "accepted" if quest_state == "active"
+                    else "start"
+                )
+                self.node = bundle.social.node_for(
+                    dialogue_id,
+                    next_node,
+                    self.service._dialogue_context(actor.actor_id, npc.npc_id),
+                )
             self.selected = 0
             self._record_current_node()
 
