@@ -33,53 +33,31 @@ class CurrencyExchangeScreen:
     CARD_AMOUNT_OFFSETS = (58, 147)
     BALANCE_CENTERS = (230, 414, 598)
 
-    # Only the transparent field directly behind the six exchange cards.
-    EXCHANGE_FIELD = (64, 190, 640, 244)
-
-    def __init__(self, service):
-        self.service = service
-        self.selected = 0
-        self._background = None
-        self._background_attempted = False
-
-    def _load_background(self, pg):
-        if self._background is not None or self._background_attempted:
-            return self._background
-        self._background_attempted = True
-        try:
-            asset = Path(__file__).resolve().parents[1] / "assets" / self.BACKGROUND_NAME
-            self._background = pg.image.load(str(asset))
-        except (AttributeError, OSError, RuntimeError):
-            self._background = None
-        return self._background
-
-    def _fill_exchange_field(self, renderer, target, scale):
-        """Color only the transparent area behind the exchange cards."""
+    def _draw_base_layer(self, renderer, target, scale):
+        """Draw a full base layer first; the frame PNG masks every opaque region."""
         pg = renderer.pg
-        x, y, width, height = self.EXCHANGE_FIELD
-        field = pg.Rect(
-            round(x * scale), round(y * scale),
-            max(1, round(width * scale)), max(1, round(height * scale)),
-        )
+        width = max(1, round(self.design_size[0] * scale))
+        height = max(1, round(self.design_size[1] * scale))
+        base = pg.Rect(0, 0, width, height)
+
         palette = (
-            (12, 22, 39),
-            (16, 31, 53),
-            (20, 39, 63),
-            (24, 43, 66),
-            (19, 35, 58),
+            (11, 20, 36),
             (14, 27, 47),
+            (17, 33, 56),
+            (20, 38, 63),
+            (17, 32, 54),
+            (13, 24, 42),
         )
-        band_height = max(1, field.height // len(palette))
-        try:
-            for index, color in enumerate(palette):
-                top = field.y + index * band_height
-                band = pg.Rect(
-                    field.x, top, field.width,
-                    field.bottom - top if index == len(palette) - 1 else band_height,
-                )
-                pg.draw.rect(target, color, band)
-        except (AttributeError, TypeError, ValueError, RuntimeError):
-            pg.draw.rect(target, palette[1], field)
+        band_height = max(1, base.height // len(palette))
+        for index, color in enumerate(palette):
+            top = base.y + index * band_height
+            band = pg.Rect(
+                base.x,
+                top,
+                base.width,
+                base.bottom - top if index == len(palette) - 1 else band_height,
+            )
+            pg.draw.rect(target, color, band)
 
     def _draw_background(self, renderer):
         image = self._load_background(renderer.pg)
@@ -87,7 +65,11 @@ class CurrencyExchangeScreen:
             return
         scale = getattr(renderer.surface, "_scale", 1.0)
         target = getattr(renderer.surface, "_surface", renderer.surface)
-        self._fill_exchange_field(renderer, target, scale)
+
+        # The solid base is intentionally drawn under the complete frame.
+        # Opaque parts of the PNG cover it; only transparent cut-outs reveal it.
+        self._draw_base_layer(renderer, target, scale)
+
         size = (
             max(1, round(self.design_size[0] * scale)),
             max(1, round(self.design_size[1] * scale)),
