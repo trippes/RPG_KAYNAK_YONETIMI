@@ -10,7 +10,7 @@ from application import GameplayServiceError
 class ContainerScreen:
     """Chest-only loot grid with search, category filters and safe transfers."""
     scale_to_window = True
-    design_size = (920, 500)
+    design_size = (920, 560)
 
 
     COLUMNS = 6
