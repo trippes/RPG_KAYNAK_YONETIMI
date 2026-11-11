@@ -330,9 +330,8 @@ class GameWindow:
             appearance={"Ten": "buğday", "Saç": "kahverengi", "Göz": "yeşil", "Yüz": "kararlı"},
         )
 
-        actor = self.service.actor("hero")
-        if actor is not None and actor.inventory_id is None:
-            self.service.bind_actor_inventory("hero", "player")
+        # The player inventory is created with the session before quest content loads.
+        # ActorView intentionally exposes position/activity data, not inventory ownership.
 
         # The test route deliberately bypasses both opening dialogue and character creation.
         self.pause_menu_open = False
