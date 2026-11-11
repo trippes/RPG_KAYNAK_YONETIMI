@@ -182,6 +182,8 @@ class GameWindow:
             (40, 70, min(self.width - 80, 920), min(self.height - 80, 560)),
             content_origin=(24, 126),
             title="Konteyner",
+            frame=False,
+            close_offset=(808, 25),
         )
 
         self.current = "menu"
