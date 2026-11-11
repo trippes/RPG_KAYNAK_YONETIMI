@@ -61,17 +61,7 @@ class CurrencyExchangeScreen:
     def render(self, renderer):
         renderer.panel(renderer.pg.Rect(36, 136, 888, 402))
         renderer.text("Döviz Bürosu", 60, 154, title=True)
-        balances = (
-            self.service.balance("hero", "bronze").amount,
-            self.service.balance("hero", "silver").amount,
-            self.service.balance("hero", "gold").amount,
-        )
-        renderer.text(
-            f"Cüzdan: {balances[0]} {currency_name('bronze')}  •  "
-            f"{balances[1]} {currency_name('silver')}  •  "
-            f"{balances[2]} {currency_name('gold')}",
-            60, 204,
-        )
+        renderer.wallet(self.service, "hero", 60, 204, label="Cüzdan")
         renderer.text("Kur: 60 bronz = 1 gümüş  |  60 gümüş = 1 altın", 60, 238)
         labels = (
             "60 Bronz → 1 Gümüş",
