@@ -246,13 +246,22 @@ class DialogueScreen:
                 ),
             )
 
-            dialogue_id = next(
-                (
-                    dialogue_id
-                    for dialogue_id in dialogues
-                    if npc.npc_id in bundle.social.dialogues[dialogue_id].speakers
-                ),
-                dialogues[0],
+            preferred_dialogues = {
+                "village_carpenter": "carpenter_dialogue",
+                "caravan_merchant": "caravan_merchant_dialogue",
+            }
+            preferred = preferred_dialogues.get(npc.npc_id)
+            dialogue_id = (
+                preferred
+                if preferred in bundle.social.dialogues
+                else next(
+                    (
+                        dialogue_id
+                        for dialogue_id in dialogues
+                        if npc.npc_id in bundle.social.dialogues[dialogue_id].speakers
+                    ),
+                    dialogues[0],
+                )
             )
 
             self.context = (
