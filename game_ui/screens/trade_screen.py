@@ -72,12 +72,11 @@ class TradeScreen:
         npc = bundle.social.npcs.get(self.npc_id) if self.npc_id else None
         merchant = self.service.trade_partner_for_npc(self.npc_id) if self.npc_id else None
         npc_name = npc.name if npc is not None else "NPC"
-        balance = (
-            self.service.balance(merchant.account_id, "gold").amount
-            if merchant is not None else 0
-        )
         renderer.text(f"{npc_name} ile Ticaret", 60, 154, title=True)
-        renderer.text(f"Alım bütçesi: {balance} {currency_name('gold')}", 60, 192, GOLD)
+        if merchant is not None:
+            renderer.wallet(
+                self.service, merchant.account_id, 60, 192, label="NPC bütçesi"
+            )
         quotes = self._quotes()
         if not quotes:
             renderer.text(
