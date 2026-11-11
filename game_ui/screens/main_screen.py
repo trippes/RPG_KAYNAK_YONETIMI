@@ -425,7 +425,7 @@ class MainScreen:
                 and actors
                 and actors[0].inventory_id is not None
                 and (
-                    not lock.lockpick_requires_tool
+                    not getattr(lock, "lockpick_requires_tool", False)
                     or self._tool_for_tags(
                         actors[0].inventory_id,
                         lock.lockpick_allowed_tool_tags,
