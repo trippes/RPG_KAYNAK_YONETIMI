@@ -269,8 +269,12 @@ class GameWindow:
     def _start_new_game(self):
         from application.content_pack import populate_opening_content
         from application.game_application import GameApplication
+        from resources import Inventory
 
-        service, _ = populate_opening_content(GameApplication.create_default())
+        application = GameApplication.create_default(
+            inventories={"player": Inventory()},
+        )
+        service, _ = populate_opening_content(application)
         from application.quest_demo import populate_caravan_quest_demo
         populate_caravan_quest_demo(service)
         self.service = service
