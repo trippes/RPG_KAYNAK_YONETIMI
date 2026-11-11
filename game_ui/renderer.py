@@ -344,6 +344,48 @@ class Renderer:
         self.pg.draw.rect(self.surface, resource_color(resource), rect, border_radius=4)
         self.pg.draw.rect(self.surface, (14, 18, 26), rect, 1, border_radius=4)
 
+    COIN_STYLES = {
+        "bronze": ((166, 101, 55), (91, 52, 30), (226, 158, 98), "B"),
+        "silver": ((181, 192, 205), (83, 96, 112), (242, 246, 250), "S"),
+        "gold": ((224, 180, 65), (117, 80, 23), (255, 226, 132), "A"),
+    }
+    COIN_LABELS = {
+        "bronze": "bronz",
+        "silver": "gümüş",
+        "gold": "altın",
+    }
+
+    def coin_icon(self, x, y, currency, size=22):
+        """Draw a small embossed coin; x/y identify its top-left corner."""
+        currency_id = getattr(currency, "value", str(currency))
+        fill, rim, highlight, symbol = self.COIN_STYLES.get(
+            currency_id, self.COIN_STYLES["bronze"]
+        )
+        radius = max(5, int(size) // 2)
+        center = (int(x) + radius, int(y) + radius)
+        self.pg.draw.circle(self.surface, (9, 12, 18), (center[0] + 1, center[1] + 2), radius)
+        self.pg.draw.circle(self.surface, rim, center, radius)
+        self.pg.draw.circle(self.surface, fill, center, max(1, radius - 2))
+        self.pg.draw.circle(self.surface, highlight, center, max(1, radius - 5), 1)
+        font = self.pg.font.Font(None, max(12, int(size * 0.62)))
+        mark = font.render(symbol, True, (48, 39, 28) if currency_id != "silver" else (48, 57, 68))
+        self.surface.blit(mark, mark.get_rect(center=center))
+
+    def wallet(self, service, actor_id="hero", x=64, y=420, *, label="Cüzdan"):
+        """Render all three denominations with the shared coin artwork."""
+        self.text(label, x, y + 2, TEXT_SOFT)
+        cursor = x + self.text_width(label) + 16
+        for currency in ("bronze", "silver", "gold"):
+            try:
+                amount = service.balance(actor_id, currency).amount
+            except (KeyError, ValueError, RuntimeError):
+                amount = 0
+            self.coin_icon(cursor, y, currency, 22)
+            amount_text = str(amount)
+            self.text(amount_text, cursor + 28, y + 2, GOLD)
+            cursor += 34 + self.text_width(amount_text) + 18
+        return cursor
+
     def chip_flow(self, items, x, y, max_x, *, color=GOLD, gap=6, row_height=25):
         """Lay chips out left-to-right, wrapping at ``max_x``; returns the next y."""
         cursor = x
