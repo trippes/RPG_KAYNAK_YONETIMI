@@ -88,8 +88,8 @@ class TestGameplayService(unittest.TestCase):
                 "hero_character": Character(
                     "hero_character", "Hero", Race("human", "Human"),
                     CharacterClass("rogue", "Rogue"),
-                    attributes=Attributes({"strength": 10}),
-                    skills=Skills({"lockpicking": 1}),
+                    attributes=Attributes({"strength": 10, "dexterity": 1}),
+                    skills=Skills(),
                 )
             },
             resource_definitions={"wood": ResourceDefinition("wood", "Wood", ResourceUnit.ITEM, 0.5, 0.25, "raw", ("wood",))},
@@ -131,8 +131,8 @@ class TestGameplayService(unittest.TestCase):
             "locked_chest_01",
         )
 
-    @patch("core.dice.zar_at", new=lambda sides: 20)
-    def test_lockpick_uses_character_skill_and_inventory_tool(self):
+    @patch("core.dice.zar_at", new=lambda sides: 10)
+    def test_lockpick_requires_dexterity_two_and_tool_then_adds_dexterity_modifier(self):
         self.service.register_container_definition(ContainerDefinition("pick_chest", "Pick chest"))
         entity = Entity(EntityType.ESYA, "Pick chest", entity_id="pick_chest_entity")
         self.application.varlik_ekle(entity)
@@ -141,6 +141,7 @@ class TestGameplayService(unittest.TestCase):
             LockpickProfile(
                 "basic_pick", allowed_tool_tags=("lockpick",),
                 require_skill=True, require_tool=True, minimum_skill=2,
+                difficulty_class=15,
             )
         )
         self.service.register_lock_definition(
@@ -152,26 +153,35 @@ class TestGameplayService(unittest.TestCase):
         self.service.register_actor("hero", "player", character_id="hero_character", inventory_id="main")
         self.inventory.add_item("lockpick")
 
-        with self.assertRaises(GameplayServiceError):
-            self.service.attempt_lockpick(
-                "hero", "other", "pick_chest_lock_01",
-                tool_item_id="lockpick",
-            )
-        self.assertFalse(self.service.attempt_lockpick(
-            "hero", "main", "pick_chest_lock_01", tool_item_id="lockpick", 
-        ))
+        # Dexterity 1: possessing a lockpick is not enough to attempt the check.
+        result = self.service.resolve_lockpick(
+            "hero", "main", "pick_chest_lock_01", tool_item_id="lockpick",
+        )
+        self.assertFalse(result.attempted)
+        self.assertIsNone(result.roll)
         self.assertTrue(self.service.lock_state("pick_chest_lock_01").locked)
 
-        self.application.holder.current.characters["hero_character"].skills = Skills({"lockpicking": 3})
+        # Dexterity 20 grants +5. A d20 result of 10 meets this lock's DC 15.
+        self.application.holder.current.characters["hero_character"].attributes = Attributes(
+            {"strength": 10, "dexterity": 20}
+        )
         self.inventory.remove_item("lockpick")
-        self.assertFalse(self.service.attempt_lockpick(
-            "hero", "main", "pick_chest_lock_01", tool_item_id="lockpick", 
-        ))
+        result = self.service.resolve_lockpick(
+            "hero", "main", "pick_chest_lock_01", tool_item_id="lockpick",
+        )
+        self.assertFalse(result.attempted)
+        self.assertIn("Maymuncuk", result.message)
         self.inventory.add_item("lockpick")
-        self.assertTrue(self.service.attempt_lockpick(
-            "hero", "main", "pick_chest_lock_01", tool_item_id="lockpick", 
-        ))
+        result = self.service.resolve_lockpick(
+            "hero", "main", "pick_chest_lock_01", tool_item_id="lockpick",
+        )
+        self.assertTrue(result.attempted)
+        self.assertEqual(result.roll, 10)
+        self.assertEqual(result.modifier, 5)
+        self.assertEqual(result.total, 15)
+        self.assertTrue(result.success)
         self.assertFalse(self.service.lock_state("pick_chest_lock_01").locked)
+
 
     @patch("core.dice.zar_at", new=lambda sides: 20)
     def test_force_open_uses_character_strength_and_carried_tool(self):
