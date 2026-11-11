@@ -27,7 +27,6 @@ class CurrencyExchangeScreen:
         (ALTIN_SIKKE_BRONZ, "bronze", "gold"),
         (1, "gold", "bronze"),
     )
-    DENOMINATION_NAMES = {"bronze": "Bronz", "silver": "Gümüş", "gold": "Altın"}
     CARD_RECTS = (
         (80, 201, 205, 107), (290, 201, 205, 107), (500, 201, 205, 107),
         (80, 315, 205, 107), (290, 315, 205, 107), (500, 315, 205, 107),
@@ -52,6 +51,38 @@ class CurrencyExchangeScreen:
             self._background = None
         return self._background
 
+    def _draw_panel_backings(self, renderer, target, scale):
+        """Add a subdued royal-blue backing visible through transparent card areas."""
+        pg = renderer.pg
+        try:
+            overlay = pg.Surface(target.get_size(), pg.SRCALPHA)
+            for x, y, width, height in self.CARD_RECTS:
+                rect = pg.Rect(
+                    round((x + 7) * scale),
+                    round((y + 7) * scale),
+                    max(1, round((width - 14) * scale)),
+                    max(1, round((height - 14) * scale)),
+                )
+                pg.draw.rect(
+                    overlay, (10, 23, 42, 178), rect,
+                    border_radius=max(2, round(11 * scale)),
+                )
+                pg.draw.rect(
+                    overlay, (190, 151, 88, 105), rect, width=max(1, round(scale)),
+                    border_radius=max(2, round(11 * scale)),
+                )
+                inset = max(2, round(4 * scale))
+                inner = rect.inflate(-inset * 2, -inset * 2)
+                pg.draw.rect(
+                    overlay, (225, 196, 139, 45), inner,
+                    width=max(1, round(scale)),
+                    border_radius=max(2, round(8 * scale)),
+                )
+            target.blit(overlay, (0, 0))
+        except (AttributeError, TypeError, ValueError, RuntimeError):
+            # Keep the screen usable on lightweight test renderers without alpha surfaces.
+            return
+
     def _draw_background(self, renderer):
         image = self._load_background(renderer.pg)
         if image is None:
@@ -63,6 +94,7 @@ class CurrencyExchangeScreen:
             max(1, round(self.design_size[0] * scale)),
             max(1, round(self.design_size[1] * scale)),
         )
+        self._draw_panel_backings(renderer, target, scale)
         try:
             artwork = renderer.pg.transform.smoothscale(image, size)
         except (AttributeError, TypeError, ValueError):
@@ -167,10 +199,8 @@ class CurrencyExchangeScreen:
                     2, border_radius=9,
                 )
             received = self._received_amount(amount, source, target)
-            label = (
-                f"{self._number(amount)} {self.DENOMINATION_NAMES[source]}"
-                f"  →  {self._number(received)} {self.DENOMINATION_NAMES[target]}"
-            )
+            # Coin artwork already identifies the denominations; show amounts only.
+            label = f"{self._number(amount)}  →  {self._number(received)}"
             if not available:
                 label = "Bakiye yetersiz"
             label = renderer.fit_text(label, rect.width - 30)
