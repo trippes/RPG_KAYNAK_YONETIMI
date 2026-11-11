@@ -783,12 +783,13 @@ class GameplayService:
                 self.caravan_quest, owner_id=actor_id, reward_inventory_id="player",
             ),
         }
-        handler = actions.get(action) or self._dialogue_actions.get(action)
+        registered_handler = self._dialogue_actions.get(action)
+        if registered_handler is not None:
+            registered_handler(actor_id, npc_id)
+            return
+        handler = actions.get(action)
         if handler is not None:
-            try:
-                handler(actor_id, npc_id)
-            except TypeError:
-                handler()
+            handler()
 
     def start_quest(self, quest: Quest, context=None, owner_id: str | None = None, reward_inventory_id: str | None = None) -> Quest:
         bundle = self._current_bundle()
