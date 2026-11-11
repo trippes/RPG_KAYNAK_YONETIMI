@@ -418,7 +418,20 @@ class MainScreen:
             )
             if has_key:
                 actions.append(("open", "Aç"))
-            elif lock.lockpick_profile_id and not lock.jammed and not lock.broken:
+            elif (
+                lock.lockpick_profile_id
+                and not lock.jammed
+                and not lock.broken
+                and actors
+                and actors[0].inventory_id is not None
+                and (
+                    not lock.lockpick_requires_tool
+                    or self._tool_for_tags(
+                        actors[0].inventory_id,
+                        lock.lockpick_allowed_tool_tags,
+                    ) is not None
+                )
+            ):
                 actions.append(("unlock", "Kilidi Aç"))
             if lock.force_profile_id and not lock.jammed and not lock.broken:
                 actions.append(("force", "Kilidi zorla"))
