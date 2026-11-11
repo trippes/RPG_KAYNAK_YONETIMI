@@ -245,10 +245,10 @@ class GameWindow:
     def _ensure_container_playtest_fixture(self):
         """Keep temporary container and quest fixtures available in playtest worlds."""
         from application.container_playtest_content import register_container_playtest_fixture
-        from application.quest_playtest_content import register_quest_playtest_fixture
+        from application.carpenter_quest_content import populate_carpenter_quest_demo
 
         register_container_playtest_fixture(self.service)
-        register_quest_playtest_fixture(self.service)
+        populate_carpenter_quest_demo(self.service)
         bundle = self.service.application.holder.current
         if "player" in bundle.inventories:
             from application.caravan_quest_content import populate_caravan_quest_demo
@@ -350,12 +350,12 @@ class GameWindow:
         from application.game_application import GameApplication
 
         service, _ = populate_opening_content(GameApplication.create_default())
-        # Register the temporary Container/Lock playtest object in the actual
-        # new-game flow, before the opening and character-creation screens.
+        # Register the temporary Container/Lock playtest object and the
+        # playable carpenter quest before the opening and character screens.
         from application.container_playtest_content import register_container_playtest_fixture
-        from application.quest_playtest_content import register_quest_playtest_fixture
+        from application.carpenter_quest_content import populate_carpenter_quest_demo
         register_container_playtest_fixture(service)
-        register_quest_playtest_fixture(service)
+        populate_carpenter_quest_demo(service)
         self.service = service
         self.screens.update({
             "opening": OpeningScreen(),
