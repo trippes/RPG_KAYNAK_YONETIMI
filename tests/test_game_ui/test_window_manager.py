@@ -268,6 +268,39 @@ class QuestWindowManagerTests(unittest.TestCase):
         ))
         self.assertFalse(window.resizing)
 
+    def test_window_resize_respects_screen_specific_minimum_dimensions(self):
+        class CharacterLikeScreen(DummyScreen):
+            responsive_layout = True
+            min_window_width = 600
+            min_window_height = 520
+
+            def __init__(self):
+                super().__init__()
+                self.viewport = None
+
+            def set_viewport(self, width, height):
+                self.viewport = (width, height)
+
+        screen = CharacterLikeScreen()
+        manager = WindowManager(self.backend, 960, 640)
+        manager.register(
+            "character", screen, (80, 20, 760, 550),
+            content_origin=(24, 126), title="Karakter",
+        )
+        window = manager.windows["character"]
+        manager._begin_resize(
+            window, (window.bounds.right - 1, window.bounds.bottom - 1),
+            ("right", "bottom"),
+        )
+        manager._resize_window(
+            window, (window.bounds.right - 1000, window.bounds.bottom - 1000)
+        )
+
+        self.assertEqual(
+            (window.bounds.width, window.bounds.height), (600, 520)
+        )
+        self.assertEqual(screen.viewport, (600, 488))
+
     def test_responsive_window_uses_dynamic_pointer_coordinates_and_viewport(self):
         class ResponsiveScreen(DummyScreen):
             responsive_layout = True
