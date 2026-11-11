@@ -10,6 +10,7 @@ from economy import currency_name
 
 class CurrencyExchangeScreen:
     scale_to_window = True
+    transparent_window_background = True
     design_size = (912, 438)
 
     OPTIONS = (
@@ -86,12 +87,6 @@ class CurrencyExchangeScreen:
     def render(self, renderer):
         """Draw the Royal Mint interface inside the managed window viewport."""
         pg = renderer.pg
-        renderer.panel(
-            pg.Rect(36, 136, 888, 402),
-            (23, 29, 43),
-            (145, 118, 70),
-        )
-
         # Header: restrained heraldic styling, with a clear information hierarchy.
         renderer.text("Kraliyet Darphanesi", 60, 150, title=True)
         renderer.text(
