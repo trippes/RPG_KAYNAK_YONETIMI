@@ -77,7 +77,11 @@ Both routes are supported:
 - skill-based attempt using the actor's lockpicking skill value;
 - tool-based attempt requiring an eligible lockpick tool/item.
 
-A lockpick profile defines which tools qualify and any profile-specific constraints. If a profile requires both skill and a tool, both checks must pass. If it permits either route, either valid route may be used. The profile must state this explicitly; the manager must not silently guess.
+A lockpicking attempt always requires both:
+- a maymuncuk/lockpick item carried in the acting character's inventory, with a tag accepted by the lock's profile;
+- a Dexterity attribute score of at least 2. Characters below 2 cannot make an attempt, even if they possess the tool.
+
+The check is D20 + Dexterity modifier >= the lock profile's difficulty class. The Dexterity modifier uses the character attribute rule already defined by the character domain. Each lock profile owns its own difficulty class; for example, a DC 15 lock is opened by a D20 result of 10 when the character's Dexterity modifier is +5. The profile's minimum_skill field is treated as an additional per-lock minimum Dexterity score when require_skill is enabled.
 
 Difficulty and any random/roll resolution are supplied to the domain as explicit inputs or by an injected deterministic resolver. The domain must not import UI, Pygame, global random state, or character progression systems.
 
