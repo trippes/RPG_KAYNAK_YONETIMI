@@ -437,7 +437,7 @@ class WindowManager:
         original_mouse_pos = renderer.mouse_pos
         for window_id in self.open_ids:
             window = self.windows[window_id]
-            if window.frame:
+            if window.frame and not getattr(window.screen, "transparent_window_background", False):
                 renderer.panel(window.bounds)
             if original_mouse_pos is not None:
                 renderer.mouse_pos = self._screen_position(window, original_mouse_pos)
@@ -562,11 +562,20 @@ class WindowManager:
                 max(1, round(logical_height * scale)),
             )
             try:
-                source = surface_type(physical_size)
+                if getattr(window.screen, "transparent_window_background", False):
+                    source = surface_type(
+                        physical_size, getattr(self.pg, "SRCALPHA", 0)
+                    )
+                    source.fill((0, 0, 0, 0))
+                else:
+                    source = surface_type(physical_size)
             except TypeError:
-                # Lightweight test backends may not expose a real Surface.
-                window.screen.render(renderer)
-                return None
+                # Lightweight test backends may not expose alpha surfaces.
+                try:
+                    source = surface_type(physical_size)
+                except TypeError:
+                    window.screen.render(renderer)
+                    return None
 
             scaled_renderer = copy(renderer)
             scaled_renderer.width = logical_width
