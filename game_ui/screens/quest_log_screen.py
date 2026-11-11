@@ -208,10 +208,12 @@ class QuestLogScreen:
         # WindowManager's responsive canvas includes the content origin.
         # Keep layout coordinates aligned with that origin so the cropped
         # window surface contains the complete journal UI.
+        # The responsive canvas is sized as (content_origin + window size).
+        # Subtract the origin once to keep the layout inside the cropped area.
         outer = (
             self.CONTENT_X, self.CONTENT_Y,
-            max(1, width - self.CONTENT_X * 2),
-            max(1, height - 16),
+            max(1, width - self.CONTENT_X),
+            max(1, height - self.CONTENT_Y),
         )
         inner = ResponsiveLayout.inset(outer, 16, 0, 16, 16)
         body_y = outer[1] + self.HEADER_HEIGHT + self.TAB_HEIGHT + 10
