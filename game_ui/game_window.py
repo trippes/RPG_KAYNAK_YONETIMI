@@ -226,6 +226,12 @@ class GameWindow:
         self.renderer.width = self.width
         self.renderer.height = self.height
 
+    def _ensure_container_playtest_fixture(self):
+        """Keep the temporary chest available in both new and loaded playtest worlds."""
+        from application.container_playtest_content import register_container_playtest_fixture
+
+        register_container_playtest_fixture(self.service)
+
     def _select_save_slot(self, index, path, exists):
         self.selected_slot = index
         self.save_path = path
@@ -242,6 +248,7 @@ class GameWindow:
             try:
                 self._ensure_save_storage()
                 self.service.load(path)
+                self._ensure_container_playtest_fixture()
             except (OSError, KeyError, ValueError, RuntimeError) as error:
                 self._set_notice(f"Kayıt yüklenemedi: {error}", "error")
                 return "save_slots"
@@ -299,6 +306,7 @@ class GameWindow:
         try:
             self._ensure_save_storage()
             self.service.load(path)
+            self._ensure_container_playtest_fixture()
         except (OSError, KeyError, ValueError, RuntimeError) as error:
             self._set_notice(f"Kayıt yüklenemedi: {error}", "error")
             return None
