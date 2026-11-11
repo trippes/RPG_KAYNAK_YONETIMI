@@ -1128,6 +1128,17 @@ class GameplayService:
         bundle.economy.ledger.credit(account_id, Money(amount, Currency(currency_id)), "application credit")
         return self.balance(account_id, currency_id)
 
+    def exchange_currency(
+        self, account_id: str, source_currency_id: str,
+        target_currency_id: str, amount: int,
+    ) -> Money:
+        """Exchange an exact amount of one coin denomination for another."""
+        bundle = self._current_bundle()
+        source = Money(amount, Currency(source_currency_id))
+        return bundle.economy.exchange_currency(
+            account_id, source, Currency(target_currency_id),
+        )
+
     def publish_offer(
         self, offer_id: str, seller_id: str, seller_inventory_id: str,
         resource_type: ResourceType, quantity: int, unit_price: Money, expires_at: int | None = None,
