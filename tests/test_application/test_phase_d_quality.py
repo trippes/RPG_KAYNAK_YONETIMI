@@ -199,13 +199,13 @@ class TestPhaseDQuality(unittest.TestCase):
         screen.selected = 4
         screen.scroll = 90
 
-        screen.handle(InputState(mouse_clicked=True, mouse_pos=(50, 50)))
+        screen.handle(InputState(mouse_clicked=True, mouse_pos=(50, 180)))
 
         self.assertEqual(screen.category, 0)
         self.assertEqual(screen.selected, 0)
         self.assertEqual(screen.scroll, 0)
 
-        screen.handle(InputState(mouse_clicked=True, mouse_pos=(55, 190)))
+        screen.handle(InputState(mouse_clicked=True, mouse_pos=(55, 310)))
         self.assertEqual(screen.selected, 1)
 
     def test_quest_log_scroll_is_clamped_to_list_bounds(self):
