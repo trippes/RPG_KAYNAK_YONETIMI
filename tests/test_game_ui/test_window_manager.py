@@ -228,6 +228,22 @@ class QuestWindowManagerTests(unittest.TestCase):
         ))
         self.assertFalse(window.resizing)
 
+    def test_scaled_window_pointer_coordinates_map_to_design_surface(self):
+        screen = DummyScreen()
+        screen.scale_to_window = True
+        screen.design_size = (760, 438)
+        manager = WindowManager(self.backend, 960, 640)
+        manager.register(
+            "character", screen, (80, 90, 600, 370),
+            content_origin=(24, 126), title="Karakter",
+        )
+        window = manager.windows["character"]
+
+        self.assertEqual(
+            manager._screen_position(window, (380, 291)),
+            (404, 345),
+        )
+
     def test_content_click_is_translated_to_screen_coordinates(self):
         self.manager.open("quest_log")
         self.manager.handle_input(
