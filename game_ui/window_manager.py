@@ -17,6 +17,10 @@ class ManagedWindow:
     visible: bool = False
     dragging: bool = False
     drag_offset: tuple[int, int] = (0, 0)
+    resizing: bool = False
+    resize_edges: tuple[str, ...] = ()
+    resize_origin: tuple[int, int] = (0, 0)
+    resize_bounds: tuple[int, int, int, int] = (0, 0, 0, 0)
 
 
 class WindowManager:
@@ -25,6 +29,9 @@ class WindowManager:
     TITLE_HEIGHT = 32
     CLOSE_SIZE = 24
     DRAG_THRESHOLD = 4
+    RESIZE_BORDER = 8
+    MIN_WIDTH = 420
+    MIN_HEIGHT = 300
 
     def __init__(self, backend, width, height, on_result=None):
         self.pg = backend
@@ -155,6 +162,61 @@ class WindowManager:
             max(0, min(y, self.height - self.TITLE_HEIGHT)),
         )
 
+    def _resize_edges_at(self, window, position):
+        """Return the window edges close enough to the pointer to resize."""
+        bounds = window.bounds
+        x, y = position
+        edges = []
+        if x - bounds.left <= self.RESIZE_BORDER:
+            edges.append("left")
+        elif bounds.right - x <= self.RESIZE_BORDER:
+            edges.append("right")
+        if y - bounds.top <= self.RESIZE_BORDER:
+            edges.append("top")
+        elif bounds.bottom - y <= self.RESIZE_BORDER:
+            edges.append("bottom")
+        return tuple(edges)
+
+    def _begin_resize(self, window, position, edges):
+        window.resizing = True
+        window.resize_edges = tuple(edges)
+        window.resize_origin = position
+        window.resize_bounds = (
+            window.bounds.x, window.bounds.y,
+            window.bounds.width, window.bounds.height,
+        )
+        window.dragging = False
+
+    def _resize_window(self, window, position):
+        origin_x, origin_y = window.resize_origin
+        start_x, start_y, start_width, start_height = window.resize_bounds
+        delta_x = position[0] - origin_x
+        delta_y = position[1] - origin_y
+        left = start_x
+        top = start_y
+        right = start_x + start_width
+        bottom = start_y + start_height
+
+        if "left" in window.resize_edges:
+            left = max(0, min(start_x + delta_x, right - self.MIN_WIDTH))
+        elif "right" in window.resize_edges:
+            right = min(self.width, max(start_x + self.MIN_WIDTH, right + delta_x))
+        if "top" in window.resize_edges:
+            top = max(0, min(start_y + delta_y, bottom - self.MIN_HEIGHT))
+        elif "bottom" in window.resize_edges:
+            bottom = min(self.height, max(start_y + self.MIN_HEIGHT, bottom + delta_y))
+
+        window.bounds.x = left
+        window.bounds.y = top
+        window.bounds.width = right - left
+        window.bounds.height = bottom - top
+        viewport = getattr(window.screen, "set_viewport", None)
+        if viewport is not None:
+            viewport(
+                window.bounds.width,
+                max(0, window.bounds.height - (self.TITLE_HEIGHT if window.frame else 0)),
+            )
+
     def _dispatch(self, window, state):
         local_pos = None
         if state.mouse_pos is not None:
@@ -210,6 +272,16 @@ class WindowManager:
         if self.focused_id is None and "character" in state.actions:
             self.open("character")
             state.actions.discard("character")
+            return True
+
+        if self.focused_id is not None and self.windows[self.focused_id].resizing:
+            window = self.windows[self.focused_id]
+            if state.mouse_button_up:
+                window.resizing = False
+                window.resize_edges = ()
+            elif state.mouse_motion and state.mouse_pos is not None:
+                self._resize_window(window, state.mouse_pos)
+            state.mouse_clicked = False
             return True
 
         if self.focused_id is not None and self.windows[self.focused_id].dragging:
@@ -268,14 +340,18 @@ class WindowManager:
                 self.focus(window.window_id)
                 if self._close_rect(window).collidepoint(state.mouse_pos):
                     self.close(window.window_id)
-                elif self._title_rect(window).collidepoint(state.mouse_pos):
-                    window.dragging = True
-                    window.drag_offset = (
-                        state.mouse_pos[0] - window.bounds.x,
-                        state.mouse_pos[1] - window.bounds.y,
-                    )
                 else:
-                    self._dispatch(window, state)
+                    resize_edges = self._resize_edges_at(window, state.mouse_pos)
+                    if resize_edges:
+                        self._begin_resize(window, state.mouse_pos, resize_edges)
+                    elif self._title_rect(window).collidepoint(state.mouse_pos):
+                        window.dragging = True
+                        window.drag_offset = (
+                            state.mouse_pos[0] - window.bounds.x,
+                            state.mouse_pos[1] - window.bounds.y,
+                        )
+                    else:
+                        self._dispatch(window, state)
                 state.mouse_clicked = False
                 return True
 
