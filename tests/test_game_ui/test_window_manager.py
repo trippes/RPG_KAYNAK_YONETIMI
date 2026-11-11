@@ -143,6 +143,24 @@ class QuestWindowManagerTests(unittest.TestCase):
         )
         self.assertFalse(self.manager.is_open("quest_log"))
 
+    def test_frameless_window_keeps_content_at_window_origin_and_has_custom_close(self):
+        manager = WindowManager(self.backend, 960, 640)
+        manager.register(
+            "container", DummyScreen(), (40, 70, 920, 560),
+            content_origin=(24, 126), title="Konteyner",
+            frame=False, close_offset=(808, 25),
+        )
+        window = manager.open("container")
+
+        self.assertEqual(manager._content_destination(window), (40, 70))
+        self.assertEqual(manager._close_rect(window).topleft, (848, 95))
+        self.assertEqual(manager._title_rect(window).height, 18)
+
+        manager.handle_input(InputState(
+            mouse_pos=(860, 107), mouse_clicked=True, mouse_button_down=True,
+        ))
+        self.assertFalse(manager.is_open("container"))
+
     def test_title_bar_drag_moves_window_and_releases_pointer(self):
         self.manager.open("quest_log")
         window = self.manager.windows["quest_log"]
