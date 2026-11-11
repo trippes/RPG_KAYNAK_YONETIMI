@@ -150,19 +150,35 @@ class WindowManager:
             max(0, window.bounds.height - (self.TITLE_HEIGHT if window.frame else 0)),
         )
 
+    def _content_transform(self, window):
+        """Return an aspect-preserving scale and centered offset for window content."""
+        if not getattr(window.screen, "scale_to_window", False):
+            return 1.0, 0.0, 0.0
+
+        design_width, design_height = window.screen.design_size
+        target_width = max(1, window.bounds.width)
+        target_height = max(
+            1, window.bounds.height - (self.TITLE_HEIGHT if window.frame else 0)
+        )
+        scale = min(
+            target_width / max(1, design_width),
+            target_height / max(1, design_height),
+        )
+        rendered_width = design_width * scale
+        rendered_height = design_height * scale
+        offset_x = (target_width - rendered_width) / 2
+        offset_y = (target_height - rendered_height) / 2
+        return scale, offset_x, offset_y
+
     def _screen_position(self, window, position):
         destination_x, destination_y = self._content_destination(window)
         origin_x, origin_y = window.content_origin
         local_x = position[0] - destination_x
         local_y = position[1] - destination_y
         if getattr(window.screen, "scale_to_window", False):
-            design_width, design_height = window.screen.design_size
-            content_width = max(1, window.bounds.width)
-            content_height = max(
-                1, window.bounds.height - (self.TITLE_HEIGHT if window.frame else 0)
-            )
-            local_x = round(local_x * design_width / content_width)
-            local_y = round(local_y * design_height / content_height)
+            scale, offset_x, offset_y = self._content_transform(window)
+            local_x = round((local_x - offset_x) / scale)
+            local_y = round((local_y - offset_y) / scale)
         return (local_x + origin_x, local_y + origin_y)
 
     def _clamp(self, window, x, y):
@@ -409,12 +425,20 @@ class WindowManager:
                         design_width, design_height,
                     )
                     content_surface = source.subsurface(design_rect)
+                    scale, offset_x, offset_y = self._content_transform(window)
                     target_size = (
-                        window.bounds.width,
-                        max(1, window.bounds.height - (self.TITLE_HEIGHT if window.frame else 0)),
+                        max(1, round(design_width * scale)),
+                        max(1, round(design_height * scale)),
                     )
                     scaled = self.pg.transform.smoothscale(content_surface, target_size)
-                    renderer.surface.blit(scaled, self._content_destination(window))
+                    destination_x, destination_y = self._content_destination(window)
+                    renderer.surface.blit(
+                        scaled,
+                        (
+                            round(destination_x + offset_x),
+                            round(destination_y + offset_y),
+                        ),
+                    )
                 else:
                     renderer.surface.blit(
                         source,
