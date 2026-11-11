@@ -216,7 +216,7 @@ class QuestWindowManagerTests(unittest.TestCase):
         self.assertEqual(set(window.resize_edges), {"right", "bottom"})
 
         self.manager.handle_input(InputState(
-            mouse_pos=(start[0] - 100, start[1] - 100), mouse_motion=True,
+            mouse_pos=(start[0] - 1000, start[1] - 1000), mouse_motion=True,
         ))
         self.assertEqual(
             (window.bounds.width, window.bounds.height),
@@ -224,7 +224,7 @@ class QuestWindowManagerTests(unittest.TestCase):
         )
 
         self.manager.handle_input(InputState(
-            mouse_pos=(start[0] - 100, start[1] - 100), mouse_button_up=True,
+            mouse_pos=(start[0] - 1000, start[1] - 1000), mouse_button_up=True,
         ))
         self.assertFalse(window.resizing)
 
