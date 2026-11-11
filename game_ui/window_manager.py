@@ -246,7 +246,7 @@ class WindowManager:
         window.bounds.width = right - left
         window.bounds.height = bottom - top
         viewport = getattr(window.screen, "set_viewport", None)
-        if viewport is not None:
+        if viewport is not None and not getattr(window.screen, "scale_to_window", False):
             viewport(
                 window.bounds.width,
                 max(0, window.bounds.height - (self.TITLE_HEIGHT if window.frame else 0)),
@@ -469,25 +469,40 @@ class WindowManager:
                     )
         renderer.mouse_pos = original_mouse_pos
 
+    def _content_canvas_size(self, window):
+        if not getattr(window.screen, "scale_to_window", False):
+            return self.width, self.height
+        design_width, design_height = window.screen.design_size
+        return (
+            window.content_origin[0] + design_width,
+            window.content_origin[1] + design_height,
+        )
+
     def _render_content(self, renderer, window):
         surface_type = getattr(self.pg, "Surface", type(renderer.surface))
+        old_surface = renderer.surface
+        old_width, old_height = renderer.width, renderer.height
+        responsive = getattr(window.screen, "scale_to_window", False)
+        if responsive:
+            renderer.width, renderer.height = self._content_canvas_size(window)
         if surface_type is None:
-            window.screen.render(renderer)
+            try:
+                window.screen.render(renderer)
+            finally:
+                renderer.width, renderer.height = old_width, old_height
             return None
         try:
-            source_size = (renderer.width, renderer.height)
-            if getattr(window.screen, "scale_to_window", False):
-                design_width, design_height = window.screen.design_size
-                source_size = (
-                    max(renderer.width, window.content_origin[0] + design_width),
-                    max(renderer.height, window.content_origin[1] + design_height),
-                )
-            source = surface_type(source_size)
+            source = surface_type((renderer.width, renderer.height))
         except TypeError:
-            window.screen.render(renderer)
+            try:
+                window.screen.render(renderer)
+            finally:
+                renderer.width, renderer.height = old_width, old_height
             return None
-        old_surface = renderer.surface
         renderer.surface = source
-        window.screen.render(renderer)
-        renderer.surface = old_surface
+        try:
+            window.screen.render(renderer)
+        finally:
+            renderer.surface = old_surface
+            renderer.width, renderer.height = old_width, old_height
         return source
