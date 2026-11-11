@@ -9,6 +9,11 @@ from ..renderer import (
 class CharacterScreen:
     """Read-only character overview with the existing skill progression action."""
 
+    scale_to_window = True
+    design_size = (760, 438)
+    min_window_width = 600
+    min_window_height = 370
+
     CONTENT_X = 24
     CONTENT_Y = 126
     CONTENT_WIDTH = 760
