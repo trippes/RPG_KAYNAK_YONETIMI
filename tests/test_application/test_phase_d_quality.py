@@ -1545,9 +1545,11 @@ class TestPhaseDQuality(unittest.TestCase):
 
         # Logical tab center (200, 207) projected through the 500px-wide window.
         scale = 500 / screen.design_size[0]
+        content_height = 470 - manager.TITLE_HEIGHT
+        offset_y = (content_height - screen.design_size[1] * scale) / 2
         pointer = (
             round(100 + (200 - 24) * scale),
-            round(132 + (207 - 126) * scale),
+            round(132 + offset_y + (207 - 126) * scale),
         )
         self.assertTrue(manager.handle_input(InputState(
             mouse_pos=pointer, mouse_clicked=True, mouse_button_down=True,
