@@ -45,6 +45,30 @@ class Ledger:
         self._balances[key] = current - money.amount
         return self._record(account_id, money, "debit", reason, counterparty_id)
 
+    def exchange(
+        self, account_id: str, source: Money, target: Money,
+        reason: str = "currency exchange",
+    ) -> tuple[LedgerEntry, LedgerEntry]:
+        """Atomically debit one denomination and credit another."""
+        self._validate_account(account_id)
+        self._validate_money(source)
+        self._validate_money(target)
+        if source.currency == target.currency:
+            raise ValueError("Currency exchange requires two different currencies.")
+        if source.amount <= 0 or target.amount <= 0:
+            raise ValueError("Currency exchange amounts must be positive.")
+        source_key = (account_id, source.currency)
+        target_key = (account_id, target.currency)
+        source_balance = self._balances.get(source_key, 0)
+        if source.amount > source_balance:
+            raise ValueError("Insufficient currency balance.")
+        # All validation precedes mutation; both ledger entries are recorded.
+        self._balances[source_key] = source_balance - source.amount
+        self._balances[target_key] = self._balances.get(target_key, 0) + target.amount
+        debit = self._record(account_id, source, "debit", reason, target.currency.value)
+        credit = self._record(account_id, target, "credit", reason, source.currency.value)
+        return debit, credit
+
     def entries(self) -> tuple[LedgerEntry, ...]:
         return tuple(self._entries)
 
