@@ -145,17 +145,39 @@ class CharacterScreen:
         self._render_equipment(renderer, character)
 
     def _render_identity(self, renderer, character, stats):
+        """Render the character identity as a compact RPG profile card."""
         rect = renderer.pg.Rect(40, 168, 316, 88)
         renderer.panel(rect, (32, 40, 54), PANEL_BORDER)
+
+        portrait = renderer.pg.Rect(rect.x + 10, rect.y + 10, 64, 68)
+        renderer.panel(portrait, (20, 27, 40), (145, 118, 70))
+        center = (portrait.centerx, portrait.centery - 3)
+        renderer.pg.draw.circle(renderer.surface, (82, 100, 126), center, 21)
+        renderer.pg.draw.circle(renderer.surface, GOLD, center, 21, 2)
+        initials = (character.name.strip()[:1] or "?").upper()
+        initials_width = renderer.text_width(initials, title=True)
         renderer.text(
-            renderer.fit_text(character.name, rect.width - 24),
-            rect.x + 12, rect.y + 8, GOLD, title=True,
-            max_width=rect.width - 24,
+            initials,
+            center[0] - initials_width // 2,
+            center[1] - 15,
+            GOLD,
+            title=True,
+        )
+
+        text_x = portrait.right + 10
+        text_width = rect.right - text_x - 10
+        renderer.text(
+            renderer.fit_text(character.name, text_width, title=True),
+            text_x, rect.y + 7, GOLD, title=True,
+            max_width=text_width,
+        )
+        identity = (
+            f"{character.race.name} · {character.character_class.name} · "
+            f"{character.age} yaş"
         )
         renderer.text(
-            f"{character.race.name} · {character.character_class.name} · {character.age} yaş",
-            rect.x + 12, rect.y + 34, TEXT_SOFT,
-            max_width=rect.width - 24,
+            identity, text_x, rect.y + 36, TEXT_SOFT,
+            max_width=text_width,
         )
         level = stats.get("level", character.progression.level)
         experience = stats.get("experience", character.progression.experience)
@@ -163,15 +185,18 @@ class CharacterScreen:
             "experience_to_next_level",
             character.progression.experience_to_next_level,
         )
-        renderer.text(f"SEVİYE {level}", rect.x + 12, rect.y + 60, MUTED)
+        renderer.text(f"SEVİYE {level}", text_x, rect.y + 60, MUTED)
+        bar_x = text_x + 78
+        bar_width = max(30, rect.right - bar_x - 10)
         renderer.bar(
-            renderer.pg.Rect(rect.x + 88, rect.y + 64, rect.width - 102, 9),
+            renderer.pg.Rect(bar_x, rect.y + 64, bar_width, 8),
             experience / required if required else 0,
             GOLD,
         )
         renderer.text(
             f"{experience}/{required} XP",
-            rect.x + 88, rect.y + 73, MUTED,
+            bar_x, rect.y + 73, MUTED,
+            max_width=bar_width,
         )
 
     def _render_combat(self, renderer, stats):
