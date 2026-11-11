@@ -31,7 +31,7 @@ class FakeContainerService:
         return SimpleNamespace(items=())
 
     def item(self, item_id):
-        return SimpleNamespace(name=item_id.capitalize(), tags=())
+        return SimpleNamespace(name=item_id.capitalize(), tags=("potion", "consumable") if item_id == "potion" else (), category="potion" if item_id == "potion" else "misc")
 
     def transfer_actor_item_from_container(self, *args):
         self.transfers.append(args)
@@ -70,6 +70,26 @@ class ContainerScreenTests(unittest.TestCase):
         self.screen.handle(InputState(mouse_pos=(1, 1), mouse_clicked=True))
         self.assertEqual([call[3:] for call in self.service.transfers], [("apple", 2), ("potion", 5)])
         self.assertIn("7 eşya", self.screen.message)
+
+
+    def test_loot_grid_starts_with_six_by_four_slots_and_grows_by_rows(self):
+        self.assertEqual(self.screen._visible_rows(0), 4)
+        self.assertEqual(self.screen.COLUMNS, 6)
+        self.assertEqual(self.screen._visible_rows(24), 4)
+        self.assertEqual(self.screen._visible_rows(25), 5)
+        self.assertEqual(self.screen._max_scroll(25), 1)
+
+    def test_category_filter_keeps_potion_items(self):
+        entries = self.screen._filtered_entries(self.service.view)
+        self.assertEqual([entry[0] for entry in entries if entry[3] == "potion"], ["potion"])
+        self.screen.category = "potion"
+        filtered = self.screen._filtered_entries(self.service.view)
+        self.assertEqual([entry[0] for entry in filtered], ["potion"])
+
+    def test_search_filters_by_item_name(self):
+        self.screen.search_text = "pot"
+        filtered = self.screen._filtered_entries(self.service.view)
+        self.assertEqual([entry[0] for entry in filtered], ["potion"])
 
     def test_locked_container_uses_matching_key_action(self):
         self.service.lock = SimpleNamespace(
