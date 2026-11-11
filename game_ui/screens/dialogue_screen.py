@@ -150,11 +150,8 @@ class DialogueScreen:
         if self.context is not None and self.context[1] == "caravan_merchant":
             caravan_quest = getattr(self.service, "caravan_quest", None)
             if self._quest_state(caravan_quest) == "completed":
-                return (DialogueChoice(
-                    "caravan_report",
-                    "Kervanın izini buldum. Sonuçları anlatayım.",
-                    next_node_id="report",
-                ),)
+                return tuple(choice for choice in choices if choice.choice_id == "caravan_report")
+            choices = tuple(choice for choice in choices if choice.choice_id != "caravan_report")
         if self.context is None or self.context[1] != "village_carpenter":
             if self.context is not None and self.context[1] == "village_blacksmith":
                 quest = getattr(self.service, "blacksmith_quest", None)
