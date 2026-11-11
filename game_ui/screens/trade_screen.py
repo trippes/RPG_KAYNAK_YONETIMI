@@ -9,7 +9,7 @@ class TradeScreen:
     design_size = (912, 438)
 
     VISIBLE_OFFERS = 6
-    ROW_X, ROW_Y, ROW_W, ROW_H = 72, 208, 790, 42
+    ROW_X, ROW_Y, ROW_W, ROW_H = 72, 220, 790, 42
     SELL_RECT = (636, 470, 220, 42)
 
     def __init__(self, service):
