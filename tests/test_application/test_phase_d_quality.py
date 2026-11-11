@@ -63,6 +63,42 @@ class TestPhaseDQuality(unittest.TestCase):
         self.assertLessEqual(x + width, skills[0] + skills[2])
         self.assertLessEqual(y + height, skills[1] + skills[3])
 
+    def test_character_minimum_viewport_keeps_all_skills_and_cards_inside_panels(self):
+        service, _ = populate_opening_content(GameApplication.create_default())
+        screen = CharacterScreen(service)
+        # A 520px framed window leaves a 488px responsive content viewport.
+        screen.set_viewport(600, 488)
+        layout = screen._layout()
+        attributes = layout["attributes"]
+        skills_panel = layout["skills"]
+
+        self.assertLessEqual(
+            attributes[1] + attributes[3], skills_panel[1]
+        )
+        cards = screen._attribute_card_rects(attributes)
+        for x, y, width, height in cards:
+            self.assertGreaterEqual(x, attributes[0])
+            self.assertGreaterEqual(y, attributes[1])
+            self.assertLessEqual(x + width, attributes[0] + attributes[2])
+            self.assertLessEqual(y + height, attributes[1] + attributes[3])
+
+        skill_rows = screen._skill_rows()
+        self.assertIn("survival", {name.lower() for name, _value in skill_rows})
+        row_rect, visible_count = screen._skill_geometry()
+        self.assertGreaterEqual(visible_count, len(skill_rows))
+        row_x, row_y, row_width, row_height = row_rect
+        for index in range(len(skill_rows)):
+            row_top = row_y + index * row_height
+            self.assertGreaterEqual(row_x, skills_panel[0])
+            self.assertGreaterEqual(row_top, skills_panel[1])
+            self.assertLessEqual(
+                row_x + row_width, skills_panel[0] + skills_panel[2]
+            )
+            self.assertLessEqual(
+                row_top + row_height - 3,
+                skills_panel[1] + skills_panel[3] - 24,
+            )
+
     def test_character_attribute_cards_stay_inside_compact_panel(self):
         service, _ = populate_opening_content(GameApplication.create_default())
         screen = CharacterScreen(service)
