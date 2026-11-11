@@ -2,6 +2,9 @@ from ..renderer import RESOURCE_NAMES, duration_label, resource_name, unit_label
 
 
 class ProductionScreen:
+    scale_to_window = True
+    design_size = (912, 438)
+
     VISIBLE_RECIPES = 5
 
     RESOURCE_NAMES = RESOURCE_NAMES
