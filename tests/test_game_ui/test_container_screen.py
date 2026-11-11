@@ -34,7 +34,10 @@ class FakeContainerService:
         return SimpleNamespace(name=item_id.capitalize(), tags=("potion", "consumable") if item_id == "potion" else (), category="potion" if item_id == "potion" else "misc")
 
     def transfer_actor_item_from_container(self, *args):
-        self.transfers.append(args)
+        self.transfers.append(("from_container", *args))
+
+    def transfer_actor_item_to_container(self, *args):
+        self.transfers.append(("to_container", *args))
 
     def resolve_lockpick(self, *args, **kwargs):
         return SimpleNamespace(attempted=True, success=True, roll=17, modifier=3, total=20, difficulty_class=18, message="opened")
@@ -52,6 +55,14 @@ class ContainerScreenTests(unittest.TestCase):
         self.service = FakeContainerService()
         self.screen = ContainerScreen(self.service)
         self.screen.set_container("chest_01")
+
+    def test_external_inventory_drop_transfers_stack_into_container(self):
+        self.assertTrue(self.screen.receive_external_item("health_potion", 3))
+        self.assertEqual(
+            self.service.transfers,
+            [("to_container", "hero", "player", "chest_01", "health_potion", 3)],
+        )
+        self.assertIn("sandığa aktarıldı", self.screen.message)
 
     def test_confirm_takes_full_selected_stack(self):
         self.screen.handle(InputState(actions={"confirm"}))
