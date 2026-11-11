@@ -197,14 +197,16 @@ class WindowManager:
         right = start_x + start_width
         bottom = start_y + start_height
 
+        min_width = max(self.MIN_WIDTH, getattr(window.screen, "min_window_width", 0))
+        min_height = max(self.MIN_HEIGHT, getattr(window.screen, "min_window_height", 0))
         if "left" in window.resize_edges:
-            left = max(0, min(start_x + delta_x, right - self.MIN_WIDTH))
+            left = max(0, min(start_x + delta_x, right - min_width))
         elif "right" in window.resize_edges:
-            right = min(self.width, max(start_x + self.MIN_WIDTH, right + delta_x))
+            right = min(self.width, max(start_x + min_width, right + delta_x))
         if "top" in window.resize_edges:
-            top = max(0, min(start_y + delta_y, bottom - self.MIN_HEIGHT))
+            top = max(0, min(start_y + delta_y, bottom - min_height))
         elif "bottom" in window.resize_edges:
-            bottom = min(self.height, max(start_y + self.MIN_HEIGHT, bottom + delta_y))
+            bottom = min(self.height, max(start_y + min_height, bottom + delta_y))
 
         window.bounds.x = left
         window.bounds.y = top
@@ -390,17 +392,40 @@ class WindowManager:
                 renderer.mouse_pos = self._screen_position(window, original_mouse_pos)
             source = self._render_content(renderer, window)
             if source is not None:
-                renderer.surface.blit(
-                    source,
-                    self._content_destination(window),
-                    self._content_source_rect(window),
-                )
+                scale_to_window = getattr(window.screen, "scale_to_window", False)
+                if scale_to_window and hasattr(self.pg, "transform"):
+                    design_width, design_height = window.screen.design_size
+                    design_rect = self.pg.Rect(
+                        window.content_origin[0], window.content_origin[1],
+                        design_width, design_height,
+                    )
+                    content_surface = source.subsurface(design_rect)
+                    target_size = (
+                        window.bounds.width,
+                        max(1, window.bounds.height - (self.TITLE_HEIGHT if window.frame else 0)),
+                    )
+                    scaled = self.pg.transform.smoothscale(content_surface, target_size)
+                    renderer.surface.blit(scaled, self._content_destination(window))
+                else:
+                    renderer.surface.blit(
+                        source,
+                        self._content_destination(window),
+                        self._content_source_rect(window),
+                    )
             renderer.surface = original_surface
             renderer.mouse_pos = original_mouse_pos
             if window.frame:
                 renderer.text(window.title, window.bounds.x + 12, window.bounds.y + 6)
             close = self._close_rect(window)
             renderer.button(close, "X")
+            if window.frame and hasattr(self.pg, "draw") and hasattr(self.pg.draw, "line"):
+                right = window.bounds.right - 7
+                bottom = window.bounds.bottom - 7
+                for offset in (0, 5, 10):
+                    self.pg.draw.line(
+                        renderer.surface, (125, 140, 164),
+                        (right - offset, bottom), (right, bottom - offset), 1,
+                    )
         renderer.mouse_pos = original_mouse_pos
 
     def _render_content(self, renderer, window):
