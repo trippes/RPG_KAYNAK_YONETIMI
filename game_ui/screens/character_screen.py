@@ -217,23 +217,34 @@ class CharacterScreen:
             renderer.text(f"{value:+}" if label != "SİLAH HASARI" else str(value),
                           x + column_width - 48, y, GOLD)
 
+    def _attribute_card_rects(self, bounds):
+        x, y, width, height = bounds
+        columns = 2 if width >= 300 else 1
+        gap = 6
+        cell_width = max(1, (width - 20 - gap * (columns - 1)) // columns)
+        row_gap = 4
+        available_height = max(18, height - 40 - row_gap * 2)
+        row_height = max(18, min(38, available_height // 3))
+        return tuple(
+            (
+                x + 10 + (index % columns) * (cell_width + gap),
+                y + 36 + (index // columns) * (row_height + row_gap),
+                cell_width,
+                row_height,
+            )
+            for index, _key in enumerate(self.ATTRIBUTE_LABELS)
+        )
+
     def _render_attributes(self, renderer, stats, bounds):
         rect = renderer.pg.Rect(bounds)
         renderer.panel(rect, (27, 35, 50), PANEL_BORDER)
         renderer.text("NİTELİKLER", rect.x + 12, rect.y + 10, GOLD)
         attributes = stats.get("attributes", {})
         modifiers = stats.get("modifiers", {})
-        columns = 2 if rect.width >= 300 else 1
-        gap = 6
-        cell_width = max(1, (rect.width - 20 - gap * (columns - 1)) // columns)
-        row_height = max(24, min(38, (rect.height - 44) // 3))
-        for index, key in enumerate(self.ATTRIBUTE_LABELS):
-            column, row = index % columns, index // columns
-            card = renderer.pg.Rect(
-                rect.x + 10 + column * (cell_width + gap),
-                rect.y + 36 + row * (row_height + 5),
-                cell_width, row_height,
-            )
+        for (key, card_bounds) in zip(
+            self.ATTRIBUTE_LABELS, self._attribute_card_rects(bounds)
+        ):
+            card = renderer.pg.Rect(card_bounds)
             renderer.panel(card, (35, 44, 60), PANEL_BORDER)
             value = f"{self.ATTRIBUTE_LABELS[key]}: {attributes.get(key, 10)} ({modifiers.get(key, 0):+})"
             renderer.text(renderer.fit_text(value, card.width - 10),
