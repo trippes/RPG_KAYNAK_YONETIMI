@@ -21,7 +21,7 @@ class QuestSnapshot:
         records = []
         for quest in log.all():
             records.append({
-                "quest_id": quest.quest_id, "title": quest.title, "state": quest.state.value,
+                "quest_id": quest.quest_id, "title": quest.title, "state": quest.state.value, "sequential_objectives": quest.sequential_objectives,
                 "reward": {"experience": quest.reward.experience, "currency": quest.reward.currency, "items": [list(item) for item in quest.reward.items], "reputation": [list(item) for item in quest.reward.reputation]},
                 "objectives": [{"objective_id": o.objective_id, "description": o.description, "objective_type": o.objective_type.value, "target_id": o.target_id, "required": o.required, "progress": o.progress, "optional": o.optional} for o in quest.objectives],
             })
@@ -58,7 +58,7 @@ class QuestSnapshot:
                             record.get("reward", {}).get("currency", 0),
                             tuple(tuple(item) for item in record.get("reward", {}).get("items", ())),
                             tuple(tuple(item) for item in record.get("reward", {}).get("reputation", ())),
-                        ), state=QuestState(record["state"])
+                        ), state=QuestState(record["state"]), sequential_objectives=record.get("sequential_objectives", False)
                     )
                 except (KeyError, TypeError, ValueError) as error:
                     raise QuestPersistenceError("Invalid quest definition in snapshot.") from error
