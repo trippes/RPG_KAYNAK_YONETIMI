@@ -418,6 +418,8 @@ class GameWindow:
             appearance={"Ten": "buğday", "Saç": "kahverengi", "Göz": "yeşil", "Yüz": "kararlı"},
         )
         populate_gameplay_resources(self.service)
+        from application.caravan_quest_content import populate_caravan_quest_demo
+        populate_caravan_quest_demo(self.service)
 
         actors = self.service.state().actors
         if actors and actors[0].inventory_id is None:
