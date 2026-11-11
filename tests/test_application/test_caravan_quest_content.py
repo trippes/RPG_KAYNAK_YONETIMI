@@ -53,6 +53,11 @@ def test_caravan_quest_advances_one_mandatory_objective_at_a_time():
 
     service.talk_to_npc("hero", CARAVAN_NPC_ID, CARAVAN_DIALOGUE_ID)
     assert quest.state.value == "completed"
+    report = service.choose_dialogue(
+        "hero", CARAVAN_NPC_ID, CARAVAN_DIALOGUE_ID,
+        "start", "caravan_report",
+    )
+    assert report.node_id == "report"
 
 
 def test_caravan_sequential_flag_survives_quest_snapshot_round_trip():
