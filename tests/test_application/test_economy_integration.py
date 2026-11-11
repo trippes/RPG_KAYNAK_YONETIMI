@@ -46,6 +46,25 @@ class TestEconomyIntegration(unittest.TestCase):
         self.assertEqual(self.application.holder.current.inventories["seller"].get(self.ore).value, 3)
         self.assertIsNotNone(self.application.holder.current.economy.market.get("ore-offer"))
 
+    def test_gameplay_currency_exchange_uses_fixed_rates(self):
+        self.service.credit("hero", "bronze", 120)
+        received = self.service.exchange_currency("hero", "bronze", "silver", 60)
+        self.assertEqual(received, Money(1, Currency("silver")))
+        self.assertEqual(self.service.balance("hero", "bronze").amount, 60)
+        self.assertEqual(self.service.balance("hero", "silver").amount, 1)
+
+    def test_currency_exchange_survives_save_load(self):
+        self.service.credit("hero", "bronze", 120)
+        self.service.exchange_currency("hero", "bronze", "silver", 60)
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "currency-save.json"
+            self.service.save(path)
+            self.service.load(path)
+        self.assertEqual(self.service.balance("hero", "bronze").amount, 60)
+        self.assertEqual(self.service.balance("hero", "silver").amount, 1)
+        self.service.exchange_currency("hero", "silver", "gold", 1)
+        self.assertEqual(self.service.balance("hero", "gold").amount, 1)
+
     def test_economy_round_trip_is_persisted(self):
         self.service.credit("buyer", "gold", 20)
         self.service.publish_offer(
