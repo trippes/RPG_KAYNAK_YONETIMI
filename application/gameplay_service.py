@@ -260,6 +260,7 @@ class GameplayService:
             "carpenter_quest",
             "inn_quest",
             "blacksmith_quest",
+            "caravan_quest",
         ):
             current = getattr(self, attribute, None)
             quest_id = getattr(current, "quest_id", None)
@@ -268,7 +269,7 @@ class GameplayService:
             restored = quest_log.get(quest_id)
             if restored is not None:
                 setattr(self, attribute, restored)
-                if attribute in ("carpenter_quest", "inn_quest"):
+                if attribute in ("carpenter_quest", "inn_quest", "caravan_quest"):
                     self._quest_reward_accounts.setdefault(quest_id, "hero")
                     self._quest_reward_inventories.setdefault(quest_id, "player")
 
