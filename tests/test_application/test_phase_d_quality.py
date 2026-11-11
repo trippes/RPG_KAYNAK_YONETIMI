@@ -25,6 +25,44 @@ from quests import Objective, ObjectiveType, Quest, QuestLog, QuestState, Reward
 
 
 class TestPhaseDQuality(unittest.TestCase):
+    def test_character_screen_uses_responsive_viewport_layout(self):
+        service, _ = populate_opening_content(GameApplication.create_default())
+        screen = CharacterScreen(service)
+
+        screen.set_viewport(912, 438)
+        standard = screen._layout()
+        screen.set_viewport(1200, 700)
+        expanded = screen._layout()
+
+        self.assertTrue(screen.responsive_layout)
+        self.assertGreater(expanded["outer"][2], standard["outer"][2])
+        self.assertGreater(expanded["outer"][3], standard["outer"][3])
+        for key in ("identity", "combat", "attributes", "skills"):
+            rect = expanded[key]
+            self.assertIsNotNone(rect)
+            self.assertGreater(rect[2], 0)
+            self.assertGreater(rect[3], 0)
+
+    def test_character_screen_compact_layout_separates_attributes_and_skills(self):
+        service, _ = populate_opening_content(GameApplication.create_default())
+        screen = CharacterScreen(service)
+        screen.set_viewport(600, 470)
+        layout = screen._layout()
+        attributes = layout["attributes"]
+        skills = layout["skills"]
+
+        self.assertTrue(layout["compact"])
+        self.assertIsNone(layout["combat"])
+        self.assertLessEqual(attributes[1] + attributes[3], skills[1])
+        self.assertGreater(skills[3], 0)
+        x, y, width, height = screen._skill_bounds()
+        self.assertGreater(width, 0)
+        self.assertGreater(height, 0)
+        self.assertGreaterEqual(x, skills[0])
+        self.assertGreaterEqual(y, skills[1])
+        self.assertLessEqual(x + width, skills[0] + skills[2])
+        self.assertLessEqual(y + height, skills[1] + skills[3])
+
     def _quest_screen(self):
         quests = QuestLog((
             Quest("active", "Aktif Görev", (
