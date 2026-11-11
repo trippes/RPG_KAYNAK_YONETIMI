@@ -1,6 +1,9 @@
 """Central management for the movable gameplay windows."""
 
 from dataclasses import dataclass
+from copy import copy
+
+from .scaled_renderer import ScaledFont, ScaledPygame, ScaledSurface
 
 from .input import InputState
 
@@ -428,20 +431,18 @@ class WindowManager:
                 scale_to_window = getattr(window.screen, "scale_to_window", False)
                 if scale_to_window and hasattr(self.pg, "transform"):
                     design_width, design_height = window.screen.design_size
-                    design_rect = self.pg.Rect(
-                        window.content_origin[0], window.content_origin[1],
-                        design_width, design_height,
-                    )
-                    content_surface = source.subsurface(design_rect)
                     scale, offset_x, offset_y = self._content_transform(window)
-                    target_size = (
+                    origin_x, origin_y = window.content_origin
+                    physical_rect = self.pg.Rect(
+                        round(origin_x * scale),
+                        round(origin_y * scale),
                         max(1, round(design_width * scale)),
                         max(1, round(design_height * scale)),
                     )
-                    scaled = self.pg.transform.smoothscale(content_surface, target_size)
+                    content_surface = source.subsurface(physical_rect)
                     destination_x, destination_y = self._content_destination(window)
                     renderer.surface.blit(
-                        scaled,
+                        content_surface,
                         (
                             round(destination_x + offset_x),
                             round(destination_y + offset_y),
@@ -480,29 +481,40 @@ class WindowManager:
 
     def _render_content(self, renderer, window):
         surface_type = getattr(self.pg, "Surface", type(renderer.surface))
-        old_surface = renderer.surface
-        old_width, old_height = renderer.width, renderer.height
         responsive = getattr(window.screen, "scale_to_window", False)
         if responsive:
-            renderer.width, renderer.height = self._content_canvas_size(window)
-        if surface_type is None:
+            logical_width, logical_height = self._content_canvas_size(window)
+            scale, _offset_x, _offset_y = self._content_transform(window)
+            physical_size = (
+                max(1, round(logical_width * scale)),
+                max(1, round(logical_height * scale)),
+            )
             try:
+                source = surface_type(physical_size)
+            except TypeError:
+                # Lightweight test backends may not expose a real Surface.
                 window.screen.render(renderer)
-            finally:
-                renderer.width, renderer.height = old_width, old_height
-            return None
+                return None
+
+            scaled_renderer = copy(renderer)
+            scaled_renderer.width = logical_width
+            scaled_renderer.height = logical_height
+            scaled_renderer.surface = ScaledSurface(source, scale, self.pg)
+            scaled_renderer.pg = ScaledPygame(self.pg, scale)
+            scaled_renderer.font = ScaledFont(self.pg, 24, scale)
+            scaled_renderer.title_font = ScaledFont(self.pg, 42, scale)
+            window.screen.render(scaled_renderer)
+            return source
+
         try:
             source = surface_type((renderer.width, renderer.height))
         except TypeError:
-            try:
-                window.screen.render(renderer)
-            finally:
-                renderer.width, renderer.height = old_width, old_height
+            window.screen.render(renderer)
             return None
+        old_surface = renderer.surface
         renderer.surface = source
         try:
             window.screen.render(renderer)
         finally:
             renderer.surface = old_surface
-            renderer.width, renderer.height = old_width, old_height
         return source
