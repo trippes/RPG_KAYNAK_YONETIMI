@@ -1577,6 +1577,12 @@ class GameplayService:
             raise ValueError("Hilmi'nin aktif bir odun görevi yok.")
         if npc_id != "village_carpenter":
             raise ValueError("Odun yalnızca Marangoz Hilmi'ye teslim edilebilir.")
+        collected = next(
+            (item for item in quest.objectives if item.objective_id == "collect_wood"),
+            None,
+        )
+        if collected is None or not collected.completed:
+            raise ValueError("Önce marangozun istediği 3 odunu toplamalısın.")
         inventory = self._inventory(self._current_bundle(), inventory_id)
         wood = ResourceType("wood")
         stock = inventory.get(wood)
