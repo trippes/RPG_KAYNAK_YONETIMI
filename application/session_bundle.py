@@ -160,7 +160,7 @@ class SessionBundle:
         object.__setattr__(self, "items", MappingProxyType(dict(self.items)))
 
     @classmethod
-    def create_default(cls, start_tick=0) -> "SessionBundle":
+    def create_default(cls, start_tick=0, inventories=None) -> "SessionBundle":
         session = GameSession(start_tick=start_tick)
         simulation = session.simulation
         return cls(
@@ -168,7 +168,7 @@ class SessionBundle:
             simulation=simulation,
             production_jobs=ProductionJobManager(simulation),
             resource_nodes=WorldResourceNodeManager(session.worlds),
-            inventories={},
+            inventories={} if inventories is None else inventories,
             recipes={},
         )
 
