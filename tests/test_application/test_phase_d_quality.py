@@ -1504,14 +1504,19 @@ class TestPhaseDQuality(unittest.TestCase):
         populate_gameplay_resources(service)
         screen = InventoryScreen(service)
         manager = WindowManager(Backend(), 960, 640)
-        # Match the 912x438 design canvas at 1:1 so this test isolates
-        # window-origin translation rather than responsive downscaling.
         manager.register("inventory", screen, (100, 100, 912, 470))
         manager.open("inventory")
 
-        # Source tab 2 is at (190, 190); the window content starts below its title bar.
+        # Use the responsive layout's real second-tab bounds, then translate
+        # screen-local coordinates into the moved window's pointer space.
+        tab = screen._layout()["tabs"][1]
+        local_point = (tab[0] + tab[2] // 2, tab[1] + tab[3] // 2)
+        pointer = (
+            100 + local_point[0] - 24,
+            100 + manager.TITLE_HEIGHT + local_point[1] - 126,
+        )
         self.assertTrue(manager.handle_input(InputState(
-            mouse_pos=(100 + (200 - 24), 100 + 32 + (200 - 126)),
+            mouse_pos=pointer,
             mouse_clicked=True,
             mouse_button_down=True,
         )))
@@ -1553,13 +1558,13 @@ class TestPhaseDQuality(unittest.TestCase):
         manager.register("inventory", screen, (100, 100, 500, 470))
         manager.open("inventory")
 
-        # Logical tab center (200, 207) projected through the 500px-wide window.
-        scale = 500 / screen.design_size[0]
-        content_height = 470 - manager.TITLE_HEIGHT
-        offset_y = (content_height - screen.design_size[1] * scale) / 2
+        # Responsive windows use their live viewport directly: no legacy
+        # design-size scaling or letterbox offset is applied to pointer input.
+        tab = screen._layout()["tabs"][1]
+        local_point = (tab[0] + tab[2] // 2, tab[1] + tab[3] // 2)
         pointer = (
-            round(100 + (200 - 24) * scale),
-            round(132 + offset_y + (207 - 126) * scale),
+            100 + local_point[0] - 24,
+            100 + manager.TITLE_HEIGHT + local_point[1] - 126,
         )
         self.assertTrue(manager.handle_input(InputState(
             mouse_pos=pointer, mouse_clicked=True, mouse_button_down=True,
@@ -1606,11 +1611,21 @@ class TestPhaseDQuality(unittest.TestCase):
 
         screen = InventoryScreen(Service())
         manager = WindowManager(Backend(), 960, 640)
-        # Keep the design canvas at 1:1; responsive scaling has dedicated tests.
         manager.register("inventory", screen, (100, 100, 912, 470))
         manager.open("inventory")
-        source = (100 + 296, 100 + 32 + 110)
-        target = (source[0] + 66, source[1])
+        screen._slot_entries()
+
+        def window_point(slot_index):
+            rect = screen._slot_rects()[slot_index]
+            local_x = rect[0] + rect[2] // 2
+            local_y = rect[1] + rect[3] // 2
+            return (
+                100 + local_x - 24,
+                100 + manager.TITLE_HEIGHT + local_y - 126,
+            )
+
+        source = window_point(0)
+        target = window_point(1)
 
         manager.handle_input(InputState(
             mouse_pos=source, mouse_clicked=True, mouse_button_down=True,
@@ -1625,7 +1640,7 @@ class TestPhaseDQuality(unittest.TestCase):
             ("item", "bread_item"), ("item", "iron_sword"),
         ])
 
-        empty_target = (source[0] + 66 * 4, source[1])
+        empty_target = window_point(4)
         manager.handle_input(InputState(
             mouse_pos=(target[0], target[1]), mouse_clicked=True,
             mouse_button_down=True,
