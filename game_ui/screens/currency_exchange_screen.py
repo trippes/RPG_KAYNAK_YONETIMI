@@ -53,47 +53,6 @@ class CurrencyExchangeScreen:
             self._background = None
         return self._background
 
-    def _draw_exchange_overlay(self, renderer, target, scale):
-        """Lay color over the checkerboard, then cut holes for the PNG panels."""
-        pg = renderer.pg
-        width = max(1, round(self.design_size[0] * scale))
-        height = max(1, round(self.design_size[1] * scale))
-        overlay = pg.Surface((width, height), pg.SRCALPHA)
-
-        x, y, field_width, field_height = self.EXCHANGE_FIELD
-        field = pg.Rect(
-            round(x * scale), round(y * scale),
-            round(field_width * scale), round(field_height * scale),
-        )
-
-        palette = (
-            (12, 22, 39, 255),
-            (15, 29, 50, 255),
-            (18, 35, 58, 255),
-            (20, 39, 63, 255),
-            (16, 31, 53, 255),
-        )
-        band_height = max(1, field.height // len(palette))
-        for index, color in enumerate(palette):
-            top = field.y + index * band_height
-            band = pg.Rect(
-                field.x, top, field.width,
-                field.bottom - top if index == len(palette) - 1 else band_height,
-            )
-            pg.draw.rect(overlay, color, band)
-
-        # The original PNG is kept visible through these cut-outs.
-        for x, y, card_width, card_height in self.CARD_RECTS:
-            hole = pg.Rect(
-                round((x - 5) * scale),
-                round((y - 5) * scale),
-                round((card_width + 10) * scale),
-                round((card_height + 10) * scale),
-            )
-            pg.draw.rect(overlay, (0, 0, 0, 0), hole, border_radius=max(4, round(10 * scale)))
-
-        target.blit(overlay, (0, 0))
-
     def _draw_background(self, renderer):
         image = self._load_background(renderer.pg)
         if image is None:
@@ -109,11 +68,7 @@ class CurrencyExchangeScreen:
         except (AttributeError, TypeError, ValueError):
             artwork = image
 
-        # First draw the complete original artwork.
         target.blit(artwork, (0, 0))
-        # Then place the palette over the checkerboard and reveal the
-        # original PNG again through the panel-shaped cut-outs.
-        self._draw_exchange_overlay(renderer, target, scale)
 
     def _balance(self, currency):
         try:
