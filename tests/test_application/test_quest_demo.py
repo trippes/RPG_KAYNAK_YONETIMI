@@ -4,6 +4,7 @@ from application.content_pack import populate_opening_content
 from application.game_application import GameApplication
 from application.quest_demo import populate_caravan_quest_demo
 from resources import Inventory
+from game_ui.screens.quest_log_screen import QuestLogScreen
 
 
 class TestQuestDemoContent(unittest.TestCase):
@@ -22,6 +23,28 @@ class TestQuestDemoContent(unittest.TestCase):
         self.assertIsNotNone(bundle.social.npcs.get("caravan_merchant"))
         self.assertIsNotNone(bundle.social.dialogues.get("carpenter_dialogue"))
         self.assertIsNotNone(bundle.social.dialogues.get("caravan_merchant_dialogue"))
+
+    def test_quest_journal_switches_details_and_long_quest_can_scroll(self):
+        screen = QuestLogScreen(self.service)
+        screen.category = 1  # Available
+        quests = screen._quests()
+        caravan_index = next(
+            index for index, quest in enumerate(quests)
+            if quest.quest_id == "lost_caravan"
+        )
+        screen.selected = caravan_index
+        self.assertEqual(screen._quests()[screen.selected].title, "Kayıp Kervanın İzinde")
+
+        screen.detail_scroll = 999
+        screen._clamp_detail_scroll()
+        self.assertGreater(screen.detail_scroll, 0)
+
+        screen.selected = next(
+            index for index, quest in enumerate(quests)
+            if quest.quest_id == "carpenter_wood"
+        )
+        screen.detail_scroll = 0
+        self.assertEqual(screen._quests()[screen.selected].title, "Marangozun Odun İsteği")
 
     def test_caravan_objectives_advance_in_order_and_complete(self):
         self.service.start_quest(
