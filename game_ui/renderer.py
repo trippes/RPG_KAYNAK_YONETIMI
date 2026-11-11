@@ -131,7 +131,7 @@ class ResponsiveLayout:
         if count == 0 or width <= 0 or height <= 0:
             return (), 0, 0
 
-        columns = max(1, min(count, (width + gap) // (min_cell + gap)))
+        columns = max(1, min(count, (width + gap) // (max_cell + gap)))
         cell = min(max_cell, max(1, (width - gap * (columns - 1)) // columns))
         rows = (count + columns - 1) // columns
 
