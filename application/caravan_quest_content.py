@@ -98,6 +98,12 @@ def populate_caravan_quest_demo(service):
                     "Bunlarla kırılmış yük arabasının izlerini takip edebiliriz. "
                     "Sonra Eren'le konuş; kervanın kaybolduğu gece nöbet ondaydı.",
                 ),
+                DialogueNode(
+                    "report", CARAVAN_NPC_ID,
+                    "Demek izleri buldun ve Eren'in anlattıklarını doğruladın. "
+                    "Bu bilgiler kervanın başına gelenleri aydınlattı. "
+                    "Söz verdiğim ödül senindir. Yolculuğunda dikkatli ol.",
+                ),
             ),
             "start",
         ))
