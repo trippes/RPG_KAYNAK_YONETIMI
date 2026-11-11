@@ -1507,6 +1507,53 @@ class TestPhaseDQuality(unittest.TestCase):
         )))
         self.assertEqual(screen.tab, 1)
 
+    def test_inventory_tab_hitbox_tracks_responsive_window_scale(self):
+        class Rect:
+            def __init__(self, *value):
+                self.x, self.y, self.width, self.height = (
+                    value[0] if len(value) == 1 else value
+                )
+            @property
+            def right(self):
+                return self.x + self.width
+            @property
+            def bottom(self):
+                return self.y + self.height
+            @property
+            def topleft(self):
+                return self.x, self.y
+            @topleft.setter
+            def topleft(self, value):
+                self.x, self.y = value
+            def collidepoint(self, point):
+                return (
+                    self.x <= point[0] < self.right
+                    and self.y <= point[1] < self.bottom
+                )
+
+        RectType = Rect
+        class Backend:
+            Rect = RectType
+
+        service, _ = populate_opening_content(GameApplication.create_default())
+        from application.content_pack import populate_gameplay_resources
+        populate_gameplay_resources(service)
+        screen = InventoryScreen(service)
+        manager = WindowManager(Backend(), 960, 640)
+        manager.register("inventory", screen, (100, 100, 500, 470))
+        manager.open("inventory")
+
+        # Logical tab center (200, 207) projected through the 500px-wide window.
+        scale = 500 / screen.design_size[0]
+        pointer = (
+            round(100 + (200 - 24) * scale),
+            round(132 + (207 - 126) * scale),
+        )
+        self.assertTrue(manager.handle_input(InputState(
+            mouse_pos=pointer, mouse_clicked=True, mouse_button_down=True,
+        )))
+        self.assertEqual(screen.tab, 1)
+
     def test_inventory_drag_swaps_slots_and_invalid_drop_preserves_order(self):
         class Rect:
             def __init__(self, *value):
