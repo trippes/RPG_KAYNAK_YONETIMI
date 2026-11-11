@@ -137,7 +137,7 @@ class GameWindow:
         self.window_manager.register(
             "character",
             self.screens["character"],
-            (80, 90, min(self.width - 80, 760), min(self.height - 90, 470)),
+            (80, 90, min(self.width - 80, 760), min(self.height - 90, 520)),
             content_origin=(24, 126),
             title="Karakter",
         )
