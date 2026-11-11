@@ -168,17 +168,6 @@ class CurrencyExchangeScreen:
         """Draw currency values and interaction feedback over the supplied frame."""
         self._draw_background(renderer)
         pg = renderer.pg
-        title = "KRALİYET DARPHANESİ"
-        renderer.text(
-            title, 384 - renderer.text_width(title, title=True) // 2,
-            91, title=True, max_width=430,
-        )
-        rates = (
-            f"{GUMUS_SIKKE_BRONZ} BRONZ = 1 GÜMÜŞ"
-            f"     •     {ALTIN_SIKKE_GUMUS} GÜMÜŞ = 1 ALTIN"
-        )
-        renderer.text(rates, 384 - renderer.text_width(rates) // 2, 119, (239, 205, 137))
-
         for center, currency in zip(self.BALANCE_CENTERS, ("bronze", "silver", "gold")):
             amount = self._number(self._balance(currency))
             renderer.text(
