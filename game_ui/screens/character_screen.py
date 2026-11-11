@@ -167,8 +167,8 @@ class CharacterScreen:
         text_x = portrait.right + 10
         text_width = rect.right - text_x - 10
         renderer.text(
-            renderer.fit_text(character.name, text_width, title=True),
-            text_x, rect.y + 7, GOLD, title=True,
+            renderer.fit_text(character.name, text_width),
+            text_x, rect.y + 10, GOLD,
             max_width=text_width,
         )
         identity = (
@@ -176,7 +176,7 @@ class CharacterScreen:
             f"{character.age} yaş"
         )
         renderer.text(
-            identity, text_x, rect.y + 36, TEXT_SOFT,
+            identity, text_x, rect.y + 35, TEXT_SOFT,
             max_width=text_width,
         )
         level = stats.get("level", character.progression.level)
@@ -188,15 +188,15 @@ class CharacterScreen:
         renderer.text(f"SEVİYE {level}", text_x, rect.y + 60, MUTED)
         bar_x = text_x + 78
         bar_width = max(30, rect.right - bar_x - 10)
-        renderer.bar(
-            renderer.pg.Rect(bar_x, rect.y + 64, bar_width, 8),
-            experience / required if required else 0,
-            GOLD,
-        )
         renderer.text(
             f"{experience}/{required} XP",
-            bar_x, rect.y + 73, MUTED,
+            bar_x, rect.y + 60, MUTED,
             max_width=bar_width,
+        )
+        renderer.bar(
+            renderer.pg.Rect(bar_x, rect.y + 80, bar_width, 6),
+            experience / required if required else 0,
+            GOLD,
         )
 
     def _render_combat(self, renderer, stats):
