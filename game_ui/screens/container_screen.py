@@ -171,6 +171,23 @@ class ContainerScreen:
             for index in range(first, first + count)
         )
 
+    def receive_external_item(self, item_id, quantity):
+        """Accept an item stack dragged from another gameplay window."""
+        if self.container_id is None:
+            return False
+        try:
+            actor_id, inventory_id = self._actor_context()
+            self.service.transfer_actor_item_to_container(
+                actor_id, inventory_id, self.container_id, item_id, quantity
+            )
+            item = self.service.item(item_id)
+            label = item.name if item is not None else str(item_id)
+            self.message = f"{label} sandığa aktarıldı."
+            return True
+        except (KeyError, ValueError, RuntimeError, GameplayServiceError) as error:
+            self.message = f"Sandığa aktarılamadı: {error}"
+            return False
+
     def _transfer(self, actor_id, inventory_id, item_id, quantity):
         self.service.transfer_actor_item_from_container(
             actor_id, inventory_id, self.container_id, item_id, quantity
