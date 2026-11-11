@@ -279,7 +279,7 @@ class QuestLogScreen:
     def _detail_content_height(self, quest):
         if quest is None:
             return 80
-        return 78 + len(quest.objectives) * 50
+        return 78 + len(quest.objectives) * 68
 
     def _render_details(self, renderer, quest):
         rect = renderer.pg.Rect(*self._details_bounds())
@@ -309,21 +309,30 @@ class QuestLogScreen:
 
         y = rect.y + 106 - self.detail_scroll
         for objective in quest.objectives:
-            if y >= rect.y + 58 and y + 42 <= rect.bottom - 12:
+            if y >= rect.y + 58 and y + 58 <= rect.bottom - 12:
                 marker = "[x]" if objective.completed else "[ ]"
                 required_label = "İsteğe bağlı" if objective.optional else "Zorunlu"
                 color = GOOD if objective.completed else TEXT_SOFT
                 renderer.text(
-                    f"{marker} {objective.description}",
+                    marker,
                     rect.x + 18,
                     y,
                     color,
-                    max_width=rect.width - 36,
                 )
+                renderer.wrapped_text(
+                    objective.description,
+                    rect.x + 48,
+                    y,
+                    rect.width - 66,
+                    color,
+                    line_height=18,
+                    max_lines=2,
+                )
+                meta_y = y + 38
                 renderer.text(
                     f"{required_label}  {objective.progress}/{objective.required}",
                     rect.x + 18,
-                    y + 22,
+                    meta_y,
                     MUTED,
                 )
                 ratio = (
@@ -331,11 +340,11 @@ class QuestLogScreen:
                     if objective.required > 0 else 0
                 )
                 renderer.bar(
-                    renderer.pg.Rect(rect.x + 160, y + 25, rect.width - 178, 10),
+                    renderer.pg.Rect(rect.x + 160, meta_y + 3, rect.width - 178, 10),
                     ratio,
                     GOOD if objective.completed else WARN,
                 )
-            y += 50
+            y += 68
 
         self._clamp_detail_scroll()
         if self.detail_scroll:
