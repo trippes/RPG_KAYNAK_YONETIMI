@@ -1,13 +1,14 @@
 from ..renderer import (
     BAD, BUTTON_HOVER, BUTTON_SELECTED, GOOD, GOLD, HIGHLIGHT, MUTED,
-    PANEL_BORDER, TEXT, TEXT_SOFT, WARN,
+    PANEL_BORDER, TEXT, TEXT_SOFT, WARN, ResponsiveLayout,
 )
 
 
 class QuestLogScreen:
     """Window content for the four-state quest journal."""
-    scale_to_window = True
-    design_size = (912, 438)
+    responsive_layout = True
+    min_window_width = 600
+    min_window_height = 520
 
 
     CATEGORIES = (
@@ -42,7 +43,12 @@ class QuestLogScreen:
         self.selected = 0
         self.scroll = 0
         self.detail_scroll = 0
-        self._viewport = (960, 640)
+        self.viewport_width = 912
+        self.viewport_height = 488
+
+    def set_viewport(self, width, height):
+        self.viewport_width = max(1, int(width))
+        self.viewport_height = max(1, int(height))
 
     def handle(self, state):
         """Handle journal navigation without changing quest lifecycle state."""
@@ -121,7 +127,7 @@ class QuestLogScreen:
         self._clamp_scroll()
 
     def render(self, renderer):
-        self._viewport = (renderer.width, renderer.height)
+        self.set_viewport(renderer.width, renderer.height)
         # WindowManager owns the outer title bar. This screen renders only its content.
         layout = self._layout(renderer.width, renderer.height)
         outer = renderer.pg.Rect(*layout["outer"])
@@ -197,18 +203,21 @@ class QuestLogScreen:
         )
 
     def _layout(self, width=None, height=None):
-        width, height = self._viewport if width is None or height is None else (width, height)
-        x = self.CONTENT_X
-        y = self.CONTENT_Y
-        available_width = max(420, width - x * 2)
-        # WindowManager clips content to the registered window height minus its title bar.
-        # The quest window is 470 px high with a 32 px title bar, so its content
-        # viewport is 438 px; keep the layout inside that source surface.
-        available_height = max(280, min(height - y - 76, 438))
+        width = self.viewport_width if width is None else max(1, int(width))
+        height = self.viewport_height if height is None else max(1, int(height))
+        outer = (
+            self.CONTENT_X, self.CONTENT_Y,
+            max(1, width - self.CONTENT_X * 2),
+            max(1, height - 16),
+        )
+        inner = ResponsiveLayout.inset(outer, 16, 0, 16, 16)
+        body_y = outer[1] + self.HEADER_HEIGHT + self.TAB_HEIGHT + 10
+        reward_height = min(self.REWARD_HEIGHT, max(56, inner[3] // 4))
+        reserved_height = self.HEADER_HEIGHT + self.TAB_HEIGHT + 44 + reward_height
+        body_height = min(self.BODY_HEIGHT, max(120, outer[3] - reserved_height))
         return {
-            "outer": (x, y, available_width, available_height),
-            "body_y": y + self.HEADER_HEIGHT + self.TAB_HEIGHT + 10,
-            "body_height": min(self.BODY_HEIGHT, max(120, available_height - self.REWARD_HEIGHT - self.HEADER_HEIGHT - self.TAB_HEIGHT - 44)),
+            "outer": outer, "inner": inner, "body_y": body_y,
+            "body_height": body_height, "reward_height": reward_height,
         }
 
     def _tab_bounds(self):
@@ -226,31 +235,34 @@ class QuestLogScreen:
 
     def _list_bounds(self):
         layout = self._layout()
+        inner_x, _inner_y, inner_width, _inner_height = layout["inner"]
+        list_width = max(180, min(304, int(inner_width * 0.36)))
         return (
-            self.CONTENT_X + self.CONTENT_MARGIN,
-            layout["body_y"],
-            max(180, min(304, (self._layout()["outer"][2] - 48) // 3)),
+            inner_x, layout["body_y"],
+            min(list_width, max(1, inner_width - 192)),
             layout["body_height"],
         )
 
     def _details_bounds(self):
         layout = self._layout()
         list_x, _list_y, list_width, _list_height = self._list_bounds()
+        inner_x, _inner_y, inner_width, _inner_height = layout["inner"]
+        gap = 12
         return (
-            list_x + list_width + 12,
-            layout["body_y"],
-            max(180, self._layout()["outer"][2] - list_width - 3 * self.CONTENT_MARGIN),
+            list_x + list_width + gap, layout["body_y"],
+            max(1, inner_x + inner_width - (list_x + list_width + gap)),
             layout["body_height"],
         )
 
     def _reward_bounds(self):
         layout = self._layout()
         outer_x, outer_y, outer_width, outer_height = layout["outer"]
+        reward_height = layout["reward_height"]
         return (
             outer_x + self.CONTENT_MARGIN,
-            outer_y + outer_height - self.REWARD_HEIGHT - self.CONTENT_MARGIN,
-            outer_width - 2 * self.CONTENT_MARGIN,
-            self.REWARD_HEIGHT,
+            outer_y + outer_height - reward_height - self.CONTENT_MARGIN,
+            max(1, outer_width - 2 * self.CONTENT_MARGIN),
+            reward_height,
         )
 
     def _reward_origin(self):
