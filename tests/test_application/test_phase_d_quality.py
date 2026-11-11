@@ -501,6 +501,16 @@ class TestPhaseDQuality(unittest.TestCase):
             "load_slots",
         )
 
+    def test_main_menu_test_world_starts_directly_without_opening_new_game_submenu(self):
+        menu = MainMenu()
+        menu.selected = 6
+
+        self.assertEqual(
+            menu.handle(InputState(actions={"confirm"})),
+            "test_world",
+        )
+        self.assertFalse(menu.new_game_open)
+
     def test_main_menu_new_game_mouse_click_also_opens_submenu(self):
         class Rect:
             def __init__(self, *value):
