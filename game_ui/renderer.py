@@ -371,45 +371,85 @@ class Renderer:
         self.pg.draw.circle(self.surface, fill, center, max(1, radius - 2))
         self.pg.draw.circle(self.surface, highlight, center, max(1, radius - 5), 1)
 
-        # The emblem is drawn twice with a one-pixel offset to create an
-        # engraved shadow/highlight effect without using denomination letters.
-        offset = max(1, int(size) // 14)
+        # Render the existing emblem design on a supersampled transparent
+        # surface, then downsample it for clean, smooth edges at small sizes.
+        # If a lightweight test backend lacks these APIs, retain the direct
+        # primitive-rendering fallback below.
+        supersample = 4
+        emblem_size = max(1, int(size))
+        can_supersample = (
+            hasattr(self.pg, "Surface")
+            and hasattr(self.pg, "transform")
+            and hasattr(self.pg.transform, "smoothscale")
+        )
 
-        def draw_emblem(color, dx=0, dy=0):
+        def draw_emblem(target, draw_api, scale, color, dx=0, dy=0):
+            px = lambda value: int(round(value * scale))
+            ox, oy = px(dx), px(dy)
+            tx, ty = px(cx - x), px(cy - y)
+
             if currency_id == "bronze":
                 # Oak leaf: pointed silhouette, central stem and side veins.
                 leaf = [
-                    (cx + dx, cy - 6 + dy),
-                    (cx + 4 + dx, cy - 3 + dy),
-                    (cx + 5 + dx, cy + dy),
-                    (cx + 3 + dx, cy + 4 + dy),
-                    (cx + dx, cy + 6 + dy),
-                    (cx - 3 + dx, cy + 4 + dy),
-                    (cx - 5 + dx, cy + dy),
-                    (cx - 4 + dx, cy - 3 + dy),
+                    (tx + ox, ty - px(6) + oy),
+                    (tx + px(4) + ox, ty - px(3) + oy),
+                    (tx + px(5) + ox, ty + oy),
+                    (tx + px(3) + ox, ty + px(4) + oy),
+                    (tx + ox, ty + px(6) + oy),
+                    (tx - px(3) + ox, ty + px(4) + oy),
+                    (tx - px(5) + ox, ty + oy),
+                    (tx - px(4) + ox, ty - px(3) + oy),
                 ]
-                self.pg.draw.polygon(self.surface, color, leaf)
-                self.pg.draw.line(self.surface, color, (cx, cy + 5 + dy), (cx, cy - 4 + dy), 1)
-                self.pg.draw.line(self.surface, color, (cx, cy + 1 + dy), (cx - 3 + dx, cy - 2 + dy), 1)
-                self.pg.draw.line(self.surface, color, (cx, cy - 1 + dy), (cx + 3 + dx, cy - 3 + dy), 1)
+                draw_api.polygon(target, color, leaf)
+                draw_api.line(target, color, (tx + ox, ty + px(5) + oy),
+                              (tx + ox, ty - px(4) + oy), max(1, px(1)))
+                draw_api.line(target, color, (tx + ox, ty + px(1) + oy),
+                              (tx - px(3) + ox, ty - px(2) + oy), max(1, px(1)))
+                draw_api.line(target, color, (tx + ox, ty - px(1) + oy),
+                              (tx + px(3) + ox, ty - px(3) + oy), max(1, px(1)))
             elif currency_id == "silver":
                 # Crescent: a bright disc partially covered by the coin face.
-                self.pg.draw.circle(self.surface, color, (cx - 1 + dx, cy + dy), 6)
-                self.pg.draw.circle(self.surface, fill, (cx + 2 + dx, cy - 2 + dy), 5)
+                draw_api.circle(target, color, (tx - px(1) + ox, ty + oy), px(6))
+                draw_api.circle(target, fill, (tx + px(2) + ox, ty - px(2) + oy), px(5))
             else:
                 # Sun: central disc with eight short rays.
-                self.pg.draw.circle(self.surface, color, (cx + dx, cy + dy), 3)
+                draw_api.circle(target, color, (tx + ox, ty + oy), px(3))
+                import math
                 for ray in range(8):
-                    import math
                     angle = ray * math.pi / 4
-                    start = (cx + int(round(5 * math.cos(angle))) + dx,
-                             cy + int(round(5 * math.sin(angle))) + dy)
-                    end = (cx + int(round(7 * math.cos(angle))) + dx,
-                           cy + int(round(7 * math.sin(angle))) + dy)
-                    self.pg.draw.line(self.surface, color, start, end, 1)
+                    start_point = (
+                        tx + px(5 * math.cos(angle)) + ox,
+                        ty + px(5 * math.sin(angle)) + oy,
+                    )
+                    end_point = (
+                        tx + px(7 * math.cos(angle)) + ox,
+                        ty + px(7 * math.sin(angle)) + oy,
+                    )
+                    draw_api.line(target, color, start_point, end_point, max(1, px(1)))
 
-        draw_emblem(motif_shadow, offset, offset)
-        draw_emblem(motif_light)
+        motif_shadow = (65, 43, 29) if currency_id == "bronze" else (
+            (58, 68, 80) if currency_id == "silver" else (112, 75, 22)
+        )
+        motif_light = (239, 184, 125) if currency_id == "bronze" else (
+            (250, 252, 255) if currency_id == "silver" else (255, 235, 165)
+        )
+        offset = max(1, int(size) // 14)
+
+        if can_supersample:
+            high_surface = self.pg.Surface(
+                (emblem_size * supersample, emblem_size * supersample),
+                getattr(self.pg, "SRCALPHA", 0),
+            )
+            high_surface.fill((0, 0, 0, 0))
+            draw_emblem(high_surface, self.pg.draw, supersample, motif_shadow, offset, offset)
+            draw_emblem(high_surface, self.pg.draw, supersample, motif_light)
+            smooth_emblem = self.pg.transform.smoothscale(
+                high_surface, (emblem_size, emblem_size)
+            )
+            self.surface.blit(smooth_emblem, (int(x), int(y)))
+        else:
+            draw_emblem(self.surface, self.pg.draw, 1, motif_shadow, offset, offset)
+            draw_emblem(self.surface, self.pg.draw, 1, motif_light)
 
     def wallet(self, service, actor_id="hero", x=64, y=420, *, label="Cüzdan"):
         """Render all three denominations with the shared coin artwork."""
