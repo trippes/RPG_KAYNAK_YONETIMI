@@ -173,6 +173,23 @@ class TestActorSystem(unittest.TestCase):
             self.service.advance_to(3)
             self.assertEqual(self.service.inventory("main").stocks, (("tool", 1, "item"),))
 
+    def test_custom_gathering_duration_survives_save_and_load(self):
+        self.service.register_actor("worker", "worker")
+        self.application.holder.current.resource_nodes.add(WorldResourceNode(
+            "custom-node", "world_actors", self.ore,
+            Quantity(3, ResourceUnit.ITEM), Quantity(3, ResourceUnit.ITEM),
+            Quantity(0, ResourceUnit.ITEM), gathering_duration_ticks=91,
+        ))
+        self.service.start_gathering(
+            "worker", "custom-node", "main", Quantity(1, ResourceUnit.ITEM), "custom-save"
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "custom-duration.json"
+            self.service.save(path)
+            self.service.load(path)
+        restored = self.application.holder.current.resource_nodes.get("custom-node")
+        self.assertEqual(restored.gathering_duration_ticks.value, 91)
+
     def test_active_gathering_restore_still_delivers_resources(self):
         self.service.register_actor("worker", "worker")
         self.service.start_gathering(
