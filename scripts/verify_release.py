@@ -81,8 +81,13 @@ def verify_installed_content_package() -> None:
             "assert package.package_id == 'demo_eldoria'; "
             "assert len(package.map_definitions) == 9, "
             "f'Expected 9 shipped maps, found {len(package.map_definitions)}'; "
+            "assert len(package.hex_map_definitions) == 1; "
+            "assert package.world_map_definition is not None; "
+            "assert package.world_map_definition.world_map_id == 'eldoria_hex_world'; "
+            "assert set(package.world_map_definition.placements_by_map_id) == {'hex_forest_demo'}; "
             "print('Installed content package verified:', package.package_id, "
-            "len(package.map_definitions), 'maps')"
+            "len(package.map_definitions), 'square maps and', "
+            "len(package.hex_map_definitions), 'hex maps with world placement')"
         )
         subprocess.run(
             [PYTHON, "-c", package_check, str(package_dir)],
