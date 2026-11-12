@@ -93,7 +93,15 @@ class TestIndependentMapContentPackage(unittest.TestCase):
             service.place_actor(actor.actor_id, "north_mine")
             service.set_actor_tile_position(actor.actor_id, 16, 31)
             screen = MainScreen(service)
-            self.assertTrue(screen._cross_boundary(actor, 0, 1))
+            self.assertEqual(screen._location().location_id, "north_mine")
+            source_definition = screen._map_definition()
+            self.assertEqual(source_definition.map_id, "north_mine")
+            self.assertTrue(any(
+                item.transition_id == "north_mine_to_test_valley"
+                for item in source_definition.transitions
+            ))
+            self.assertEqual(screen._position(actor.position), (16, 31))
+            self.assertTrue(screen._cross_boundary(actor, 0, 1), screen.message)
             self.assertEqual(service.actor("hero").location_id, "test_valley")
             self.assertEqual(
                 (service.actor("hero").position.x, service.actor("hero").position.y),
