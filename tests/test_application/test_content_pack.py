@@ -8,6 +8,7 @@ from application import GameApplication
 from application.content_pack import (
     ContentDefinitionError,
     load_starter_content,
+    load_npc_definitions,
     populate_opening_content,
     populate_gameplay_resources,
     _build_dialogue_from_definition,
@@ -20,14 +21,14 @@ from resources import Quantity, ResourceType, ResourceUnit
 
 class TestContentPack(unittest.TestCase):
 
-    def test_opening_content_excludes_demo_runtime_entities(self):
+    def test_opening_content_registers_only_opening_phase_npcs(self):
         application = GameApplication.create_default()
         service, ids = populate_opening_content(application)
         bundle = application.holder.current
 
         self.assertEqual(
             tuple(npc.npc_id for npc in bundle.social.npcs.all()),
-            (ids.npc_id,),
+            (ids.npc_id, "village_carpenter"),
         )
         self.assertEqual(
             tuple(bundle.social.dialogues),
@@ -43,10 +44,13 @@ class TestContentPack(unittest.TestCase):
         service, _ids = populate_opening_content(application)
 
         self.assertIsNone(service.market_for_npc("innkeeper_mira"))
-        self.assertIsNone(service.market_for_npc("village_trader"))
+        self.assertIsNone(service.market_for_npc("caravan_merchant"))
+        self.assertIsNotNone(application.holder.current.social.npcs.get("village_carpenter"))
 
         populate_gameplay_resources(service)
 
+        self.assertIsNotNone(application.holder.current.social.npcs.get("innkeeper_mira"))
+        self.assertIsNotNone(application.holder.current.social.npcs.get("caravan_merchant"))
         self.assertIsNone(service.market_for_npc("village_trader"))
         self.assertIsNone(service.market_for_npc("village_craftsman"))
         inn_profile = service.market_for_npc("innkeeper_mira")
@@ -108,28 +112,42 @@ class TestContentPack(unittest.TestCase):
         self.assertIn("world", definition)
         self.assertIn("character", definition)
         self.assertIn("locations", definition)
-        self.assertIn("npc", definition)
+        self.assertNotIn("npc", definition)
         self.assertIn("dialogue", definition)
 
-    def test_starter_content_can_be_customized_without_python_changes(self):
-        definition = load_starter_content()
-        definition["npc"]["name"] = "Test Muhafızı"
+    def test_npc_content_can_be_customized_without_python_changes(self):
+        records = [dict(record) for record in load_npc_definitions()]
+        records[0]["name"] = "Test Muhafızı"
 
         with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "starter_content.json"
+            path = Path(directory) / "npcs.json"
             path.write_text(
-                json.dumps(definition, ensure_ascii=False),
+                json.dumps({"schema_version": 1, "npcs": records}, ensure_ascii=False),
                 encoding="utf-8",
             )
 
             application = GameApplication.create_default()
             _service, ids = populate_opening_content(
                 application,
-                definition_path=path,
+                npc_definitions_path=path,
             )
 
         npc = application.holder.current.social.npcs.get(ids.npc_id)
         self.assertEqual(npc.name, "Test Muhafızı")
+
+    def test_npc_definitions_reject_duplicate_ids(self):
+        records = [dict(record) for record in load_npc_definitions()]
+        records.append(dict(records[0]))
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "npcs.json"
+            path.write_text(
+                json.dumps({"schema_version": 1, "npcs": records}, ensure_ascii=False),
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(ContentDefinitionError, "Duplicate NPC id"):
+                load_npc_definitions(path)
 
     def test_future_content_schema_is_rejected(self):
         definition = load_starter_content()
