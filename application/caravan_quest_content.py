@@ -63,6 +63,7 @@ def populate_caravan_quest_demo(service):
             items=(("iron_ore", 1),), reputation=(("wardens", 5),),
         ),
         sequential_objectives=True,
+        giver_npc_id=CARAVAN_NPC_ID,
     )
     if existing is None:
         bundle.quest_log.add(quest)
