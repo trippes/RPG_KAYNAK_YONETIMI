@@ -37,6 +37,20 @@ def load_map_definitions(directory: str | Path) -> dict[str, MapDefinition]:
     definitions: dict[str, MapDefinition] = {}
     transition_ids: set[str] = set()
     for source in sorted(root.glob("*.json")):
+        # The legacy v1 catalog deliberately ignores v2 hex maps. Mixed-schema
+        # discovery is owned by application.content_loader, not this API.
+        try:
+            raw = json.loads(source.read_text(encoding="utf-8"))
+        except OSError as error:
+            raise MapDefinitionError(f"Map definition file could not be read: {source}") from error
+        except json.JSONDecodeError as error:
+            raise MapDefinitionError(
+                f"Invalid map JSON in '{source}' at line {error.lineno}, "
+                f"column {error.colno}: {error.msg}"
+            ) from error
+        version = raw.get("schema_version") if isinstance(raw, dict) else None
+        if type(version) is int and version == 2:
+            continue
         definition = load_map_definition(source)
         if definition.map_id in definitions:
             raise MapDefinitionError(f"Duplicate map ID: {definition.map_id}")

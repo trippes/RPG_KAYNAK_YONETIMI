@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from core.domain.spatial import HexDirection, LocalHexPosition
-from world.hex_map_definition import HexMapDefinitionError, parse_hex_map, load_hex_map_definition
+from application.hex_map_definition import HexMapDefinitionError, parse_hex_map, load_hex_map_definition
 
 DATA={
  "schema_version":2,"map_id":"test_hex","name":"Test","description":"",
