@@ -27,6 +27,11 @@ class Recipe:
     facility_type: str | None = None
     required_capabilities: tuple[str, ...] = ()
 
+    @property
+    def duration_ticks(self) -> Tick:
+        """Canonical content-facing duration for this recipe, expressed in ticks."""
+        return self.processing_time
+
     def __post_init__(self) -> None:
         if not isinstance(self.recipe_id, str):
             raise TypeError("recipe_id must be a string.")
