@@ -28,7 +28,7 @@ class TestContentPack(unittest.TestCase):
 
         self.assertEqual(
             tuple(npc.npc_id for npc in bundle.social.npcs.all()),
-            (ids.npc_id, "village_carpenter"),
+            ("warden_lyra", "village_carpenter"),
         )
         self.assertEqual(
             tuple(bundle.social.dialogues),
@@ -83,12 +83,12 @@ class TestContentPack(unittest.TestCase):
 
         node = service.talk_to_npc(
             ids.hero_id,
-            ids.npc_id,
+            "warden_lyra",
             "warden_intro",
         )
 
         self.assertEqual(node.node_id, "start")
-        self.assertEqual(node.speaker_id, ids.npc_id)
+        self.assertEqual(node.speaker_id, "warden_lyra")
         self.assertIn("warden", service._character_factory.classes)
         self.assertIn("human", service._character_factory.races)
 
@@ -97,7 +97,7 @@ class TestContentPack(unittest.TestCase):
         service, ids = populate_opening_content(application)
 
         screen = DialogueScreen(service)
-        screen.set_target_npc(ids.npc_id)
+        screen.set_target_npc("warden_lyra")
 
         result = screen.handle(InputState(actions={"confirm"}))
 
