@@ -9,7 +9,7 @@ from npc import NPC
 from quests import Dialogue, DialogueChoice, DialogueNode, Objective, ObjectiveType, Quest, QuestState, Reward
 
 
-PLAYTEST_NPC_ID = "village_carpenter"
+PLAYTEST_NPC_ID = "ui_playtest_carpenter"
 PLAYTEST_DIALOGUE_ID = "carpenter_intro"
 PLAYTEST_QUEST_ID = "ui_playtest_forest_scouting"
 
@@ -31,7 +31,7 @@ def register_quest_playtest_fixture(service):
 
     # Keep the offer on the service until accepted. Adding an AVAILABLE quest
     # to QuestLog makes it visible in the journal's "Mevcut" category.
-    quest = getattr(service, "carpenter_quest", None)
+    quest = getattr(service, "playtest_quest", None)
     if quest is None:
         quest = bundle.quest_log.get(PLAYTEST_QUEST_ID)
     if quest is None:

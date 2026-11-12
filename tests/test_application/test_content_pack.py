@@ -148,6 +148,21 @@ class TestContentPack(unittest.TestCase):
         self.assertEqual(records["innkeeper_mira"]["load_phase"], "gameplay")
         self.assertEqual(records["warden_lyra"]["load_phase"], "opening")
 
+    def test_gameplay_content_registration_is_idempotent_for_quests_and_dialogues(self):
+        application = GameApplication.create_default()
+        service, _ids = populate_opening_content(application)
+        populate_gameplay_resources(service)
+        first_quest_ids = {quest.quest_id for quest in application.holder.current.quest_log.all()}
+        first_dialogue_ids = set(application.holder.current.social.dialogues)
+
+        populate_gameplay_resources(service)
+
+        self.assertEqual(
+            {quest.quest_id for quest in application.holder.current.quest_log.all()},
+            first_quest_ids,
+        )
+        self.assertEqual(set(application.holder.current.social.dialogues), first_dialogue_ids)
+
     def test_quest_content_is_data_defined_and_loaded_after_gameplay_npcs(self):
         application = GameApplication.create_default()
         service, _ids = populate_opening_content(application)

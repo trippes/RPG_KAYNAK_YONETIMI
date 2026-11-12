@@ -393,7 +393,9 @@ def _register_quest_content(service, records) -> None:
             sequential_objectives=record.get("sequential_objectives", False),
             giver_npc_id=record["giver_npc_id"],
         )
-        service.register_quest_definition(quest)
+        existing = service.application.holder.current.quest_log.get(quest.quest_id)
+        if existing is None:
+            service.register_quest_definition(quest)
         dialogue_data = record.get("dialogue")
         if dialogue_data is not None and service.application.holder.current.social.dialogues.get(dialogue_data.get("id")) is None:
             service.register_dialogue(_build_dialogue_from_definition(dialogue_data, record["giver_npc_id"]))
