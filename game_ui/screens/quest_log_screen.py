@@ -431,6 +431,7 @@ class QuestLogScreen:
         return name or "Bilinmeyen görev veren"
 
     def _render_details(self, renderer, quest):
+        self._branch_choice_rects = []
         rect = renderer.pg.Rect(*self._details_bounds())
         if quest is None:
             renderer.text("Bir görev seçin.", rect.x + 18, rect.y + 20, MUTED)
@@ -459,7 +460,6 @@ class QuestLogScreen:
                 )
             heading_offset = 24
 
-        self._branch_choice_rects = []
         branch_groups = self._branch_groups(quest)
         branch_offset = 0
         branch_y = rect.y + 78 + heading_offset - self.detail_scroll
