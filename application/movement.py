@@ -39,6 +39,7 @@ class MovementManager:
         self._runtime = runtime
         self._maps: dict[str, WorldMap] = {}
         self._movements: dict[str, _Movement] = {}
+        self._world_objects = None
         self._bound = False
 
     def register_map(self, world_map: WorldMap) -> None:
@@ -58,14 +59,29 @@ class MovementManager:
             raise KeyError(f"Location not found: {location_id}")
         actor.set_position(location_id)
 
-    def set_tile_position(self, actor_id: str, x: int, y: int, size: int = 32) -> None:
-        if not isinstance(x, int) or not isinstance(y, int):
+    def bind_world_objects(self, registry) -> None:
+        if not callable(getattr(registry, "local_map_for", None)):
+            raise TypeError("registry must provide local_map_for().")
+        self._world_objects = registry
+
+    def set_tile_position(self, actor_id: str, x: int, y: int) -> None:
+        if type(x) is not int or type(y) is not int:
             raise TypeError("Tile coordinates must be integers.")
-        if not 0 <= x < size or not 0 <= y < size:
-            raise ValueError(f"Tile coordinates must be within 0..{size - 1}.")
         actor = self._actors._require(actor_id)
         if actor.location_id is None:
             raise ValueError("Actor has no current location.")
+        if self._world_objects is None:
+            raise ValueError("Local map dimensions are not bound to movement.")
+        local_map = self._world_objects.local_map_for(actor.world_id, actor.location_id)
+        if local_map is None:
+            raise ValueError(
+                f"Local map dimensions are not registered: {actor.world_id}/{actor.location_id}"
+            )
+        if not (0 <= x < local_map.width and 0 <= y < local_map.height):
+            raise ValueError(
+                f"Tile coordinates ({x}, {y}) are outside "
+                f"{actor.location_id} bounds ({local_map.width}x{local_map.height})."
+            )
         actor.set_position(actor.location_id, Position(x, y))
 
     def move(self, actor_id: str, destination_id: str, action_id: str | None = None) -> MovementActionView:

@@ -60,6 +60,10 @@ class WorldObjectPlacementRegistry:
     def has_local_map(self, world_id, location_id):
         return (world_id, location_id) in self._maps
 
+    def local_map_for(self, world_id, location_id):
+        """Return the canonical dimensions for one world location."""
+        return self._maps.get((world_id, location_id))
+
     def place(self, placement):
         if not isinstance(placement, WorldObjectPlacement):
             raise TypeError("placement must be WorldObjectPlacement.")

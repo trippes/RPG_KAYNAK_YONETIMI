@@ -180,6 +180,7 @@ remain mutable domain objects by design; this is not deep immutability.
             raise TypeError("movement must be MovementManager.")
         if self.movement._actors is not self.actors or self.movement._runtime is not self.simulation:
             raise ValueError("movement must use bundle actors and simulation.")
+        self.movement.bind_world_objects(self.world_objects)
         if self.quest_log is None:
             object.__setattr__(self, "quest_log", QuestLog())
         if not isinstance(self.quest_log, QuestLog):

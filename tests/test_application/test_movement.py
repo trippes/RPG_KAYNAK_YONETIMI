@@ -40,6 +40,36 @@ class TestMovement(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.service.move_actor("hero", "island")
 
+    def test_tile_position_uses_registered_local_map_dimensions(self):
+        from application import GameApplication
+        from application.actor_system import WorldActor
+        from world import LocalMapDefinition, Location, WorldMap
+
+        application = GameApplication.create_default()
+        bundle = application.holder.current
+        bundle.session.worlds.create("Dynamic", world_id="dynamic_world")
+        world_map = WorldMap("dynamic_world")
+        world_map.add_location(Location(
+            "small_map", "Small Map", (0, 0), "", "test", (), (),
+        ))
+        bundle.movement.register_map(world_map)
+        bundle.world_objects.register_local_map(
+            LocalMapDefinition("dynamic_world", "small_map", 16, 24)
+        )
+        bundle.actors.add(WorldActor(
+            "dynamic_hero", "dynamic_world", "player", True,
+            location_id="small_map",
+        ))
+
+        bundle.movement.set_tile_position("dynamic_hero", 15, 23)
+        self.assertEqual(
+            (bundle.actors.get("dynamic_hero").position.x,
+             bundle.actors.get("dynamic_hero").position.y),
+            (15, 23),
+        )
+        with self.assertRaisesRegex(ValueError, "16x24"):
+            bundle.movement.set_tile_position("dynamic_hero", 16, 23)
+
 
 if __name__ == "__main__":
     unittest.main()
