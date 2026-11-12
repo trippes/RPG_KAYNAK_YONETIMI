@@ -49,6 +49,7 @@ class MainScreen:
     def _map_definition(self, location=None):
         location = location or self._location()
         if location is None:
+            self.message = "Aktif harita konumu bulunamadı."
             return None
         if self._map_definition_cache is None:
             package_root = getattr(self.service, "_content_package_path", None)
@@ -56,8 +57,9 @@ class MainScreen:
                 package_root = Path(__file__).resolve().parents[2] / "content" / "demo_eldoria"
             try:
                 self._map_definition_cache = load_map_definitions(Path(package_root) / "maps")
-            except (OSError, ValueError):
+            except (OSError, ValueError) as error:
                 self._map_definition_cache = {}
+                self.message = f"Harita paketi yüklenemedi: {error}"
                 return None
         return self._map_definition_cache.get(location.location_id)
 
