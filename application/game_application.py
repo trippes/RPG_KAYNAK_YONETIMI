@@ -261,7 +261,11 @@ class GameApplication:
             combat=(CombatSnapshot.from_runtime(bundle.combat) if bundle.combat.all() else None),
             containers=container_snapshot,
             locks=lock_snapshot,
-            quest_graph_progress=bundle.quest_graph_progress.to_dict(),
+            quest_graph_progress=(
+                bundle.pending_quest_graph_progress
+                if bundle.pending_quest_graph_progress is not None
+                else bundle.quest_graph_progress.to_dict()
+            ),
         )
         return GameSaveFileAdapter.save(document, path)
 
