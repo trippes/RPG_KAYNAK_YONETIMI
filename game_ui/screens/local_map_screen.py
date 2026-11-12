@@ -332,9 +332,10 @@ class LocalMapScreen:
         destination_map = destination.local_map or {}
         destination_width = max(1, int(destination_map.get("width", 1)))
         destination_height = max(1, int(destination_map.get("height", 1)))
+        current_x, current_y = self._position(actor.position)
         target = (
-            0 if dx > 0 else destination_width - 1 if dx < 0 else self._position(actor.position)[0],
-            0 if dy > 0 else destination_height - 1 if dy < 0 else self._position(actor.position)[1],
+            0 if dx > 0 else destination_width - 1 if dx < 0 else min(destination_width - 1, current_x),
+            0 if dy > 0 else destination_height - 1 if dy < 0 else min(destination_height - 1, current_y),
         )
         destination_gates = {
             tuple(tile)
@@ -509,19 +510,19 @@ class LocalMapScreen:
 
         if location and self._wall_tiles():
             for x, y in self._wall_tiles():
-                    rect = renderer.pg.Rect(
-                        origin_x + x * self.TILE_SIZE,
-                        origin_y + y * self.TILE_SIZE,
-                        self.TILE_SIZE,
-                        self.TILE_SIZE,
-                    )
-                    renderer.pg.draw.rect(renderer.surface, (125, 125, 122), rect)
-                    renderer.pg.draw.rect(renderer.surface, (82, 87, 81), rect, 1)
-                    renderer.pg.draw.line(
-                        renderer.surface, (175, 172, 156),
-                        (rect.x + 2, rect.y + 3),
-                        (rect.right - 3, rect.y + 3), 2,
-                    )
+                rect = renderer.pg.Rect(
+                    origin_x + x * self.TILE_SIZE,
+                    origin_y + y * self.TILE_SIZE,
+                    self.TILE_SIZE,
+                    self.TILE_SIZE,
+                )
+                renderer.pg.draw.rect(renderer.surface, (125, 125, 122), rect)
+                renderer.pg.draw.rect(renderer.surface, (82, 87, 81), rect, 1)
+                renderer.pg.draw.line(
+                    renderer.surface, (175, 172, 156),
+                    (rect.x + 2, rect.y + 3),
+                    (rect.right - 3, rect.y + 3), 2,
+                )
 
         for landmark in self._landmarks():
             x, y = tuple(landmark[2])
