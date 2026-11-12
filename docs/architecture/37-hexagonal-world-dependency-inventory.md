@@ -106,3 +106,40 @@ Aşağıdakiler mekânsal dönüşümün kapsamı değildir: `economy/`, `invent
 En yüksek riskler: eski 4 yönlü BFS'nin 6 komşuya geçişinde yeni kısayollar; kare footprint'in axial occupancy'ye çevrilmesi; geçiş hücresi eşlemesinin deterministik olmaması; NPC/actor/container kayıtlarının farklı snapshot'larda bulunması; world_position piksel tuple'larının axial koordinat sanılması.
 
 Bu Aşama 0 çalışmasında GitHub üzerinden dosya ağacı ve kaynak dosyalar incelendi. Uzak GitHub bağlantısı tek başına yerel Python testlerini çalıştırmaz; bu nedenle test suite'i bu aşama raporunda çalıştırılmış/başarılı olarak gösterilmemelidir.
+
+
+## 9. İkincil modüller ve kapsam sınırı
+
+Kod taramasında aşağıdaki paketler de incelendi. Bunlar ana dönüşümün yanında ele alınmalı; konum tutmayan modüller gereksiz yere yeniden yazılmamalıdır.
+
+| Dosya/paket | Gerçek kullanım | Karar |
+|---|---|---|
+| `npc/npc.py` | NPC `location_id` ve `core.domain.spatial.Position` taşır | Position'ın NPC yerel hücresi olarak kullanıldığı için uyarlanacak |
+| `npc/behavior.py` | NPC davranış/karar mantığı | Hücre komşuluğu veya konum sorgusu kullandığı doğrulanırsa uyarlanacak; aksi halde korunacak |
+| `npc/faction.py`, `npc/relationship.py`, `npc/reputation.py` | Fraksiyon, ilişki ve itibar kimlik/değerleri | Korunacak |
+| `resources/node.py` | Resource node world_id/location_id taşır; hücre koordinatı tutmaz | Korunacak; landmark/map referansı doğrulaması test edilecek |
+| `resources/gathering.py` | Node registry world_id üzerinden filtreler | Korunacak; location/cell sorgusu eklenirse dar uyarlama |
+| `resources/definition.py`, `resource.py`, `inventory.py`, `jobs.py`, `production.py`, `recipe.py`, `transfer.py` | Kaynak tanımı, stok, iş ve üretim | Korunacak; kaynak kimlikleri ve toplama akışı regresyon testinde |
+| `economy/market.py`, `merchant.py` | Market/merchant location_id ve NPC bağı | Location ID korunur; market konumunda ayrıca cell bulunuyorsa content adapter incelenir |
+| `economy/currency.py`, `economy/ledger.py`, `economy/exchange.py`, `economy/trade.py`, `economy/prices.py`, `economy/persistence.py` | Para, hesap, fiyat ve ticaret | Korunacak |
+| `quests/quest.py`, `objective.py`, `reward.py`, `graph.py`, `condition.py`, `dialogue.py` | Quest/objective target_id ve dialogue graph | Kimlikler korunur; objective türü ileride cell hedefi alırsa ayrıca tasarlanır |
+| `game_ui/renderer.py` | `world_map()` location.position'ı panel içi piksel noktası olarak çizer | WorldHexPosition→pixel adaptörü; genel UI çizim API'si korunur |
+| `game_ui/screens/container_screen.py`, `inventory_screen.py`, `character_screen.py`, `production_screen.py`, `quest_log_screen.py`, `dialogue_screen.py`, `combat_screen.py` | UI panelleri; quest log rect position'ları ekran koordinatıdır | Oyun harita hücresi kullandığı kanıtlanmadıkça korunur; UI hitbox position'ları hex değildir |
+| `game_ui/screens/character_creation.py`, `main_menu.py`, `opening_screen.py`, `save_slots_screen.py`, `market_screen.py`, `trade_screen.py`, `currency_exchange_screen.py` | Menü/karakter/pazar/saklama UI | Korunacak; harita entegrasyonu regresyonu |
+| `core/entity/entity.py`, `entity_state.py`, `entity_manager.py`, `entity_type.py`, `entity_id.py` | Genel entity kimliği/durum/sahiplik | Korunacak; genel Position ayrı tutulur |
+| `core/persistence/*`, `core/application/persistence.py`, `core/compatibility/migration.py` | Core persistence contracts ve compatibility | Core schema'yı mekânsal app migration'a zorlamadan koru; sınır testleri |
+| `character/persistence.py`, `economy/persistence.py`, `quests/persistence.py`, `resources/persistence.py` | Alt domain snapshot'ları | Sadece konum alanı varsa uyarlanır; aksi halde korunur/test edilir |
+
+### Test kapsamının genişletilmesi
+
+İlgili regresyon klasörleri ayrıca:
+- `tests/test_npc/` ve `tests/test_social/` mevcutsa NPC position/location akışları,
+- `tests/test_resources/` resource node, gathering, production ve resource persistence,
+- `tests/test_economy/` market location/trade ve economy persistence,
+- `tests/test_quests/` objective identity/graph/persistence,
+- `tests/test_character/` character actor links,
+- `tests/test_containers/` placement/custody/nesting,
+- `tests/test_combat/` combat state,
+- `tests/test_entity/` ve `tests/test_foundation/` Position compatibility
+
+altıgen uygulama aşamalarında çalıştırılmalıdır. Klasör veya test adı mevcut snapshot'ta bulunmuyorsa test grubu mevcutmuş gibi varsayılmamalı; gerçek tree yeniden kontrol edilmelidir.
