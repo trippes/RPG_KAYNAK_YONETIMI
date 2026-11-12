@@ -540,7 +540,7 @@ class TestPhaseDQuality(unittest.TestCase):
         from application.content_pack import populate_opening_content
         service, ids = populate_opening_content(GameApplication.create_default())
         screen = DialogueScreen(service)
-        screen.set_target_npc(ids.npc_id)
+        screen.set_target_npc("warden_lyra")
         self.assertIn("Eren", screen.message)
 
     def test_village_menu_opens_market(self):
@@ -612,7 +612,7 @@ class TestPhaseDQuality(unittest.TestCase):
         local_screen = MainScreen(service)
         local_screen.selected = (16, 30)
         self.assertEqual(local_screen.handle(InputState(actions={"confirm"})), "dialogue")
-        self.assertEqual(local_screen.selected_npc_id, ids.npc_id)
+        self.assertEqual(local_screen.selected_npc_id, "warden_lyra")
 
     def test_save_load_keys_are_part_of_the_input_contract(self):
         mapper = InputMapper()
