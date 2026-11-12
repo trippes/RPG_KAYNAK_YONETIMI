@@ -350,7 +350,8 @@ class QuestLogScreen:
     def _detail_content_height(self, quest):
         if quest is None:
             return 70
-        return 92 + len(quest.objectives) * 50
+        giver_height = 24 if getattr(quest, "giver_npc_id", None) else 0
+        return 92 + giver_height + len(quest.objectives) * 50
 
     def _render_list(self, renderer, quests):
         rect = renderer.pg.Rect(*self._list_bounds())
@@ -387,6 +388,17 @@ class QuestLogScreen:
                 max_width=row.width - 34,
             )
 
+    def _giver_name(self, quest):
+        giver_id = getattr(quest, "giver_npc_id", None)
+        if not giver_id:
+            return None
+        try:
+            npc = self.service.application.holder.current.social.npcs.get(giver_id)
+        except (AttributeError, KeyError, RuntimeError):
+            npc = None
+        name = getattr(npc, "name", None) if npc is not None else None
+        return name or "Bilinmeyen görev veren"
+
     def _render_details(self, renderer, quest):
         rect = renderer.pg.Rect(*self._details_bounds())
         if quest is None:
@@ -404,11 +416,22 @@ class QuestLogScreen:
             self.STATUS_LABELS[category_key],
             rect.x + 18, rect.y + 48, MUTED,
         )
-        heading_y = rect.y + 78 - self.detail_scroll
+        giver_name = self._giver_name(quest)
+        heading_offset = 0
+        if giver_name:
+            giver_y = rect.y + 74 - self.detail_scroll
+            if rect.y + 62 <= giver_y <= rect.bottom - 24:
+                renderer.text(
+                    f"Görev veren: {giver_name}",
+                    rect.x + 18, giver_y, TEXT_SOFT,
+                    max_width=rect.width - 36,
+                )
+            heading_offset = 24
+        heading_y = rect.y + 78 + heading_offset - self.detail_scroll
         if rect.y + 62 <= heading_y <= rect.bottom - 24:
             renderer.text("Hedefler", rect.x + 18, heading_y, GOLD)
 
-        y = rect.y + 106 - self.detail_scroll
+        y = rect.y + 106 + heading_offset - self.detail_scroll
         for objective in quest.objectives:
             if y >= rect.y + 62 and y + 42 <= rect.bottom - 10:
                 marker = "[x]" if objective.completed else "[ ]"
