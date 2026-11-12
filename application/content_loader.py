@@ -160,8 +160,6 @@ def load_content_package(package_dir: str | Path) -> ContentPackage:
                         "Content package world_map path resolves outside the package directory."
                     )
                 try:
-                    import json
-
                     world_map_data = json.loads(world_map_source.read_text(encoding="utf-8"))
                     world_map = parse_world_map(world_map_data)
                     validate_world_map(world_map, hexes)
@@ -173,6 +171,8 @@ def load_content_package(package_dir: str | Path) -> ContentPackage:
             raise ContentPackageError(
                 f"Content package maps could not be loaded from '{maps_root}': {error}"
             ) from error
+    elif manifest.get("world_map") is not None:
+        raise ContentPackageError("Content package world_map requires a maps directory.")
 
     return ContentPackage(
         package_id,
