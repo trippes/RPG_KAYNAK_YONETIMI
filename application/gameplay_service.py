@@ -1554,11 +1554,11 @@ class GameplayService:
             raise ValueError(f"Quest graph references unregistered quest definitions: {sorted(unknown)}")
         pending = bundle.pending_quest_graph_progress
         if pending is not None:
-            object.__setattr__(bundle, "quest_graph_progress", QuestGraphProgress.from_dict(pending, graph))
+            object.__setattr__(bundle, "quest_graph_progress", QuestGraphProgress.from_dict(pending, graph, self.quest_states()))
             object.__setattr__(bundle, "pending_quest_graph_progress", None)
         else:
             object.__setattr__(bundle, "quest_graph_progress", QuestGraphProgress.from_dict(
-                bundle.quest_graph_progress.to_dict(), graph
+                bundle.quest_graph_progress.to_dict(), graph, self.quest_states()
             ))
         object.__setattr__(bundle, "quest_graph", graph)
         self._quest_graph_definition = graph
