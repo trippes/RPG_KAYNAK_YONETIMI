@@ -135,6 +135,18 @@ class TestContentPack(unittest.TestCase):
         npc = application.holder.current.social.npcs.get("warden_lyra")
         self.assertEqual(npc.name, "Test Muhafızı")
 
+    def test_all_demo_npc_profiles_are_data_defined(self):
+        records = {record["id"]: record for record in load_npc_definitions()}
+
+        self.assertEqual(
+            {record["name"] for record in records.values()},
+            {"Eren", "Marangoz Hilmi", "Hancı Mira", "Tüccar Yadigar"},
+        )
+        self.assertEqual(records["village_carpenter"]["role"], "carpenter")
+        self.assertEqual(records["village_carpenter"]["position"], [21, 15])
+        self.assertEqual(records["innkeeper_mira"]["load_phase"], "gameplay")
+        self.assertEqual(records["warden_lyra"]["load_phase"], "opening")
+
     def test_npc_definitions_reject_duplicate_ids(self):
         records = [dict(record) for record in load_npc_definitions()]
         records.append(dict(records[0]))
