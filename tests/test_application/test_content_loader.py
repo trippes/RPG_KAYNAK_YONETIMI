@@ -3,6 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from core.domain.spatial import WorldHexPosition
 from application.content_loader import (
     ContentPackageError,
     load_content_package,
