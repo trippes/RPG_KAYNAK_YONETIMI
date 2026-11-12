@@ -9,6 +9,7 @@ from pathlib import Path
 from types import MappingProxyType
 
 from application import GameplayService
+from application.content_loader import ContentPackageError, load_content_package
 from character import Ability, CharacterClass, CharacterFactory, Race
 from core.domain.spatial import Position
 from npc import Faction, NPC
@@ -18,7 +19,8 @@ from resources import Inventory, Quantity, ResourceType, ResourceUnit, WorldReso
 from world import Location, WorldMap
 
 
-DEFAULT_CONTENT_PATH = Path(__file__).resolve().parent.parent / "data" / "starter_content.json"
+DEFAULT_CONTENT_PACKAGE_PATH = Path(__file__).resolve().parent.parent / "content" / "demo_eldoria"
+DEFAULT_CONTENT_PATH = DEFAULT_CONTENT_PACKAGE_PATH / "starter_content.json"
 CONTENT_SCHEMA_VERSION = 1
 
 
@@ -37,59 +39,102 @@ class ContentDefinitionError(ValueError, RPGError):
     """Raised when a content definition cannot safely enter the runtime."""
 
 
-def load_starter_content(path: str | Path | None = None) -> dict:
-    """Load and validate a JSON content definition without mutating it."""
-    if path is None:
-        candidates = (
-            DEFAULT_CONTENT_PATH,
-            Path(sys.prefix) / "data" / "starter_content.json",
-            Path(sys.prefix) / "starter_content.json",
-        )
-        source = next((candidate for candidate in candidates if candidate.exists()), candidates[0])
-    else:
-        source = Path(path)
+def _read_json_definition(source: Path, label: str) -> dict:
     try:
         definition = json.loads(source.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as error:
-        raise ContentDefinitionError(f"Content definition could not be loaded: {source}") from error
+        raise ContentDefinitionError(f"{label} could not be loaded: {source}") from error
     if not isinstance(definition, dict):
-        raise ContentDefinitionError("Content definition must be a JSON object.")
+        raise ContentDefinitionError(f"{label} must be a JSON object.")
+    return definition
+
+
+def _load_package_file(key: str) -> dict:
+    try:
+        package = load_content_package(DEFAULT_CONTENT_PACKAGE_PATH)
+        return package.files[key]
+    except (ContentPackageError, KeyError) as error:
+        raise ContentDefinitionError(
+            f"Content package file '{key}' could not be loaded."
+        ) from error
+
+
+def load_starter_content(path: str | Path | None = None) -> dict:
+    """Load and validate the starter world definition from the active content package."""
+    definition = (
+        _load_package_file("starter")
+        if path is None
+        else _read_json_definition(Path(path), "Content definition")
+    )
     if definition.get("schema_version") != CONTENT_SCHEMA_VERSION:
         raise ContentDefinitionError("Unsupported content definition schema version.")
-    required = {"ids", "world", "character", "locations", "faction", "npc", "dialogue"}
+    required = {"ids", "world", "character", "locations", "faction", "dialogue"}
     missing = sorted(required - definition.keys())
     if missing:
-        raise ContentDefinitionError(f"Content definition is missing sections: {', '.join(missing)}")
+        raise ContentDefinitionError(
+            f"Content definition is missing sections: {', '.join(missing)}"
+        )
     return definition
 
 
 def load_opening_content(path: str | Path | None = None) -> dict:
     """Load only the definition sections required before character creation."""
-    if path is None:
-        candidates = (
-            DEFAULT_CONTENT_PATH,
-            Path(sys.prefix) / "data" / "starter_content.json",
-            Path(sys.prefix) / "starter_content.json",
-        )
-        source = next((candidate for candidate in candidates if candidate.exists()), candidates[0])
-    else:
-        source = Path(path)
-    try:
-        definition = json.loads(source.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as error:
-        raise ContentDefinitionError(f"Opening content definition could not be loaded: {source}") from error
-    if not isinstance(definition, dict):
-        raise ContentDefinitionError("Opening content definition must be a JSON object.")
-    if definition.get("schema_version") != CONTENT_SCHEMA_VERSION:
-        raise ContentDefinitionError("Unsupported content definition schema version.")
-    required = {"ids", "world", "character", "locations", "faction", "npc", "dialogue"}
-    missing = sorted(required - definition.keys())
-    if missing:
-        raise ContentDefinitionError(
-            f"Opening content definition is missing sections: {', '.join(missing)}"
-        )
-    return definition
+    return load_starter_content(path)
 
+
+def load_npc_definitions(path: str | Path | None = None) -> tuple[dict, ...]:
+    """Load NPC records from the content package or an explicit JSON file."""
+    definition = (
+        _load_package_file("npcs")
+        if path is None
+        else _read_json_definition(Path(path), "NPC definition")
+    )
+    if definition.get("schema_version") != CONTENT_SCHEMA_VERSION:
+        raise ContentDefinitionError("Unsupported NPC definition schema version.")
+    records = definition.get("npcs")
+    if not isinstance(records, list):
+        raise ContentDefinitionError("NPC definitions must contain an 'npcs' list.")
+
+    npc_ids: set[str] = set()
+    allowed_phases = {"opening", "gameplay"}
+    required_fields = {"id", "name", "role", "location_id", "position", "load_phase"}
+    for index, record in enumerate(records):
+        if not isinstance(record, dict):
+            raise ContentDefinitionError(f"NPC record at index {index} must be an object.")
+        missing = sorted(required_fields - record.keys())
+        if missing:
+            raise ContentDefinitionError(
+                f"NPC record at index {index} is missing fields: {', '.join(missing)}"
+            )
+        npc_id = record["id"]
+        if not isinstance(npc_id, str) or not npc_id.strip():
+            raise ContentDefinitionError(f"NPC record at index {index} has an invalid id.")
+        if npc_id in npc_ids:
+            raise ContentDefinitionError(f"Duplicate NPC id: {npc_id}")
+        npc_ids.add(npc_id)
+        for field in ("name", "role", "location_id"):
+            if not isinstance(record[field], str) or not record[field].strip():
+                raise ContentDefinitionError(f"NPC '{npc_id}' has an invalid {field}.")
+        if record["load_phase"] not in allowed_phases:
+            raise ContentDefinitionError(
+                f"NPC '{npc_id}' has an unsupported load phase."
+            )
+        if (
+            not isinstance(record["position"], list)
+            or len(record["position"]) != 2
+            or any(type(value) is not int for value in record["position"])
+        ):
+            raise ContentDefinitionError(
+                f"NPC '{npc_id}' position must contain two integer coordinates."
+            )
+        faction_ids = record.get("faction_ids", [])
+        if (
+            not isinstance(faction_ids, list)
+            or any(not isinstance(value, str) or not value.strip() for value in faction_ids)
+        ):
+            raise ContentDefinitionError(f"NPC '{npc_id}' has invalid faction ids.")
+
+    return tuple(records)
 
 def _id_resolver(definition: dict, ids: StarterContentIds):
     configured = definition["ids"]
@@ -253,7 +298,28 @@ def _build_dialogue_from_definition(dialogue_data: dict, speaker_id: str) -> Dia
     return Dialogue(dialogue_id, tuple(nodes), start_node_id)
 
 
-def _register_opening_content(application, definition: dict, ids: StarterContentIds):
+def _register_npcs_for_phase(service, npc_definitions, phase: str, resolve_id):
+    """Register validated NPC records for the requested lifecycle phase."""
+    bundle = service.application.holder.current
+    for npc_data in npc_definitions:
+        if npc_data["load_phase"] != phase:
+            continue
+        npc_id = npc_data["id"]
+        if bundle.social.npcs.get(npc_id) is not None:
+            continue
+        service.register_npc(
+            NPC(
+                npc_id,
+                npc_data["name"],
+                npc_data["role"],
+                tuple(resolve_id(value) for value in npc_data.get("faction_ids", ())),
+                resolve_id(npc_data["location_id"]),
+                position=Position(*npc_data["position"]),
+            )
+        )
+
+
+def _register_opening_content(application, definition: dict, npc_definitions, ids: StarterContentIds):
     resolve_id = _id_resolver(definition, ids)
     world_data = definition["world"]
     world = application.aktif_dunya() or application.dunya_olustur(
@@ -279,17 +345,7 @@ def _register_opening_content(application, definition: dict, ids: StarterContent
     service._starter_content_ids = ids
     faction_data = definition["faction"]
     service.register_faction(Faction(resolve_id("faction_id"), faction_data["name"]))
-    npc_data = definition["npc"]
-    service.register_npc(
-        NPC(
-            resolve_id("npc_id"),
-            npc_data["name"],
-            npc_data["role"],
-            (resolve_id("faction_id"),),
-            resolve_id(npc_data["location_id"]),
-            position=Position(*(npc_data.get("position") or (16, 30))),
-        )
-    )
+    _register_npcs_for_phase(service, npc_definitions, "opening", resolve_id)
     dialogue = _build_dialogue_from_definition(
         definition["dialogue"],
         resolve_id("npc_id"),
@@ -308,12 +364,18 @@ def _register_opening_content(application, definition: dict, ids: StarterContent
 
 
 def populate_opening_content(
-    application, ids: StarterContentIds = StarterContentIds(), definition_path=None
+    application,
+    ids: StarterContentIds = StarterContentIds(),
+    definition_path=None,
+    npc_definitions_path=None,
 ):
-    """Build only the opening session used before character creation."""
+    """Build the opening session using data-defined NPC records."""
+    definition = load_opening_content(definition_path)
+    npc_definitions = load_npc_definitions(npc_definitions_path)
     return _register_opening_content(
         application,
-        load_opening_content(definition_path),
+        definition,
+        npc_definitions,
         ids,
     )
 
@@ -325,6 +387,9 @@ def populate_gameplay_resources(service, definition_path=None):
         raise RuntimeError("An active world is required for gameplay resources.")
     ids = getattr(service, "_starter_content_ids", StarterContentIds())
     definition = load_starter_content(definition_path)
+    npc_definitions = load_npc_definitions()
+    resolve_id = _id_resolver(definition, ids)
+    _register_npcs_for_phase(service, npc_definitions, "gameplay", resolve_id)
     _register_opening_resources(
         service.application.holder.current,
         definition,
@@ -332,18 +397,9 @@ def populate_gameplay_resources(service, definition_path=None):
         ids,
         world.world_id,
     )
-    resolve_id = _id_resolver(definition, ids)
     bundle = service.application.holder.current
     for market_data in definition.get("markets", ()):
         market_npc_id = market_data["npc_id"]
-        if bundle.social.npcs.get(market_npc_id) is None:
-            service.register_npc(NPC(
-                market_npc_id, market_data["npc_name"],
-                market_data.get("npc_role", "merchant"),
-                tuple(market_data.get("faction_ids", ())),
-                resolve_id(market_data["location_id"]),
-                position=Position(*(market_data.get("position") or (20, 20))),
-            ))
         dialogue_data = market_data["dialogue"]
         if bundle.social.dialogues.get(dialogue_data["id"]) is None:
             service.register_dialogue(_build_dialogue_from_definition(
@@ -361,14 +417,6 @@ def populate_gameplay_resources(service, definition_path=None):
         ))
     for trade_data in definition.get("trade_partners", ()):
         trade_npc_id = trade_data["npc_id"]
-        if bundle.social.npcs.get(trade_npc_id) is None:
-            service.register_npc(NPC(
-                trade_npc_id, trade_data["npc_name"],
-                trade_data.get("npc_role", "civilian"),
-                tuple(trade_data.get("faction_ids", ())),
-                resolve_id(trade_data["location_id"]),
-                position=Position(*(trade_data.get("position") or (20, 20))),
-            ))
         dialogue_data = trade_data["dialogue"]
         if bundle.social.dialogues.get(dialogue_data["id"]) is None:
             service.register_dialogue(_build_dialogue_from_definition(
