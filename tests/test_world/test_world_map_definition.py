@@ -2,7 +2,7 @@ import copy
 import unittest
 
 from application.hex_map_definition import parse_hex_map
-from application.world_map_definition import (
+from core.domain.spatial import HexDirection\nfrom application.world_map_definition import (
     WorldMapDefinitionError,
     parse_world_map,
     validate_world_map,
