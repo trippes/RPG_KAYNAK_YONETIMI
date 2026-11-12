@@ -1,4 +1,4 @@
-from application.container_playtest_content import (
+from tests.test_game_ui.fixtures.container_playtest import (
     KEYED_CHEST_ID,
     KEYED_CHEST_ENTITY_ID,
     KEYED_CHEST_LOCK_ID,

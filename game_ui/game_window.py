@@ -250,18 +250,6 @@ class GameWindow:
         self.renderer.width = self.width
         self.renderer.height = self.height
 
-    def _ensure_container_playtest_fixture(self):
-        """Keep temporary container and quest fixtures available in playtest worlds."""
-        from application.container_playtest_content import register_container_playtest_fixture
-        from application.carpenter_quest_content import populate_carpenter_quest_demo
-
-        register_container_playtest_fixture(self.service)
-        populate_carpenter_quest_demo(self.service)
-        bundle = self.service.application.holder.current
-        if "player" in bundle.inventories:
-            from application.caravan_quest_content import populate_caravan_quest_demo
-            populate_caravan_quest_demo(self.service)
-
     def _select_save_slot(self, index, path, exists):
         self.selected_slot = index
         self.save_path = path
@@ -278,7 +266,6 @@ class GameWindow:
             try:
                 self._ensure_save_storage()
                 self.service.load(path)
-                self._ensure_container_playtest_fixture()
             except (OSError, KeyError, ValueError, RuntimeError) as error:
                 self._set_notice(f"Kayıt yüklenemedi: {error}", "error")
                 return "save_slots"
@@ -336,7 +323,6 @@ class GameWindow:
         try:
             self._ensure_save_storage()
             self.service.load(path)
-            self._ensure_container_playtest_fixture()
         except (OSError, KeyError, ValueError, RuntimeError) as error:
             self._set_notice(f"Kayıt yüklenemedi: {error}", "error")
             return None
@@ -358,11 +344,8 @@ class GameWindow:
         from application.game_application import GameApplication
 
         service, _ = populate_opening_content(GameApplication.create_default())
-        # Register the temporary Container/Lock playtest object and the
-        # playable carpenter quest before the opening and character screens.
-        from application.container_playtest_content import register_container_playtest_fixture
+        # Demo quest content is loaded separately from the temporary UI test fixtures.
         from application.carpenter_quest_content import populate_carpenter_quest_demo
-        register_container_playtest_fixture(service)
         populate_carpenter_quest_demo(service)
         self.service = service
         self.screens.update({
