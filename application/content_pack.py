@@ -887,6 +887,12 @@ def _register_opening_resources(bundle, map_definitions, resource_definitions, r
         )
 
 
+def content_package_world_id(package_path=None) -> str:
+    """Return the stable world ID owned by the selected content package."""
+    definition = load_starter_content(package_path=package_path)
+    return _id_resolver(definition, StarterContentIds())("world_id")
+
+
 def build_starter_world_map(
     world_id: str,
     ids: StarterContentIds = StarterContentIds(),
@@ -921,6 +927,7 @@ __all__ = [
     "load_gameplay_rules",
     "populate_opening_content",
     "populate_gameplay_resources",
+    "content_package_world_id",
     "build_starter_world_map",
     "build_starter_local_map_definitions",
 ]

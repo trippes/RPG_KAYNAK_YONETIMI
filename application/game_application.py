@@ -157,11 +157,17 @@ class GameApplication:
     
         from application.content_pack import (
             build_starter_world_map, build_starter_local_map_definitions,
+            content_package_world_id,
         )
 
-        # Rebuild world and local maps from the selected content package.
+        # Only worlds owned by the active package use its local map catalog.
+        package_world_id = content_package_world_id()
+        managed_world_ids = set()
         local_map_catalog = {}
         for world in candidate.session.worlds.get_all():
+            if world.world_id != package_world_id:
+                continue
+            managed_world_ids.add(world.world_id)
             world_map = build_starter_world_map(world.world_id)
 
             saved_location_ids = {
@@ -197,7 +203,7 @@ class GameApplication:
         # Restore actor positions only when their locations exist in the map.
         if candidate.actors is not None:
             for actor_view in candidate.actors.actors():
-                if actor_view.location_id is None:
+                if actor_view.location_id is None or actor_view.world_id not in managed_world_ids:
                     continue
 
                 world_map = candidate.movement.map_for(actor_view.world_id)

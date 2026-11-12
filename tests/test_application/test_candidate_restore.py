@@ -41,10 +41,10 @@ class TestCandidateRestore(unittest.TestCase):
             ((self.tool, Quantity(1, ResourceUnit.ITEM)),),
         )
 
-    def _document(self, node_world_id="world_main"):
+    def _document(self, node_world_id="world_main", world_id="world_main"):
         source = GameSession()
-        source.worlds.create("Main", world_id="world_main")
-        source.worlds.set_active("world_main")
+        source.worlds.create("Main", world_id=world_id)
+        source.worlds.set_active(world_id)
         inventory = Inventory()
         inventory.add(self.wood, Quantity(3, ResourceUnit.ITEM))
         jobs = ProductionJobManager(source.simulation)
@@ -68,9 +68,9 @@ class TestCandidateRestore(unittest.TestCase):
         return GameSaveDocument(core=core, gameplay=gameplay)
 
     def _document_with_actor(self, location_id, position):
-        document = self._document()
+        document = self._document(node_world_id="demo_valley", world_id="demo_valley")
         actor = ActorRecord(
-            "hero", "world_main", "player", True, None, None,
+            "hero", "demo_valley", "player", True, None, None,
             location_id, Position(*position), "main",
         )
         return replace(document, actors=ActorSnapshot((actor,), ()))
