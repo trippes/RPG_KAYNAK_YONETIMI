@@ -99,8 +99,9 @@ class TestHexWorldView(unittest.TestCase):
 
     def test_unlinked_map_boundary_blocks_movement(self):
         self.assertTrue(self.view.enter())
+        self.assertTrue(self.view._move_to(LocalHexPosition(3, 2)))
         before = self.view.runtime.entity("hero").position
-        self.assertFalse(self.view._move(HexDirection.WEST))
+        self.assertFalse(self.view._move(HexDirection.NORTH_EAST))
         self.assertEqual(self.view.runtime.entity("hero").position, before)
 
     def test_leave_keeps_legacy_actor_location_and_position(self):
