@@ -15,6 +15,7 @@ from core.domain.spatial import (
 from core.domain.spatial.hex_geometry import axial_to_pixel
 from game_ui.world_transform import WorldTransform
 from game_ui.world_rendering.terrain_renderer import HexTerrainRenderer
+from game_ui.world_rendering.depth_sorter import DepthSorter
 from application.content_loader import load_content_package
 
 
@@ -269,46 +270,44 @@ class HexWorldView:
                         max(4, round(self._hex_size * 0.32)),
                     )
 
-        for landmark in definition.landmarks:
-            center = centers[landmark.position]
-            renderer.pg.draw.circle(
-                renderer.surface, (180, 145, 83),
-                (round(center[0]), round(center[1])),
-                max(5, round(self._hex_size * 0.22)),
-            )
-            renderer.text(
-                landmark.name,
-                round(center[0] - self._hex_size),
-                round(center[1] + self._hex_size * 0.28),
-                (245, 225, 180),
-                max_width=round(self._hex_size * 2),
-            )
-
-        for transition in definition.transitions:
-            if not transition.active:
-                continue
-            for cell in transition.source_cells:
-                center = centers[cell]
+        drawables = [(item.position, "landmark", item) for item in definition.landmarks]
+        drawables.append((entity.position.cell, "player", entity))
+        for position, drawable_type, drawable in DepthSorter.sort(
+            drawables, lambda item: item[0],
+        ):
+            center = centers[position]
+            if drawable_type == "landmark":
                 renderer.pg.draw.circle(
-                    renderer.surface, (102, 219, 230),
+                    renderer.surface, (180, 145, 83),
                     (round(center[0]), round(center[1])),
-                    max(7, round(self._hex_size * 0.48)), 2,
+                    max(5, round(self._hex_size * 0.22)),
+                )
+                renderer.text(
+                    drawable.name,
+                    round(center[0] - self._hex_size),
+                    round(center[1] + self._hex_size * 0.28),
+                    (245, 225, 180),
+                    max_width=round(self._hex_size * 2),
+                )
+            else:
+                player_center = center
+                if self._movement_path:
+                    elapsed = min(self._movement_elapsed, (len(self._movement_path) - 1) * self._movement_step_seconds)
+                    segment = min(int(elapsed / self._movement_step_seconds), len(self._movement_path) - 2)
+                    progress = min(1.0, (elapsed - segment * self._movement_step_seconds) / self._movement_step_seconds)
+                    move_start = centers.get(self._movement_path[segment])
+                    move_end = centers.get(self._movement_path[segment + 1])
+                    if move_start is not None and move_end is not None:
+                        player_center = (
+                            move_start[0] + (move_end[0] - move_start[0]) * progress,
+                            move_start[1] + (move_end[1] - move_start[1]) * progress,
+                        )
+                renderer.pg.draw.circle(
+                    renderer.surface, (118, 238, 166),
+                    (round(player_center[0]), round(player_center[1])),
+                    max(6, round(self._hex_size * 0.24)),
                 )
 
-        player_center = centers[entity.position.cell]
-        if self._movement_path:
-            elapsed = min(self._movement_elapsed, (len(self._movement_path) - 1) * self._movement_step_seconds)
-            segment = min(int(elapsed / self._movement_step_seconds), len(self._movement_path) - 2)
-            progress = min(1.0, (elapsed - segment * self._movement_step_seconds) / self._movement_step_seconds)
-            start = centers.get(self._movement_path[segment])
-            end = centers.get(self._movement_path[segment + 1])
-            if start is not None and end is not None:
-                player_center = (start[0] + (end[0] - start[0]) * progress, start[1] + (end[1] - start[1]) * progress)
-        renderer.pg.draw.circle(
-            renderer.surface, (118, 238, 166),
-            (round(player_center[0]), round(player_center[1])),
-            max(6, round(self._hex_size * 0.24)),
-        )
         renderer.text(
             f"Harita: {definition.name}   Axial: q={entity.position.cell.q}, r={entity.position.cell.r}",
             28, 76, (225, 215, 185), max_width=renderer.width - 56,
