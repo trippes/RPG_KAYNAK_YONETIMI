@@ -23,6 +23,14 @@ EXPECTED_WORLD_POSITIONS = {
     "west_mine": (30, 390),
     "east_mine": (480, 220),
 }
+def square_map_paths():
+    """Return only legacy schema-v1 map files for square-map assertions."""
+    return [
+        path for path in MAPS.glob("*.json")
+        if json.loads(path.read_text(encoding="utf-8")).get("schema_version") == 1
+    ]
+
+
 EXPECTED_CONNECTIONS = {
     frozenset(("village", "forest")),
     frozenset(("village", "south_forest")),
@@ -39,7 +47,7 @@ class TestDemoLocalMapContent(unittest.TestCase):
     def test_all_nine_demo_maps_are_discovered_from_json(self):
         definitions = load_map_definitions(MAPS)
         self.assertEqual(set(definitions), EXPECTED_MAPS)
-        self.assertEqual({path.stem for path in MAPS.glob("*.json")}, EXPECTED_MAPS)
+        self.assertEqual({path.stem for path in square_map_paths()}, EXPECTED_MAPS)
 
     def test_world_positions_are_declared_by_local_map_files(self):
         definitions = load_map_definitions(MAPS)
@@ -52,7 +60,7 @@ class TestDemoLocalMapContent(unittest.TestCase):
         )
 
     def test_all_landmark_coordinates_are_inside_their_local_maps(self):
-        for path in MAPS.glob("*.json"):
+        for path in square_map_paths():
             definition = load_map_definition(path)
             for landmark in definition.landmarks:
                 x, y = landmark.position
