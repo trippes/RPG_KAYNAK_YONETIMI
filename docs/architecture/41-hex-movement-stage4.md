@@ -1,6 +1,6 @@
 # Eldoria — Aşama 4: Altıgen Hareket, Yol Bulma ve Harita Geçiş Runtime'ı
 
-**Durum:** Aşama 4 uygulaması tamamlandı; son Linux ve Windows release-candidate doğrulaması bekleniyor.  
+**Durum:** Aşama 4 tamamlandı. Linux Python 3.11 ve Windows Python 3.12 release-candidate doğrulamaları başarılıdır. Son kod commit'i: `a5d593e439bd88e558ad8540fbb90f9c3ca421df`. Her iki platformda da 1.310 test ve 222 subtest başarılıdır.  
 **Dal:** `demo_eldoria`  
 **Kapsam:** schema-v2 axial hex map'ler. Kare harita hareketi bu aşamada değiştirilmez.
 
@@ -84,3 +84,19 @@ Demo içerik artık iki gerçek yerel haritadan oluşur: `hex_forest_demo` düny
 ## 8. Kapsam dışı
 
 Renderer, kamera, Pygame input/animasyon, save schema/migration, kare haritaları axial'e dönüştürme, fiziksel feet/mesafe/hız, combat movement points ve Stage 5 kaynak/NPC simülasyon entegrasyonu bu aşamada yapılmaz.
+
+## 9. Aşama 4 kapanış raporu
+
+| Alt aşama | Sonuç |
+|---|---|
+| 4.1 — Ortak hareket domain sözleşmeleri ve saf kurallar | Tamamlandı |
+| 4.2 — Altı yönlü axial komşuluk, hücre geçerliliği ve A* | Tamamlandı |
+| 4.3 — Occupancy, çarpışma ve atomik konum güncellemesi | Tamamlandı |
+| 4.4 — Oyuncu hareket runtime'ı | Tamamlandı |
+| 4.5 — NPC yaklaşma, kaçınma, devriye ve sınır davranışları | Tamamlandı |
+| 4.6 — Profil kontrollü taşınabilir nesne hareketi | Tamamlandı |
+| 4.7 — Dünya topolojisine bağlı haritalar arası geçiş runtime'ı ve reciprocal demo içeriği | Tamamlandı |
+
+Release-candidate workflow: [Linux ve Windows doğrulama sonucu](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43305169877).
+
+Aşama 4 sonunda demo axial dünya iki gerçek yerel haritaya sahiptir. Orman ve açıklık haritaları aktif, karşılıklı ve ters hücre/yön eşleşmeli geçişlerle bağlanmıştır. Dokuz mevcut schema-v1 kare harita korunmuştur. Renderer, kamera, save migration, fiziksel feet/hız kuralları ve Stage 5 entegrasyonu kapsam dışında kalmıştır.
