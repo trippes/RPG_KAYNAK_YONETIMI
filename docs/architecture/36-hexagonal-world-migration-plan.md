@@ -30,7 +30,7 @@ Not: `world_position` mevcut kodda `Location.position` olarak world map renderer
 - `south_forest`: 62 blocked; river 64, bridge 2; 4 kaynak landmark'ı; 2 geçiş.
 - `north_mine`, `south_mine`, `east_mine`, `west_mine`: her biri 62 blocked; river 64, bridge 2; bir demir maden landmark'ı; bir geçiş.
 
-Landmark sayıları toplam 38'dir: 22 kaynak landmark'ı (18 orman kaynağı + 4 maden haritası madeni) ve köyde 16 yapı/gate. Resource JSON'da 21 node kaydı bulunur; bunlar map landmark'larına ID üzerinden bağlanır. NPC JSON'da 4 NPC vardır; hepsi köyde konumlanır. NPC ve resource konumları ayrı JSON dosyalarında tutulur.
+Landmark sayıları toplam 38'dir: 22 kaynak landmark'ı (18 orman kaynağı + 4 maden haritası madeni) ve köyde 16 yapı/gate. Resource JSON'da 22 node kaydı bulunur; bunlar map landmark'larına ID üzerinden bağlanır. NPC JSON'da 4 NPC vardır; hepsi köyde konumlanır. NPC ve resource konumları ayrı JSON dosyalarında tutulur.
 
 ### Mevcut bağlantı grafiği
 
