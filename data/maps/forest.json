@@ -1,0 +1,399 @@
+{
+  "schema_version": 1,
+  "map_id": "forest",
+  "name": "Kuzey Ormanı",
+  "description": "Odun kaynakları ve tehlikeli yaratıklarla dolu eski orman.",
+  "size": {
+    "width": 32,
+    "height": 32
+  },
+  "terrain": {
+    "default_tile": "grass"
+  },
+  "blocked_tiles": [],
+  "features": [
+    {
+      "id": "river",
+      "type": "river",
+      "tiles": [
+        [
+          18,
+          0
+        ],
+        [
+          19,
+          0
+        ],
+        [
+          18,
+          1
+        ],
+        [
+          19,
+          1
+        ],
+        [
+          18,
+          2
+        ],
+        [
+          19,
+          2
+        ],
+        [
+          18,
+          3
+        ],
+        [
+          19,
+          3
+        ],
+        [
+          18,
+          4
+        ],
+        [
+          19,
+          4
+        ],
+        [
+          18,
+          5
+        ],
+        [
+          19,
+          5
+        ],
+        [
+          18,
+          6
+        ],
+        [
+          19,
+          6
+        ],
+        [
+          18,
+          7
+        ],
+        [
+          19,
+          7
+        ],
+        [
+          18,
+          8
+        ],
+        [
+          19,
+          8
+        ],
+        [
+          18,
+          9
+        ],
+        [
+          19,
+          9
+        ],
+        [
+          18,
+          10
+        ],
+        [
+          19,
+          10
+        ],
+        [
+          18,
+          11
+        ],
+        [
+          19,
+          11
+        ],
+        [
+          18,
+          12
+        ],
+        [
+          19,
+          12
+        ],
+        [
+          18,
+          13
+        ],
+        [
+          19,
+          13
+        ],
+        [
+          18,
+          14
+        ],
+        [
+          19,
+          14
+        ],
+        [
+          18,
+          15
+        ],
+        [
+          19,
+          15
+        ],
+        [
+          18,
+          16
+        ],
+        [
+          19,
+          16
+        ],
+        [
+          18,
+          17
+        ],
+        [
+          19,
+          17
+        ],
+        [
+          18,
+          18
+        ],
+        [
+          19,
+          18
+        ],
+        [
+          18,
+          19
+        ],
+        [
+          19,
+          19
+        ],
+        [
+          18,
+          20
+        ],
+        [
+          19,
+          20
+        ],
+        [
+          18,
+          21
+        ],
+        [
+          19,
+          21
+        ],
+        [
+          18,
+          22
+        ],
+        [
+          19,
+          22
+        ],
+        [
+          18,
+          23
+        ],
+        [
+          19,
+          23
+        ],
+        [
+          18,
+          24
+        ],
+        [
+          19,
+          24
+        ],
+        [
+          18,
+          25
+        ],
+        [
+          19,
+          25
+        ],
+        [
+          18,
+          26
+        ],
+        [
+          19,
+          26
+        ],
+        [
+          18,
+          27
+        ],
+        [
+          19,
+          27
+        ],
+        [
+          18,
+          28
+        ],
+        [
+          19,
+          28
+        ],
+        [
+          18,
+          29
+        ],
+        [
+          19,
+          29
+        ],
+        [
+          18,
+          30
+        ],
+        [
+          19,
+          30
+        ],
+        [
+          18,
+          31
+        ],
+        [
+          19,
+          31
+        ]
+      ],
+      "walkable": false
+    },
+    {
+      "id": "bridge",
+      "type": "bridge",
+      "tiles": [
+        [
+          18,
+          16
+        ],
+        [
+          19,
+          16
+        ]
+      ],
+      "walkable": true
+    }
+  ],
+  "landmarks": [
+    {
+      "id": "forest_tree_01",
+      "name": "Çam Ağacı",
+      "description": "Kesilip odun toplanabilen yaşlı bir çam ağacı.",
+      "position": [
+        4,
+        5
+      ],
+      "type": "resource",
+      "visual_type": "tree",
+      "walkable": true,
+      "interactable": true,
+      "activities": [
+        "gather"
+      ],
+      "resource_node_id": "forest_wood"
+    },
+    {
+      "id": "forest_tree_02",
+      "name": "Meşe Ağacı",
+      "description": "Gövdesinde toplanabilir odun bulunan güçlü bir meşe.",
+      "position": [
+        8,
+        11
+      ],
+      "type": "resource",
+      "visual_type": "tree",
+      "walkable": true,
+      "interactable": true,
+      "activities": [
+        "gather"
+      ],
+      "resource_node_id": "forest_tree_02_wood"
+    },
+    {
+      "id": "forest_tree_03",
+      "name": "Çam Ağacı",
+      "description": "Kesilip odun toplanabilen yaşlı bir çam ağacı.",
+      "position": [
+        13,
+        7
+      ],
+      "type": "resource",
+      "visual_type": "tree",
+      "walkable": true,
+      "interactable": true,
+      "activities": [
+        "gather"
+      ],
+      "resource_node_id": "forest_tree_03_wood"
+    },
+    {
+      "id": "forest_tree_04",
+      "name": "Meşe Ağacı",
+      "description": "Gövdesinde toplanabilir odun bulunan güçlü bir meşe.",
+      "position": [
+        23,
+        12
+      ],
+      "type": "resource",
+      "visual_type": "tree",
+      "walkable": true,
+      "interactable": true,
+      "activities": [
+        "gather"
+      ],
+      "resource_node_id": "forest_tree_04_wood"
+    },
+    {
+      "id": "forest_tree_05",
+      "name": "Çam Ağacı",
+      "description": "Kesilip odun toplanabilen yaşlı bir çam ağacı.",
+      "position": [
+        27,
+        24
+      ],
+      "type": "resource",
+      "visual_type": "tree",
+      "walkable": true,
+      "interactable": true,
+      "activities": [
+        "gather"
+      ],
+      "resource_node_id": "forest_tree_05_wood"
+    },
+    {
+      "id": "forest_iron_mine",
+      "name": "Demir Madeni",
+      "description": "Kayaların arasında demir cevheri damarları bulunan maden.",
+      "position": [
+        20,
+        25
+      ],
+      "type": "resource",
+      "visual_type": "mine",
+      "walkable": true,
+      "interactable": true,
+      "activities": [
+        "gather"
+      ],
+      "resource_node_id": "north_iron_mine"
+    }
+  ],
+  "transitions": []
+}
