@@ -49,7 +49,8 @@ def register_quest_playtest_fixture(service):
             Reward(experience=35, currency=12),
             state=QuestState.AVAILABLE,
         )
-    service.carpenter_quest = quest
+    service.playtest_quest = quest
+    service.register_pending_quest_definition(quest)
 
     if PLAYTEST_DIALOGUE_ID not in bundle.social.dialogues:
         service.register_dialogue(Dialogue(
@@ -65,7 +66,7 @@ def register_quest_playtest_fixture(service):
                             "accept_carpenter_quest",
                             "Elbette. Orman yolunu araştıracağım.",
                             next_node_id="quest_accepted",
-                            action="accept_carpenter_quest",
+                            action="accept_quest:ui_playtest_forest_scouting:player",
                         ),
                         DialogueChoice(
                             "decline_carpenter_quest",

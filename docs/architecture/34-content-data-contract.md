@@ -20,6 +20,10 @@ NPC tanımları:
 
 content/demo_eldoria/npcs.json
 
+Görevler, hedefler, ödüller ve görev diyalogları:
+
+content/demo_eldoria/quests.json
+
 Yükleme giriş noktası:
 
 from application.content_pack import load_starter_content, load_npc_definitions, populate_opening_content
@@ -27,6 +31,8 @@ from application.content_pack import load_starter_content, load_npc_definitions,
 "load_starter_content()" başlangıç dünyası tanımını yükler ve doğrular.
 
 "load_npc_definitions()" NPC kayıtlarını yükler, kimlikleri ve alanları doğrular.
+
+"load_quest_definitions()" görev, hedef, ödül ve görev diyaloğu kayıtlarını yükler ve doğrular.
 
 "populate_opening_content()" açılış aşamasında etkinleştirilen NPC kayıtlarını yeni oyun oturumuna ekler. Oynanış aşamasındaki NPC kayıtları kaynaklar ve pazarlar hazırlanırken etkinleştirilir.
 
@@ -38,6 +44,7 @@ Başlangıç paketi şu öğeleri kapsar:
 - Oyuncu karakterinin başlangıç tanımı
 - Başlangıç lokasyonları
 - NPC tanımları ayrı "npcs.json" dosyasında; açılış ve oynanış aşamasına göre yüklenir
+- Görevler, hedefler, ödüller ve görev diyalogları ayrı "quests.json" dosyasında tanımlanır
 - Açılış diyaloğu
 - Karakter oluşturma için gerekli tanımlar
 
@@ -54,7 +61,7 @@ Sürümleme ve doğrulama
 
 Gelecekteki içerik paketleri
 
-Yeni NPC kayıtları mevcut "npcs.json" veri sözleşmesine eklenir. Görevler, diyaloglar, kaynaklar, pazarlar ve karşılaşmalar da aynı paket manifesti üzerinden ayrı veri dosyalarına ayrılacaktır.
+Yeni NPC kayıtları mevcut "npcs.json" veri sözleşmesine eklenir. Kaynaklar, pazarlar ve karşılaşmalar da aynı paket manifesti üzerinden ayrı veri dosyalarına ayrılacaktır. Görev ve görev diyaloğu verileri artık "quests.json" dosyasında tutulur.
 
 Bu paketler başlangıç içeriğine bağımlı olmak zorunda değildir. Her paket kendi kimliklerini, sürümünü ve doğrulama kurallarını taşımalıdır.
 
@@ -72,3 +79,16 @@ Her NPC kaydı "npcs.json" içindeki "npcs" listesinde bulunur:
 - "dialogue_id": varsa NPC ile ilişkili diyalog tanımının kimliği.
 
 NPC kayıtları tek bir genel kayıt işleyicisiyle yüklenir. Yeni NPC eklemek için Python modülü, GameWindow veya GameplayService üzerinde NPC'ye özel kod yazılmaz. "load_phase" yalnızca yükleme zamanını belirler; NPC'nin görev verip vermediği veya pazar işletip işletmediği başka içerik ilişkileriyle tanımlanır.
+
+Görev veri sözleşmesi
+
+Her görev kaydı "quests.json" içindeki "quests" listesinde bulunur:
+
+- "id", "title" ve "giver_npc_id": kararlı görev kimliği, görünen başlık ve görev veren NPC ilişkisi.
+- "sequential_objectives": zorunlu hedeflerin sırayla ilerleyip ilerlemeyeceği.
+- "objectives": hedef kimliği, açıklaması, türü, hedef kimliği, gerekli miktarı ve isteğe bağlılık durumu.
+- "reward": deneyim, para, eşya ve itibar ödülleri.
+- "dialogue": görev veren NPC'nin düğüm ve seçeneklerden oluşan diyalog ağı.
+- Diyalog eylemleri yalnızca güvenli genel eylem sözleşmelerini kullanır ("accept_quest", "deliver_resource"); içerik JSON'u Python kodu çalıştıramaz.
+
+Yeni görevler bu veri sözleşmesiyle eklenir. Görev tanımı, hedefler, ödüller veya diyalog metinleri için yeni Python görev modülü ya da GameWindow/GameplayService içinde göreve özel kayıt kodu gerekmez. Yeni bir oyun mekaniği gerektiğinde motorun genel yeteneği bir kez geliştirilir; o mekaniği kullanan yeni görevler veriyle tanımlanır.

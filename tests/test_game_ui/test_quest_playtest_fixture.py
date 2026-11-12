@@ -25,7 +25,7 @@ def test_quest_playtest_fixture_places_talkable_npc_and_hides_unaccepted_quest()
     assert npc.location_id == "village"
     assert (int(npc.position.x), int(npc.position.y)) == (14, 29)
     assert bundle.quest_log.get(PLAYTEST_QUEST_ID) is None
-    assert service.carpenter_quest.state.value == "available"
+    assert service.playtest_quest.state.value == "available"
     assert PLAYTEST_DIALOGUE_ID in bundle.social.dialogues
 
     local_map = MainScreen(service)
@@ -68,7 +68,7 @@ def test_quest_playtest_fixture_is_idempotent():
 def test_completing_playtest_quest_grants_experience_and_wallet_currency():
     service = _service()
     populate_gameplay_resources(service)
-    service.accept_carpenter_quest("hero", "player")
+    service.accept_quest_by_id(PLAYTEST_QUEST_ID, "hero", "player")
 
     initial_balance = service.balance("hero", "gold").amount
     character = service.actor_character("hero")

@@ -9,6 +9,7 @@ from application.content_pack import (
     ContentDefinitionError,
     load_starter_content,
     load_npc_definitions,
+    load_quest_definitions,
     populate_opening_content,
     populate_gameplay_resources,
     _build_dialogue_from_definition,
@@ -146,6 +147,20 @@ class TestContentPack(unittest.TestCase):
         self.assertEqual(records["village_carpenter"]["position"], [21, 15])
         self.assertEqual(records["innkeeper_mira"]["load_phase"], "gameplay")
         self.assertEqual(records["warden_lyra"]["load_phase"], "opening")
+
+    def test_quest_content_is_data_defined_and_loaded_after_gameplay_npcs(self):
+        application = GameApplication.create_default()
+        service, _ids = populate_opening_content(application)
+        self.assertEqual(tuple(application.holder.current.quest_log.all()), ())
+
+        populate_gameplay_resources(service)
+
+        records = {record["id"]: record for record in load_quest_definitions()}
+        self.assertEqual(set(records), {"carpenter_wood", "lost_caravan"})
+        self.assertIsNotNone(application.holder.current.quest_log.get("carpenter_wood"))
+        self.assertIsNotNone(application.holder.current.quest_log.get("lost_caravan"))
+        self.assertIn("carpenter_dialogue", application.holder.current.social.dialogues)
+        self.assertIn("caravan_merchant_dialogue", application.holder.current.social.dialogues)
 
     def test_npc_definitions_reject_duplicate_ids(self):
         records = [dict(record) for record in load_npc_definitions()]
