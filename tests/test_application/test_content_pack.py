@@ -10,6 +10,7 @@ from application.content_pack import (
     load_starter_content,
     load_npc_definitions,
     load_quest_definitions,
+    load_resource_definitions,
     populate_opening_content,
     populate_gameplay_resources,
     _build_dialogue_from_definition,
@@ -162,6 +163,38 @@ class TestContentPack(unittest.TestCase):
             first_quest_ids,
         )
         self.assertEqual(set(application.holder.current.social.dialogues), first_dialogue_ids)
+
+    def test_resource_nodes_are_data_defined_and_duration_is_customizable(self):
+        records = [dict(record) for record in load_resource_definitions()]
+        forest_wood = next(record for record in records if record["id"] == "forest_wood")
+        forest_wood["gathering_duration_ticks"] = 90
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "resources.json"
+            path.write_text(
+                json.dumps({"schema_version": 1, "nodes": records}, ensure_ascii=False),
+                encoding="utf-8",
+            )
+            application = GameApplication.create_default()
+            service, _ids = populate_opening_content(application)
+            populate_gameplay_resources(service, resource_definitions_path=path)
+
+        node = application.holder.current.resource_nodes.get("forest_wood")
+        self.assertEqual(node.gathering_duration_ticks.value, 90)
+        self.assertEqual(node.resource_type.value, "wood")
+        self.assertEqual(node.location_id, "forest")
+
+    def test_resource_definitions_reject_duplicate_node_ids(self):
+        records = list(load_resource_definitions())
+        records.append(dict(records[0]))
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "resources.json"
+            path.write_text(
+                json.dumps({"schema_version": 1, "nodes": records}, ensure_ascii=False),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ContentDefinitionError, "Duplicate resource node id"):
+                load_resource_definitions(path)
 
     def test_quest_content_is_data_defined_and_loaded_after_gameplay_npcs(self):
         application = GameApplication.create_default()

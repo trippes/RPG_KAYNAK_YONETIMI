@@ -496,7 +496,7 @@ def populate_opening_content(
     )
 
 
-def populate_gameplay_resources(service, definition_path=None):
+def populate_gameplay_resources(service, definition_path=None, resource_definitions_path=None):
     """Create gameplay inventory and resource nodes after character creation."""
     world = service.application.aktif_dunya()
     if world is None:
@@ -510,8 +510,8 @@ def populate_gameplay_resources(service, definition_path=None):
     _register_opening_resources(
         service.application.holder.current,
         definition,
+        load_resource_definitions(resource_definitions_path),
         _id_resolver(definition, ids),
-        ids,
         world.world_id,
     )
     bundle = service.application.holder.current
@@ -549,54 +549,75 @@ def populate_gameplay_resources(service, definition_path=None):
 
 
 
-def _register_opening_resources(bundle, definition, resolve_id, ids, world_id):
-    """Register the starter inventory and every gatherable landmark as a resource node."""
+
+def load_resource_definitions(path: str | Path | None = None) -> tuple[dict, ...]:
+    """Load and validate explicit world resource-node definitions."""
+    definition = _load_package_file("resources") if path is None else _read_json_definition(Path(path), "Resource definition")
+    if definition.get("schema_version") != CONTENT_SCHEMA_VERSION:
+        raise ContentDefinitionError("Unsupported resource definition schema version.")
+    records = definition.get("nodes")
+    if not isinstance(records, list):
+        raise ContentDefinitionError("Resource definitions must contain a 'nodes' list.")
+    seen: set[str] = set()
+    required_text = ("id", "landmark_id", "location_id", "resource_type", "unit")
+    numeric = ("initial_quantity", "capacity", "regeneration_rate", "gathering_duration_ticks")
+    for index, record in enumerate(records):
+        if not isinstance(record, dict):
+            raise ContentDefinitionError(f"Resource node at index {index} must be an object.")
+        for key in required_text:
+            if not isinstance(record.get(key), str) or not record[key].strip():
+                raise ContentDefinitionError(f"Resource node at index {index} has an invalid {key}.")
+        if record["id"] in seen:
+            raise ContentDefinitionError(f"Duplicate resource node id: {record['id']}")
+        seen.add(record["id"])
+        try:
+            ResourceUnit(record["unit"])
+            ResourceType(record["resource_type"])
+        except (TypeError, ValueError) as error:
+            raise ContentDefinitionError(f"Resource node '{record['id']}' has an invalid resource type or unit.") from error
+        for key in numeric:
+            value = record.get(key)
+            minimum = 1 if key in ("capacity", "gathering_duration_ticks") else 0
+            if isinstance(value, bool) or not isinstance(value, int) or value < minimum:
+                raise ContentDefinitionError(f"Resource node '{record['id']}' has an invalid {key}.")
+        if record["initial_quantity"] > record["capacity"]:
+            raise ContentDefinitionError(f"Resource node '{record['id']}' starts above its capacity.")
+    return tuple(records)
+
+
+
+def _register_opening_resources(bundle, definition, resource_definitions, resolve_id, world_id):
+    """Register resource nodes exclusively from validated content records."""
     inventories = dict(bundle.inventories)
     inventories.setdefault("player", Inventory())
     object.__setattr__(bundle, "inventories", MappingProxyType(inventories))
 
-    for location_data in definition["locations"]:
-        location_id = resolve_id(location_data["id"])
-        for landmark in location_data.get("landmarks", ()):
-            activities = tuple(landmark.get("activities", ()))
-            if "gather" not in activities:
-                continue
-
-            landmark_id = landmark["id"]
-            landmark_name = landmark["name"].lower()
-            normalized_id = landmark_id.lower()
-            if "tree" in normalized_id or "ağaç" in landmark_name:
-                node_id = (
-                    "forest_wood"
-                    if landmark_id == "forest_tree_01"
-                    else f"{landmark_id}_wood"
-                )
-                resource_id = "wood"
-            elif "mine" in normalized_id or "maden" in landmark_name:
-                node_id = (
-                    "north_iron_mine"
-                    if location_id == ids.forest_id
-                    else landmark_id
-                )
-                resource_id = "iron_ore"
-            else:
-                continue
-
-            if bundle.resource_nodes.get(node_id) is not None:
-                continue
-            quantity = Quantity(20, ResourceUnit.ITEM)
-            bundle.resource_nodes.add(
-                WorldResourceNode(
-                    node_id,
-                    world_id,
-                    ResourceType(resource_id),
-                    quantity,
-                    quantity,
-                    Quantity(0, ResourceUnit.ITEM),
-                    location_id=location_id,
-                    gathering_duration_ticks=landmark.get("gathering_duration_ticks", 150),
-                )
+    landmarks = {
+        (resolve_id(location["id"]), landmark["id"])
+        for location in definition["locations"]
+        for landmark in location.get("landmarks", ())
+    }
+    for record in resource_definitions:
+        location_id = resolve_id(record["location_id"])
+        if (location_id, record["landmark_id"]) not in landmarks:
+            raise ContentDefinitionError(
+                f"Resource node '{record['id']}' references an unknown landmark."
             )
+        if bundle.resource_nodes.get(record["id"]) is not None:
+            continue
+        unit = ResourceUnit(record["unit"])
+        bundle.resource_nodes.add(
+            WorldResourceNode(
+                record["id"],
+                world_id,
+                ResourceType(record["resource_type"]),
+                Quantity(record["initial_quantity"], unit),
+                Quantity(record["capacity"], unit),
+                Quantity(record["regeneration_rate"], unit),
+                location_id=location_id,
+                gathering_duration_ticks=record["gathering_duration_ticks"],
+            )
+        )
 
 
 def _build_world_map_from_definition(
@@ -651,6 +672,7 @@ __all__ = [
     "load_opening_content",
     "load_npc_definitions",
     "load_quest_definitions",
+    "load_resource_definitions",
     "populate_opening_content",
     "populate_gameplay_resources",
     "build_starter_world_map",

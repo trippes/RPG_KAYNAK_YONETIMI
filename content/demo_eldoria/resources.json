@@ -1,0 +1,247 @@
+{
+  "schema_version": 1,
+  "nodes": [
+    {
+      "id": "forest_wood",
+      "landmark_id": "forest_tree_01",
+      "location_id": "forest_id",
+      "resource_type": "wood",
+      "unit": "item",
+      "initial_quantity": 20,
+      "capacity": 20,
+      "regeneration_rate": 0,
+      "gathering_duration_ticks": 150
+    },
+    {
+      "id": "forest_tree_02_wood",
+      "landmark_id": "forest_tree_02",
+      "location_id": "forest_id",
+      "resource_type": "wood",
+      "unit": "item",
+      "initial_quantity": 20,
+      "capacity": 20,
+      "regeneration_rate": 0,
+      "gathering_duration_ticks": 150
+    },
+    {
+      "id": "forest_tree_03_wood",
+      "landmark_id": "forest_tree_03",
+      "location_id": "forest_id",
+      "resource_type": "wood",
+      "unit": "item",
+      "initial_quantity": 20,
+      "capacity": 20,
+      "regeneration_rate": 0,
+      "gathering_duration_ticks": 150
+    },
+    {
+      "id": "forest_tree_04_wood",
+      "landmark_id": "forest_tree_04",
+      "location_id": "forest_id",
+      "resource_type": "wood",
+      "unit": "item",
+      "initial_quantity": 20,
+      "capacity": 20,
+      "regeneration_rate": 0,
+      "gathering_duration_ticks": 150
+    },
+    {
+      "id": "forest_tree_05_wood",
+      "landmark_id": "forest_tree_05",
+      "location_id": "forest_id",
+      "resource_type": "wood",
+      "unit": "item",
+      "initial_quantity": 20,
+      "capacity": 20,
+      "regeneration_rate": 0,
+      "gathering_duration_ticks": 150
+    },
+    {
+      "id": "forest_iron_mine",
+      "landmark_id": "forest_iron_mine",
+      "location_id": "forest_id",
+      "resource_type": "iron_ore",
+      "unit": "item",
+      "initial_quantity": 20,
+      "capacity": 20,
+      "regeneration_rate": 0,
+      "gathering_duration_ticks": 150
+    },
+    {
+      "id": "south_tree_01_wood",
+      "landmark_id": "south_tree_01",
+      "location_id": "south_forest",
+      "resource_type": "wood",
+      "unit": "item",
+      "initial_quantity": 20,
+      "capacity": 20,
+      "regeneration_rate": 0,
+      "gathering_duration_ticks": 150
+    },
+    {
+      "id": "south_tree_02_wood",
+      "landmark_id": "south_tree_02",
+      "location_id": "south_forest",
+      "resource_type": "wood",
+      "unit": "item",
+      "initial_quantity": 20,
+      "capacity": 20,
+      "regeneration_rate": 0,
+      "gathering_duration_ticks": 150
+    },
+    {
+      "id": "south_tree_03_wood",
+      "landmark_id": "south_tree_03",
+      "location_id": "south_forest",
+      "resource_type": "wood",
+      "unit": "item",
+      "initial_quantity": 20,
+      "capacity": 20,
+      "regeneration_rate": 0,
+      "gathering_duration_ticks": 150
+    },
+    {
+      "id": "south_iron_mine",
+      "landmark_id": "south_iron_mine",
+      "location_id": "south_forest",
+      "resource_type": "iron_ore",
+      "unit": "item",
+      "initial_quantity": 20,
+      "capacity": 20,
+      "regeneration_rate": 0,
+      "gathering_duration_ticks": 150
+    },
+    {
+      "id": "west_tree_01_wood",
+      "landmark_id": "west_tree_01",
+      "location_id": "west_forest",
+      "resource_type": "wood",
+      "unit": "item",
+      "initial_quantity": 20,
+      "capacity": 20,
+      "regeneration_rate": 0,
+      "gathering_duration_ticks": 150
+    },
+    {
+      "id": "west_tree_02_wood",
+      "landmark_id": "west_tree_02",
+      "location_id": "west_forest",
+      "resource_type": "wood",
+      "unit": "item",
+      "initial_quantity": 20,
+      "capacity": 20,
+      "regeneration_rate": 0,
+      "gathering_duration_ticks": 150
+    },
+    {
+      "id": "west_tree_03_wood",
+      "landmark_id": "west_tree_03",
+      "location_id": "west_forest",
+      "resource_type": "wood",
+      "unit": "item",
+      "initial_quantity": 20,
+      "capacity": 20,
+      "regeneration_rate": 0,
+      "gathering_duration_ticks": 150
+    },
+    {
+      "id": "west_iron_mine",
+      "landmark_id": "west_iron_mine",
+      "location_id": "west_forest",
+      "resource_type": "iron_ore",
+      "unit": "item",
+      "initial_quantity": 20,
+      "capacity": 20,
+      "regeneration_rate": 0,
+      "gathering_duration_ticks": 150
+    },
+    {
+      "id": "east_tree_01_wood",
+      "landmark_id": "east_tree_01",
+      "location_id": "east_forest",
+      "resource_type": "wood",
+      "unit": "item",
+      "initial_quantity": 20,
+      "capacity": 20,
+      "regeneration_rate": 0,
+      "gathering_duration_ticks": 150
+    },
+    {
+      "id": "east_tree_02_wood",
+      "landmark_id": "east_tree_02",
+      "location_id": "east_forest",
+      "resource_type": "wood",
+      "unit": "item",
+      "initial_quantity": 20,
+      "capacity": 20,
+      "regeneration_rate": 0,
+      "gathering_duration_ticks": 150
+    },
+    {
+      "id": "east_tree_03_wood",
+      "landmark_id": "east_tree_03",
+      "location_id": "east_forest",
+      "resource_type": "wood",
+      "unit": "item",
+      "initial_quantity": 20,
+      "capacity": 20,
+      "regeneration_rate": 0,
+      "gathering_duration_ticks": 150
+    },
+    {
+      "id": "east_iron_mine",
+      "landmark_id": "east_iron_mine",
+      "location_id": "east_forest",
+      "resource_type": "iron_ore",
+      "unit": "item",
+      "initial_quantity": 20,
+      "capacity": 20,
+      "regeneration_rate": 0,
+      "gathering_duration_ticks": 150
+    },
+    {
+      "id": "north_mine_iron",
+      "landmark_id": "north_mine_iron",
+      "location_id": "north_mine",
+      "resource_type": "iron_ore",
+      "unit": "item",
+      "initial_quantity": 20,
+      "capacity": 20,
+      "regeneration_rate": 0,
+      "gathering_duration_ticks": 150
+    },
+    {
+      "id": "south_mine_iron",
+      "landmark_id": "south_mine_iron",
+      "location_id": "south_mine",
+      "resource_type": "iron_ore",
+      "unit": "item",
+      "initial_quantity": 20,
+      "capacity": 20,
+      "regeneration_rate": 0,
+      "gathering_duration_ticks": 150
+    },
+    {
+      "id": "west_mine_iron",
+      "landmark_id": "west_mine_iron",
+      "location_id": "west_mine",
+      "resource_type": "iron_ore",
+      "unit": "item",
+      "initial_quantity": 20,
+      "capacity": 20,
+      "regeneration_rate": 0,
+      "gathering_duration_ticks": 150
+    },
+    {
+      "id": "east_mine_iron",
+      "landmark_id": "east_mine_iron",
+      "location_id": "east_mine",
+      "resource_type": "iron_ore",
+      "unit": "item",
+      "initial_quantity": 20,
+      "capacity": 20,
+      "regeneration_rate": 0,
+      "gathering_duration_ticks": 150
+    }
+  ]
+}
