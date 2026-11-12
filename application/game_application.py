@@ -29,7 +29,7 @@ from character import Character, CharacterFactory, CharacterSnapshot, Skills
 from character import Attributes
 from types import MappingProxyType
 from application.production_facility import ProductionFacilityRegistry
-from quests import QuestLog, QuestSnapshot
+from quests import QuestLog, QuestSnapshot, QuestGraphProgress
 from application.actor_system import WorldActor
 from economy import Economy, EconomySnapshot
 from application.extended_persistence import SocialSnapshot, CombatSnapshot
@@ -135,6 +135,7 @@ class GameApplication:
             containers=containers,
             locks=locks,
             quest_log=document.quests.restore({}) if document.quests is not None else QuestLog(),
+            pending_quest_graph_progress=document.quest_graph_progress,
             economy=(
                 Economy(*document.economy.restore())
                 if document.economy is not None else Economy()
@@ -260,6 +261,7 @@ class GameApplication:
             combat=(CombatSnapshot.from_runtime(bundle.combat) if bundle.combat.all() else None),
             containers=container_snapshot,
             locks=lock_snapshot,
+            quest_graph_progress=bundle.quest_graph_progress.to_dict(),
         )
         return GameSaveFileAdapter.save(document, path)
 
