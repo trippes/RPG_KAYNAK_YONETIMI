@@ -1,4 +1,6 @@
 import unittest
+import tempfile
+from pathlib import Path
 
 from application import GameApplication, GameplayService
 from game_ui.screens.quest_log_screen import QuestLogScreen
@@ -90,6 +92,31 @@ class TestQuestGraphGameplayIntegration(unittest.TestCase):
 
         self.service.choose_quest_branch("root", "route", "left")
         self.assertEqual(screen._branch_groups(self.root)[0][2], "left")
+
+    def test_branch_choice_survives_game_save_and_load(self):
+        self.service.start_quest(self.root, owner_id="hero")
+        self.service.update_quest_objective("root", "finish_root")
+        self.service.choose_quest_branch("root", "route", "right")
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "quest-graph-save.json"
+            self.application.save(path)
+
+            restored_application = GameApplication.create_default()
+            restored_service = GameplayService(restored_application)
+            restored_service.load(path)
+            restored_service.register_quest_graph(self.graph)
+
+            self.assertEqual(
+                restored_application.holder.current.quest_graph_progress.selected_branch(
+                    "root", "route"
+                ),
+                "right",
+            )
+            self.assertEqual(
+                tuple(q.quest_id for q in restored_service.available_quests()),
+                ("right",),
+            )
 
     def test_dialogue_actions_can_be_registered_by_content(self):
         calls = []
