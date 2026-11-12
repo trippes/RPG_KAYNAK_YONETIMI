@@ -114,5 +114,5 @@ Her aşama ayrı test ve küçük commitlerle ilerler. Görev sistemi zaten oyun
 - Kök görevler (giriş bağlantısı olmayanlar) grafik bakımından açıktır; kendi görev koşulları yine uygulanır.
 - Oyuncunun alternatif dal seçimi içerik verisi değildir. `QuestGraphProgress` içinde oyuncu ilerlemesi olarak tutulur; dışa/içe aktarılabilir ve yüklenirken mevcut grafik tanımıyla doğrulanır.
 - Seçilmiş dal değiştirilemez. Farklı bir hikâye sonucu için içerik açıkça ayrı bir yeniden seçim/geri alma mekaniği tanımlamalıdır.
-- Bu aşamadaki çalışma zamanı API'si genel ve bağımsızdır. Oyun oturumu/save sistemiyle tam entegrasyon ayrı bir aşamadır; entegrasyon tamamlanana kadar dal seçimlerini oyun kaydına otomatik yazdığı varsayılmamalıdır.
+- `SessionBundle` görev grafiği tanımını ve oyuncu dal ilerlemesini taşır. `GameplayService.register_quest_graph()` içerik tanımını oturuma bağlar; `available_quests()`, `start_quest()` ve `choose_quest_branch()` aynı çalışma zamanı durumunu kullanır. Dal seçimi oyun kaydına `quest_graph_progress` alanında yazılır. Grafik içeriği save dosyasına kopyalanmaz; yükleme sırasında içerik yeniden kaydedildiğinde bekleyen seçimler bu grafik tanımıyla doğrulanır. Eski kayıtlarda bu alan yoksa boş ilerleme ile devam edilir.
 
