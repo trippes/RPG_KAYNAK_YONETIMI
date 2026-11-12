@@ -101,6 +101,23 @@ class TestMapDefinition(unittest.TestCase):
         self.assertEqual(definition.activities, ("travel", "gather"))
         self.assertTrue(definition.transitions[0].bidirectional)
 
+    def test_rejects_unknown_nested_fields(self):
+        for field, value in (
+            ("size", {"width": 4, "height": 3, "depth": 2}),
+            ("terrain", {"default_tile": "grass", "unknown": "value"}),
+        ):
+            data = valid_definition()
+            data[field] = value
+            with self.subTest(field=field):
+                with self.assertRaisesRegex(MapDefinitionError, "unsupported fields"):
+                    MapDefinition.from_dict(data)
+
+    def test_rejects_unknown_transition_fields(self):
+        data = valid_definition()
+        data["transitions"][0]["target_location"] = "next_map"
+        with self.assertRaisesRegex(MapDefinitionError, "unsupported fields"):
+            MapDefinition.from_dict(data)
+
 
 if __name__ == "__main__":
     unittest.main()

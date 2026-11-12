@@ -106,6 +106,8 @@ class MapDefinition:
         size_data, terrain_data = data["size"], data["terrain"]
         if not isinstance(size_data, dict) or not isinstance(terrain_data, dict):
             raise MapDefinitionError("size and terrain must be objects.")
+        _reject_unknown_fields(size_data, {"width", "height"}, "size")
+        _reject_unknown_fields(terrain_data, {"default_tile"}, "terrain")
         definition = cls(
             schema_version=1,
             map_id=_string(data["map_id"], "map_id"),
@@ -158,6 +160,14 @@ class MapDefinition:
                 raise MapDefinitionError(f"Duplicate {label} IDs are not allowed.")
 
 
+def _reject_unknown_fields(data: dict, allowed: set[str], field_name: str) -> None:
+    unknown = sorted(set(data) - allowed)
+    if unknown:
+        raise MapDefinitionError(
+            f"{field_name} has unsupported fields: " + ", ".join(unknown)
+        )
+
+
 def _string(value: Any, field_name: str, *, allow_empty: bool = False) -> str:
     if not isinstance(value, str) or (not allow_empty and not value.strip()):
         raise MapDefinitionError(f"{field_name} must be a {'string' if allow_empty else 'non-empty string'}.")
@@ -181,6 +191,7 @@ def _metadata(value: Any) -> dict[str, Any] | None:
 def _feature(data: Any) -> MapFeature:
     if not isinstance(data, dict):
         raise MapDefinitionError("Feature must be an object.")
+    _reject_unknown_fields(data, {"id", "type", "tiles", "walkable"}, "feature")
     return MapFeature(
         _string(data.get("id"), "feature.id"),
         _string(data.get("type"), "feature.type"),
@@ -192,6 +203,14 @@ def _feature(data: Any) -> MapFeature:
 def _landmark(data: Any) -> LandmarkDefinition:
     if not isinstance(data, dict):
         raise MapDefinitionError("Landmark must be an object.")
+    _reject_unknown_fields(
+        data,
+        {
+            "id", "name", "description", "position", "type", "visual_type",
+            "walkable", "interactable", "activities", "resource_node_id",
+        },
+        "landmark",
+    )
     resource_node_id = data.get("resource_node_id")
     if resource_node_id is not None:
         resource_node_id = _string(resource_node_id, "landmark.resource_node_id")
@@ -212,6 +231,11 @@ def _landmark(data: Any) -> LandmarkDefinition:
 def _transition(data: Any) -> MapTransition:
     if not isinstance(data, dict):
         raise MapDefinitionError("Transition must be an object.")
+    _reject_unknown_fields(
+        data,
+        {"id", "from_tiles", "target_map_id", "target_tiles", "direction", "bidirectional"},
+        "transition",
+    )
     from_tiles = tuple(_coordinate(item, "transition.from_tiles item") for item in data.get("from_tiles", ()))
     if not from_tiles:
         raise MapDefinitionError("transition.from_tiles must not be empty.")
