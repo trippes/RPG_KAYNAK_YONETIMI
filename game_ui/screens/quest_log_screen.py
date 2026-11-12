@@ -32,7 +32,6 @@ class QuestLogScreen:
     }
     STATUS_LABELS = {
         "active": "Devam ediyor",
-        "available": "Mevcut",
         "completed": "Tamamlandı",
         "failed": "Başarısız",
     }
