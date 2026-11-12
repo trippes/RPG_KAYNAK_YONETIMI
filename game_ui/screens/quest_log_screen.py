@@ -359,7 +359,7 @@ class QuestLogScreen:
             return 70
         giver_height = 24 if getattr(quest, "giver_npc_id", None) else 0
         branch_height = sum(
-            24 + (28 * len(targets) if selected is None else 0)
+            22 + (28 * len(targets) if selected is None else 28)
             for _group, targets, selected in self._branch_groups(quest)
         )
         return 92 + giver_height + branch_height + len(quest.objectives) * 50
