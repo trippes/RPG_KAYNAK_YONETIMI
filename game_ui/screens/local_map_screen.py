@@ -211,9 +211,7 @@ class LocalMapScreen:
         )
         if landmark is None:
             return self._npc_at(tile) is not None
-        landmark_id = str(landmark[0]).lower()
-        landmark_name = str(landmark[1]).lower()
-        return bool(landmark[3]) or "tree" in landmark_id or "ağaç" in landmark_name
+        return bool(landmark[3]) or self._landmark_metadata(landmark).get("visual_type") == "tree"
 
     def _path_to(self, start, target):
         if start == target:
@@ -257,8 +255,8 @@ class LocalMapScreen:
         self.selected = target
 
     def _grid_origin(self):
-        size = max(self._map_width(), self._map_height()) * self.TILE_SIZE
-        return ((self.renderer_width - self._map_width() * self.TILE_SIZE) // 2, 54)
+        size = self._map_width() * self.TILE_SIZE
+        return ((self.renderer_width - size) // 2, 54)
 
     def _tile_size_for(self, renderer):
         available_width = max(320, renderer.width - 48)
@@ -642,7 +640,7 @@ class LocalMapScreen:
                 )
                 remaining = node.current_quantity.value if node is not None else 0
                 renderer.text(
-                    f"{'Demir cevheri' if 'mine' in str(landmark[0]).lower() else 'Odun'}: {remaining} kaldı — Enter: topla",
+                    f"{'Demir cevheri' if self._landmark_metadata(landmark).get('visual_type') == 'mine' else 'Odun'}: {remaining} kaldı — Enter: topla",
                     28, 232, (140, 220, 160), max_width=360,
                 )
         renderer.wrapped_text(
