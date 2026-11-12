@@ -29,6 +29,13 @@ class HexMapFeature:
     feature_id: str
     feature_type: str
     cells: tuple[LocalHexPosition, ...]
+    def __post_init__(self):
+        _text(self.feature_id, "feature_id"); _text(self.feature_type, "feature_type")
+        values=tuple(self.cells)
+        if not values or any(not isinstance(p,LocalHexPosition) for p in values):
+            raise HexMapDefinitionError("Feature cells must be non-empty LocalHexPosition values.")
+        if len(set(values))!=len(values): raise HexMapDefinitionError("Feature cells must be unique.")
+        object.__setattr__(self,"cells",values)
 
 @dataclass(frozen=True, slots=True)
 class HexLandmarkDefinition:
@@ -42,6 +49,16 @@ class HexLandmarkDefinition:
     activities: tuple[str, ...] = ()
     resource_node_id: str | None = None
     description: str = ""
+    def __post_init__(self):
+        _text(self.landmark_id,"landmark_id"); _text(self.name,"name")
+        if not isinstance(self.position,LocalHexPosition): raise TypeError("position must be LocalHexPosition.")
+        _text(self.landmark_type,"landmark_type"); _text(self.visual_type,"visual_type")
+        if not isinstance(self.walkable,bool) or not isinstance(self.interactable,bool): raise TypeError("landmark flags must be booleans.")
+        acts=tuple(self.activities)
+        if any(not isinstance(v,str) or not v.strip() for v in acts): raise HexMapDefinitionError("activities must be non-empty strings.")
+        if self.resource_node_id is not None: _text(self.resource_node_id,"resource_node_id")
+        if not isinstance(self.description,str): raise TypeError("description must be a string.")
+        object.__setattr__(self,"activities",acts)
 
 @dataclass(frozen=True, slots=True)
 class HexMapTransition:
@@ -53,6 +70,17 @@ class HexMapTransition:
     target_cells: tuple[LocalHexPosition, ...] = ()
     active: bool = True
     traversal_mode: str = "one_way"
+    def __post_init__(self):
+        _text(self.transition_id,"transition_id"); _text(self.target_map_id,"target_map_id")
+        sources=tuple(self.source_cells); targets=tuple(self.target_cells)
+        if not sources or any(not isinstance(p,LocalHexPosition) for p in sources): raise HexMapDefinitionError("source_cells must contain LocalHexPosition values.")
+        if len(set(sources))!=len(sources) or len(set(targets))!=len(targets): raise HexMapDefinitionError("transition cells must be unique.")
+        if any(not isinstance(p,LocalHexPosition) for p in targets): raise TypeError("target_cells must contain LocalHexPosition values.")
+        if not isinstance(self.exit_direction,HexDirection): raise TypeError("exit_direction must be HexDirection.")
+        if self.target_entry_direction is not None and not isinstance(self.target_entry_direction,HexDirection): raise TypeError("target_entry_direction must be HexDirection or None.")
+        if not isinstance(self.active,bool): raise TypeError("active must be boolean.")
+        if self.traversal_mode not in {"one_way","bidirectional"}: raise HexMapDefinitionError("Invalid traversal_mode.")
+        object.__setattr__(self,"source_cells",sources); object.__setattr__(self,"target_cells",targets)
 
 @dataclass(frozen=True, slots=True)
 class HexMapDefinition:
@@ -188,24 +216,29 @@ def parse_hex_map(data):
         seen.add(p)
         if p not in valid: raise HexMapDefinitionError(f"Cell override ({p.q}, {p.r}) is outside valid_cells.")
         terrain=item.get("terrain",default)
-        if terrain not in terrain_ids: raise HexMapDefinitionError(f"cell_overrides[{i}] references unknown terrain '{terrain}'.")
+        if not isinstance(terrain,str) or terrain not in terrain_ids: raise HexMapDefinitionError(f"cell_overrides[{i}] references unknown terrain '{terrain}'.")
         blocked=item.get("blocked",False)
         if not isinstance(blocked,bool): raise HexMapDefinitionError(f"cell_overrides[{i}].blocked must be boolean.")
         cells[p]=HexCell(p,terrain,blocked)
+    raw_features=data.get("features",[])
+    raw_landmarks=data.get("landmarks",[])
+    raw_transitions=data.get("transitions",[])
+    if not isinstance(raw_features,list) or not isinstance(raw_landmarks,list) or not isinstance(raw_transitions,list):
+        raise HexMapDefinitionError("features, landmarks and transitions must be lists.")
     features=[]
-    for i,item in enumerate(data.get("features",[])):
+    for i,item in enumerate(raw_features):
         if not isinstance(item,dict): raise HexMapDefinitionError(f"features[{i}] must be an object.")
         _unknown(item,{"id","type","cells"},f"features[{i}]")
         features.append(HexMapFeature(_text(item.get("id"),f"features[{i}].id"),_text(item.get("type"),f"features[{i}].type"),_positions(item.get("cells",[]),f"features[{i}].cells",True)))
     landmarks=[]
-    for i,item in enumerate(data.get("landmarks",[])):
+    for i,item in enumerate(raw_landmarks):
         if not isinstance(item,dict): raise HexMapDefinitionError(f"landmarks[{i}] must be an object.")
         _unknown(item,{"id","name","position","description","type","visual_type","walkable","interactable","activities","resource_node_id"},f"landmarks[{i}]")
         acts=item.get("activities",[])
         if not isinstance(acts,list) or any(not isinstance(v,str) or not v.strip() for v in acts): raise HexMapDefinitionError(f"landmarks[{i}].activities must be strings.")
         landmarks.append(HexLandmarkDefinition(_text(item.get("id"),f"landmarks[{i}].id"),_text(item.get("name"),f"landmarks[{i}].name"),_pos(item.get("position"),f"landmarks[{i}].position"),_text(item.get("type","generic"),f"landmarks[{i}].type"),_text(item.get("visual_type","generic"),f"landmarks[{i}].visual_type"),item.get("walkable",True),item.get("interactable",False),tuple(acts),item.get("resource_node_id"),item.get("description","")))
     transitions=[]
-    for i,item in enumerate(data.get("transitions",[])):
+    for i,item in enumerate(raw_transitions):
         if not isinstance(item,dict): raise HexMapDefinitionError(f"transitions[{i}] must be an object.")
         _unknown(item,{"id","source_cells","exit_direction","target_map_id","target_entry_direction","target_cells","active","traversal_mode"},f"transitions[{i}]")
         transitions.append(HexMapTransition(_text(item.get("id"),f"transitions[{i}].id"),_positions(item.get("source_cells",[]),f"transitions[{i}].source_cells",True),_direction(item.get("exit_direction"),f"transitions[{i}].exit_direction"),_text(item.get("target_map_id"),f"transitions[{i}].target_map_id"),_direction(item.get("target_entry_direction"),f"transitions[{i}].target_entry_direction",True),_positions(item.get("target_cells",[]),f"transitions[{i}].target_cells"),item.get("active",True),item.get("traversal_mode","one_way")))
