@@ -5,7 +5,7 @@ from types import SimpleNamespace
 from game_ui.input import InputState
 from game_ui.screens.main_screen import MainScreen
 from game_ui.hex_world_view import HexWorldView
-from core.domain.spatial import HexDirection, LocalHexPosition
+from core.domain.spatial import EntityPosition, LocalHexPosition
 
 
 class _FakeService:
@@ -62,9 +62,7 @@ class TestHexWorldView(unittest.TestCase):
         self.view.handle(InputState(actions={"confirm"}))
         self.assertEqual(
             self.view.runtime.entity("hero").position,
-            self.view.runtime.entity("hero").position.__class__(
-                "hex_clearing_demo", LocalHexPosition(0, 0)
-            ),
+            EntityPosition("hex_clearing_demo", LocalHexPosition(0, 0)),
         )
         self.view.handle(InputState(actions={"confirm"}))
         self.assertEqual(
