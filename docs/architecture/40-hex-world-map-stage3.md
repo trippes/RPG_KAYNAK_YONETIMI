@@ -60,9 +60,9 @@ Demo dosyası: `content/demo_eldoria/world.json`
 }
 ```
 
-Zorunlu alanlar: `schema_version`, `id`, `name`, `maps`. Her yerleşim `map_id` ve integer `position.q/r) alanlarını taşır. Bilinmeyen alanlar, eksik alanlar, yanlış tipler, yinelenen map ID'leri ve yinelenen koordinatlar reddedilir. Metadata opsiyoneldir.
+Zorunlu alanlar: `schema_version`, `id`, `name`, `maps`. Her yerleşim `map_id` ve integer `position.q` ve `position.r` alanlarını taşır. Bilinmeyen alanlar, eksik alanlar, yanlış tipler, yinelenen map ID'leri ve yinelenen koordinatlar reddedilir. Metadata opsiyoneldir.
 
-Manifest'e eklenen `world_map` alanı dünya JSON dosyasının package içindeki göreli yoludur. Alanı kullanmayan eski content package'lar için dünya tanımı `None) kalır; mevcut manifest schema version artırılmamıştır.
+Manifest'e eklenen `world_map` alanı dünya JSON dosyasının package içindeki göreli yoludur. Alanı kullanmayan eski content package'lar için dünya tanımı `None` kalır; mevcut manifest schema version artırılmamıştır.
 
 ## 4. Geçişlerin tek doğruluk kaynağı
 
@@ -99,9 +99,9 @@ Wheel dağıtımına `world.json` dahil edilmiştir.
 
 Yeni testler:
 
-- `tests/test_foundation/test_world_hex_position.py): immutable/hash davranışı, tip ayrımı, altı komşu ve ters yön, geometri uzaklığı.
+- `tests/test_foundation/test_world_hex_position.py`: immutable/hash davranışı, tip ayrımı, altı komşu ve ters yön, geometri uzaklığı.
 - `tests/test_world/test_world_map_definition.py`: boş dünya, geçerli yerleşim, duplicate ID/koordinat, bilinmeyen/yerleşmemiş map, yanlış tip, reciprocal bağlantı, eksik dönüş, yanlış yön, yanlış giriş yönü, eksik hedef, geçersiz hedef hücresi, açık one-way ve pasif placeholder davranışı.
-- `tests/test_application/test_content_loader.py): demo package dünya tanımının yüklenmesi ve yerleşim koordinatı.
+- `tests/test_application/test_content_loader.py`: demo package dünya tanımının yüklenmesi ve yerleşim koordinatı.
 
 Mevcut kare harita testleri dokuz map ID'sini, sekiz bağlantı çiftini, başlangıç konumunu ve legacy world graph'ı doğrulamaya devam eder.
 
