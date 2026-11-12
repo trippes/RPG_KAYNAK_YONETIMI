@@ -4,6 +4,7 @@ from ..renderer import GOLD, TEXT_SOFT, duration_label
 from resources import Quantity, ResourceUnit
 from collections import deque
 from application.content_loader import load_content_package
+from ..hex_world_view import HexWorldView
 
 
 class MainScreen:
@@ -38,6 +39,7 @@ class MainScreen:
     def __init__(self, service):
         self.service = service
         self._map_definition_cache = None
+        self._hex_world_view = HexWorldView(service)
         self.selected = (16, 16)
         self.selected_npc_id = None
         self.selected_container_id = None
@@ -614,6 +616,19 @@ class MainScreen:
                 return target
             return None
 
+        if state.pressed("hex_portal"):
+            if self._hex_world_view.active:
+                self._hex_world_view.leave()
+                self.message = self._hex_world_view.message
+            elif self._hex_world_view.enter():
+                self.message = self._hex_world_view.message
+            else:
+                self.message = self._hex_world_view.message
+            return None
+
+        if self._hex_world_view.active:
+            return self._hex_world_view.handle(state)
+
         if state.pressed("up"):
             self._move_player(0, -1)
         if state.pressed("down"):
@@ -812,6 +827,26 @@ class MainScreen:
     def render(self, renderer):
         self.renderer_width = renderer.width
         self.renderer_height = renderer.height
+        if self._hex_world_view.active:
+            self._hex_world_view.render(renderer)
+            if self.menu_open:
+                renderer.pg.draw.rect(
+                    renderer.surface, (11, 15, 24),
+                    renderer.pg.Rect(0, 0, renderer.width, renderer.height),
+                )
+                self.menu_rects = renderer.vertical_menu(
+                    "OYUN MENÜSÜ",
+                    [label for _target, label in self.menu_options],
+                    self.menu_selected,
+                    width=min(420, renderer.width - 48),
+                    row_height=46,
+                )
+                renderer.text(
+                    "Yukarı/Aşağı seç   Enter onayla   Esc kapat",
+                    0, self.menu_rects[-1].bottom + 18, TEXT_SOFT,
+                    max_width=renderer.width,
+                )
+            return
         self.TILE_SIZE = self._tile_size_for(renderer)
         snapshot = self.service.state()
         actor = snapshot.actors[0] if snapshot.actors else None
