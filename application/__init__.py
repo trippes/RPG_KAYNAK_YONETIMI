@@ -62,6 +62,13 @@ from .migrations import CURRENT_SAVE_SCHEMA_VERSION, migrate_save_data
 from .container_persistence import CONTAINER_SCHEMA, CONTAINER_SCHEMA_VERSION, ContainerPersistenceError, ContainerSnapshot
 from .lock_persistence import LOCK_SCHEMA, LOCK_SCHEMA_VERSION, LockPersistenceError, LockSnapshot
 from .world_object_placement import WorldObjectPlacement, WorldObjectPlacementError, WorldObjectPlacementRegistry
+from .world_map_definition import (
+    WorldMapDefinition,
+    WorldMapDefinitionError,
+    WorldMapPlacement,
+    parse_world_map,
+    validate_world_map,
+)
 
 __all__ = [
     "GameApplication",
@@ -120,6 +127,8 @@ __all__ = [
     "SocialSnapshot", "CombatSnapshot",
     "CURRENT_SAVE_SCHEMA_VERSION", "migrate_save_data",
     "WorldObjectPlacement", "WorldObjectPlacementError", "WorldObjectPlacementRegistry",
+    "WorldMapDefinition", "WorldMapDefinitionError", "WorldMapPlacement",
+    "parse_world_map", "validate_world_map",
     "CONTAINER_SCHEMA", "CONTAINER_SCHEMA_VERSION", "ContainerPersistenceError", "ContainerSnapshot",
     "LOCK_SCHEMA", "LOCK_SCHEMA_VERSION", "LockPersistenceError", "LockSnapshot",
 ]
