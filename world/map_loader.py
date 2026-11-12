@@ -66,6 +66,10 @@ def load_map_definitions(directory: str | Path) -> dict[str, MapDefinition]:
                 reciprocal = any(
                     candidate.bidirectional
                     and candidate.target_map_id == definition.map_id
+                    and candidate.direction == {
+                        "north": "south", "south": "north",
+                        "east": "west", "west": "east",
+                    }.get(transition.direction)
                     and set(candidate.from_tiles) == set(transition.target_tiles)
                     and set(candidate.target_tiles) == set(transition.from_tiles)
                     for candidate in target.transitions

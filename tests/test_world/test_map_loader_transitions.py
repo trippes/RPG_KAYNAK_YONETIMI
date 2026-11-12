@@ -99,3 +99,16 @@ class TestMapPackageTransitions(unittest.TestCase):
                 ]),
             })
 
+    def test_bidirectional_transition_requires_opposite_reverse_direction(self):
+        with self.assertRaisesRegex(MapDefinitionError, "reciprocal"):
+            self._load({
+                "source": record("source", transitions=[
+                    {**transition("out", "target"), "bidirectional": True}
+                ]),
+                "target": record("target", 8, 7, transitions=[
+                    {**transition("back", "source", source=(0, 1), destination=(3, 1)),
+                     "bidirectional": True}
+                ]),
+            })
+
+
