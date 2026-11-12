@@ -18,10 +18,12 @@ class TestContentPackageLoader(unittest.TestCase):
         package = load_content_package(DEMO_PACKAGE)
 
         self.assertEqual(package.package_id, "demo_eldoria")
-        self.assertEqual(package.package_version, "0.1.0")
+        self.assertEqual(package.package_version, "0.2.0")
         self.assertIn("starter", package.files)
+        self.assertIn("npcs", package.files)
         self.assertEqual(package.files["starter"]["schema_version"], 1)
         self.assertIn("locations", package.files["starter"])
+        self.assertEqual(len(package.files["npcs"]["npcs"]), 4)
 
     def test_package_rejects_unsupported_manifest_schema(self):
         with tempfile.TemporaryDirectory() as directory:
