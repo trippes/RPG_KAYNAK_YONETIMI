@@ -161,6 +161,7 @@ class QuestJournalWindowTests(unittest.TestCase):
         self.assertIn("Devam Eden (12)", rendered_text)
         self.assertNotIn("Mevcut", rendered_text)
         self.assertEqual(len(self.screen.CATEGORIES), 3)
+        self.assertNotIn("available", self.screen.STATUS_LABELS)
         self.assertEqual(
             tuple(key for key, _label in self.screen.CATEGORIES),
             ("active", "completed", "failed"),
