@@ -74,7 +74,7 @@ class TestMainScreenJsonTransitions(unittest.TestCase):
     def test_crosses_using_json_target_and_target_map_dimensions(self):
         screen, service = self._screen()
         self.assertTrue(screen._cross_boundary(service.actor, 1, 0))
-        self.assertEqual(service.placed, ("hero", "target"))
+        self.assertEqual(service.placed, ("hero", "target"), screen.message)
         self.assertEqual(service.tile_position, ("hero", 5, 6))
 
     def test_transition_requires_matching_direction(self):
