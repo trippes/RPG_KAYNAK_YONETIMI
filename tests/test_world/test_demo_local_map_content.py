@@ -12,6 +12,27 @@ EXPECTED_MAPS = {
     "village", "forest", "south_forest", "west_forest", "east_forest",
     "north_mine", "south_mine", "west_mine", "east_mine",
 }
+EXPECTED_WORLD_POSITIONS = {
+    "village": (180, 220),
+    "forest": (180, 50),
+    "south_forest": (180, 390),
+    "west_forest": (30, 220),
+    "east_forest": (330, 220),
+    "north_mine": (300, 50),
+    "south_mine": (300, 390),
+    "west_mine": (30, 390),
+    "east_mine": (480, 220),
+}
+EXPECTED_CONNECTIONS = {
+    frozenset(("village", "forest")),
+    frozenset(("village", "south_forest")),
+    frozenset(("village", "west_forest")),
+    frozenset(("village", "east_forest")),
+    frozenset(("forest", "north_mine")),
+    frozenset(("south_forest", "south_mine")),
+    frozenset(("west_forest", "west_mine")),
+    frozenset(("east_forest", "east_mine")),
+}
 
 
 class TestDemoLocalMapContent(unittest.TestCase):
@@ -25,6 +46,10 @@ class TestDemoLocalMapContent(unittest.TestCase):
         self.assertTrue(all(item.world_position is not None for item in definitions.values()))
         positions = [item.world_position for item in definitions.values()]
         self.assertEqual(len(positions), len(set(positions)))
+        self.assertEqual(
+            {map_id: item.world_position for map_id, item in definitions.items()},
+            EXPECTED_WORLD_POSITIONS,
+        )
 
     def test_all_landmark_coordinates_are_inside_their_local_maps(self):
         for path in MAPS.glob("*.json"):
@@ -88,6 +113,16 @@ class TestDemoLocalMapContent(unittest.TestCase):
         self.assertEqual(len(starting), 1)
         self.assertEqual(starting[0].map_id, "village")
         self.assertEqual(starting[0].starting_position, (16, 29))
+
+    def test_world_graph_preserves_all_eight_original_connections(self):
+        definitions = load_map_definitions(MAPS)
+        actual = {
+            frozenset((map_id, transition.target_map_id))
+            for map_id, definition in definitions.items()
+            for transition in definition.transitions
+            if transition.bidirectional
+        }
+        self.assertEqual(actual, EXPECTED_CONNECTIONS)
 
 
 if __name__ == "__main__":
