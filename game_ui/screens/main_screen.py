@@ -64,11 +64,11 @@ class MainScreen:
 
     def _map_width(self):
         definition = self._map_definition()
-        return definition.size.width if definition is not None else 32
+        return definition.size.width if definition is not None else 1
 
     def _map_height(self):
         definition = self._map_definition()
-        return definition.size.height if definition is not None else 32
+        return definition.size.height if definition is not None else 1
 
     def _gate_tiles(self, definition=None):
         definition = definition or self._map_definition()
@@ -242,9 +242,13 @@ class MainScreen:
         if location is None or definition is None:
             return blocked
         blocked.update(definition.blocked_tiles)
+        walkable_feature_tiles = set()
         for feature in definition.features:
-            if not feature.walkable:
+            if feature.walkable:
+                walkable_feature_tiles.update(feature.tiles)
+            else:
                 blocked.update(feature.tiles)
+        blocked.difference_update(walkable_feature_tiles)
         actors = self._actors()
         if actors:
             blocked.update(
