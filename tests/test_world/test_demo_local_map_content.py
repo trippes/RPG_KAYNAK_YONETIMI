@@ -55,6 +55,32 @@ class TestDemoLocalMapContent(unittest.TestCase):
                 if landmark.resource_node_id is not None:
                     self.assertIn(landmark.resource_node_id, node_ids)
 
+    def test_world_positions_are_declared_by_local_map_files(self):
+        starter = json.loads((PACKAGE / "starter_content.json").read_text(encoding="utf-8"))
+        for location in starter["locations"]:
+            map_id = ALIASES.get(location["id"], location["id"])
+            definition = load_map_definition(MAPS / f"{map_id}.json")
+            self.assertEqual(definition.world_position, tuple(location["position"]), map_id)
+
+    def test_local_map_transitions_cover_every_legacy_world_connection(self):
+        starter = json.loads((PACKAGE / "starter_content.json").read_text(encoding="utf-8"))
+        transitions = {
+            (map_id, transition.target_map_id)
+            for map_id, definition in (
+                (path.stem, load_map_definition(path)) for path in MAPS.glob("*.json")
+            )
+            for transition in definition.transitions
+        }
+        for first, second in starter["connections"]:
+            first_id = ALIASES.get(first, first)
+            second_id = ALIASES.get(second, second)
+            self.assertIn((first_id, second_id), transitions)
+            self.assertIn((second_id, first_id), transitions)
+
+    def test_village_declares_player_starting_tile(self):
+        definition = load_map_definition(MAPS / "village.json")
+        self.assertEqual(definition.starting_position, (16, 29))
+
 
 if __name__ == "__main__":
     unittest.main()

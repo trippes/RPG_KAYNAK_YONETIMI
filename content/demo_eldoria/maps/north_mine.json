@@ -559,5 +559,27 @@
       "resource_node_id": "north_mine_iron"
     }
   ],
-  "transitions": []
+  "transitions": [
+    {
+      "id": "north_mine_to_forest",
+      "from_tiles": [
+        [
+          0,
+          16
+        ]
+      ],
+      "target_map_id": "forest",
+      "target_tiles": [
+        [
+          31,
+          16
+        ]
+      ],
+      "direction": "west"
+    }
+  ],
+  "world_position": [
+    300,
+    50
+  ]
 }

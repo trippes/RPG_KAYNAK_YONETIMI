@@ -610,5 +610,44 @@
       "resource_node_id": "south_iron_mine"
     }
   ],
-  "transitions": []
+  "transitions": [
+    {
+      "id": "south_forest_to_village",
+      "from_tiles": [
+        [
+          16,
+          0
+        ]
+      ],
+      "target_map_id": "village",
+      "target_tiles": [
+        [
+          16,
+          31
+        ]
+      ],
+      "direction": "north"
+    },
+    {
+      "id": "south_forest_to_south_mine",
+      "from_tiles": [
+        [
+          31,
+          16
+        ]
+      ],
+      "target_map_id": "south_mine",
+      "target_tiles": [
+        [
+          0,
+          16
+        ]
+      ],
+      "direction": "east"
+    }
+  ],
+  "world_position": [
+    180,
+    390
+  ]
 }

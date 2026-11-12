@@ -559,5 +559,27 @@
       "resource_node_id": "south_mine_iron"
     }
   ],
-  "transitions": []
+  "transitions": [
+    {
+      "id": "south_mine_to_south_forest",
+      "from_tiles": [
+        [
+          0,
+          16
+        ]
+      ],
+      "target_map_id": "south_forest",
+      "target_tiles": [
+        [
+          31,
+          16
+        ]
+      ],
+      "direction": "west"
+    }
+  ],
+  "world_position": [
+    300,
+    390
+  ]
 }
