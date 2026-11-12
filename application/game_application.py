@@ -165,9 +165,9 @@ class GameApplication:
         managed_world_ids = set()
         local_map_catalog = {}
         for world in candidate.session.worlds.get_all():
-            if world.world_id != package_world_id:
-                continue
-            managed_world_ids.add(world.world_id)
+            is_package_world = world.world_id == package_world_id
+            if is_package_world:
+                managed_world_ids.add(world.world_id)
             world_map = build_starter_world_map(world.world_id)
 
             saved_location_ids = {
@@ -181,7 +181,7 @@ class GameApplication:
                 location.location_id for location in world_map.locations()
             }
             missing_location_ids = sorted(saved_location_ids - available_location_ids)
-            if missing_location_ids:
+            if is_package_world and missing_location_ids:
                 raise ValueError(
                     f"Save for world '{world.world_id}' references maps missing from "
                     f"the active content package: {', '.join(missing_location_ids)}. "
