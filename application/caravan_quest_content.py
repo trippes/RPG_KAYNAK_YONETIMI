@@ -1,7 +1,5 @@
-"""Playable caravan quest content for the Eldoria demo branch."""
+"""Playable caravan quest mechanics for the Eldoria demo package."""
 
-from core.domain.spatial import Position
-from npc import NPC
 from quests import Dialogue, DialogueChoice, DialogueNode, Objective, ObjectiveType, Quest, Reward
 
 CARAVAN_QUEST_ID = "lost_caravan"
@@ -10,19 +8,13 @@ CARAVAN_DIALOGUE_ID = "caravan_merchant_dialogue"
 
 
 def populate_caravan_quest_demo(service):
-    """Register Yadigar and the sequential caravan quest in a gameplay session."""
+    """Register the sequential caravan quest; its giver NPC is package data."""
     bundle = service.application.holder.current
     if "player" not in bundle.inventories:
         raise RuntimeError("Caravan quest requires the player inventory.")
     existing = bundle.quest_log.get(CARAVAN_QUEST_ID)
 
-    npc = bundle.social.npcs.get(CARAVAN_NPC_ID)
-    if npc is None:
-        service.register_npc(NPC(
-            CARAVAN_NPC_ID, "Tüccar Yadigar", "merchant",
-            ("wardens",), "village", position=Position(20, 20),
-        ))
-
+    # NPC identity and placement are loaded from the active content package.
     quest = existing or Quest(
         CARAVAN_QUEST_ID,
         "Kayıp Kervanın İzinde",
