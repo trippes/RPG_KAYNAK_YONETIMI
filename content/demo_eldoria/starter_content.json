@@ -19,15 +19,10 @@
       29
     ],
     "race": {
-      "id": "human",
-      "name": "İnsan",
-      "ability_id": "adapt",
-      "ability_name": "Uyum"
+      "id": "human"
     },
     "class": {
-      "id": "gatherer",
-      "name": "Toplayıcı",
-      "hit_points": 12
+      "id": "gatherer"
     }
   },
   "locations": [

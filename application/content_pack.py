@@ -10,7 +10,7 @@ from types import MappingProxyType
 
 from application import GameplayService
 from application.content_loader import ContentPackageError, load_content_package
-from character import Ability, CharacterClass, CharacterFactory, Race
+from character import Ability, Attribute, CharacterClass, CharacterFactory, Race
 from core.domain.spatial import Position
 from npc import Faction, NPC
 from economy import Currency, Money, MarketProfile, MarketCatalogEntry
@@ -151,46 +151,79 @@ def _id_resolver(definition: dict, ids: StarterContentIds):
     return lambda key: replacements.get(key, key)
 
 
-def _build_character_factory(character_data: dict) -> CharacterFactory:
-    race_data = character_data["race"]
-    class_data = character_data["class"]
-    return CharacterFactory(
-        {
-            race_data["id"]: Race(
-                race_data["id"], race_data["name"],
-                abilities=(Ability(race_data["ability_id"], race_data["ability_name"]),),
-            ),
-            "elf": Race(
-                "elf", "Orman Elfi",
-                {"dexterity": 2, "wisdom": 1},
-                (Ability("night_sight", "Gece Görüşü", "Karanlıkta daha iyi algı."),),
-            ),
-            "dwarf": Race(
-                "dwarf", "Dağ Cücesi",
-                {"constitution": 2, "strength": 1},
-                (Ability("stone_endurance", "Taş Dayanıklılığı", "Yüksek fiziksel direnç."),),
-            ),
-        },
-        {
-            class_data["id"]: CharacterClass(
-                class_data["id"], class_data["name"],
-                hit_points=class_data["hit_points"],
-                skill_ranks=class_data.get(
-                    "skill_ranks", {"gathering": 1, "survival": 1}
-                ),
-            ),
-            "warden": CharacterClass(
-                "warden", "Vadi Muhafızı", hit_points=16,
-                skill_ranks={"combat": 2, "survival": 1},
-                abilities=(Ability("guard_stance", "Muhafız Duruşu", "Savunmada eğitimli."),),
-            ),
-            "arcanist": CharacterClass(
-                "arcanist", "Arkanist", hit_points=9,
-                skill_ranks={"lore": 2, "alchemy": 1},
-                abilities=(Ability("spark", "Kıvılcım", "Temel büyü bilgisi."),),
-            ),
-        },
-    )
+def load_character_definitions(path: str | Path | None = None) -> dict:
+    """Load and validate reusable race, class and ability definitions."""
+    definition = _load_package_file("characters") if path is None else _read_json_definition(Path(path), "Character definition")
+    if definition.get("schema_version") != CONTENT_SCHEMA_VERSION:
+        raise ContentDefinitionError("Unsupported character definition schema version.")
+    for section in ("races", "classes"):
+        records = definition.get(section)
+        if not isinstance(records, list):
+            raise ContentDefinitionError(f"Character definitions must contain a '{section}' list.")
+        seen: set[str] = set()
+        for index, record in enumerate(records):
+            if not isinstance(record, dict):
+                raise ContentDefinitionError(f"{section} record at index {index} must be an object.")
+            record_id, name = record.get("id"), record.get("name")
+            if not isinstance(record_id, str) or not record_id.strip() or not isinstance(name, str) or not name.strip():
+                raise ContentDefinitionError(f"{section} record at index {index} has invalid identity fields.")
+            if record_id in seen:
+                raise ContentDefinitionError(f"Duplicate {section[:-1]} id: {record_id}")
+            seen.add(record_id)
+            abilities = record.get("abilities", [])
+            if not isinstance(abilities, list):
+                raise ContentDefinitionError(f"{section[:-1]} '{record_id}' abilities must be a list.")
+            for ability in abilities:
+                if not isinstance(ability, dict) or not isinstance(ability.get("id"), str) or not ability["id"].strip() or not isinstance(ability.get("name"), str) or not ability["name"].strip():
+                    raise ContentDefinitionError(f"{section[:-1]} '{record_id}' has an invalid ability.")
+            if section == "races":
+                modifiers = record.get("attribute_modifiers", {})
+                if not isinstance(modifiers, dict):
+                    raise ContentDefinitionError(f"Race '{record_id}' attribute_modifiers must be an object.")
+                for attribute, amount in modifiers.items():
+                    try:
+                        Attribute(attribute)
+                    except ValueError as error:
+                        raise ContentDefinitionError(f"Race '{record_id}' has an unknown attribute: {attribute}") from error
+                    if isinstance(amount, bool) or not isinstance(amount, int):
+                        raise ContentDefinitionError(f"Race '{record_id}' has an invalid attribute modifier.")
+            else:
+                hit_points = record.get("hit_points", 10)
+                ranks = record.get("skill_ranks", {})
+                if isinstance(hit_points, bool) or not isinstance(hit_points, int) or hit_points <= 0:
+                    raise ContentDefinitionError(f"Class '{record_id}' hit_points must be positive.")
+                if not isinstance(ranks, dict) or any(not isinstance(key, str) or not key.strip() or isinstance(value, bool) or not isinstance(value, int) or value < 0 for key, value in ranks.items()):
+                    raise ContentDefinitionError(f"Class '{record_id}' has invalid skill ranks.")
+    return definition
+
+
+def _build_character_factory(character_data: dict, character_definitions: dict) -> CharacterFactory:
+    def abilities(records):
+        return tuple(
+            Ability(item["id"], item["name"], item.get("description", ""))
+            for item in records
+        )
+
+    races = {
+        record["id"]: Race(
+            record["id"], record["name"],
+            record.get("attribute_modifiers", {}),
+            abilities(record.get("abilities", ())),
+        )
+        for record in character_definitions["races"]
+    }
+    classes = {
+        record["id"]: CharacterClass(
+            record["id"], record["name"],
+            hit_points=record.get("hit_points", 10),
+            skill_ranks=record.get("skill_ranks", {}),
+            abilities=abilities(record.get("abilities", ())),
+        )
+        for record in character_definitions["classes"]
+    }
+    if character_data["race"]["id"] not in races or character_data["class"]["id"] not in classes:
+        raise ContentDefinitionError("Starter character references an undefined race or class.")
+    return CharacterFactory(races, classes)
 
 
 
@@ -423,7 +456,7 @@ def _register_npcs_for_phase(service, npc_definitions, phase: str, resolve_id):
         )
 
 
-def _register_opening_content(application, definition: dict, npc_definitions, ids: StarterContentIds):
+def _register_opening_content(application, definition: dict, npc_definitions, character_definitions, ids: StarterContentIds):
     resolve_id = _id_resolver(definition, ids)
     world_data = definition["world"]
     world = application.aktif_dunya() or application.dunya_olustur(
@@ -434,7 +467,7 @@ def _register_opening_content(application, definition: dict, npc_definitions, id
     )
     bundle = application.holder.current
     character_data = definition["character"]
-    factory = _build_character_factory(character_data)
+    factory = _build_character_factory(character_data, character_definitions)
     if not bundle.characters:
         application.karakter_olustur(
             factory,
@@ -484,14 +517,17 @@ def populate_opening_content(
     ids: StarterContentIds = StarterContentIds(),
     definition_path=None,
     npc_definitions_path=None,
+    character_definitions_path=None,
 ):
     """Build the opening session using data-defined NPC records."""
     definition = load_opening_content(definition_path)
     npc_definitions = load_npc_definitions(npc_definitions_path)
+    character_definitions = load_character_definitions(character_definitions_path)
     return _register_opening_content(
         application,
         definition,
         npc_definitions,
+        character_definitions,
         ids,
     )
 
@@ -671,6 +707,7 @@ __all__ = [
     "load_starter_content",
     "load_opening_content",
     "load_npc_definitions",
+    "load_character_definitions",
     "load_quest_definitions",
     "load_resource_definitions",
     "populate_opening_content",

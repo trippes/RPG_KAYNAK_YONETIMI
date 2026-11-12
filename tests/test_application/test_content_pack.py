@@ -11,6 +11,7 @@ from application.content_pack import (
     load_npc_definitions,
     load_quest_definitions,
     load_resource_definitions,
+    load_character_definitions,
     populate_opening_content,
     populate_gameplay_resources,
     _build_dialogue_from_definition,
@@ -163,6 +164,21 @@ class TestContentPack(unittest.TestCase):
             first_quest_ids,
         )
         self.assertEqual(set(application.holder.current.social.dialogues), first_dialogue_ids)
+
+    def test_races_and_classes_are_loaded_from_character_content_data(self):
+        definitions = load_character_definitions()
+        self.assertEqual(
+            {record["id"] for record in definitions["races"]},
+            {"human", "elf", "dwarf"},
+        )
+        self.assertEqual(
+            {record["id"] for record in definitions["classes"]},
+            {"gatherer", "warden", "arcanist"},
+        )
+        application = GameApplication.create_default()
+        service, _ids = populate_opening_content(application)
+        self.assertIn("elf", service._character_factory.races)
+        self.assertIn("arcanist", service._character_factory.classes)
 
     def test_resource_nodes_are_data_defined_and_duration_is_customizable(self):
         records = [dict(record) for record in load_resource_definitions()]

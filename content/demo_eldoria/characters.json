@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "races": [
+    {
+      "id": "human",
+      "name": "İnsan",
+      "attribute_modifiers": {},
+      "abilities": [
+        {
+          "id": "adapt",
+          "name": "Uyum",
+          "description": "Farklı koşullara hızla uyum sağlar."
+        }
+      ]
+    },
+    {
+      "id": "elf",
+      "name": "Orman Elfi",
+      "attribute_modifiers": {
+        "dexterity": 2,
+        "wisdom": 1
+      },
+      "abilities": [
+        {
+          "id": "night_sight",
+          "name": "Gece Görüşü",
+          "description": "Karanlıkta daha iyi algı."
+        }
+      ]
+    },
+    {
+      "id": "dwarf",
+      "name": "Dağ Cücesi",
+      "attribute_modifiers": {
+        "constitution": 2,
+        "strength": 1
+      },
+      "abilities": [
+        {
+          "id": "stone_endurance",
+          "name": "Taş Dayanıklılığı",
+          "description": "Yüksek fiziksel direnç."
+        }
+      ]
+    }
+  ],
+  "classes": [
+    {
+      "id": "gatherer",
+      "name": "Toplayıcı",
+      "hit_points": 12,
+      "skill_ranks": {
+        "gathering": 1,
+        "survival": 1
+      },
+      "abilities": []
+    },
+    {
+      "id": "warden",
+      "name": "Vadi Muhafızı",
+      "hit_points": 16,
+      "skill_ranks": {
+        "combat": 2,
+        "survival": 1
+      },
+      "abilities": [
+        {
+          "id": "guard_stance",
+          "name": "Muhafız Duruşu",
+          "description": "Savunmada eğitimli."
+        }
+      ]
+    },
+    {
+      "id": "arcanist",
+      "name": "Arkanist",
+      "hit_points": 9,
+      "skill_ranks": {
+        "lore": 2,
+        "alchemy": 1
+      },
+      "abilities": [
+        {
+          "id": "spark",
+          "name": "Kıvılcım",
+          "description": "Temel büyü bilgisi."
+        }
+      ]
+    }
+  ]
+}
