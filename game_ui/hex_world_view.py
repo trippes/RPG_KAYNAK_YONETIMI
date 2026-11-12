@@ -12,7 +12,8 @@ from application.hex_world_runtime import HexWorldRuntime
 from core.domain.spatial import (
     EntityPosition, HexCoord, HexDirection, LocalHexPosition, MovementProfile,
 )
-from core.domain.spatial.hex_geometry import axial_to_pixel, pixel_to_axial
+from core.domain.spatial.hex_geometry import axial_to_pixel
+from game_ui.world_transform import WorldTransform
 from application.content_loader import load_content_package
 
 
@@ -39,6 +40,7 @@ class HexWorldView:
         self._package = None
         self._hex_size = self.HEX_RADIUS
         self._center = (0, 0)
+        self._world_transform = WorldTransform(hex_size=self.HEX_RADIUS)
 
     def _load_package(self):
         if self._package is None:
@@ -171,11 +173,7 @@ class HexWorldView:
 
         if state.mouse_clicked and state.mouse_pos is not None:
             size = self._hex_size
-            target_coord = pixel_to_axial(
-                state.mouse_pos[0] - self._center[0],
-                state.mouse_pos[1] - self._center[1],
-                size,
-            )
+            target_coord = self._world_transform.screen_to_axial(*state.mouse_pos)
             q, r = target_coord.q, target_coord.r
             target = LocalHexPosition(q, r)
             if self._map().has_cell(target):
@@ -205,11 +203,12 @@ class HexWorldView:
         )
         self._hex_size = size
         self._center = (renderer.width // 2, renderer.height // 2 + 4)
+        self._world_transform.configure(
+            hex_size=size, camera_x=0.0, camera_y=0.0,
+            viewport_center=self._center, zoom=1.0,
+        )
         return {
-            cell: (
-                self._center[0] + axial_to_pixel(HexCoord(cell.q, cell.r), size)[0],
-                self._center[1] + axial_to_pixel(HexCoord(cell.q, cell.r), size)[1],
-            )
+            cell: self._world_transform.axial_to_screen(HexCoord(cell.q, cell.r))
             for cell in definition.valid_cells
         }
 
