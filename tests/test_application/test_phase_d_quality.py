@@ -23,7 +23,6 @@ from game_ui.screens.quest_log_screen import QuestLogScreen
 from game_ui.screens.save_slots_screen import SaveSlotsScreen
 from quests import Objective, ObjectiveType, Quest, QuestLog, QuestState, Reward
 
-
 class TestPhaseDQuality(unittest.TestCase):
     def test_quest_log_uses_shared_responsive_layout_without_panel_overlap(self):
         service, _ = populate_opening_content(GameApplication.create_default())
@@ -190,30 +189,6 @@ class TestPhaseDQuality(unittest.TestCase):
         self.assertEqual([quest.quest_id for quest in screen._quests()], ["completed"])
         screen.category = 2
         self.assertEqual([quest.quest_id for quest in screen._quests()], ["failed"])
-
-    def test_quest_log_selection_and_tab_click_reset_selection_and_scroll(self):
-        screen = self._quest_screen()
-        screen.selected = 4
-        screen.scroll = 90
-
-        first_tab = screen._tab_bounds()[0]
-        screen.handle(InputState(
-            mouse_clicked=True,
-            mouse_pos=(first_tab[0] + first_tab[2] // 2,
-                       first_tab[1] + first_tab[3] // 2),
-        ))
-
-        self.assertEqual(screen.category, 0)
-        self.assertEqual(screen.selected, 0)
-        self.assertEqual(screen.scroll, 0)
-
-        second_row = screen._row_bounds()[1]
-        screen.handle(InputState(
-            mouse_clicked=True,
-            mouse_pos=(second_row[0] + second_row[2] // 2,
-                       second_row[1] + second_row[3] // 2),
-        ))
-        self.assertEqual(screen.selected, 1)
 
     def test_quest_log_scroll_is_clamped_to_list_bounds(self):
         screen = self._quest_screen()
@@ -501,7 +476,6 @@ class TestPhaseDQuality(unittest.TestCase):
         self.assertTrue(local_screen._gather_at_selected_tree())
         service.advance_by(service.gathering_duration(ids.hero_id))
         self.assertEqual(service.inventory("player").stocks, (("iron_ore", 1, "item"),))
-
 
     def test_dialogue_objective_helpers_tolerate_missing_and_malformed_data(self):
         self.assertIsNone(DialogueScreen._find_objective(None, "missing"))
@@ -1407,47 +1381,6 @@ class TestPhaseDQuality(unittest.TestCase):
         self.assertEqual(manager.open_ids, ("character", "quest_log", "inventory"))
         self.assertEqual(manager.windows["quest_log"].bounds.topleft, original_position)
 
-    def test_window_manager_closes_only_quest_window_with_x(self):
-        class Rect:
-            def __init__(self, *value):
-                self.x, self.y, self.width, self.height = (
-                    value[0] if len(value) == 1 else value
-                )
-            @property
-            def right(self):
-                return self.x + self.width
-            @property
-            def bottom(self):
-                return self.y + self.height
-            @property
-            def topleft(self):
-                return self.x, self.y
-            @topleft.setter
-            def topleft(self, value):
-                self.x, self.y = value
-            def collidepoint(self, point):
-                return self.x <= point[0] < self.right and self.y <= point[1] < self.bottom
-
-        RectType = Rect
-        class Backend:
-            Rect = RectType
-
-        manager = WindowManager(Backend(), 960, 640)
-        manager.register("inventory", object(), (20, 20, 300, 240))
-        manager.register("character", object(), (100, 100, 300, 240))
-        manager.register("quest_log", object(), (180, 140, 400, 240))
-        manager.open("inventory")
-        manager.open("character")
-        manager.open("quest_log")
-
-        close_position = (manager.windows["quest_log"].bounds.right - 10, 150)
-        self.assertTrue(manager.handle_input(InputState(
-            mouse_pos=close_position, mouse_clicked=True, mouse_button_down=True,
-        )))
-
-        self.assertFalse(manager.is_open("quest_log"))
-        self.assertEqual(manager.open_ids, ("inventory", "character"))
-
     def test_character_shortcut_toggles_character_without_closing_inventory(self):
         class Rect:
             def __init__(self, value):
@@ -1821,7 +1754,6 @@ class TestPhaseDQuality(unittest.TestCase):
         ))
         self.assertEqual(screen.slot_order, before)
 
-
     def _character_screen_fixture(self, skill_count=3):
         skills = {f"skill_{index}": index for index in range(skill_count)}
         character = SimpleNamespace(
@@ -1886,8 +1818,6 @@ class TestPhaseDQuality(unittest.TestCase):
         screen = CharacterScreen(SimpleNamespace(actor_character=lambda _actor_id: None))
         screen.handle(InputState(actions={"down", "confirm"}))
         self.assertEqual(screen.selected_skill, 0)
-
-
 
 if __name__ == "__main__":
     unittest.main()

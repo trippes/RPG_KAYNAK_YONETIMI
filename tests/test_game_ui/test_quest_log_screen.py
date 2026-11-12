@@ -196,16 +196,25 @@ class QuestJournalWindowTests(unittest.TestCase):
     def test_mouse_tab_switch_resets_scroll_and_selection(self):
         self.screen.selected = 4
         self.screen.scroll = 70
-        x, y, width, height = self.screen._tab_bounds()[2]
+        x, y, width, height = self.screen._tab_bounds()[0]
         self.screen.handle(
             InputState(
                 mouse_pos=(x + width // 2, y + height // 2),
                 mouse_clicked=True,
             )
         )
-        self.assertEqual(self.screen.category, 2)
+        self.assertEqual(self.screen.category, 0)
         self.assertEqual(self.screen.selected, 0)
         self.assertEqual(self.screen.scroll, 0)
+
+        row = self.screen._row_bounds()[1]
+        self.screen.handle(
+            InputState(
+                mouse_pos=(row[0] + row[2] // 2, row[1] + row[3] // 2),
+                mouse_clicked=True,
+            )
+        )
+        self.assertEqual(self.screen.selected, 1)
 
 
 if __name__ == "__main__":

@@ -156,6 +156,10 @@ class QuestWindowManagerTests(unittest.TestCase):
         self.assertFalse(self.manager.is_open("quest_log"))
 
     def test_close_button_closes_only_the_quest_window(self):
+        self.manager.register("inventory", DummyScreen(), (20, 20, 300, 240))
+        self.manager.register("character", DummyScreen(), (100, 100, 300, 240))
+        self.manager.open("inventory")
+        self.manager.open("character")
         self.manager.open("quest_log")
         window = self.manager.windows["quest_log"]
         close_position = (window.bounds.right - 16, window.bounds.y + 16)
@@ -167,6 +171,7 @@ class QuestWindowManagerTests(unittest.TestCase):
             )
         )
         self.assertFalse(self.manager.is_open("quest_log"))
+        self.assertEqual(self.manager.open_ids, ("inventory", "character"))
 
     def test_frameless_window_keeps_content_at_window_origin_and_has_custom_close(self):
         manager = WindowManager(self.backend, 960, 640)
