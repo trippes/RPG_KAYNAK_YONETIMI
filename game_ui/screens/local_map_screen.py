@@ -1,4 +1,4 @@
-"""32x32 tile map for movement and local NPC positions."""
+"""Data-driven local tile map for movement and local NPC positions."""
 
 from ..renderer import GOLD, TEXT_SOFT, duration_label
 from resources import Quantity, ResourceUnit
@@ -6,15 +6,11 @@ from collections import deque
 
 
 class LocalMapScreen:
-    GRID_SIZE = 32
     TILE_SIZE = 16
-    RIVER_TILES = frozenset((18, 19))
-    BRIDGE_TILES = frozenset(((18, 16), (19, 16)))
-    VILLAGE_GATES = frozenset(((16, 0), (16, 31), (0, 16), (31, 16)))
 
     def __init__(self, service):
         self.service = service
-        self.selected = (16, 16)
+        self.selected = self._map_center()
         self.selected_npc_id = None
         self.menu_open = False
         self.menu_selected = 0
@@ -40,6 +36,52 @@ class LocalMapScreen:
             return None
         world_map = self.service.application.holder.current.movement.map_for(actors[0].world_id)
         return world_map.get(actors[0].location_id) if world_map else None
+
+    def _map_definition(self):
+        location = self._location()
+        return getattr(location, "local_map", None) or {}
+
+    def _map_width(self):
+        return max(1, int(self._map_definition().get("width", 1)))
+
+    def _map_height(self):
+        return max(1, int(self._map_definition().get("height", 1)))
+
+    def _map_center(self):
+        return self._map_width() // 2, self._map_height() // 2
+
+    def _in_bounds(self, tile):
+        x, y = tile
+        return 0 <= x < self._map_width() and 0 <= y < self._map_height()
+
+    def _river_tiles(self):
+        river = self._map_definition().get("river", {})
+        return {(int(x), y) for x in river.get("columns", ()) for y in range(self._map_height())}
+
+    def _bridge_tiles(self):
+        return {tuple(tile) for tile in self._map_definition().get("bridges", ())}
+
+    def _gate_tiles(self):
+        boundaries = self._map_definition().get("boundaries", {})
+        return {tuple(tile) for tile in boundaries.get("gates", ())}
+
+    def _wall_tiles(self):
+        boundaries = self._map_definition().get("boundaries", {})
+        edges = set(boundaries.get("walls", {}).get("edges", ()))
+        tiles = set()
+        if "north" in edges:
+            tiles.update((x, 0) for x in range(self._map_width()))
+        if "south" in edges:
+            tiles.update((x, self._map_height() - 1) for x in range(self._map_width()))
+        if "west" in edges:
+            tiles.update((0, y) for y in range(self._map_height()))
+        if "east" in edges:
+            tiles.update((self._map_width() - 1, y) for y in range(self._map_height()))
+        return tiles - self._gate_tiles()
+
+    @staticmethod
+    def _landmark_metadata(landmark):
+        return landmark[5] if len(landmark) > 5 and isinstance(landmark[5], dict) else {}
 
     def _actors(self):
         return self.service.state().actors
@@ -71,28 +113,10 @@ class LocalMapScreen:
             None,
         )
 
-    def _wood_node_id(self):
-        location = self._location()
-        if location is None:
-            return None
-        return "forest_wood" if location.location_id == "forest" else f"{location.location_id}_wood"
-
     def _node_id_for_landmark(self, landmark):
         if landmark is None:
-            return self._wood_node_id()
-        if "tree" in str(landmark[0]).lower() or "ağaç" in str(landmark[1]).lower():
-            return (
-                "forest_wood"
-                if landmark[0] == "forest_tree_01"
-                else f"{landmark[0]}_wood"
-            )
-        if "mine" in str(landmark[0]).lower() or "maden" in str(landmark[1]).lower():
-            return (
-                "north_iron_mine"
-                if self._location().location_id == "forest"
-                else str(landmark[0])
-            )
-        return self._wood_node_id()
+            return None
+        return self._landmark_metadata(landmark).get("resource_node_id")
 
     def _gather_at_selected_tree(self):
         landmark = self._landmark_at(self.selected)
@@ -115,7 +139,6 @@ class LocalMapScreen:
                 "player",
                 Quantity(1, ResourceUnit.ITEM),
             )
-            resource_name = "demir cevheri" if "mine" in str(landmark[0]).lower() else "odun"
             duration = self.service.gathering_duration(actors[0].actor_id)
             self.message = (
                 f"{landmark[1]} toplama başladı. "
@@ -134,14 +157,8 @@ class LocalMapScreen:
         return node is not None and node.current_quantity.value > 0
 
     def _is_resource_landmark(self, landmark):
-        landmark_id = str(landmark[0]).lower()
-        landmark_name = str(landmark[1]).lower()
-        return (
-            "tree" in landmark_id
-            or "ağaç" in landmark_name
-            or "mine" in landmark_id
-            or "maden" in landmark_name
-        )
+        metadata = self._landmark_metadata(landmark)
+        return metadata.get("visual_type") in {"tree", "mine"} or bool(metadata.get("resource_node_id"))
 
     def _resource_is_available(self, landmark):
         if not self._is_resource_landmark(landmark):
@@ -152,7 +169,7 @@ class LocalMapScreen:
         origin_x, origin_y = self._grid_origin()
         x = (mouse_pos[0] - origin_x) // self.TILE_SIZE
         y = (mouse_pos[1] - origin_y) // self.TILE_SIZE
-        if 0 <= x < self.GRID_SIZE and 0 <= y < self.GRID_SIZE:
+        if self._in_bounds((x, y)):
             return x, y
         return None
 
@@ -163,39 +180,23 @@ class LocalMapScreen:
         if location is None:
             return blocked
         for landmark in location.landmarks:
-            landmark_id = str(landmark[0]).lower()
-            name = str(landmark[1]).lower()
-            if "river" not in landmark_id and "nehir" not in name:
-                if landmark[3]:
-                    continue
-                x, y = tuple(landmark[2])
-                blocked.update(
-                    (tile_x, tile_y)
-                    for tile_x in range(x, min(self.GRID_SIZE, x + 2))
-                    for tile_y in range(y, min(self.GRID_SIZE, y + 2))
-                )
-        blocked.update(
-            (x, y)
-            for x in self.RIVER_TILES
-            for y in range(self.GRID_SIZE)
-            if (x, y) not in self.BRIDGE_TILES
-        )
-        if location.location_id == "village":
+            metadata = self._landmark_metadata(landmark)
+            if not metadata.get("blocks_movement", False):
+                continue
+            x, y = tuple(landmark[2])
+            width, height = metadata.get("footprint", (2, 2))
             blocked.update(
-                (x, y)
-                for x in range(self.GRID_SIZE)
-                for y in range(self.GRID_SIZE)
-                if (
-                    x in (0, self.GRID_SIZE - 1)
-                    or y in (0, self.GRID_SIZE - 1)
-                )
-                and (x, y) not in self.VILLAGE_GATES
+                (tile_x, tile_y)
+                for tile_x in range(x, min(self._map_width(), x + width))
+                for tile_y in range(y, min(self._map_height(), y + height))
             )
+        blocked.update(self._river_tiles() - self._bridge_tiles())
+        blocked.update(self._wall_tiles())
         return blocked
 
     def _is_walkable(self, tile, target=None):
         x, y = tile
-        if not (0 <= x < self.GRID_SIZE and 0 <= y < self.GRID_SIZE):
+        if not self._in_bounds(tile):
             return False
         if tile not in self._blocked_tiles():
             return True
@@ -256,20 +257,23 @@ class LocalMapScreen:
         self.selected = target
 
     def _grid_origin(self):
-        size = self.GRID_SIZE * self.TILE_SIZE
-        return ((self.renderer_width - size) // 2, 54)
+        size = max(self._map_width(), self._map_height()) * self.TILE_SIZE
+        return ((self.renderer_width - self._map_width() * self.TILE_SIZE) // 2, 54)
 
     def _tile_size_for(self, renderer):
         available_width = max(320, renderer.width - 48)
         available_height = max(320, renderer.height - 150)
-        return max(8, min(available_width // self.GRID_SIZE, available_height // self.GRID_SIZE))
+        return max(8, min(
+            available_width // self._map_width(),
+            available_height // self._map_height(),
+        ))
 
-    @staticmethod
-    def _position(position, fallback=(16, 16)):
+    def _position(self, position, fallback=None):
+        fallback = self._map_center() if fallback is None else fallback
         if position is None:
             return fallback
         x, y = int(position.x), int(position.y)
-        return (x, y) if 0 <= x < 32 and 0 <= y < 32 else fallback
+        return (x, y) if self._in_bounds((x, y)) else fallback
 
     def _move_player(self, dx, dy):
         actors = self._actors()
@@ -278,11 +282,11 @@ class LocalMapScreen:
         actor = actors[0]
         x, y = self._position(actor.position)
         next_x, next_y = x + dx, y + dy
-        if not (0 <= next_x < self.GRID_SIZE and 0 <= next_y < self.GRID_SIZE):
+        if not self._in_bounds((next_x, next_y)):
             if self._cross_boundary(actor, dx, dy):
                 return
-            next_x = max(0, min(self.GRID_SIZE - 1, next_x))
-            next_y = max(0, min(self.GRID_SIZE - 1, next_y))
+            next_x = max(0, min(self._map_width() - 1, next_x))
+            next_y = max(0, min(self._map_height() - 1, next_y))
         target = (next_x, next_y)
         if not self._is_walkable(target, target=target):
             self.message = "Bu yoldan geçemezsin. Nehirden yalnızca köprüden geçilebilir."
@@ -309,7 +313,7 @@ class LocalMapScreen:
             return False
         x, y = self._position(actor.position)
         gate_tile = (x, y)
-        if location.location_id == "village" and gate_tile not in self.VILLAGE_GATES:
+        if self._wall_tiles() and gate_tile not in self._gate_tiles():
             self.message = "Köyden yalnızca kapılardan çıkabilirsin."
             return True
         neighbors = world_map.neighbors(actor.location_id)
@@ -329,18 +333,18 @@ class LocalMapScreen:
         destination = sorted(candidates, key=lambda item: item.location_id)[0]
         if destination.location_id == "village":
             target_gate = (
-                (16, 31) if dy < 0 else
-                (16, 0) if dy > 0 else
-                (31, 16) if dx < 0 else
-                (0, 16)
+                (self._map_width() // 2, self._map_height() - 1) if dy < 0 else
+                (self._map_width() // 2, 0) if dy > 0 else
+                (self._map_width() - 1, self._map_height() // 2) if dx < 0 else
+                (0, self._map_height() // 2)
             )
-            if target_gate not in self.VILLAGE_GATES:
+            if target_gate not in self._gate_tiles():
                 self.message = "Köye yalnızca kapılardan girebilirsin."
                 return True
         self.service.place_actor(actor.actor_id, destination.location_id)
         target = (
-            0 if dx > 0 else self.GRID_SIZE - 1 if dx < 0 else self._position(actor.position)[0],
-            0 if dy > 0 else self.GRID_SIZE - 1 if dy < 0 else self._position(actor.position)[1],
+            0 if dx > 0 else self._map_width() - 1 if dx < 0 else self._position(actor.position)[0],
+            0 if dy > 0 else self._map_height() - 1 if dy < 0 else self._position(actor.position)[1],
         )
         self._complete_tile_move(actor.actor_id, target)
         self.selected = target
@@ -445,8 +449,8 @@ class LocalMapScreen:
         origin_x, origin_y = self._grid_origin()
         if location:
             renderer.text(location.name, 28, 72, title=True)
-        for y in range(self.GRID_SIZE):
-            for x in range(self.GRID_SIZE):
+        for y in range(self._map_height()):
+            for x in range(self._map_width()):
                 rect = renderer.pg.Rect(
                     origin_x + x * self.TILE_SIZE,
                     origin_y + y * self.TILE_SIZE,
@@ -459,23 +463,20 @@ class LocalMapScreen:
                 renderer.pg.draw.rect(renderer.surface, color, rect)
                 renderer.pg.draw.rect(renderer.surface, (54, 112, 57), rect, 1)
 
-        for y in range(self.GRID_SIZE):
+        for river_x, river_y in self._river_tiles():
             rect = renderer.pg.Rect(
-                origin_x + 18 * self.TILE_SIZE,
-                origin_y + y * self.TILE_SIZE,
-                self.TILE_SIZE * 2,
+                origin_x + river_x * self.TILE_SIZE,
+                origin_y + river_y * self.TILE_SIZE,
+                self.TILE_SIZE,
                 self.TILE_SIZE,
             )
             renderer.pg.draw.rect(renderer.surface, (45, 115, 165), rect)
             renderer.pg.draw.line(
-                renderer.surface,
-                (115, 190, 220),
-                (rect.x + 3, rect.centery),
-                (rect.right - 3, rect.centery),
-                1,
+                renderer.surface, (115, 190, 220),
+                (rect.x + 3, rect.centery), (rect.right - 3, rect.centery), 1,
             )
 
-        for bridge_x, bridge_y in self.BRIDGE_TILES:
+        for bridge_x, bridge_y in self._bridge_tiles():
             rect = renderer.pg.Rect(
                 origin_x + bridge_x * self.TILE_SIZE,
                 origin_y + bridge_y * self.TILE_SIZE,
@@ -494,14 +495,8 @@ class LocalMapScreen:
                 (rect.right - 2, rect.y + self.TILE_SIZE * 2 // 3), 2,
             )
 
-        if location and location.location_id == "village":
-            for x in range(self.GRID_SIZE):
-                for y in range(self.GRID_SIZE):
-                    if (
-                        x not in (0, self.GRID_SIZE - 1)
-                        and y not in (0, self.GRID_SIZE - 1)
-                    ) or (x, y) in self.VILLAGE_GATES:
-                        continue
+        if location and self._wall_tiles():
+            for x, y in self._wall_tiles():
                     rect = renderer.pg.Rect(
                         origin_x + x * self.TILE_SIZE,
                         origin_y + y * self.TILE_SIZE,
@@ -518,19 +513,18 @@ class LocalMapScreen:
 
         for landmark in self._landmarks():
             x, y = tuple(landmark[2])
-            if not (0 <= x < self.GRID_SIZE and 0 <= y < self.GRID_SIZE):
+            if not self._in_bounds((x, y)):
                 continue
+            metadata = self._landmark_metadata(landmark)
+            footprint_width, footprint_height = metadata.get("footprint", (2, 2))
             rect = renderer.pg.Rect(
                 origin_x + x * self.TILE_SIZE + 1,
                 origin_y + y * self.TILE_SIZE + 1,
-                self.TILE_SIZE * 2 - 2,
-                self.TILE_SIZE * 2 - 2,
+                footprint_width * self.TILE_SIZE - 2,
+                footprint_height * self.TILE_SIZE - 2,
             )
-            is_tree = (
-                "tree" in str(landmark[0]).lower()
-                or "ağaç" in str(landmark[1]).lower()
-            )
-            if is_tree:
+            visual_type = metadata.get("visual_type", "landmark")
+            if visual_type == "tree":
                 renderer.pg.draw.rect(
                     renderer.surface, (105, 70, 38),
                     renderer.pg.Rect(
@@ -545,7 +539,7 @@ class LocalMapScreen:
                     (rect.centerx, rect.y + self.TILE_SIZE // 2),
                     max(5, self.TILE_SIZE // 2),
                 )
-            elif "mine" in str(landmark[0]).lower() or "maden" in str(landmark[1]).lower():
+            elif visual_type == "mine":
                 renderer.pg.draw.polygon(
                     renderer.surface,
                     (112, 108, 104),
@@ -565,7 +559,7 @@ class LocalMapScreen:
                         self.TILE_SIZE // 2,
                     ),
                 )
-            else:
+            elif visual_type == "building":
                 house_body = renderer.pg.Rect(
                     rect.x + 2,
                     rect.y + self.TILE_SIZE // 2,
@@ -599,6 +593,11 @@ class LocalMapScreen:
                         (105, 190, 205),
                         renderer.pg.Rect(window_x, house_body.y + 3, window_size, window_size),
                     )
+            else:
+                renderer.pg.draw.circle(
+                    renderer.surface, (185, 170, 120), rect.center,
+                    max(3, self.TILE_SIZE // 3),
+                )
             renderer.pg.draw.rect(renderer.surface, (102, 72, 43), rect, 1)
 
         for npc in self._npcs():
