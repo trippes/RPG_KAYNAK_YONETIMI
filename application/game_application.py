@@ -155,9 +155,11 @@ class GameApplication:
 
 
     
-        from application.content_pack import build_starter_world_map
+        from application.content_pack import (
+            build_starter_world_map, build_starter_local_map_definitions,
+        )
 
-        # Rebuild starter maps only when they match saved actor locations.
+        # Rebuild world and local maps from the selected content package.
         for world in candidate.session.worlds.get_all():
             world_map = build_starter_world_map(world.world_id)
 
@@ -177,10 +179,11 @@ class GameApplication:
                 continue
 
             candidate.movement.register_map(world_map)
-            for location in world_map.locations():
-                candidate.world_objects.register_local_map(LocalMapDefinition(
-                    world_map.world_id, location.location_id, 32, 32
-                ))
+            for local_map in build_starter_local_map_definitions(world.world_id):
+                if not candidate.world_objects.has_local_map(
+                    local_map.world_id, local_map.location_id,
+                ):
+                    candidate.world_objects.register_local_map(local_map)
 
         # Restore container placements only after their local maps are registered.
         for placement in container_placements:
