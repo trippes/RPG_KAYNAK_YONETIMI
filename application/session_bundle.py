@@ -338,6 +338,7 @@ class SessionHolder:
             or first.economy is second.economy
             or first.social is second.social
             or first.combat is second.combat
+            or first.quest_graph_progress is second.quest_graph_progress
             or first.world_objects is second.world_objects
             or first.containers is second.containers
         ):
