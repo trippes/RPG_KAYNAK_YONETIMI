@@ -158,3 +158,13 @@ GitHub birleşik commit status endpoint'i de herhangi bir status kaydı döndür
 7. Kayıt migration, dokuz haritanın içerik dönüşümü ve tam regresyon.
 
 Aşama 1 — Altıgen geometri çekirdeği — uygulandı: immutable HexCoord, altı yön/opposite, komşuluk, axial uzaklık, pointy-top pixel dönüşümü ve geometri testleri. GitHub Actions doğrulaması bu commit için ayrıca izlenmelidir. Harita modeli ve oyun davranışı henüz değiştirilmemiştir.
+
+
+## Faz F — Altıgen dünya mimarisi — Aşama 2 uygulama
+
+LocalHexPosition, masked axial HexMapDefinition, schema-v2 JSON doğrulaması,
+karma v1/v2 harita keşfi ve ContentPackage içinde ayrı kare/altıgen harita
+koleksiyonları eklendi. Manifest schema sürümü 1 olarak korundu. Dokuz eski
+kare harita değiştirilmedi. Aşama 2'nin doğrulanmış tamamlanma durumu Linux ve
+Windows GitHub Actions tam test sonuçları görüldükten sonra kesinleştirilir.
+Aşama 3 ve sonraki aşamalar uygulanmamıştır.
