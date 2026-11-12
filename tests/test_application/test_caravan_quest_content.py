@@ -41,7 +41,7 @@ def test_caravan_quest_advances_one_mandatory_objective_at_a_time():
     assert quest.objectives[0].progress == 3
     assert quest.objectives[1].progress == 0
 
-    service.collect("north_iron_mine", "player", Quantity(2, ResourceUnit.ITEM))
+    service.collect("north_mine_iron", "player", Quantity(2, ResourceUnit.ITEM))
     assert quest.objectives[1].progress == 2
     assert quest.objectives[2].progress == 0
 

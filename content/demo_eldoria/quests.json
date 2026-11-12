@@ -74,7 +74,7 @@
           "id": "caravan_ore",
           "description": "Hasarlı yük kasalarını güçlendirmek için kuzey madeninden 2 demir cevheri çıkar.",
           "type": "collect",
-          "target_id": "north_iron_mine",
+          "target_id": "north_mine_iron",
           "required": 2
         },
         {

@@ -1724,6 +1724,78 @@ class GameplayService:
             self._grant_quest_reward(quest, owner_id, inventory_id)
         return quest.state
 
+    def deliver_resource_for_quest(
+        self,
+        quest_id: str,
+        collection_objective_id: str,
+        delivery_objective_id: str,
+        resource_type: str,
+        quantity: int,
+        actor_id: str | None = None,
+        npc_id: str | None = None,
+        inventory_id: str | None = None,
+    ) -> Quest:
+        """Consume configured resource stock and complete a quest delivery objective."""
+        actor_id = actor_id or self.player_actor_id
+        inventory_id = inventory_id or self.player_inventory_id
+        if isinstance(quantity, bool) or not isinstance(quantity, int) or quantity <= 0:
+            raise ValueError("Delivery quantity must be a positive integer.")
+        resource = ResourceType(resource_type)
+        bundle = self._current_bundle()
+        self._require_actor_in_active_world(bundle, actor_id)
+        actor = bundle.actors.get(actor_id)
+        if npc_id is not None:
+            npc = bundle.social.npcs.get(npc_id)
+            if npc is None:
+                raise KeyError(f"NPC not found: {npc_id}")
+            if npc.location_id is not None and npc.location_id != actor.location_id:
+                raise GameplayServiceError("Actor and quest giver must be at the same location.")
+
+        quest = bundle.quest_log.get(quest_id)
+        if quest is None:
+            raise KeyError(f"Quest not found: {quest_id}")
+        if quest.state.value != "active":
+            raise ValueError("Only an active quest can receive a delivery.")
+        collection = next(
+            (item for item in quest.objectives if item.objective_id == collection_objective_id),
+            None,
+        )
+        delivery = next(
+            (item for item in quest.objectives if item.objective_id == delivery_objective_id),
+            None,
+        )
+        if collection is None or delivery is None:
+            raise KeyError("Quest collection or delivery objective was not found.")
+        if collection.objective_type.value != "collect":
+            raise ValueError("The source objective must be a collection objective.")
+        if not collection.completed or quantity > collection.progress:
+            raise ValueError("The required collection objective has not been completed.")
+        if delivery.completed:
+            return quest
+
+        source_node = (
+            bundle.resource_nodes.get(collection.target_id)
+            if collection.target_id is not None
+            else None
+        )
+        if source_node is not None and source_node.resource_type != resource:
+            raise ValueError("Delivered resource does not match the quest collection objective.")
+
+        inventory = self._inventory(bundle, inventory_id)
+        stock = inventory.get(resource)
+        if stock is None:
+            raise ValueError("Required delivery resource is not in the selected inventory.")
+        amount = Quantity(quantity, stock.unit)
+        inventory.remove(resource, amount)
+        try:
+            self.update_quest_objective(
+                quest_id, delivery_objective_id, 1, actor_id, inventory_id,
+            )
+        except Exception:
+            inventory.add(resource, amount)
+            raise
+        return quest
+
     def grant_experience(self, actor_id: str, amount: int) -> int:
         """Award XP through the canonical character progression model."""
         if isinstance(amount, bool) or not isinstance(amount, int) or amount < 0:
