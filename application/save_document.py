@@ -111,10 +111,10 @@ class GameSaveDocument:
         return result
 
     @classmethod
-    def from_dict(cls, data: Mapping[str, object]) -> "GameSaveDocument":
+    def from_dict(cls, data: Mapping[str, object], *, npc_definitions=None) -> "GameSaveDocument":
         if not isinstance(data, Mapping):
             raise SaveDocumentError("Game save document must be an object.")
-        data = migrate_save_data(dict(data))
+        data = migrate_save_data(dict(data), npc_definitions=npc_definitions)
 
         required = {"schema", "schema_version", "core", "gameplay"}
         missing = required - set(data)

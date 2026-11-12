@@ -164,16 +164,16 @@ class GameSaveFileAdapter:
         return tuple(removed)
 
     @staticmethod
-    def load(path: PathLike) -> GameSaveDocument:
+    def load(path: PathLike, *, npc_definitions=None) -> GameSaveDocument:
         target = Path(path)
         with save_path_lock(target):
-            return GameSaveFileAdapter._load_locked(target)
+            return GameSaveFileAdapter._load_locked(target, npc_definitions=npc_definitions)
 
     @staticmethod
-    def _load_locked(target: Path) -> GameSaveDocument:
+    def _load_locked(target: Path, *, npc_definitions=None) -> GameSaveDocument:
         primary_error = None
         try:
-            return GameSaveFileAdapter._read_document(target)
+            return GameSaveFileAdapter._read_document(target, npc_definitions=npc_definitions)
         except SaveFileReadError as error:
             primary_error = error
         except UnsupportedSaveSchemaError:
@@ -184,7 +184,7 @@ class GameSaveFileAdapter:
 
         backup = GameSaveFileAdapter.backup_path(target)
         try:
-            document = GameSaveFileAdapter._read_document(backup)
+            document = GameSaveFileAdapter._read_document(backup, npc_definitions=npc_definitions)
         except (OSError, ValueError, TypeError):
             raise primary_error
 
@@ -196,7 +196,7 @@ class GameSaveFileAdapter:
         return document
 
     @staticmethod
-    def _read_document(path: PathLike) -> GameSaveDocument:
+    def _read_document(path: PathLike, *, npc_definitions=None) -> GameSaveDocument:
         target = Path(path)
         try:
             payload = target.read_text(encoding="utf-8")
@@ -204,7 +204,7 @@ class GameSaveFileAdapter:
             raise SaveFileReadError(
                 f"Could not read game save file: {target}"
             ) from error
-        return SaveJsonCodec.decode(payload)
+        return SaveJsonCodec.decode(payload, npc_definitions=npc_definitions)
 
     @staticmethod
     def _fsync_directory(directory: Path) -> None:
