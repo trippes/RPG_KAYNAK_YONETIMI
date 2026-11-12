@@ -36,7 +36,7 @@ class TestHexPathfinding(unittest.TestCase):
         self.assertIsNone(HexPathfinder.find_path(definition, LocalHexPosition(0, 0), LocalHexPosition(2, 0), MovementProfile(allowed_terrain_ids={"grass"})))
 
     def test_occupied_cells_are_excluded(self):
-        definition = make_map(cells=[[0, 0], [1, 0], [1, -1], [0, -1], [2, 0]])
+        definition = make_map(cells=[[0, 0], [1, 0], [1, -1], [2, -1], [0, -1], [2, 0]])
         path = HexPathfinder.find_path(definition, LocalHexPosition(0, 0), LocalHexPosition(2, 0), blocked_cells={LocalHexPosition(1, 0)})
         self.assertNotIn(LocalHexPosition(1, 0), path)
 
