@@ -211,6 +211,9 @@ class GameWindow:
         self.pause_menu_open = False
         self.pause_menu_selected = 0
         self.running = False
+        # Canonical simulation time runs at 60 ticks per real second while a timed activity is active.
+        self._auto_time_fraction = 0.0
+        self._simulation_ticks_per_second = 60
         self.notice = ""
         self.notice_level = "info"
         self._notice_frames = 0
@@ -618,7 +621,45 @@ class GameWindow:
 
         self.screens[self.current].render(self.renderer)
 
-    def step(self, events=()):
+    def _has_running_timed_activity(self):
+        """Return whether any actor activity still requires simulation time."""
+        try:
+            return any(
+                activity.state == "running"
+                for activity in self.service.activities_state()
+            )
+        except (AttributeError, KeyError, RuntimeError, ValueError):
+            return False
+
+    def _advance_active_time(self, elapsed_seconds):
+        """Advance canonical time only while a duration-based activity is running."""
+        if (
+            not self.gameplay_active
+            or self.pause_menu_open
+            or elapsed_seconds <= 0
+            or not self._has_running_timed_activity()
+        ):
+            self._auto_time_fraction = 0.0
+            return
+
+        self._auto_time_fraction += elapsed_seconds * self._simulation_ticks_per_second
+        ticks_to_advance = int(self._auto_time_fraction)
+        if ticks_to_advance <= 0:
+            return
+
+        self._auto_time_fraction -= ticks_to_advance
+        for _ in range(ticks_to_advance):
+            if not self._has_running_timed_activity():
+                self._auto_time_fraction = 0.0
+                break
+            try:
+                self.service.advance_by(1)
+            except (KeyError, RuntimeError, ValueError) as error:
+                self._auto_time_fraction = 0.0
+                self._set_notice(f"Süreli eylem durduruldu: {error}", "error")
+                break
+
+    def step(self, events=(), *, elapsed_seconds=0.0):
         state = self.input.collect(events)
 
         if state.mouse_pos is not None:
@@ -795,6 +836,8 @@ class GameWindow:
                 )
             self._set_current(next_screen)
 
+        self._advance_active_time(elapsed_seconds)
+
         # Tell the renderer which chrome to draw for the screen shown this frame.
         shown = self.current
         if shown in NAV_SCREENS:
@@ -817,9 +860,9 @@ class GameWindow:
         clock = self.pg.time.Clock()
 
         while self.running:
-            self.step(self.pg.event.get())
+            elapsed_seconds = clock.tick(fps) / 1000.0
+            self.step(self.pg.event.get(), elapsed_seconds=elapsed_seconds)
             self.pg.display.flip()
-            clock.tick(fps)
 
         self.pg.quit()
 
