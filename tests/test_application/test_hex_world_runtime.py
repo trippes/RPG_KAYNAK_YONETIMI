@@ -1,5 +1,7 @@
 import unittest
+from pathlib import Path
 
+from application.content_loader import load_content_package
 from application.hex_map_definition import parse_hex_map
 from application.hex_occupancy import HexOccupant, HexOccupancyRegistry
 from application.hex_pathfinding import HexPathfinder
@@ -81,6 +83,10 @@ class TestHexOccupancy(unittest.TestCase):
         self.assertEqual(registry.get("a").position, first)
 
 
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+DEMO_PACKAGE = PROJECT_ROOT / "content" / "demo_eldoria"
+
+
 class TestHexWorldRuntime(unittest.TestCase):
     def setUp(self):
         self.map = make_map()
@@ -149,6 +155,23 @@ class TestHexWorldRuntime(unittest.TestCase):
         self.assertEqual(path, (LocalHexPosition(0, 0), LocalHexPosition(1, 0)))
         self.assertTrue(runtime.move("wraith", HexDirection.EAST).success)
         self.assertEqual(runtime.entity("wraith").position.cell, LocalHexPosition(1, 0))
+
+    def test_demo_content_supports_reciprocal_runtime_map_transitions(self):
+        package = load_content_package(DEMO_PACKAGE)
+        runtime = HexWorldRuntime(
+            package.hex_map_definitions,
+            world_map_definition=package.world_map_definition,
+        )
+        runtime.register_entity(
+            "hero", "player",
+            EntityPosition("hex_forest_demo", LocalHexPosition(0, 0)),
+        )
+        outbound = runtime.transition("hero", "forest_to_clearing")
+        self.assertTrue(outbound.success)
+        self.assertEqual(outbound.position, EntityPosition("hex_clearing_demo", LocalHexPosition(0, 0)))
+        inbound = runtime.transition("hero", "clearing_to_forest")
+        self.assertTrue(inbound.success)
+        self.assertEqual(inbound.position, EntityPosition("hex_forest_demo", LocalHexPosition(0, 0)))
 
     def test_transition_preserves_position_when_inactive_or_unavailable(self):
         map_a = make_map("a", transitions=[{

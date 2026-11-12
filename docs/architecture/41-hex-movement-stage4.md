@@ -1,6 +1,6 @@
 # Eldoria — Aşama 4: Altıgen Hareket, Yol Bulma ve Harita Geçiş Runtime'ı
 
-**Durum:** Uygulama ve doğrulama sürüyor; kapanış yalnızca Linux ve Windows release-candidate kontrolleri birlikte başarılı olduğunda yapılır.  
+**Durum:** Aşama 4 uygulaması tamamlandı; son Linux ve Windows release-candidate doğrulaması bekleniyor.  
 **Dal:** `demo_eldoria`  
 **Kapsam:** schema-v2 axial hex map'ler. Kare harita hareketi bu aşamada değiştirilmez.
 
@@ -63,7 +63,9 @@ Bu API Pygame input veya görsel animasyon bağlamaz.
 
 `HexMapTransitionService` yalnızca kaynak hücrede bulunan varlığın ilgili aktif `HexMapTransition` kaydını çalıştırır. Hedef harita ve hedef giriş hücreleri doğrulanır; dolu veya engelli giriş hücresi atlanarak ilk uygun hedef seçilir. Hiçbir hedef uygun değilse varlık kaynak haritada kalır.
 
-Runtime'a `WorldMapDefinition` verildiğinde dünya yerleşimleri ve aktif geçişlerin Stage 3 doğrulamaları tekrar uygulanır. Geçiş kayıtlarının tek veri kaynağı yerel harita JSON'udur. Tek yönlü ve çift yönlü geçiş ayrımı korunur.
+Runtime'a `WorldMapDefinition` verildiğinde dünya yerleşimleri ve aktif geçişlerin Stage 3 doğrulamaları tekrar uygulanır. Aktif runtime geçişi için dünya topolojisi zorunludur. Geçiş kayıtlarının tek veri kaynağı yerel harita JSON'udur. Tek yönlü ve çift yönlü geçiş ayrımı korunur.
+
+Demo içerik artık iki gerçek yerel haritadan oluşur: `hex_forest_demo` dünya axial koordinatı (0, 0), `hex_clearing_demo` (1, 0). İki haritanın giriş/çıkış hücreleri ve yönleri ters eşleşen aktif `bidirectional` kayıtlarla birbirine bağlanır.
 
 ## 7. Aşama 4 kabul testleri
 

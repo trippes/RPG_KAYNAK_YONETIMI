@@ -1,0 +1,28 @@
+{
+  "schema_version": 2,
+  "map_id": "hex_clearing_demo",
+  "name": "Altıgen Orman Açıklığı",
+  "description": "Orman yolunun doğusunda bulunan küçük açıklık; çift yönlü geçiş demosu.",
+  "geometry": {"type": "hex_axial", "orientation": "pointy_top", "coordinate_system": "axial"},
+  "terrain_ids": ["clearing_floor", "grass", "water"],
+  "default_terrain": "clearing_floor",
+  "valid_cells": [[0,0],[1,0],[1,-1],[0,-1],[-1,0],[-1,1],[0,1],[2,0]],
+  "cell_overrides": [
+    {"q":1,"r":0,"terrain":"grass"},
+    {"q":0,"r":-1,"terrain":"water","blocked":true}
+  ],
+  "features": [{"id":"clearing_grass_patch","type":"vegetation","cells":[[1,0],[1,-1]]}],
+  "landmarks": [
+    {"id":"clearing_waystone","name":"Yol Taşı","position":[-1,0],"type":"structure","visual_type":"stone"}
+  ],
+  "transitions": [{
+    "id":"clearing_to_forest",
+    "source_cells":[[0,0]],
+    "exit_direction":"west",
+    "target_map_id":"hex_forest_demo",
+    "target_entry_direction":"east",
+    "target_cells":[[0,0]],
+    "active":true,
+    "traversal_mode":"bidirectional"
+  }]
+}

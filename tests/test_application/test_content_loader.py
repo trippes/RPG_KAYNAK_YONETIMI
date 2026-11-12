@@ -40,13 +40,25 @@ class TestContentPackageLoader(unittest.TestCase):
     def test_demo_package_separates_hex_maps_from_square_maps(self):
         package = load_content_package(DEMO_PACKAGE)
 
-        self.assertEqual(set(package.hex_map_definitions), {"hex_forest_demo"})
+        self.assertEqual(set(package.hex_map_definitions), {"hex_forest_demo", "hex_clearing_demo"})
         self.assertIsNotNone(package.world_map_definition)
         self.assertEqual(package.world_map_definition.world_map_id, "eldoria_hex_world")
         self.assertEqual(
             package.world_map_definition.placements_by_map_id["hex_forest_demo"].position,
             WorldHexPosition(0, 0),
         )
+        self.assertEqual(
+            package.world_map_definition.placements_by_map_id["hex_clearing_demo"].position,
+            WorldHexPosition(1, 0),
+        )
+        forest_exit = package.hex_map_definitions["hex_forest_demo"].transitions[0]
+        clearing_exit = package.hex_map_definitions["hex_clearing_demo"].transitions[0]
+        self.assertTrue(forest_exit.active)
+        self.assertTrue(clearing_exit.active)
+        self.assertEqual(forest_exit.traversal_mode, "bidirectional")
+        self.assertEqual(clearing_exit.traversal_mode, "bidirectional")
+        self.assertEqual(forest_exit.target_map_id, "hex_clearing_demo")
+        self.assertEqual(clearing_exit.target_map_id, "hex_forest_demo")
         self.assertNotIn("hex_forest_demo", package.map_definitions)
         self.assertEqual(len(package.map_definitions), 9)
         self.assertTrue(
