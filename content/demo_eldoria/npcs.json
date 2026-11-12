@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "npcs": [
+    {
+      "id": "warden_lyra",
+      "name": "Eren",
+      "role": "warden",
+      "faction_ids": [
+        "wardens"
+      ],
+      "location_id": "village_id",
+      "position": [
+        16,
+        30
+      ],
+      "load_phase": "opening",
+      "dialogue_id": "warden_intro"
+    },
+    {
+      "id": "village_carpenter",
+      "name": "Marangoz Hilmi",
+      "role": "carpenter",
+      "faction_ids": [
+        "wardens"
+      ],
+      "location_id": "village_id",
+      "position": [
+        21,
+        15
+      ],
+      "load_phase": "opening",
+      "dialogue_id": "carpenter_dialogue"
+    },
+    {
+      "id": "innkeeper_mira",
+      "name": "Hancı Mira",
+      "role": "innkeeper",
+      "faction_ids": [],
+      "location_id": "village_id",
+      "position": [
+        20,
+        23
+      ],
+      "load_phase": "gameplay",
+      "dialogue_id": "innkeeper_dialogue"
+    },
+    {
+      "id": "caravan_merchant",
+      "name": "Tüccar Yadigar",
+      "role": "merchant",
+      "faction_ids": [
+        "wardens"
+      ],
+      "location_id": "village_id",
+      "position": [
+        20,
+        20
+      ],
+      "load_phase": "gameplay",
+      "dialogue_id": "caravan_merchant_dialogue"
+    }
+  ]
+}
