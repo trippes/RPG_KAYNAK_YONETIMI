@@ -57,6 +57,7 @@ def load_starter_content(path: str | Path | None = None) -> dict:
     missing = sorted(required - definition.keys())
     if missing:
         raise ContentDefinitionError(f"Content definition is missing sections: {', '.join(missing)}")
+    _validate_local_map_definitions(definition)
     return definition
 
 
@@ -85,7 +86,83 @@ def load_opening_content(path: str | Path | None = None) -> dict:
         raise ContentDefinitionError(
             f"Opening content definition is missing sections: {', '.join(missing)}"
         )
+    _validate_local_map_definitions(definition)
     return definition
+
+
+def _validate_local_map_definitions(definition: dict) -> None:
+    """Reject incomplete or out-of-bounds local map content before runtime use."""
+    for location in definition["locations"]:
+        location_id = location.get("id", "<unknown>")
+        local_map = location.get("local_map")
+        if not isinstance(local_map, dict):
+            raise ContentDefinitionError(
+                "Location " + repr(location_id) + " is missing its local_map definition."
+            )
+        width, height = local_map.get("width"), local_map.get("height")
+        if (
+            isinstance(width, bool) or not isinstance(width, int) or width < 1
+            or isinstance(height, bool) or not isinstance(height, int) or height < 1
+        ):
+            raise ContentDefinitionError(
+                "Location " + repr(location_id) + " has invalid local map dimensions."
+            )
+
+        def validate_tile(tile, label):
+            if (
+                not isinstance(tile, (list, tuple)) or len(tile) != 2
+                or any(isinstance(value, bool) or not isinstance(value, int) for value in tile)
+                or not (0 <= tile[0] < width and 0 <= tile[1] < height)
+            ):
+                raise ContentDefinitionError(
+                    "Location " + repr(location_id) + " has an invalid "
+                    + label + " tile: " + repr(tile) + "."
+                )
+
+        river = local_map.get("river", {})
+        if not isinstance(river, dict):
+            raise ContentDefinitionError(
+                "Location " + repr(location_id) + " has an invalid river definition."
+            )
+        columns = river.get("columns", ())
+        if any(
+            isinstance(column, bool) or not isinstance(column, int)
+            or not 0 <= column < width
+            for column in columns
+        ):
+            raise ContentDefinitionError(
+                "Location " + repr(location_id) + " has an out-of-bounds river column."
+            )
+        for tile in local_map.get("bridges", ()):
+            validate_tile(tile, "bridge")
+        boundaries = local_map.get("boundaries", {})
+        if not isinstance(boundaries, dict):
+            raise ContentDefinitionError(
+                "Location " + repr(location_id) + " has invalid boundary metadata."
+            )
+        walls = boundaries.get("walls", {})
+        if not isinstance(walls, dict) or not set(walls.get("edges", ())).issubset(
+            {"north", "south", "east", "west"}
+        ):
+            raise ContentDefinitionError(
+                "Location " + repr(location_id) + " has invalid wall edges."
+            )
+        for tile in boundaries.get("gates", ()):
+            validate_tile(tile, "gate")
+        for landmark in location.get("landmarks", ()):
+            visual_type = landmark.get("visual_type")
+            if not isinstance(visual_type, str) or not visual_type.strip():
+                raise ContentDefinitionError(
+                    "Landmark " + repr(landmark.get("id", "<unknown>"))
+                    + " needs visual_type."
+                )
+            if "gather" in landmark.get("activities", ()) and not landmark.get(
+                "resource_node_id"
+            ):
+                raise ContentDefinitionError(
+                    "Gatherable landmark " + repr(landmark.get("id", "<unknown>"))
+                    + " needs resource_node_id."
+                )
 
 
 def _id_resolver(definition: dict, ids: StarterContentIds):
