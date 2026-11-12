@@ -312,7 +312,7 @@ class LocalMapScreen:
         x, y = self._position(actor.position)
         gate_tile = (x, y)
         if self._wall_tiles() and gate_tile not in self._gate_tiles():
-            self.message = "Köyden yalnızca kapılardan çıkabilirsin."
+            self.message = "Bu haritadan yalnızca tanımlı kapılardan çıkabilirsin."
             return True
         neighbors = world_map.neighbors(actor.location_id)
         candidates = []
@@ -329,21 +329,35 @@ class LocalMapScreen:
             self.message = "Bu yönde başka bir yerel harita yok."
             return True
         destination = sorted(candidates, key=lambda item: item.location_id)[0]
-        if destination.location_id == "village":
-            target_gate = (
-                (self._map_width() // 2, self._map_height() - 1) if dy < 0 else
-                (self._map_width() // 2, 0) if dy > 0 else
-                (self._map_width() - 1, self._map_height() // 2) if dx < 0 else
-                (0, self._map_height() // 2)
-            )
-            if target_gate not in self._gate_tiles():
-                self.message = "Köye yalnızca kapılardan girebilirsin."
-                return True
-        self.service.place_actor(actor.actor_id, destination.location_id)
+        destination_map = destination.local_map or {}
+        destination_width = max(1, int(destination_map.get("width", 1)))
+        destination_height = max(1, int(destination_map.get("height", 1)))
         target = (
-            0 if dx > 0 else self._map_width() - 1 if dx < 0 else self._position(actor.position)[0],
-            0 if dy > 0 else self._map_height() - 1 if dy < 0 else self._position(actor.position)[1],
+            0 if dx > 0 else destination_width - 1 if dx < 0 else self._position(actor.position)[0],
+            0 if dy > 0 else destination_height - 1 if dy < 0 else self._position(actor.position)[1],
         )
+        destination_gates = {
+            tuple(tile)
+            for tile in destination_map.get("boundaries", {}).get("gates", ())
+        }
+        if destination_gates:
+            if dx > 0:
+                entry_gates = [gate for gate in destination_gates if gate[0] == 0]
+            elif dx < 0:
+                entry_gates = [gate for gate in destination_gates if gate[0] == destination_width - 1]
+            elif dy > 0:
+                entry_gates = [gate for gate in destination_gates if gate[1] == 0]
+            else:
+                entry_gates = [gate for gate in destination_gates if gate[1] == destination_height - 1]
+            if not entry_gates:
+                self.message = "Hedef haritada bu yönde kullanılabilir bir kapı yok."
+                return True
+            reference = self._position(actor.position)
+            target = min(
+                entry_gates,
+                key=lambda gate: abs(gate[0] - reference[0]) + abs(gate[1] - reference[1]),
+            )
+        self.service.place_actor(actor.actor_id, destination.location_id)
         self._complete_tile_move(actor.actor_id, target)
         self.selected = target
         self.message = (
