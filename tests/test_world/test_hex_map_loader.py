@@ -25,7 +25,7 @@ class TestHexMapLoader(unittest.TestCase):
   self.assertFalse(m.is_blocked(LocalHexPosition(9,9)))
  def test_holes_and_disconnected_islands_are_valid(self):
   d=dict(DATA); d["valid_cells"]=[[0,0],[9,-4]]
-  d["features"]=[]; d["landmarks"]=[]; d["transitions"]=[]
+  d["cell_overrides"]=[]; d["features"]=[]; d["landmarks"]=[]; d["transitions"]=[]
   self.assertEqual(len(parse_hex_map(d).valid_cells),2)
  def test_collections_immutable(self):
   m=parse_hex_map(DATA)
