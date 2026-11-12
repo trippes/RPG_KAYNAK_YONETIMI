@@ -9,6 +9,7 @@ from types import MappingProxyType
 from typing import Mapping
 
 from .hex_map_definition import load_hex_map_definition
+from .world_map_definition import parse_world_map, validate_world_map
 
 CONTENT_PACKAGE_SCHEMA_VERSION = 1
 
@@ -25,6 +26,7 @@ class ContentPackage:
     files: Mapping[str, dict]
     map_definitions: Mapping[str, object]
     hex_map_definitions: Mapping[str, object]
+    world_map_definition: object | None = None
 
 
 def _load_hex_maps(maps_root: Path, square_maps: Mapping[str, object]) -> dict[str, object]:
@@ -77,7 +79,7 @@ def load_content_package(package_dir: str | Path) -> ContentPackage:
         ) from error
     if not isinstance(manifest, dict):
         raise ContentPackageError("Content package manifest must be a JSON object.")
-    allowed = {"schema_version", "package_id", "package_version", "files", "maps"}
+    allowed = {"schema_version", "package_id", "package_version", "files", "maps", "world_map"}
     extra = sorted(set(manifest) - allowed)
     if extra:
         raise ContentPackageError(
@@ -125,6 +127,7 @@ def load_content_package(package_dir: str | Path) -> ContentPackage:
 
     square = {}
     hexes = {}
+    world_map = None
     maps_dir = manifest.get("maps")
     if maps_dir is not None:
         if not isinstance(maps_dir, str) or not maps_dir.strip():
@@ -145,6 +148,27 @@ def load_content_package(package_dir: str | Path) -> ContentPackage:
 
             square, _ = load_map_catalog(maps_root)
             hexes = _load_hex_maps(maps_root, square)
+            world_map_path = manifest.get("world_map")
+            if world_map_path is not None:
+                if not isinstance(world_map_path, str) or not world_map_path.strip():
+                    raise ContentPackageError(
+                        "Content package world_map path must be a non-empty relative path."
+                    )
+                world_map_source = (root / world_map_path).resolve()
+                if not world_map_source.is_relative_to(root):
+                    raise ContentPackageError(
+                        "Content package world_map path resolves outside the package directory."
+                    )
+                try:
+                    import json
+
+                    world_map_data = json.loads(world_map_source.read_text(encoding="utf-8"))
+                    world_map = parse_world_map(world_map_data)
+                    validate_world_map(world_map, hexes)
+                except (OSError, json.JSONDecodeError, ValueError) as error:
+                    raise ContentPackageError(
+                        f"Invalid content package world map '{world_map_source}': {error}"
+                    ) from error
         except (OSError, ValueError) as error:
             raise ContentPackageError(
                 f"Content package maps could not be loaded from '{maps_root}': {error}"
@@ -157,4 +181,5 @@ def load_content_package(package_dir: str | Path) -> ContentPackage:
         MappingProxyType(files),
         MappingProxyType(square),
         MappingProxyType(hexes),
+        world_map,
     )
