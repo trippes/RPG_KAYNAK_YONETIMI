@@ -62,19 +62,6 @@ def load_map_definitions(directory: str | Path) -> dict[str, MapDefinition]:
                         f"Transition '{transition.transition_id}' target coordinate "
                         f"({x}, {y}) is outside map '{target.map_id}' bounds."
                     )
-            if transition.direction is not None:
-                for x, y in transition.target_tiles:
-                    on_entry_edge = {
-                        "north": y == target.size.height - 1,
-                        "south": y == 0,
-                        "west": x == target.size.width - 1,
-                        "east": x == 0,
-                    }[transition.direction]
-                    if not on_entry_edge:
-                        raise MapDefinitionError(
-                            f"Transition '{transition.transition_id}' target tile "
-                            f"({x}, {y}) is not on the entry edge of map '{target.map_id}'."
-                        )
             if transition.bidirectional:
                 reciprocal = any(
                     candidate.bidirectional

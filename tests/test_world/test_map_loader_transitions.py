@@ -99,15 +99,3 @@ class TestMapPackageTransitions(unittest.TestCase):
                 ]),
             })
 
-    def test_rejects_transition_target_not_on_entry_edge(self):
-        with self.assertRaisesRegex(MapDefinitionError, "not on the entry edge"):
-            self._load({
-                "source": record("source", transitions=[
-                    transition("out", "target", source=(3, 1), destination=(2, 1), direction="east")
-                ]),
-                "target": record("target", 8, 7),
-            })
-
-
-if __name__ == "__main__":
-    unittest.main()
