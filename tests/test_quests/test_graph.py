@@ -87,6 +87,32 @@ class QuestGraphTests(unittest.TestCase):
         states = {"root": "completed", "path_a": "active", "path_b": "completed"}
         self.assertTrue(graph.is_unlocked("join", states))
 
+    def test_restored_branch_choice_requires_completed_source(self):
+        graph = QuestGraph(
+            ("start", "left", "right"),
+            (
+                QuestLink("start", "left", QuestLinkType.ALTERNATIVE, "route"),
+                QuestLink("start", "right", QuestLinkType.ALTERNATIVE, "route"),
+            ),
+        )
+        saved = {
+            "selected_branches": [{
+                "source_quest_id": "start",
+                "branch_group": "route",
+                "target_quest_id": "left",
+            }]
+        }
+
+        with self.assertRaises(ValueError):
+            QuestGraphProgress.from_dict(
+                saved, graph, {"start": QuestState.ACTIVE}
+            )
+
+        restored = QuestGraphProgress.from_dict(
+            saved, graph, {"start": QuestState.COMPLETED}
+        )
+        self.assertEqual(restored.selected_branch("start", "route"), "left")
+
     def test_branch_progress_round_trips_and_validates_content(self):
         graph = QuestGraph(
             ("root", "a", "b"),
