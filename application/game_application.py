@@ -160,6 +160,7 @@ class GameApplication:
         )
 
         # Rebuild world and local maps from the selected content package.
+        local_map_catalog = {}
         for world in candidate.session.worlds.get_all():
             world_map = build_starter_world_map(world.world_id)
 
@@ -170,16 +171,20 @@ class GameApplication:
                 and actor.location_id is not None
             } if candidate.actors is not None else set()
 
-            starter_location_ids = {
-                location.location_id
-                for location in world_map.locations()
+            available_location_ids = {
+                location.location_id for location in world_map.locations()
             }
-
-            if saved_location_ids and not saved_location_ids.issubset(starter_location_ids):
-                continue
+            missing_location_ids = sorted(saved_location_ids - available_location_ids)
+            if missing_location_ids:
+                raise ValueError(
+                    f"Save for world '{world.world_id}' references maps missing from "
+                    f"the active content package: {', '.join(missing_location_ids)}. "
+                    "Restore the required content pack or provide an explicit migration."
+                )
 
             candidate.movement.register_map(world_map)
             for local_map in build_starter_local_map_definitions(world.world_id):
+                local_map_catalog[(world.world_id, local_map.location_id)] = local_map
                 if not candidate.world_objects.has_local_map(
                     local_map.world_id, local_map.location_id,
                 ):
@@ -196,21 +201,35 @@ class GameApplication:
                     continue
 
                 world_map = candidate.movement.map_for(actor_view.world_id)
-                if world_map is None:
-                    continue
+                if world_map is None or world_map.get(actor_view.location_id) is None:
+                    raise ValueError(
+                        f"Saved actor '{actor_view.actor_id}' references unavailable "
+                        f"map '{actor_view.location_id}' in world '{actor_view.world_id}'."
+                    )
 
-                if world_map.get(actor_view.location_id) is None:
-                    continue
+                local_map = local_map_catalog.get(
+                    (actor_view.world_id, actor_view.location_id)
+                )
+                if local_map is None:
+                    raise ValueError(
+                        f"Local map dimensions are missing for saved location "
+                        f"'{actor_view.location_id}'."
+                    )
 
                 candidate.movement.set_position(
                     actor_view.actor_id,
                     actor_view.location_id,
                 )
                 if actor_view.position is not None:
+                    x, y = int(actor_view.position.x), int(actor_view.position.y)
+                    if not (0 <= x < local_map.width and 0 <= y < local_map.height):
+                        raise ValueError(
+                            f"Saved actor '{actor_view.actor_id}' position ({x}, {y}) "
+                            f"is outside map '{actor_view.location_id}' bounds "
+                            f"({local_map.width}x{local_map.height}). No relocation was applied."
+                        )
                     candidate.movement.set_tile_position(
-                        actor_view.actor_id,
-                        int(actor_view.position.x),
-                        int(actor_view.position.y),
+                        actor_view.actor_id, x, y,
                     )
 
         self.holder.publish(candidate)
