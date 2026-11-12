@@ -1006,11 +1006,26 @@ class GameplayService:
         self._advance_quests("collect", node_id, quantity.value, actor_id, inventory_id)
         return result
 
-    def gathering_duration(self, actor_id: str) -> int:
-        """Return gathering duration after applying the character skill."""
-        character = self.actor_character(actor_id)
-        skill = character.skills.get("gathering") if character is not None else 0
-        return max(1, 150 - (skill * 15))
+    def gathering_duration(self, actor_id: str, node_id: str | None = None) -> int:
+        """Resolve the exact tick duration configured on a resource node.
+
+        When node_id is omitted, an already-running gathering activity supplies
+        its target. This keeps UI duration labels aligned with the started action.
+        """
+        bundle = self._current_bundle()
+        if node_id is None:
+            activity = bundle.actor_activities.get(
+                bundle.actors.get(actor_id).activity_id
+            ) if bundle.actors.get(actor_id) is not None and bundle.actors.get(actor_id).activity_id else None
+            if activity is None or activity.activity_type != "gather":
+                raise GameplayServiceError(
+                    "A resource node is required to resolve gathering duration."
+                )
+            node_id = activity.target_id
+        node = bundle.resource_nodes.get(node_id)
+        if node is None:
+            raise KeyError(f"Resource node not found: {node_id}")
+        return node.gathering_duration_ticks.value
 
     def interact_with_location(self, actor_id: str, location_id: str) -> LocationInteractionView:
         """Inspect a location from an actor currently standing there."""
