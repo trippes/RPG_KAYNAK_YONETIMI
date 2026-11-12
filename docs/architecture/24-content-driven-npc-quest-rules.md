@@ -98,3 +98,21 @@ Görev tanımı, görev ekranının ihtiyaçlarına göre şekillenmez. Görev e
 6. Görev günlüğünde zincir/ön koşul/veren ilişkilerinin veriye dayalı gösterimi.
 
 Her aşama ayrı test ve küçük commitlerle ilerler. Görev sistemi zaten oyun içinde doğrulandığı için bu çalışma mevcut çalışan davranışları gereksiz yere yeniden yazmaz. WindowManager, ana dünya ekranı ve pencere etkileşim modeli korunur.
+
+
+## 11. Görev ağacı çalışma zamanı kuralları
+
+- Görev ağacı yalnızca içerik tanımlarındaki kararlı görev kimliklerini ve bağlantıları bilir. NPC, görev başlığı, UI veya demo kimliği içermez.
+- Bağlantı türü `UNLOCKS` veya `SIDE` ise hedef görev, bu bağlantıların tüm kaynak görevleri tamamlandığında açılır (AND).
+- Aynı `branch_group` içindeki `ALTERNATIVE` giriş bağlantıları OR olarak değerlendirilir; gruptaki tamamlanmış ve seçilmiş yollardan en az biri hedefi açar.
+- Bir kaynak görevden aynı dal grubunda birden fazla alternatif hedef çıkıyorsa kaynak tamamlandıktan sonra oyuncu açıkça bir hedef seçer. Seçim yapılmadan hiçbir alternatif hedef açılmaz.
+- Tek hedefli alternatif bağlantı seçim istemez; tamamlanan kaynak görev hedefi açar.
+- Bir hedefte birden fazla normal giriş bağlantısı ile alternatif gruplar birlikte varsa, tüm normal bağlantılar ve her alternatif grup kendi kuralı doğrultusunda sağlanmalıdır.
+- Birleşme noktası için farklı yollardan herhangi birinin yeterli olması isteniyorsa, bu yollar aynı alternatif giriş grubuna bağlanır. Tüm yolların tamamlanması isteniyorsa normal `UNLOCKS` bağlantıları kullanılır.
+- Bağlantı kuralları görev tanımının kendi ön koşullarından ayrıdır. Bir görev ancak hem grafik bağlantıları hem de kendi koşul ifadesi doğruysa başlatılabilir.
+- Ön koşul ifadeleri `AllConditions` (AND), `AnyConditions` (OR) ve `NotCondition` (NOT) ile iç içe kurulabilir. Atomik koşullar bayrak, itibar, eşya, hedef ilerlemesi ve görev durumunu okuyabilir.
+- Kök görevler (giriş bağlantısı olmayanlar) grafik bakımından açıktır; kendi görev koşulları yine uygulanır.
+- Oyuncunun alternatif dal seçimi içerik verisi değildir. `QuestGraphProgress` içinde oyuncu ilerlemesi olarak tutulur; dışa/içe aktarılabilir ve yüklenirken mevcut grafik tanımıyla doğrulanır.
+- Seçilmiş dal değiştirilemez. Farklı bir hikâye sonucu için içerik açıkça ayrı bir yeniden seçim/geri alma mekaniği tanımlamalıdır.
+- Bu aşamadaki çalışma zamanı API'si genel ve bağımsızdır. Oyun oturumu/save sistemiyle tam entegrasyon ayrı bir aşamadır; entegrasyon tamamlanana kadar dal seçimlerini oyun kaydına otomatik yazdığı varsayılmamalıdır.
+
