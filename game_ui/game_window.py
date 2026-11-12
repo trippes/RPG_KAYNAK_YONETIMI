@@ -346,7 +346,7 @@ class GameWindow:
 
         service, _ = populate_opening_content(
             GameApplication.create_default(),
-            content_package_path=self.content_package_path,
+            content_package_path=getattr(self, "content_package_path", None),
         )
         self.service = service
         self.screens.update({
