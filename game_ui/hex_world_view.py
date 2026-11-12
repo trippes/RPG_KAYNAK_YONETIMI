@@ -171,15 +171,12 @@ class HexWorldView:
 
         if state.mouse_clicked and state.mouse_pos is not None:
             size = self._hex_size
-            q, r = pixel_to_axial(
+            target_coord = pixel_to_axial(
                 state.mouse_pos[0] - self._center[0],
                 state.mouse_pos[1] - self._center[1],
                 size,
-            ).q, pixel_to_axial(
-                state.mouse_pos[0] - self._center[0],
-                state.mouse_pos[1] - self._center[1],
-                size,
-            ).r
+            )
+            q, r = target_coord.q, target_coord.r
             target = LocalHexPosition(q, r)
             if self._map().has_cell(target):
                 self._move_to(target)
