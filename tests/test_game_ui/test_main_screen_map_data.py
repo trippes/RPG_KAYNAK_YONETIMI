@@ -107,5 +107,19 @@ class TestMainScreenMapData(unittest.TestCase):
         self.assertIn("mine", MainScreen.LANDMARK_STYLES)
 
 
+
+    def test_renderer_has_no_demo_or_map_identity_dependencies(self):
+        source = Path(__file__).resolve().parents[2] / "game_ui" / "screens" / "main_screen.py"
+        text = source.read_text(encoding="utf-8")
+        self.assertNotIn("demo_eldoria", text)
+        for map_id in (
+            "village", "forest", "south_forest", "west_forest",
+            "east_forest", "north_mine", "south_mine", "west_mine", "east_mine",
+        ):
+            self.assertNotIn(f'"{map_id}"', text)
+        render_source = text[text.index("    def render("):]
+        self.assertNotIn("if feature.feature_type ==", render_source)
+        self.assertNotIn("if visual_type ==", render_source)
+
 if __name__ == "__main__":
     unittest.main()
