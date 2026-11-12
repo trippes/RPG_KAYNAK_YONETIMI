@@ -118,6 +118,12 @@ class TestMapDefinition(unittest.TestCase):
         with self.assertRaisesRegex(MapDefinitionError, "unsupported fields"):
             MapDefinition.from_dict(data)
 
+    def test_rejects_transition_source_not_on_declared_edge(self):
+        data = valid_definition()
+        data["transitions"][0]["direction"] = "north"
+        with self.assertRaisesRegex(MapDefinitionError, "not on the north edge"):
+            MapDefinition.from_dict(data)
+
 
 if __name__ == "__main__":
     unittest.main()

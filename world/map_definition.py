@@ -144,6 +144,20 @@ class MapDefinition:
             coordinates.append(self.starting_position)
         for transition in self.transitions:
             coordinates.extend(transition.from_tiles)
+            if transition.direction is not None:
+                for x, y in transition.from_tiles:
+                    on_edge = {
+                        "north": y == 0,
+                        "south": y == self.size.height - 1,
+                        "west": x == 0,
+                        "east": x == self.size.width - 1,
+                    }[transition.direction]
+                    if not on_edge:
+                        raise MapDefinitionError(
+                            f"Transition '{transition.transition_id}' source tile "
+                            f"({x}, {y}) is not on the {transition.direction} edge "
+                            f"of map '{self.map_id}'."
+                        )
         for x, y in coordinates:
             if not (0 <= x < self.size.width and 0 <= y < self.size.height):
                 raise MapDefinitionError(
