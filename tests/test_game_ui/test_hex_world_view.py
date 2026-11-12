@@ -70,6 +70,15 @@ class TestHexWorldView(unittest.TestCase):
             target,
         )
 
+    def test_path_movement_uses_visual_interpolation_without_delaying_runtime(self):
+        self.assertTrue(self.view.enter())
+        target = LocalHexPosition(3, 2)
+        self.assertTrue(self.view._move_to(target))
+        self.assertEqual(self.view.runtime.entity("hero").position.cell, target)
+        self.assertTrue(self.view._movement_path)
+        self.view.update(10.0)
+        self.assertFalse(self.view._movement_path)
+
     def test_enter_does_not_change_hex_maps(self):
         self.assertTrue(self.view.enter())
         self.view.handle(InputState(actions={"confirm"}))

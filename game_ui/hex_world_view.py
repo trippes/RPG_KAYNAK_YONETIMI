@@ -44,6 +44,9 @@ class HexWorldView:
         self._world_transform = WorldTransform(hex_size=self.HEX_RADIUS)
         self._terrain_renderer = HexTerrainRenderer()
         self._zoom = 1.0
+        self._movement_path = ()
+        self._movement_elapsed = 0.0
+        self._movement_step_seconds = 0.18
 
     def _load_package(self):
         if self._package is None:
@@ -111,6 +114,8 @@ class HexWorldView:
 
     def _move(self, direction):
         entity = self._entity()
+        previous_map_id = entity.position.map_id
+        previous_cell = entity.position.cell
         definition = self._map()
         target = LocalHexPosition.from_hex_coord(
             entity.position.cell.to_hex_coord().neighbor(direction)
@@ -135,6 +140,10 @@ class HexWorldView:
             result = self.runtime.move(self.entity_id, direction)
 
         if result.success:
+            if result.position.map_id == previous_map_id:
+                self._start_visual_movement((previous_cell, result.position.cell))
+            else:
+                self._movement_path = ()
             self.selected = result.position.cell
             destination = self.runtime.map_definition(result.position.map_id)
             self.message = f"{destination.name} — q={self.selected.q}, r={self.selected.r}"
@@ -147,8 +156,9 @@ class HexWorldView:
         if not path:
             self.message = "Bu hücreye güvenli bir yol bulunamadı."
             return False
+        self._start_visual_movement(path)
         moved = False
-        for cell in path[1:]:
+        for cell in path[1:]
             result = self.runtime.move_to(self.entity_id, cell)
             if not result.success:
                 self.message = result.detail or "Hareket yolu üzerinde engel var."
@@ -157,6 +167,19 @@ class HexWorldView:
         self.selected = target
         self.message = f"Hedef hücreye ulaşıldı: q={target.q}, r={target.r}"
         return True
+
+    def _start_visual_movement(self, path):
+        self._movement_path = tuple(path) if len(path) > 1 else ()
+        self._movement_elapsed = 0.0
+
+    def update(self, elapsed_seconds):
+        if not self._movement_path or elapsed_seconds <= 0:
+            return
+        self._movement_elapsed += float(elapsed_seconds)
+        duration = (len(self._movement_path) - 1) * self._movement_step_seconds
+        if self._movement_elapsed >= duration:
+            self._movement_path = ()
+            self._movement_elapsed = 0.0
 
     def handle(self, state):
         if not self.active:
@@ -273,6 +296,14 @@ class HexWorldView:
                 )
 
         player_center = centers[entity.position.cell]
+        if self._movement_path:
+            elapsed = min(self._movement_elapsed, (len(self._movement_path) - 1) * self._movement_step_seconds)
+            segment = min(int(elapsed / self._movement_step_seconds), len(self._movement_path) - 2)
+            progress = min(1.0, (elapsed - segment * self._movement_step_seconds) / self._movement_step_seconds)
+            start = centers.get(self._movement_path[segment])
+            end = centers.get(self._movement_path[segment + 1])
+            if start is not None and end is not None:
+                player_center = (start[0] + (end[0] - start[0]) * progress, start[1] + (end[1] - start[1]) * progress)
         renderer.pg.draw.circle(
             renderer.surface, (118, 238, 166),
             (round(player_center[0]), round(player_center[1])),

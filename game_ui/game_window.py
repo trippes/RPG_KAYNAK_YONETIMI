@@ -771,6 +771,12 @@ class GameWindow:
                 )
             self._set_current(next_screen)
 
+        if self.gameplay_active:
+            world_screen = self.screens.get(self.gameplay_screen)
+            update = getattr(world_screen, "update", None)
+            if update is not None:
+                update(elapsed_seconds)
+
         self._advance_active_time(elapsed_seconds)
 
         # Tell the renderer which chrome to draw for the screen shown this frame.

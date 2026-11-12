@@ -568,6 +568,10 @@ class MainScreen:
             rects.append((action, rect))
         self.context_menu_rects = tuple(rects)
 
+    def update(self, elapsed_seconds=0.0):
+        if self._hex_world_view.active:
+            self._hex_world_view.update(elapsed_seconds)
+
     def handle(self, state):
         if state.pressed("back"):
             if self.menu_open:
