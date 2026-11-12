@@ -5,7 +5,7 @@ from types import SimpleNamespace
 from game_ui.input import InputState
 from game_ui.screens.main_screen import MainScreen
 from game_ui.hex_world_view import HexWorldView
-from core.domain.spatial import EntityPosition, LocalHexPosition
+from core.domain.spatial import EntityPosition, HexDirection, LocalHexPosition
 
 
 class _FakeService:
@@ -70,18 +70,38 @@ class TestHexWorldView(unittest.TestCase):
             target,
         )
 
-    def test_confirm_uses_reciprocal_hex_map_transition(self):
+    def test_enter_does_not_change_hex_maps(self):
         self.assertTrue(self.view.enter())
         self.view.handle(InputState(actions={"confirm"}))
         self.assertEqual(
             self.view.runtime.entity("hero").position,
-            EntityPosition("hex_clearing_demo", LocalHexPosition(0, 0)),
+            EntityPosition("hex_forest_demo", LocalHexPosition(0, 0)),
         )
-        self.view.handle(InputState(actions={"confirm"}))
+
+    def test_crossing_east_boundary_automatically_enters_clearing(self):
+        self.assertTrue(self.view.enter())
+        self.assertTrue(self.view._move_to(LocalHexPosition(3, 2)))
+        self.assertTrue(self.view._move(HexDirection.EAST))
         self.assertEqual(
-            self.view.runtime.entity("hero").position.map_id,
-            "hex_forest_demo",
+            self.view.runtime.entity("hero").position,
+            EntityPosition("hex_clearing_demo", LocalHexPosition(-1, 0)),
         )
+
+    def test_crossing_west_boundary_returns_to_forest_automatically(self):
+        self.assertTrue(self.view.enter())
+        self.assertTrue(self.view._move_to(LocalHexPosition(3, 2)))
+        self.assertTrue(self.view._move(HexDirection.EAST))
+        self.assertTrue(self.view._move(HexDirection.WEST))
+        self.assertEqual(
+            self.view.runtime.entity("hero").position,
+            EntityPosition("hex_forest_demo", LocalHexPosition(3, 2)),
+        )
+
+    def test_unlinked_map_boundary_blocks_movement(self):
+        self.assertTrue(self.view.enter())
+        before = self.view.runtime.entity("hero").position
+        self.assertFalse(self.view._move(HexDirection.WEST))
+        self.assertEqual(self.view.runtime.entity("hero").position, before)
 
     def test_leave_keeps_legacy_actor_location_and_position(self):
         self.assertTrue(self.view.enter())
