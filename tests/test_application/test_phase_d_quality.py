@@ -1394,5 +1394,80 @@ class TestPhaseDQuality(unittest.TestCase):
                 self.assertEqual(screen._visible_choices(), ())
 
 
+    def test_local_map_geometry_is_loaded_from_location_content(self):
+        service, _ = populate_opening_content(GameApplication.create_default())
+        screen = LocalMapScreen(service)
+
+        self.assertEqual((screen._map_width(), screen._map_height()), (32, 32))
+        self.assertEqual(screen._river_tiles(), {
+            (18, y) for y in range(32)
+        } | {
+            (19, y) for y in range(32)
+        })
+        self.assertEqual(screen._bridge_tiles(), {(18, 16), (19, 16)})
+        self.assertEqual(screen._gate_tiles(), {
+            (16, 0), (16, 31), (0, 16), (31, 16),
+        })
+        self.assertIn((1, 0), screen._wall_tiles())
+        self.assertNotIn((16, 0), screen._wall_tiles())
+
+    def test_local_map_dimensions_and_boundaries_are_not_hard_coded(self):
+        service, _ = populate_opening_content(GameApplication.create_default())
+        screen = LocalMapScreen(service)
+        location = screen._location()
+        location.local_map.update({
+            "width": 20,
+            "height": 18,
+            "river": {"columns": [5], "visual_type": "river"},
+            "bridges": [[5, 7]],
+            "boundaries": {
+                "walls": {"edges": ["north", "west"]},
+                "gates": [[10, 0], [0, 9]],
+            },
+        })
+
+        self.assertEqual((screen._map_width(), screen._map_height()), (20, 18))
+        self.assertTrue(screen._in_bounds((19, 17)))
+        self.assertFalse(screen._in_bounds((20, 17)))
+        self.assertIn((5, 8), screen._blocked_tiles())
+        self.assertNotIn((5, 7), screen._blocked_tiles())
+        self.assertIn((1, 0), screen._wall_tiles())
+        self.assertNotIn((10, 0), screen._wall_tiles())
+
+    def test_landmark_visuals_and_resource_nodes_use_explicit_metadata(self):
+        service, _ = populate_opening_content(GameApplication.create_default())
+        world_map = service.application.holder.current.movement.map_for(
+            service.actor("hero").world_id
+        )
+        forest = world_map.get("forest")
+        landmarks = {landmark[0]: landmark for landmark in forest.landmarks}
+
+        tree = landmarks["forest_tree_01"]
+        mine = landmarks["forest_iron_mine"]
+        self.assertEqual(tree[5]["visual_type"], "tree")
+        self.assertEqual(tree[5]["resource_node_id"], "forest_wood")
+        self.assertEqual(mine[5]["visual_type"], "mine")
+        self.assertEqual(mine[5]["resource_node_id"], "north_iron_mine")
+
+        service.place_actor("hero", "forest")
+        screen = LocalMapScreen(service)
+        self.assertEqual(screen._node_id_for_landmark(tree), "forest_wood")
+        self.assertEqual(screen._node_id_for_landmark(mine), "north_iron_mine")
+
+    def test_every_starter_location_has_a_self_describing_local_map(self):
+        from application.content_pack import load_starter_content
+
+        definition = load_starter_content()
+        for location in definition["locations"]:
+            with self.subTest(location=location["id"]):
+                local_map = location["local_map"]
+                self.assertGreater(local_map["width"], 0)
+                self.assertGreater(local_map["height"], 0)
+                for landmark in location.get("landmarks", ()):
+                    self.assertIn("visual_type", landmark)
+                    if "gather" in landmark.get("activities", ()):
+                        self.assertIn("resource_node_id", landmark)
+
+
 if __name__ == "__main__":
     unittest.main()
