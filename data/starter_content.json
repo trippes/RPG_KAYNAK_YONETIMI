@@ -57,6 +57,12 @@
           "position": [
             15,
             15
+          ],
+          "visual_type": "building",
+          "blocks_movement": false,
+          "footprint": [
+            2,
+            2
           ]
         },
         {
@@ -69,6 +75,12 @@
           "position": [
             21,
             15
+          ],
+          "visual_type": "building",
+          "blocks_movement": false,
+          "footprint": [
+            2,
+            2
           ]
         },
         {
@@ -81,6 +93,12 @@
           "position": [
             27,
             15
+          ],
+          "visual_type": "building",
+          "blocks_movement": false,
+          "footprint": [
+            2,
+            2
           ]
         },
         {
@@ -93,6 +111,12 @@
           "position": [
             24,
             20
+          ],
+          "visual_type": "building",
+          "blocks_movement": false,
+          "footprint": [
+            2,
+            2
           ]
         },
         {
@@ -105,6 +129,12 @@
           "position": [
             20,
             23
+          ],
+          "visual_type": "building",
+          "blocks_movement": false,
+          "footprint": [
+            2,
+            2
           ]
         },
         {
@@ -117,6 +147,12 @@
           "position": [
             16,
             0
+          ],
+          "visual_type": "gate",
+          "blocks_movement": false,
+          "footprint": [
+            2,
+            2
           ]
         },
         {
@@ -129,6 +165,12 @@
           "position": [
             16,
             30
+          ],
+          "visual_type": "landmark",
+          "blocks_movement": false,
+          "footprint": [
+            2,
+            2
           ]
         },
         {
@@ -141,6 +183,12 @@
           "position": [
             31,
             16
+          ],
+          "visual_type": "gate",
+          "blocks_movement": false,
+          "footprint": [
+            2,
+            2
           ]
         },
         {
@@ -153,6 +201,12 @@
           "position": [
             0,
             16
+          ],
+          "visual_type": "gate",
+          "blocks_movement": false,
+          "footprint": [
+            2,
+            2
           ]
         },
         {
@@ -165,6 +219,12 @@
           "position": [
             11,
             12
+          ],
+          "visual_type": "building",
+          "blocks_movement": false,
+          "footprint": [
+            2,
+            2
           ]
         },
         {
@@ -175,6 +235,12 @@
           "position": [
             7,
             10
+          ],
+          "visual_type": "building",
+          "blocks_movement": true,
+          "footprint": [
+            2,
+            2
           ]
         },
         {
@@ -185,6 +251,12 @@
           "position": [
             26,
             11
+          ],
+          "visual_type": "building",
+          "blocks_movement": true,
+          "footprint": [
+            2,
+            2
           ]
         },
         {
@@ -197,6 +269,12 @@
           "position": [
             10,
             6
+          ],
+          "visual_type": "building",
+          "blocks_movement": false,
+          "footprint": [
+            2,
+            2
           ]
         },
         {
@@ -209,6 +287,12 @@
           "position": [
             3,
             5
+          ],
+          "visual_type": "building",
+          "blocks_movement": false,
+          "footprint": [
+            2,
+            2
           ]
         },
         {
@@ -219,6 +303,12 @@
           "position": [
             25,
             16
+          ],
+          "visual_type": "building",
+          "blocks_movement": true,
+          "footprint": [
+            2,
+            2
           ]
         },
         {
@@ -229,9 +319,66 @@
           "position": [
             7,
             23
+          ],
+          "visual_type": "building",
+          "blocks_movement": true,
+          "footprint": [
+            2,
+            2
           ]
         }
-      ]
+      ],
+      "local_map": {
+        "width": 32,
+        "height": 32,
+        "terrain": "grass",
+        "river": {
+          "columns": [
+            18,
+            19
+          ],
+          "visual_type": "river"
+        },
+        "bridges": [
+          [
+            18,
+            16
+          ],
+          [
+            19,
+            16
+          ]
+        ],
+        "boundaries": {
+          "walls": {
+            "edges": [
+              "north",
+              "south",
+              "east",
+              "west"
+            ],
+            "visual_type": "wall"
+          },
+          "gates": [
+            [
+              16,
+              0
+            ],
+            [
+              16,
+              31
+            ],
+            [
+              0,
+              16
+            ],
+            [
+              31,
+              16
+            ]
+          ]
+        }
+      }
     },
     {
       "id": "forest_id",
@@ -258,6 +405,13 @@
           "position": [
             150,
             210
+          ],
+          "visual_type": "clearing",
+          "resource_node_id": "forest_wood",
+          "blocks_movement": false,
+          "footprint": [
+            2,
+            2
           ]
         },
         {
@@ -270,6 +424,12 @@
           "position": [
             350,
             130
+          ],
+          "visual_type": "landmark",
+          "blocks_movement": false,
+          "footprint": [
+            2,
+            2
           ]
         },
         {
@@ -282,6 +442,12 @@
           "position": [
             470,
             270
+          ],
+          "visual_type": "landmark",
+          "blocks_movement": false,
+          "footprint": [
+            2,
+            2
           ]
         },
         {
@@ -294,6 +460,13 @@
           "position": [
             4,
             5
+          ],
+          "visual_type": "tree",
+          "resource_node_id": "forest_wood",
+          "blocks_movement": false,
+          "footprint": [
+            2,
+            2
           ]
         },
         {
@@ -306,6 +479,13 @@
           "position": [
             8,
             11
+          ],
+          "visual_type": "tree",
+          "resource_node_id": "forest_tree_02_wood",
+          "blocks_movement": false,
+          "footprint": [
+            2,
+            2
           ]
         },
         {
@@ -318,6 +498,13 @@
           "position": [
             13,
             7
+          ],
+          "visual_type": "tree",
+          "resource_node_id": "forest_tree_03_wood",
+          "blocks_movement": false,
+          "footprint": [
+            2,
+            2
           ]
         },
         {
@@ -330,6 +517,13 @@
           "position": [
             23,
             12
+          ],
+          "visual_type": "tree",
+          "resource_node_id": "forest_tree_04_wood",
+          "blocks_movement": false,
+          "footprint": [
+            2,
+            2
           ]
         },
         {
@@ -342,6 +536,13 @@
           "position": [
             27,
             24
+          ],
+          "visual_type": "tree",
+          "resource_node_id": "forest_tree_05_wood",
+          "blocks_movement": false,
+          "footprint": [
+            2,
+            2
           ]
         },
         {
@@ -354,9 +555,39 @@
           "position": [
             20,
             25
+          ],
+          "visual_type": "mine",
+          "resource_node_id": "north_iron_mine",
+          "blocks_movement": false,
+          "footprint": [
+            2,
+            2
           ]
         }
-      ]
+      ],
+      "local_map": {
+        "width": 32,
+        "height": 32,
+        "terrain": "grass",
+        "river": {
+          "columns": [
+            18,
+            19
+          ],
+          "visual_type": "river"
+        },
+        "bridges": [
+          [
+            18,
+            16
+          ],
+          [
+            19,
+            16
+          ]
+        ],
+        "boundaries": {}
+      }
     },
     {
       "id": "south_forest",
@@ -383,6 +614,13 @@
           "position": [
             6,
             8
+          ],
+          "visual_type": "tree",
+          "resource_node_id": "south_tree_01_wood",
+          "blocks_movement": false,
+          "footprint": [
+            2,
+            2
           ]
         },
         {
@@ -395,6 +633,13 @@
           "position": [
             18,
             14
+          ],
+          "visual_type": "tree",
+          "resource_node_id": "south_tree_02_wood",
+          "blocks_movement": false,
+          "footprint": [
+            2,
+            2
           ]
         },
         {
@@ -407,6 +652,13 @@
           "position": [
             27,
             24
+          ],
+          "visual_type": "tree",
+          "resource_node_id": "south_tree_03_wood",
+          "blocks_movement": false,
+          "footprint": [
+            2,
+            2
           ]
         },
         {
@@ -419,9 +671,39 @@
           "position": [
             22,
             5
+          ],
+          "visual_type": "mine",
+          "resource_node_id": "south_iron_mine",
+          "blocks_movement": false,
+          "footprint": [
+            2,
+            2
           ]
         }
-      ]
+      ],
+      "local_map": {
+        "width": 32,
+        "height": 32,
+        "terrain": "grass",
+        "river": {
+          "columns": [
+            18,
+            19
+          ],
+          "visual_type": "river"
+        },
+        "bridges": [
+          [
+            18,
+            16
+          ],
+          [
+            19,
+            16
+          ]
+        ],
+        "boundaries": {}
+      }
     },
     {
       "id": "west_forest",
@@ -448,6 +730,13 @@
           "position": [
             5,
             6
+          ],
+          "visual_type": "tree",
+          "resource_node_id": "west_tree_01_wood",
+          "blocks_movement": false,
+          "footprint": [
+            2,
+            2
           ]
         },
         {
@@ -460,6 +749,13 @@
           "position": [
             15,
             20
+          ],
+          "visual_type": "tree",
+          "resource_node_id": "west_tree_02_wood",
+          "blocks_movement": false,
+          "footprint": [
+            2,
+            2
           ]
         },
         {
@@ -472,6 +768,13 @@
           "position": [
             26,
             10
+          ],
+          "visual_type": "tree",
+          "resource_node_id": "west_tree_03_wood",
+          "blocks_movement": false,
+          "footprint": [
+            2,
+            2
           ]
         },
         {
@@ -484,9 +787,39 @@
           "position": [
             23,
             26
+          ],
+          "visual_type": "mine",
+          "resource_node_id": "west_iron_mine",
+          "blocks_movement": false,
+          "footprint": [
+            2,
+            2
           ]
         }
-      ]
+      ],
+      "local_map": {
+        "width": 32,
+        "height": 32,
+        "terrain": "grass",
+        "river": {
+          "columns": [
+            18,
+            19
+          ],
+          "visual_type": "river"
+        },
+        "bridges": [
+          [
+            18,
+            16
+          ],
+          [
+            19,
+            16
+          ]
+        ],
+        "boundaries": {}
+      }
     },
     {
       "id": "east_forest",
@@ -513,6 +846,13 @@
           "position": [
             4,
             17
+          ],
+          "visual_type": "tree",
+          "resource_node_id": "east_tree_01_wood",
+          "blocks_movement": false,
+          "footprint": [
+            2,
+            2
           ]
         },
         {
@@ -525,6 +865,13 @@
           "position": [
             17,
             7
+          ],
+          "visual_type": "tree",
+          "resource_node_id": "east_tree_02_wood",
+          "blocks_movement": false,
+          "footprint": [
+            2,
+            2
           ]
         },
         {
@@ -537,6 +884,13 @@
           "position": [
             25,
             22
+          ],
+          "visual_type": "tree",
+          "resource_node_id": "east_tree_03_wood",
+          "blocks_movement": false,
+          "footprint": [
+            2,
+            2
           ]
         },
         {
@@ -549,9 +903,39 @@
           "position": [
             8,
             25
+          ],
+          "visual_type": "mine",
+          "resource_node_id": "east_iron_mine",
+          "blocks_movement": false,
+          "footprint": [
+            2,
+            2
           ]
         }
-      ]
+      ],
+      "local_map": {
+        "width": 32,
+        "height": 32,
+        "terrain": "grass",
+        "river": {
+          "columns": [
+            18,
+            19
+          ],
+          "visual_type": "river"
+        },
+        "bridges": [
+          [
+            18,
+            16
+          ],
+          [
+            19,
+            16
+          ]
+        ],
+        "boundaries": {}
+      }
     },
     {
       "id": "north_mine",
@@ -577,9 +961,39 @@
           "position": [
             15,
             15
+          ],
+          "visual_type": "mine",
+          "resource_node_id": "north_mine_iron",
+          "blocks_movement": false,
+          "footprint": [
+            2,
+            2
           ]
         }
-      ]
+      ],
+      "local_map": {
+        "width": 32,
+        "height": 32,
+        "terrain": "grass",
+        "river": {
+          "columns": [
+            18,
+            19
+          ],
+          "visual_type": "river"
+        },
+        "bridges": [
+          [
+            18,
+            16
+          ],
+          [
+            19,
+            16
+          ]
+        ],
+        "boundaries": {}
+      }
     },
     {
       "id": "south_mine",
@@ -605,9 +1019,39 @@
           "position": [
             15,
             15
+          ],
+          "visual_type": "mine",
+          "resource_node_id": "south_mine_iron",
+          "blocks_movement": false,
+          "footprint": [
+            2,
+            2
           ]
         }
-      ]
+      ],
+      "local_map": {
+        "width": 32,
+        "height": 32,
+        "terrain": "grass",
+        "river": {
+          "columns": [
+            18,
+            19
+          ],
+          "visual_type": "river"
+        },
+        "bridges": [
+          [
+            18,
+            16
+          ],
+          [
+            19,
+            16
+          ]
+        ],
+        "boundaries": {}
+      }
     },
     {
       "id": "west_mine",
@@ -633,9 +1077,39 @@
           "position": [
             15,
             15
+          ],
+          "visual_type": "mine",
+          "resource_node_id": "west_mine_iron",
+          "blocks_movement": false,
+          "footprint": [
+            2,
+            2
           ]
         }
-      ]
+      ],
+      "local_map": {
+        "width": 32,
+        "height": 32,
+        "terrain": "grass",
+        "river": {
+          "columns": [
+            18,
+            19
+          ],
+          "visual_type": "river"
+        },
+        "bridges": [
+          [
+            18,
+            16
+          ],
+          [
+            19,
+            16
+          ]
+        ],
+        "boundaries": {}
+      }
     },
     {
       "id": "east_mine",
@@ -661,9 +1135,39 @@
           "position": [
             15,
             15
+          ],
+          "visual_type": "mine",
+          "resource_node_id": "east_mine_iron",
+          "blocks_movement": false,
+          "footprint": [
+            2,
+            2
           ]
         }
-      ]
+      ],
+      "local_map": {
+        "width": 32,
+        "height": 32,
+        "terrain": "grass",
+        "river": {
+          "columns": [
+            18,
+            19
+          ],
+          "visual_type": "river"
+        },
+        "bridges": [
+          [
+            18,
+            16
+          ],
+          [
+            19,
+            16
+          ]
+        ],
+        "boundaries": {}
+      }
     }
   ],
   "connections": [
