@@ -22,6 +22,12 @@ Paket manifesti:
 
 content/demo_eldoria/manifest.json
 
+Harita klasörü ve harita JSON sözleşmesi:
+
+content/demo_eldoria/maps/*.json
+
+docs/content/map-authoring.md
+
 Başlangıç dünyası ve karakter oluşturma tanımları:
 
 content/demo_eldoria/starter_content.json
@@ -54,9 +60,9 @@ from application.content_pack import load_starter_content, load_npc_definitions,
 
 Başlangıç paketi şu öğeleri kapsar:
 
-- Başlangıç dünyası ve harita bağlantıları
+- Başlangıç dünyasının kimliği ve başlangıç ayarları; yerel haritalar, dünya konumları ve harita geçişleri ayrı `maps/*.json` tanımlarında tutulur.
 - Oyuncu karakterinin başlangıç tanımı
-- Başlangıç lokasyonları
+- Harita JSON dosyalarından otomatik keşfedilen başlangıç lokasyonları
 - NPC tanımları ayrı "npcs.json" dosyasında; açılış ve oynanış aşamasına göre yüklenir
 - Görevler, hedefler, ödüller ve görev diyalogları ayrı "quests.json" dosyasında tanımlanır
 - Kaynak düğümleri ve toplama süreleri ayrı "resources.json" dosyasında tanımlanır
@@ -78,9 +84,9 @@ Sürümleme ve doğrulama
 
 Gelecekteki içerik paketleri
 
-Yeni NPC kayıtları mevcut "npcs.json" veri sözleşmesine eklenir. Kaynaklar, pazarlar ve karşılaşmalar da aynı paket manifesti üzerinden ayrı veri dosyalarına ayrılacaktır. Görev ve görev diyaloğu verileri artık "quests.json" dosyasında tutulur.
+Yeni NPC, kaynak ve görev kayıtları ilgili JSON sözleşmelerine eklenir; pazar tanımları başlangıç/paket verisinde NPC ve harita kimlikleriyle ilişkilendirilir. Haritalar manifestte bir klasör olarak tanımlanır ve bu klasördeki bütün JSON dosyaları otomatik keşfedilir. Harita dosyalarını tek tek manifest'e eklemek veya yeni bir harita için Python kodu yazmak gerekmez.
 
-Bu paketler başlangıç içeriğine bağımlı olmak zorunda değildir. Her paket kendi kimliklerini, sürümünü ve doğrulama kurallarını taşımalıdır.
+Her paket kendi kimliğini, sürümünü ve doğrulama kurallarını taşır. Harita geçişleri, koordinatlar, NPC/kaynak/görev/pazar ilişkileri ve kayıt uyumluluğu için ayrıntılı sözleşme `docs/content/map-authoring.md` belgesindedir.
 
 NPC veri sözleşmesi
 
