@@ -57,6 +57,7 @@ class GameWindow:
         fullscreen=True,
     ):
         self.service = service
+        self.content_package_path = getattr(service, "_content_package_path", None)
         self.pg = backend
         self.width, self.height = width, height
 
@@ -343,7 +344,10 @@ class GameWindow:
         from application.content_pack import populate_opening_content
         from application.game_application import GameApplication
 
-        service, _ = populate_opening_content(GameApplication.create_default())
+        service, _ = populate_opening_content(
+            GameApplication.create_default(),
+            content_package_path=self.content_package_path,
+        )
         self.service = service
         self.screens.update({
             "opening": OpeningScreen(),

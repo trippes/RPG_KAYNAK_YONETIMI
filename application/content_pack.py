@@ -19,8 +19,44 @@ from resources import Inventory, Quantity, ResourceType, ResourceUnit, WorldReso
 from world import Location, WorldMap
 
 
-DEFAULT_CONTENT_PACKAGE_PATH = Path(__file__).resolve().parent.parent / "content" / "demo_eldoria"
 CONTENT_SCHEMA_VERSION = 1
+CONTENT_ROOT = Path(__file__).resolve().parent.parent / "content"
+ACTIVE_PACKAGE_CONFIG = "active_package.json"
+
+
+def _resolve_content_package_path(package_path: str | Path | None = None) -> Path:
+    """Resolve an explicit package path or the package selected by content config."""
+    roots = (CONTENT_ROOT, Path(sys.prefix) / "content")
+    if package_path is not None:
+        requested = Path(package_path).expanduser()
+        candidates = (requested,) if requested.is_absolute() else tuple(root / requested for root in roots)
+        for candidate in candidates:
+            if (candidate / "manifest.json").is_file():
+                return candidate.resolve()
+        raise ContentDefinitionError(f"Content package was not found: {package_path}")
+
+    for root in roots:
+        config_path = root / ACTIVE_PACKAGE_CONFIG
+        if not config_path.is_file():
+            continue
+        try:
+            config = json.loads(config_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as error:
+            raise ContentDefinitionError("Active content package configuration could not be loaded.") from error
+        if not isinstance(config, dict) or config.get("schema_version") != CONTENT_SCHEMA_VERSION:
+            raise ContentDefinitionError("Active content package configuration has an unsupported schema.")
+        relative = config.get("package_path")
+        if not isinstance(relative, str) or not relative.strip():
+            raise ContentDefinitionError("Active content package path must be a non-empty string.")
+        selected = (root / relative).resolve()
+        if not selected.is_relative_to(root.resolve()):
+            raise ContentDefinitionError("Active content package path escapes the content directory.")
+        if not (selected / "manifest.json").is_file():
+            raise ContentDefinitionError(f"Active content package was not found: {relative}")
+        return selected
+    raise ContentDefinitionError("No active content package is configured.")
+
+
 
 
 @dataclass(frozen=True)
@@ -47,15 +83,8 @@ def _read_json_definition(source: Path, label: str) -> dict:
     return definition
 
 
-def _load_package_file(key: str) -> dict:
-    candidates = (
-        DEFAULT_CONTENT_PACKAGE_PATH,
-        Path(sys.prefix) / "content" / "demo_eldoria",
-    )
-    package_root = next(
-        (candidate for candidate in candidates if (candidate / "manifest.json").is_file()),
-        candidates[0],
-    )
+def _load_package_file(key: str, package_path: str | Path | None = None) -> dict:
+    package_root = _resolve_content_package_path(package_path)
     try:
         package = load_content_package(package_root)
         return package.files[key]
@@ -65,10 +94,10 @@ def _load_package_file(key: str) -> dict:
         ) from error
 
 
-def load_starter_content(path: str | Path | None = None) -> dict:
+def load_starter_content(path: str | Path | None = None, *, package_path: str | Path | None = None) -> dict:
     """Load and validate the starter world definition from the active content package."""
     definition = (
-        _load_package_file("starter")
+        _load_package_file("starter", package_path)
         if path is None
         else _read_json_definition(Path(path), "Content definition")
     )
@@ -83,15 +112,15 @@ def load_starter_content(path: str | Path | None = None) -> dict:
     return definition
 
 
-def load_opening_content(path: str | Path | None = None) -> dict:
+def load_opening_content(path: str | Path | None = None, *, package_path: str | Path | None = None) -> dict:
     """Load only the definition sections required before character creation."""
-    return load_starter_content(path)
+    return load_starter_content(path, package_path=package_path)
 
 
-def load_npc_definitions(path: str | Path | None = None) -> tuple[dict, ...]:
+def load_npc_definitions(path: str | Path | None = None, *, package_path: str | Path | None = None) -> tuple[dict, ...]:
     """Load NPC records from the content package or an explicit JSON file."""
     definition = (
-        _load_package_file("npcs")
+        _load_package_file("npcs", package_path)
         if path is None
         else _read_json_definition(Path(path), "NPC definition")
     )
@@ -151,9 +180,9 @@ def _id_resolver(definition: dict, ids: StarterContentIds):
     return lambda key: replacements.get(key, key)
 
 
-def load_character_definitions(path: str | Path | None = None) -> dict:
+def load_character_definitions(path: str | Path | None = None, *, package_path: str | Path | None = None) -> dict:
     """Load and validate reusable race, class and ability definitions."""
-    definition = _load_package_file("characters") if path is None else _read_json_definition(Path(path), "Character definition")
+    definition = _load_package_file("characters", package_path) if path is None else _read_json_definition(Path(path), "Character definition")
     if definition.get("schema_version") != CONTENT_SCHEMA_VERSION:
         raise ContentDefinitionError("Unsupported character definition schema version.")
     for section in ("races", "classes"):
@@ -338,9 +367,9 @@ def _build_dialogue_from_definition(dialogue_data: dict, speaker_id: str) -> Dia
 
 
 
-def load_quest_definitions(path: str | Path | None = None) -> tuple[dict, ...]:
+def load_quest_definitions(path: str | Path | None = None, *, package_path: str | Path | None = None) -> tuple[dict, ...]:
     """Load and validate declarative quest and dialogue records."""
-    definition = _load_package_file("quests") if path is None else _read_json_definition(Path(path), "Quest definition")
+    definition = _load_package_file("quests", package_path) if path is None else _read_json_definition(Path(path), "Quest definition")
     if definition.get("schema_version") != CONTENT_SCHEMA_VERSION:
         raise ContentDefinitionError("Unsupported quest definition schema version.")
     records = definition.get("quests")
@@ -518,35 +547,39 @@ def populate_opening_content(
     definition_path=None,
     npc_definitions_path=None,
     character_definitions_path=None,
+    content_package_path=None,
 ):
     """Build the opening session using data-defined NPC records."""
-    definition = load_opening_content(definition_path)
-    npc_definitions = load_npc_definitions(npc_definitions_path)
-    character_definitions = load_character_definitions(character_definitions_path)
-    return _register_opening_content(
+    definition = load_opening_content(definition_path, package_path=content_package_path)
+    npc_definitions = load_npc_definitions(npc_definitions_path, package_path=content_package_path)
+    character_definitions = load_character_definitions(character_definitions_path, package_path=content_package_path)
+    service = _register_opening_content(
         application,
         definition,
         npc_definitions,
         character_definitions,
         ids,
     )
+    service._content_package_path = _resolve_content_package_path(content_package_path)
+    return service
 
 
-def populate_gameplay_resources(service, definition_path=None, resource_definitions_path=None):
+def populate_gameplay_resources(service, definition_path=None, resource_definitions_path=None, content_package_path=None):
     """Create gameplay inventory and resource nodes after character creation."""
     world = service.application.aktif_dunya()
     if world is None:
         raise RuntimeError("An active world is required for gameplay resources.")
     ids = getattr(service, "_starter_content_ids", StarterContentIds())
-    definition = load_starter_content(definition_path)
-    npc_definitions = load_npc_definitions()
+    active_package_path = content_package_path or getattr(service, "_content_package_path", None)
+    definition = load_starter_content(definition_path, package_path=active_package_path)
+    npc_definitions = load_npc_definitions(package_path=active_package_path)
     resolve_id = _id_resolver(definition, ids)
     _register_npcs_for_phase(service, npc_definitions, "gameplay", resolve_id)
-    _register_quest_content(service, load_quest_definitions())
+    _register_quest_content(service, load_quest_definitions(package_path=active_package_path))
     _register_opening_resources(
         service.application.holder.current,
         definition,
-        load_resource_definitions(resource_definitions_path),
+        load_resource_definitions(resource_definitions_path, package_path=active_package_path),
         _id_resolver(definition, ids),
         world.world_id,
     )
@@ -586,9 +619,9 @@ def populate_gameplay_resources(service, definition_path=None, resource_definiti
 
 
 
-def load_resource_definitions(path: str | Path | None = None) -> tuple[dict, ...]:
+def load_resource_definitions(path: str | Path | None = None, *, package_path: str | Path | None = None) -> tuple[dict, ...]:
     """Load and validate explicit world resource-node definitions."""
-    definition = _load_package_file("resources") if path is None else _read_json_definition(Path(path), "Resource definition")
+    definition = _load_package_file("resources", package_path) if path is None else _read_json_definition(Path(path), "Resource definition")
     if definition.get("schema_version") != CONTENT_SCHEMA_VERSION:
         raise ContentDefinitionError("Unsupported resource definition schema version.")
     records = definition.get("nodes")

@@ -20,6 +20,7 @@ py-modules = ["main"]
 game_ui = ["assets/*.png"]
 
 [tool.setuptools.data-files]
+"content" = ["content/active_package.json"]
 "." = ["data/starter_content.json", "data/playtest_balance.json"]
 "content/demo_eldoria" = ["content/demo_eldoria/manifest.json", "content/demo_eldoria/starter_content.json", "content/demo_eldoria/npcs.json", "content/demo_eldoria/quests.json", "content/demo_eldoria/resources.json", "content/demo_eldoria/characters.json"]
 

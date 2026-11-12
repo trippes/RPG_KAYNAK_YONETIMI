@@ -1,6 +1,7 @@
 """RPG Kaynak Yönetimi için çalıştırılabilir uygulama giriş noktası."""
 
 import sys
+from pathlib import Path
 
 from application import GameApplication
 from application.runtime_logging import configure_logging
@@ -24,6 +25,12 @@ def main():
     if "--version" in sys.argv:
         print(APP_VERSION)
         return
+    content_package_path = None
+    if "--content-package" in sys.argv:
+        index = sys.argv.index("--content-package")
+        if index + 1 >= len(sys.argv):
+            raise SystemExit("--content-package için bir paket dizini belirtin.")
+        content_package_path = Path(sys.argv[index + 1])
     if "--play" not in sys.argv:
         game = oyun_olustur()
         print(game.bilgi())
@@ -37,7 +44,7 @@ def main():
     except RuntimeError as error:
         raise SystemExit("Oynatmak için pygame-ce kurulmalı: pip install pygame-ce") from error
     try:
-        launch(create_opening_service(game), pygame)
+        launch(create_opening_service(game, content_package_path), pygame)
     except Exception as error:
         logger.exception("Interactive game session failed")
         raise SystemExit(f"Oyun başlatılamadı. Ayrıntılar logs/eldoria.log dosyasına yazıldı: {error}") from error
