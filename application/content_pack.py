@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import sys
 from dataclasses import dataclass, fields
 from pathlib import Path
 from types import MappingProxyType
@@ -20,7 +19,6 @@ from world import Location, WorldMap
 
 
 DEFAULT_CONTENT_PACKAGE_PATH = Path(__file__).resolve().parent.parent / "content" / "demo_eldoria"
-DEFAULT_CONTENT_PATH = DEFAULT_CONTENT_PACKAGE_PATH / "starter_content.json"
 CONTENT_SCHEMA_VERSION = 1
 
 
@@ -31,7 +29,6 @@ class StarterContentIds:
     village_id: str = "village"
     forest_id: str = "forest"
     faction_id: str = "wardens"
-    npc_id: str = "warden_lyra"
 
 from core.errors import RPGError
 
@@ -346,9 +343,21 @@ def _register_opening_content(application, definition: dict, npc_definitions, id
     faction_data = definition["faction"]
     service.register_faction(Faction(resolve_id("faction_id"), faction_data["name"]))
     _register_npcs_for_phase(service, npc_definitions, "opening", resolve_id)
+    opening_dialogue_data = definition["dialogue"]
+    speaker_record = next(
+        (
+            record for record in npc_definitions
+            if record.get("dialogue_id") == opening_dialogue_data.get("id")
+        ),
+        None,
+    )
+    if speaker_record is None:
+        raise ContentDefinitionError(
+            f"No NPC references opening dialogue '{opening_dialogue_data.get('id')}'."
+        )
     dialogue = _build_dialogue_from_definition(
-        definition["dialogue"],
-        resolve_id("npc_id"),
+        opening_dialogue_data,
+        speaker_record["id"],
     )
     service.register_dialogue(dialogue)
     world_map = _build_world_map_from_definition(
@@ -532,6 +541,7 @@ __all__ = [
     "StarterContentIds",
     "load_starter_content",
     "load_opening_content",
+    "load_npc_definitions",
     "populate_opening_content",
     "populate_gameplay_resources",
     "build_starter_world_map",
