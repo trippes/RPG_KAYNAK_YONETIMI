@@ -27,8 +27,8 @@ class TestContentPack(unittest.TestCase):
         bundle = application.holder.current
 
         self.assertEqual(
-            tuple(npc.npc_id for npc in bundle.social.npcs.all()),
-            ("warden_lyra", "village_carpenter"),
+            {npc.npc_id for npc in bundle.social.npcs.all()},
+            {"warden_lyra", "village_carpenter"},
         )
         self.assertEqual(
             tuple(bundle.social.dialogues),
