@@ -91,6 +91,16 @@ class TestActorSystem(unittest.TestCase):
         self.assertEqual(self.inventory.get(self.ore), Quantity(2, ResourceUnit.ITEM))
         self.assertIsNone(self.service.actor("miner").activity_id)
 
+    def test_gathering_uses_the_duration_configured_on_its_resource_node(self):
+        self.service.register_actor("miner", "miner")
+        node = self.application.holder.current.resource_nodes.get("node")
+        node._gathering_duration_ticks = __import__("core.time", fromlist=["Tick"]).Tick(37)
+        activity = self.service.start_gathering(
+            "miner", "node", "main", Quantity(1, ResourceUnit.ITEM), "custom-duration"
+        )
+        self.assertEqual(activity.end_tick - activity.start_tick, 37)
+        self.assertEqual(self.service.gathering_duration("miner"), 37)
+
     def test_failed_gather_does_not_change_inventory_or_node(self):
         self.service.register_actor("miner", "miner")
         with self.assertRaises(ResourceNodeInsufficientError):
