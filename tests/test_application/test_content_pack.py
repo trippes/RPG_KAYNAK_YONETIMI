@@ -187,6 +187,14 @@ class TestContentPack(unittest.TestCase):
         self.assertEqual(service.balance("hero", "gold").amount, 275)
         self.assertEqual(service._consumable_effects, {"bread": 7, "water": 3})
         self.assertEqual(service.player_inventory_id, "player")
+        character = service.actor_character("hero")
+        character.current_hit_points = 2
+        application.holder.current.inventories["player"].add(
+            ResourceType("bread"),
+            Quantity(1, ResourceUnit.ITEM),
+        )
+        service.consume_item("hero", "player", "bread")
+        self.assertEqual(character.current_hit_points, 9)
 
     def test_starter_ids_are_resolved_from_the_selected_package(self):
         application = GameApplication.create_default()

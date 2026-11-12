@@ -61,6 +61,7 @@ Başlangıç paketi şu öğeleri kapsar:
 - Görevler, hedefler, ödüller ve görev diyalogları ayrı "quests.json" dosyasında tanımlanır
 - Kaynak düğümleri ve toplama süreleri ayrı "resources.json" dosyasında tanımlanır
 - Irk, sınıf ve yetenek tanımları ayrı "characters.json" dosyasında tutulur
+- Oyuncu envanteri/hesabı, başlangıç ekonomisi ve tüketilebilir eşya etkileri "gameplay_rules.json" dosyasında tanımlanır
 - Açılış diyaloğu
 - Karakter oluşturma için gerekli tanımlar
 
@@ -128,3 +129,7 @@ Sosyal kayıtlarda NPC konumu bulunmayan veya eski varsayılan (0, 0) konumunda 
 Başlangıç kimlikleri
 
 Motorun StarterContentIds alanları demo kimliklerini varsayılan olarak taşımaz. Paket içindeki "ids" alanından çözülür; isteğe bağlı çağrı zamanı geçersiz kılmaları ayrıca desteklenir.
+
+Oynanış kuralları veri sözleşmesi
+
+"gameplay_rules.json" oyuncunun aktör, envanter ve ekonomi hesabı kimliklerini; başlangıç para birimi ve miktarını; tüketilebilir kaynakların etkilerini tanımlar. GameplayService bu kayıtları genel yapılandırma olarak alır. Yeni bir iyileştirici yiyecek eklemek için tüketilebilir tanımına yeni bir kayıt eklenir; ekmek/su gibi içerik kimlikleri ve değerleri servis koduna gömülü değildir.
