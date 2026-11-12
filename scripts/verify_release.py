@@ -17,24 +17,12 @@ PYTHON = sys.executable
 
 
 def run(label: str, *args: str) -> None:
-    print(f"==> {label}")
+    print(f"==> {label}", flush=True)
     subprocess.run(args, cwd=ROOT, check=True)
 
 
 def main() -> int:
-    run(
-        "unit tests",
-        PYTHON,
-        "-m",
-        "unittest",
-        "discover",
-        "-s",
-        "tests",
-        "-t",
-        ".",
-        "-p",
-        "test_*.py",
-    )
+    run("complete test suite", PYTHON, "-m", "pytest", "-q")
     run(
         "compileall",
         PYTHON,
