@@ -1,7 +1,5 @@
-"""Playable carpenter quest content for the Eldoria demo branch."""
+"""Playable carpenter quest mechanics for the Eldoria demo package."""
 
-from core.domain.spatial import Position
-from npc import NPC
 from quests import Dialogue, DialogueChoice, DialogueNode, Objective, ObjectiveType, Quest, Reward
 
 CARPENTER_QUEST_ID = "carpenter_wood"
@@ -10,17 +8,11 @@ CARPENTER_DIALOGUE_ID = "carpenter_dialogue"
 
 
 def populate_carpenter_quest_demo(service):
-    """Register Marangoz Hilmi and his wood-delivery quest."""
+    """Register the wood-delivery quest; its giver NPC is content-package data."""
     bundle = service.application.holder.current
     existing = bundle.quest_log.get(CARPENTER_QUEST_ID)
 
-    npc = bundle.social.npcs.get(CARPENTER_NPC_ID)
-    if npc is None:
-        service.register_npc(NPC(
-            CARPENTER_NPC_ID, "Marangoz Hilmi", "carpenter",
-            ("wardens",), "village", position=Position(21, 15),
-        ))
-
+    # NPC identity and placement are loaded from the active content package.
     quest = existing or Quest(
         CARPENTER_QUEST_ID,
         "Marangozun Odun İsteği",
