@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from types import MappingProxyType
 from typing import Mapping
 
@@ -31,7 +31,9 @@ class WorldMapDefinition:
     world_map_id: str
     name: str
     placements: tuple[WorldMapPlacement, ...]
-    metadata: Mapping[str, object]
+    metadata: Mapping[str, object] = field(compare=False, hash=False)
+    _placements_by_map_id: Mapping[str, WorldMapPlacement] = field(init=False, repr=False, compare=False, hash=False)
+    _placements_by_position: Mapping[WorldHexPosition, WorldMapPlacement] = field(init=False, repr=False, compare=False, hash=False)
 
     def __post_init__(self) -> None:
         if type(self.schema_version) is not int or self.schema_version != 1:
@@ -52,14 +54,16 @@ class WorldMapDefinition:
             raise TypeError("world map metadata must be a mapping.")
         object.__setattr__(self, "placements", placements)
         object.__setattr__(self, "metadata", MappingProxyType(dict(self.metadata)))
+        object.__setattr__(self, "_placements_by_map_id", MappingProxyType({item.map_id: item for item in placements}))
+        object.__setattr__(self, "_placements_by_position", MappingProxyType({item.position: item for item in placements}))
 
     @property
     def placements_by_map_id(self) -> Mapping[str, WorldMapPlacement]:
-        return MappingProxyType({item.map_id: item for item in self.placements})
+        return self._placements_by_map_id
 
     @property
     def placements_by_position(self) -> Mapping[WorldHexPosition, WorldMapPlacement]:
-        return MappingProxyType({item.position: item for item in self.placements})
+        return self._placements_by_position
 
     def get_placement(self, map_id: str) -> WorldMapPlacement | None:
         return self.placements_by_map_id.get(map_id)
