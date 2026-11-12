@@ -13,6 +13,7 @@ class Location:
     location_type: str = "unknown"
     activities: tuple[str, ...] = ()
     landmarks: tuple = ()
+    local_map: dict | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.location_id, str) or not self.location_id.strip():
@@ -27,3 +28,5 @@ class Location:
             raise TypeError("activities must be a tuple of non-empty strings.")
         if not isinstance(self.landmarks, tuple):
             raise TypeError("landmarks must be a tuple.")
+        if self.local_map is not None and not isinstance(self.local_map, dict):
+            raise TypeError("local_map must be a dictionary or None.")
