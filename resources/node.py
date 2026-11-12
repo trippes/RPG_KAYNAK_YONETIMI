@@ -36,6 +36,7 @@ class WorldResourceNode:
         regeneration_rate: Quantity,
         last_simulation_tick: Tick | int = Tick(0),
         location_id: str | None = None,
+        gathering_duration_ticks: Tick | int = Tick(150),
     ) -> None:
         self._node_id = self._validate_text(node_id, "node_id")
         self._world_id = self._validate_world_id(world_id)
@@ -58,6 +59,11 @@ class WorldResourceNode:
         if location_id is not None and (not isinstance(location_id, str) or not location_id.strip()):
             raise ValueError("location_id must be a non-empty string when provided.")
         self._location_id = location_id
+        self._validate_tick(gathering_duration_ticks)
+        duration = self._as_tick(gathering_duration_ticks)
+        if duration.value <= 0:
+            raise ResourceNodeError("gathering_duration_ticks must be positive.")
+        self._gathering_duration_ticks = duration
 
     @property
     def node_id(self) -> str:
@@ -74,6 +80,11 @@ class WorldResourceNode:
     @property
     def location_id(self) -> str | None:
         return self._location_id
+
+    @property
+    def gathering_duration_ticks(self) -> Tick:
+        """Configured base duration for extracting from this node."""
+        return self._gathering_duration_ticks
 
     @property
     def quantity(self) -> Quantity:
