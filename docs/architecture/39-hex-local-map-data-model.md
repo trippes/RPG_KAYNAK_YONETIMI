@@ -1,6 +1,6 @@
 # Eldoria — Aşama 2: Altıgen Yerel Harita Veri Modeli
 
-**Durum:** Kod ve testler eklendi; CI sonucu bekleniyor.  
+**Durum:** Kod ve testler eklendi; Linux ve Windows CI doğrulamaları başarıyla tamamlandı.  
 **Harita şeması:** JSON schema_version 2.  
 **Content package manifest:** schema_version 1 olarak korunur.
 
