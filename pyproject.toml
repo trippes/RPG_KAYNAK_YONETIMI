@@ -21,6 +21,7 @@ game_ui = ["assets/*.png"]
 
 [tool.setuptools.data-files]
 "." = ["data/starter_content.json", "data/playtest_balance.json"]
+"data/maps" = ["data/maps/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
