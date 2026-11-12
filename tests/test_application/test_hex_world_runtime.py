@@ -15,7 +15,7 @@ def make_map(map_id="forest", cells=None, overrides=None, transitions=None):
         "geometry": {"type": "hex_axial", "orientation": "pointy_top", "coordinate_system": "axial"},
         "terrain_ids": ["grass", "water"],
         "default_terrain": "grass",
-        "valid_cells": cells or [[0, 0], [1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1], [2, 0]],
+        "valid_cells": cells or [[0, 0], [1, 0], [1, -1], [2, -1], [0, -1], [-1, 0], [-1, 1], [0, 1], [2, 0]],
         "cell_overrides": overrides or [],
         "transitions": transitions or [],
     })
