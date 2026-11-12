@@ -22,8 +22,9 @@ game_ui = ["assets/*.png"]
 [tool.setuptools.data-files]
 "." = ["data/starter_content.json", "data/playtest_balance.json"]
 
-[tool.unittest]
-test_command = "python -m unittest discover -s tests -t . -p test_*.py"
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
 
 [tool.setuptools.packages.find]
 where = ["."]
