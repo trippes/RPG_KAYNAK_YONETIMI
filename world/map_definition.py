@@ -69,6 +69,7 @@ class MapTransition:
     target_map_id: str
     target_tiles: tuple[tuple[int, int], ...] = ()
     direction: str | None = None
+    bidirectional: bool = False
 
 
 @dataclass(frozen=True)
@@ -82,6 +83,7 @@ class MapDefinition:
     world_position: tuple[int, int] | None = None
     starting_position: tuple[int, int] | None = None
     metadata: dict[str, Any] | None = None
+    activities: tuple[str, ...] = ()
     blocked_tiles: tuple[tuple[int, int], ...] = ()
     features: tuple[MapFeature, ...] = ()
     landmarks: tuple[LandmarkDefinition, ...] = ()
@@ -93,7 +95,7 @@ class MapDefinition:
             raise MapDefinitionError("Map definition must be an object.")
         if data.get("schema_version") != 1:
             raise MapDefinitionError("Unsupported map definition schema version.")
-        allowed = {"schema_version", "map_id", "name", "description", "size", "terrain", "world_position", "starting_position", "metadata", "blocked_tiles", "features", "landmarks", "transitions"}
+        allowed = {"schema_version", "map_id", "name", "description", "size", "terrain", "world_position", "starting_position", "metadata", "activities", "blocked_tiles", "features", "landmarks", "transitions"}
         unknown = sorted(set(data) - allowed)
         if unknown:
             raise MapDefinitionError("Map definition has unsupported fields: " + ", ".join(unknown))
@@ -120,6 +122,7 @@ class MapDefinition:
                 if data.get("starting_position") is not None else None
             ),
             metadata=_metadata(data.get("metadata")),
+            activities=_string_list(data.get("activities", ()), "activities"),
             blocked_tiles=tuple(_coordinate(item, "blocked_tiles item") for item in data.get("blocked_tiles", ())),
             features=tuple(_feature(item) for item in data.get("features", ())),
             landmarks=tuple(_landmark(item) for item in data.get("landmarks", ())),
@@ -159,6 +162,12 @@ def _string(value: Any, field_name: str, *, allow_empty: bool = False) -> str:
     if not isinstance(value, str) or (not allow_empty and not value.strip()):
         raise MapDefinitionError(f"{field_name} must be a {'string' if allow_empty else 'non-empty string'}.")
     return value
+
+
+def _string_list(value: Any, field_name: str) -> tuple[str, ...]:
+    if not isinstance(value, (list, tuple)):
+        raise MapDefinitionError(f"{field_name} must be a list of strings.")
+    return tuple(_string(item, f"{field_name} item") for item in value)
 
 
 def _metadata(value: Any) -> dict[str, Any] | None:
@@ -220,6 +229,7 @@ def _transition(data: Any) -> MapTransition:
         _string(data.get("target_map_id"), "transition.target_map_id"),
         target_tiles,
         direction,
+        _bool(data.get("bidirectional", False), "transition.bidirectional"),
     )
 
 

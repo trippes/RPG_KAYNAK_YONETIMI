@@ -3,7 +3,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from world.map_loader import load_map_definitions
+from world.map_loader import (
+    load_map_definitions, build_world_map, build_local_map_definitions,
+)
 from world.map_definition import MapDefinitionError
 
 
@@ -11,7 +13,7 @@ def record(map_id, width=4, height=3, transitions=()):
     return {
         "schema_version": 1, "map_id": map_id, "name": map_id, "description": "",
         "size": {"width": width, "height": height},
-        "terrain": {"default_tile": "grass"}, "transitions": list(transitions),
+        "terrain": {"default_tile": "grass"}, "world_position": [0, 0], "transitions": list(transitions),
     }
 
 
@@ -58,6 +60,31 @@ class TestMapPackageTransitions(unittest.TestCase):
 
     def test_maps_without_transitions_are_valid(self):
         self.assertEqual(self._load({"isolated": record("isolated")})["isolated"].transitions, ())
+
+    def test_world_graph_is_built_from_one_way_map_exits(self):
+        maps = self._load({
+            "source": record("source", transitions=[
+                {**transition("out", "target"), "bidirectional": False}
+            ]),
+            "target": record("target", 8, 7),
+        })
+        world = build_world_map(maps, "world")
+        self.assertEqual(
+            tuple(item.location_id for item in world.neighbors("source")),
+            ("target",),
+        )
+        self.assertEqual(world.neighbors("target"), ())
+
+    def test_local_map_dimensions_are_built_from_map_catalog(self):
+        maps = self._load({
+            "small": record("small", 16, 24),
+            "large": record("large", 40, 18),
+        })
+        local_maps = {
+            item.location_id: (item.width, item.height)
+            for item in build_local_map_definitions(maps, "world")
+        }
+        self.assertEqual(local_maps, {"large": (40, 18), "small": (16, 24)})
 
 
 if __name__ == "__main__":

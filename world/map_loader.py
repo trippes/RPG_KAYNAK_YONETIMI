@@ -6,6 +6,9 @@ import json
 from pathlib import Path
 
 from .map_definition import MapDefinition, MapDefinitionError
+from .location import Location
+from .map import WorldMap
+from .local_map import LocalMapDefinition
 
 
 def load_map_definition(path: str | Path) -> MapDefinition:
@@ -51,4 +54,66 @@ def load_map_definitions(directory: str | Path) -> dict[str, MapDefinition]:
                         f"Transition '{transition.transition_id}' target coordinate "
                         f"({x}, {y}) is outside map '{target.map_id}' bounds."
                     )
+            if transition.bidirectional:
+                reciprocal = any(
+                    candidate.bidirectional
+                    and candidate.target_map_id == definition.map_id
+                    and set(candidate.from_tiles).intersection(transition.target_tiles)
+                    and set(candidate.target_tiles).intersection(transition.from_tiles)
+                    for candidate in target.transitions
+                )
+                if not reciprocal:
+                    raise MapDefinitionError(
+                        f"Bidirectional transition '{transition.transition_id}' from "
+                        f"'{definition.map_id}' requires a reciprocal transition in "
+                        f"'{target.map_id}'. Set bidirectional=false for a one-way exit."
+                    )
     return definitions
+
+
+def build_world_map(definitions: dict[str, MapDefinition], world_id: str) -> WorldMap:
+    """Build the world graph exclusively from local map metadata and exits."""
+    world_map = WorldMap(world_id)
+    for definition in definitions.values():
+        if definition.world_position is None:
+            raise MapDefinitionError(
+                f"Map '{definition.map_id}' is missing required world_position metadata."
+            )
+        landmarks = tuple(
+            (
+                item.landmark_id, item.name, item.position, item.activities,
+                item.description,
+            )
+            for item in definition.landmarks
+        )
+        location_type = (definition.metadata or {}).get("location_type", "unknown")
+        world_map.add_location(Location(
+            definition.map_id, definition.name, definition.world_position,
+            definition.description, location_type, definition.activities, landmarks,
+        ))
+
+    connected_pairs = set()
+    for definition in definitions.values():
+        for transition in definition.transitions:
+            pair = (definition.map_id, transition.target_map_id)
+            if transition.bidirectional:
+                key = tuple(sorted(pair))
+                if key not in connected_pairs:
+                    world_map.connect(*pair)
+                    connected_pairs.add(key)
+            else:
+                world_map.connect_one_way(*pair)
+    return world_map
+
+
+def build_local_map_definitions(
+    definitions: dict[str, MapDefinition], world_id: str,
+) -> tuple[LocalMapDefinition, ...]:
+    """Create dynamic local-map dimensions from the content catalog."""
+    return tuple(
+        LocalMapDefinition(
+            world_id, definition.map_id,
+            definition.size.width, definition.size.height,
+        )
+        for definition in definitions.values()
+    )

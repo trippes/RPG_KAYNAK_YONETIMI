@@ -626,7 +626,8 @@
           16
         ]
       ],
-      "direction": "east"
+      "direction": "east",
+      "bidirectional": true
     },
     {
       "id": "west_forest_to_west_mine",
@@ -643,11 +644,20 @@
           0
         ]
       ],
-      "direction": "south"
+      "direction": "south",
+      "bidirectional": true
     }
   ],
   "world_position": [
     30,
     220
-  ]
+  ],
+  "activities": [
+    "gather",
+    "combat",
+    "travel"
+  ],
+  "metadata": {
+    "location_type": "wilderness"
+  }
 }

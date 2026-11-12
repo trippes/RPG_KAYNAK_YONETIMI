@@ -575,11 +575,19 @@
           16
         ]
       ],
-      "direction": "west"
+      "direction": "west",
+      "bidirectional": true
     }
   ],
   "world_position": [
     300,
     390
-  ]
+  ],
+  "activities": [
+    "gather",
+    "travel"
+  ],
+  "metadata": {
+    "location_type": "mine"
+  }
 }

@@ -16,7 +16,7 @@ from npc import Faction, NPC
 from economy import Currency, Money, MarketProfile, MarketCatalogEntry
 from quests import Dialogue, DialogueChoice, DialogueNode, Objective, ObjectiveType, Quest, Reward
 from resources import Inventory, Quantity, ResourceType, ResourceUnit, WorldResourceNode
-from world import Location, WorldMap
+from world import build_world_map, build_local_map_definitions
 
 
 CONTENT_SCHEMA_VERSION = 1
@@ -485,7 +485,7 @@ def _register_npcs_for_phase(service, npc_definitions, phase: str, resolve_id):
         )
 
 
-def _register_opening_content(application, definition: dict, npc_definitions, character_definitions, ids: StarterContentIds):
+def _register_opening_content(application, definition: dict, npc_definitions, character_definitions, map_definitions, ids: StarterContentIds):
     ids = StarterContentIds(**{
         field.name: getattr(ids, field.name) or definition["ids"][field.name]
         for field in fields(StarterContentIds)
@@ -533,14 +533,24 @@ def _register_opening_content(application, definition: dict, npc_definitions, ch
         speaker_record["id"],
     )
     service.register_dialogue(dialogue)
-    world_map = _build_world_map_from_definition(
-        definition, world.world_id, ids
-    )
+    world_map = build_world_map(dict(map_definitions), world.world_id)
     service.register_world_map(world_map)
-    service.place_actor(resolve_id("hero_id"), resolve_id("village_id"))
-    start_position = character_data.get("starting_position") or (16, 29)
+    local_maps = build_local_map_definitions(dict(map_definitions), world.world_id)
+    for local_map in local_maps:
+        if not bundle.world_objects.has_local_map(local_map.world_id, local_map.location_id):
+            bundle.world_objects.register_local_map(local_map)
+    starting_maps = tuple(
+        item for item in map_definitions.values()
+        if item.starting_position is not None
+    )
+    if len(starting_maps) != 1:
+        raise ContentDefinitionError(
+            "Content package must define exactly one map with starting_position."
+        )
+    start_map = starting_maps[0]
+    service.place_actor(resolve_id("hero_id"), start_map.map_id)
     service.set_actor_tile_position(
-        resolve_id("hero_id"), start_position[0], start_position[1]
+        resolve_id("hero_id"), start_map.starting_position[0], start_map.starting_position[1]
     )
     return service, ids
 
@@ -559,14 +569,16 @@ def populate_opening_content(
     npc_definitions = load_npc_definitions(npc_definitions_path, package_path=content_package_path)
     character_definitions = load_character_definitions(character_definitions_path, package_path=content_package_path)
     gameplay_rules = load_gameplay_rules(gameplay_rules_path, package_path=content_package_path)
+    resolved_package_path = _resolve_content_package_path(content_package_path)
+    package = load_content_package(resolved_package_path)
     service, resolved_ids = _register_opening_content(
         application,
         definition,
         npc_definitions,
         character_definitions,
+        package.map_definitions,
         ids,
     )
-    resolved_package_path = _resolve_content_package_path(content_package_path)
     service._content_package_path = resolved_package_path
     application._content_package_path = resolved_package_path
     player_rules = gameplay_rules["player"]
@@ -759,49 +771,25 @@ def _register_opening_resources(bundle, definition, resource_definitions, resolv
         )
 
 
-def _build_world_map_from_definition(
-    definition: dict, world_id: str, ids: StarterContentIds
-):
-    resolve_id = _id_resolver(definition, ids)
-    world_map = WorldMap(world_id)
-    for location in definition["locations"]:
-        world_map.add_location(
-            Location(
-                resolve_id(location["id"]),
-                location["name"],
-                tuple(location["position"])
-                if location.get("position") is not None
-                else None,
-                location.get("description", ""),
-                location.get("type", "unknown"),
-                tuple(location.get("activities", ())),
-                tuple(
-                    (
-                        landmark["id"],
-                        landmark["name"],
-                        tuple(landmark.get("position", (180, 180))),
-                        tuple(landmark.get("activities", ())),
-                        landmark.get("description", ""),
-                    )
-                    for landmark in location.get("landmarks", ())
-                ),
-            )
-        )
-    for connection in definition.get("connections", ()):
-        world_map.connect(resolve_id(connection[0]), resolve_id(connection[1]))
-    return world_map
-
-
 def build_starter_world_map(
     world_id: str,
     ids: StarterContentIds = StarterContentIds(),
     definition_path=None,
     package_path=None,
 ):
-    """Rebuild the static starter map without resetting saved gameplay state."""
-    definition = load_starter_content(definition_path, package_path=package_path)
+    """Build the world graph from the selected package's local map catalog."""
+    if definition_path is not None:
+        raise ContentDefinitionError(
+            "World-map construction now requires map JSON files from the content package."
+        )
+    package = load_content_package(_resolve_content_package_path(package_path))
+    return build_world_map(dict(package.map_definitions), world_id)
 
-    return _build_world_map_from_definition(definition, world_id, ids)
+
+def build_starter_local_map_definitions(world_id: str, package_path=None):
+    """Return the package-defined local dimensions for world-object placement."""
+    package = load_content_package(_resolve_content_package_path(package_path))
+    return build_local_map_definitions(dict(package.map_definitions), world_id)
 
 
 __all__ = [
@@ -818,4 +806,5 @@ __all__ = [
     "populate_opening_content",
     "populate_gameplay_resources",
     "build_starter_world_map",
+    "build_starter_local_map_definitions",
 ]

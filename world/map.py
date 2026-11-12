@@ -36,6 +36,14 @@ class WorldMap:
         self._neighbors[first_id].add(second_id)
         self._neighbors[second_id].add(first_id)
 
+    def connect_one_way(self, source_id: str, target_id: str) -> None:
+        """Add a directed edge without creating a reverse connection."""
+        self._require(source_id)
+        self._require(target_id)
+        if source_id == target_id:
+            raise ValueError("A location cannot connect to itself.")
+        self._neighbors[source_id].add(target_id)
+
     def neighbors(self, location_id: str) -> tuple[Location, ...]:
         self._require(location_id)
         return tuple(self._locations[key] for key in sorted(self._neighbors[location_id]))

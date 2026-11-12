@@ -93,6 +93,14 @@ class TestMapDefinition(unittest.TestCase):
         with self.assertRaisesRegex(MapDefinitionError, "unsupported fields"):
             MapDefinition.from_dict(data)
 
+    def test_parses_map_activities_and_explicit_transition_directionality(self):
+        data = valid_definition()
+        data["activities"] = ["travel", "gather"]
+        data["transitions"][0]["bidirectional"] = True
+        definition = MapDefinition.from_dict(data)
+        self.assertEqual(definition.activities, ("travel", "gather"))
+        self.assertTrue(definition.transitions[0].bidirectional)
+
 
 if __name__ == "__main__":
     unittest.main()

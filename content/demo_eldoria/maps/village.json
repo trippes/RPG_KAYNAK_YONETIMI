@@ -1821,7 +1821,8 @@
           31
         ]
       ],
-      "direction": "north"
+      "direction": "north",
+      "bidirectional": true
     },
     {
       "id": "village_to_south_forest",
@@ -1838,7 +1839,8 @@
           0
         ]
       ],
-      "direction": "south"
+      "direction": "south",
+      "bidirectional": true
     },
     {
       "id": "village_to_west_forest",
@@ -1855,7 +1857,8 @@
           16
         ]
       ],
-      "direction": "west"
+      "direction": "west",
+      "bidirectional": true
     },
     {
       "id": "village_to_east_forest",
@@ -1872,7 +1875,8 @@
           16
         ]
       ],
-      "direction": "east"
+      "direction": "east",
+      "bidirectional": true
     }
   ],
   "world_position": [
@@ -1882,5 +1886,13 @@
   "starting_position": [
     16,
     29
-  ]
+  ],
+  "activities": [
+    "dialogue",
+    "market",
+    "travel"
+  ],
+  "metadata": {
+    "location_type": "settlement"
+  }
 }
