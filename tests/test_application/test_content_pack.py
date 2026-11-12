@@ -1,5 +1,6 @@
 
 import json
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
@@ -164,6 +165,27 @@ class TestContentPack(unittest.TestCase):
             first_quest_ids,
         )
         self.assertEqual(set(application.holder.current.social.dialogues), first_dialogue_ids)
+
+    def test_gameplay_can_use_an_explicit_alternate_content_package_directory(self):
+        source = Path(__file__).resolve().parents[2] / "content" / "demo_eldoria"
+        with tempfile.TemporaryDirectory() as directory:
+            package_path = Path(directory) / "alternate_world"
+            shutil.copytree(source, package_path)
+            manifest_path = package_path / "manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["package_id"] = "alternate_world"
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+            application = GameApplication.create_default()
+            service, _ids = populate_opening_content(
+                application,
+                content_package_path=package_path,
+            )
+            populate_gameplay_resources(service)
+
+        self.assertEqual(service._content_package_path, package_path.resolve())
+        self.assertIsNotNone(application.holder.current.quest_log.get("lost_caravan"))
+        self.assertIsNotNone(application.holder.current.resource_nodes.get("forest_wood"))
 
     def test_races_and_classes_are_loaded_from_character_content_data(self):
         definitions = load_character_definitions()

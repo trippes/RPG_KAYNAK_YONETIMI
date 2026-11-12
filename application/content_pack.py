@@ -726,9 +726,10 @@ def build_starter_world_map(
     world_id: str,
     ids: StarterContentIds = StarterContentIds(),
     definition_path=None,
+    package_path=None,
 ):
     """Rebuild the static starter map without resetting saved gameplay state."""
-    definition = load_starter_content(definition_path)
+    definition = load_starter_content(definition_path, package_path=package_path)
 
     return _build_world_map_from_definition(definition, world_id, ids)
 

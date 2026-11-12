@@ -4,7 +4,17 @@ Oynanış kuralları application/domain katmanında kalır. Başlangıç dünyas
 
 İçerik paketi
 
-Kaynak dizin:
+İçerik kök dizini:
+
+content/
+
+Etkin paket seçimi:
+
+content/active_package.json
+
+Varsayılan paket dizini bu ayar dosyasında seçilir. Çalıştırırken `--content-package <paket-dizini>` parametresiyle başka bir paket de seçilebilir.
+
+Demo paket dizini:
 
 content/demo_eldoria/
 
@@ -34,6 +44,10 @@ from application.content_pack import load_starter_content, load_npc_definitions,
 
 "load_quest_definitions()" görev, hedef, ödül ve görev diyaloğu kayıtlarını yükler ve doğrular.
 
+"load_resource_definitions()" kaynak düğümlerini, miktarlarını ve toplama sürelerini yükler.
+
+"load_character_definitions()" ırk, sınıf, nitelik değiştiricileri ve yetenek tanımlarını yükler.
+
 "populate_opening_content()" açılış aşamasında etkinleştirilen NPC kayıtlarını yeni oyun oturumuna ekler. Oynanış aşamasındaki NPC kayıtları kaynaklar ve pazarlar hazırlanırken etkinleştirilir.
 
 İçerik kapsamı
@@ -45,6 +59,8 @@ Başlangıç paketi şu öğeleri kapsar:
 - Başlangıç lokasyonları
 - NPC tanımları ayrı "npcs.json" dosyasında; açılış ve oynanış aşamasına göre yüklenir
 - Görevler, hedefler, ödüller ve görev diyalogları ayrı "quests.json" dosyasında tanımlanır
+- Kaynak düğümleri ve toplama süreleri ayrı "resources.json" dosyasında tanımlanır
+- Irk, sınıf ve yetenek tanımları ayrı "characters.json" dosyasında tutulur
 - Açılış diyaloğu
 - Karakter oluşturma için gerekli tanımlar
 
@@ -92,3 +108,15 @@ Her görev kaydı "quests.json" içindeki "quests" listesinde bulunur:
 - Diyalog eylemleri yalnızca güvenli genel eylem sözleşmelerini kullanır ("accept_quest", "deliver_resource"); içerik JSON'u Python kodu çalıştıramaz.
 
 Yeni görevler bu veri sözleşmesiyle eklenir. Görev tanımı, hedefler, ödüller veya diyalog metinleri için yeni Python görev modülü ya da GameWindow/GameplayService içinde göreve özel kayıt kodu gerekmez. Yeni bir oyun mekaniği gerektiğinde motorun genel yeteneği bir kez geliştirilir; o mekaniği kullanan yeni görevler veriyle tanımlanır.
+
+Kaynak düğümü veri sözleşmesi
+
+"resources.json" içindeki her düğüm; kendi kimliğini, bağlandığı konum ve landmark kimliğini, kaynak türünü, birimini, başlangıç miktarını, kapasitesini, yenilenme oranını ve "gathering_duration_ticks" değerini taşır. Yükleyici landmark ilişkisinin geçerli olduğunu doğrular. Motor, landmark adından veya kimliğinden kaynak türü tahmin etmez.
+
+Karakter tanımı veri sözleşmesi
+
+"characters.json" ırkları, sınıfları ve bunların yeteneklerini tanımlar. Başlangıç karakterinin hangi ırk ve sınıfı kullanacağı "starter_content.json" içinde yalnızca kimlik olarak seçilir. Yeni ırk veya sınıf eklemek için CharacterFactory ya da ana oyun dosyaları değiştirilmez.
+
+Paket seçimi
+
+Motor, etkin paket kimliğini Python kodunda sabitlemez. "active_package.json" varsayılan paket dizinini belirler; çalıştırma sırasında "content_package_path" parametresiyle geçici/alternatif paket seçilebilir. Paket dosyalarının güvenli JSON yüklemesi ve manifest doğrulaması ortak ContentPackageLoader tarafından yapılır.
