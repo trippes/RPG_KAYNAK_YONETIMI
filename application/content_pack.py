@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import sys
 from dataclasses import dataclass, fields
 from pathlib import Path
 from types import MappingProxyType
@@ -47,8 +48,16 @@ def _read_json_definition(source: Path, label: str) -> dict:
 
 
 def _load_package_file(key: str) -> dict:
+    candidates = (
+        DEFAULT_CONTENT_PACKAGE_PATH,
+        Path(sys.prefix) / "content" / "demo_eldoria",
+    )
+    package_root = next(
+        (candidate for candidate in candidates if (candidate / "manifest.json").is_file()),
+        candidates[0],
+    )
     try:
-        package = load_content_package(DEFAULT_CONTENT_PACKAGE_PATH)
+        package = load_content_package(package_root)
         return package.files[key]
     except (ContentPackageError, KeyError) as error:
         raise ContentDefinitionError(
