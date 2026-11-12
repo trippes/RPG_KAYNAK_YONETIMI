@@ -3,6 +3,8 @@ from unittest.mock import patch
 
 from core.dice import (
     zar_at,
+    d20,
+    d100,
     zar_havuzu_at,
     zar_toplami,
     dusukleri_cikar,
@@ -24,6 +26,7 @@ from core.math.numbers import (
     tam_sayi_mi,
     pozitif_mi,
     negatif_mi,
+    negatif_olmayan_mi,
     sifir_mi,
     mutlak_deger,
 )
@@ -220,3 +223,116 @@ if __name__ == "__main__":
     unittest.main()
 
 
+class TestDice(unittest.TestCase):
+    def setUp(self): seed_ayarla(42)
+    def test_single_and_pool_rolls(self):
+        self.assertIn(zar_at(20), range(1, 21))
+        values = zar_havuzu_at(4, 6)
+        self.assertEqual(len(values), 4)
+        self.assertTrue(all(1 <= value <= 6 for value in values))
+        self.assertTrue(2 <= zar_toplami(2, 6) <= 12)
+    def test_drop_lowest_and_highest(self):
+        seed_ayarla(7); low = dusukleri_cikar(4, 6, 1)
+        self.assertEqual(low["kalanlar"], low["sirali_sonuclar"][1:])
+        self.assertEqual(low["toplam"], sum(low["kalanlar"]))
+        seed_ayarla(7); high = yuksekleri_cikar(4, 6, 1)
+        self.assertEqual(high["kalanlar"], high["sirali_sonuclar"][:-1])
+        self.assertEqual(high["toplam"], sum(high["kalanlar"]))
+        self.assertEqual(len(dort_d_alti_eksi_en_dusuk()["kalanlar"]), 3)
+    def test_expression_parsing_and_rolling(self):
+        self.assertEqual(zar_ifadesi_ayristir("2d8+3"), {"adet": 2, "zar": 8, "degistirici": 3})
+        self.assertEqual(zar_ifadesi_ayristir("2d8-1")["degistirici"], -1)
+        result = zar_ifadesi_at("2d6+3")
+        self.assertEqual(result["toplam"], sum(result["sonuclar"]) + 3)
+        self.assertIn(d20(), range(1, 21)); self.assertIn(d100(), range(1, 101))
+    def test_invalid_rolls_and_expressions(self):
+        with self.assertRaises(ValueError): zar_at(7)
+        with self.assertRaises(TypeError): zar_at(True)
+        with self.assertRaises(ValueError): zar_havuzu_at(0, 6)
+        with self.assertRaises(ValueError): dusukleri_cikar(4, 6, 4)
+        with self.assertRaises(ValueError): yuksekleri_cikar(4, 6, 4)
+        with self.assertRaises(ValueError): zar_ifadesi_ayristir("5d7")
+        with self.assertRaises(ValueError): zar_ifadesi_ayristir("abc")
+
+
+class TestNumbers(unittest.TestCase):
+    def test_numeric_types_exclude_booleans(self):
+        self.assertTrue(sayi_mi(10)); self.assertTrue(sayi_mi(10.5))
+        self.assertFalse(sayi_mi("10")); self.assertFalse(sayi_mi(True))
+        self.assertTrue(tam_sayi_mi(10)); self.assertFalse(tam_sayi_mi(10.0))
+        self.assertFalse(tam_sayi_mi(False))
+    def test_sign_predicates(self):
+        self.assertTrue(pozitif_mi(1)); self.assertTrue(negatif_mi(-1))
+        self.assertTrue(sifir_mi(0)); self.assertTrue(negatif_olmayan_mi(0))
+        self.assertFalse(pozitif_mi("1")); self.assertFalse(negatif_mi(True))
+        self.assertFalse(sifir_mi(None))
+    def test_absolute_value(self):
+        self.assertEqual(mutlak_deger(-25), 25)
+        self.assertEqual(mutlak_deger(-2.5), 2.5)
+        with self.assertRaises(TypeError): mutlak_deger(True)
+
+
+class TestOperations(unittest.TestCase):
+    def test_basic_arithmetic(self):
+        self.assertEqual(topla(10, 5), 15); self.assertEqual(cikar(10, 5), 5)
+        self.assertEqual(carp(10, 5), 50); self.assertEqual(bol(10, 5), 2)
+        self.assertEqual(mod(10, 3), 1)
+    def test_minimum_and_maximum(self):
+        self.assertEqual(minimum(10, 5), 5); self.assertEqual(maksimum(10, 5), 10)
+    def test_invalid_operands_and_zero_divisors(self):
+        with self.assertRaises(TypeError): topla(10, "5")
+        with self.assertRaises(TypeError): carp(True, 2)
+        with self.assertRaises(ZeroDivisionError): bol(10, 0)
+        with self.assertRaises(ZeroDivisionError): mod(10, 0)
+
+
+class TestRandom(unittest.TestCase):
+    def test_seed_reproduces_sequence(self):
+        seed_ayarla(12345); first = [tam_sayi(1, 100) for _ in range(5)]
+        seed_ayarla(12345); second = [tam_sayi(1, 100) for _ in range(5)]
+        self.assertEqual(first, second)
+    def test_ranges_and_probability_edges(self):
+        seed_ayarla(42)
+        self.assertTrue(all(1 <= tam_sayi(1, 20) <= 20 for _ in range(30)))
+        self.assertTrue(0.0 <= ondalik_sayi() <= 1.0)
+        self.assertTrue(10 <= ondalik_sayi(10, 20) <= 20)
+        self.assertFalse(olasilik_yuzde(0)); self.assertTrue(olasilik_yuzde(100))
+    def test_selection(self):
+        self.assertIn(sec(("a", "b")), ("a", "b"))
+        self.assertEqual(agirlikli_sec(["only"], [1]), "only")
+        seed_ayarla(42)
+        self.assertIn(agirlikli_sec(["a", "b"], [1, 0]), ("a", "b"))
+    def test_invalid_inputs(self):
+        with self.assertRaises(ValueError): tam_sayi(20, 10)
+        with self.assertRaises(TypeError): tam_sayi(True, 10)
+        with self.assertRaises(ValueError): olasilik_yuzde(101)
+        with self.assertRaises(ValueError): sec([])
+        with self.assertRaises(ValueError): agirlikli_sec(["a", "b"], [0, 0])
+        with self.assertRaises(ValueError): agirlikli_sec(["a"], [1, 2])
+
+
+class TestRatios(unittest.TestCase):
+    def test_percentage_operations(self):
+        self.assertEqual(yuzde_hesapla(100, 20), 20)
+        self.assertEqual(yuzde_artir(100, 20), 120)
+        self.assertEqual(yuzde_azalt(100, 20), 80)
+        self.assertEqual(bonus_uygula(100, 20), 120)
+        self.assertEqual(ceza_uygula(100, 20), 80)
+    def test_multiplier_and_ratio(self):
+        self.assertEqual(katsayi_uygula(100, 1.25), 125)
+        self.assertEqual(oran_hesapla(25, 100), 0.25)
+    def test_invalid_inputs(self):
+        with self.assertRaises(TypeError): yuzde_hesapla(100, "20")
+        with self.assertRaises(ZeroDivisionError): oran_hesapla(25, 0)
+
+
+class TestRounding(unittest.TestCase):
+    def test_floor_and_ceiling(self):
+        self.assertEqual(asagi_yuvarla(3.9), 3); self.assertEqual(asagi_yuvarla(-3.1), -4)
+        self.assertEqual(yukari_yuvarla(3.1), 4); self.assertEqual(yukari_yuvarla(-3.1), -3)
+    def test_half_away_from_zero(self):
+        self.assertEqual(en_yakina_yuvarla(3.5), 4); self.assertEqual(en_yakina_yuvarla(-3.5), -4)
+        self.assertEqual(oyun_yuvarla(2.5), 3); self.assertEqual(oyun_yuvarla(-2.5), -3)
+    def test_invalid_inputs(self):
+        with self.assertRaises(TypeError): asagi_yuvarla("5.5")
+        with self.assertRaises(TypeError): oyun_yuvarla(True)
