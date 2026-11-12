@@ -71,7 +71,7 @@ class HexOccupancyRegistry:
             item.position.cell for item in self.snapshot()
             if item.entity_id != excluding
             and item.position.map_id == map_id
-            and item.blocks_movement
+            and (item.blocks_movement or item.blocks_occupancy)
         )
 
     def can_enter(self, position: EntityPosition, excluding: str | None = None) -> bool:

@@ -34,7 +34,9 @@ Altı yönün tek doğruluk kaynağı `HexDirection` enum'udur. Sabit feet, hız
 
 Hareket profili `ignores_occupancy=True` olduğunda varlık occupancy engellerini
 yok sayabilir; bu istisna arazi, valid_cells, engel ve komşuluk doğrulamasını
-atlamaz. Varlık yine registry'de tutulur.
+atlamaz. Varlık yine registry'de tutulur. A* yolunda her ara hücre ayrı bir
+hareket hedefi olduğundan, movement veya occupancy bloklayan kayıtlar yol
+hücresi olarak dışlanır.
 
 Hareket ve harita geçişi önce hedefi doğrular, sonra occupancy kaydını ve entity konumunu tek uygulama adımında günceller. Başarısız işlemde kaynak konum ve occupancy kaydı korunur.
 

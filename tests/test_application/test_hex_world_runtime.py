@@ -64,6 +64,7 @@ class TestHexOccupancy(unittest.TestCase):
         registry.add(HexOccupant("soft", position, blocks_movement=False, blocks_occupancy=True))
         self.assertFalse(registry.is_movement_blocked(position))
         self.assertTrue(registry.is_occupied(position))
+        self.assertIn(LocalHexPosition(0, 0), registry.blocked_cells("forest"))
         registry.remove("soft")
         registry.add(HexOccupant("wall", position, blocks_movement=True, blocks_occupancy=False))
         self.assertTrue(registry.is_movement_blocked(position))
