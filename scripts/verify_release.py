@@ -26,14 +26,8 @@ def main() -> int:
         "unit tests",
         PYTHON,
         "-m",
-        "unittest",
-        "discover",
-        "-s",
-        ".",
-        "-t",
-        ".",
-        "-p",
-        "test_*.py",
+        "pytest",
+        "-q",
     )
     run(
         "compileall",
