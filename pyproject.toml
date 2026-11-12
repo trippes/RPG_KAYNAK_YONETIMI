@@ -38,6 +38,7 @@ include = [
     "economy*",
     "npc*",
     "game_ui*",
+    "locks*",
     "quests*",
     "resources*",
     "save*",
