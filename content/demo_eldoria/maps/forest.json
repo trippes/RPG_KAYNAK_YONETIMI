@@ -644,5 +644,40 @@
       "resource_node_id": "forest_iron_mine"
     }
   ],
-  "transitions": []
+  "transitions": [
+    {
+      "id": "north_forest_to_village",
+      "from_tiles": [
+        [
+          16,
+          31
+        ]
+      ],
+      "target_map_id": "village",
+      "target_tiles": [
+        [
+          16,
+          0
+        ]
+      ],
+      "direction": "south"
+    },
+    {
+      "id": "north_forest_to_mine",
+      "from_tiles": [
+        [
+          31,
+          16
+        ]
+      ],
+      "target_map_id": "north_mine",
+      "target_tiles": [
+        [
+          0,
+          16
+        ]
+      ],
+      "direction": "east"
+    }
+  ]
 }

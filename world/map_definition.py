@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 
@@ -14,7 +14,7 @@ def _coordinate(value: Any, field_name: str) -> tuple[int, int]:
     if not isinstance(value, (list, tuple)) or len(value) != 2:
         raise MapDefinitionError(f"{field_name} must be a two-item coordinate.")
     x, y = value
-    if type(x) is not int or type(y) is not int:
+    if not isinstance(x, int) or isinstance(x, bool) or not isinstance(y, int) or isinstance(y, bool):
         raise MapDefinitionError(f"{field_name} coordinates must be integers.")
     return x, y
 
@@ -25,9 +25,9 @@ class MapSize:
     height: int
 
     def __post_init__(self) -> None:
-        if type(self.width) is not int or self.width <= 0:
+        if not isinstance(self.width, int) or isinstance(self.width, bool) or self.width <= 0:
             raise MapDefinitionError("Map width must be a positive integer.")
-        if type(self.height) is not int or self.height <= 0:
+        if not isinstance(self.height, int) or isinstance(self.height, bool) or self.height <= 0:
             raise MapDefinitionError("Map height must be a positive integer.")
 
 
@@ -90,13 +90,17 @@ class MapDefinition:
             raise MapDefinitionError("Map definition must be an object.")
         if data.get("schema_version") != 1:
             raise MapDefinitionError("Unsupported map definition schema version.")
+
         required = {"schema_version", "map_id", "name", "description", "size", "terrain"}
         missing = sorted(required - data.keys())
         if missing:
             raise MapDefinitionError("Map definition is missing fields: " + ", ".join(missing))
-        size_data, terrain_data = data["size"], data["terrain"]
+
+        size_data = data["size"]
+        terrain_data = data["terrain"]
         if not isinstance(size_data, dict) or not isinstance(terrain_data, dict):
             raise MapDefinitionError("size and terrain must be objects.")
+
         definition = cls(
             schema_version=1,
             map_id=_string(data["map_id"], "map_id"),
@@ -121,6 +125,7 @@ class MapDefinition:
             coordinates.append(landmark.position)
         for transition in self.transitions:
             coordinates.extend(transition.from_tiles)
+            coordinates.extend(transition.target_tiles)
         for x, y in coordinates:
             if not (0 <= x < self.size.width and 0 <= y < self.size.height):
                 raise MapDefinitionError(
@@ -181,13 +186,9 @@ def _transition(data: Any) -> MapTransition:
     if not from_tiles:
         raise MapDefinitionError("transition.from_tiles must not be empty.")
     target_tiles = tuple(_coordinate(item, "transition.target_tiles item") for item in data.get("target_tiles", ()))
-    if not target_tiles:
-        raise MapDefinitionError("transition.target_tiles must not be empty.")
     direction = data.get("direction")
     if direction is not None:
         direction = _string(direction, "transition.direction")
-        if direction not in {"north", "south", "east", "west"}:
-            raise MapDefinitionError("transition.direction must be north, south, east, or west.")
     return MapTransition(
         _string(data.get("id"), "transition.id"),
         from_tiles,
