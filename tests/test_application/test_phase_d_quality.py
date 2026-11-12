@@ -654,13 +654,15 @@ class TestPhaseDQuality(unittest.TestCase):
             "load_slots",
         )
 
-    def test_main_menu_test_world_starts_directly_without_opening_new_game_submenu(self):
+    def test_main_menu_does_not_expose_a_test_world_action(self):
         menu = MainMenu()
+        actions = {action for _label, action in menu.OPTIONS}
+        self.assertNotIn("test_world", actions)
         menu.selected = 2
 
         self.assertEqual(
             menu.handle(InputState(actions={"confirm"})),
-            "test_world",
+            "settings",
         )
         self.assertFalse(menu.new_game_open)
 

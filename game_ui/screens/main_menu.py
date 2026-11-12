@@ -8,7 +8,7 @@ class MainMenu:
     OPTIONS = (
         ("Yeni Oyun", "new_game"),
         ("Devam Et", "continue"),
-            ("Ayarlar", "settings"),
+        ("Ayarlar", "settings"),
         ("Oyun Rehberi", "guide"),
         ("Hakkında", "about"),
         ("Çıkış", "quit"),
@@ -16,7 +16,6 @@ class MainMenu:
     HINTS = (
         "Yeni bir maceraya atıl",
         "Macerana devam et",
-        "Hazır karakterle doğrudan test et",
         "Oyun ayarlarını düzenle",
         "Eldoria oyun rehberini aç",
         "Eldoria hakkında bilgi al",
