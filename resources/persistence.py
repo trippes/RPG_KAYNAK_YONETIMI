@@ -51,6 +51,7 @@ class NodeRecord:
     regeneration_rate: tuple[int, str]
     last_simulation_tick: int
     location_id: str | None = None
+    gathering_duration_ticks: int = 150
 
 
 @dataclass(frozen=True)
@@ -195,6 +196,7 @@ class GameplaySnapshot:
                     "regeneration_rate": _quantity_dict(record.regeneration_rate),
                     "last_simulation_tick": record.last_simulation_tick,
                     "location_id": record.location_id,
+                    "gathering_duration_ticks": record.gathering_duration_ticks,
                 }
                 for record in self.nodes
             ],
@@ -312,6 +314,7 @@ class GameplaySnapshot:
                 _quantity(record.regeneration_rate),
                 Tick(record.last_simulation_tick),
                 record.location_id,
+                Tick(record.gathering_duration_ticks),
             )
             nodes.add(node)
 
@@ -432,7 +435,12 @@ class GameplayFileAdapter:
 
 
 def _node_record(node: WorldResourceNode) -> NodeRecord:
-    return NodeRecord(node.node_id, node.world_id, node.resource_type.value, _quantity_tuple(node.quantity), _quantity_tuple(node.capacity), _quantity_tuple(node.regeneration_rate), node.last_simulation_tick.value)
+    return NodeRecord(
+        node.node_id, node.world_id, node.resource_type.value,
+        _quantity_tuple(node.quantity), _quantity_tuple(node.capacity),
+        _quantity_tuple(node.regeneration_rate), node.last_simulation_tick.value,
+        node.location_id, node.gathering_duration_ticks.value,
+    )
 
 
 def _recipe_record(recipe: Recipe) -> RecipeRecord:
@@ -489,6 +497,7 @@ def _node_record_from_dict(data) -> NodeRecord:
         _quantity_tuple_from_dict(data.get("regeneration_rate")),
         _non_negative_int(data.get("last_simulation_tick"), "last_simulation_tick"),
         _optional_text(data.get("location_id"), "location_id"),
+        _positive_int(data.get("gathering_duration_ticks", 150), "gathering_duration_ticks"),
     )
 
 
