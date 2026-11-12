@@ -21,6 +21,7 @@ game_ui = ["assets/*.png"]
 
 [tool.setuptools.data-files]
 "." = ["data/starter_content.json", "data/playtest_balance.json"]
+"content/demo_eldoria" = ["content/demo_eldoria/*.json"]
 
 [tool.unittest]
 test_command = "python -m unittest discover -s . -t . -p test_*.py"
