@@ -1549,14 +1549,6 @@ class GameplayService:
             raise TypeError("graph must be QuestGraph.")
         bundle = self._current_bundle()
         known_ids = {quest.quest_id for quest in bundle.quest_log.all()}
-        known_ids.update(
-            getattr(getattr(self, name, None), "quest_id", None)
-            for name in (
-                "available_forest_quest", "carpenter_quest", "inn_quest",
-                "blacksmith_quest", "caravan_quest",
-            )
-        )
-        known_ids.discard(None)
         unknown = set(graph.quest_ids()) - known_ids
         if unknown:
             raise ValueError(f"Quest graph references unregistered quest definitions: {sorted(unknown)}")
@@ -1572,20 +1564,25 @@ class GameplayService:
         self._quest_graph_definition = graph
         return graph
 
+    def register_quest_definition(self, quest: Quest) -> Quest:
+        """Register one content-defined quest without starting it."""
+        if not isinstance(quest, Quest):
+            raise TypeError("quest must be Quest.")
+        bundle = self._current_bundle()
+        existing = bundle.quest_log.get(quest.quest_id)
+        if existing is None:
+            bundle.quest_log.add(quest)
+            return quest
+        if existing is not quest:
+            raise ValueError(f"Quest definition already registered: {quest.quest_id}")
+        return existing
+
     def quest_states(self) -> dict[str, str]:
         return {quest.quest_id: quest.state.value for quest in self._current_bundle().quest_log.all()}
 
     def available_quests(self, quests=None, context=None) -> tuple[Quest, ...]:
         bundle = self._current_bundle()
-        candidates = tuple(quests) if quests is not None else tuple(
-            quest for quest in (
-                getattr(self, name, None)
-                for name in (
-                    "available_forest_quest", "carpenter_quest", "inn_quest",
-                    "blacksmith_quest", "caravan_quest",
-                )
-            ) if quest is not None
-        ) + bundle.quest_log.all()
+        candidates = tuple(quests) if quests is not None else bundle.quest_log.available()
         unique = {quest.quest_id: quest for quest in candidates}
         return bundle.quest_graph.available_quests(
             unique.values(), self.quest_states(),
@@ -1602,13 +1599,15 @@ class GameplayService:
 
     def start_quest(self, quest: Quest, context=None, owner_id: str | None = None, reward_inventory_id: str | None = None) -> Quest:
         bundle = self._current_bundle()
+        resolved_context = (
+            context if context is not None
+            else self._dialogue_context(owner_id or "hero", "")
+        )
         if quest.quest_id in bundle.quest_graph.quest_ids() and not bundle.quest_graph.can_start(
-            quest, self.quest_states(),
-            context or self._dialogue_context(owner_id or "hero", ""),
-            bundle.quest_graph_progress,
+            quest, self.quest_states(), resolved_context, bundle.quest_graph_progress,
         ):
             raise ValueError("Quest graph prerequisites are not met.")
-        quest.start(context or {})
+        quest.start(resolved_context)
         registered = bundle.quest_log.get(quest.quest_id)
         if registered is None:
             bundle.quest_log.add(quest)
