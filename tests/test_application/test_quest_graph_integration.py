@@ -1,6 +1,7 @@
 import unittest
 
 from application import GameApplication, GameplayService
+from game_ui.screens.quest_log_screen import QuestLogScreen
 from quests import (
     Objective, ObjectiveType, Quest, QuestGraph, QuestLink, QuestLinkType,
 )
@@ -74,6 +75,21 @@ class TestQuestGraphGameplayIntegration(unittest.TestCase):
         self.assertIn("side", available_ids)
         self.assertNotIn("left", available_ids)
         self.assertNotIn("right", available_ids)
+
+    def test_quest_journal_reads_branch_options_and_selected_path(self):
+        self.service.start_quest(self.root, owner_id="hero")
+        self.service.update_quest_objective("root", "finish_root")
+        screen = QuestLogScreen(self.service)
+
+        groups = screen._branch_groups(self.root)
+
+        self.assertEqual(len(groups), 1)
+        self.assertEqual(groups[0][0], "route")
+        self.assertEqual(groups[0][1], ("left", "right"))
+        self.assertIsNone(groups[0][2])
+
+        self.service.choose_quest_branch("root", "route", "left")
+        self.assertEqual(screen._branch_groups(self.root)[0][2], "left")
 
     def test_dialogue_actions_can_be_registered_by_content(self):
         calls = []
