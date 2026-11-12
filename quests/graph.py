@@ -1,32 +1,111 @@
-"""Content-driven quest graph definitions and validation.
-
-This module contains only generic relationships between quest identifiers.
-It does not know NPC names, demo quests, UI screens or gameplay services.
-Content packages can create a QuestGraph and attach any quest IDs to it.
-"""
+"""Content-driven quest graph definitions and runtime availability rules."""
 from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Iterable
+from typing import Iterable, Mapping
 
 
 class QuestLinkType(str, Enum):
-    """General semantic relationship between two quests."""
+    """Semantic relationship between two quest definitions."""
 
     UNLOCKS = "unlocks"
     ALTERNATIVE = "alternative"
     SIDE = "side"
 
 
+def _state_value(value: object) -> str:
+    return str(getattr(value, "value", value))
+
+
+class QuestGraphProgress:
+    """Player-owned choices made inside a quest graph.
+
+    Content definitions stay immutable; branch selections belong to the
+    player's progress and can be serialized independently from quest content.
+    """
+
+    def __init__(self, selections: Mapping[tuple[str, str], str] | None = None) -> None:
+        self._selections: dict[tuple[str, str], str] = {}
+        for key, target in (selections or {}).items():
+            if (
+                not isinstance(key, tuple)
+                or len(key) != 2
+                or any(not isinstance(part, str) or not part.strip() for part in key)
+                or not isinstance(target, str)
+                or not target.strip()
+            ):
+                raise ValueError("Invalid quest branch selection.")
+            self._selections[key] = target
+
+    def selected_branch(self, source_quest_id: str, branch_group: str) -> str | None:
+        return self._selections.get((source_quest_id, branch_group))
+
+    def choose_branch(
+        self,
+        graph: "QuestGraph",
+        source_quest_id: str,
+        branch_group: str,
+        target_quest_id: str,
+        quest_states: Mapping[str, object],
+    ) -> str:
+        options = graph.branch_options(source_quest_id, branch_group)
+        if len(options) < 2:
+            raise ValueError("The requested branch group has no choice to make.")
+        if target_quest_id not in options:
+            raise KeyError(f"Quest is not an option in this branch: {target_quest_id}")
+        if _state_value(quest_states.get(source_quest_id, "available")) != "completed":
+            raise ValueError("The source quest must be completed before choosing a branch.")
+        key = (source_quest_id, branch_group)
+        selected = self._selections.get(key)
+        if selected is not None and selected != target_quest_id:
+            raise ValueError("A branch choice cannot be changed once selected.")
+        self._selections[key] = target_quest_id
+        return target_quest_id
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "selected_branches": [
+                {
+                    "source_quest_id": source,
+                    "branch_group": group,
+                    "target_quest_id": target,
+                }
+                for (source, group), target in sorted(self._selections.items())
+            ]
+        }
+
+    @classmethod
+    def from_dict(
+        cls,
+        data: Mapping[str, object],
+        graph: "QuestGraph",
+    ) -> "QuestGraphProgress":
+        if not isinstance(data, Mapping):
+            raise TypeError("Quest graph progress must be a mapping.")
+        records = data.get("selected_branches", [])
+        if not isinstance(records, list):
+            raise ValueError("selected_branches must be a list.")
+        progress = cls()
+        for record in records:
+            if not isinstance(record, Mapping):
+                raise ValueError("Branch selection records must be objects.")
+            source = record.get("source_quest_id")
+            group = record.get("branch_group")
+            target = record.get("target_quest_id")
+            options = graph.branch_options(source, group)
+            if len(options) < 2 or target not in options:
+                raise ValueError("Saved branch selection does not match quest content.")
+            key = (source, group)
+            if key in progress._selections:
+                raise ValueError("Duplicate saved branch selection.")
+            progress._selections[key] = target
+        return progress
+
+
 @dataclass(frozen=True)
 class QuestLink:
-    """A directed relationship declared by content.
-
-    The source and target are stable quest IDs. Runtime code decides when a
-    link becomes eligible; the graph itself only describes and validates the
-    content relationship.
-    """
+    """A directed relationship declared by content."""
 
     source_quest_id: str
     target_quest_id: str
@@ -41,19 +120,24 @@ class QuestLink:
         if self.source_quest_id == self.target_quest_id:
             raise ValueError("A quest link cannot target itself.")
         object.__setattr__(self, "link_type", QuestLinkType(self.link_type))
-        if self.branch_group is not None:
+        if self.link_type is QuestLinkType.ALTERNATIVE:
             if not isinstance(self.branch_group, str) or not self.branch_group.strip():
-                raise ValueError("branch_group must be a non-empty string or None.")
+                raise ValueError("Alternative links require a non-empty branch_group.")
+        elif self.branch_group is not None:
+            raise ValueError("branch_group is only valid for alternative links.")
 
 
 class QuestGraph:
-    """Validated, content-defined graph of quest relationships.
+    """Validated, acyclic quest progression graph.
 
-    The graph is deliberately independent from Quest instances so content can
-    be loaded, validated and inspected without changing runtime quest logic.
-    Cycles are rejected because ordinary progression graphs must be acyclic.
-    Repeatable loops, if introduced later, should use an explicit repeat
-    mechanism rather than an implicit graph cycle.
+    Runtime rules:
+    - Root quests have no graph prerequisite.
+    - UNLOCKS and SIDE incoming links are all required (AND).
+    - ALTERNATIVE incoming links sharing a branch_group are OR alternatives.
+    - A source with multiple outgoing alternatives in one group requires an
+      explicit, persistent player choice before the selected target unlocks.
+    - A single alternative link needs no choice.
+    - Quest-local prerequisites are evaluated separately by can_start().
     """
 
     def __init__(
@@ -61,7 +145,7 @@ class QuestGraph:
         quest_ids: Iterable[str] = (),
         links: Iterable[QuestLink] = (),
     ) -> None:
-        self._quest_ids = set()
+        self._quest_ids: set[str] = set()
         for quest_id in quest_ids:
             self.add_quest(quest_id)
         self._links: list[QuestLink] = []
@@ -96,17 +180,13 @@ class QuestGraph:
         return tuple(sorted(self._quest_ids))
 
     def links(self) -> tuple[QuestLink, ...]:
-        return tuple(
-            sorted(
-                self._links,
-                key=lambda link: (
-                    link.source_quest_id,
-                    link.target_quest_id,
-                    link.link_type.value,
-                    link.branch_group or "",
-                ),
-            )
-        )
+        return tuple(sorted(
+            self._links,
+            key=lambda link: (
+                link.source_quest_id, link.target_quest_id,
+                link.link_type.value, link.branch_group or "",
+            ),
+        ))
 
     def outgoing(self, quest_id: str) -> tuple[QuestLink, ...]:
         self._require_known(quest_id)
@@ -121,6 +201,88 @@ class QuestGraph:
 
     def predecessors(self, quest_id: str) -> tuple[str, ...]:
         return tuple(link.source_quest_id for link in self.incoming(quest_id))
+
+    def branch_options(self, source_quest_id: str, branch_group: str) -> tuple[str, ...]:
+        self._require_known(source_quest_id)
+        if not isinstance(branch_group, str) or not branch_group.strip():
+            raise ValueError("branch_group must be a non-empty string.")
+        return tuple(sorted({
+            link.target_quest_id for link in self.outgoing(source_quest_id)
+            if link.link_type is QuestLinkType.ALTERNATIVE
+            and link.branch_group == branch_group
+        }))
+
+    def is_unlocked(
+        self,
+        quest_id: str,
+        quest_states: Mapping[str, object],
+        progress: QuestGraphProgress | None = None,
+    ) -> bool:
+        self._require_known(quest_id)
+        if not isinstance(quest_states, Mapping):
+            raise TypeError("quest_states must be a mapping.")
+        progress = progress or QuestGraphProgress()
+        incoming = self.incoming(quest_id)
+        if not incoming:
+            return True
+
+        required = [
+            link for link in incoming
+            if link.link_type in (QuestLinkType.UNLOCKS, QuestLinkType.SIDE)
+        ]
+        if any(_state_value(quest_states.get(link.source_quest_id, "available")) != "completed"
+               for link in required):
+            return False
+
+        alternatives: dict[str, list[QuestLink]] = {}
+        for link in incoming:
+            if link.link_type is QuestLinkType.ALTERNATIVE:
+                alternatives.setdefault(link.branch_group, []).append(link)
+
+        for group_links in alternatives.values():
+            satisfied = False
+            for link in group_links:
+                if _state_value(quest_states.get(link.source_quest_id, "available")) != "completed":
+                    continue
+                options = self.branch_options(link.source_quest_id, link.branch_group)
+                if len(options) > 1:
+                    selected = progress.selected_branch(link.source_quest_id, link.branch_group)
+                    if selected != link.target_quest_id:
+                        continue
+                satisfied = True
+                break
+            if not satisfied:
+                return False
+        return True
+
+    def can_start(
+        self,
+        quest: object,
+        quest_states: Mapping[str, object],
+        context: Mapping[str, object] | None = None,
+        progress: QuestGraphProgress | None = None,
+    ) -> bool:
+        quest_id = getattr(quest, "quest_id", None)
+        if quest_id not in self._quest_ids:
+            raise KeyError(f"Quest is not registered in graph: {quest_id}")
+        local_check = getattr(quest, "can_start", None)
+        if not callable(local_check):
+            raise TypeError("quest must provide can_start(context).")
+        return bool(local_check(context or {})) and self.is_unlocked(
+            quest_id, quest_states, progress
+        )
+
+    def available_quests(
+        self,
+        quests: Iterable[object],
+        quest_states: Mapping[str, object],
+        context: Mapping[str, object] | None = None,
+        progress: QuestGraphProgress | None = None,
+    ) -> tuple[object, ...]:
+        return tuple(
+            quest for quest in quests
+            if self.can_start(quest, quest_states, context, progress)
+        )
 
     def validate(self) -> None:
         self._validate_references()
@@ -141,7 +303,6 @@ class QuestGraph:
         adjacency = {quest_id: [] for quest_id in self._quest_ids}
         for link in self._links:
             adjacency[link.source_quest_id].append(link.target_quest_id)
-
         visiting: set[str] = set()
         visited: set[str] = set()
 
@@ -160,4 +321,4 @@ class QuestGraph:
             visit(quest_id)
 
 
-__all__ = ["QuestGraph", "QuestLink", "QuestLinkType"]
+__all__ = ["QuestGraph", "QuestGraphProgress", "QuestLink", "QuestLinkType"]
