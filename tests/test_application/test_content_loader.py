@@ -43,7 +43,7 @@ class TestContentPackageLoader(unittest.TestCase):
         self.assertEqual(package.world_map_definition.world_map_id, "eldoria_hex_world")
         self.assertEqual(
             package.world_map_definition.placements_by_map_id["hex_forest_demo"].position,
-            __import__("core.domain.spatial", fromlist=["WorldHexPosition"]).WorldHexPosition(0, 0),
+            WorldHexPosition(0, 0),
         )
         self.assertNotIn("hex_forest_demo", package.map_definitions)
         self.assertEqual(len(package.map_definitions), 9)
