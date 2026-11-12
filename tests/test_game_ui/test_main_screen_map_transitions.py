@@ -58,6 +58,12 @@ class TestMainScreenJsonTransitions(unittest.TestCase):
         self.addCleanup(temporary.cleanup)
         root = Path(temporary.name)
         (root / "maps").mkdir()
+        (root / "manifest.json").write_text(json.dumps({
+            "schema_version": 1, "package_id": "transition_test",
+            "package_version": "1.0.0",
+            "files": {"starter": "starter.json"}, "maps": "maps",
+        }), encoding="utf-8")
+        (root / "starter.json").write_text("{}", encoding="utf-8")
         transition = {
             "id": "source_to_target", "from_tiles": [[3, 1]],
             "target_map_id": "target", "target_tiles": [[5, 6]],
