@@ -1,0 +1,17 @@
+{
+  "schema_version": 2,
+  "map_id": "hex_forest_demo",
+  "name": "Altıgen Orman Deneme Alanı",
+  "description": "Yalnızca veri yükleyici testleri için izole örnek.",
+  "geometry": {"type": "hex_axial", "orientation": "pointy_top", "coordinate_system": "axial"},
+  "terrain_ids": ["grass", "forest_floor", "water"],
+  "default_terrain": "grass",
+  "valid_cells": [[0,0],[1,0],[1,-1],[0,-1],[-1,0],[-1,1],[0,1],[3,2]],
+  "cell_overrides": [{"q":1,"r":0,"terrain":"forest_floor"},{"q":0,"r":-1,"terrain":"water","blocked":true}],
+  "features": [{"id":"demo_river","type":"river","cells":[[0,-1],[1,-1]]}],
+  "landmarks": [
+    {"id":"demo_old_tree","name":"Yaşlı Ağaç","position":[-1,0],"type":"nature","visual_type":"tree"},
+    {"id":"demo_ore_vein","name":"Cevher Damarı","position":[3,2],"type":"resource","resource_node_id":"demo_ore_node"}
+  ],
+  "transitions": [{"id":"demo_exit","source_cells":[[0,0]],"exit_direction":"east","target_map_id":"future_hex_region","target_entry_direction":"west","target_cells":[[-2,0]],"active":false,"traversal_mode":"one_way"}]
+}
