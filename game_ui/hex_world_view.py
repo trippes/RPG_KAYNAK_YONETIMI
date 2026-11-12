@@ -159,7 +159,7 @@ class HexWorldView:
             return False
         self._start_visual_movement(path)
         moved = False
-        for cell in path[1:]
+        for cell in path[1:]:
             result = self.runtime.move_to(self.entity_id, cell)
             if not result.success:
                 self.message = result.detail or "Hareket yolu üzerinde engel var."
