@@ -3,6 +3,7 @@
   "package_id": "demo_eldoria",
   "package_version": "0.1.0",
   "files": {
-    "starter": "starter_content.json"
+    "starter": "starter_content.json",
+    "npcs": "npcs.json"
   }
 }
