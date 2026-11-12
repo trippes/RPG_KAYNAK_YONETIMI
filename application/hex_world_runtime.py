@@ -187,29 +187,24 @@ class HexWorldRuntime:
             self._patrol_indices[entity_id] = index
         return result
 
-    def transition(self, entity_id: str, transition_id: str) -> MovementResult:
+    def transfer_entity(self, entity_id: str, target: EntityPosition) -> MovementResult:
+        """Apply a validated cross-map relocation as one atomic occupancy update."""
         entity = self.entity(entity_id)
-        source_map = self.map_definition(entity.position.map_id)
-        transition = next((item for item in source_map.transitions if item.transition_id == transition_id), None)
-        if transition is None or not transition.active:
-            return MovementResult(False, entity.position, MovementFailureReason.INVALID_TRANSITION, "Transition is missing or inactive.")
-        if entity.position.cell not in transition.source_cells:
-            return MovementResult(False, entity.position, MovementFailureReason.INVALID_TRANSITION, "Entity is not on a transition source cell.")
-        target_map = self._maps.get(transition.target_map_id)
-        if target_map is None or not transition.target_cells:
-            return MovementResult(False, entity.position, MovementFailureReason.INVALID_TRANSITION, "Transition target map or entry cells are unavailable.")
-        for target_cell in transition.target_cells:
-            if not target_map.has_cell(target_cell):
-                continue
-            if target_map.is_blocked(target_cell) and not entity.profile.can_traverse_blocked_cells:
-                continue
-            target = EntityPosition(target_map.map_id, target_cell)
-            if not self._occupancy.can_enter(target, excluding=entity_id):
-                continue
-            self._occupancy.move(entity_id, target)
-            self._entities[entity_id] = replace(entity, position=target)
-            return MovementResult(True, target)
-        return MovementResult(False, entity.position, MovementFailureReason.OCCUPIED_CELL, "No valid unoccupied transition entry cell is available.")
+        if not isinstance(target, EntityPosition):
+            raise TypeError("target must be an EntityPosition.")
+        if target.map_id not in self._maps or not self.map_definition(target.map_id).has_cell(target.cell):
+            return MovementResult(False, entity.position, MovementFailureReason.INVALID_TARGET, "Destination map cell is unavailable.")
+        if self.map_definition(target.map_id).is_blocked(target.cell) and not entity.profile.can_traverse_blocked_cells:
+            return MovementResult(False, entity.position, MovementFailureReason.BLOCKED_CELL, "Destination cell is blocked.")
+        if not self._occupancy.can_enter(target, excluding=entity_id):
+            return MovementResult(False, entity.position, MovementFailureReason.OCCUPIED_CELL, "Destination cell is occupied or movement-blocked.")
+        self._occupancy.move(entity_id, target)
+        self._entities[entity_id] = replace(entity, position=target)
+        return MovementResult(True, target)
+
+    def transition(self, entity_id: str, transition_id: str) -> MovementResult:
+        from .hex_transition_service import HexMapTransitionService
+        return HexMapTransitionService(self, self._world_map).transition(entity_id, transition_id)
 
 
 __all__ = ["HexMovableEntity", "HexWorldRuntime"]
