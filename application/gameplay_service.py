@@ -30,7 +30,7 @@ from .movement import MovementManager
 from world import WorldMap, LocalMapDefinition
 from .world_object_placement import WorldObjectPlacement
 from npc import Faction, NPC
-from quests import Dialogue, Quest
+from quests import Dialogue, Quest, QuestGraph, QuestGraphProgress
 from .social_runtime import SocialRuntimeError
 from .combat_runtime import Combatant
 
@@ -187,6 +187,7 @@ class GameplayService:
         self._quest_reward_accounts: dict[str, str] = {}
         self._quest_reward_inventories: dict[str, str] = {}
         self._dialogue_actions: dict[str, Callable[[str, str], None]] = {}
+        self._quest_graph_definition: QuestGraph | None = None
 
     @property
     def application(self) -> GameApplication:
@@ -310,6 +311,8 @@ class GameplayService:
         self._bundle = result
         result.actor_activities.bind_gameplay_service(self)
         self._rebind_content_quests()
+        if self._quest_graph_definition is not None:
+            self.register_quest_graph(self._quest_graph_definition)
         return result
 
     def _rebind_content_quests(self) -> None:
@@ -1522,6 +1525,11 @@ class GameplayService:
         }
 
     def _run_dialogue_action(self, action: str, actor_id: str, npc_id: str) -> None:
+        registered = self._dialogue_actions.get(action)
+        if registered is not None:
+            registered(actor_id, npc_id)
+            return
+        # Compatibility adapters for the existing starter slice only.
         actions = {
             "accept_carpenter_quest": lambda: self.accept_carpenter_quest(actor_id, "player"),
             "deliver_carpenter_wood": lambda: self.deliver_carpenter_wood(actor_id, npc_id, "player"),
@@ -1535,8 +1543,71 @@ class GameplayService:
         if handler is not None:
             handler()
 
+    def register_quest_graph(self, graph: QuestGraph) -> QuestGraph:
+        """Attach content-owned progression rules to the active gameplay session."""
+        if not isinstance(graph, QuestGraph):
+            raise TypeError("graph must be QuestGraph.")
+        bundle = self._current_bundle()
+        known_ids = {quest.quest_id for quest in bundle.quest_log.all()}
+        known_ids.update(
+            getattr(getattr(self, name, None), "quest_id", None)
+            for name in (
+                "available_forest_quest", "carpenter_quest", "inn_quest",
+                "blacksmith_quest", "caravan_quest",
+            )
+        )
+        known_ids.discard(None)
+        unknown = set(graph.quest_ids()) - known_ids
+        if unknown:
+            raise ValueError(f"Quest graph references unregistered quest definitions: {sorted(unknown)}")
+        pending = bundle.pending_quest_graph_progress
+        if pending is not None:
+            bundle.quest_graph_progress = QuestGraphProgress.from_dict(pending, graph)
+            bundle.pending_quest_graph_progress = None
+        else:
+            bundle.quest_graph_progress = QuestGraphProgress.from_dict(
+                bundle.quest_graph_progress.to_dict(), graph
+            )
+        bundle.quest_graph = graph
+        self._quest_graph_definition = graph
+        return graph
+
+    def quest_states(self) -> dict[str, str]:
+        return {quest.quest_id: quest.state.value for quest in self._current_bundle().quest_log.all()}
+
+    def available_quests(self, quests=None, context=None) -> tuple[Quest, ...]:
+        bundle = self._current_bundle()
+        candidates = tuple(quests) if quests is not None else tuple(
+            quest for quest in (
+                getattr(self, name, None)
+                for name in (
+                    "available_forest_quest", "carpenter_quest", "inn_quest",
+                    "blacksmith_quest", "caravan_quest",
+                )
+            ) if quest is not None
+        ) + bundle.quest_log.all()
+        unique = {quest.quest_id: quest for quest in candidates}
+        return bundle.quest_graph.available_quests(
+            unique.values(), self.quest_states(),
+            context or self._dialogue_context("hero", ""),
+            bundle.quest_graph_progress,
+        )
+
+    def choose_quest_branch(self, source_quest_id: str, branch_group: str, target_quest_id: str) -> str:
+        bundle = self._current_bundle()
+        return bundle.quest_graph_progress.choose_branch(
+            bundle.quest_graph, source_quest_id, branch_group, target_quest_id,
+            self.quest_states(),
+        )
+
     def start_quest(self, quest: Quest, context=None, owner_id: str | None = None, reward_inventory_id: str | None = None) -> Quest:
         bundle = self._current_bundle()
+        if quest.quest_id in bundle.quest_graph.quest_ids() and not bundle.quest_graph.can_start(
+            quest, self.quest_states(),
+            context or self._dialogue_context(owner_id or "hero", ""),
+            bundle.quest_graph_progress,
+        ):
+            raise ValueError("Quest graph prerequisites are not met.")
         quest.start(context or {})
         registered = bundle.quest_log.get(quest.quest_id)
         if registered is None:
