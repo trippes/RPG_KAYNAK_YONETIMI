@@ -17,7 +17,7 @@ from character import Character, ItemDefinition
 from resources import ResourceDefinition
 from containers import ContainerManager
 from locks import LockManager
-from quests import QuestLog
+from quests import QuestLog, QuestGraph, QuestGraphProgress
 from economy import Economy
 from .social_runtime import SocialRuntime
 from .combat_runtime import CombatRuntime
@@ -45,6 +45,9 @@ remain mutable domain objects by design; this is not deep immutability.
     characters: Mapping[str, Character] | None = None
     movement: MovementManager | None = None
     quest_log: QuestLog | None = None
+    quest_graph: QuestGraph | None = None
+    quest_graph_progress: QuestGraphProgress | None = None
+    pending_quest_graph_progress: Mapping[str, object] | None = None
     economy: Economy | None = None
     social: SocialRuntime | None = None
     combat: CombatRuntime | None = None
@@ -181,6 +184,16 @@ remain mutable domain objects by design; this is not deep immutability.
             object.__setattr__(self, "quest_log", QuestLog())
         if not isinstance(self.quest_log, QuestLog):
             raise TypeError("quest_log must be QuestLog.")
+        if self.quest_graph is None:
+            object.__setattr__(self, "quest_graph", QuestGraph())
+        if not isinstance(self.quest_graph, QuestGraph):
+            raise TypeError("quest_graph must be QuestGraph.")
+        if self.quest_graph_progress is None:
+            object.__setattr__(self, "quest_graph_progress", QuestGraphProgress())
+        if not isinstance(self.quest_graph_progress, QuestGraphProgress):
+            raise TypeError("quest_graph_progress must be QuestGraphProgress.")
+        if self.pending_quest_graph_progress is not None and not isinstance(self.pending_quest_graph_progress, Mapping):
+            raise TypeError("pending_quest_graph_progress must be a mapping or None.")
         if self.economy is None:
             object.__setattr__(self, "economy", Economy())
         if not isinstance(self.economy, Economy):
