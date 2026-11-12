@@ -33,6 +33,20 @@ class TestWorldResourceNode(unittest.TestCase):
         with self.assertRaises(ValueError):
             WorldResourceNode("n", "w", self.ore, Quantity(1, ResourceUnit.KG), Quantity(2, ResourceUnit.KG), Quantity(1, ResourceUnit.KG), -1)
 
+    def test_gathering_duration_is_content_configurable(self):
+        node = WorldResourceNode(
+            "slow-node", "world-1", self.ore,
+            Quantity(5, ResourceUnit.KG), Quantity(10, ResourceUnit.KG),
+            Quantity(0, ResourceUnit.KG), gathering_duration_ticks=275,
+        )
+        self.assertEqual(node.gathering_duration_ticks, Tick(275))
+        with self.assertRaises(ValueError):
+            WorldResourceNode(
+                "invalid-node", "world-1", self.ore,
+                Quantity(1, ResourceUnit.KG), Quantity(1, ResourceUnit.KG),
+                Quantity(0, ResourceUnit.KG), gathering_duration_ticks=0,
+            )
+
     def test_regeneration_is_tick_based_and_idempotent(self):
         self.node.regenerate_to(Tick(2))
         self.assertEqual(self.node.quantity, Quantity(9, ResourceUnit.KG))
