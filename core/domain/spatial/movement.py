@@ -1,50 +1,48 @@
-"""Map-scoped movement contracts for the axial hex world.
-
-These value objects are deliberately independent from Pygame and from the
-legacy square-tile MovementManager.
-"""
+"""Shared, immutable domain contracts for axial-hex entity movement."""
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
 
-from core.domain.spatial import LocalHexPosition
+from .local_hex_position import LocalHexPosition
 
 
-def _non_empty(value: object, field_name: str) -> str:
+def _require_id(value: object, field_name: str) -> None:
     if not isinstance(value, str) or not value.strip():
         raise ValueError(f"{field_name} must be a non-empty string.")
-    return value
 
 
 @dataclass(frozen=True, slots=True)
 class EntityPosition:
-    """Authoritative logical position scoped to one local hex map."""
+    """An entity's logical position, scoped to one local hex map."""
 
     map_id: str
     cell: LocalHexPosition
 
     def __post_init__(self) -> None:
-        _non_empty(self.map_id, "map_id")
+        _require_id(self.map_id, "map_id")
         if not isinstance(self.cell, LocalHexPosition):
             raise TypeError("cell must be a LocalHexPosition.")
 
 
 @dataclass(frozen=True, slots=True)
 class MovementProfile:
-    """Capabilities used by the shared hex movement rules."""
+    """Movement capabilities shared by players, NPCs, and movable objects."""
 
     can_move: bool = True
     allowed_terrain_ids: frozenset[str] | None = None
     can_traverse_blocked_cells: bool = False
-    ignores_occupancy: bool = False
 
     def __post_init__(self) -> None:
-        for name in ("can_move", "can_traverse_blocked_cells", "ignores_occupancy"):
-            if not isinstance(getattr(self, name), bool):
-                raise TypeError(f"{name} must be a boolean.")
+        if not isinstance(self.can_move, bool):
+            raise TypeError("can_move must be a boolean.")
+        if not isinstance(self.can_traverse_blocked_cells, bool):
+            raise TypeError("can_traverse_blocked_cells must be a boolean.")
         if self.allowed_terrain_ids is not None:
-            values = frozenset(self.allowed_terrain_ids)
+            try:
+                values = frozenset(self.allowed_terrain_ids)
+            except TypeError as exc:
+                raise TypeError("allowed_terrain_ids must be an iterable of strings.") from exc
             if any(not isinstance(value, str) or not value.strip() for value in values):
                 raise ValueError("allowed_terrain_ids must contain non-empty strings.")
             object.__setattr__(self, "allowed_terrain_ids", values)
@@ -52,7 +50,7 @@ class MovementProfile:
 
 @dataclass(frozen=True, slots=True)
 class MovementRequest:
-    """A request to move one entity from a source to a target position."""
+    """A movement intent; it does not mutate an entity or a map."""
 
     entity_id: str
     source: EntityPosition
@@ -60,7 +58,7 @@ class MovementRequest:
     profile: MovementProfile = field(default_factory=MovementProfile)
 
     def __post_init__(self) -> None:
-        _non_empty(self.entity_id, "entity_id")
+        _require_id(self.entity_id, "entity_id")
         if not isinstance(self.source, EntityPosition):
             raise TypeError("source must be an EntityPosition.")
         if not isinstance(self.target, EntityPosition):
@@ -83,7 +81,7 @@ class MovementFailureReason(str, Enum):
 
 @dataclass(frozen=True, slots=True)
 class MovementResult:
-    """Stable result returned by movement application services."""
+    """Immutable outcome; failures retain the source position."""
 
     success: bool
     position: EntityPosition

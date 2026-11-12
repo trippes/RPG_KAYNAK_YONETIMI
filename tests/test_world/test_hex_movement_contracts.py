@@ -1,8 +1,8 @@
 import unittest
 
-from core.domain.spatial import LocalHexPosition
-from world.hex_movement import (
+from core.domain.spatial import (
     EntityPosition,
+    LocalHexPosition,
     MovementFailureReason,
     MovementProfile,
     MovementRequest,
@@ -13,8 +13,8 @@ from world.hex_movement import (
 class TestHexMovementContracts(unittest.TestCase):
     def test_entity_position_is_map_scoped_and_immutable(self):
         first = EntityPosition("forest", LocalHexPosition(0, 0))
-        same_cell_other_map = EntityPosition("mine", LocalHexPosition(0, 0))
-        self.assertNotEqual(first, same_cell_other_map)
+        other_map = EntityPosition("mine", LocalHexPosition(0, 0))
+        self.assertNotEqual(first, other_map)
         self.assertEqual(first, EntityPosition("forest", LocalHexPosition(0, 0)))
         with self.assertRaises((AttributeError, TypeError)):
             first.map_id = "mine"
