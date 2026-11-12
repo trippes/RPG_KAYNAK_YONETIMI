@@ -25,12 +25,6 @@ class HexWorldView:
     START_MAP_ID = "hex_forest_demo"
     PLAYER_KIND = "player"
     HEX_RADIUS = 32
-    TERRAIN_COLORS = {
-        "grass": (83, 132, 73),
-        "forest_floor": (49, 103, 62),
-        "clearing_floor": (137, 119, 76),
-        "water": (47, 102, 150),
-    }
 
     def __init__(self, service):
         self.service = service
@@ -202,7 +196,6 @@ class HexWorldView:
                 return None
 
         if state.mouse_clicked and state.mouse_pos is not None:
-            size = self._hex_size
             target_coord = self._world_transform.screen_to_axial(*state.mouse_pos)
             q, r = target_coord.q, target_coord.r
             target = LocalHexPosition(q, r)
@@ -253,13 +246,14 @@ class HexWorldView:
         entity = self._entity()
         centers = self._layout(definition, renderer)
         renderer.frame(definition.name, 0)
+        render_radius = self._hex_size * self._zoom
 
         for cell in sorted(definition.valid_cells, key=lambda item: (item.r, item.q)):
-            if not self._terrain_renderer.is_visible(centers[cell], self._hex_size, renderer.width, renderer.height):
+            if not self._terrain_renderer.is_visible(centers[cell], render_radius, renderer.width, renderer.height):
                 continue
             self._terrain_renderer.draw_cell(
                 renderer, cell, definition.get_cell(cell), centers[cell],
-                self._hex_size, selected=(cell == self.selected),
+                render_radius, selected=(cell == self.selected),
             )
 
         for feature in definition.features:
@@ -271,8 +265,21 @@ class HexWorldView:
                     renderer.pg.draw.circle(
                         renderer.surface, (75, 157, 201),
                         (round(center[0]), round(center[1])),
-                        max(4, round(self._hex_size * 0.32)),
+                        max(4, round(render_radius * 0.32)),
                     )
+
+        for transition in definition.transitions:
+            if not transition.active:
+                continue
+            for cell in transition.source_cells:
+                center = centers[cell]
+                if not self._terrain_renderer.is_visible(center, render_radius, renderer.width, renderer.height):
+                    continue
+                renderer.pg.draw.circle(
+                    renderer.surface, (102, 219, 230),
+                    (round(center[0]), round(center[1])),
+                    max(7, round(render_radius * 0.48)), 2,
+                )
 
         drawables = [(item.position, "landmark", item) for item in definition.landmarks if self._terrain_renderer.is_visible(centers[item.position], self._hex_size, renderer.width, renderer.height)]
         drawables.append((entity.position.cell, "player", entity))
@@ -284,14 +291,14 @@ class HexWorldView:
                 renderer.pg.draw.circle(
                     renderer.surface, (180, 145, 83),
                     (round(center[0]), round(center[1])),
-                    max(5, round(self._hex_size * 0.22)),
+                    max(5, round(render_radius * 0.22)),
                 )
                 renderer.text(
                     drawable.name,
-                    round(center[0] - self._hex_size),
-                    round(center[1] + self._hex_size * 0.28),
+                    round(center[0] - render_radius),
+                    round(center[1] + render_radius * 0.28),
                     (245, 225, 180),
-                    max_width=round(self._hex_size * 2),
+                    max_width=round(render_radius * 2),
                 )
             else:
                 player_center = center
@@ -309,7 +316,7 @@ class HexWorldView:
                 renderer.pg.draw.circle(
                     renderer.surface, (118, 238, 166),
                     (round(player_center[0]), round(player_center[1])),
-                    max(6, round(self._hex_size * 0.24)),
+                    max(6, round(render_radius * 0.24)),
                 )
 
         renderer.text(
