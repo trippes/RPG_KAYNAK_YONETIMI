@@ -5,7 +5,7 @@ from resources import Quantity, ResourceUnit
 from collections import deque
 from pathlib import Path
 
-from world import load_map_definition
+from world import load_map_definitions
 
 
 class MainScreen:
@@ -13,7 +13,7 @@ class MainScreen:
 
     def __init__(self, service):
         self.service = service
-        self._map_definition_cache = {}
+        self._map_definition_cache = None
         self.selected = (16, 16)
         self.selected_npc_id = None
         self.selected_container_id = None
@@ -50,17 +50,16 @@ class MainScreen:
         location = location or self._location()
         if location is None:
             return None
-        map_id = location.location_id
-        if map_id not in self._map_definition_cache:
+        if self._map_definition_cache is None:
             package_root = getattr(self.service, "_content_package_path", None)
             if package_root is None:
                 package_root = Path(__file__).resolve().parents[2] / "content" / "demo_eldoria"
-            source = Path(package_root) / "maps" / f"{map_id}.json"
             try:
-                self._map_definition_cache[map_id] = load_map_definition(source)
+                self._map_definition_cache = load_map_definitions(Path(package_root) / "maps")
             except (OSError, ValueError):
+                self._map_definition_cache = {}
                 return None
-        return self._map_definition_cache[map_id]
+        return self._map_definition_cache.get(location.location_id)
 
     def _map_width(self):
         definition = self._map_definition()
@@ -362,62 +361,61 @@ class MainScreen:
             self.message = f"Hareket tamamlanamadı: {error}"
 
     def _cross_boundary(self, actor, dx, dy):
-        world_map = self.service.application.holder.current.movement.map_for(actor.world_id)
-        location = world_map.get(actor.location_id) if world_map else None
-        if location is None or location.position is None:
+        """Resolve a boundary crossing exclusively from the active map's JSON transitions."""
+        direction = {
+            (0, -1): "north",
+            (0, 1): "south",
+            (-1, 0): "west",
+            (1, 0): "east",
+        }.get((dx, dy))
+        if direction is None:
             return False
+
         current_gate = self._position(actor.position)
-        current_definition = self._map_definition(location)
-        current_gates = self._gate_tiles(current_definition)
-        if current_gates and current_gate not in current_gates:
-            self.message = "Bu bölgeden yalnızca tanımlı geçiş noktalarından çıkabilirsin."
+        current_definition = self._map_definition()
+        if current_definition is None:
+            self.message = "Mevcut haritanın geçiş verisi yüklenemedi."
             return True
 
-        candidates = []
-        for neighbor in world_map.neighbors(actor.location_id):
-            if neighbor.position is None:
-                continue
-            offset_x = neighbor.position[0] - location.position[0]
-            offset_y = neighbor.position[1] - location.position[1]
-            if dx and offset_x * dx > 0 and abs(offset_x) >= abs(offset_y):
-                candidates.append(neighbor)
-            if dy and offset_y * dy > 0 and abs(offset_y) >= abs(offset_x):
-                candidates.append(neighbor)
-        if not candidates:
-            self.message = "Bu yönde başka bir yerel harita yok."
+        transitions = [
+            transition for transition in current_definition.transitions
+            if current_gate in transition.from_tiles
+            and transition.direction in (None, direction)
+        ]
+        if not transitions:
+            self.message = "Bu noktada bu yönde tanımlı bir harita geçişi yok."
+            return True
+        if len(transitions) > 1:
+            self.message = "Bu noktada birden fazla geçiş tanımı eşleşiyor."
             return True
 
-        destination = sorted(candidates, key=lambda item: item.location_id)[0]
+        transition = transitions[0]
+        world_map = self.service.application.holder.current.movement.map_for(actor.world_id)
+        destination = world_map.get(transition.target_map_id) if world_map else None
+        if destination is None:
+            self.message = (
+                f"Geçiş hedefi '{transition.target_map_id}' dünya içeriğinde bulunamadı."
+            )
+            return True
+
         destination_definition = self._map_definition(destination)
-        destination_gates = self._gate_tiles(destination_definition)
-        target_width = destination_definition.size.width if destination_definition else self._map_width()
-        target_height = destination_definition.size.height if destination_definition else self._map_height()
-        target = (
-            (0 if dx > 0 else target_width - 1, min(current_gate[1], target_height - 1))
-            if dx else
-            (min(current_gate[0], target_width - 1), 0 if dy > 0 else target_height - 1)
+        if (
+            destination_definition is None
+            or destination_definition.map_id != transition.target_map_id
+        ):
+            self.message = "Geçiş hedef haritasının JSON tanımı yüklenemedi."
+            return True
+
+        target = min(
+            transition.target_tiles,
+            key=lambda tile: abs(tile[0] - current_gate[0]) + abs(tile[1] - current_gate[1]),
         )
-        if destination_gates and destination_definition is not None:
-            target_edge = (
-                "west" if dx > 0 else "east" if dx < 0 else
-                "north" if dy > 0 else "south"
-            )
-            def on_target_edge(tile):
-                if target_edge == "west":
-                    return tile[0] == 0
-                if target_edge == "east":
-                    return tile[0] == destination_definition.size.width - 1
-                if target_edge == "north":
-                    return tile[1] == 0
-                return tile[1] == destination_definition.size.height - 1
-            edge_tiles = [tile for tile in destination_gates if on_target_edge(tile)]
-            if not edge_tiles:
-                self.message = "Hedef haritada bu yönde tanımlı bir geçiş yok."
-                return True
-            target = min(
-                edge_tiles,
-                key=lambda tile: abs(tile[0] - current_gate[0]) + abs(tile[1] - current_gate[1]),
-            )
+        if not (
+            0 <= target[0] < destination_definition.size.width
+            and 0 <= target[1] < destination_definition.size.height
+        ):
+            self.message = "Geçiş hedef koordinatı hedef haritanın sınırları dışında."
+            return True
 
         self.service.place_actor(actor.actor_id, destination.location_id)
         self._complete_tile_move(actor.actor_id, target)

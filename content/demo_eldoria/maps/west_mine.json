@@ -559,23 +559,5 @@
       "resource_node_id": "west_mine_iron"
     }
   ],
-  "transitions": [
-    {
-      "id": "west_mine_to_forest",
-      "from_tiles": [
-        [
-          16,
-          0
-        ]
-      ],
-      "target_map_id": "west_forest",
-      "target_tiles": [
-        [
-          16,
-          31
-        ]
-      ],
-      "direction": "north"
-    }
-  ]
+  "transitions": []
 }
