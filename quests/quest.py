@@ -17,11 +17,15 @@ class Quest:
     prerequisites: AllConditions = AllConditions()
     state: QuestState = QuestState.AVAILABLE
     sequential_objectives: bool = False
+    giver_npc_id: str | None = None
     def __post_init__(self):
         if not self.quest_id or not self.title: raise ValueError("Quest ID and title are required.")
         self.state = QuestState(self.state)
         if not isinstance(self.sequential_objectives, bool):
             raise ValueError("sequential_objectives must be a boolean.")
+        if self.giver_npc_id is not None:
+            if not isinstance(self.giver_npc_id, str) or not self.giver_npc_id.strip():
+                raise ValueError("giver_npc_id must be a non-empty string or None.")
         ids = [o.objective_id for o in self.objectives]
         if len(ids) != len(set(ids)): raise ValueError("Objective IDs must be unique.")
     def can_start(self, context): return self.state == QuestState.AVAILABLE and self.prerequisites.evaluate(context)
