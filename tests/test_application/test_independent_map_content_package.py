@@ -92,6 +92,7 @@ class TestIndependentMapContentPackage(unittest.TestCase):
             actor = service.actor("hero")
             service.place_actor(actor.actor_id, "north_mine")
             service.set_actor_tile_position(actor.actor_id, 16, 31)
+            actor = service.actor("hero")
             screen = MainScreen(service)
             self.assertEqual(screen._location().location_id, "north_mine")
             source_definition = screen._map_definition()
