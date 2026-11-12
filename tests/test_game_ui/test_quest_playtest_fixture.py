@@ -1,7 +1,7 @@
 from application.content_pack import populate_opening_content
 from application.game_application import GameApplication
 from application.content_pack import populate_gameplay_resources
-from application.quest_playtest_content import (
+from tests.test_game_ui.fixtures.quest_playtest import (
     PLAYTEST_DIALOGUE_ID,
     PLAYTEST_NPC_ID,
     PLAYTEST_QUEST_ID,
