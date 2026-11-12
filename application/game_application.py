@@ -33,7 +33,6 @@ from quests import QuestLog, QuestSnapshot, QuestGraphProgress
 from application.actor_system import WorldActor
 from economy import Economy, EconomySnapshot
 from application.extended_persistence import SocialSnapshot, CombatSnapshot
-from core.domain.spatial import Position
 from application.container_persistence import ContainerSnapshot
 from application.lock_persistence import LockSnapshot
 from world.local_map import LocalMapDefinition
@@ -74,7 +73,12 @@ class GameApplication:
         The active bundle is not touched until every Core/gameplay
         validation and cross-reference check succeeds.
         """
-        document = GameSaveFileAdapter.load(path)
+        from application.content_pack import load_npc_definitions
+
+        npc_definitions = load_npc_definitions(
+            package_path=getattr(self, "_content_package_path", None),
+        )
+        document = GameSaveFileAdapter.load(path, npc_definitions=npc_definitions)
         candidate_session = GameSession()
         core_state = document.core.to_state()
         core_plan = RestoreContract.prepare(core_state)
@@ -144,16 +148,7 @@ class GameApplication:
             combat=document.combat.restore() if document.combat is not None else None,
         )
 
-        # Older saves did not persist NPC tile positions. Restore the starter
-        # defaults for those records so existing slots remain interactive.
-        legacy_npc_positions = {
-            "warden_lyra": Position(16, 30),
-        }
-        for npc_id, position in legacy_npc_positions.items():
-            npc = candidate.social.npcs.get(npc_id)
-            if npc is not None and npc.position == Position():
-                npc.position = position
-        
+
     
         from application.content_pack import build_starter_world_map
 

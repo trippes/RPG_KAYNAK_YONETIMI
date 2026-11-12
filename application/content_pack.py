@@ -61,11 +61,11 @@ def _resolve_content_package_path(package_path: str | Path | None = None) -> Pat
 
 @dataclass(frozen=True)
 class StarterContentIds:
-    world_id: str = "demo_valley"
-    hero_id: str = "hero"
-    village_id: str = "village"
-    forest_id: str = "forest"
-    faction_id: str = "wardens"
+    world_id: str | None = None
+    hero_id: str | None = None
+    village_id: str | None = None
+    forest_id: str | None = None
+    faction_id: str | None = None
 
 from core.errors import RPGError
 
@@ -176,7 +176,7 @@ def _id_resolver(definition: dict, ids: StarterContentIds):
     valid_fields = {field.name for field in fields(StarterContentIds)}
     if set(configured) != valid_fields:
         raise ContentDefinitionError("Content ids must match StarterContentIds fields.")
-    replacements = {key: getattr(ids, key) for key in valid_fields}
+    replacements = {key: getattr(ids, key) or configured[key] for key in valid_fields}
     return lambda key: replacements.get(key, key)
 
 
@@ -486,6 +486,10 @@ def _register_npcs_for_phase(service, npc_definitions, phase: str, resolve_id):
 
 
 def _register_opening_content(application, definition: dict, npc_definitions, character_definitions, ids: StarterContentIds):
+    ids = StarterContentIds(**{
+        field.name: getattr(ids, field.name) or definition["ids"][field.name]
+        for field in fields(StarterContentIds)
+    })
     resolve_id = _id_resolver(definition, ids)
     world_data = definition["world"]
     world = application.aktif_dunya() or application.dunya_olustur(
@@ -560,7 +564,9 @@ def populate_opening_content(
         character_definitions,
         ids,
     )
-    service._content_package_path = _resolve_content_package_path(content_package_path)
+    resolved_package_path = _resolve_content_package_path(content_package_path)
+    service._content_package_path = resolved_package_path
+    application._content_package_path = resolved_package_path
     return service, resolved_ids
 
 
