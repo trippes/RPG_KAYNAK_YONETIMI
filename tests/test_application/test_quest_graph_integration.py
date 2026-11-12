@@ -62,6 +62,19 @@ class TestQuestGraphGameplayIntegration(unittest.TestCase):
             "right",
         )
 
+    def test_standalone_quests_can_coexist_with_graph_quests(self):
+        side_quest = Quest("side", "Bağımsız Yan Görev", ())
+        self.service.register_quest_definition(side_quest)
+
+        available_ids = {
+            quest.quest_id for quest in self.service.available_quests()
+        }
+
+        self.assertIn("root", available_ids)
+        self.assertIn("side", available_ids)
+        self.assertNotIn("left", available_ids)
+        self.assertNotIn("right", available_ids)
+
     def test_dialogue_actions_can_be_registered_by_content(self):
         calls = []
         self.service.register_dialogue_action(
