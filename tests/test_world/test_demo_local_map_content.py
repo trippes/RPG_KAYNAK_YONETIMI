@@ -70,7 +70,7 @@ class TestDemoLocalMapContent(unittest.TestCase):
                 )
 
     def test_river_and_bridge_are_declared_as_map_features(self):
-        for path in MAPS.glob("*.json"):
+        for path in square_map_paths():
             definition = load_map_definition(path)
             features = {item.feature_id: item for item in definition.features}
             self.assertIn("river", features, path.stem)
