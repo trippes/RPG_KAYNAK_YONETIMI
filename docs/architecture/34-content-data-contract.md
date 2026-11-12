@@ -2,19 +2,33 @@ Başlangıç İçeriği Veri Sözleşmesi
 
 Oynanış kuralları application/domain katmanında kalır. Başlangıç dünyası, karakter oluşturma ve açılış diyaloğu gibi ilk oyun deneyimine ait tanımlar veri dosyasından yüklenir.
 
-Başlangıç içerik dosyası
+İçerik paketi
 
-Kaynak dosya:
+Kaynak dizin:
 
-data/starter_content.json
+content/demo_eldoria/
+
+Paket manifesti:
+
+content/demo_eldoria/manifest.json
+
+Başlangıç dünyası ve karakter oluşturma tanımları:
+
+content/demo_eldoria/starter_content.json
+
+NPC tanımları:
+
+content/demo_eldoria/npcs.json
 
 Yükleme giriş noktası:
 
-from application.content_pack import load_starter_content, populate_opening_content
+from application.content_pack import load_starter_content, load_npc_definitions, populate_opening_content
 
-"load_starter_content()" başlangıç içerik tanımını yükler ve doğrular.
+"load_starter_content()" başlangıç dünyası tanımını yükler ve doğrular.
 
-"populate_opening_content()" doğrulanmış başlangıç içeriğini yeni oyun oturumuna kaydeder.
+"load_npc_definitions()" NPC kayıtlarını yükler, kimlikleri ve alanları doğrular.
+
+"populate_opening_content()" açılış aşamasında etkinleştirilen NPC kayıtlarını yeni oyun oturumuna ekler. Oynanış aşamasındaki NPC kayıtları kaynaklar ve pazarlar hazırlanırken etkinleştirilir.
 
 İçerik kapsamı
 
@@ -23,7 +37,7 @@ Başlangıç paketi şu öğeleri kapsar:
 - Başlangıç dünyası ve harita bağlantıları
 - Oyuncu karakterinin başlangıç tanımı
 - Başlangıç lokasyonları
-- Açılışta karşılaşılan NPC
+- NPC tanımları ayrı "npcs.json" dosyasında; açılış ve oynanış aşamasına göre yüklenir
 - Açılış diyaloğu
 - Karakter oluşturma için gerekli tanımlar
 
@@ -40,6 +54,6 @@ Sürümleme ve doğrulama
 
 Gelecekteki içerik paketleri
 
-Yeni görevler, NPC'ler, diyaloglar, kaynaklar, pazarlar ve karşılaşmalar ayrı içerik paketleri olarak tasarlanacaktır.
+Yeni NPC kayıtları mevcut "npcs.json" veri sözleşmesine eklenir. Görevler, diyaloglar, kaynaklar, pazarlar ve karşılaşmalar da aynı paket manifesti üzerinden ayrı veri dosyalarına ayrılacaktır.
 
 Bu paketler başlangıç içeriğine bağımlı olmak zorunda değildir. Her paket kendi kimliklerini, sürümünü ve doğrulama kurallarını taşımalıdır.
