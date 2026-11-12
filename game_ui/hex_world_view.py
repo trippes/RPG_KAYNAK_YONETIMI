@@ -82,7 +82,7 @@ class HexWorldView:
             )
             self.selected = start
             self.active = True
-            self.message = "Altıgen dünyaya geçildi. H: kare dünyaya dön."
+            self.message = "Altıgen dünyaya geçildi. Bağlı haritalara sınırdan geçebilirsin. H: kare dünyaya dön."
             return True
         except (OSError, ValueError, KeyError, RuntimeError) as error:
             self.runtime = None
@@ -105,12 +105,34 @@ class HexWorldView:
         return self.runtime.map_definition(self._entity().position.map_id)
 
     def _move(self, direction):
-        result = self.runtime.move(self.entity_id, direction)
+        entity = self._entity()
+        definition = self._map()
+        target = LocalHexPosition.from_hex_coord(
+            entity.position.cell.to_hex_coord().neighbor(direction)
+        )
+
+        # Leaving the local valid-cell mask can activate an authored world link.
+        if not definition.has_cell(target):
+            transition = next(
+                (
+                    item for item in definition.transitions
+                    if item.active
+                    and item.exit_direction == direction
+                    and entity.position.cell in item.source_cells
+                ),
+                None,
+            )
+            if transition is None:
+                self.message = "Bu yönde harita sınırı var; bağlantılı bir bölge bulunmuyor."
+                return False
+            result = self.runtime.transition(self.entity_id, transition.transition_id)
+        else:
+            result = self.runtime.move(self.entity_id, direction)
+
         if result.success:
             self.selected = result.position.cell
-            self.message = (
-                f"Konum: q={self.selected.q}, r={self.selected.r}"
-            )
+            destination = self.runtime.map_definition(result.position.map_id)
+            self.message = f"{destination.name} — q={self.selected.q}, r={self.selected.r}"
         else:
             self.message = result.detail or "Bu altıgen hücreye hareket edilemiyor."
         return result.success
@@ -129,28 +151,6 @@ class HexWorldView:
             moved = True
         self.selected = target
         self.message = f"Hedef hücreye ulaşıldı: q={target.q}, r={target.r}"
-        return True
-
-    def _use_transition(self):
-        entity = self._entity()
-        definition = self._map()
-        transition = next(
-            (
-                item for item in definition.transitions
-                if item.active and entity.position.cell in item.source_cells
-            ),
-            None,
-        )
-        if transition is None:
-            self.message = "Bu altıgen hücrede etkin bir dünya geçidi yok."
-            return False
-        result = self.runtime.transition(self.entity_id, transition.transition_id)
-        if not result.success:
-            self.message = result.detail or "Dünya geçişi gerçekleştirilemedi."
-            return False
-        self.selected = result.position.cell
-        destination = self.runtime.map_definition(result.position.map_id)
-        self.message = f"{destination.name} bölgesine geçildi."
         return True
 
     def handle(self, state):
@@ -184,8 +184,7 @@ class HexWorldView:
                 self.message = "Bu noktada geçerli bir altıgen hücre yok."
             return None
 
-        if state.pressed("confirm"):
-            self._use_transition()
+        # Enter does not change maps; travel is triggered by crossing a linked boundary.
         return None
 
     def _layout(self, definition, renderer):
@@ -294,5 +293,5 @@ class HexWorldView:
             max_width=renderer.width - 56,
         )
         renderer.footer(
-            "Oklar: NE / E / SE / W   Z: NW   X: SW   Enter: geçit   H: kare dünyaya dön   Esc: Menü"
+            "Oklar: NE / E / SE / W   Z: NW   X: SW   Sınırdan geç: bağlı harita   H: kare dünyaya dön   Esc: Menü"
         )
