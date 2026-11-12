@@ -109,6 +109,9 @@ class InputMapper:
                 "e": "equip",
                 "t": "lockpick",
                 "f": "force_lock",
+                "h": "hex_portal",
+                "z": "hex_north_west",
+                "x": "hex_south_west",
             }
 
             action = actions.get(key)
@@ -145,7 +148,7 @@ class InputMapper:
         }
 
         if self.backend is not None:
-            for letter in "gcipwqxlmdbnjtf":
+            for letter in "gcipwqxlmdbnjtfhz":
                 names[getattr(self.backend, f"K_{letter}", object())] = letter
             names[getattr(self.backend, "K_F5", object())] = "f5"
             names[getattr(self.backend, "K_F9", object())] = "f9"
