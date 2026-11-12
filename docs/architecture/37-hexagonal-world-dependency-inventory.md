@@ -132,14 +132,13 @@ Kod taramasında aşağıdaki paketler de incelendi. Bunlar ana dönüşümün y
 
 ### Test kapsamının genişletilmesi
 
-İlgili regresyon klasörleri ayrıca:
-- `tests/test_npc/` ve `tests/test_social/` mevcutsa NPC position/location akışları,
-- `tests/test_resources/` resource node, gathering, production ve resource persistence,
-- `tests/test_economy/` market location/trade ve economy persistence,
-- `tests/test_quests/` objective identity/graph/persistence,
-- `tests/test_character/` character actor links,
-- `tests/test_containers/` placement/custody/nesting,
-- `tests/test_combat/` combat state,
-- `tests/test_entity/` ve `tests/test_foundation/` Position compatibility
+Mevcut tree'de bulunan ilgili regresyon klasörleri:
+- `tests/test_resources/`: resource node, gathering, production ve resource persistence.
+- `tests/test_economy/`: market location/trade ve economy persistence.
+- `tests/test_quests/`: objective identity/graph/persistence.
+- `tests/test_character/`: character actor links.
+- `tests/test_containers/`: placement/custody/nesting.
+- `tests/test_entity/` ve `tests/test_foundation/`: Position compatibility.
+- `tests/test_locks/`, `tests/test_simulation/`, `tests/test_time/` ve `tests/test_core/`: mekânsal olmayan Core davranışlarının regresyon koruması.
 
-altıgen uygulama aşamalarında çalıştırılmalıdır. Klasör veya test adı mevcut snapshot'ta bulunmuyorsa test grubu mevcutmuş gibi varsayılmamalı; gerçek tree yeniden kontrol edilmelidir.
+Snapshot'ta ayrı `tests/test_npc/`, `tests/test_social/` veya `tests/test_combat/` klasörü bulunmuyor; NPC/social/combat regresyonu mevcut application/persistence/UI testleri içinden doğrulanmalıdır.
