@@ -1637,6 +1637,28 @@ class GameplayService:
         pending[quest.quest_id] = quest
         return quest
 
+    def accept_quest_by_id(
+        self,
+        quest_id: str,
+        owner_id: str | None = None,
+        inventory_id: str | None = None,
+    ) -> Quest:
+        """Accept a registered quest offer by its content-defined identifier."""
+        if not isinstance(quest_id, str) or not quest_id.strip():
+            raise ValueError("quest_id must be a non-empty string.")
+        bundle = self._current_bundle()
+        quest = bundle.quest_log.get(quest_id)
+        if quest is None:
+            quest = getattr(self, "_pending_quest_definitions", {}).get(quest_id)
+        if quest is None:
+            raise KeyError(f"Quest definition not found: {quest_id}")
+        if quest.state.value == "active":
+            return quest
+        return self.start_quest(
+            quest,
+            owner_id=owner_id,
+            reward_inventory_id=inventory_id,
+        )
 
     def quest_states(self) -> dict[str, str]:
         return {quest.quest_id: quest.state.value for quest in self._current_bundle().quest_log.all()}
