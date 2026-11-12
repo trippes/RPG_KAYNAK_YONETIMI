@@ -24,6 +24,7 @@ class QuestSnapshot:
             records.append({
                 "quest_id": quest.quest_id, "title": quest.title, "state": quest.state.value,
                 "sequential_objectives": quest.sequential_objectives,
+                "giver_npc_id": quest.giver_npc_id,
                 "reward": {"experience": quest.reward.experience, "currency": quest.reward.currency, "items": [list(item) for item in quest.reward.items], "reputation": [list(item) for item in quest.reward.reputation]},
                 "objectives": [{"objective_id": o.objective_id, "description": o.description, "objective_type": o.objective_type.value, "target_id": o.target_id, "required": o.required, "progress": o.progress, "optional": o.optional} for o in quest.objectives],
             })
@@ -62,6 +63,7 @@ class QuestSnapshot:
                             tuple(tuple(item) for item in record.get("reward", {}).get("reputation", ())),
                         ), state=QuestState(record["state"]),
                         sequential_objectives=record.get("sequential_objectives", False),
+                        giver_npc_id=record.get("giver_npc_id"),
                     )
                 except (KeyError, TypeError, ValueError) as error:
                     raise QuestPersistenceError("Invalid quest definition in snapshot.") from error
@@ -75,6 +77,10 @@ class QuestSnapshot:
             if not isinstance(sequential, bool):
                 raise QuestPersistenceError("sequential_objectives must be a boolean.")
             quest.sequential_objectives = sequential
+            giver_npc_id = record.get("giver_npc_id", getattr(quest, "giver_npc_id", None))
+            if giver_npc_id is not None and (not isinstance(giver_npc_id, str) or not giver_npc_id.strip()):
+                raise QuestPersistenceError("giver_npc_id must be a non-empty string or null.")
+            quest.giver_npc_id = giver_npc_id
             reward = record.get("reward") or {}
             quest.reward = Reward(
                 reward.get("experience", quest.reward.experience),
