@@ -760,7 +760,8 @@ class MainScreen:
                 self.TILE_SIZE * 2 - 2,
                 self.TILE_SIZE * 2 - 2,
             )
-            if landmark[5] == "tree":
+            visual_type = landmark[5]
+            if visual_type == "tree":
                 renderer.pg.draw.rect(
                     renderer.surface, (105, 70, 38),
                     renderer.pg.Rect(
@@ -795,6 +796,21 @@ class MainScreen:
                         self.TILE_SIZE // 2,
                     ),
                 )
+            elif visual_type == "gate":
+                post_width = max(3, self.TILE_SIZE // 4)
+                post_height = max(8, self.TILE_SIZE)
+                renderer.pg.draw.rect(
+                    renderer.surface, (111, 70, 39),
+                    renderer.pg.Rect(rect.x + 2, rect.bottom - post_height, post_width, post_height),
+                )
+                renderer.pg.draw.rect(
+                    renderer.surface, (111, 70, 39),
+                    renderer.pg.Rect(rect.right - post_width - 2, rect.bottom - post_height, post_width, post_height),
+                )
+                renderer.pg.draw.rect(
+                    renderer.surface, (151, 99, 53),
+                    renderer.pg.Rect(rect.x + 1, rect.y + 2, rect.width - 2, max(3, self.TILE_SIZE // 4)),
+                )
             else:
                 house_body = renderer.pg.Rect(
                     rect.x + 2,
@@ -802,10 +818,28 @@ class MainScreen:
                     rect.width - 4,
                     rect.height - self.TILE_SIZE // 2 - 2,
                 )
-                renderer.pg.draw.rect(renderer.surface, (210, 170, 105), house_body)
+                body_colors = {
+                    "forge": (116, 112, 105),
+                    "inn": (181, 129, 76),
+                    "market": (193, 157, 88),
+                    "house": (210, 170, 105),
+                    "tower": (151, 145, 126),
+                    "building": (210, 170, 105),
+                }
+                roof_colors = {
+                    "forge": (73, 77, 82),
+                    "inn": (112, 56, 43),
+                    "market": (153, 87, 45),
+                    "house": (150, 55, 45),
+                    "tower": (95, 91, 83),
+                    "building": (150, 55, 45),
+                }
+                renderer.pg.draw.rect(
+                    renderer.surface, body_colors.get(visual_type, (210, 170, 105)), house_body,
+                )
                 renderer.pg.draw.polygon(
                     renderer.surface,
-                    (150, 55, 45),
+                    roof_colors.get(visual_type, (150, 55, 45)),
                     (
                         (rect.x, house_body.y + 2),
                         (rect.centerx, rect.y + 1),
