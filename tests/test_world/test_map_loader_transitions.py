@@ -103,10 +103,11 @@ class TestMapPackageTransitions(unittest.TestCase):
         with self.assertRaisesRegex(MapDefinitionError, "reciprocal"):
             self._load({
                 "source": record("source", transitions=[
-                    {**transition("out", "target"), "bidirectional": True}
+                    {**transition("out", "target", source=(3, 1), destination=(7, 1)),
+                     "bidirectional": True}
                 ]),
                 "target": record("target", 8, 7, transitions=[
-                    {**transition("back", "source", source=(0, 1), destination=(3, 1)),
+                    {**transition("back", "source", source=(7, 1), destination=(3, 1)),
                      "bidirectional": True}
                 ]),
             })
