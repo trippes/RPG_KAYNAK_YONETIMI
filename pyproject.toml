@@ -21,7 +21,7 @@ game_ui = ["assets/*.png"]
 
 [tool.setuptools.data-files]
 "content" = ["content/active_package.json"]
-"content/demo_eldoria" = ["content/demo_eldoria/manifest.json", "content/demo_eldoria/starter_content.json", "content/demo_eldoria/npcs.json", "content/demo_eldoria/quests.json", "content/demo_eldoria/resources.json", "content/demo_eldoria/characters.json", "content/demo_eldoria/gameplay_rules.json"]
+"content/demo_eldoria" = ["content/demo_eldoria/manifest.json", "content/demo_eldoria/world.json", "content/demo_eldoria/starter_content.json", "content/demo_eldoria/npcs.json", "content/demo_eldoria/quests.json", "content/demo_eldoria/resources.json", "content/demo_eldoria/characters.json", "content/demo_eldoria/gameplay_rules.json"]
 "content/demo_eldoria/maps" = ["content/demo_eldoria/maps/*.json"]
 
 [tool.unittest]
