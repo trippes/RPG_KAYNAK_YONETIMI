@@ -706,9 +706,6 @@ class GameWindow:
         elif next_screen == "new_game":
             self._start_new_game()
             next_screen = "opening"
-        elif next_screen == "test_world":
-            self._start_test_world()
-            next_screen = None
         elif next_screen == "load_slots":
             next_screen = self._open_save_slots("load")
 

@@ -8,8 +8,7 @@ class MainMenu:
     OPTIONS = (
         ("Yeni Oyun", "new_game"),
         ("Devam Et", "continue"),
-        ("Test Dünyası", "test_world"),
-        ("Ayarlar", "settings"),
+            ("Ayarlar", "settings"),
         ("Oyun Rehberi", "guide"),
         ("Hakkında", "about"),
         ("Çıkış", "quit"),
