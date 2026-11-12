@@ -72,7 +72,7 @@ snapshot'larının sorumluluğundadır.
    seçim, hata/başarı geri bildirimi ve temel keyboard navigation eklendi.
 10. Başlangıç dünyası, karakter oluşturma ve açılış diyaloğu için
     `StarterContentIds` ve `populate_opening_content()` sözleşmesi oluşturuldu.
-    Başlangıç içeriği `data/starter_content.json` üzerinden yüklenir.
+    Başlangıç içeriği etkin içerik paketinin `starter_content.json` dosyasından yüklenir. Haritalar `maps/*.json` dosyalarında tanımlanır ve otomatik keşfedilir; ayrıntılar `docs/content/map-authoring.md` içindedir.
 
 ### Faz D — Kalite ve yayın hazırlığı — TAMAMLANDI
 
