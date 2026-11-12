@@ -418,5 +418,45 @@ class TestContentPack(unittest.TestCase):
             )
 
 
+
+    def test_npc_location_reference_must_resolve_to_a_map(self):
+        package = load_content_package(
+            Path(__file__).resolve().parents[2] / "content" / "demo_eldoria"
+        )
+        npcs = [dict(record) for record in load_npc_definitions()]
+        npcs[0]["location_id"] = "missing_map"
+        with self.assertRaisesRegex(ContentDefinitionError, "references missing map"):
+            _validate_content_references(
+                load_starter_content(), package.map_definitions, npcs,
+                load_quest_definitions(), load_resource_definitions(),
+                StarterContentIds(),
+            )
+
+    def test_quest_giver_reference_must_resolve_to_an_npc(self):
+        package = load_content_package(
+            Path(__file__).resolve().parents[2] / "content" / "demo_eldoria"
+        )
+        quests = [dict(record) for record in load_quest_definitions()]
+        quests[0]["giver_npc_id"] = "missing_npc"
+        with self.assertRaisesRegex(ContentDefinitionError, "missing giver NPC"):
+            _validate_content_references(
+                load_starter_content(), package.map_definitions,
+                load_npc_definitions(), quests, load_resource_definitions(),
+                StarterContentIds(),
+            )
+
+    def test_content_package_requires_exactly_one_starting_map(self):
+        package = load_content_package(
+            Path(__file__).resolve().parents[2] / "content" / "demo_eldoria"
+        )
+        maps = dict(package.map_definitions)
+        maps.pop("village")
+        with self.assertRaisesRegex(ContentDefinitionError, "exactly one map"):
+            _validate_content_references(
+                load_starter_content(), maps, load_npc_definitions(),
+                load_quest_definitions(), load_resource_definitions(),
+                StarterContentIds(),
+            )
+
 if __name__ == "__main__":
     unittest.main()
