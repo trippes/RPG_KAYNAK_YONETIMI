@@ -53,6 +53,7 @@ class QuestLogScreen:
         self.viewport_height = 470
         self._background = None
         self._background_attempted = False
+        self._branch_choice_rects = []
 
     def set_viewport(self, width, height):
         self.viewport_width = max(1, int(width))
@@ -167,6 +168,12 @@ class QuestLogScreen:
 
         if not state.mouse_clicked or state.mouse_pos is None:
             return None
+
+        for rect, source_id, group, target_id in self._branch_choice_rects:
+            if self._contains(rect, state.mouse_pos):
+                self.service.choose_quest_branch(source_id, group, target_id)
+                self.detail_scroll = 0
+                return None
 
         for index, rect in enumerate(self._tab_bounds()):
             if self._contains(rect, state.mouse_pos):
@@ -351,7 +358,31 @@ class QuestLogScreen:
         if quest is None:
             return 70
         giver_height = 24 if getattr(quest, "giver_npc_id", None) else 0
-        return 92 + giver_height + len(quest.objectives) * 50
+        branch_height = sum(
+            24 + (28 * len(targets) if selected is None else 0)
+            for _group, targets, selected in self._branch_groups(quest)
+        )
+        return 92 + giver_height + branch_height + len(quest.objectives) * 50
+
+    def _branch_groups(self, quest):
+        if getattr(quest.state, "value", quest.state) != "completed":
+            return ()
+        bundle = self.service.application.holder.current
+        graph = getattr(bundle, "quest_graph", None)
+        progress = getattr(bundle, "quest_graph_progress", None)
+        if graph is None or progress is None or quest.quest_id not in graph.quest_ids():
+            return ()
+        grouped = {}
+        for link in graph.outgoing(quest.quest_id):
+            if getattr(link.link_type, "value", link.link_type) == "alternative":
+                grouped.setdefault(link.branch_group, set()).add(link.target_quest_id)
+        result = []
+        for group, target_ids in sorted(grouped.items()):
+            targets = tuple(sorted(target_ids))
+            if len(targets) < 2:
+                continue
+            result.append((group, targets, progress.selected_branch(quest.quest_id, group)))
+        return tuple(result)
 
     def _render_list(self, renderer, quests):
         rect = renderer.pg.Rect(*self._list_bounds())
@@ -427,11 +458,49 @@ class QuestLogScreen:
                     max_width=rect.width - 36,
                 )
             heading_offset = 24
-        heading_y = rect.y + 78 + heading_offset - self.detail_scroll
+
+        self._branch_choice_rects = []
+        branch_groups = self._branch_groups(quest)
+        branch_offset = 0
+        branch_y = rect.y + 78 + heading_offset - self.detail_scroll
+        for group, targets, selected in branch_groups:
+            if rect.y + 62 <= branch_y <= rect.bottom - 24:
+                renderer.text("Görev yolu seçimi", rect.x + 18, branch_y, GOLD)
+            branch_y += 22
+            branch_offset += 22
+            if selected is not None:
+                target = self._quest_log().get(selected)
+                target_name = target.title if target is not None else selected
+                if rect.y + 62 <= branch_y <= rect.bottom - 24:
+                    renderer.text(
+                        f"Seçilen yol: {target_name}",
+                        rect.x + 18, branch_y, GOOD,
+                        max_width=rect.width - 36,
+                    )
+                branch_y += 28
+                branch_offset += 28
+                continue
+            for target_id in targets:
+                target = self._quest_log().get(target_id)
+                target_name = target.title if target is not None else target_id
+                button_rect = (
+                    rect.x + 18, branch_y, max(1, rect.width - 36), 24,
+                )
+                if rect.y + 62 <= branch_y and branch_y + 24 <= rect.bottom - 8:
+                    renderer.button(
+                        renderer.pg.Rect(button_rect), target_name,
+                    )
+                    self._branch_choice_rects.append(
+                        (button_rect, quest.quest_id, group, target_id)
+                    )
+                branch_y += 28
+                branch_offset += 28
+
+        heading_y = rect.y + 78 + heading_offset + branch_offset - self.detail_scroll
         if rect.y + 62 <= heading_y <= rect.bottom - 24:
             renderer.text("Hedefler", rect.x + 18, heading_y, GOLD)
 
-        y = rect.y + 106 + heading_offset - self.detail_scroll
+        y = rect.y + 106 + heading_offset + branch_offset - self.detail_scroll
         for objective in quest.objectives:
             if y >= rect.y + 62 and y + 42 <= rect.bottom - 10:
                 marker = "[x]" if objective.completed else "[ ]"
