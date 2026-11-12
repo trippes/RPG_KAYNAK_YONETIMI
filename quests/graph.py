@@ -80,6 +80,7 @@ class QuestGraphProgress:
         cls,
         data: Mapping[str, object],
         graph: "QuestGraph",
+        quest_states: Mapping[str, object] | None = None,
     ) -> "QuestGraphProgress":
         if not isinstance(data, Mapping):
             raise TypeError("Quest graph progress must be a mapping.")
@@ -96,6 +97,10 @@ class QuestGraphProgress:
             options = graph.branch_options(source, group)
             if len(options) < 2 or target not in options:
                 raise ValueError("Saved branch selection does not match quest content.")
+            if quest_states is not None and _state_value(
+                quest_states.get(source, "available")
+            ) != "completed":
+                raise ValueError("Saved branch selection requires a completed source quest.")
             key = (source, group)
             if key in progress._selections:
                 raise ValueError("Duplicate saved branch selection.")
