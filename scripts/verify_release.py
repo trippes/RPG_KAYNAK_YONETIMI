@@ -22,6 +22,14 @@ def run(label: str, *args: str) -> None:
 
 
 def main() -> int:
+    run(
+        "map contract tests",
+        PYTHON,
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_world/test_map_definition.py",
+    )
     run("complete test suite", PYTHON, "-m", "pytest", "-q")
     run(
         "compileall",
