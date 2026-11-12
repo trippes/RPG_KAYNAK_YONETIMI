@@ -132,3 +132,14 @@ __all__ = [
     "CONTAINER_SCHEMA", "CONTAINER_SCHEMA_VERSION", "ContainerPersistenceError", "ContainerSnapshot",
     "LOCK_SCHEMA", "LOCK_SCHEMA_VERSION", "LockPersistenceError", "LockSnapshot",
 ]
+
+from .hex_movement_rules import MovementRules
+from .hex_pathfinding import HexPathfinder
+from .hex_occupancy import HexOccupant, HexOccupancyRegistry
+from .hex_world_runtime import HexMovableEntity, HexWorldRuntime
+from .hex_transition_service import HexMapTransitionService
+
+__all__ += [
+    "MovementRules", "HexPathfinder", "HexOccupant", "HexOccupancyRegistry",
+    "HexMovableEntity", "HexWorldRuntime", "HexMapTransitionService",
+]

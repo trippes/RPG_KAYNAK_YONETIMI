@@ -30,6 +30,11 @@ class HexMapTransitionService:
             (item for item in source_map.transitions if item.transition_id == transition_id),
             None,
         )
+        if not entity.active or not entity.profile.can_move:
+            return MovementResult(
+                False, entity.position, MovementFailureReason.MOVEMENT_NOT_ALLOWED,
+                "Inactive or non-movable entities cannot use map transitions.",
+            )
         if transition is None or not transition.active:
             return MovementResult(
                 False, entity.position, MovementFailureReason.INVALID_TRANSITION,
