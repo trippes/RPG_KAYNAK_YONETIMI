@@ -42,27 +42,21 @@ class TestContentPack(unittest.TestCase):
         application = GameApplication.create_default()
         service, _ids = populate_opening_content(application)
 
-        self.assertIsNone(service.market_for_npc("village_trader"))
         self.assertIsNone(service.market_for_npc("innkeeper_mira"))
+        self.assertIsNone(service.market_for_npc("village_trader"))
 
         populate_gameplay_resources(service)
 
-        village_profile = service.market_for_npc("village_trader")
+        self.assertIsNone(service.market_for_npc("village_trader"))
+        self.assertIsNone(service.market_for_npc("village_craftsman"))
         inn_profile = service.market_for_npc("innkeeper_mira")
-        self.assertEqual(village_profile.market_id, "village_stalls")
         self.assertEqual(inn_profile.market_id, "village_inn")
-        self.assertEqual(
-            {offer.resource_type.value for offer in service.market_offers("village_stalls")},
-            {"wood", "iron_ore", "water"},
-        )
         self.assertEqual(
             {offer.resource_type.value for offer in service.market_offers("village_inn")},
             {"bread", "water"},
         )
-        self.assertIs(
-            application.holder.current.economy.merchants["merchant_village"].inventory,
-            application.holder.current.inventories["market_village_inventory"],
-        )
+        self.assertNotIn("merchant_village", application.holder.current.economy.merchants)
+        self.assertNotIn("trade_arda", application.holder.current.economy.merchants)
 
     def test_gameplay_resources_are_created_after_opening_phase(self):
         application = GameApplication.create_default()
@@ -77,46 +71,6 @@ class TestContentPack(unittest.TestCase):
         self.assertEqual(
             bundle.resource_nodes.get("north_mine_iron").location_id,
             "north_mine",
-        )
-
-    def test_other_npc_dialogue_opens_separate_trade_window(self):
-        application = GameApplication.create_default()
-        service, _ids = populate_opening_content(application)
-        populate_gameplay_resources(service)
-        bundle = application.holder.current
-        bundle.inventories["player"].add(
-            ResourceType("wood"), Quantity(3, ResourceUnit.ITEM),
-        )
-
-        dialogue = DialogueScreen(service)
-        dialogue.set_target_npc("village_craftsman")
-        self.assertIsNone(dialogue.handle(InputState(actions={"confirm"})))
-        self.assertEqual(dialogue.handle(InputState(actions={"confirm"})), "trade")
-
-        trade = TradeScreen(service)
-        trade.set_npc("village_craftsman")
-        quote = trade._quotes()[0]
-        self.assertEqual(quote[0], ResourceType("wood"))
-        result = service.sell_to_npc("village_craftsman", ResourceType("wood"), 1)
-        self.assertEqual(result.total.amount, 2)
-        self.assertEqual(bundle.inventories["player"].get(ResourceType("wood")).value, 2)
-        self.assertEqual(
-            bundle.inventories["trade_arda_inventory"].get(ResourceType("wood")).value,
-            1,
-        )
-        with tempfile.TemporaryDirectory() as directory:
-            save_path = Path(directory) / "npc-trade-save.json"
-            service.save(save_path)
-            service.load(save_path)
-        restored = application.holder.current
-        restored_partner = restored.economy.merchants["trade_arda"]
-        self.assertEqual(
-            restored_partner.accepted_resources,
-            (ResourceType("wood"), ResourceType("iron_ore")),
-        )
-        self.assertIs(
-            restored_partner.inventory,
-            restored.inventories["trade_arda_inventory"],
         )
 
     def test_opening_content_preserves_eren_dialogue_and_character_creation_factory(self):
