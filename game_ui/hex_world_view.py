@@ -14,6 +14,7 @@ from core.domain.spatial import (
 )
 from core.domain.spatial.hex_geometry import axial_to_pixel
 from game_ui.world_transform import WorldTransform
+from game_ui.world_rendering.terrain_renderer import HexTerrainRenderer
 from application.content_loader import load_content_package
 
 
@@ -41,6 +42,7 @@ class HexWorldView:
         self._hex_size = self.HEX_RADIUS
         self._center = (0, 0)
         self._world_transform = WorldTransform(hex_size=self.HEX_RADIUS)
+        self._terrain_renderer = HexTerrainRenderer()
 
     def _load_package(self):
         if self._package is None:
@@ -221,25 +223,10 @@ class HexWorldView:
         renderer.frame(definition.name, 0)
 
         for cell in sorted(definition.valid_cells, key=lambda item: (item.r, item.q)):
-            center_x, center_y = centers[cell]
-            radius = self._hex_size
-            polygon = [
-                (
-                    round(center_x + math.cos(math.radians(-90 + index * 60)) * radius),
-                    round(center_y + math.sin(math.radians(-90 + index * 60)) * radius),
-                )
-                for index in range(6)
-            ]
-            cell_data = definition.get_cell(cell)
-            color = self.TERRAIN_COLORS.get(
-                cell_data.terrain_id, (91, 105, 79)
+            self._terrain_renderer.draw_cell(
+                renderer, cell, definition.get_cell(cell), centers[cell],
+                self._hex_size, selected=(cell == self.selected),
             )
-            if cell_data.blocked:
-                color = (45, 65, 91)
-            if cell == self.selected:
-                color = (132, 157, 83)
-            renderer.pg.draw.polygon(renderer.surface, color, polygon)
-            renderer.pg.draw.polygon(renderer.surface, (35, 48, 38), polygon, 2)
 
         for feature in definition.features:
             for cell in feature.cells:
