@@ -131,6 +131,41 @@ class TestHexWorldView(unittest.TestCase):
         self.view.handle(InputState(mouse_wheel=-20))
         self.assertEqual(self.view._zoom, 0.75)
 
+    def test_render_composes_zoomed_terrain_and_world_entities(self):
+        class FakeDraw:
+            polygons = 0
+            circles = 0
+            lines = 0
+
+            @classmethod
+            def polygon(cls, *args, **kwargs):
+                cls.polygons += 1
+
+            @classmethod
+            def circle(cls, *args, **kwargs):
+                cls.circles += 1
+
+            @classmethod
+            def line(cls, *args, **kwargs):
+                cls.lines += 1
+
+        class FakeRenderer:
+            def __init__(self):
+                self.pg = SimpleNamespace(draw=FakeDraw)
+                self.surface = object()
+                self.width = 960
+                self.height = 640
+
+            def frame(self, *args, **kwargs): pass
+            def text(self, *args, **kwargs): pass
+            def footer(self, *args, **kwargs): pass
+
+        self.assertTrue(self.view.enter())
+        self.view._zoom = 1.4
+        self.view.render(FakeRenderer())
+        self.assertGreater(FakeDraw.polygons, 0)
+        self.assertGreater(FakeDraw.circles, 0)
+
     def test_main_screen_h_key_enters_and_leaves_hex_world(self):
         screen = MainScreen(self.service)
         screen.handle(InputState(actions={"hex_portal"}))
