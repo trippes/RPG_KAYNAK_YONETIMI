@@ -52,6 +52,41 @@ class TestContentPackageLoader(unittest.TestCase):
             set(package.map_definitions).isdisjoint(package.hex_map_definitions)
         )
 
+
+    def test_hex_transition_ids_are_unique_across_local_maps(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for map_id in ("first", "second"):
+                definition = {
+                    "schema_version": 2,
+                    "map_id": map_id,
+                    "name": map_id,
+                    "description": "",
+                    "geometry": {
+                        "type": "hex_axial",
+                        "orientation": "pointy_top",
+                        "coordinate_system": "axial",
+                    },
+                    "terrain_ids": ["grass"],
+                    "default_terrain": "grass",
+                    "valid_cells": [[0, 0]],
+                    "transitions": [{
+                        "id": "shared_exit",
+                        "source_cells": [[0, 0]],
+                        "exit_direction": "east",
+                        "target_map_id": "future",
+                        "target_entry_direction": "west",
+                        "target_cells": [],
+                        "active": False,
+                        "traversal_mode": "one_way",
+                    }],
+                }
+                (root / f"{map_id}.json").write_text(
+                    json.dumps(definition), encoding="utf-8"
+                )
+            with self.assertRaisesRegex(ContentPackageError, "Duplicate transition ID"):
+                _load_hex_maps(root, {})
+
     def test_package_rejects_unsupported_manifest_schema(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
