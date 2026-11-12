@@ -52,6 +52,10 @@ class TestHexOccupancy(unittest.TestCase):
         registry.add(HexOccupant("soft", position, blocks_movement=False, blocks_occupancy=True))
         self.assertFalse(registry.is_movement_blocked(position))
         self.assertTrue(registry.is_occupied(position))
+        registry.remove("soft")
+        registry.add(HexOccupant("wall", position, blocks_movement=True, blocks_occupancy=False))
+        self.assertTrue(registry.is_movement_blocked(position))
+        self.assertFalse(registry.is_occupied(position))
 
     def test_rejects_duplicate_occupancy_and_keeps_failed_move_atomic(self):
         registry = HexOccupancyRegistry()
@@ -128,6 +132,8 @@ class TestHexWorldRuntime(unittest.TestCase):
             "wraith", "npc", EntityPosition("forest", LocalHexPosition(0, 0)),
             MovementProfile(ignores_occupancy=True),
         )
+        path = runtime.path_to("wraith", LocalHexPosition(1, 0))
+        self.assertEqual(path, (LocalHexPosition(0, 0), LocalHexPosition(1, 0)))
         self.assertTrue(runtime.move("wraith", HexDirection.EAST).success)
         self.assertEqual(runtime.entity("wraith").position.cell, LocalHexPosition(1, 0))
 
@@ -142,6 +148,21 @@ class TestHexWorldRuntime(unittest.TestCase):
         result = runtime.transition("player", "closed")
         self.assertFalse(result.success)
         self.assertEqual(runtime.entity("player").position, EntityPosition("a", LocalHexPosition(0, 0)))
+
+    def test_transition_failure_keeps_source_position_when_all_entries_are_blocked(self):
+        map_a = make_map("a", transitions=[{
+            "id": "blocked-exit", "source_cells": [[0, 0]], "exit_direction": "east",
+            "target_map_id": "b", "target_entry_direction": "west",
+            "target_cells": [[0, 0]], "active": True, "traversal_mode": "one_way",
+        }])
+        map_b = make_map("b")
+        runtime = HexWorldRuntime({"a": map_a, "b": map_b})
+        source = EntityPosition("a", LocalHexPosition(0, 0))
+        runtime.register_entity("player", "player", source)
+        runtime.register_entity("blocker", "npc", EntityPosition("b", LocalHexPosition(0, 0)))
+        result = runtime.transition("player", "blocked-exit")
+        self.assertFalse(result.success)
+        self.assertEqual(runtime.entity("player").position, source)
 
     def test_transition_moves_entity_to_first_available_target_cell(self):
         map_a = make_map("a", transitions=[{

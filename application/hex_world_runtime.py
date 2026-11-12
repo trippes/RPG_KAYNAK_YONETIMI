@@ -198,6 +198,8 @@ class HexWorldRuntime:
         entity = self.entity(entity_id)
         if not isinstance(target, EntityPosition):
             raise TypeError("target must be an EntityPosition.")
+        if not entity.active or not entity.profile.can_move:
+            return MovementResult(False, entity.position, MovementFailureReason.MOVEMENT_NOT_ALLOWED, "Entity cannot change maps.")
         if target.map_id not in self._maps or not self.map_definition(target.map_id).has_cell(target.cell):
             return MovementResult(False, entity.position, MovementFailureReason.INVALID_TARGET, "Destination map cell is unavailable.")
         if self.map_definition(target.map_id).is_blocked(target.cell) and not entity.profile.can_traverse_blocked_cells:
