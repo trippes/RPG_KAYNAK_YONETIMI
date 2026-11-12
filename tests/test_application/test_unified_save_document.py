@@ -6,6 +6,7 @@ from pathlib import Path
 from unittest import mock
 
 from application import GameSaveDocument, GameSaveFileAdapter, SaveJsonCodec
+from application.migrations import migrate_save_data
 from application.save_file_adapter import SaveFileReadError, SaveFileWriteError
 from application.save_document import (
     SaveDocumentError,
@@ -372,6 +373,32 @@ class TestUnifiedSaveDocument(unittest.TestCase):
             SaveJsonCodec.encode(migrated),
             SaveJsonCodec.encode(self._document()),
         )
+
+
+    def test_legacy_npc_positions_are_backfilled_from_content_definitions(self):
+        original = {
+            "schema_version": 2,
+            "social": {
+                "npcs": [
+                    {"npc_id": "warden_lyra", "position": {"x": 0, "y": 0}},
+                    {"npc_id": "village_carpenter"},
+                    {"npc_id": "npc_with_saved_position", "position": {"x": 8, "y": 9}},
+                ]
+            },
+        }
+        definitions = [
+            {"id": "warden_lyra", "position": [16, 30]},
+            {"id": "village_carpenter", "position": [21, 15]},
+            {"id": "npc_with_saved_position", "position": [3, 4]},
+        ]
+
+        migrated = migrate_save_data(original, npc_definitions=definitions)
+
+        positions = {npc["npc_id"]: npc.get("position") for npc in migrated["social"]["npcs"]}
+        self.assertEqual(positions["warden_lyra"], {"x": 16, "y": 30})
+        self.assertEqual(positions["village_carpenter"], {"x": 21, "y": 15})
+        self.assertEqual(positions["npc_with_saved_position"], {"x": 8, "y": 9})
+        self.assertNotIn("position", original["social"]["npcs"][1])
 
 
 if __name__ == "__main__":

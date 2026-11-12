@@ -120,3 +120,11 @@ Karakter tanımı veri sözleşmesi
 Paket seçimi
 
 Motor, etkin paket kimliğini Python kodunda sabitlemez. "active_package.json" varsayılan paket dizinini belirler; çalıştırma sırasında "content_package_path" parametresiyle geçici/alternatif paket seçilebilir. Paket dosyalarının güvenli JSON yüklemesi ve manifest doğrulaması ortak ContentPackageLoader tarafından yapılır.
+
+Eski kayıt geçişi
+
+Sosyal kayıtlarda NPC konumu bulunmayan veya eski varsayılan (0, 0) konumunda kalan kayıtlar, "migrate_save_data" geçişinde etkin içerik paketinin NPC koordinatlarıyla tamamlanır. Geçiş NPC kimliğine özel bir koşul içermez; mevcut konumları olan kayıtları değiştirmez. Yeni paketlerdeki NPC'ler için ayrıca GameApplication içine kayıt düzeltmesi eklenmesi gerekmez.
+
+Başlangıç kimlikleri
+
+Motorun StarterContentIds alanları demo kimliklerini varsayılan olarak taşımaz. Paket içindeki "ids" alanından çözülür; isteğe bağlı çağrı zamanı geçersiz kılmaları ayrıca desteklenir.

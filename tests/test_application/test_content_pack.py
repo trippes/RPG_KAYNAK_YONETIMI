@@ -166,6 +166,16 @@ class TestContentPack(unittest.TestCase):
         )
         self.assertEqual(set(application.holder.current.social.dialogues), first_dialogue_ids)
 
+    def test_starter_ids_are_resolved_from_the_selected_package(self):
+        application = GameApplication.create_default()
+        _service, ids = populate_opening_content(application)
+
+        self.assertEqual(ids.world_id, "demo_valley")
+        self.assertEqual(ids.hero_id, "hero")
+        self.assertEqual(ids.village_id, "village")
+        self.assertEqual(ids.forest_id, "forest")
+        self.assertEqual(ids.faction_id, "wardens")
+
     def test_gameplay_can_use_an_explicit_alternate_content_package_directory(self):
         source = Path(__file__).resolve().parents[2] / "content" / "demo_eldoria"
         with tempfile.TemporaryDirectory() as directory:
