@@ -1,6 +1,7 @@
 import json
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
 from unittest import mock
 
@@ -12,6 +13,8 @@ from application import (
     SessionHolder,
 )
 from application.save_file_adapter import SaveFileReadError
+from application.actor_persistence import ActorRecord, ActorSnapshot
+from core.domain.spatial import Position
 from core.application import GameSession
 from core.persistence import CanonicalSessionState, PersistenceDocument
 from core.time import Tick
@@ -63,6 +66,14 @@ class TestCandidateRestore(unittest.TestCase):
             {"main": inventory}, nodes, jobs
         )
         return GameSaveDocument(core=core, gameplay=gameplay)
+
+    def _document_with_actor(self, location_id, position):
+        document = self._document()
+        actor = ActorRecord(
+            "hero", "world_main", "player", True, None, None,
+            location_id, Position(*position), "main",
+        )
+        return replace(document, actors=ActorSnapshot((actor,), ()))
 
     def _write(self, directory, document):
         path = Path(directory) / "save.json"
@@ -303,6 +314,28 @@ class TestCandidateRestore(unittest.TestCase):
         self.assertEqual(application.aktif_dunya().world_id, "world_main")
         application.advance_simulation(2)
         self.assertEqual(application.holder.current.simulation.current_tick.value, 2)
+
+    def test_save_with_removed_map_is_rejected_without_relocation(self):
+        application = GameApplication.create_default()
+        old = application.holder.current
+        with tempfile.TemporaryDirectory() as directory:
+            path = self._write(
+                directory, self._document_with_actor("removed_map", (5, 5)),
+            )
+            with self.assertRaisesRegex(ValueError, "references maps missing"):
+                application.load(path)
+        self.assertIs(application.holder.current, old)
+
+    def test_save_with_actor_outside_changed_map_dimensions_is_rejected(self):
+        application = GameApplication.create_default()
+        old = application.holder.current
+        with tempfile.TemporaryDirectory() as directory:
+            path = self._write(
+                directory, self._document_with_actor("village", (99, 99)),
+            )
+            with self.assertRaisesRegex(ValueError, "No relocation was applied"):
+                application.load(path)
+        self.assertIs(application.holder.current, old)
 
 
 if __name__ == "__main__":
