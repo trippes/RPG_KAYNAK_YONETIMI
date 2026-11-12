@@ -1,6 +1,6 @@
 # Eldoria — Aşama 3: Altıgen Dünya Haritası ve Karşılıklı Geçişler
 
-**Durum:** Uygulandı; nihai doğrulama GitHub Actions Linux ve Windows sonuçlarına bağlıdır.  
+**Durum:** Uygulandı; kod revizyonu `f09e38c215151404faf33387a880bfe2cdf0677d` üzerinde Linux ve Windows release-candidate doğrulamaları başarılıdır. Dokümantasyon revizyonunun CI kontrolü ayrıca tetiklenir.  
 **Dal:** `demo_eldoria`  
 **Dünya şeması:** JSON `schema_version: 1`  
 **Yerel altıgen harita şeması:** JSON `schema_version: 2` (değişmedi)  
@@ -86,6 +86,37 @@ Transition ID benzersizliği mevcut content package yükleyicisindeki global kon
 Dokuz mevcut schema-v1 kare harita aynı dosyalarda ve aynı veri modeliyle kalır. Bunların mevcut `world_position` alanları piksel/legacy dünya kataloğu koordinatlarıdır; yeni axial koordinat olarak yorumlanmaz.
 
 Mevcut sekiz çift yönlü bağlantı ve 16 yönlü geçiş kaydı korunur. `world.map_loader`, `MapDefinition`, `WorldMap` ve kare harita başlangıç akışı değiştirilmez. Yeni `world_map` yalnızca schema-v2 altıgen harita kataloğunu kapsar. Bu ayrım, kare haritaları bu aşamada dönüştürmeden yeni hex dünya modelini kurar.
+
+### 5.1 Korunan kare harita bağlantı envanteri
+
+Aşağıdaki bağlantılar legacy schema-v1 kare harita sisteminde kalır. Koordinatlar `[x, y]` tile koordinatıdır; axial dünya koordinatı değildir.
+
+| Kaynak | Hedef | Yön | Kaynak çıkış → hedef giriş |
+|---|---|---|---|
+| village | forest | north | [16, 0] → [16, 31] |
+| village | south_forest | south | [16, 31] → [16, 0] |
+| village | west_forest | west | [0, 16] → [31, 16] |
+| village | east_forest | east | [31, 16] → [0, 16] |
+| forest | north_mine | east | [31, 16] → [0, 16] |
+| east_forest | east_mine | east | [31, 16] → [0, 16] |
+| south_forest | south_mine | east | [31, 16] → [0, 16] |
+| west_forest | west_mine | south | [16, 31] → [16, 0] |
+
+Her satırın hedef haritasında ters yönlü ayrı bir geçiş kaydı bulunur. Böylece 8 bağlantı çifti ve toplam 16 yönlü geçiş korunur. Legacy world catalog koordinatları da değişmeden kalır:
+
+| Harita | Legacy world_position |
+|---|---|
+| village | (180, 220) |
+| forest | (180, 50) |
+| south_forest | (180, 390) |
+| west_forest | (30, 220) |
+| east_forest | (330, 220) |
+| north_mine | (300, 50) |
+| south_mine | (300, 390) |
+| west_mine | (30, 390) |
+| east_mine | (480, 220) |
+
+Bu tablo yalnızca koruma envanteridir; bu koordinatlar yeni `WorldHexPosition` değerlerine dönüştürülmemiştir.
 
 ## 6. Content package entegrasyonu
 
