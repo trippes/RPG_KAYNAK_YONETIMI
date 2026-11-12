@@ -38,6 +38,7 @@ def populate_carpenter_quest_demo(service):
         ),
         Reward(experience=35, currency=12),
         sequential_objectives=True,
+        giver_npc_id=CARPENTER_NPC_ID,
     )
     if existing is None:
         bundle.quest_log.add(quest)
