@@ -2,7 +2,7 @@ import json
 import unittest
 from pathlib import Path
 
-from world.map_loader import load_map_definition, load_map_definitions
+from world.map_loader import load_map_definition, load_map_definitions, build_world_map
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -123,6 +123,16 @@ class TestDemoLocalMapContent(unittest.TestCase):
             if transition.bidirectional
         }
         self.assertEqual(actual, EXPECTED_CONNECTIONS)
+
+    def test_world_catalog_preserves_landmark_visual_types(self):
+        definitions = load_map_definitions(MAPS)
+        world = build_world_map(definitions, "demo_world")
+        for map_id, definition in definitions.items():
+            location = world.get(map_id)
+            self.assertEqual(len(location.landmarks), len(definition.landmarks))
+            for world_landmark, map_landmark in zip(location.landmarks, definition.landmarks):
+                self.assertEqual(world_landmark[0], map_landmark.landmark_id)
+                self.assertEqual(world_landmark[5], map_landmark.visual_type)
 
 
 if __name__ == "__main__":

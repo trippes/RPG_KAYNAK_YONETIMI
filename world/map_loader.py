@@ -90,7 +90,7 @@ def build_world_map(definitions: dict[str, MapDefinition], world_id: str) -> Wor
         landmarks = tuple(
             (
                 item.landmark_id, item.name, item.position, item.activities,
-                item.description,
+                item.description, item.visual_type,
             )
             for item in definition.landmarks
         )
