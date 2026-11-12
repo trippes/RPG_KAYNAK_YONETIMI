@@ -16,9 +16,17 @@ def load_map_definition(path: str | Path) -> MapDefinition:
     source = Path(path)
     try:
         data = json.loads(source.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as error:
-        raise MapDefinitionError(f"Map definition could not be loaded: {source}") from error
-    return MapDefinition.from_dict(data)
+    except OSError as error:
+        raise MapDefinitionError(f"Map definition file could not be read: {source}") from error
+    except json.JSONDecodeError as error:
+        raise MapDefinitionError(
+            f"Invalid map JSON in '{source}' at line {error.lineno}, "
+            f"column {error.colno}: {error.msg}"
+        ) from error
+    try:
+        return MapDefinition.from_dict(data)
+    except MapDefinitionError as error:
+        raise MapDefinitionError(f"Invalid map definition in '{source}': {error}") from error
 
 
 def load_map_definitions(directory: str | Path) -> dict[str, MapDefinition]:
@@ -58,8 +66,8 @@ def load_map_definitions(directory: str | Path) -> dict[str, MapDefinition]:
                 reciprocal = any(
                     candidate.bidirectional
                     and candidate.target_map_id == definition.map_id
-                    and set(candidate.from_tiles).intersection(transition.target_tiles)
-                    and set(candidate.target_tiles).intersection(transition.from_tiles)
+                    and set(candidate.from_tiles) == set(transition.target_tiles)
+                    and set(candidate.target_tiles) == set(transition.from_tiles)
                     for candidate in target.transitions
                 )
                 if not reciprocal:

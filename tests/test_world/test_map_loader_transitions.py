@@ -86,6 +86,19 @@ class TestMapPackageTransitions(unittest.TestCase):
         }
         self.assertEqual(local_maps, {"large": (40, 18), "small": (16, 24)})
 
+    def test_bidirectional_exit_requires_exact_reciprocal_tile_sets(self):
+        with self.assertRaisesRegex(MapDefinitionError, "reciprocal"):
+            self._load({
+                "source": record("source", transitions=[
+                    {**transition("out", "target", source=(3, 0), destination=(0, 1)),
+                     "bidirectional": True}
+                ]),
+                "target": record("target", 8, 7, transitions=[
+                    {**transition("back", "source", source=(0, 1), destination=(3, 1), direction="west"),
+                     "bidirectional": True}
+                ]),
+            })
+
 
 if __name__ == "__main__":
     unittest.main()

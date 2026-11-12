@@ -5,8 +5,8 @@ from dataclasses import dataclass
 class LocalMapDefinition:
     world_id: str
     location_id: str
-    width: int = 32
-    height: int = 32
+    width: int
+    height: int
 
     def __post_init__(self):
         for name in ("world_id", "location_id"):

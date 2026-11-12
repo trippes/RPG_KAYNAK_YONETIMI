@@ -77,6 +77,10 @@ class TestWorldObjectPlacementRegistry(unittest.TestCase):
     def test_registry_validation_checks_existing_placements(self):
         self.registry.place(self.placement())
         self.registry.validate()
+    def test_local_map_dimensions_are_required(self):
+        with self.assertRaises(TypeError):
+            LocalMapDefinition("world_a", "village")
+
 
 if __name__ == "__main__":
     unittest.main()
