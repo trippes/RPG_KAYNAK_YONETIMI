@@ -1,19 +1,19 @@
-"""32x32 tile map for movement and local NPC positions."""
+"""Content-defined local tile map for movement and NPC positions."""
 
 from ..renderer import GOLD, TEXT_SOFT, duration_label
 from resources import Quantity, ResourceUnit
 from collections import deque
+from pathlib import Path
+
+from world import load_map_definition
 
 
 class MainScreen:
-    GRID_SIZE = 32
     TILE_SIZE = 16
-    RIVER_TILES = frozenset((18, 19))
-    BRIDGE_TILES = frozenset(((18, 16), (19, 16)))
-    VILLAGE_GATES = frozenset(((16, 0), (16, 31), (0, 16), (31, 16)))
 
     def __init__(self, service):
         self.service = service
+        self._map_definition_cache = {}
         self.selected = (16, 16)
         self.selected_npc_id = None
         self.selected_container_id = None
@@ -46,6 +46,45 @@ class MainScreen:
         world_map = self.service.application.holder.current.movement.map_for(actors[0].world_id)
         return world_map.get(actors[0].location_id) if world_map else None
 
+    def _map_definition(self, location=None):
+        location = location or self._location()
+        if location is None:
+            return None
+        map_id = location.location_id
+        if map_id not in self._map_definition_cache:
+            package_root = getattr(self.service, "_content_package_path", None)
+            if package_root is None:
+                package_root = Path(__file__).resolve().parents[2] / "content" / "demo_eldoria"
+            source = Path(package_root) / "maps" / f"{map_id}.json"
+            try:
+                self._map_definition_cache[map_id] = load_map_definition(source)
+            except (OSError, ValueError):
+                return None
+        return self._map_definition_cache[map_id]
+
+    def _map_width(self):
+        definition = self._map_definition()
+        return definition.size.width if definition is not None else 32
+
+    def _map_height(self):
+        definition = self._map_definition()
+        return definition.size.height if definition is not None else 32
+
+    def _gate_tiles(self, definition=None):
+        definition = definition or self._map_definition()
+        if definition is None:
+            return frozenset()
+        return frozenset(item.position for item in definition.landmarks if item.visual_type == "gate")
+
+    def _feature_tiles(self, feature_type, definition=None):
+        definition = definition or self._map_definition()
+        if definition is None:
+            return frozenset()
+        return frozenset(
+            tile for feature in definition.features if feature.feature_type == feature_type
+            for tile in feature.tiles
+        )
+
     def _actors(self):
         return self.service.state().actors
 
@@ -58,11 +97,19 @@ class MainScreen:
         )
 
     def _landmarks(self):
-        location = self._location()
-        return tuple(
-            landmark for landmark in (location.landmarks if location else ())
-            if self._resource_is_available(landmark)
-        )
+        definition = self._map_definition()
+        if definition is None:
+            return ()
+        result = []
+        for item in definition.landmarks:
+            landmark = (
+                item.landmark_id, item.name, item.position, item.activities,
+                item.description, item.visual_type, item.resource_node_id,
+                item.walkable, item.interactable, item.landmark_type,
+            )
+            if self._resource_is_available(landmark):
+                result.append(landmark)
+        return tuple(result)
 
     def _landmark_at(self, tile):
         return next(
@@ -115,28 +162,8 @@ class MainScreen:
         dy = max(placement.y - actor_y, 0, actor_y - (placement.y + placement.height - 1))
         return max(dx, dy) <= 1
 
-    def _wood_node_id(self):
-        location = self._location()
-        if location is None:
-            return None
-        return "forest_wood" if location.location_id == "forest" else f"{location.location_id}_wood"
-
     def _node_id_for_landmark(self, landmark):
-        if landmark is None:
-            return self._wood_node_id()
-        if "tree" in str(landmark[0]).lower() or "ağaç" in str(landmark[1]).lower():
-            return (
-                "forest_wood"
-                if landmark[0] == "forest_tree_01"
-                else f"{landmark[0]}_wood"
-            )
-        if "mine" in str(landmark[0]).lower() or "maden" in str(landmark[1]).lower():
-            return (
-                "north_iron_mine"
-                if self._location().location_id == "forest"
-                else str(landmark[0])
-            )
-        return self._wood_node_id()
+        return landmark[6] if landmark is not None else None
 
     def _gather_at_selected_tree(self):
         landmark = self._landmark_at(self.selected)
@@ -178,14 +205,7 @@ class MainScreen:
         return node is not None and node.current_quantity.value > 0
 
     def _is_resource_landmark(self, landmark):
-        landmark_id = str(landmark[0]).lower()
-        landmark_name = str(landmark[1]).lower()
-        return (
-            "tree" in landmark_id
-            or "ağaç" in landmark_name
-            or "mine" in landmark_id
-            or "maden" in landmark_name
-        )
+        return landmark[9] == "resource" or landmark[6] is not None
 
     def _resource_is_available(self, landmark):
         if not self._is_resource_landmark(landmark):
@@ -201,65 +221,37 @@ class MainScreen:
         return None
 
     def _blocked_tiles(self):
-        """Return tiles that cannot be crossed by local movement."""
+        """Return blocked tiles declared by the active map and world objects."""
         blocked = set()
         location = self._location()
-        if location is None:
+        definition = self._map_definition(location)
+        if location is None or definition is None:
             return blocked
+        blocked.update(definition.blocked_tiles)
+        for feature in definition.features:
+            if not feature.walkable:
+                blocked.update(feature.tiles)
         actors = self._actors()
         if actors:
-            blocked.update(self.service.blocked_world_object_tiles(actors[0].world_id, location.location_id))
-        for landmark in location.landmarks:
-            landmark_id = str(landmark[0]).lower()
-            name = str(landmark[1]).lower()
-            if "river" not in landmark_id and "nehir" not in name:
-                if landmark[3]:
-                    continue
-                x, y = tuple(landmark[2])
-                blocked.update(
-                    (tile_x, tile_y)
-                    for tile_x in range(x, min(self.GRID_SIZE, x + 2))
-                    for tile_y in range(y, min(self.GRID_SIZE, y + 2))
-                )
-        blocked.update(
-            (x, y)
-            for x in self.RIVER_TILES
-            for y in range(self.GRID_SIZE)
-            if (x, y) not in self.BRIDGE_TILES
-        )
-        if location.location_id == "village":
             blocked.update(
-                (x, y)
-                for x in range(self.GRID_SIZE)
-                for y in range(self.GRID_SIZE)
-                if (
-                    x in (0, self.GRID_SIZE - 1)
-                    or y in (0, self.GRID_SIZE - 1)
+                self.service.blocked_world_object_tiles(
+                    actors[0].world_id, location.location_id,
                 )
-                and (x, y) not in self.VILLAGE_GATES
             )
         return blocked
 
     def _is_walkable(self, tile, target=None):
         x, y = tile
-        if not (0 <= x < self.GRID_SIZE and 0 <= y < self.GRID_SIZE):
+        if not (0 <= x < self._map_width() and 0 <= y < self._map_height()):
             return False
         if tile not in self._blocked_tiles():
             return True
         if tile != target:
             return False
-        landmark = next(
-            (
-                item for item in (self._location().landmarks if self._location() else ())
-                if tuple(item[2]) == tile
-            ),
-            None,
-        )
+        landmark = self._landmark_at(tile)
         if landmark is None:
             return self._npc_at(tile) is not None
-        landmark_id = str(landmark[0]).lower()
-        landmark_name = str(landmark[1]).lower()
-        return bool(landmark[3]) or "tree" in landmark_id or "ağaç" in landmark_name
+        return bool(landmark[7] or landmark[8])
 
     def _path_to(self, start, target):
         if start == target:
@@ -303,20 +295,22 @@ class MainScreen:
         self.selected = target
 
     def _grid_origin(self):
-        size = self.GRID_SIZE * self.TILE_SIZE
-        return ((self.renderer_width - size) // 2, 54)
+        width = self._map_width() * self.TILE_SIZE
+        height = self._map_height() * self.TILE_SIZE
+        return ((self.renderer_width - width) // 2, max(54, (self.renderer_height - height) // 2))
 
     def _tile_size_for(self, renderer):
         available_width = max(320, renderer.width - 48)
         available_height = max(320, renderer.height - 150)
-        return max(8, min(available_width // self.GRID_SIZE, available_height // self.GRID_SIZE))
+        return max(8, min(available_width // self._map_width(), available_height // self._map_height()))
 
-    @staticmethod
-    def _position(position, fallback=(16, 16)):
+    def _position(self, position, fallback=None):
+        if fallback is None:
+            fallback = (self._map_width() // 2, self._map_height() // 2)
         if position is None:
             return fallback
         x, y = int(position.x), int(position.y)
-        return (x, y) if 0 <= x < 32 and 0 <= y < 32 else fallback
+        return (x, y) if 0 <= x < self._map_width() and 0 <= y < self._map_height() else fallback
 
     def _move_player(self, dx, dy):
         actors = self._actors()
@@ -325,7 +319,7 @@ class MainScreen:
         actor = actors[0]
         x, y = self._position(actor.position)
         next_x, next_y = x + dx, y + dy
-        if not (0 <= next_x < self.GRID_SIZE and 0 <= next_y < self.GRID_SIZE):
+        if not (0 <= next_x < self._map_width() and 0 <= next_y < self._map_height()):
             if self._cross_boundary(actor, dx, dy):
                 return
             next_x = max(0, min(self.GRID_SIZE - 1, next_x))
@@ -354,14 +348,15 @@ class MainScreen:
         location = world_map.get(actor.location_id) if world_map else None
         if location is None or location.position is None:
             return False
-        x, y = self._position(actor.position)
-        gate_tile = (x, y)
-        if location.location_id == "village" and gate_tile not in self.VILLAGE_GATES:
-            self.message = "Köyden yalnızca kapılardan çıkabilirsin."
+        current_gate = self._position(actor.position)
+        current_definition = self._map_definition(location)
+        current_gates = self._gate_tiles(current_definition)
+        if current_gates and current_gate not in current_gates:
+            self.message = "Bu bölgeden yalnızca tanımlı geçiş noktalarından çıkabilirsin."
             return True
-        neighbors = world_map.neighbors(actor.location_id)
+
         candidates = []
-        for neighbor in neighbors:
+        for neighbor in world_map.neighbors(actor.location_id):
             if neighbor.position is None:
                 continue
             offset_x = neighbor.position[0] - location.position[0]
@@ -373,28 +368,41 @@ class MainScreen:
         if not candidates:
             self.message = "Bu yönde başka bir yerel harita yok."
             return True
+
         destination = sorted(candidates, key=lambda item: item.location_id)[0]
-        if destination.location_id == "village":
-            target_gate = (
-                (16, 31) if dy < 0 else
-                (16, 0) if dy > 0 else
-                (31, 16) if dx < 0 else
-                (0, 16)
-            )
-            if target_gate not in self.VILLAGE_GATES:
-                self.message = "Köye yalnızca kapılardan girebilirsin."
-                return True
-        self.service.place_actor(actor.actor_id, destination.location_id)
+        destination_definition = self._map_definition(destination)
+        destination_gates = self._gate_tiles(destination_definition)
         target = (
-            0 if dx > 0 else self.GRID_SIZE - 1 if dx < 0 else self._position(actor.position)[0],
-            0 if dy > 0 else self.GRID_SIZE - 1 if dy < 0 else self._position(actor.position)[1],
+            (0 if dx > 0 else self._map_width() - 1, current_gate[1])
+            if dx else
+            (current_gate[0], 0 if dy > 0 else self._map_height() - 1)
         )
+        if destination_gates and destination_definition is not None:
+            target_edge = (
+                "west" if dx > 0 else "east" if dx < 0 else
+                "north" if dy > 0 else "south"
+            )
+            def on_target_edge(tile):
+                if target_edge == "west":
+                    return tile[0] == 0
+                if target_edge == "east":
+                    return tile[0] == destination_definition.size.width - 1
+                if target_edge == "north":
+                    return tile[1] == 0
+                return tile[1] == destination_definition.size.height - 1
+            edge_tiles = [tile for tile in destination_gates if on_target_edge(tile)]
+            if not edge_tiles:
+                self.message = "Hedef haritada bu yönde tanımlı bir geçiş yok."
+                return True
+            target = min(
+                edge_tiles,
+                key=lambda tile: abs(tile[0] - current_gate[0]) + abs(tile[1] - current_gate[1]),
+            )
+
+        self.service.place_actor(actor.actor_id, destination.location_id)
         self._complete_tile_move(actor.actor_id, target)
         self.selected = target
-        self.message = (
-            f"{destination.name} bölgesine geçildi. "
-            f"Adım: {self.steps_taken}."
-        )
+        self.message = f"{destination.name} bölgesine geçildi. Adım: {self.steps_taken}."
         return True
 
     def _has_required_key(self, inventory_id, lock):
