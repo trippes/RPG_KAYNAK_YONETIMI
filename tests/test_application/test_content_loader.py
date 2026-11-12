@@ -6,6 +6,7 @@ from pathlib import Path
 from core.domain.spatial import WorldHexPosition
 from application.content_loader import (
     ContentPackageError,
+    _load_hex_maps,
     load_content_package,
 )
 
