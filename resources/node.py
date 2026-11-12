@@ -87,6 +87,11 @@ class WorldResourceNode:
         return self._gathering_duration_ticks
 
     @property
+    def duration_ticks(self) -> Tick:
+        """Canonical content-facing duration for this gatherable node."""
+        return self._gathering_duration_ticks
+
+    @property
     def quantity(self) -> Quantity:
         return self._quantity
 
