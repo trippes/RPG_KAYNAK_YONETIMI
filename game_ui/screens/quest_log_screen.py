@@ -26,7 +26,6 @@ class QuestLogScreen:
     )
     CATEGORY_COLORS = {
         "active": WARN,
-        "available": TEXT_SOFT,
         "completed": GOOD,
         "failed": BAD,
     }
