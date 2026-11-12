@@ -86,7 +86,7 @@ class HexWorldRuntime:
         entity = HexMovableEntity(entity_id, kind, position, profile, active)
         self._occupancy.add(HexOccupant(
             entity_id, position, blocks_movement, blocks_occupancy, kind,
-        ))
+        ), ignore_blockers=profile.ignores_occupancy)
         self._entities[entity_id] = entity
         return entity
 
@@ -126,9 +126,9 @@ class HexWorldRuntime:
         result = MovementRules.evaluate(request, self.map_definition(entity.position.map_id))
         if not result.success:
             return result
-        if not self._occupancy.can_enter(destination, excluding=entity_id):
+        if not entity.profile.ignores_occupancy and not self._occupancy.can_enter(destination, excluding=entity_id):
             return MovementResult(False, entity.position, MovementFailureReason.OCCUPIED_CELL, "Target cell is occupied or movement-blocked.")
-        self._occupancy.move(entity_id, destination)
+        self._occupancy.move(entity_id, destination, ignore_blockers=entity.profile.ignores_occupancy)
         self._entities[entity_id] = replace(entity, position=destination)
         return MovementResult(True, destination)
 
@@ -137,7 +137,10 @@ class HexWorldRuntime:
         if not entity.active or not entity.profile.can_move:
             return None
         map_definition = self.map_definition(entity.position.map_id)
-        blocked = self._occupancy.blocked_cells(map_definition.map_id, excluding=entity_id)
+        blocked = (
+            frozenset() if entity.profile.ignores_occupancy
+            else self._occupancy.blocked_cells(map_definition.map_id, excluding=entity_id)
+        )
         return HexPathfinder.find_path(map_definition, entity.position.cell, goal, entity.profile, blocked)
 
     def move_toward(self, entity_id: str, goal: LocalHexPosition) -> MovementResult:
@@ -160,7 +163,10 @@ class HexWorldRuntime:
             target = EntityPosition(entity.position.map_id, cell)
             request = MovementRequest(entity_id, entity.position, target, entity.profile)
             result = MovementRules.evaluate(request, map_definition)
-            if result.success and self._occupancy.can_enter(target, excluding=entity_id):
+            if result.success and (
+                entity.profile.ignores_occupancy
+                or self._occupancy.can_enter(target, excluding=entity_id)
+            ):
                 distance = cell.to_hex_coord().distance_to(threat.to_hex_coord())
                 candidates.append((distance, -direction.value[0], -direction.value[1], cell))
         if not candidates:
@@ -196,9 +202,9 @@ class HexWorldRuntime:
             return MovementResult(False, entity.position, MovementFailureReason.INVALID_TARGET, "Destination map cell is unavailable.")
         if self.map_definition(target.map_id).is_blocked(target.cell) and not entity.profile.can_traverse_blocked_cells:
             return MovementResult(False, entity.position, MovementFailureReason.BLOCKED_CELL, "Destination cell is blocked.")
-        if not self._occupancy.can_enter(target, excluding=entity_id):
+        if not entity.profile.ignores_occupancy and not self._occupancy.can_enter(target, excluding=entity_id):
             return MovementResult(False, entity.position, MovementFailureReason.OCCUPIED_CELL, "Destination cell is occupied or movement-blocked.")
-        self._occupancy.move(entity_id, target)
+        self._occupancy.move(entity_id, target, ignore_blockers=entity.profile.ignores_occupancy)
         self._entities[entity_id] = replace(entity, position=target)
         return MovementResult(True, target)
 

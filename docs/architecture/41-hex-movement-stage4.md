@@ -32,6 +32,10 @@ Altı yönün tek doğruluk kaynağı `HexDirection` enum'udur. Sabit feet, hız
 - `blocks_movement`: A* aramasında hücreyi geçiş engeli yapar.
 - `blocks_occupancy`: başka varlığın aynı hücreye yerleşmesini engeller.
 
+Hareket profili `ignores_occupancy=True` olduğunda varlık occupancy engellerini
+yok sayabilir; bu istisna arazi, valid_cells, engel ve komşuluk doğrulamasını
+atlamaz. Varlık yine registry'de tutulur.
+
 Hareket ve harita geçişi önce hedefi doğrular, sonra occupancy kaydını ve entity konumunu tek uygulama adımında günceller. Başarısız işlemde kaynak konum ve occupancy kaydı korunur.
 
 ## 4. Yol bulma
@@ -40,7 +44,7 @@ Hareket ve harita geçişi önce hedefi doğrular, sonra occupancy kaydını ve 
 - `valid_cells` dışına çıkmaz,
 - engelli ve movement-blocking hücreleri atlar,
 - MovementProfile arazi/engel kurallarını uygular,
-- occupancy engellerini dikkate alır,
+- occupancy engellerini dikkate alır; `ignores_occupancy` profili bunları yok sayar,
 - deterministik eşitlik sıralaması kullanır.
 
 Dönüş değeri başlangıç ve hedef hücrelerini içeren immutable tuple'dır; yol yoksa `None` döner. Hareket runtime'ı otomatik olarak tüm yolu yürütmez; `move_toward` yalnızca ilk adımı uygular.

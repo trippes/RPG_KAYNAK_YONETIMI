@@ -31,12 +31,12 @@ class HexOccupancyRegistry:
     def __init__(self):
         self._occupants: dict[str, HexOccupant] = {}
 
-    def add(self, occupant: HexOccupant) -> None:
+    def add(self, occupant: HexOccupant, *, ignore_blockers: bool = False) -> None:
         if not isinstance(occupant, HexOccupant):
             raise TypeError("occupant must be a HexOccupant.")
         if occupant.entity_id in self._occupants:
             raise ValueError(f"Duplicate hex occupant: {occupant.entity_id}")
-        if not self.can_enter(occupant.position):
+        if not ignore_blockers and not self.can_enter(occupant.position):
             raise ValueError("The target hex is occupied or movement-blocked.")
         self._occupants[occupant.entity_id] = occupant
 
@@ -77,14 +77,14 @@ class HexOccupancyRegistry:
     def can_enter(self, position: EntityPosition, excluding: str | None = None) -> bool:
         return not self.is_occupied(position, excluding) and not self.is_movement_blocked(position, excluding)
 
-    def move(self, entity_id: str, target: EntityPosition) -> HexOccupant:
+    def move(self, entity_id: str, target: EntityPosition, *, ignore_blockers: bool = False) -> HexOccupant:
         """Atomically relocate an occupant after checking all other blockers."""
         current = self.get(entity_id)
         if current is None:
             raise KeyError(f"Unknown hex occupant: {entity_id}")
         if not isinstance(target, EntityPosition):
             raise TypeError("target must be an EntityPosition.")
-        if not self.can_enter(target, excluding=entity_id):
+        if not ignore_blockers and not self.can_enter(target, excluding=entity_id):
             raise ValueError("The target hex is occupied or movement-blocked.")
         updated = HexOccupant(
             current.entity_id, target, current.blocks_movement,

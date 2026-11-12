@@ -32,12 +32,15 @@ class MovementProfile:
     can_move: bool = True
     allowed_terrain_ids: frozenset[str] | None = None
     can_traverse_blocked_cells: bool = False
+    ignores_occupancy: bool = False
 
     def __post_init__(self) -> None:
         if not isinstance(self.can_move, bool):
             raise TypeError("can_move must be a boolean.")
         if not isinstance(self.can_traverse_blocked_cells, bool):
             raise TypeError("can_traverse_blocked_cells must be a boolean.")
+        if not isinstance(self.ignores_occupancy, bool):
+            raise TypeError("ignores_occupancy must be a boolean.")
         if self.allowed_terrain_ids is not None:
             try:
                 values = frozenset(self.allowed_terrain_ids)

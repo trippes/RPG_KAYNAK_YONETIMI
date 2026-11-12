@@ -28,6 +28,10 @@ class TestHexMovementContracts(unittest.TestCase):
     def test_movement_profile_normalizes_terrain_capabilities(self):
         profile = MovementProfile(allowed_terrain_ids={"grass", "road"})
         self.assertEqual(profile.allowed_terrain_ids, frozenset({"grass", "road"}))
+        self.assertFalse(profile.ignores_occupancy)
+        self.assertTrue(MovementProfile(ignores_occupancy=True).ignores_occupancy)
+        with self.assertRaises(TypeError):
+            MovementProfile(ignores_occupancy=1)
         with self.assertRaises(TypeError):
             MovementProfile(can_move=1)
         with self.assertRaises(ValueError):

@@ -121,6 +121,16 @@ class TestHexWorldRuntime(unittest.TestCase):
         movable.register_entity("crate", "object", EntityPosition("forest", LocalHexPosition(0, 0)), MovementProfile())
         self.assertTrue(movable.move("crate", HexDirection.EAST).success)
 
+    def test_ignores_occupancy_profile_can_overlap_and_path_through_occupants(self):
+        runtime = HexWorldRuntime({"forest": self.map})
+        runtime.register_entity("guard", "npc", EntityPosition("forest", LocalHexPosition(1, 0)))
+        runtime.register_entity(
+            "wraith", "npc", EntityPosition("forest", LocalHexPosition(0, 0)),
+            MovementProfile(ignores_occupancy=True),
+        )
+        self.assertTrue(runtime.move("wraith", HexDirection.EAST).success)
+        self.assertEqual(runtime.entity("wraith").position.cell, LocalHexPosition(1, 0))
+
     def test_transition_preserves_position_when_inactive_or_unavailable(self):
         map_a = make_map("a", transitions=[{
             "id": "closed", "source_cells": [[0, 0]], "exit_direction": "east",

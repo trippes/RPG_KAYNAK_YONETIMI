@@ -27,7 +27,7 @@ class HexPathfinder:
             profile = MovementProfile()
         if not isinstance(profile, MovementProfile):
             raise TypeError("profile must be a MovementProfile.")
-        blocked = frozenset(blocked_cells)
+        blocked = frozenset() if profile.ignores_occupancy else frozenset(blocked_cells)
         if any(not isinstance(cell, LocalHexPosition) for cell in blocked):
             raise TypeError("blocked_cells must contain LocalHexPosition values.")
         if not map_definition.has_cell(start) or not map_definition.has_cell(goal):
