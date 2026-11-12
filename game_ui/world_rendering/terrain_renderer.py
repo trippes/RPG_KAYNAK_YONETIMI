@@ -8,6 +8,11 @@ class HexTerrainRenderer:
     SELECTED_COLOR = (132, 157, 83)
 
     @staticmethod
+    def is_visible(center, radius, width, height):
+        x, y = center
+        return not (x + radius < 0 or y + radius < 0 or x - radius > width or y - radius > height)
+
+    @staticmethod
     def polygon_for(center, radius):
         if radius <= 0:
             raise ValueError("radius must be greater than zero.")
