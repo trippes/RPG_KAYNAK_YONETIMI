@@ -70,6 +70,29 @@ class TestMapDefinition(unittest.TestCase):
         with self.assertRaises(MapDefinitionError):
             MapDefinition.from_dict(data)
 
+    def test_reads_optional_world_and_starting_positions(self):
+        data = valid_definition()
+        data["world_position"] = [120, 240]
+        data["starting_position"] = [2, 2]
+        data["metadata"] = {"biome": "temperate"}
+        definition = MapDefinition.from_dict(data)
+
+        self.assertEqual(definition.world_position, (120, 240))
+        self.assertEqual(definition.starting_position, (2, 2))
+        self.assertEqual(definition.metadata, {"biome": "temperate"})
+
+    def test_rejects_starting_position_outside_map_bounds(self):
+        data = valid_definition()
+        data["starting_position"] = [4, 2]
+        with self.assertRaisesRegex(MapDefinitionError, "outside map"):
+            MapDefinition.from_dict(data)
+
+    def test_rejects_unknown_top_level_fields(self):
+        data = valid_definition()
+        data["unexpected"] = True
+        with self.assertRaisesRegex(MapDefinitionError, "unsupported fields"):
+            MapDefinition.from_dict(data)
+
 
 if __name__ == "__main__":
     unittest.main()

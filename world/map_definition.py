@@ -79,6 +79,9 @@ class MapDefinition:
     description: str
     size: MapSize
     terrain: TerrainDefinition
+    world_position: tuple[int, int] | None = None
+    starting_position: tuple[int, int] | None = None
+    metadata: dict[str, Any] | None = None
     blocked_tiles: tuple[tuple[int, int], ...] = ()
     features: tuple[MapFeature, ...] = ()
     landmarks: tuple[LandmarkDefinition, ...] = ()
@@ -90,6 +93,10 @@ class MapDefinition:
             raise MapDefinitionError("Map definition must be an object.")
         if data.get("schema_version") != 1:
             raise MapDefinitionError("Unsupported map definition schema version.")
+        allowed = {"schema_version", "map_id", "name", "description", "size", "terrain", "world_position", "starting_position", "metadata", "blocked_tiles", "features", "landmarks", "transitions"}
+        unknown = sorted(set(data) - allowed)
+        if unknown:
+            raise MapDefinitionError("Map definition has unsupported fields: " + ", ".join(unknown))
         required = {"schema_version", "map_id", "name", "description", "size", "terrain"}
         missing = sorted(required - data.keys())
         if missing:
@@ -104,6 +111,15 @@ class MapDefinition:
             description=_string(data["description"], "description", allow_empty=True),
             size=MapSize(size_data.get("width"), size_data.get("height")),
             terrain=TerrainDefinition(terrain_data.get("default_tile")),
+            world_position=(
+                _coordinate(data["world_position"], "world_position")
+                if data.get("world_position") is not None else None
+            ),
+            starting_position=(
+                _coordinate(data["starting_position"], "starting_position")
+                if data.get("starting_position") is not None else None
+            ),
+            metadata=_metadata(data.get("metadata")),
             blocked_tiles=tuple(_coordinate(item, "blocked_tiles item") for item in data.get("blocked_tiles", ())),
             features=tuple(_feature(item) for item in data.get("features", ())),
             landmarks=tuple(_landmark(item) for item in data.get("landmarks", ())),
@@ -119,6 +135,8 @@ class MapDefinition:
             coordinates.extend(feature.tiles)
         for landmark in self.landmarks:
             coordinates.append(landmark.position)
+        if self.starting_position is not None:
+            coordinates.append(self.starting_position)
         for transition in self.transitions:
             coordinates.extend(transition.from_tiles)
         for x, y in coordinates:
@@ -141,6 +159,14 @@ def _string(value: Any, field_name: str, *, allow_empty: bool = False) -> str:
     if not isinstance(value, str) or (not allow_empty and not value.strip()):
         raise MapDefinitionError(f"{field_name} must be a {'string' if allow_empty else 'non-empty string'}.")
     return value
+
+
+def _metadata(value: Any) -> dict[str, Any] | None:
+    if value is None:
+        return None
+    if not isinstance(value, dict) or any(not isinstance(key, str) or not key.strip() for key in value):
+        raise MapDefinitionError("metadata must be an object with non-empty string keys.")
+    return dict(value)
 
 
 def _feature(data: Any) -> MapFeature:
