@@ -5,8 +5,7 @@
     "hero_id": "hero",
     "village_id": "village",
     "forest_id": "forest",
-    "faction_id": "wardens",
-    "npc_id": "warden_lyra"
+    "faction_id": "wardens"
   },
   "world": {
     "name": "Başlangıç Vadisi",
