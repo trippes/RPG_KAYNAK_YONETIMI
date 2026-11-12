@@ -89,14 +89,14 @@ class TestIndependentMapContentPackage(unittest.TestCase):
                 )
             )
 
-            actor = service.state().actors[0]
+            actor = service.actor("hero")
             service.place_actor(actor.actor_id, "north_mine")
             service.set_actor_tile_position(actor.actor_id, 16, 31)
             screen = MainScreen(service)
             self.assertTrue(screen._cross_boundary(actor, 0, 1))
-            self.assertEqual(service.state().actors[0].location_id, "test_valley")
+            self.assertEqual(service.actor("hero").location_id, "test_valley")
             self.assertEqual(
-                (service.state().actors[0].position.x, service.state().actors[0].position.y),
+                (service.actor("hero").position.x, service.actor("hero").position.y),
                 (8, 0),
             )
             self.assertEqual(screen._map_width(), 16)
