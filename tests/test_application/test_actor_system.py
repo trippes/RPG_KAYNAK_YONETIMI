@@ -93,10 +93,13 @@ class TestActorSystem(unittest.TestCase):
 
     def test_gathering_uses_the_duration_configured_on_its_resource_node(self):
         self.service.register_actor("miner", "miner")
-        node = self.application.holder.current.resource_nodes.get("node")
-        node._gathering_duration_ticks = __import__("core.time", fromlist=["Tick"]).Tick(37)
+        self.application.holder.current.resource_nodes.add(WorldResourceNode(
+            "slow-node", "world_actors", self.ore,
+            Quantity(5, ResourceUnit.ITEM), Quantity(5, ResourceUnit.ITEM),
+            Quantity(0, ResourceUnit.ITEM), gathering_duration_ticks=37,
+        ))
         activity = self.service.start_gathering(
-            "miner", "node", "main", Quantity(1, ResourceUnit.ITEM), "custom-duration"
+            "miner", "slow-node", "main", Quantity(1, ResourceUnit.ITEM), "custom-duration"
         )
         self.assertEqual(activity.end_tick - activity.start_tick, 37)
         self.assertEqual(self.service.gathering_duration("miner"), 37)
