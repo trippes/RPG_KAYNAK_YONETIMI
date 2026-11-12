@@ -39,6 +39,9 @@ class FakeService:
         self.application = SimpleNamespace(
             holder=SimpleNamespace(current=self.bundle)
         )
+        self._content_package_path = (
+            Path(__file__).resolve().parents[2] / "content" / "demo_eldoria"
+        )
 
     def state(self):
         return SimpleNamespace(actors=(self.actor,))
