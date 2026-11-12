@@ -57,3 +57,18 @@ Gelecekteki içerik paketleri
 Yeni NPC kayıtları mevcut "npcs.json" veri sözleşmesine eklenir. Görevler, diyaloglar, kaynaklar, pazarlar ve karşılaşmalar da aynı paket manifesti üzerinden ayrı veri dosyalarına ayrılacaktır.
 
 Bu paketler başlangıç içeriğine bağımlı olmak zorunda değildir. Her paket kendi kimliklerini, sürümünü ve doğrulama kurallarını taşımalıdır.
+
+NPC veri sözleşmesi
+
+Her NPC kaydı "npcs.json" içindeki "npcs" listesinde bulunur:
+
+- "id": kayıtlar ve görev ilişkileri için kararlı, benzersiz kimlik.
+- "name": oyuncuya gösterilecek ad.
+- "role": NPC rolü; davranışın kendisini çalıştıran bir kod değildir.
+- "faction_ids": NPC'nin bağlı olduğu fraksiyon kimlikleri.
+- "location_id": başlangıç dünyasındaki konum kimliği.
+- "position": konum içindeki iki tam sayı koordinatı.
+- "load_phase": NPC'nin etkinleştirileceği genel yaşam döngüsü aşaması ("opening" veya "gameplay").
+- "dialogue_id": varsa NPC ile ilişkili diyalog tanımının kimliği.
+
+NPC kayıtları tek bir genel kayıt işleyicisiyle yüklenir. Yeni NPC eklemek için Python modülü, GameWindow veya GameplayService üzerinde NPC'ye özel kod yazılmaz. "load_phase" yalnızca yükleme zamanını belirler; NPC'nin görev verip vermediği veya pazar işletip işletmediği başka içerik ilişkileriyle tanımlanır.
