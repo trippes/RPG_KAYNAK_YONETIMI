@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "id": "eldoria_hex_world",
+  "name": "Eldoria — Altıgen Dünya",
+  "maps": [
+    {
+      "map_id": "hex_forest_demo",
+      "position": { "q": 0, "r": 0 }
+    }
+  ],
+  "metadata": {
+    "scope": "hex_maps_only",
+    "description": "Aşama 3 axial world placement fixture; legacy square maps remain on their existing world graph."
+  }
+}
