@@ -242,9 +242,16 @@ def _build_world_map_from_definition(
                         tuple(landmark.get("position", (180, 180))),
                         tuple(landmark.get("activities", ())),
                         landmark.get("description", ""),
+                        {
+                            "visual_type": landmark.get("visual_type", "landmark"),
+                            "resource_node_id": landmark.get("resource_node_id"),
+                            "blocks_movement": bool(landmark.get("blocks_movement", False)),
+                            "footprint": tuple(landmark.get("footprint", (2, 2))),
+                        },
                     )
                     for landmark in location.get("landmarks", ())
                 ),
+                location.get("local_map"),
             )
         )
     for connection in definition.get("connections", ()):
