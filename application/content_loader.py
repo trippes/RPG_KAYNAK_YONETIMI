@@ -14,9 +14,6 @@ from typing import Mapping
 
 
 CONTENT_PACKAGE_SCHEMA_VERSION = 1
-DEFAULT_CONTENT_ROOT = Path(__file__).resolve().parent.parent / "content"
-
-
 class ContentPackageError(ValueError):
     """Raised when a content package is malformed or unsafe to load."""
 
@@ -44,8 +41,19 @@ def load_content_package(package_dir: str | Path) -> ContentPackage:
     if not isinstance(manifest, dict):
         raise ContentPackageError("Content package manifest must be a JSON object.")
 
+    allowed_fields = {"schema_version", "package_id", "package_version", "files"}
+    unknown_fields = sorted(set(manifest) - allowed_fields)
+    if unknown_fields:
+        raise ContentPackageError(
+            "Content package manifest has unsupported fields: "
+            + ", ".join(unknown_fields)
+        )
+
     schema_version = manifest.get("schema_version")
-    if schema_version != CONTENT_PACKAGE_SCHEMA_VERSION:
+    if (
+        type(schema_version) is not int
+        or schema_version != CONTENT_PACKAGE_SCHEMA_VERSION
+    ):
         raise ContentPackageError("Unsupported content package schema version.")
 
     package_id = manifest.get("package_id")
