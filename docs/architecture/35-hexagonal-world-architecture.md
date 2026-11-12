@@ -154,3 +154,34 @@ Korunması beklenen: ekonomi, inventory, recipe/production, tick/time scheduler,
 8. Aşama 7: save migration, içerik paketleri, uçtan uca regresyon ve eski içerik kapanışı.
 
 Her aşama test ve kabul kapısından geçmeden sonraki aşamaya başlanmaz. Bu belge uygulamanın tamamlandığını iddia etmez.
+
+
+## 11. Test ve kabul matrisi
+
+| Aşama | Test grubu | Asgari kabul senaryoları |
+|---|---|---|
+| 1 | Geometri | Altı yön offset'i; her yönün opposite değeri; opposite(opposite(d))=d; komşuluk simetrisi; axial add/subtract; mesafe örnekleri ve simetrisi; aynı hücre mesafesi 0; koordinat tipi/immutability/hash; negatif q/r |
+| 1 | Piksel matematiği | Hex center → pixel → axial round-trip; hücre merkezleri; altı kenar/vertex sınırında deterministik seçim; farklı hex size; sıfır/negatif size reddi |
+| 2 | Harita topolojisi | Maskede var/yok hücre; blocked ile absent farkı; duplicate cell reddi; boş mask; negatif axial koordinat; farklı düzensiz maskeler; delik ve kopuk adalar |
+| 2 | İçerik yükleme | JSON schema version; eksik/unknown alan; feature/landmark/transition hücrelerinin maskede olması; sadece yeni JSON haritası ekleyerek yükleme; mevcut paket loader izolasyonu |
+| 3 | Dünya haritası | WorldHexPosition tip kontrolü; altı yönlü geometrik komşuluk; aynı hücre çakışma politikası; map ID benzersizliği; dünya konumlarının piksel değerleriyle karıştırılmaması |
+| 3 | Geçişler | Altı yönün her biri; karşı yön eşleşmesi; iki yönlü reciprocal; tek yönlü geçiş; inactive geçiş; eksik hedef map; source/target hücrenin maskede olması; tek ve çok hücreli geçiş; hücre pair sırası; hatalı yön eşleşmesi |
+| 4 | Hareket/pathfinding | Altı komşuya hareket; maskeden çıkışın reddi; engelli hücre; iki hücre arası shortest path; yeni diagonal shortcut testleri; unreachable target; disconnected mask; NPC movement; occupancy collision |
+| 5 | Pygame | Pointy-top polygon çizimi; kamera pan; zoom; farklı viewport; DPI scaling ayrımı; fare hücre seçimi; hücre sınırı; maskede olmayan alan; seçilen cell ile renderer cell eşleşmesi |
+| 6 | Actor ve nesne | Player/NPC aynı cell; NPC interaction; resource landmark link; object multi-cell occupancy; overlap; transfer/move; gate/bridge/structure passability |
+| 7 | Persistence | Yeni axial save round-trip; eski v2 kare save migration; unknown map; mapping missing; invalid target cell; collision; backup retained; failed migration leaves original untouched; repeat migration idempotency; candidate load atomicity |
+| 7 | Paket/regresyon | Yeni content package sadece JSON ile yüklenir; manifest map discovery; NPC/resource/quest ID referansları korunur; eski kare package migration path; ekonomi/inventory/production/time/quest/combat regresyonu |
+
+### Matematiksel property testleri
+
+- Her koordinat `c` ve yön `d` için `distance(c, neighbor(c,d)) == 1`.
+- Her yön `d` için `neighbor(neighbor(c,d), opposite(d)) == c`.
+- Her koordinat çifti `a,b` için `distance(a,b) == distance(b,a)`.
+- `distance(a,a) == 0`; mesafe negatif olamaz.
+- `distance(a,b) <= distance(a,c) + distance(c,b)`.
+- Pixel round-trip, hücre merkezlerinde tam aynı axial hücreyi döndürür.
+- Hücre maskesi dışındaki pixel hit-test sonucu geçersiz seçimdir; yakın hücreye sessiz snap yapılmaz.
+
+### Regresyon koruma
+
+Altıgen çalışması ekonomi, envanter, üretim, zaman simülasyonu, görev kimlikleri, diyalog ve savaş kurallarını değiştirmemelidir. İlgili mevcut test paketleri her aşamada çalıştırılır. Test komutunun çıktısı, test sayısı ve başarısızlık sayısı rapora eklenir; çalıştırılmayan test başarılı kabul edilmez.
