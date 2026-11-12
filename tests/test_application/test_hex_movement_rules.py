@@ -23,9 +23,9 @@ def make_map():
         },
         "terrain_ids": ["grass", "water"],
         "default_terrain": "grass",
-        "valid_cells": [[0, 0], [1, 0], [2, 0], [0, 1]],
+        "valid_cells": [[0, 0], [1, 0], [2, 0], [0, 1], [1, -1]],
         "cell_overrides": [
-            {"q": 2, "r": 0, "blocked": True},
+            {"q": 1, "r": -1, "blocked": True},
             {"q": 0, "r": 1, "terrain": "water"},
         ],
     })
@@ -70,13 +70,13 @@ class TestHexMovementRules(unittest.TestCase):
         self.assertEqual(result.reason, MovementFailureReason.NON_ADJACENT_TARGET)
 
     def test_blocked_target_is_rejected_by_default(self):
-        result = MovementRules.evaluate(self.request(LocalHexPosition(2, 0)), self.map)
+        result = MovementRules.evaluate(self.request(LocalHexPosition(1, -1)), self.map)
         self.assertEqual(result.reason, MovementFailureReason.BLOCKED_CELL)
 
     def test_profile_can_explicitly_traverse_blocked_target(self):
         profile = MovementProfile(can_traverse_blocked_cells=True)
         result = MovementRules.evaluate(
-            self.request(LocalHexPosition(2, 0), profile), self.map,
+            self.request(LocalHexPosition(1, -1), profile), self.map,
         )
         self.assertTrue(result.success)
 
