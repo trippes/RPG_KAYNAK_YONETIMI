@@ -8,7 +8,7 @@ from game_ui.screens.main_screen import MainScreen
 
 
 class FakeMapService:
-    def __init__(self, location, package_path=None):
+    def __init__(self, location, package_path=None, use_default_package=True):
         self.actor = SimpleNamespace(
             actor_id="hero", world_id="world", location_id=location.location_id,
             position=SimpleNamespace(x=16, y=16),
@@ -19,7 +19,11 @@ class FakeMapService:
                 movement=SimpleNamespace(map_for=lambda _world_id: world_map),
             )),
         )
-        self._content_package_path = package_path
+        self._content_package_path = (
+            package_path
+            if package_path is not None or not use_default_package
+            else Path(__file__).resolve().parents[2] / "content" / "demo_eldoria"
+        )
 
     def state(self):
         return SimpleNamespace(actors=(self.actor,))
@@ -34,6 +38,15 @@ class TestMainScreenMapData(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / "maps").mkdir()
+            (root / "manifest.json").write_text(
+                json.dumps({
+                    "schema_version": 1, "package_id": "tiny",
+                    "package_version": "1.0.0",
+                    "files": {"starter": "starter.json"}, "maps": "maps",
+                }),
+                encoding="utf-8",
+            )
+            (root / "starter.json").write_text("{}", encoding="utf-8")
             definition = {
                 "schema_version": 1,
                 "map_id": "tiny",
@@ -76,6 +89,22 @@ class TestMainScreenMapData(unittest.TestCase):
         self.assertIn((16, 30), gates)
         self.assertIn((16, 31), gates)
         self.assertIn((0, 16), gates)
+
+    def test_missing_package_context_does_not_fall_back_to_demo_content(self):
+        location = SimpleNamespace(location_id="village", landmarks=(), name="Village")
+        screen = MainScreen(FakeMapService(location, use_default_package=False))
+
+        self.assertIsNone(screen._map_definition())
+        self.assertIn("paketi bağlamı", screen.message)
+        self.assertIsNone(screen._map_definition_cache)
+
+    def test_supported_visual_styles_are_registered_centrally(self):
+        self.assertIn("grass", MainScreen.TERRAIN_STYLES)
+        self.assertIn("river", MainScreen.FEATURE_STYLES)
+        self.assertIn("bridge", MainScreen.FEATURE_STYLES)
+        self.assertIn("wall", MainScreen.FEATURE_STYLES)
+        self.assertIn("tree", MainScreen.LANDMARK_STYLES)
+        self.assertIn("mine", MainScreen.LANDMARK_STYLES)
 
 
 if __name__ == "__main__":

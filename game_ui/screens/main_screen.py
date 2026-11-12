@@ -3,13 +3,37 @@
 from ..renderer import GOLD, TEXT_SOFT, duration_label
 from resources import Quantity, ResourceUnit
 from collections import deque
-from pathlib import Path
-
-from world import load_map_definitions
+from application.content_loader import load_content_package
 
 
 class MainScreen:
     TILE_SIZE = 16
+    TERRAIN_STYLES = {
+        "grass": {"colors": ((67, 133, 66), (74, 145, 72)), "grid": (54, 112, 57)},
+        "dirt": {"colors": ((126, 96, 62), (137, 105, 69)), "grid": (94, 72, 48)},
+        "sand": {"colors": ((190, 166, 111), (202, 180, 126)), "grid": (158, 137, 92)},
+        "stone": {"colors": ((105, 108, 111), (117, 120, 123)), "grid": (78, 81, 84)},
+    }
+    FEATURE_STYLES = {
+        "river": {"fill": (45, 115, 165), "lines": (("h", 0.5, (115, 190, 220), 1),)},
+        "bridge": {"fill": (151, 99, 53), "lines": (
+            ("h", 1 / 3, (224, 172, 92), 2),
+            ("h", 2 / 3, (224, 172, 92), 2),
+        )},
+        "wall": {"fill": (125, 125, 122), "border": (82, 87, 81),
+                 "lines": (("h", 0.18, (175, 172, 156), 2),)},
+    }
+    LANDMARK_STYLES = {
+        "tree": {"shape": "tree", "trunk": (105, 70, 38), "foliage": (48, 125, 68)},
+        "mine": {"shape": "mine", "rock": (112, 108, 104), "opening": (35, 38, 42)},
+        "gate": {"shape": "gate", "posts": (111, 70, 39), "lintel": (151, 99, 53)},
+        "forge": {"shape": "building", "body": (116, 112, 105), "roof": (73, 77, 82)},
+        "inn": {"shape": "building", "body": (181, 129, 76), "roof": (112, 56, 43)},
+        "market": {"shape": "building", "body": (193, 157, 88), "roof": (153, 87, 45)},
+        "house": {"shape": "building", "body": (210, 170, 105), "roof": (150, 55, 45)},
+        "tower": {"shape": "building", "body": (151, 145, 126), "roof": (95, 91, 83)},
+        "building": {"shape": "building", "body": (210, 170, 105), "roof": (150, 55, 45)},
+    }
 
     def __init__(self, service):
         self.service = service
@@ -54,9 +78,11 @@ class MainScreen:
         if self._map_definition_cache is None:
             package_root = getattr(self.service, "_content_package_path", None)
             if package_root is None:
-                package_root = Path(__file__).resolve().parents[2] / "content" / "demo_eldoria"
+                self.message = "Aktif içerik paketi bağlamı bulunamadı."
+                return None
             try:
-                self._map_definition_cache = load_map_definitions(Path(package_root) / "maps")
+                package = load_content_package(package_root)
+                self._map_definition_cache = package.map_definitions
             except (OSError, ValueError) as error:
                 self._map_definition_cache = {}
                 self.message = f"Harita paketi yüklenemedi: {error}"
@@ -665,6 +691,124 @@ class MainScreen:
 
         return None
 
+    def _draw_feature(self, renderer, feature, origin_x, origin_y):
+        style = self.FEATURE_STYLES.get(feature.feature_type)
+        if style is None:
+            self.message = f"Bilinmeyen arazi görsel türü: {feature.feature_type}"
+            return
+        for tile_x, tile_y in feature.tiles:
+            rect = renderer.pg.Rect(
+                origin_x + tile_x * self.TILE_SIZE,
+                origin_y + tile_y * self.TILE_SIZE,
+                self.TILE_SIZE,
+                self.TILE_SIZE,
+            )
+            renderer.pg.draw.rect(renderer.surface, style["fill"], rect)
+            if style.get("border") is not None:
+                renderer.pg.draw.rect(renderer.surface, style["border"], rect, 1)
+            for axis, offset, color, width in style.get("lines", ()):
+                if axis == "h":
+                    y = rect.y + round(rect.height * offset)
+                    start, end = (rect.x + 2, y), (rect.right - 2, y)
+                else:
+                    x = rect.x + round(rect.width * offset)
+                    start, end = (x, rect.y + 2), (x, rect.bottom - 2)
+                renderer.pg.draw.line(renderer.surface, color, start, end, width)
+
+    def _draw_landmark(self, renderer, landmark, origin_x, origin_y):
+        x, y = tuple(landmark[2])
+        if not (0 <= x < self._map_width() and 0 <= y < self._map_height()):
+            return
+        rect = renderer.pg.Rect(
+            origin_x + x * self.TILE_SIZE + 1,
+            origin_y + y * self.TILE_SIZE + 1,
+            self.TILE_SIZE * 2 - 2,
+            self.TILE_SIZE * 2 - 2,
+        )
+        visual_type = landmark[5]
+        style = self.LANDMARK_STYLES.get(visual_type)
+        if style is None:
+            renderer.pg.draw.rect(renderer.surface, (180, 80, 160), rect, 2)
+            self.message = f"Bilinmeyen landmark görsel türü: {visual_type}"
+            return
+        shape = style["shape"]
+        if shape == "tree":
+            trunk_width = max(4, self.TILE_SIZE // 3)
+            renderer.pg.draw.rect(
+                renderer.surface, style["trunk"],
+                renderer.pg.Rect(
+                    rect.centerx - trunk_width // 2,
+                    rect.bottom - self.TILE_SIZE,
+                    trunk_width, self.TILE_SIZE,
+                ),
+            )
+            renderer.pg.draw.circle(
+                renderer.surface, style["foliage"],
+                (rect.centerx, rect.y + self.TILE_SIZE // 2),
+                max(5, self.TILE_SIZE // 2),
+            )
+        elif shape == "mine":
+            renderer.pg.draw.polygon(
+                renderer.surface, style["rock"],
+                (
+                    (rect.x + 2, rect.bottom - 2),
+                    (rect.centerx, rect.y + 3),
+                    (rect.right - 2, rect.bottom - 2),
+                ),
+            )
+            renderer.pg.draw.ellipse(
+                renderer.surface, style["opening"],
+                renderer.pg.Rect(
+                    rect.centerx - self.TILE_SIZE // 2,
+                    rect.centery - 2, self.TILE_SIZE, self.TILE_SIZE // 2,
+                ),
+            )
+        elif shape == "gate":
+            post_width = max(3, self.TILE_SIZE // 4)
+            post_height = max(8, self.TILE_SIZE)
+            for post_x in (rect.x + 2, rect.right - post_width - 2):
+                renderer.pg.draw.rect(
+                    renderer.surface, style["posts"],
+                    renderer.pg.Rect(post_x, rect.bottom - post_height, post_width, post_height),
+                )
+            renderer.pg.draw.rect(
+                renderer.surface, style["lintel"],
+                renderer.pg.Rect(rect.x + 1, rect.y + 2, rect.width - 2, max(3, self.TILE_SIZE // 4)),
+            )
+        else:
+            body = renderer.pg.Rect(
+                rect.x + 2, rect.y + self.TILE_SIZE // 2, rect.width - 4,
+                rect.height - self.TILE_SIZE // 2 - 2,
+            )
+            renderer.pg.draw.rect(renderer.surface, style["body"], body)
+            renderer.pg.draw.polygon(
+                renderer.surface, style["roof"],
+                (
+                    (rect.x, body.y + 2),
+                    (rect.centerx, rect.y + 1),
+                    (rect.right, body.y + 2),
+                ),
+            )
+            door_width = max(4, self.TILE_SIZE // 3)
+            renderer.pg.draw.rect(
+                renderer.surface, (92, 59, 39),
+                renderer.pg.Rect(
+                    rect.centerx - door_width // 2,
+                    body.bottom - self.TILE_SIZE // 2,
+                    door_width, self.TILE_SIZE // 2,
+                ),
+            )
+            window_size = max(3, self.TILE_SIZE // 4)
+            for window_x in (
+                body.x + self.TILE_SIZE // 3,
+                body.right - self.TILE_SIZE // 3 - window_size,
+            ):
+                renderer.pg.draw.rect(
+                    renderer.surface, (105, 190, 205),
+                    renderer.pg.Rect(window_x, body.y + 3, window_size, window_size),
+                )
+        renderer.pg.draw.rect(renderer.surface, (102, 72, 43), rect, 1)
+
     def render(self, renderer):
         self.renderer_width = renderer.width
         self.renderer_height = renderer.height
@@ -680,6 +824,15 @@ class MainScreen:
         origin_x, origin_y = self._grid_origin()
         if location:
             renderer.text(location.name, 28, 72, title=True)
+        definition = self._map_definition(location)
+        terrain = (
+            self.TERRAIN_STYLES.get(definition.terrain.default_tile)
+            if definition is not None else None
+        )
+        if terrain is None:
+            terrain = {"colors": ((88, 88, 88), (98, 98, 98)), "grid": (65, 65, 65)}
+            if definition is not None:
+                self.message = f"Bilinmeyen zemin türü: {definition.terrain.default_tile}"
         for y in range(self._map_height()):
             for x in range(self._map_width()):
                 rect = renderer.pg.Rect(
@@ -688,185 +841,17 @@ class MainScreen:
                     self.TILE_SIZE,
                     self.TILE_SIZE,
                 )
-                color = (74, 145, 72) if (x + y) % 2 else (67, 133, 66)
+                color = terrain["colors"][(x + y) % 2]
                 if (x, y) == self.selected:
                     color = (112, 177, 82)
                 renderer.pg.draw.rect(renderer.surface, color, rect)
-                renderer.pg.draw.rect(renderer.surface, (54, 112, 57), rect, 1)
+                renderer.pg.draw.rect(renderer.surface, terrain["grid"], rect, 1)
 
-        definition = self._map_definition(location)
         if definition is not None:
             for feature in definition.features:
-                if feature.feature_type != "river":
-                    continue
-                for tile_x, tile_y in feature.tiles:
-                    rect = renderer.pg.Rect(
-                        origin_x + tile_x * self.TILE_SIZE,
-                        origin_y + tile_y * self.TILE_SIZE,
-                        self.TILE_SIZE,
-                        self.TILE_SIZE,
-                    )
-                    renderer.pg.draw.rect(renderer.surface, (45, 115, 165), rect)
-                    renderer.pg.draw.line(
-                        renderer.surface, (115, 190, 220),
-                        (rect.x + 3, rect.centery),
-                        (rect.right - 3, rect.centery), 1,
-                    )
-
-            for feature in definition.features:
-                if feature.feature_type != "bridge":
-                    continue
-                for bridge_x, bridge_y in feature.tiles:
-                    rect = renderer.pg.Rect(
-                        origin_x + bridge_x * self.TILE_SIZE,
-                        origin_y + bridge_y * self.TILE_SIZE,
-                        self.TILE_SIZE,
-                        self.TILE_SIZE,
-                    )
-                    renderer.pg.draw.rect(renderer.surface, (151, 99, 53), rect)
-                    renderer.pg.draw.line(
-                        renderer.surface, (224, 172, 92),
-                        (rect.x + 2, rect.y + self.TILE_SIZE // 3),
-                        (rect.right - 2, rect.y + self.TILE_SIZE // 3), 2,
-                    )
-                    renderer.pg.draw.line(
-                        renderer.surface, (224, 172, 92),
-                        (rect.x + 2, rect.y + self.TILE_SIZE * 2 // 3),
-                        (rect.right - 2, rect.y + self.TILE_SIZE * 2 // 3), 2,
-                    )
-
-            for feature in definition.features:
-                if feature.feature_type != "wall":
-                    continue
-                for wall_x, wall_y in feature.tiles:
-                    rect = renderer.pg.Rect(
-                        origin_x + wall_x * self.TILE_SIZE,
-                        origin_y + wall_y * self.TILE_SIZE,
-                        self.TILE_SIZE,
-                        self.TILE_SIZE,
-                    )
-                    renderer.pg.draw.rect(renderer.surface, (125, 125, 122), rect)
-                    renderer.pg.draw.rect(renderer.surface, (82, 87, 81), rect, 1)
-                    renderer.pg.draw.line(
-                        renderer.surface, (175, 172, 156),
-                        (rect.x + 2, rect.y + 3),
-                        (rect.right - 3, rect.y + 3), 2,
-                    )
-
-        for landmark in self._landmarks():
-            x, y = tuple(landmark[2])
-            if not (0 <= x < self._map_width() and 0 <= y < self._map_height()):
-                continue
-            rect = renderer.pg.Rect(
-                origin_x + x * self.TILE_SIZE + 1,
-                origin_y + y * self.TILE_SIZE + 1,
-                self.TILE_SIZE * 2 - 2,
-                self.TILE_SIZE * 2 - 2,
-            )
-            visual_type = landmark[5]
-            if visual_type == "tree":
-                renderer.pg.draw.rect(
-                    renderer.surface, (105, 70, 38),
-                    renderer.pg.Rect(
-                        rect.centerx - max(2, self.TILE_SIZE // 6),
-                        rect.bottom - self.TILE_SIZE,
-                        max(4, self.TILE_SIZE // 3),
-                        self.TILE_SIZE,
-                    ),
-                )
-                renderer.pg.draw.circle(
-                    renderer.surface, (48, 125, 68),
-                    (rect.centerx, rect.y + self.TILE_SIZE // 2),
-                    max(5, self.TILE_SIZE // 2),
-                )
-            elif landmark[5] == "mine":
-                renderer.pg.draw.polygon(
-                    renderer.surface,
-                    (112, 108, 104),
-                    (
-                        (rect.x + 2, rect.bottom - 2),
-                        (rect.centerx, rect.y + 3),
-                        (rect.right - 2, rect.bottom - 2),
-                    ),
-                )
-                renderer.pg.draw.ellipse(
-                    renderer.surface,
-                    (35, 38, 42),
-                    renderer.pg.Rect(
-                        rect.centerx - self.TILE_SIZE // 2,
-                        rect.centery - 2,
-                        self.TILE_SIZE,
-                        self.TILE_SIZE // 2,
-                    ),
-                )
-            elif visual_type == "gate":
-                post_width = max(3, self.TILE_SIZE // 4)
-                post_height = max(8, self.TILE_SIZE)
-                renderer.pg.draw.rect(
-                    renderer.surface, (111, 70, 39),
-                    renderer.pg.Rect(rect.x + 2, rect.bottom - post_height, post_width, post_height),
-                )
-                renderer.pg.draw.rect(
-                    renderer.surface, (111, 70, 39),
-                    renderer.pg.Rect(rect.right - post_width - 2, rect.bottom - post_height, post_width, post_height),
-                )
-                renderer.pg.draw.rect(
-                    renderer.surface, (151, 99, 53),
-                    renderer.pg.Rect(rect.x + 1, rect.y + 2, rect.width - 2, max(3, self.TILE_SIZE // 4)),
-                )
-            else:
-                house_body = renderer.pg.Rect(
-                    rect.x + 2,
-                    rect.y + self.TILE_SIZE // 2,
-                    rect.width - 4,
-                    rect.height - self.TILE_SIZE // 2 - 2,
-                )
-                body_colors = {
-                    "forge": (116, 112, 105),
-                    "inn": (181, 129, 76),
-                    "market": (193, 157, 88),
-                    "house": (210, 170, 105),
-                    "tower": (151, 145, 126),
-                    "building": (210, 170, 105),
-                }
-                roof_colors = {
-                    "forge": (73, 77, 82),
-                    "inn": (112, 56, 43),
-                    "market": (153, 87, 45),
-                    "house": (150, 55, 45),
-                    "tower": (95, 91, 83),
-                    "building": (150, 55, 45),
-                }
-                renderer.pg.draw.rect(
-                    renderer.surface, body_colors.get(visual_type, (210, 170, 105)), house_body,
-                )
-                renderer.pg.draw.polygon(
-                    renderer.surface,
-                    roof_colors.get(visual_type, (150, 55, 45)),
-                    (
-                        (rect.x, house_body.y + 2),
-                        (rect.centerx, rect.y + 1),
-                        (rect.right, house_body.y + 2),
-                    ),
-                )
-                renderer.pg.draw.rect(
-                    renderer.surface,
-                    (92, 59, 39),
-                    renderer.pg.Rect(
-                        rect.centerx - max(2, self.TILE_SIZE // 6),
-                        house_body.bottom - self.TILE_SIZE // 2,
-                        max(4, self.TILE_SIZE // 3),
-                        self.TILE_SIZE // 2,
-                    ),
-                )
-                window_size = max(3, self.TILE_SIZE // 4)
-                for window_x in (house_body.x + self.TILE_SIZE // 3, house_body.right - self.TILE_SIZE // 3 - window_size):
-                    renderer.pg.draw.rect(
-                        renderer.surface,
-                        (105, 190, 205),
-                        renderer.pg.Rect(window_x, house_body.y + 3, window_size, window_size),
-                    )
-            renderer.pg.draw.rect(renderer.surface, (102, 72, 43), rect, 1)
+                self._draw_feature(renderer, feature, origin_x, origin_y)
+            for landmark in self._landmarks():
+                self._draw_landmark(renderer, landmark, origin_x, origin_y)
 
         if actor is not None and location is not None:
             for placement in self.service.world_objects_for_location(actor.world_id, location.location_id):
