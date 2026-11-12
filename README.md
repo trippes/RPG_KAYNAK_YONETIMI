@@ -68,11 +68,12 @@ başlıca `collect`, `start_production`, `start_chain`, `advance_to`,
 `publish_offer`, `buy_offer`, `cancel_offer`, `register_npc`, `talk_to_npc`,
 `start_quest`, `add_combatant` ve encounter işlemlerini sağlar. Bu API'ler
 deterministik tick ve candidate restore sözleşmelerini kullanır. Başlangıç
-dünyası, karakter oluşturma ve açılış diyaloğu `data/starter_content.json`
-dosyasından yüklenir. Bu başlangıç paketi, oynanış sistemlerinin test
-senaryolarından ve gelecekte hazırlanacak içerik paketlerinden ayrı tutulur.
-İçerik sözleşmesi için `docs/architecture/34-content-data-contract.md`
-belgesine bakın.
+Başlangıç dünyası, karakter oluşturma ve açılış diyaloğu seçili içerik paketinden
+yüklenir. Aktif paket `content/active_package.json` ile seçilir; harita JSON
+kayıtları `content/<paket_id>/maps/` klasöründen otomatik keşfedilir. Harita
+ekleme, geçiş tanımlama, NPC/kaynak/görev/pazar referansları ve kayıt uyumluluğu
+kuralları için `docs/content/map-authoring.md` belgesine bakın. Genel içerik
+paketi sözleşmesi `docs/architecture/34-content-data-contract.md` içinde açıklanır.
 
 Ekonomi sınırı: `resources` fiziksel `ResourceType`, `Quantity`, `Inventory`,
 node, reçete ve üretim state'ini taşır. `economy` ise `Currency`/`Money`,
@@ -95,6 +96,10 @@ Release-candidate doğrulama kapısı için test araçlarını runtime bağıml�
 python -m pip install -r requirements-test.txt
 python scripts/verify_release.py
 ```
+
+Bu doğrulama tüm testleri ve smoke kontrolünü çalıştırmanın yanında wheel üretir,
+izole bir hedefe kurar ve kurulu paketin dokuz harita JSON dosyasını kaynak kod
+ağacının dışından yükleyebildiğini doğrular.
 
 Dağıtılabilir wheel/sdist üretimi için yayın araçlarını kurup:
 
