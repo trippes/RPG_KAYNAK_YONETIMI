@@ -376,7 +376,8 @@ class MainScreen:
         current_gate = self._position(actor.position)
         current_definition = self._map_definition()
         if current_definition is None:
-            self.message = "Mevcut haritanın geçiş verisi yüklenemedi."
+            if not self.message.startswith("Harita paketi yüklenemedi:") and not self.message.startswith("Aktif harita konumu"):
+                self.message = "Mevcut haritanın JSON tanımı bulunamadı."
             return True
 
         transitions = [
