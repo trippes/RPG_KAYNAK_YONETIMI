@@ -184,13 +184,11 @@ class TestPhaseDQuality(unittest.TestCase):
     def test_quest_log_categories_and_counts_use_quest_log_filters(self):
         screen = self._quest_screen()
 
-        self.assertEqual(screen._counts(), (2, 1, 1, 1))
+        self.assertEqual(screen._counts(), (2, 1, 1))
         self.assertEqual([quest.quest_id for quest in screen._quests()], ["active", "active-2"])
         screen.category = 1
-        self.assertEqual([quest.quest_id for quest in screen._quests()], ["available"])
-        screen.category = 2
         self.assertEqual([quest.quest_id for quest in screen._quests()], ["completed"])
-        screen.category = 3
+        screen.category = 2
         self.assertEqual([quest.quest_id for quest in screen._quests()], ["failed"])
 
     def test_quest_log_selection_and_tab_click_reset_selection_and_scroll(self):
