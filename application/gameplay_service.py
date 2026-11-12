@@ -1584,10 +1584,21 @@ class GameplayService:
         bundle = self._current_bundle()
         candidates = tuple(quests) if quests is not None else bundle.quest_log.available()
         unique = {quest.quest_id: quest for quest in candidates}
-        return bundle.quest_graph.available_quests(
-            unique.values(), self.quest_states(),
-            context or self._dialogue_context("hero", ""),
-            bundle.quest_graph_progress,
+        resolved_context = (
+            context if context is not None
+            else self._dialogue_context("hero", "")
+        )
+        graph_ids = set(bundle.quest_graph.quest_ids())
+        states = self.quest_states()
+        return tuple(
+            quest for quest in unique.values()
+            if (
+                bundle.quest_graph.can_start(
+                    quest, states, resolved_context, bundle.quest_graph_progress
+                )
+                if quest.quest_id in graph_ids
+                else quest.can_start(resolved_context)
+            )
         )
 
     def choose_quest_branch(self, source_quest_id: str, branch_group: str, target_quest_id: str) -> str:
