@@ -74,7 +74,22 @@ class MainScreen:
         definition = definition or self._map_definition()
         if definition is None:
             return frozenset()
-        return frozenset(item.position for item in definition.landmarks if item.visual_type == "gate")
+        gates = set()
+        width, height = definition.size.width, definition.size.height
+        for item in definition.landmarks:
+            if item.visual_type != "gate":
+                continue
+            x, y = item.position
+            gates.add((x, y))
+            if x <= 1:
+                gates.add((0, y))
+            elif x >= width - 2:
+                gates.add((width - 1, y))
+            if y <= 1:
+                gates.add((x, 0))
+            elif y >= height - 2:
+                gates.add((x, height - 1))
+        return frozenset(gates)
 
     def _feature_tiles(self, feature_type, definition=None):
         definition = definition or self._map_definition()
