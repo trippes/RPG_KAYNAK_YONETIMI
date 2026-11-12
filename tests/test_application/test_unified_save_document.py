@@ -53,6 +53,26 @@ class TestUnifiedSaveDocument(unittest.TestCase):
         self.assertEqual(data["core"]["schema"], "rpg-core")
         self.assertEqual(data["gameplay"]["schema"], "rpg-gameplay")
 
+    def test_quest_graph_progress_is_optional_and_round_trips(self):
+        document = self._document()
+        progress = {
+            "selected_branches": [{
+                "source_quest_id": "quest_a",
+                "branch_group": "ending",
+                "target_quest_id": "quest_b",
+            }]
+        }
+        with_progress = GameSaveDocument(
+            core=document.core,
+            gameplay=document.gameplay,
+            quest_graph_progress=progress,
+        )
+
+        decoded = SaveJsonCodec.decode(SaveJsonCodec.encode(with_progress))
+
+        self.assertEqual(decoded.quest_graph_progress, progress)
+        self.assertIsNone(GameSaveDocument.from_dict(document.to_dict()).quest_graph_progress)
+
     def test_schema_and_versions_are_validated(self):
         data = self._document().to_dict()
         data["schema"] = "other"
