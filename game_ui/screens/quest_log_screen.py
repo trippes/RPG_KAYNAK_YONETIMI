@@ -21,7 +21,6 @@ class QuestLogScreen:
 
     CATEGORIES = (
         ("active", "Devam Eden"),
-        ("available", "Mevcut"),
         ("completed", "Tamamlanan"),
         ("failed", "Başarısız"),
     )
@@ -321,8 +320,7 @@ class QuestLogScreen:
         return tuple(
             self._art_rect(x, 0.105, width, 0.095)
             for x, width in (
-                (0.055, 0.218), (0.283, 0.214),
-                (0.507, 0.214), (0.730, 0.214),
+                (0.055, 0.280), (0.360, 0.280), (0.665, 0.280),
             )
         )
 
