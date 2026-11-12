@@ -574,11 +574,11 @@ def _validate_content_references(
         map_id = resolve_id(market["location_id"])
         if map_id not in maps:
             raise ContentDefinitionError(
-                f"Market '{market['id']}' references missing map '{map_id}'."
+                f"Market '{market['market_id']}' references missing map '{map_id}'."
             )
         if market["npc_id"] not in npc_ids:
             raise ContentDefinitionError(
-                f"Market '{market['id']}' references missing NPC '{market['npc_id']}'."
+                f"Market '{market['market_id']}' references missing NPC '{market['npc_id']}'."
             )
     for partner in definition.get("trade_partners", ()):
         if partner["npc_id"] not in npc_ids:

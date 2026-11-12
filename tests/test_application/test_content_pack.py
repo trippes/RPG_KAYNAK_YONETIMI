@@ -368,6 +368,37 @@ class TestContentPack(unittest.TestCase):
         with self.assertRaisesRegex(ContentDefinitionError, "must be an object"):
             _build_dialogue_from_definition(definition, "npc")
 
+    def test_opening_content_rejects_npc_coordinates_outside_map_bounds(self):
+        records = [dict(record) for record in load_npc_definitions()]
+        records[0]["position"] = [99, 99]
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "npcs.json"
+            path.write_text(
+                json.dumps({"schema_version": 1, "npcs": records}),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ContentDefinitionError, "outside map"):
+                populate_opening_content(
+                    GameApplication.create_default(),
+                    npc_definitions_path=path,
+                )
+
+    def test_gameplay_resources_reject_unknown_map_references(self):
+        application = GameApplication.create_default()
+        service, _ids = populate_opening_content(application)
+        records = [dict(record) for record in load_resource_definitions()]
+        records[0]["location_id"] = "missing_map"
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "resources.json"
+            path.write_text(
+                json.dumps({"schema_version": 1, "nodes": records}),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ContentDefinitionError, "unknown landmark"):
+                populate_gameplay_resources(
+                    service, resource_definitions_path=path,
+                )
+
 
 if __name__ == "__main__":
     unittest.main()
