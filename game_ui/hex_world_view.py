@@ -259,7 +259,7 @@ class HexWorldView:
         for feature in definition.features:
             for cell in feature.cells:
                 center = centers[cell]
-                if not self._terrain_renderer.is_visible(center, self._hex_size, renderer.width, renderer.height):
+                if not self._terrain_renderer.is_visible(center, render_radius, renderer.width, renderer.height):
                     continue
                 if feature.feature_type == "river":
                     renderer.pg.draw.circle(
@@ -281,7 +281,7 @@ class HexWorldView:
                     max(7, round(render_radius * 0.48)), 2,
                 )
 
-        drawables = [(item.position, "landmark", item) for item in definition.landmarks if self._terrain_renderer.is_visible(centers[item.position], self._hex_size, renderer.width, renderer.height)]
+        drawables = [(item.position, "landmark", item) for item in definition.landmarks if self._terrain_renderer.is_visible(centers[item.position], render_radius, renderer.width, renderer.height)]
         drawables.append((entity.position.cell, "player", entity))
         for position, drawable_type, drawable in DepthSorter.sort(
             drawables, lambda item: item[0],
