@@ -389,7 +389,7 @@ class ActorActivityManager:
             )
             actor.begin_activity(activity.activity_id)
             activity.start()
-            duration = gameplay_service.gathering_duration(actor_id)
+            duration = gameplay_service.gathering_duration(actor_id, node_id)
             activity.end_tick = self.runtime.current_tick + Tick(duration)
             activity.quantity = quantity
             activity.gameplay_service = gameplay_service
