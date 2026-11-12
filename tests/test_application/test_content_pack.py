@@ -132,7 +132,7 @@ class TestContentPack(unittest.TestCase):
                 npc_definitions_path=path,
             )
 
-        npc = application.holder.current.social.npcs.get(ids.npc_id)
+        npc = application.holder.current.social.npcs.get("warden_lyra")
         self.assertEqual(npc.name, "Test Muhafızı")
 
     def test_npc_definitions_reject_duplicate_ids(self):
