@@ -553,7 +553,7 @@ def populate_opening_content(
     definition = load_opening_content(definition_path, package_path=content_package_path)
     npc_definitions = load_npc_definitions(npc_definitions_path, package_path=content_package_path)
     character_definitions = load_character_definitions(character_definitions_path, package_path=content_package_path)
-    service = _register_opening_content(
+    service, resolved_ids = _register_opening_content(
         application,
         definition,
         npc_definitions,
@@ -561,7 +561,7 @@ def populate_opening_content(
         ids,
     )
     service._content_package_path = _resolve_content_package_path(content_package_path)
-    return service
+    return service, resolved_ids
 
 
 def populate_gameplay_resources(service, definition_path=None, resource_definitions_path=None, content_package_path=None):
