@@ -185,6 +185,32 @@ class TestHexWorldRuntime(unittest.TestCase):
         self.assertFalse(result.success)
         self.assertEqual(runtime.entity("player").position, EntityPosition("a", LocalHexPosition(0, 0)))
 
+    def test_transition_rejects_wrong_source_cell_and_missing_target_map(self):
+        map_a = make_map("a", transitions=[{
+            "id": "exit", "source_cells": [[0, 0]], "exit_direction": "east",
+            "target_map_id": "missing_map", "target_entry_direction": "west",
+            "target_cells": [[0, 0]], "active": True, "traversal_mode": "one_way",
+        }])
+        wrong_source_runtime = HexWorldRuntime({"a": map_a})
+        wrong_source = EntityPosition("a", LocalHexPosition(1, 0))
+        wrong_source_runtime.register_entity("hero", "player", wrong_source)
+        wrong_source_result = wrong_source_runtime.transition("hero", "exit")
+        self.assertFalse(wrong_source_result.success)
+        self.assertEqual(wrong_source_result.reason, MovementFailureReason.INVALID_TRANSITION)
+        self.assertEqual(wrong_source_runtime.entity("hero").position, wrong_source)
+
+        missing_target_runtime = HexWorldRuntime({"a": map_a})
+        source = EntityPosition("a", LocalHexPosition(0, 0))
+        missing_target_runtime.register_entity("hero", "player", source)
+        missing_target_result = missing_target_runtime.transition("hero", "exit")
+        self.assertFalse(missing_target_result.success)
+        self.assertEqual(missing_target_result.reason, MovementFailureReason.INVALID_TRANSITION)
+        self.assertEqual(missing_target_runtime.entity("hero").position, source)
+
+    def test_patrol_route_cannot_leave_the_local_map_mask(self):
+        with self.assertRaises(ValueError):
+            self.runtime.patrol("npc", [LocalHexPosition(99, 99)])
+
     def test_transition_failure_keeps_source_position_when_all_entries_are_blocked(self):
         map_a = make_map("a", transitions=[{
             "id": "blocked-exit", "source_cells": [[0, 0]], "exit_direction": "east",
