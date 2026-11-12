@@ -95,6 +95,16 @@ class TestWorldMapDefinition(unittest.TestCase):
         with self.assertRaisesRegex(WorldMapDefinitionError, "reciprocal"):
             validate_world_map(world([placement("a", 0, 0), placement("b", 1, 0)]), {"a": a, "b": b})
 
+
+    def test_reciprocal_transition_must_target_the_original_map(self):
+        a = hex_map("a", [exit_record("a_to_b", "b", "east", "west")])
+        b = hex_map("b", [exit_record("b_to_other", "other", "west", "east")])
+        with self.assertRaisesRegex(WorldMapDefinitionError, "reciprocal"):
+            validate_world_map(
+                world([placement("a", 0, 0), placement("b", 1, 0)]),
+                {"a": a, "b": b},
+            )
+
     def test_wrong_world_direction_is_rejected(self):
         a = hex_map("a", [exit_record("a_to_b", "b", "east", "west", mode="one_way")])
         b = hex_map("b")
