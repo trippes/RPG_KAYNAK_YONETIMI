@@ -57,6 +57,19 @@ class TestHexWorldView(unittest.TestCase):
         )
         self.assertIn("blocked", self.view.message.lower())
 
+    def test_far_ore_landmark_is_connected_by_a_walkable_route(self):
+        self.assertTrue(self.view.enter())
+        target = LocalHexPosition(3, 2)
+        path = self.view.runtime.path_to("hero", target)
+        self.assertIsNotNone(path)
+        self.assertEqual(path[0], LocalHexPosition(0, 0))
+        self.assertEqual(path[-1], target)
+        self.assertTrue(self.view._move_to(target))
+        self.assertEqual(
+            self.view.runtime.entity("hero").position.cell,
+            target,
+        )
+
     def test_confirm_uses_reciprocal_hex_map_transition(self):
         self.assertTrue(self.view.enter())
         self.view.handle(InputState(actions={"confirm"}))
