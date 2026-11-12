@@ -121,3 +121,40 @@ Bu çalışma kopyasında Git metadata'sı bulunmadığından ilerleme karşıla
 commit tarihçesine göre yapılamaz. Bu nedenle bu roadmap'teki durum; mevcut
 kaynak kodu, architecture belgeleri ve tekrar üretilebilir test sonucu ile
 belirlenir.
+
+
+## Faz F — Altıgen dünya mimarisi — AŞAMA 0 TAMAMLANDI (12 Kasım 2026)
+
+Aşama 0 kapsamında yalnızca teknik inceleme ve dokümantasyon yapıldı. Başlangıç
+snapshot'ında 420 dosya ve dokuz yerel harita incelendi. Kare tabanlı mekânsal
+bağımlılıklar, içerik bağlantıları, kayıt alanları ve Pygame dönüşüm noktaları
+envanterlendi. Yeni HexCoord, axial map schema, masked topology, altı yönlü
+transition ve eski kayıt migration sözleşmeleri tasarım olarak belgelendi.
+
+Yeni belgeler:
+- `docs/architecture/35-hexagonal-world-architecture.md`
+- `docs/architecture/36-hexagonal-world-migration-plan.md`
+- `docs/architecture/37-hexagonal-world-dependency-inventory.md`
+- `docs/content/hex-map-authoring.md`
+
+Aşama 0'da oyun kodu, mevcut map JSON'ları, test dosyaları ve mevcut kare
+`docs/content/map-authoring.md` sözleşmesi değiştirilmedi. Yeni altıgen JSON
+sözleşmesi henüz loader tarafından uygulanmıyor.
+
+**Test notu:** Bu çalışma GitHub kaynak incelemesi ve dokümantasyon işlemleriyle
+yürütüldü; yerel Python test komutu çalıştırılmadı. Bu nedenle önceki bölümde
+kaydedilen 764 test sonucu tarihsel bir doğrulama kaydıdır; 12 Kasım snapshot'ı
+için yeniden çalıştırılmış sonuç olarak yorumlanmamalıdır. Başlangıç commit'inde
+GitHub birleşik commit status endpoint'i de herhangi bir status kaydı döndürmedi.
+
+### Sonraki uygulama aşamaları
+
+1. Axial geometri value object ve matematik testleri.
+2. Masked local map veri modeli ve JSON loader.
+3. WorldHexPosition ve altı yönlü dünya bağlantıları.
+4. Altı komşulu yerel hareket/pathfinding.
+5. Pointy-top Pygame renderer, kamera ve fare seçimi.
+6. NPC, kaynak, landmark, yapı ve nesne occupancy adaptörleri.
+7. Kayıt migration, dokuz haritanın içerik dönüşümü ve tam regresyon.
+
+Aşama 1, ayrı bir uygulama talimatı verilene kadar başlatılmaz.
