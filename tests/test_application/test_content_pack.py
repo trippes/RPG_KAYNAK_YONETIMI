@@ -116,7 +116,9 @@ class TestContentPack(unittest.TestCase):
         self.assertIn("ids", definition)
         self.assertIn("world", definition)
         self.assertIn("character", definition)
-        self.assertIn("locations", definition)
+        self.assertNotIn("locations", definition)
+        self.assertNotIn("connections", definition)
+        self.assertNotIn("starting_position", definition["character"])
         self.assertNotIn("npc", definition)
         self.assertIn("dialogue", definition)
 

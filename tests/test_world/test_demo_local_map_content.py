@@ -2,40 +2,39 @@ import json
 import unittest
 from pathlib import Path
 
-from world.map_loader import load_map_definition
+from world.map_loader import load_map_definition, load_map_definitions
 
 
 ROOT = Path(__file__).resolve().parents[2]
 PACKAGE = ROOT / "content" / "demo_eldoria"
 MAPS = PACKAGE / "maps"
-ALIASES = {"village_id": "village", "forest_id": "forest"}
+EXPECTED_MAPS = {
+    "village", "forest", "south_forest", "west_forest", "east_forest",
+    "north_mine", "south_mine", "west_mine", "east_mine",
+}
 
 
 class TestDemoLocalMapContent(unittest.TestCase):
-    def test_every_starter_location_has_a_valid_map_file(self):
-        starter = json.loads((PACKAGE / "starter_content.json").read_text(encoding="utf-8"))
-        expected = {ALIASES.get(item["id"], item["id"]) for item in starter["locations"]}
-        actual = {path.stem for path in MAPS.glob("*.json")}
-        self.assertEqual(actual, expected)
-        for path in sorted(MAPS.glob("*.json")):
-            self.assertEqual(load_map_definition(path).map_id, path.stem)
+    def test_all_nine_demo_maps_are_discovered_from_json(self):
+        definitions = load_map_definitions(MAPS)
+        self.assertEqual(set(definitions), EXPECTED_MAPS)
+        self.assertEqual({path.stem for path in MAPS.glob("*.json")}, EXPECTED_MAPS)
 
-    def test_local_landmarks_preserve_starter_coordinates(self):
-        starter = json.loads((PACKAGE / "starter_content.json").read_text(encoding="utf-8"))
-        for location in starter["locations"]:
-            map_id = ALIASES.get(location["id"], location["id"])
-            definition = load_map_definition(MAPS / f"{map_id}.json")
-            expected = {
-                item["id"]: tuple(item["position"])
-                for item in location.get("landmarks", ())
-                if isinstance(item.get("position"), list)
-                and len(item["position"]) == 2
-                and all(type(value) is int for value in item["position"])
-                and 0 <= item["position"][0] < definition.size.width
-                and 0 <= item["position"][1] < definition.size.height
-            }
-            actual = {item.landmark_id: item.position for item in definition.landmarks}
-            self.assertEqual(actual, expected, map_id)
+    def test_world_positions_are_declared_by_local_map_files(self):
+        definitions = load_map_definitions(MAPS)
+        self.assertTrue(all(item.world_position is not None for item in definitions.values()))
+        positions = [item.world_position for item in definitions.values()]
+        self.assertEqual(len(positions), len(set(positions)))
+
+    def test_all_landmark_coordinates_are_inside_their_local_maps(self):
+        for path in MAPS.glob("*.json"):
+            definition = load_map_definition(path)
+            for landmark in definition.landmarks:
+                x, y = landmark.position
+                self.assertTrue(
+                    0 <= x < definition.size.width and 0 <= y < definition.size.height,
+                    f"{definition.map_id}:{landmark.landmark_id}",
+                )
 
     def test_river_and_bridge_are_declared_as_map_features(self):
         for path in MAPS.glob("*.json"):
@@ -46,40 +45,49 @@ class TestDemoLocalMapContent(unittest.TestCase):
             self.assertEqual(len(features["river"].tiles), definition.size.height * 2)
             self.assertEqual(len(features["bridge"].tiles), 2)
 
-    def test_resource_landmarks_reference_declared_resource_nodes(self):
+    def test_resource_landmarks_match_the_resource_catalog(self):
         resources = json.loads((PACKAGE / "resources.json").read_text(encoding="utf-8"))
         node_ids = {item["id"] for item in resources["nodes"]}
-        for path in MAPS.glob("*.json"):
-            definition = load_map_definition(path)
+        definitions = load_map_definitions(MAPS)
+        for definition in definitions.values():
             for landmark in definition.landmarks:
                 if landmark.resource_node_id is not None:
                     self.assertIn(landmark.resource_node_id, node_ids)
-
-    def test_world_positions_are_declared_by_local_map_files(self):
-        starter = json.loads((PACKAGE / "starter_content.json").read_text(encoding="utf-8"))
-        for location in starter["locations"]:
-            map_id = ALIASES.get(location["id"], location["id"])
-            definition = load_map_definition(MAPS / f"{map_id}.json")
-            self.assertEqual(definition.world_position, tuple(location["position"]), map_id)
-
-    def test_local_map_transitions_cover_every_legacy_world_connection(self):
-        starter = json.loads((PACKAGE / "starter_content.json").read_text(encoding="utf-8"))
-        transitions = {
-            (map_id, transition.target_map_id)
-            for map_id, definition in (
-                (path.stem, load_map_definition(path)) for path in MAPS.glob("*.json")
+        for record in resources["nodes"]:
+            map_id = {"village_id": "village", "forest_id": "forest"}.get(
+                record["location_id"], record["location_id"],
             )
-            for transition in definition.transitions
-        }
-        for first, second in starter["connections"]:
-            first_id = ALIASES.get(first, first)
-            second_id = ALIASES.get(second, second)
-            self.assertIn((first_id, second_id), transitions)
-            self.assertIn((second_id, first_id), transitions)
+            landmark = next(
+                item for item in definitions[map_id].landmarks
+                if item.landmark_id == record["landmark_id"]
+            )
+            self.assertEqual(landmark.resource_node_id, record["id"])
 
-    def test_village_declares_player_starting_tile(self):
-        definition = load_map_definition(MAPS / "village.json")
-        self.assertEqual(definition.starting_position, (16, 29))
+    def test_bidirectional_exits_have_reciprocal_local_transitions(self):
+        definitions = load_map_definitions(MAPS)
+        for map_id, definition in definitions.items():
+            for transition in definition.transitions:
+                if not transition.bidirectional:
+                    continue
+                target = definitions[transition.target_map_id]
+                reciprocal = any(
+                    candidate.bidirectional
+                    and candidate.target_map_id == map_id
+                    and set(candidate.from_tiles).intersection(transition.target_tiles)
+                    and set(candidate.target_tiles).intersection(transition.from_tiles)
+                    for candidate in target.transitions
+                )
+                self.assertTrue(reciprocal, transition.transition_id)
+
+    def test_only_the_starting_map_declares_a_starting_position(self):
+        definitions = load_map_definitions(MAPS)
+        starting = [
+            item for item in definitions.values()
+            if item.starting_position is not None
+        ]
+        self.assertEqual(len(starting), 1)
+        self.assertEqual(starting[0].map_id, "village")
+        self.assertEqual(starting[0].starting_position, (16, 29))
 
 
 if __name__ == "__main__":

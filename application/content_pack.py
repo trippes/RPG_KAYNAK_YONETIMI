@@ -103,7 +103,7 @@ def load_starter_content(path: str | Path | None = None, *, package_path: str | 
     )
     if definition.get("schema_version") != CONTENT_SCHEMA_VERSION:
         raise ContentDefinitionError("Unsupported content definition schema version.")
-    required = {"ids", "world", "character", "locations", "faction", "dialogue"}
+    required = {"ids", "world", "character", "faction", "dialogue"}
     missing = sorted(required - definition.keys())
     if missing:
         raise ContentDefinitionError(
