@@ -35,6 +35,16 @@ class TestContentPackageLoader(unittest.TestCase):
         self.assertEqual(len(package.files["characters"]["races"]), 3)
         self.assertEqual(len(package.files["characters"]["classes"]), 3)
 
+    def test_demo_package_separates_hex_maps_from_square_maps(self):
+        package = load_content_package(DEMO_PACKAGE)
+
+        self.assertEqual(set(package.hex_map_definitions), {"hex_forest_demo"})
+        self.assertNotIn("hex_forest_demo", package.map_definitions)
+        self.assertEqual(len(package.map_definitions), 9)
+        self.assertTrue(
+            set(package.map_definitions).isdisjoint(package.hex_map_definitions)
+        )
+
     def test_package_rejects_unsupported_manifest_schema(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
