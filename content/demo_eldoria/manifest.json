@@ -10,5 +10,6 @@
     "characters": "characters.json",
     "gameplay_rules": "gameplay_rules.json"
   },
-  "maps": "maps"
+  "maps": "maps",
+  "world_map": "world.json"
 }
