@@ -570,21 +570,51 @@ def _validate_content_references(
                     f"references missing NPC '{target_id}'."
                 )
 
+    npc_by_id = {record["id"]: record for record in npc_definitions}
     for market in definition.get("markets", ()):
         map_id = resolve_id(market["location_id"])
-        if map_id not in maps:
+        map_definition = maps.get(map_id)
+        if map_definition is None:
             raise ContentDefinitionError(
                 f"Market '{market['market_id']}' references missing map '{map_id}'."
             )
-        if market["npc_id"] not in npc_ids:
+        market_npc = npc_by_id.get(market["npc_id"])
+        if market_npc is None:
             raise ContentDefinitionError(
                 f"Market '{market['market_id']}' references missing NPC '{market['npc_id']}'."
             )
+        npc_map_id = resolve_id(market_npc["location_id"])
+        if npc_map_id != map_id:
+            raise ContentDefinitionError(
+                f"Market '{market['market_id']}' is on map '{map_id}' but its NPC "
+                f"'{market['npc_id']}' is assigned to '{npc_map_id}'."
+            )
+        if "position" in market:
+            x, y = market["position"]
+            if not (0 <= x < map_definition.size.width and 0 <= y < map_definition.size.height):
+                raise ContentDefinitionError(
+                    f"Market '{market['market_id']}' position ({x}, {y}) is outside "
+                    f"map '{map_id}' bounds ({map_definition.size.width}x{map_definition.size.height})."
+                )
     for partner in definition.get("trade_partners", ()):
         if partner["npc_id"] not in npc_ids:
             raise ContentDefinitionError(
                 f"Trade partner references missing NPC '{partner['npc_id']}'."
             )
+        if "location_id" in partner:
+            map_id = resolve_id(partner["location_id"])
+            map_definition = maps.get(map_id)
+            if map_definition is None:
+                raise ContentDefinitionError(
+                    f"Trade partner '{partner['npc_id']}' references missing map '{map_id}'."
+                )
+            if "position" in partner:
+                x, y = partner["position"]
+                if not (0 <= x < map_definition.size.width and 0 <= y < map_definition.size.height):
+                    raise ContentDefinitionError(
+                        f"Trade partner '{partner['npc_id']}' position ({x}, {y}) is outside "
+                        f"map '{map_id}' bounds ({map_definition.size.width}x{map_definition.size.height})."
+                    )
 
 
 def _register_opening_content(application, definition: dict, npc_definitions, character_definitions, map_definitions, ids: StarterContentIds):

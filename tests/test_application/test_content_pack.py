@@ -17,7 +17,10 @@ from application.content_pack import (
     populate_opening_content,
     populate_gameplay_resources,
     _build_dialogue_from_definition,
+    StarterContentIds,
+    _validate_content_references,
 )
+from application.content_loader import load_content_package
 from game_ui.input import InputState
 from game_ui.screens.dialogue_screen import DialogueScreen
 from game_ui.screens.trade_screen import TradeScreen
@@ -400,6 +403,19 @@ class TestContentPack(unittest.TestCase):
                 populate_gameplay_resources(
                     service, resource_definitions_path=path,
                 )
+
+    def test_market_location_and_coordinates_are_validated_against_map_catalog(self):
+        package = load_content_package(
+            Path(__file__).resolve().parents[2] / "content" / "demo_eldoria"
+        )
+        starter = load_starter_content()
+        starter["markets"][0]["position"] = [99, 99]
+        with self.assertRaisesRegex(ContentDefinitionError, "Market .* position"):
+            _validate_content_references(
+                starter, package.map_definitions, load_npc_definitions(),
+                load_quest_definitions(), load_resource_definitions(),
+                StarterContentIds(),
+            )
 
 
 if __name__ == "__main__":

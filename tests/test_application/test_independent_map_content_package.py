@@ -5,6 +5,7 @@ import unittest
 from pathlib import Path
 
 from application import GameApplication
+from application.content_loader import load_content_package
 from application.content_pack import (
     populate_gameplay_resources,
     populate_opening_content,
@@ -121,6 +122,9 @@ class TestIndependentMapContentPackage(unittest.TestCase):
                 (restored_actor.position.x, restored_actor.position.y),
                 (8, 0),
             )
+
+        # The temporary package is gone; the original package remains usable.
+        self.assertEqual(len(load_content_package(DEMO_PACKAGE).map_definitions), 9)
 
 
 if __name__ == "__main__":
