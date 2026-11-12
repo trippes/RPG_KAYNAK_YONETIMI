@@ -10,7 +10,7 @@ class LocalMapScreen:
 
     def __init__(self, service):
         self.service = service
-        self.selected = self._map_center()
+        self.selected = (0, 0)
         self.selected_npc_id = None
         self.menu_open = False
         self.menu_selected = 0
