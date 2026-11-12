@@ -390,10 +390,12 @@ class MainScreen:
         destination = sorted(candidates, key=lambda item: item.location_id)[0]
         destination_definition = self._map_definition(destination)
         destination_gates = self._gate_tiles(destination_definition)
+        target_width = destination_definition.size.width if destination_definition else self._map_width()
+        target_height = destination_definition.size.height if destination_definition else self._map_height()
         target = (
-            (0 if dx > 0 else self._map_width() - 1, current_gate[1])
+            (0 if dx > 0 else target_width - 1, min(current_gate[1], target_height - 1))
             if dx else
-            (current_gate[0], 0 if dy > 0 else self._map_height() - 1)
+            (min(current_gate[0], target_width - 1), 0 if dy > 0 else target_height - 1)
         )
         if destination_gates and destination_definition is not None:
             target_edge = (
