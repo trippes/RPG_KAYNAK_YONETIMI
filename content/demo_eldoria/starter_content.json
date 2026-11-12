@@ -703,15 +703,6 @@
   "faction": {
     "name": "Vadi Muhafızları"
   },
-  "npc": {
-    "name": "Eren",
-    "role": "warden",
-    "location_id": "village_id",
-    "position": [
-      16,
-      30
-    ]
-  },
   "dialogue": {
     "id": "warden_intro",
     "start_node": "start",
@@ -728,8 +719,6 @@
       "market_id": "village_inn",
       "location_id": "village_id",
       "npc_id": "innkeeper_mira",
-      "npc_name": "Hancı Mira",
-      "npc_role": "innkeeper",
       "merchant_id": "merchant_inn",
       "inventory_id": "market_inn_inventory",
       "restock_interval": 2,
