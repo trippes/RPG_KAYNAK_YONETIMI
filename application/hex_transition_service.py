@@ -52,6 +52,11 @@ class HexMapTransitionService:
                 False, entity.position, MovementFailureReason.INVALID_TRANSITION,
                 "Transition target map is unavailable.",
             )
+        if self._world_map is None:
+            return MovementResult(
+                False, entity.position, MovementFailureReason.INVALID_TRANSITION,
+                "World-map topology is required to execute a cross-map transition.",
+            )
         if not transition.target_cells:
             return MovementResult(
                 False, entity.position, MovementFailureReason.INVALID_TRANSITION,

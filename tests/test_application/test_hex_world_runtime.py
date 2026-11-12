@@ -4,7 +4,19 @@ from application.hex_map_definition import parse_hex_map
 from application.hex_occupancy import HexOccupant, HexOccupancyRegistry
 from application.hex_pathfinding import HexPathfinder
 from application.hex_world_runtime import HexWorldRuntime
-from core.domain.spatial import EntityPosition, HexDirection, LocalHexPosition, MovementFailureReason, MovementProfile
+from core.domain.spatial import EntityPosition, HexDirection, LocalHexPosition, MovementFailureReason, MovementProfile, WorldHexPosition
+from application.world_map_definition import WorldMapDefinition, WorldMapPlacement
+
+
+def make_world_map():
+    return WorldMapDefinition(
+        1, "test_world", "Test World",
+        (
+            WorldMapPlacement("a", WorldHexPosition(0, 0)),
+            WorldMapPlacement("b", WorldHexPosition(1, 0)),
+        ),
+        {},
+    )
 
 
 def make_map(map_id="forest", cells=None, overrides=None, transitions=None):
@@ -156,7 +168,7 @@ class TestHexWorldRuntime(unittest.TestCase):
             "target_cells": [[0, 0]], "active": True, "traversal_mode": "one_way",
         }])
         map_b = make_map("b")
-        runtime = HexWorldRuntime({"a": map_a, "b": map_b})
+        runtime = HexWorldRuntime({"a": map_a, "b": map_b}, world_map_definition=make_world_map())
         source = EntityPosition("a", LocalHexPosition(0, 0))
         runtime.register_entity("player", "player", source)
         runtime.register_entity("blocker", "npc", EntityPosition("b", LocalHexPosition(0, 0)))
@@ -171,7 +183,7 @@ class TestHexWorldRuntime(unittest.TestCase):
             "target_cells": [[0, 0], [1, 0]], "active": True, "traversal_mode": "one_way",
         }])
         map_b = make_map("b")
-        runtime = HexWorldRuntime({"a": map_a, "b": map_b})
+        runtime = HexWorldRuntime({"a": map_a, "b": map_b}, world_map_definition=make_world_map())
         runtime.register_entity("player", "player", EntityPosition("a", LocalHexPosition(0, 0)))
         runtime.register_entity("guard", "npc", EntityPosition("b", LocalHexPosition(0, 0)))
         result = runtime.transition("player", "open")
