@@ -1544,19 +1544,14 @@ class GameplayService:
         if registered is not None:
             registered(actor_id, npc_id)
             return
-        # Compatibility adapters for the existing starter slice only.
-        actions = {
-            "accept_carpenter_quest": lambda: self.accept_carpenter_quest(actor_id, "player"),
-            "deliver_carpenter_wood": lambda: self.deliver_carpenter_wood(actor_id, npc_id, "player"),
-            "accept_inn_quest": lambda: self.accept_inn_quest(actor_id, "player"),
-            "deliver_inn_supplies": lambda: self.deliver_inn_supplies(actor_id, npc_id, "player"),
-            "accept_blacksmith_quest": lambda: self.accept_blacksmith_quest(actor_id, "player"),
-            "deliver_blacksmith_ore": lambda: self.deliver_blacksmith_ore(actor_id, npc_id, "player"),
-            "accept_caravan_quest": lambda: self.accept_caravan_quest(actor_id, "player"),
-        }
-        handler = actions.get(action)
-        if handler is not None:
-            handler()
+        parts = action.split(":")
+        if parts[0] == "accept_quest" and len(parts) == 3:
+            self.accept_quest_by_id(parts[1], actor_id, parts[2])
+        elif parts[0] == "deliver_resource" and len(parts) == 7:
+            self.deliver_resource_for_quest(
+                parts[1], parts[2], parts[3], parts[4], int(parts[5]),
+                actor_id, npc_id, parts[6],
+            )
 
     def register_quest_graph(self, graph: QuestGraph) -> QuestGraph:
         """Attach content-owned progression rules to the active gameplay session."""
@@ -1591,6 +1586,21 @@ class GameplayService:
         if existing is not quest:
             raise ValueError(f"Quest definition already registered: {quest.quest_id}")
         return existing
+
+    def register_pending_quest_definition(self, quest: Quest) -> Quest:
+        """Register an unlisted quest definition for a later dialogue offer."""
+        if not isinstance(quest, Quest):
+            raise TypeError("quest must be Quest.")
+        pending = getattr(self, "_pending_quest_definitions", None)
+        if pending is None:
+            pending = {}
+            self._pending_quest_definitions = pending
+        existing = pending.get(quest.quest_id)
+        if existing is not None and existing is not quest:
+            raise ValueError(f"Pending quest definition already registered: {quest.quest_id}")
+        pending[quest.quest_id] = quest
+        return quest
+
 
     def quest_states(self) -> dict[str, str]:
         return {quest.quest_id: quest.state.value for quest in self._current_bundle().quest_log.all()}
@@ -1643,111 +1653,6 @@ class GameplayService:
             self._quest_reward_accounts[quest.quest_id] = owner_id
         if reward_inventory_id is not None:
             self._quest_reward_inventories[quest.quest_id] = reward_inventory_id
-        return quest
-
-    def accept_caravan_quest(self, owner_id: str, inventory_id: str):
-        quest = getattr(self, "caravan_quest", None)
-        if quest is None:
-            raise RuntimeError("Kayıp Kervanın İzinde görevi bulunamadı.")
-        if quest.state.value == "active":
-            return quest
-        if quest.state.value == "completed":
-            raise ValueError("Kervan görevi zaten tamamlandı.")
-        return self.start_quest(quest, owner_id=owner_id, reward_inventory_id=inventory_id)
-
-    def accept_carpenter_quest(self, owner_id: str, inventory_id: str):
-        quest = getattr(self, "carpenter_quest", None)
-        if quest is None:
-            raise RuntimeError("Marangoz görevi bulunamadı.")
-        if quest.state.value == "active":
-            return quest
-        if quest.state.value == "completed":
-            raise ValueError("Marangoz görevi zaten tamamlandı.")
-        return self.start_quest(
-            quest, owner_id=owner_id, reward_inventory_id=inventory_id,
-        )
-
-    def deliver_carpenter_wood(self, actor_id: str, npc_id: str, inventory_id: str):
-        quest = getattr(self, "carpenter_quest", None)
-        if quest is None or quest.state.value != "active":
-            raise ValueError("Hilmi'nin aktif bir odun görevi yok.")
-        if npc_id != "village_carpenter":
-            raise ValueError("Odun yalnızca Marangoz Hilmi'ye teslim edilebilir.")
-        collected = next(
-            (item for item in quest.objectives if item.objective_id == "collect_wood"),
-            None,
-        )
-        if collected is None or not collected.completed:
-            raise ValueError("Önce marangozun istediği 3 odunu toplamalısın.")
-        inventory = self._inventory(self._current_bundle(), inventory_id)
-        wood = ResourceType("wood")
-        stock = inventory.get(wood)
-        if stock is None or stock.value < 3:
-            raise ValueError("Teslim etmek için en az 3 odun gerekli.")
-        inventory.remove(wood, Quantity(3, ResourceUnit.ITEM))
-        self.update_quest_objective(
-            quest.quest_id, "deliver_wood", 1, actor_id, inventory_id,
-        )
-        return quest
-
-    def accept_inn_quest(self, owner_id: str, inventory_id: str):
-        quest = getattr(self, "inn_quest", None)
-        if quest is None:
-            raise RuntimeError("Han görevi bulunamadı.")
-        if quest.state.value == "active":
-            return quest
-        if quest.state.value == "completed":
-            raise ValueError("Han görevi zaten tamamlandı.")
-        carpenter = getattr(self, "carpenter_quest", None)
-        if carpenter is None or carpenter.state.value != "completed":
-            raise ValueError("Önce Hilmi'nin odun görevini tamamlamalısın.")
-        return self.start_quest(
-            quest, owner_id=owner_id, reward_inventory_id=inventory_id,
-        )
-
-    def accept_blacksmith_quest(self, owner_id: str, inventory_id: str):
-        quest = getattr(self, "blacksmith_quest", None)
-        if quest is None:
-            raise RuntimeError("Demirci görevi bulunamadı.")
-        if quest.state.value == "active":
-            return quest
-        if quest.state.value == "completed":
-            raise ValueError("Demirci görevi zaten tamamlandı.")
-        return self.start_quest(quest, owner_id=owner_id, reward_inventory_id=inventory_id)
-
-    def deliver_blacksmith_ore(self, actor_id: str, npc_id: str, inventory_id: str):
-        quest = getattr(self, "blacksmith_quest", None)
-        if quest is None or quest.state.value != "active":
-            raise ValueError("Demircinin aktif bir cevher görevi yok.")
-        if npc_id != "village_blacksmith":
-            raise ValueError("Demir cevheri yalnızca demirciye teslim edilebilir.")
-        inventory = self._inventory(self._current_bundle(), inventory_id)
-        ore = ResourceType("iron_ore")
-        stock = inventory.get(ore)
-        if stock is None or stock.value < 3:
-            raise ValueError("Teslim etmek için en az 3 demir cevheri gerekli.")
-        inventory.remove(ore, Quantity(3, ResourceUnit.ITEM))
-        self.update_quest_objective(
-            quest.quest_id, "deliver_iron_ore", 1, actor_id, inventory_id,
-        )
-        return quest
-
-    def deliver_inn_supplies(self, actor_id: str, npc_id: str, inventory_id: str):
-        quest = getattr(self, "inn_quest", None)
-        if quest is None or quest.state.value != "active":
-            raise ValueError("Hilmi'nin aktif bir han görevi yok.")
-        if npc_id != "village_carpenter":
-            raise ValueError("Erzaklar Hilmi'ye teslim edilmelidir.")
-        inventory = self._inventory(self._current_bundle(), inventory_id)
-        bread = inventory.get(ResourceType("bread"))
-        water = inventory.get(ResourceType("water"))
-        if bread is None or bread.value < 1 or water is None or water.value < 1:
-            raise ValueError("Teslim etmek için 1 ekmek ve 1 su gerekli.")
-        inventory.remove(ResourceType("bread"), Quantity(1, ResourceUnit.ITEM))
-        inventory.remove(ResourceType("water"), Quantity(1, ResourceUnit.ITEM))
-        self.update_quest_objective(
-            quest.quest_id, "deliver_supplies", 1, actor_id, inventory_id,
-        )
         return quest
 
     def update_quest_objective(self, quest_id: str, objective_id: str, amount: int = 1, owner_id: str | None = None, inventory_id: str | None = None):

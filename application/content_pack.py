@@ -14,7 +14,7 @@ from character import Ability, CharacterClass, CharacterFactory, Race
 from core.domain.spatial import Position
 from npc import Faction, NPC
 from economy import Currency, Money, MarketProfile, MarketCatalogEntry
-from quests import Dialogue, DialogueChoice, DialogueNode
+from quests import Dialogue, DialogueChoice, DialogueNode, Objective, ObjectiveType, Quest, Reward
 from resources import Inventory, Quantity, ResourceType, ResourceUnit, WorldResourceNode
 from world import Location, WorldMap
 
@@ -304,6 +304,102 @@ def _build_dialogue_from_definition(dialogue_data: dict, speaker_id: str) -> Dia
     return Dialogue(dialogue_id, tuple(nodes), start_node_id)
 
 
+
+def load_quest_definitions(path: str | Path | None = None) -> tuple[dict, ...]:
+    """Load and validate declarative quest and dialogue records."""
+    definition = _load_package_file("quests") if path is None else _read_json_definition(Path(path), "Quest definition")
+    if definition.get("schema_version") != CONTENT_SCHEMA_VERSION:
+        raise ContentDefinitionError("Unsupported quest definition schema version.")
+    records = definition.get("quests")
+    if not isinstance(records, list):
+        raise ContentDefinitionError("Quest definitions must contain a 'quests' list.")
+    quest_ids: set[str] = set()
+    for index, record in enumerate(records):
+        if not isinstance(record, dict):
+            raise ContentDefinitionError(f"Quest record at index {index} must be an object.")
+        quest_id, title, giver = record.get("id"), record.get("title"), record.get("giver_npc_id")
+        if not all(isinstance(value, str) and value.strip() for value in (quest_id, title, giver)):
+            raise ContentDefinitionError(f"Quest record at index {index} has invalid identity fields.")
+        if quest_id in quest_ids:
+            raise ContentDefinitionError(f"Duplicate quest id: {quest_id}")
+        quest_ids.add(quest_id)
+        if not isinstance(record.get("sequential_objectives", False), bool):
+            raise ContentDefinitionError(f"Quest '{quest_id}' sequential_objectives must be boolean.")
+        objectives = record.get("objectives")
+        if not isinstance(objectives, list) or not objectives:
+            raise ContentDefinitionError(f"Quest '{quest_id}' must define at least one objective.")
+        objective_ids: set[str] = set()
+        for objective in objectives:
+            if not isinstance(objective, dict):
+                raise ContentDefinitionError(f"Quest '{quest_id}' objective must be an object.")
+            objective_id = objective.get("id")
+            if not isinstance(objective_id, str) or not objective_id.strip() or objective_id in objective_ids:
+                raise ContentDefinitionError(f"Quest '{quest_id}' has an invalid or duplicate objective id.")
+            objective_ids.add(objective_id)
+            if not isinstance(objective.get("description"), str) or not objective["description"].strip():
+                raise ContentDefinitionError(f"Quest '{quest_id}' objective '{objective_id}' has no description.")
+            try:
+                ObjectiveType(objective.get("type"))
+            except (TypeError, ValueError) as error:
+                raise ContentDefinitionError(f"Quest '{quest_id}' objective '{objective_id}' has an invalid type.") from error
+            required_count = objective.get("required", 1)
+            if isinstance(required_count, bool) or not isinstance(required_count, int) or required_count < 1:
+                raise ContentDefinitionError(f"Quest '{quest_id}' objective '{objective_id}' has invalid required count.")
+            if not isinstance(objective.get("optional", False), bool):
+                raise ContentDefinitionError(f"Quest '{quest_id}' objective '{objective_id}' optional must be boolean.")
+        reward = record.get("reward", {})
+        if not isinstance(reward, dict):
+            raise ContentDefinitionError(f"Quest '{quest_id}' reward must be an object.")
+        for key in ("experience", "currency"):
+            amount = reward.get(key, 0)
+            if isinstance(amount, bool) or not isinstance(amount, int) or amount < 0:
+                raise ContentDefinitionError(f"Quest '{quest_id}' reward '{key}' must be a non-negative integer.")
+        for key, id_key, amount_key in (("items", "id", "quantity"), ("reputation", "id", "amount")):
+            entries = reward.get(key, [])
+            if not isinstance(entries, list):
+                raise ContentDefinitionError(f"Quest '{quest_id}' reward '{key}' must be a list.")
+            for entry in entries:
+                if not isinstance(entry, dict) or not isinstance(entry.get(id_key), str) or not entry[id_key].strip():
+                    raise ContentDefinitionError(f"Quest '{quest_id}' has an invalid '{key}' reward entry.")
+                amount = entry.get(amount_key)
+                if isinstance(amount, bool) or not isinstance(amount, int) or amount < 0:
+                    raise ContentDefinitionError(f"Quest '{quest_id}' has an invalid '{key}' reward amount.")
+        dialogue = record.get("dialogue")
+        if dialogue is not None and not isinstance(dialogue, dict):
+            raise ContentDefinitionError(f"Quest '{quest_id}' dialogue must be an object.")
+    return tuple(records)
+
+
+def _register_quest_content(service, records) -> None:
+    """Create generic quest aggregates and dialogue graphs from package data."""
+    for record in records:
+        objectives = tuple(
+            Objective(
+                item["id"], item["description"], ObjectiveType(item["type"]),
+                target_id=item.get("target_id"), required=item.get("required", 1),
+                optional=item.get("optional", False),
+            )
+            for item in record["objectives"]
+        )
+        reward_data = record.get("reward", {})
+        reward = Reward(
+            experience=reward_data.get("experience", 0),
+            currency=reward_data.get("currency", 0),
+            items=tuple((item["id"], item["quantity"]) for item in reward_data.get("items", ())),
+            reputation=tuple((item["id"], item["amount"]) for item in reward_data.get("reputation", ())),
+        )
+        quest = Quest(
+            record["id"], record["title"], objectives, reward,
+            sequential_objectives=record.get("sequential_objectives", False),
+            giver_npc_id=record["giver_npc_id"],
+        )
+        service.register_quest_definition(quest)
+        dialogue_data = record.get("dialogue")
+        if dialogue_data is not None and service.application.holder.current.social.dialogues.get(dialogue_data.get("id")) is None:
+            service.register_dialogue(_build_dialogue_from_definition(dialogue_data, record["giver_npc_id"]))
+
+
+
 def _register_npcs_for_phase(service, npc_definitions, phase: str, resolve_id):
     """Register validated NPC records for the requested lifecycle phase."""
     bundle = service.application.holder.current
@@ -408,6 +504,7 @@ def populate_gameplay_resources(service, definition_path=None):
     npc_definitions = load_npc_definitions()
     resolve_id = _id_resolver(definition, ids)
     _register_npcs_for_phase(service, npc_definitions, "gameplay", resolve_id)
+    _register_quest_content(service, load_quest_definitions())
     _register_opening_resources(
         service.application.holder.current,
         definition,
@@ -551,6 +648,7 @@ __all__ = [
     "load_starter_content",
     "load_opening_content",
     "load_npc_definitions",
+    "load_quest_definitions",
     "populate_opening_content",
     "populate_gameplay_resources",
     "build_starter_world_map",

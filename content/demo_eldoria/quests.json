@@ -1,0 +1,158 @@
+{
+  "schema_version": 1,
+  "quests": [
+    {
+      "id": "carpenter_wood",
+      "title": "Marangozun Odun İsteği",
+      "giver_npc_id": "village_carpenter",
+      "sequential_objectives": true,
+      "objectives": [
+        {
+          "id": "collect_wood",
+          "description": "Kuzey Ormanı'ndan marangoz atölyesi için 3 odun topla.",
+          "type": "collect",
+          "target_id": "forest_wood",
+          "required": 3
+        },
+        {
+          "id": "deliver_wood",
+          "description": "Topladığın 3 odunu Marangoz Hilmi'ye teslim et.",
+          "type": "custom",
+          "required": 1
+        }
+      ],
+      "reward": {
+        "experience": 35,
+        "currency": 12
+      },
+      "dialogue": {
+        "id": "carpenter_dialogue",
+        "start_node": "start",
+        "nodes": [
+          {
+            "id": "start",
+            "text": "Atölyenin çatısı fırtınada hasar gördü. Onarmak için üç oduna ihtiyacım var. Yardım edebilir misin?",
+            "choices": [
+              {
+                "id": "accept_carpenter_quest",
+                "text": "Elbette. Üç odun getiririm.",
+                "next": "accepted",
+                "action": "accept_quest:carpenter_wood:player"
+              },
+              {
+                "id": "deliver_carpenter_wood",
+                "text": "İstediğin odunları getirdim.",
+                "action": "deliver_resource:carpenter_wood:collect_wood:deliver_wood:wood:3:player"
+              },
+              {
+                "id": "decline_carpenter_quest",
+                "text": "Şimdi değil."
+              }
+            ]
+          },
+          {
+            "id": "accepted",
+            "text": "Harika. Kuzey Ormanı'ndaki ağaçlardan üç odun topla ve atölyeye geri dön. Malzemeleri teslim ettiğinde ödülünü alacaksın."
+          }
+        ]
+      }
+    },
+    {
+      "id": "lost_caravan",
+      "title": "Kayıp Kervanın İzinde",
+      "giver_npc_id": "caravan_merchant",
+      "sequential_objectives": true,
+      "objectives": [
+        {
+          "id": "caravan_wood",
+          "description": "Kervanın kırılmış tekerleklerini onarmak için Kuzey Ormanı'ndan 3 odun topla.",
+          "type": "collect",
+          "target_id": "forest_wood",
+          "required": 3
+        },
+        {
+          "id": "caravan_ore",
+          "description": "Hasarlı yük kasalarını güçlendirmek için kuzey madeninden 2 demir cevheri çıkar.",
+          "type": "collect",
+          "target_id": "north_iron_mine",
+          "required": 2
+        },
+        {
+          "id": "caravan_eren",
+          "description": "Topladığın malzemeleri ve izleri köy muhafızı Eren'e anlat.",
+          "type": "talk",
+          "target_id": "warden_lyra"
+        },
+        {
+          "id": "caravan_return",
+          "description": "Araştırmanın sonucunu Tüccar Yadigar'a bildir.",
+          "type": "talk",
+          "target_id": "caravan_merchant"
+        },
+        {
+          "id": "caravan_clue_wagons",
+          "description": "İsteğe bağlı: Orman yolundaki devrilmiş yük arabalarının izlerini incele.",
+          "type": "custom",
+          "optional": true
+        },
+        {
+          "id": "caravan_clue_tracks",
+          "description": "İsteğe bağlı: Çamurda kalan at ve tekerlek izlerini araştır.",
+          "type": "custom",
+          "optional": true
+        }
+      ],
+      "reward": {
+        "experience": 120,
+        "currency": 45,
+        "items": [
+          {
+            "id": "iron_ore",
+            "quantity": 1
+          }
+        ],
+        "reputation": [
+          {
+            "id": "wardens",
+            "amount": 5
+          }
+        ]
+      },
+      "dialogue": {
+        "id": "caravan_merchant_dialogue",
+        "start_node": "start",
+        "nodes": [
+          {
+            "id": "start",
+            "text": "Kuzey yolunda üç arabadan oluşan kervanım kayboldu. Son haberci, ormandaki eski patikanın yakınında kırılmış tekerlekler ve dağılmış yükler gördüğünü söyledi. Tek başıma araştırmaya cesaret edemiyorum. Bana yardım eder misin?",
+            "choices": [
+              {
+                "id": "accept_caravan_quest",
+                "text": "Kervanın izini süreceğim. Bana bildiklerini anlat.",
+                "next": "accepted",
+                "action": "accept_quest:lost_caravan:player"
+              },
+              {
+                "id": "decline_caravan_quest",
+                "text": "Şimdilik başka işlerim var."
+              },
+              {
+                "id": "caravan_report",
+                "text": "Kervanın izini buldum. Sonuçları anlatayım.",
+                "next": "report"
+              }
+            ]
+          },
+          {
+            "id": "accepted",
+            "text": "Önce ormandan üç odun ve kuzey madeninden iki demir cevheri getir. Bunlarla kırılmış yük arabasının izlerini takip edebiliriz. Sonra Eren'le konuş; kervanın kaybolduğu gece nöbet ondaydı."
+          },
+          {
+            "id": "report",
+            "text": "Demek izleri buldun ve Eren'in anlattıklarını doğruladın. Bu bilgiler kervanın başına gelenleri aydınlattı. Söz verdiğim ödül senindir. Yolculuğunda dikkatli ol."
+          }
+        ]
+      }
+    }
+  ]
+}

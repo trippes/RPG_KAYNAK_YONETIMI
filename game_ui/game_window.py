@@ -344,9 +344,6 @@ class GameWindow:
         from application.game_application import GameApplication
 
         service, _ = populate_opening_content(GameApplication.create_default())
-        # Demo quest content is loaded separately from the temporary UI test fixtures.
-        from application.carpenter_quest_content import populate_carpenter_quest_demo
-        populate_carpenter_quest_demo(service)
         self.service = service
         self.screens.update({
             "opening": OpeningScreen(),
@@ -726,8 +723,6 @@ class GameWindow:
         ):
             from application.content_pack import populate_gameplay_resources
             populate_gameplay_resources(self.service)
-            from application.caravan_quest_content import populate_caravan_quest_demo
-            populate_caravan_quest_demo(self.service)
             actors = self.service.state().actors
             if actors and actors[0].inventory_id is None:
                 self.service.bind_actor_inventory(actors[0].actor_id, "player")
