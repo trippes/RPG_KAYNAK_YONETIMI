@@ -24,6 +24,7 @@ class ContentPackage:
     package_version: str
     schema_version: int
     files: Mapping[str, dict]
+    map_definitions: Mapping[str, object]
 
 
 def load_content_package(package_dir: str | Path) -> ContentPackage:
@@ -41,7 +42,7 @@ def load_content_package(package_dir: str | Path) -> ContentPackage:
     if not isinstance(manifest, dict):
         raise ContentPackageError("Content package manifest must be a JSON object.")
 
-    allowed_fields = {"schema_version", "package_id", "package_version", "files"}
+    allowed_fields = {"schema_version", "package_id", "package_version", "files", "maps"}
     unknown_fields = sorted(set(manifest) - allowed_fields)
     if unknown_fields:
         raise ContentPackageError(
@@ -96,9 +97,28 @@ def load_content_package(package_dir: str | Path) -> ContentPackage:
             )
         loaded_files[key] = definition
 
+    map_definitions = {}
+    maps_directory = manifest.get("maps")
+    if maps_directory is not None:
+        if not isinstance(maps_directory, str) or not maps_directory.strip():
+            raise ContentPackageError("Content package maps directory must be a non-empty relative path.")
+        maps_root = (root / maps_directory).resolve()
+        if not maps_root.is_relative_to(root):
+            raise ContentPackageError("Content package maps directory resolves outside the package directory.")
+        if not maps_root.is_dir():
+            raise ContentPackageError(f"Content package maps directory could not be loaded: {maps_root}")
+        try:
+            from world.map_loader import load_map_definitions
+            map_definitions = load_map_definitions(maps_root)
+        except (OSError, ValueError) as error:
+            raise ContentPackageError(f"Content package maps could not be loaded from '{maps_root}': {error}") from error
+        if not map_definitions:
+            raise ContentPackageError(f"Content package maps directory contains no JSON map definitions: {maps_root}")
+
     return ContentPackage(
         package_id=package_id,
         package_version=package_version,
         schema_version=schema_version,
         files=MappingProxyType(loaded_files),
+        map_definitions=MappingProxyType(map_definitions),
     )

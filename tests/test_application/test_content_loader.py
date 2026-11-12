@@ -84,6 +84,36 @@ class TestContentPackageLoader(unittest.TestCase):
             with self.assertRaisesRegex(ContentPackageError, "could not be loaded"):
                 load_content_package(root)
 
+    def test_demo_package_discovers_all_map_json_files(self):
+        package = load_content_package(DEMO_PACKAGE)
+
+        self.assertEqual(
+            set(package.map_definitions),
+            {
+                "village", "forest", "south_forest", "west_forest",
+                "east_forest", "north_mine", "south_mine", "west_mine",
+                "east_mine",
+            },
+        )
+
+    def test_package_rejects_missing_declared_maps_directory(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "manifest.json").write_text(
+                json.dumps({
+                    "schema_version": 1,
+                    "package_id": "invalid",
+                    "package_version": "1.0.0",
+                    "files": {"starter": "starter.json"},
+                    "maps": "maps",
+                }),
+                encoding="utf-8",
+            )
+            (root / "starter.json").write_text("{}", encoding="utf-8")
+
+            with self.assertRaisesRegex(ContentPackageError, "maps directory"):
+                load_content_package(root)
+
 
 if __name__ == "__main__":
     unittest.main()

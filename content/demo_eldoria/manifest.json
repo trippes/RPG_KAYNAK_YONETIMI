@@ -9,5 +9,6 @@
     "resources": "resources.json",
     "characters": "characters.json",
     "gameplay_rules": "gameplay_rules.json"
-  }
+  },
+  "maps": "maps"
 }
