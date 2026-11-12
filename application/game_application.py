@@ -161,14 +161,17 @@ class GameApplication:
         )
 
         # Only worlds owned by the active package use its local map catalog.
-        package_world_id = content_package_world_id()
+        active_package_path = getattr(self, "_content_package_path", None)
+        package_world_id = content_package_world_id(active_package_path)
         managed_world_ids = set()
         local_map_catalog = {}
         for world in candidate.session.worlds.get_all():
             is_package_world = world.world_id == package_world_id
             if is_package_world:
                 managed_world_ids.add(world.world_id)
-            world_map = build_starter_world_map(world.world_id)
+            world_map = build_starter_world_map(
+                world.world_id, package_path=active_package_path,
+            )
 
             saved_location_ids = {
                 actor.location_id
@@ -189,7 +192,9 @@ class GameApplication:
                 )
 
             candidate.movement.register_map(world_map)
-            for local_map in build_starter_local_map_definitions(world.world_id):
+            for local_map in build_starter_local_map_definitions(
+                world.world_id, package_path=active_package_path,
+            ):
                 local_map_catalog[(world.world_id, local_map.location_id)] = local_map
                 if not candidate.world_objects.has_local_map(
                     local_map.world_id, local_map.location_id,
