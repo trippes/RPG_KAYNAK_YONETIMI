@@ -429,6 +429,7 @@ def _register_opening_resources(bundle, definition, resolve_id, ids, world_id):
                     quantity,
                     Quantity(0, ResourceUnit.ITEM),
                     location_id=location_id,
+                    gathering_duration_ticks=landmark.get("gathering_duration_ticks", 150),
                 )
             )
 
