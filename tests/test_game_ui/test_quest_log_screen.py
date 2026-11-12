@@ -154,11 +154,17 @@ class QuestJournalWindowTests(unittest.TestCase):
         self.assertTrue(asset.is_file())
         self.assertTrue(QuestLogScreen.transparent_window_background)
 
-    def test_render_shows_categories_objectives_and_rewards(self):
+    def test_render_shows_only_active_completed_and_failed_categories(self):
         renderer = FakeRenderer()
         self.screen.render(renderer)
         rendered_text = [entry[1] for entry in renderer.drawn if entry[0] == "text"]
         self.assertIn("Devam Eden (12)", rendered_text)
+        self.assertNotIn("Mevcut", rendered_text)
+        self.assertEqual(len(self.screen.CATEGORIES), 3)
+        self.assertEqual(
+            tuple(key for key, _label in self.screen.CATEGORIES),
+            ("active", "completed", "failed"),
+        )
         self.assertIn("Hedefler", rendered_text)
         self.assertIn("XP  25", rendered_text)
         self.assertTrue(any(entry[0] == "bar" for entry in renderer.drawn))
