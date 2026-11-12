@@ -2,7 +2,7 @@
 
 **Branch:** `demo_eldoria`  
 **Scope:** Pygame presentation/input integration for the existing hex runtime  
-**Status:** Implemented; automated CI verification pending
+**Status:** Boundary-transition implementation; automated CI verification pending
 
 ## Design boundary
 
@@ -29,8 +29,14 @@ must preserve the same return-position contract.
 - Pygame renders pointy-top axial hexes from the domain geometry helpers.
 - Mouse clicks resolve pixel coordinates to axial coordinates and use runtime
   pathfinding to reach valid cells.
-- The active reciprocal transition between `hex_forest_demo` and
-  `hex_clearing_demo` is invoked with Enter while standing on its source cell.
+- Cross-map travel is movement-driven. When the player attempts to step beyond
+  a local map's valid-cell boundary, the view resolves an active transition
+  whose source cell and exit direction match that move, then atomically places
+  the player on the destination map's authored entry cell.
+- The demo forest connects eastward from `(3, 2)` to the clearing's west
+  entry at `(-1, 0)`; the reverse boundary move returns to the forest.
+- Enter no longer changes maps. A boundary with no matching world connection
+  blocks movement.
 
 ## Controls
 
@@ -44,15 +50,16 @@ must preserve the same return-position contract.
 | Z | North-west |
 | X | South-west |
 | Left mouse click | Pathfind to a valid hex cell |
-| Enter | Use a transition on the current cell |
+| Enter | No map-travel action; map changes occur by crossing connected boundaries |
 | Escape | Open/close the in-game menu |
 
 ## Verification coverage
 
 `tests/test_game_ui/test_hex_world_view.py` covers player registration,
-keyboard movement through the runtime, blocked-cell rejection, reciprocal
-hex-map transitions, preservation of the legacy actor state, and MainScreen's
-development bridge toggle.
+keyboard movement through the runtime, blocked-cell rejection, automatic
+east/west boundary transitions, Enter not changing maps, unlinked-boundary
+rejection, preservation of the legacy actor state, and MainScreen's development
+bridge toggle.
 
 The GitHub Actions Core quality workflow is the authoritative automated
 verification for this branch. Manual Pygame visual/input verification remains
