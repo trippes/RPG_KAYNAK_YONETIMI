@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "player": {
+    "inventory_id": "player",
+    "account_id": "hero"
+  },
+  "economy": {
+    "starting_currency": "gold",
+    "starting_balance": 100
+  },
+  "consumables": [
+    {
+      "resource_id": "bread",
+      "healing": 2
+    },
+    {
+      "resource_id": "water",
+      "healing": 1
+    }
+  ]
+}

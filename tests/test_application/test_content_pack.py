@@ -13,6 +13,7 @@ from application.content_pack import (
     load_quest_definitions,
     load_resource_definitions,
     load_character_definitions,
+    load_gameplay_rules,
     populate_opening_content,
     populate_gameplay_resources,
     _build_dialogue_from_definition,
@@ -165,6 +166,27 @@ class TestContentPack(unittest.TestCase):
             first_quest_ids,
         )
         self.assertEqual(set(application.holder.current.social.dialogues), first_dialogue_ids)
+
+    def test_starting_economy_and_consumable_effects_are_content_configurable(self):
+        rules = load_gameplay_rules()
+        rules["economy"]["starting_balance"] = 275
+        rules["consumables"] = [
+            {"resource_id": "bread", "healing": 7},
+            {"resource_id": "water", "healing": 3},
+        ]
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "gameplay_rules.json"
+            path.write_text(json.dumps(rules, ensure_ascii=False), encoding="utf-8")
+            application = GameApplication.create_default()
+            service, _ids = populate_opening_content(
+                application,
+                gameplay_rules_path=path,
+            )
+            populate_gameplay_resources(service)
+
+        self.assertEqual(service.balance("hero", "gold").amount, 275)
+        self.assertEqual(service._consumable_effects, {"bread": 7, "water": 3})
+        self.assertEqual(service.player_inventory_id, "player")
 
     def test_starter_ids_are_resolved_from_the_selected_package(self):
         application = GameApplication.create_default()

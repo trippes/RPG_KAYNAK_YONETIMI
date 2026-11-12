@@ -729,7 +729,7 @@ class GameWindow:
             populate_gameplay_resources(self.service)
             actors = self.service.state().actors
             if actors and actors[0].inventory_id is None:
-                self.service.bind_actor_inventory(actors[0].actor_id, "player")
+                self.service.bind_actor_inventory(actors[0].actor_id, self.service.player_inventory_id)
 
         if next_screen == "market":
             dialogue = self.screens["dialogue"]

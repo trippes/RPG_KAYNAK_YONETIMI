@@ -181,6 +181,10 @@ class GameplayService:
         if not isinstance(application, GameApplication):
             raise TypeError("application must be GameApplication.")
         self._application = application
+        self._player_actor_id = "hero"
+        self._player_inventory_id = "player"
+        self._player_account_id = "hero"
+        self._consumable_effects: dict[str, int] = {}
         self._chains: dict[str, ProductionChain] = {}
         self._bundle = None
         self._character_factory = None
@@ -195,6 +199,36 @@ class GameplayService:
 
     def register_character_factory(self, factory) -> None:
         self._character_factory = factory
+
+    @property
+    def player_actor_id(self) -> str:
+        return self._player_actor_id
+
+    @property
+    def player_inventory_id(self) -> str:
+        return self._player_inventory_id
+
+    @property
+    def player_account_id(self) -> str:
+        return self._player_account_id
+
+    def configure_player_context(self, actor_id: str, inventory_id: str, account_id: str | None = None) -> None:
+        values = (actor_id, inventory_id, account_id or actor_id)
+        if any(not isinstance(value, str) or not value.strip() for value in values):
+            raise ValueError("Player actor, inventory and account IDs must be non-empty strings.")
+        self._player_actor_id, self._player_inventory_id, self._player_account_id = values
+
+    def configure_consumable_effects(self, effects: dict[str, int]) -> None:
+        if not isinstance(effects, dict):
+            raise TypeError("Consumable effects must be a mapping.")
+        validated = {}
+        for resource_id, healing in effects.items():
+            if not isinstance(resource_id, str) or not resource_id.strip():
+                raise ValueError("Consumable resource IDs must be non-empty strings.")
+            if isinstance(healing, bool) or not isinstance(healing, int) or healing < 0:
+                raise ValueError("Consumable healing effects must be non-negative integers.")
+            validated[resource_id] = healing
+        self._consumable_effects = validated
 
     def collect(self, node_id: str, inventory_id: str, quantity: Quantity) -> None:
         """Atomically extract from an active-world node into a registered inventory."""
@@ -211,7 +245,7 @@ class GameplayService:
                 f"Resource node {node_id} does not belong to the active world."
             )
         bundle.resource_nodes.extract(node_id, inventory, quantity)
-        self._advance_quests("collect", node_id, quantity.value, "hero", inventory_id)
+        self._advance_quests("collect", node_id, quantity.value, self.player_actor_id, inventory_id)
 
     def action_cost(self, action_type: ActionType | str) -> int:
         """Return a fixed gameplay action's canonical cost in ticks."""
@@ -332,8 +366,8 @@ class GameplayService:
             if restored is not None:
                 setattr(self, attribute, restored)
                 if attribute in ("carpenter_quest", "inn_quest", "caravan_quest"):
-                    self._quest_reward_accounts.setdefault(quest_id, "hero")
-                    self._quest_reward_inventories.setdefault(quest_id, "player")
+                    self._quest_reward_accounts.setdefault(quest_id, self.player_account_id)
+                    self._quest_reward_inventories.setdefault(quest_id, self.player_inventory_id)
 
     def register_actor(self, actor_id: str, role: str, world_id: str | None = None, active: bool = True, character_id: str | None = None, inventory_id: str | None = None) -> ActorView:
         bundle = self._current_bundle()
@@ -1117,8 +1151,7 @@ class GameplayService:
         if character is None:
             raise GameplayServiceError("Actor must be linked to a character to consume items.")
         resource = ResourceType(resource_id)
-        effects = {"bread": 2, "water": 1}
-        healing = effects.get(resource.value)
+        healing = self._consumable_effects.get(resource.value)
         if healing is None:
             raise GameplayServiceError(f"Resource is not consumable: {resource_id}")
         inventory = self._inventory(bundle, inventory_id)
@@ -1338,7 +1371,8 @@ class GameplayService:
             None,
         )
 
-    def trade_sellable_items(self, npc_id: str, inventory_id: str = "player"):
+    def trade_sellable_items(self, npc_id: str, inventory_id: str | None = None):
+        inventory_id = inventory_id or self.player_inventory_id
         bundle = self._current_bundle()
         merchant = self.trade_partner_for_npc(npc_id)
         if merchant is None:
@@ -1359,8 +1393,10 @@ class GameplayService:
 
     def sell_to_npc(
         self, npc_id: str, resource_type: ResourceType, quantity: int = 1,
-        actor_id: str = "hero", inventory_id: str = "player",
+        actor_id: str | None = None, inventory_id: str | None = None,
     ):
+        actor_id = actor_id or self.player_actor_id
+        inventory_id = inventory_id or self.player_inventory_id
         bundle = self._current_bundle()
         merchant = self.trade_partner_for_npc(npc_id)
         if merchant is None:
@@ -1394,8 +1430,8 @@ class GameplayService:
             profile = bundle.economy.market.profile(market_id)
             if profile is None:
                 raise KeyError(f"Market not found: {market_id}")
-            self._require_actor_in_active_world(bundle, "hero")
-            actor = bundle.actors.get("hero")
+            self._require_actor_in_active_world(bundle, self.player_actor_id)
+            actor = bundle.actors.get(self.player_actor_id)
             if actor.location_id != profile.location_id:
                 raise GameplayServiceError(
                     "Player must be at the market's registered location."
@@ -1519,7 +1555,7 @@ class GameplayService:
         try:
             items = {
                 getattr(resource, "value", str(resource)): amount
-                for resource, amount, _unit in self.inventory("player").stocks
+                for resource, amount, _unit in self.inventory(self.player_inventory_id).stocks
             }
         except (KeyError, ValueError, RuntimeError, AttributeError, TypeError):
             pass
@@ -1611,7 +1647,7 @@ class GameplayService:
         unique = {quest.quest_id: quest for quest in candidates}
         resolved_context = (
             context if context is not None
-            else self._dialogue_context("hero", "")
+            else self._dialogue_context(self.player_actor_id, "")
         )
         graph_ids = set(bundle.quest_graph.quest_ids())
         states = self.quest_states()
@@ -1637,7 +1673,7 @@ class GameplayService:
         bundle = self._current_bundle()
         resolved_context = (
             context if context is not None
-            else self._dialogue_context(owner_id or "hero", "")
+            else self._dialogue_context(owner_id or self.player_actor_id, "")
         )
         if quest.quest_id in bundle.quest_graph.quest_ids() and not bundle.quest_graph.can_start(
             quest, self.quest_states(), resolved_context, bundle.quest_graph_progress,

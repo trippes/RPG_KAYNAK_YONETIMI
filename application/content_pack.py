@@ -552,11 +552,13 @@ def populate_opening_content(
     npc_definitions_path=None,
     character_definitions_path=None,
     content_package_path=None,
+    gameplay_rules_path=None,
 ):
     """Build the opening session using data-defined NPC records."""
     definition = load_opening_content(definition_path, package_path=content_package_path)
     npc_definitions = load_npc_definitions(npc_definitions_path, package_path=content_package_path)
     character_definitions = load_character_definitions(character_definitions_path, package_path=content_package_path)
+    gameplay_rules = load_gameplay_rules(gameplay_rules_path, package_path=content_package_path)
     service, resolved_ids = _register_opening_content(
         application,
         definition,
@@ -567,16 +569,42 @@ def populate_opening_content(
     resolved_package_path = _resolve_content_package_path(content_package_path)
     service._content_package_path = resolved_package_path
     application._content_package_path = resolved_package_path
+    player_rules = gameplay_rules["player"]
+    service.configure_player_context(
+        resolved_ids.hero_id,
+        player_rules["inventory_id"],
+        player_rules["account_id"],
+    )
+    service.configure_consumable_effects({
+        item["resource_id"]: item["healing"]
+        for item in gameplay_rules["consumables"]
+    })
+    service._gameplay_rules = gameplay_rules
     return service, resolved_ids
 
 
-def populate_gameplay_resources(service, definition_path=None, resource_definitions_path=None, content_package_path=None):
+def populate_gameplay_resources(service, definition_path=None, resource_definitions_path=None, content_package_path=None, gameplay_rules_path=None):
     """Create gameplay inventory and resource nodes after character creation."""
     world = service.application.aktif_dunya()
     if world is None:
         raise RuntimeError("An active world is required for gameplay resources.")
     ids = getattr(service, "_starter_content_ids", StarterContentIds())
     active_package_path = content_package_path or getattr(service, "_content_package_path", None)
+    gameplay_rules = (
+        load_gameplay_rules(gameplay_rules_path, package_path=active_package_path)
+        if gameplay_rules_path is not None or not hasattr(service, "_gameplay_rules")
+        else service._gameplay_rules
+    )
+    player_rules = gameplay_rules["player"]
+    service.configure_player_context(
+        getattr(service, "player_actor_id", ids.hero_id),
+        player_rules["inventory_id"],
+        player_rules["account_id"],
+    )
+    service.configure_consumable_effects({
+        item["resource_id"]: item["healing"]
+        for item in gameplay_rules["consumables"]
+    })
     definition = load_starter_content(definition_path, package_path=active_package_path)
     npc_definitions = load_npc_definitions(package_path=active_package_path)
     resolve_id = _id_resolver(definition, ids)
@@ -588,6 +616,7 @@ def populate_gameplay_resources(service, definition_path=None, resource_definiti
         load_resource_definitions(resource_definitions_path, package_path=active_package_path),
         _id_resolver(definition, ids),
         world.world_id,
+        player_rules["inventory_id"],
     )
     bundle = service.application.holder.current
     for market_data in definition.get("markets", ()):
@@ -619,9 +648,44 @@ def populate_gameplay_resources(service, definition_path=None, resource_definiti
             trade_data["accepted_resources"], trade_data["initial_gold"],
             trade_data.get("buyback_rate", 50), trade_data.get("unit_prices", {}),
         )
-    if service.balance("hero", "gold").amount == 0:
-        service.credit("hero", "gold", 100)
+    starting_currency = gameplay_rules["economy"]["starting_currency"]
+    starting_balance = gameplay_rules["economy"]["starting_balance"]
+    if starting_balance and service.balance(player_rules["account_id"], starting_currency).amount == 0:
+        service.credit(player_rules["account_id"], starting_currency, starting_balance)
 
+
+
+
+
+def load_gameplay_rules(path: str | Path | None = None, *, package_path: str | Path | None = None) -> dict:
+    """Load configurable player identity, starting economy and consumable effects."""
+    definition = _load_package_file("gameplay_rules", package_path) if path is None else _read_json_definition(Path(path), "Gameplay rules")
+    if definition.get("schema_version") != CONTENT_SCHEMA_VERSION:
+        raise ContentDefinitionError("Unsupported gameplay rules schema version.")
+    player = definition.get("player")
+    economy = definition.get("economy")
+    consumables = definition.get("consumables")
+    if not isinstance(player, dict) or any(not isinstance(player.get(key), str) or not player[key].strip() for key in ("inventory_id", "account_id")):
+        raise ContentDefinitionError("Gameplay rules must define player inventory_id and account_id.")
+    if not isinstance(economy, dict):
+        raise ContentDefinitionError("Gameplay rules must define an economy object.")
+    currency = economy.get("starting_currency")
+    balance = economy.get("starting_balance")
+    if not isinstance(currency, str) or not currency.strip() or isinstance(balance, bool) or not isinstance(balance, int) or balance < 0:
+        raise ContentDefinitionError("Gameplay rules contain an invalid starting balance.")
+    if not isinstance(consumables, list):
+        raise ContentDefinitionError("Gameplay rules consumables must be a list.")
+    seen: set[str] = set()
+    for item in consumables:
+        if not isinstance(item, dict) or not isinstance(item.get("resource_id"), str) or not item["resource_id"].strip():
+            raise ContentDefinitionError("Gameplay rules contain an invalid consumable.")
+        if item["resource_id"] in seen:
+            raise ContentDefinitionError(f"Duplicate consumable definition: {item['resource_id']}")
+        seen.add(item["resource_id"])
+        healing = item.get("healing")
+        if isinstance(healing, bool) or not isinstance(healing, int) or healing < 0:
+            raise ContentDefinitionError(f"Consumable '{item['resource_id']}' has invalid healing.")
+    return definition
 
 
 
@@ -661,10 +725,10 @@ def load_resource_definitions(path: str | Path | None = None, *, package_path: s
 
 
 
-def _register_opening_resources(bundle, definition, resource_definitions, resolve_id, world_id):
+def _register_opening_resources(bundle, definition, resource_definitions, resolve_id, world_id, inventory_id):
     """Register resource nodes exclusively from validated content records."""
     inventories = dict(bundle.inventories)
-    inventories.setdefault("player", Inventory())
+    inventories.setdefault(inventory_id, Inventory())
     object.__setattr__(bundle, "inventories", MappingProxyType(inventories))
 
     landmarks = {
@@ -750,6 +814,7 @@ __all__ = [
     "load_character_definitions",
     "load_quest_definitions",
     "load_resource_definitions",
+    "load_gameplay_rules",
     "populate_opening_content",
     "populate_gameplay_resources",
     "build_starter_world_map",
