@@ -201,6 +201,17 @@ class GameApplication:
                 ):
                     candidate.world_objects.register_local_map(local_map)
 
+            if is_package_world:
+                for node in candidate.resource_nodes.for_world(world.world_id):
+                    if (
+                        node.location_id is not None
+                        and node.location_id not in available_location_ids
+                    ):
+                        raise ValueError(
+                            f"Saved resource node '{node.node_id}' references map "
+                            f"'{node.location_id}' missing from the active content package."
+                        )
+
         # Restore container placements only after their local maps are registered.
         for placement in container_placements:
             candidate.world_objects.place(placement)
