@@ -64,12 +64,8 @@ class TestWorldMapDefinition(unittest.TestCase):
     def test_valid_placement_and_neighbor_lookup(self):
         definition = world([placement("a", 0, 0), placement("b", 1, 0)])
         validate_world_map(definition, {"a": hex_map("a"), "b": hex_map("b")})
-        self.assertEqual(definition.neighbor("a", __import__(
-            "core.domain.spatial", fromlist=["HexDirection"]
-        ).HexDirection.EAST).map_id, "b")
-        self.assertIsNone(definition.neighbor("a", __import__(
-            "core.domain.spatial", fromlist=["HexDirection"]
-        ).HexDirection.WEST))
+        self.assertEqual(definition.neighbor("a", HexDirection.EAST).map_id, "b")
+        self.assertIsNone(definition.neighbor("a", HexDirection.WEST))
 
     def test_duplicate_map_ids_and_world_coordinates_are_rejected(self):
         with self.assertRaisesRegex(WorldMapDefinitionError, "duplicate map_id"):
