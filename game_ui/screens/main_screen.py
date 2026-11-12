@@ -186,7 +186,6 @@ class MainScreen:
                 "player",
                 Quantity(1, ResourceUnit.ITEM),
             )
-            resource_name = "demir cevheri" if "mine" in str(landmark[0]).lower() else "odun"
             duration = self.service.gathering_duration(actors[0].actor_id)
             self.message = (
                 f"{landmark[1]} toplama başladı. "
@@ -216,7 +215,7 @@ class MainScreen:
         origin_x, origin_y = self._grid_origin()
         x = (mouse_pos[0] - origin_x) // self.TILE_SIZE
         y = (mouse_pos[1] - origin_y) // self.TILE_SIZE
-        if 0 <= x < self.GRID_SIZE and 0 <= y < self.GRID_SIZE:
+        if 0 <= x < self._map_width() and 0 <= y < self._map_height():
             return x, y
         return None
 
@@ -322,8 +321,8 @@ class MainScreen:
         if not (0 <= next_x < self._map_width() and 0 <= next_y < self._map_height()):
             if self._cross_boundary(actor, dx, dy):
                 return
-            next_x = max(0, min(self.GRID_SIZE - 1, next_x))
-            next_y = max(0, min(self.GRID_SIZE - 1, next_y))
+            next_x = max(0, min(self._map_width() - 1, next_x))
+            next_y = max(0, min(self._map_height() - 1, next_y))
         target = (next_x, next_y)
         if not self._is_walkable(target, target=target):
             self.message = "Bu yoldan geçemezsin. Nehirden yalnızca köprüden geçilebilir."
@@ -659,8 +658,8 @@ class MainScreen:
         origin_x, origin_y = self._grid_origin()
         if location:
             renderer.text(location.name, 28, 72, title=True)
-        for y in range(self.GRID_SIZE):
-            for x in range(self.GRID_SIZE):
+        for y in range(self._map_height()):
+            for x in range(self._map_width()):
                 rect = renderer.pg.Rect(
                     origin_x + x * self.TILE_SIZE,
                     origin_y + y * self.TILE_SIZE,
@@ -673,52 +672,54 @@ class MainScreen:
                 renderer.pg.draw.rect(renderer.surface, color, rect)
                 renderer.pg.draw.rect(renderer.surface, (54, 112, 57), rect, 1)
 
-        for y in range(self.GRID_SIZE):
-            rect = renderer.pg.Rect(
-                origin_x + 18 * self.TILE_SIZE,
-                origin_y + y * self.TILE_SIZE,
-                self.TILE_SIZE * 2,
-                self.TILE_SIZE,
-            )
-            renderer.pg.draw.rect(renderer.surface, (45, 115, 165), rect)
-            renderer.pg.draw.line(
-                renderer.surface,
-                (115, 190, 220),
-                (rect.x + 3, rect.centery),
-                (rect.right - 3, rect.centery),
-                1,
-            )
-
-        for bridge_x, bridge_y in self.BRIDGE_TILES:
-            rect = renderer.pg.Rect(
-                origin_x + bridge_x * self.TILE_SIZE,
-                origin_y + bridge_y * self.TILE_SIZE,
-                self.TILE_SIZE,
-                self.TILE_SIZE,
-            )
-            renderer.pg.draw.rect(renderer.surface, (151, 99, 53), rect)
-            renderer.pg.draw.line(
-                renderer.surface, (224, 172, 92),
-                (rect.x + 2, rect.y + self.TILE_SIZE // 3),
-                (rect.right - 2, rect.y + self.TILE_SIZE // 3), 2,
-            )
-            renderer.pg.draw.line(
-                renderer.surface, (224, 172, 92),
-                (rect.x + 2, rect.y + self.TILE_SIZE * 2 // 3),
-                (rect.right - 2, rect.y + self.TILE_SIZE * 2 // 3), 2,
-            )
-
-        if location and location.location_id == "village":
-            for x in range(self.GRID_SIZE):
-                for y in range(self.GRID_SIZE):
-                    if (
-                        x not in (0, self.GRID_SIZE - 1)
-                        and y not in (0, self.GRID_SIZE - 1)
-                    ) or (x, y) in self.VILLAGE_GATES:
-                        continue
+        definition = self._map_definition(location)
+        if definition is not None:
+            for feature in definition.features:
+                if feature.feature_type != "river":
+                    continue
+                for tile_x, tile_y in feature.tiles:
                     rect = renderer.pg.Rect(
-                        origin_x + x * self.TILE_SIZE,
-                        origin_y + y * self.TILE_SIZE,
+                        origin_x + tile_x * self.TILE_SIZE,
+                        origin_y + tile_y * self.TILE_SIZE,
+                        self.TILE_SIZE,
+                        self.TILE_SIZE,
+                    )
+                    renderer.pg.draw.rect(renderer.surface, (45, 115, 165), rect)
+                    renderer.pg.draw.line(
+                        renderer.surface, (115, 190, 220),
+                        (rect.x + 3, rect.centery),
+                        (rect.right - 3, rect.centery), 1,
+                    )
+
+            for feature in definition.features:
+                if feature.feature_type != "bridge":
+                    continue
+                for bridge_x, bridge_y in feature.tiles:
+                    rect = renderer.pg.Rect(
+                        origin_x + bridge_x * self.TILE_SIZE,
+                        origin_y + bridge_y * self.TILE_SIZE,
+                        self.TILE_SIZE,
+                        self.TILE_SIZE,
+                    )
+                    renderer.pg.draw.rect(renderer.surface, (151, 99, 53), rect)
+                    renderer.pg.draw.line(
+                        renderer.surface, (224, 172, 92),
+                        (rect.x + 2, rect.y + self.TILE_SIZE // 3),
+                        (rect.right - 2, rect.y + self.TILE_SIZE // 3), 2,
+                    )
+                    renderer.pg.draw.line(
+                        renderer.surface, (224, 172, 92),
+                        (rect.x + 2, rect.y + self.TILE_SIZE * 2 // 3),
+                        (rect.right - 2, rect.y + self.TILE_SIZE * 2 // 3), 2,
+                    )
+
+            for feature in definition.features:
+                if feature.feature_type != "wall":
+                    continue
+                for wall_x, wall_y in feature.tiles:
+                    rect = renderer.pg.Rect(
+                        origin_x + wall_x * self.TILE_SIZE,
+                        origin_y + wall_y * self.TILE_SIZE,
                         self.TILE_SIZE,
                         self.TILE_SIZE,
                     )
@@ -732,7 +733,7 @@ class MainScreen:
 
         for landmark in self._landmarks():
             x, y = tuple(landmark[2])
-            if not (0 <= x < self.GRID_SIZE and 0 <= y < self.GRID_SIZE):
+            if not (0 <= x < self._map_width() and 0 <= y < self._map_height()):
                 continue
             rect = renderer.pg.Rect(
                 origin_x + x * self.TILE_SIZE + 1,
@@ -740,11 +741,7 @@ class MainScreen:
                 self.TILE_SIZE * 2 - 2,
                 self.TILE_SIZE * 2 - 2,
             )
-            is_tree = (
-                "tree" in str(landmark[0]).lower()
-                or "ağaç" in str(landmark[1]).lower()
-            )
-            if is_tree:
+            if landmark[5] == "tree":
                 renderer.pg.draw.rect(
                     renderer.surface, (105, 70, 38),
                     renderer.pg.Rect(
@@ -759,7 +756,7 @@ class MainScreen:
                     (rect.centerx, rect.y + self.TILE_SIZE // 2),
                     max(5, self.TILE_SIZE // 2),
                 )
-            elif "mine" in str(landmark[0]).lower() or "maden" in str(landmark[1]).lower():
+            elif landmark[5] == "mine":
                 renderer.pg.draw.polygon(
                     renderer.surface,
                     (112, 108, 104),
@@ -868,7 +865,7 @@ class MainScreen:
                 )
                 remaining = node.current_quantity.value if node is not None else 0
                 renderer.text(
-                    f"{'Demir cevheri' if 'mine' in str(landmark[0]).lower() else 'Odun'}: {remaining} kaldı — Enter: topla",
+                    f"{'Demir cevheri' if landmark[5] == 'mine' else 'Odun'}: {remaining} kaldı — Enter: topla",
                     28, 232, (140, 220, 160), max_width=360,
                 )
         renderer.wrapped_text(
