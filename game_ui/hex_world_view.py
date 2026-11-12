@@ -43,6 +43,7 @@ class HexWorldView:
         self._center = (0, 0)
         self._world_transform = WorldTransform(hex_size=self.HEX_RADIUS)
         self._terrain_renderer = HexTerrainRenderer()
+        self._zoom = 1.0
 
     def _load_package(self):
         if self._package is None:
@@ -160,6 +161,9 @@ class HexWorldView:
     def handle(self, state):
         if not self.active:
             return None
+        if state.mouse_wheel:
+            self._zoom = max(0.75, min(1.8, self._zoom + state.mouse_wheel * 0.1))
+            self.message = f"Yakınlaştırma: {self._zoom:.1f}x"
         directions = (
             ("up", HexDirection.NORTH_EAST),
             ("right", HexDirection.EAST),
@@ -205,9 +209,13 @@ class HexWorldView:
         )
         self._hex_size = size
         self._center = (renderer.width // 2, renderer.height // 2 + 4)
+        camera_x = camera_y = 0.0
+        if self._zoom > 1.0:
+            player_cell = self._entity().position.cell
+            camera_x, camera_y = axial_to_pixel(HexCoord(player_cell.q, player_cell.r), size)
         self._world_transform.configure(
-            hex_size=size, camera_x=0.0, camera_y=0.0,
-            viewport_center=self._center, zoom=1.0,
+            hex_size=size, camera_x=camera_x, camera_y=camera_y,
+            viewport_center=self._center, zoom=self._zoom,
         )
         return {
             cell: self._world_transform.axial_to_screen(HexCoord(cell.q, cell.r))

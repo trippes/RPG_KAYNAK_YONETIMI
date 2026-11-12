@@ -115,6 +115,13 @@ class TestHexWorldView(unittest.TestCase):
             (7, 9),
         )
 
+    def test_mouse_wheel_adjusts_hex_world_zoom_with_limits(self):
+        self.assertTrue(self.view.enter())
+        self.view.handle(InputState(mouse_wheel=1))
+        self.assertAlmostEqual(self.view._zoom, 1.1)
+        self.view.handle(InputState(mouse_wheel=-20))
+        self.assertEqual(self.view._zoom, 0.75)
+
     def test_main_screen_h_key_enters_and_leaves_hex_world(self):
         screen = MainScreen(self.service)
         screen.handle(InputState(actions={"hex_portal"}))
