@@ -157,4 +157,4 @@ GitHub birleşik commit status endpoint'i de herhangi bir status kaydı döndür
 6. NPC, kaynak, landmark, yapı ve nesne occupancy adaptörleri.
 7. Kayıt migration, dokuz haritanın içerik dönüşümü ve tam regresyon.
 
-Aşama 1, ayrı bir uygulama talimatı verilene kadar başlatılmaz.
+Aşama 1 — Altıgen geometri çekirdeği — uygulandı: immutable HexCoord, altı yön/opposite, komşuluk, axial uzaklık, pointy-top pixel dönüşümü ve geometri testleri. GitHub Actions doğrulaması bu commit için ayrıca izlenmelidir. Harita modeli ve oyun davranışı henüz değiştirilmemiştir.
