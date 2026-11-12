@@ -27,14 +27,14 @@ class SaveJsonCodec:
             ) from error
 
     @staticmethod
-    def decode(payload: str, *, npc_definitions=None) -> GameSaveDocument:
+    def decode(payload: str) -> GameSaveDocument:
         if not isinstance(payload, str):
             raise TypeError("JSON payload must be a string.")
         try:
             data: Any = json.loads(payload, parse_constant=_reject_constant)
         except json.JSONDecodeError as error:
             raise SaveDocumentError("Invalid game save JSON.") from error
-        return GameSaveDocument.from_dict(data, npc_definitions=npc_definitions)
+        return GameSaveDocument.from_dict(data)
 
 
 def _reject_constant(value: str):
