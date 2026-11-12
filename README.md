@@ -89,9 +89,10 @@ seviyesindeki application fazlarını kapsar. UI ve RPG domain genişlemeleri
 aynı üst katman sınırları içinde ilerlemektedir. Faz A-C tamamlanmış, güncel
 odak Faz D kalite ve yayın hazırlığıdır.
 
-Release-candidate doğrulama kapısı için:
+Release-candidate doğrulama kapısı için test araçlarını runtime bağımlılıklarından ayrı kurun:
 
 ```powershell
+python -m pip install -r requirements-test.txt
 python scripts/verify_release.py
 ```
 
