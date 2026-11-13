@@ -88,7 +88,10 @@ class TreeRigRenderer:
             start, end = skeleton.animated_branch_points(index, elapsed)
             base = skeleton.branches[index]
             angle = TreeRigRenderer._angle_delta(base.start, base.end, start, end)
-            return (0.0, 0.0), angle * weight
+            return (
+                (start[0] - base.start[0]) * width * weight,
+                (start[1] - base.start[1]) * height * weight,
+            ), angle * weight
         if kind == "leaf":
             if index is None or not 0 <= index < len(skeleton.leaf_clusters):
                 return (0.0, 0.0), 0.0
