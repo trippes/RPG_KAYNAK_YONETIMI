@@ -82,7 +82,9 @@ class HexWorldView:
         package_root = getattr(self.service, "_content_package_path", None)
         if package_root is None:
             return
-        catalog_path = Path(package_root) / "presentation_assets.json"
+        catalog_path = getattr(self._package, "presentation_assets_path", None)
+        if catalog_path is None:
+            catalog_path = Path(package_root) / "presentation_assets.json"
         if not catalog_path.is_file():
             return
         try:

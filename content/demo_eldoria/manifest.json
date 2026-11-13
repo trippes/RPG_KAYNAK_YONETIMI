@@ -11,5 +11,6 @@
     "gameplay_rules": "gameplay_rules.json"
   },
   "maps": "maps",
-  "world_map": "world.json"
+  "world_map": "world.json",
+  "presentation_assets": "presentation_assets.json"
 }

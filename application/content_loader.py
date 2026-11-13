@@ -27,6 +27,7 @@ class ContentPackage:
     map_definitions: Mapping[str, object]
     hex_map_definitions: Mapping[str, object]
     world_map_definition: object | None = None
+    presentation_assets_path: Path | None = None
 
 
 def _load_hex_maps(maps_root: Path, square_maps: Mapping[str, object]) -> dict[str, object]:
@@ -79,7 +80,7 @@ def load_content_package(package_dir: str | Path) -> ContentPackage:
         ) from error
     if not isinstance(manifest, dict):
         raise ContentPackageError("Content package manifest must be a JSON object.")
-    allowed = {"schema_version", "package_id", "package_version", "files", "maps", "world_map"}
+    allowed = {"schema_version", "package_id", "package_version", "files", "maps", "world_map", "presentation_assets"}
     extra = sorted(set(manifest) - allowed)
     if extra:
         raise ContentPackageError(
@@ -174,6 +175,29 @@ def load_content_package(package_dir: str | Path) -> ContentPackage:
     elif manifest.get("world_map") is not None:
         raise ContentPackageError("Content package world_map requires a maps directory.")
 
+    presentation_assets_path = None
+    presentation_assets_relative = manifest.get("presentation_assets")
+    if presentation_assets_relative is not None:
+        if not isinstance(presentation_assets_relative, str) or not presentation_assets_relative.strip():
+            raise ContentPackageError("Presentation asset catalog path must be a non-empty relative path.")
+        candidate = (root / presentation_assets_relative).resolve()
+        if not candidate.is_relative_to(root):
+            raise ContentPackageError("Presentation asset catalog path resolves outside the package directory.")
+        if not candidate.is_file():
+            raise ContentPackageError(f"Presentation asset catalog could not be loaded: {candidate}")
+        try:
+            presentation_data = json.loads(candidate.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as error:
+            raise ContentPackageError("Presentation asset catalog could not be parsed.") from error
+        if (
+            not isinstance(presentation_data, dict)
+            or presentation_data.get("schema_version") != 1
+            or not isinstance(presentation_data.get("assets"), list)
+            or not isinstance(presentation_data.get("objects", []), list)
+        ):
+            raise ContentPackageError("Presentation asset catalog has an invalid schema.")
+        presentation_assets_path = candidate
+
     return ContentPackage(
         package_id,
         package_version,
@@ -182,4 +206,5 @@ def load_content_package(package_dir: str | Path) -> ContentPackage:
         MappingProxyType(square),
         MappingProxyType(hexes),
         world_map,
+        presentation_assets_path,
     )
