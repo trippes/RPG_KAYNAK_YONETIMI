@@ -146,6 +146,19 @@ class TestAssetCatalogContract(unittest.TestCase):
         self.assertEqual([asset.asset_id for asset in catalog.list_assets("flora")], ["flora.tree"])
         self.assertEqual(len(catalog.list_assets("prop")), 0)
 
+    def test_asset_collision_rejects_non_finite_geometry(self):
+        self.write_catalog(
+            [{
+                "asset_id": "flora.tree",
+                "path": "assets/tree.png",
+                "width": 0,
+                "height": 0,
+                "collision": [0, 0, float("nan"), 2],
+            }]
+        )
+        with self.assertRaisesRegex(AssetCatalogError, "finite x/y/width/height"):
+            self.load()
+
     def test_catalog_asset_mapping_is_read_only(self):
         catalog = self.load()
         with self.assertRaises(TypeError):
