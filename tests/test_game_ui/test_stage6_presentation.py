@@ -21,7 +21,7 @@ class TestStage6Presentation(unittest.TestCase):
             catalog = AssetCatalog.load(source)
             self.assertTrue(catalog.available("tree.oak"))
             self.assertEqual(catalog.get("tree.oak").anchor, (0.5, 0.95))
-            self.assertEqual(catalog.resolve_path("tree.oak"), root / "tree.png")
+            self.assertTrue(catalog.resolve_path("tree.oak").samefile(root / "tree.png"))
     def test_catalog_rejects_path_traversal_and_duplicate_ids(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
