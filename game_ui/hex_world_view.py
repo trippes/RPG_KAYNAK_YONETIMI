@@ -16,6 +16,7 @@ from game_ui.assets.sprite_sheet import SpriteSheet
 from game_ui.world_rendering.character_animation import CharacterAnimator
 from game_ui.world_rendering.scene_object import SceneObject, SceneObjectRenderer
 from application.hex_world_runtime import HexWorldRuntime
+from application.hex_occupancy import HexOccupant
 from core.domain.spatial import (
     EntityPosition, HexCoord, HexDirection, LocalHexPosition, MovementProfile,
 )
@@ -229,6 +230,7 @@ class HexWorldView:
                 EntityPosition(map_id, start),
                 MovementProfile(),
             )
+            self._register_scene_object_blockers(start_position=EntityPosition(map_id, start))
             self.selected = start
             self._movement_path = ()
             self._movement_elapsed = 0.0
@@ -241,6 +243,44 @@ class HexWorldView:
             self.active = False
             self.message = f"Altıgen dünya yüklenemedi: {error}"
             return False
+
+    def _register_scene_object_blockers(self, start_position):
+        """Register authored solid props with the hex occupancy/pathfinding layer.
+
+        The current movement model is cell-stepped, so solid props reserve their
+        authored cell. Sprite trunk rectangles remain available for later
+        sub-cell collision refinement.
+        """
+        catalog_path = getattr(self._package, "presentation_assets_path", None)
+        if catalog_path is None or not catalog_path.is_file():
+            return
+        try:
+            catalog = AssetCatalog.load(catalog_path)
+        except (AssetCatalogError, OSError, ValueError):
+            return
+        for placement in catalog.objects:
+            asset = catalog.get(placement.asset_id)
+            if placement.collision_box is None and (asset is None or asset.collision is None):
+                continue
+            definition = self._package.hex_map_definitions.get(placement.map_id)
+            cell = LocalHexPosition(placement.q, placement.r)
+            if definition is None or not definition.has_cell(cell):
+                continue
+            position = EntityPosition(placement.map_id, cell)
+            # Never spawn a blocker on top of the player. Other collocated
+            # scenery blockers are allowed and collapse to the same blocked cell.
+            if position == start_position:
+                continue
+            self.runtime.occupancy.add(
+                HexOccupant(
+                    entity_id=f"scene:{placement.object_id}",
+                    position=position,
+                    blocks_movement=True,
+                    blocks_occupancy=True,
+                    kind="scene_object",
+                ),
+                ignore_blockers=True,
+            )
 
     def leave(self):
         """Return to the untouched legacy square-world actor state."""
