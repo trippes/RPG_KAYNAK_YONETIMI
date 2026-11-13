@@ -55,8 +55,16 @@ class FakeAtlas:
             "motion": {"kind": "trunk"},
         },
         {
-            "component_id": "foliage",
+            "component_id": "branch",
             "order": 1,
+            "anchor": [0.5, 0.78],
+            "pivot": [0.8, 0.9],
+            "size": [0.3, 0.3],
+            "motion": {"kind": "branch", "index": 0},
+        },
+        {
+            "component_id": "foliage",
+            "order": 2,
             "anchor": [0.5, 0.3],
             "pivot": [0.5, 0.5],
             "size": [0.5, 0.4],
@@ -67,6 +75,7 @@ class FakeAtlas:
     def __init__(self):
         self.parts = {
             "trunk": FakeSurface((20, 80)),
+            "branch": FakeSurface((30, 30)),
             "foliage": FakeSurface((50, 40)),
         }
 
@@ -82,7 +91,7 @@ class TestTreeRigRenderer(unittest.TestCase):
             renderer, FakeAtlas(), DEFAULT_TREE_SKELETON,
             (100, 200), (120, 180), 1.0, 0.0,
         ))
-        self.assertEqual(len(renderer.surface.calls), 2)
+        self.assertEqual(len(renderer.surface.calls), 3)
 
     def test_leaf_layer_moves_while_ground_anchor_stays_fixed(self):
         atlas = FakeAtlas()
@@ -93,6 +102,7 @@ class TestTreeRigRenderer(unittest.TestCase):
         rig.draw(second, atlas, DEFAULT_TREE_SKELETON, (100, 200), (120, 180), 1.0, 1.0)
         self.assertEqual(first.surface.calls[0][1], second.surface.calls[0][1])
         self.assertNotEqual(first.surface.calls[1][1], second.surface.calls[1][1])
+        self.assertNotEqual(first.surface.calls[2][1], second.surface.calls[2][1])
 
     def test_missing_rig_metadata_keeps_legacy_renderer_available(self):
         class EmptyAtlas:
