@@ -156,7 +156,7 @@ class TestAssetCatalogContract(unittest.TestCase):
                 "collision": [0, 0, float("nan"), 2],
             }]
         )
-        with self.assertRaisesRegex(AssetCatalogError, "finite x/y/width/height"):
+        with self.assertRaisesRegex(AssetCatalogError, "Invalid asset record"):
             self.load()
 
     def test_catalog_asset_mapping_is_read_only(self):
