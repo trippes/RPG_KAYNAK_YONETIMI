@@ -11,6 +11,7 @@ from pathlib import Path
 
 from game_ui.assets.asset_definition import AssetCatalog, AssetCatalogError
 from game_ui.assets.asset_manager import AssetManager
+from game_ui.assets.placement_catalog import ScenePlacementCatalog
 from game_ui.assets.animation import Animation
 from game_ui.assets.sprite_sheet import SpriteSheet
 from game_ui.world_rendering.character_animation import CharacterAnimator
@@ -52,6 +53,8 @@ class HexWorldView:
         self._world_transform = WorldTransform(hex_size=self.HEX_RADIUS)
         self._terrain_renderer = HexTerrainRenderer()
         self._presentation_catalog = None
+        self._scene_placements = None
+        self._presentation_data_loaded = False
         self._presentation_assets_loaded = False
         self._asset_manager = None
         self._scene_object_renderer = None
@@ -85,24 +88,60 @@ class HexWorldView:
             raise RuntimeError("İçerik paketinde doğrulanmış altıgen dünya bulunamadı.")
         return self._package
 
+    def _load_presentation_data(self):
+        """Load asset definitions and map placements from their independent sources."""
+        if self._presentation_data_loaded:
+            return
+        self._presentation_data_loaded = True
+        package = self._load_package()
+        asset_catalog_path = getattr(package, "asset_catalog_path", None)
+        placements_path = getattr(package, "map_placements_path", None)
+        if asset_catalog_path is not None and placements_path is not None:
+            self._presentation_catalog = AssetCatalog.load(asset_catalog_path)
+            self._scene_placements = ScenePlacementCatalog.load_directory(
+                placements_path, self._presentation_catalog
+            )
+            return
+
+        # Backward compatibility for packages that still expose the combined
+        # schema-v1 presentation_assets.json document.
+        catalog_path = getattr(package, "presentation_assets_path", None)
+        if catalog_path is None:
+            package_root = getattr(self.service, "_content_package_path", None)
+            if package_root is not None:
+                candidate = Path(package_root) / "presentation_assets.json"
+                catalog_path = candidate if candidate.is_file() else None
+        if catalog_path is not None and catalog_path.is_file():
+            self._presentation_catalog = AssetCatalog.load(catalog_path)
+            self._scene_placements = None
+
+    def _placements_for_map(self, map_id):
+        if self._scene_placements is not None:
+            return self._scene_placements.objects_for_map(map_id)
+        if self._presentation_catalog is not None:
+            return self._presentation_catalog.objects_for_map(map_id)
+        return ()
+
+    def _all_scene_placements(self):
+        if self._scene_placements is not None:
+            return self._scene_placements.placements
+        if self._presentation_catalog is not None:
+            return self._presentation_catalog.objects
+        return ()
+
     def _load_presentation_assets(self, pygame_module):
-        """Load optional image metadata once; missing art keeps procedural fallbacks."""
+        """Load optional presentation data and image adapters once."""
         if self._presentation_assets_loaded:
             return
         self._presentation_assets_loaded = True
-        package_root = getattr(self.service, "_content_package_path", None)
-        if package_root is None:
-            return
-        catalog_path = getattr(self._package, "presentation_assets_path", None)
-        if catalog_path is None:
-            catalog_path = Path(package_root) / "presentation_assets.json"
-        if not catalog_path.is_file():
-            return
         try:
-            self._presentation_catalog = AssetCatalog.load(catalog_path)
+            self._load_presentation_data()
+            if self._presentation_catalog is None:
+                return
             self._asset_manager = AssetManager(pygame_module)
             self._scene_object_renderer = SceneObjectRenderer(self._asset_manager)
-            if self._tree_rig_enabled:
+            package_root = getattr(self.service, "_content_package_path", None)
+            if self._tree_rig_enabled and package_root is not None:
                 atlas_path = Path(package_root) / "assets" / "tree_parts_atlas.png"
                 atlas_manifest = Path(package_root) / "assets" / "tree_parts_atlas.json"
                 if atlas_path.is_file() and atlas_manifest.is_file():
@@ -116,6 +155,7 @@ class HexWorldView:
                 self._tree_parts_atlas = None
         except (AssetCatalogError, OSError, ValueError):
             self._presentation_catalog = None
+            self._scene_placements = None
             self._asset_manager = None
 
     def _terrain_images(self, cell, terrain_id, definition):
@@ -269,15 +309,14 @@ class HexWorldView:
         authored cell. Sprite trunk rectangles remain available for later
         sub-cell collision refinement.
         """
-        catalog_path = getattr(self._package, "presentation_assets_path", None)
-        if catalog_path is None or not catalog_path.is_file():
-            return
         try:
-            catalog = AssetCatalog.load(catalog_path)
+            self._load_presentation_data()
         except (AssetCatalogError, OSError, ValueError):
             return
-        for placement in catalog.objects:
-            asset = catalog.get(placement.asset_id)
+        if self._presentation_catalog is None:
+            return
+        for placement in self._all_scene_placements():
+            asset = self._presentation_catalog.get(placement.asset_id)
             if placement.collision_box is None and (asset is None or asset.collision is None):
                 continue
             definition = self._package.hex_map_definitions.get(placement.map_id)
@@ -769,7 +808,7 @@ class HexWorldView:
 
         drawables = [(item.position, "landmark", item) for item in definition.landmarks]
         if self._presentation_catalog is not None:
-            for placement in self._presentation_catalog.objects_for_map(definition.map_id):
+            for placement in self._placements_for_map(definition.map_id):
                 position = LocalHexPosition(placement.q, placement.r)
                 if definition.has_cell(position):
                     drawables.append((position, "scene_object", placement))
