@@ -2,28 +2,45 @@
 
 ## Purpose
 A tree is represented by two independent parts:
-- **Skeleton:** stable world geometry used for anchoring, depth ordering, and trunk collision.
-- **Artwork:** a replaceable transparent PNG rendered over the skeleton's ground anchor.
+- **Skeleton:** stable world geometry and articulation data for anchoring, collision, depth ordering, branches and foliage animation.
+- **Artwork:** a replaceable visual skin. PNG dimensions and transparency must not define physical behavior or branch structure.
 
-Changing the PNG must not require changing movement or collision code.
+Changing the PNG must not require changing movement, collision or animation data.
 
-## Geometry
-The initial implementation is in `game_ui/world_rendering/tree_skeleton.py`.
+## Skeleton-space geometry
+The articulated skeleton uses its own normalized local coordinate space (0–1), independent of the PNG:
+- `TreeBranch.start` and `TreeBranch.end`: branch segment endpoints.
+- `TreeBranch.parent_index`: optional parent branch, allowing a branch hierarchy.
+- `TreeBranch.thickness`: relative branch thickness.
+- `TreeBranch.sway_weight` and `phase`: per-branch wind response and phase offset.
+- `TreeLeafCluster.anchor`: foliage cluster position.
+- `TreeLeafCluster.radius`: relative foliage cluster size.
+- `TreeLeafCluster.branch_index`: optional branch attachment.
+- `TreeLeafCluster.sway_weight` and `phase`: independent leaf motion response.
+- `TreeSkeleton.wind_response` and `sway_frequency`: global animation controls.
 
-- `ground_anchor`: normalized point that attaches the tree to the world.
-- `depth_anchor`: normalized point used to compare the tree with the player's ground-contact depth.
-- `trunk_collision`: normalized rectangle around the trunk; it does not include the canopy.
-- `canopy_bounds`: normalized foliage region, reserved for editor/debug visualization and future canopy behavior.
+These values describe the tree itself, not pixels in a particular image. The renderer will map the skeleton coordinate space to the selected visual asset.
 
-All normalized values are relative to the PNG rectangle. Geometry is scaled with the image, while the world anchor remains stable.
+## World and collision geometry
+- `ground_anchor`: point that attaches the tree to the world.
+- `depth_anchor`: point used for front/behind ordering.
+- `trunk_collision`: legacy normalized rectangle used by the current artwork adapter; the long-term collision authority is the independent world-space collider model.
+- `canopy_bounds`: foliage envelope reserved for debug and editor visualization.
 
-## Initial default
-The current oak PNG uses a ground anchor at `(0.50, 0.985)`, a depth reference at `(0.50, 0.955)`, a trunk collision rectangle `(0.39, 0.82, 0.22, 0.16)`, and canopy bounds `(0.03, 0.02, 0.94, 0.76)`. These are normalized to the 949×936 artwork and are initial calibration values, not universal values for every tree silhouette. Individual tree definitions can override them when their silhouette requires it.
+The current sprite placement helpers still use normalized artwork anchors as an adapter for the existing PNG renderer. This does not make branch, foliage or future collision geometry dependent on PNG pixels.
+
+## Initial articulated tree
+The default skeleton contains four branch segments and five leaf clusters. Branch segments may reference parent segments; foliage clusters may attach to branches. Different sway weights and phase offsets let the renderer animate the trunk, main branches, secondary branches and foliage with progressively more flexible movement.
+
+This commit defines and validates the data model. It does not yet render articulated branches over the current PNG or run wind animation; those are subsequent renderer tasks.
+
+## Developer visualization
+Press **F3** in the hex-world view to display the existing developer guides: red trunk collision rectangle, blue canopy bounds, yellow depth line, and white ground anchor. Branch and leaf guide rendering will be added when the articulated renderer is integrated.
 
 ## Separation of responsibilities
-- PNG: appearance, transparency, silhouette and artistic detail.
-- Skeleton: anchor, depth reference, trunk collision and canopy bounds.
+- Artwork: appearance, transparency, silhouette and artistic detail.
+- Skeleton: branch hierarchy, foliage attachment, animation response, anchors and depth metadata.
 - World simulation: movement and collision resolution.
-- Renderer: sprite scaling, placement and draw order.
+- Renderer: mapping skeleton coordinates to visuals, animation and draw order.
 
-The skeleton is now used by the live tree sprite renderer for ground anchoring and depth sorting. Press **F3** in the hex-world view to display developer guides: red trunk collision rectangle, blue canopy bounds, yellow depth line, and white ground anchor. The collision rectangle is currently presentation/debug metadata; the hex simulation still resolves movement through its existing cell occupancy rules and does not yet perform pixel-level trunk collision.
+The current hex simulation still resolves movement through its existing cell occupancy rules and does not yet perform precise world-space trunk collision.
