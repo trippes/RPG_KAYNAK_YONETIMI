@@ -29,6 +29,14 @@ class TestHexWorldView(unittest.TestCase):
         self.service = _FakeService()
         self.view = HexWorldView(self.service)
 
+    def test_enter_loads_split_asset_and_map_placement_sources(self):
+        self.assertTrue(self.view.enter())
+        self.assertEqual(len(self.view._presentation_catalog.assets), 6)
+        self.assertEqual(self.view._presentation_catalog.objects, ())
+        self.assertIsNotNone(self.view._scene_placements)
+        self.assertEqual(len(self.view._placements_for_map("hex_forest_demo")), 12)
+        self.assertEqual(len(self.view._placements_for_map("hex_clearing_demo")), 2)
+
     def test_enter_registers_existing_player_in_hex_runtime(self):
         self.assertTrue(self.view.enter())
         entity = self.view.runtime.entity("hero")
