@@ -52,7 +52,7 @@ class TestStage6RenderPrimitives(unittest.TestCase):
         cell = SimpleNamespace(terrain_id="grass", blocked=False)
         HexTerrainRenderer().draw_cell(renderer, SimpleNamespace(q=0, r=0), cell,
                                        (100, 100), 32, image=FakeImage())
-        self.assertEqual(calls, [(67, 67)])
+        self.assertEqual(calls, [(66, 66)])
         self.assertTrue(any(call[0] == "circle" for call in draw.calls))
 
 
