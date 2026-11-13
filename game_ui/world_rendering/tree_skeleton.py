@@ -72,7 +72,7 @@ class TreeSkeleton:
     def depth_y(self, world_anchor, sprite_size, scale=1.0):
         """Return the world-space depth line, independent of the canopy height."""
         _, height = self._scaled_size(sprite_size, scale)
-        return float(world_anchor[1]) + height * scale * (
+        return float(world_anchor[1]) + height * (
             self.depth_anchor[1] - self.ground_anchor[1]
         )
 
