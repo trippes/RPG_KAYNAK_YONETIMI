@@ -2,12 +2,31 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from application.content_loader import ContentPackageError, load_content_package
 from game_ui.assets.asset_definition import AssetCatalog, AssetCatalogError
 from game_ui.assets.animation import Animation
 from game_ui.world_rendering.character_animation import CharacterAnimator
 from game_ui.world_rendering.scene_object import SceneObject, SceneObjectRenderer
 
 class TestStage6Presentation(unittest.TestCase):
+    def test_active_package_exposes_validated_presentation_catalog(self):
+        package_root = Path(__file__).resolve().parents[2] / "content" / "demo_eldoria"
+        package = load_content_package(package_root)
+        self.assertEqual(package.presentation_assets_path.name, "presentation_assets.json")
+        self.assertTrue(package.presentation_assets_path.is_file())
+
+    def test_content_package_rejects_presentation_catalog_path_traversal(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "data.json").write_text("{}", encoding="utf-8")
+            (root / "manifest.json").write_text(json.dumps({
+                "schema_version": 1, "package_id": "test", "package_version": "1",
+                "files": {"data": "data.json"},
+                "presentation_assets": "../outside.json"
+            }), encoding="utf-8")
+            with self.assertRaises(ContentPackageError):
+                load_content_package(root)
+
     def test_catalog_resolves_metadata_and_file(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
