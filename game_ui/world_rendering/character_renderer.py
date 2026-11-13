@@ -11,8 +11,9 @@ class HexCharacterRenderer:
         if len(anchor) != 2 or any(not 0 <= value <= 1 for value in anchor):
             raise ValueError("anchor must contain two normalized coordinates.")
         scale = max(1, round(float(world_scale)))
-        width = max(1, round(sprite.get_width() * scale / 64))
-        height = max(1, round(sprite.get_height() * scale / 64))
+        source_width, source_height = sprite.get_size()
+        width = max(1, round(source_width * scale / 64))
+        height = max(1, round(source_height * scale / 64))
         image = sprite
         if image.get_size() != (width, height):
             image = renderer.pg.transform.smoothscale(image, (width, height))
