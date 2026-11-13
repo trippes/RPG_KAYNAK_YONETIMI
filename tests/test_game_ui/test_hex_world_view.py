@@ -93,17 +93,17 @@ class TestHexWorldView(unittest.TestCase):
         self.assertTrue(self.view._move(HexDirection.EAST))
         self.assertEqual(
             self.view.runtime.entity("hero").position,
-            EntityPosition("hex_clearing_demo", LocalHexPosition(-1, 0)),
+            EntityPosition("hex_clearing_demo", LocalHexPosition(-8, 0)),
         )
 
     def test_any_east_edge_cell_transitions_to_clearing(self):
         self.assertTrue(self.view.enter())
-        edge_cell = LocalHexPosition(8, 5)
+        edge_cell = LocalHexPosition(8, -5)
         self.assertTrue(self.view._move_to(edge_cell))
         self.assertTrue(self.view._move(HexDirection.EAST))
         self.assertEqual(
             self.view.runtime.entity("hero").position,
-            EntityPosition("hex_clearing_demo", LocalHexPosition(-1, 5)),
+            EntityPosition("hex_clearing_demo", LocalHexPosition(-3, -5)),
         )
 
     def test_crossing_west_boundary_returns_to_forest_automatically(self):
@@ -119,8 +119,10 @@ class TestHexWorldView(unittest.TestCase):
     def test_unlinked_map_boundary_blocks_movement(self):
         self.assertTrue(self.view.enter())
         self.assertTrue(self.view._move_to(LocalHexPosition(8, 0)))
+        self.assertTrue(self.view._move(HexDirection.EAST))
+        self.assertTrue(self.view._move_to(LocalHexPosition(8, 0)))
         before = self.view.runtime.entity("hero").position
-        self.assertFalse(self.view._move(HexDirection.NORTH_EAST))
+        self.assertFalse(self.view._move(HexDirection.EAST))
         self.assertEqual(self.view.runtime.entity("hero").position, before)
 
     def test_leave_keeps_legacy_actor_location_and_position(self):

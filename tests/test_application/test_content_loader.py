@@ -40,7 +40,7 @@ class TestContentPackageLoader(unittest.TestCase):
     def test_demo_package_separates_hex_maps_from_square_maps(self):
         package = load_content_package(DEMO_PACKAGE)
 
-        self.assertEqual(set(package.hex_map_definitions), {"hex_forest_demo", "hex_clearing_demo"})
+        self.assertEqual(set(package.hex_map_definitions), {p.map_id for p in package.world_map_definition.placements})
         self.assertIsNotNone(package.world_map_definition)
         self.assertEqual(package.world_map_definition.world_map_id, "eldoria_hex_world")
         self.assertEqual(
@@ -51,6 +51,11 @@ class TestContentPackageLoader(unittest.TestCase):
             package.world_map_definition.placements_by_map_id["hex_clearing_demo"].position,
             WorldHexPosition(1, 0),
         )
+        self.assertEqual(len(package.world_map_definition.placements), 7)
+        self.assertEqual(len(package.hex_map_definitions), 7)
+        from core.domain.spatial import HexDirection
+        for direction in HexDirection:
+            self.assertIsNotNone(package.world_map_definition.neighbor("hex_forest_demo", direction))
         forest_exit = package.hex_map_definitions["hex_forest_demo"].transitions[0]
         clearing_exit = package.hex_map_definitions["hex_clearing_demo"].transitions[0]
         self.assertTrue(forest_exit.active)

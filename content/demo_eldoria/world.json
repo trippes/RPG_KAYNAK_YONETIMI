@@ -1,19 +1,60 @@
 {
   "schema_version": 1,
   "id": "eldoria_hex_world",
-  "name": "Eldoria — Altıgen Dünya",
+  "name": "Eldoria — Merkezi ve Altı Komşu Harita",
   "maps": [
     {
       "map_id": "hex_forest_demo",
-      "position": { "q": 0, "r": 0 }
+      "position": {
+        "q": 0,
+        "r": 0
+      }
     },
     {
       "map_id": "hex_clearing_demo",
-      "position": { "q": 1, "r": 0 }
+      "position": {
+        "q": 1,
+        "r": 0
+      }
+    },
+    {
+      "map_id": "hex_northeast_demo",
+      "position": {
+        "q": 1,
+        "r": -1
+      }
+    },
+    {
+      "map_id": "hex_northwest_demo",
+      "position": {
+        "q": 0,
+        "r": -1
+      }
+    },
+    {
+      "map_id": "hex_west_demo",
+      "position": {
+        "q": -1,
+        "r": 0
+      }
+    },
+    {
+      "map_id": "hex_southwest_demo",
+      "position": {
+        "q": -1,
+        "r": 1
+      }
+    },
+    {
+      "map_id": "hex_southeast_demo",
+      "position": {
+        "q": 0,
+        "r": 1
+      }
     }
   ],
   "metadata": {
     "scope": "hex_maps_only",
-    "description": "Aşama 4 iki haritalı axial dünya demosu; legacy square maps remain on their existing world graph."
+    "description": "Merkez orman ve çevresindeki altı komşu altıgen yerel harita; tüm bitişik kenarlar çift yönlü bağlıdır."
   }
 }

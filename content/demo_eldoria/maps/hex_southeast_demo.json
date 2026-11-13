@@ -1,0 +1,1913 @@
+{
+  "schema_version": 2,
+  "map_id": "hex_southeast_demo",
+  "name": "Güneydoğu Ormanı",
+  "description": "Eldoria merkezi orman çevresindeki güneydoğu ormanı bölgesi.",
+  "geometry": {
+    "type": "hex_axial",
+    "orientation": "pointy_top",
+    "coordinate_system": "axial"
+  },
+  "terrain_ids": [
+    "grass",
+    "forest_floor",
+    "clearing_floor",
+    "water"
+  ],
+  "default_terrain": "grass",
+  "valid_cells": [
+    [
+      -8,
+      0
+    ],
+    [
+      -8,
+      1
+    ],
+    [
+      -8,
+      2
+    ],
+    [
+      -8,
+      3
+    ],
+    [
+      -8,
+      4
+    ],
+    [
+      -8,
+      5
+    ],
+    [
+      -8,
+      6
+    ],
+    [
+      -8,
+      7
+    ],
+    [
+      -8,
+      8
+    ],
+    [
+      -7,
+      -1
+    ],
+    [
+      -7,
+      0
+    ],
+    [
+      -7,
+      1
+    ],
+    [
+      -7,
+      2
+    ],
+    [
+      -7,
+      3
+    ],
+    [
+      -7,
+      4
+    ],
+    [
+      -7,
+      5
+    ],
+    [
+      -7,
+      6
+    ],
+    [
+      -7,
+      7
+    ],
+    [
+      -7,
+      8
+    ],
+    [
+      -6,
+      -2
+    ],
+    [
+      -6,
+      -1
+    ],
+    [
+      -6,
+      0
+    ],
+    [
+      -6,
+      1
+    ],
+    [
+      -6,
+      2
+    ],
+    [
+      -6,
+      3
+    ],
+    [
+      -6,
+      4
+    ],
+    [
+      -6,
+      5
+    ],
+    [
+      -6,
+      6
+    ],
+    [
+      -6,
+      7
+    ],
+    [
+      -6,
+      8
+    ],
+    [
+      -5,
+      -3
+    ],
+    [
+      -5,
+      -2
+    ],
+    [
+      -5,
+      -1
+    ],
+    [
+      -5,
+      0
+    ],
+    [
+      -5,
+      1
+    ],
+    [
+      -5,
+      2
+    ],
+    [
+      -5,
+      3
+    ],
+    [
+      -5,
+      4
+    ],
+    [
+      -5,
+      5
+    ],
+    [
+      -5,
+      6
+    ],
+    [
+      -5,
+      7
+    ],
+    [
+      -5,
+      8
+    ],
+    [
+      -4,
+      -4
+    ],
+    [
+      -4,
+      -3
+    ],
+    [
+      -4,
+      -2
+    ],
+    [
+      -4,
+      -1
+    ],
+    [
+      -4,
+      0
+    ],
+    [
+      -4,
+      1
+    ],
+    [
+      -4,
+      2
+    ],
+    [
+      -4,
+      3
+    ],
+    [
+      -4,
+      4
+    ],
+    [
+      -4,
+      5
+    ],
+    [
+      -4,
+      6
+    ],
+    [
+      -4,
+      7
+    ],
+    [
+      -4,
+      8
+    ],
+    [
+      -3,
+      -5
+    ],
+    [
+      -3,
+      -4
+    ],
+    [
+      -3,
+      -3
+    ],
+    [
+      -3,
+      -2
+    ],
+    [
+      -3,
+      -1
+    ],
+    [
+      -3,
+      0
+    ],
+    [
+      -3,
+      1
+    ],
+    [
+      -3,
+      2
+    ],
+    [
+      -3,
+      3
+    ],
+    [
+      -3,
+      4
+    ],
+    [
+      -3,
+      5
+    ],
+    [
+      -3,
+      6
+    ],
+    [
+      -3,
+      7
+    ],
+    [
+      -3,
+      8
+    ],
+    [
+      -2,
+      -6
+    ],
+    [
+      -2,
+      -5
+    ],
+    [
+      -2,
+      -4
+    ],
+    [
+      -2,
+      -3
+    ],
+    [
+      -2,
+      -2
+    ],
+    [
+      -2,
+      -1
+    ],
+    [
+      -2,
+      0
+    ],
+    [
+      -2,
+      1
+    ],
+    [
+      -2,
+      2
+    ],
+    [
+      -2,
+      3
+    ],
+    [
+      -2,
+      4
+    ],
+    [
+      -2,
+      5
+    ],
+    [
+      -2,
+      6
+    ],
+    [
+      -2,
+      7
+    ],
+    [
+      -2,
+      8
+    ],
+    [
+      -1,
+      -7
+    ],
+    [
+      -1,
+      -6
+    ],
+    [
+      -1,
+      -5
+    ],
+    [
+      -1,
+      -4
+    ],
+    [
+      -1,
+      -3
+    ],
+    [
+      -1,
+      -2
+    ],
+    [
+      -1,
+      -1
+    ],
+    [
+      -1,
+      0
+    ],
+    [
+      -1,
+      1
+    ],
+    [
+      -1,
+      2
+    ],
+    [
+      -1,
+      3
+    ],
+    [
+      -1,
+      4
+    ],
+    [
+      -1,
+      5
+    ],
+    [
+      -1,
+      6
+    ],
+    [
+      -1,
+      7
+    ],
+    [
+      -1,
+      8
+    ],
+    [
+      0,
+      -8
+    ],
+    [
+      0,
+      -7
+    ],
+    [
+      0,
+      -6
+    ],
+    [
+      0,
+      -5
+    ],
+    [
+      0,
+      -4
+    ],
+    [
+      0,
+      -3
+    ],
+    [
+      0,
+      -2
+    ],
+    [
+      0,
+      -1
+    ],
+    [
+      0,
+      0
+    ],
+    [
+      0,
+      1
+    ],
+    [
+      0,
+      2
+    ],
+    [
+      0,
+      3
+    ],
+    [
+      0,
+      4
+    ],
+    [
+      0,
+      5
+    ],
+    [
+      0,
+      6
+    ],
+    [
+      0,
+      7
+    ],
+    [
+      0,
+      8
+    ],
+    [
+      1,
+      -8
+    ],
+    [
+      1,
+      -7
+    ],
+    [
+      1,
+      -6
+    ],
+    [
+      1,
+      -5
+    ],
+    [
+      1,
+      -4
+    ],
+    [
+      1,
+      -3
+    ],
+    [
+      1,
+      -2
+    ],
+    [
+      1,
+      -1
+    ],
+    [
+      1,
+      0
+    ],
+    [
+      1,
+      1
+    ],
+    [
+      1,
+      2
+    ],
+    [
+      1,
+      3
+    ],
+    [
+      1,
+      4
+    ],
+    [
+      1,
+      5
+    ],
+    [
+      1,
+      6
+    ],
+    [
+      1,
+      7
+    ],
+    [
+      2,
+      -8
+    ],
+    [
+      2,
+      -7
+    ],
+    [
+      2,
+      -6
+    ],
+    [
+      2,
+      -5
+    ],
+    [
+      2,
+      -4
+    ],
+    [
+      2,
+      -3
+    ],
+    [
+      2,
+      -2
+    ],
+    [
+      2,
+      -1
+    ],
+    [
+      2,
+      0
+    ],
+    [
+      2,
+      1
+    ],
+    [
+      2,
+      2
+    ],
+    [
+      2,
+      3
+    ],
+    [
+      2,
+      4
+    ],
+    [
+      2,
+      5
+    ],
+    [
+      2,
+      6
+    ],
+    [
+      3,
+      -8
+    ],
+    [
+      3,
+      -7
+    ],
+    [
+      3,
+      -6
+    ],
+    [
+      3,
+      -5
+    ],
+    [
+      3,
+      -4
+    ],
+    [
+      3,
+      -3
+    ],
+    [
+      3,
+      -2
+    ],
+    [
+      3,
+      -1
+    ],
+    [
+      3,
+      0
+    ],
+    [
+      3,
+      1
+    ],
+    [
+      3,
+      2
+    ],
+    [
+      3,
+      3
+    ],
+    [
+      3,
+      4
+    ],
+    [
+      3,
+      5
+    ],
+    [
+      4,
+      -8
+    ],
+    [
+      4,
+      -7
+    ],
+    [
+      4,
+      -6
+    ],
+    [
+      4,
+      -5
+    ],
+    [
+      4,
+      -4
+    ],
+    [
+      4,
+      -3
+    ],
+    [
+      4,
+      -2
+    ],
+    [
+      4,
+      -1
+    ],
+    [
+      4,
+      0
+    ],
+    [
+      4,
+      1
+    ],
+    [
+      4,
+      2
+    ],
+    [
+      4,
+      3
+    ],
+    [
+      4,
+      4
+    ],
+    [
+      5,
+      -8
+    ],
+    [
+      5,
+      -7
+    ],
+    [
+      5,
+      -6
+    ],
+    [
+      5,
+      -5
+    ],
+    [
+      5,
+      -4
+    ],
+    [
+      5,
+      -3
+    ],
+    [
+      5,
+      -2
+    ],
+    [
+      5,
+      -1
+    ],
+    [
+      5,
+      0
+    ],
+    [
+      5,
+      1
+    ],
+    [
+      5,
+      2
+    ],
+    [
+      5,
+      3
+    ],
+    [
+      6,
+      -8
+    ],
+    [
+      6,
+      -7
+    ],
+    [
+      6,
+      -6
+    ],
+    [
+      6,
+      -5
+    ],
+    [
+      6,
+      -4
+    ],
+    [
+      6,
+      -3
+    ],
+    [
+      6,
+      -2
+    ],
+    [
+      6,
+      -1
+    ],
+    [
+      6,
+      0
+    ],
+    [
+      6,
+      1
+    ],
+    [
+      6,
+      2
+    ],
+    [
+      7,
+      -8
+    ],
+    [
+      7,
+      -7
+    ],
+    [
+      7,
+      -6
+    ],
+    [
+      7,
+      -5
+    ],
+    [
+      7,
+      -4
+    ],
+    [
+      7,
+      -3
+    ],
+    [
+      7,
+      -2
+    ],
+    [
+      7,
+      -1
+    ],
+    [
+      7,
+      0
+    ],
+    [
+      7,
+      1
+    ],
+    [
+      8,
+      -8
+    ],
+    [
+      8,
+      -7
+    ],
+    [
+      8,
+      -6
+    ],
+    [
+      8,
+      -5
+    ],
+    [
+      8,
+      -4
+    ],
+    [
+      8,
+      -3
+    ],
+    [
+      8,
+      -2
+    ],
+    [
+      8,
+      -1
+    ],
+    [
+      8,
+      0
+    ]
+  ],
+  "cell_overrides": [],
+  "features": [],
+  "landmarks": [],
+  "transitions": [
+    {
+      "id": "hex_southeast_demo_to_hex_clearing_demo_north_east_0_-8",
+      "source_cells": [
+        [
+          0,
+          -8
+        ]
+      ],
+      "exit_direction": "north_east",
+      "target_map_id": "hex_clearing_demo",
+      "target_entry_direction": "south_west",
+      "target_cells": [
+        [
+          -8,
+          0
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_clearing_demo_north_east_1_-8",
+      "source_cells": [
+        [
+          1,
+          -8
+        ]
+      ],
+      "exit_direction": "north_east",
+      "target_map_id": "hex_clearing_demo",
+      "target_entry_direction": "south_west",
+      "target_cells": [
+        [
+          -8,
+          1
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_clearing_demo_north_east_2_-8",
+      "source_cells": [
+        [
+          2,
+          -8
+        ]
+      ],
+      "exit_direction": "north_east",
+      "target_map_id": "hex_clearing_demo",
+      "target_entry_direction": "south_west",
+      "target_cells": [
+        [
+          -8,
+          2
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_clearing_demo_north_east_3_-8",
+      "source_cells": [
+        [
+          3,
+          -8
+        ]
+      ],
+      "exit_direction": "north_east",
+      "target_map_id": "hex_clearing_demo",
+      "target_entry_direction": "south_west",
+      "target_cells": [
+        [
+          -8,
+          3
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_clearing_demo_north_east_4_-8",
+      "source_cells": [
+        [
+          4,
+          -8
+        ]
+      ],
+      "exit_direction": "north_east",
+      "target_map_id": "hex_clearing_demo",
+      "target_entry_direction": "south_west",
+      "target_cells": [
+        [
+          -8,
+          4
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_clearing_demo_north_east_5_-8",
+      "source_cells": [
+        [
+          5,
+          -8
+        ]
+      ],
+      "exit_direction": "north_east",
+      "target_map_id": "hex_clearing_demo",
+      "target_entry_direction": "south_west",
+      "target_cells": [
+        [
+          -8,
+          5
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_clearing_demo_north_east_6_-8",
+      "source_cells": [
+        [
+          6,
+          -8
+        ]
+      ],
+      "exit_direction": "north_east",
+      "target_map_id": "hex_clearing_demo",
+      "target_entry_direction": "south_west",
+      "target_cells": [
+        [
+          -8,
+          6
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_clearing_demo_north_east_7_-8",
+      "source_cells": [
+        [
+          7,
+          -8
+        ]
+      ],
+      "exit_direction": "north_east",
+      "target_map_id": "hex_clearing_demo",
+      "target_entry_direction": "south_west",
+      "target_cells": [
+        [
+          -8,
+          7
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_clearing_demo_north_east_8_-8",
+      "source_cells": [
+        [
+          8,
+          -8
+        ]
+      ],
+      "exit_direction": "north_east",
+      "target_map_id": "hex_clearing_demo",
+      "target_entry_direction": "south_west",
+      "target_cells": [
+        [
+          -8,
+          8
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_clearing_demo_north_east_8_-7",
+      "source_cells": [
+        [
+          8,
+          -7
+        ]
+      ],
+      "exit_direction": "north_east",
+      "target_map_id": "hex_clearing_demo",
+      "target_entry_direction": "south_west",
+      "target_cells": [
+        [
+          -7,
+          8
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_clearing_demo_north_east_8_-6",
+      "source_cells": [
+        [
+          8,
+          -6
+        ]
+      ],
+      "exit_direction": "north_east",
+      "target_map_id": "hex_clearing_demo",
+      "target_entry_direction": "south_west",
+      "target_cells": [
+        [
+          -6,
+          8
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_clearing_demo_north_east_8_-5",
+      "source_cells": [
+        [
+          8,
+          -5
+        ]
+      ],
+      "exit_direction": "north_east",
+      "target_map_id": "hex_clearing_demo",
+      "target_entry_direction": "south_west",
+      "target_cells": [
+        [
+          -5,
+          8
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_clearing_demo_north_east_8_-4",
+      "source_cells": [
+        [
+          8,
+          -4
+        ]
+      ],
+      "exit_direction": "north_east",
+      "target_map_id": "hex_clearing_demo",
+      "target_entry_direction": "south_west",
+      "target_cells": [
+        [
+          -4,
+          8
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_clearing_demo_north_east_8_-3",
+      "source_cells": [
+        [
+          8,
+          -3
+        ]
+      ],
+      "exit_direction": "north_east",
+      "target_map_id": "hex_clearing_demo",
+      "target_entry_direction": "south_west",
+      "target_cells": [
+        [
+          -3,
+          8
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_clearing_demo_north_east_8_-2",
+      "source_cells": [
+        [
+          8,
+          -2
+        ]
+      ],
+      "exit_direction": "north_east",
+      "target_map_id": "hex_clearing_demo",
+      "target_entry_direction": "south_west",
+      "target_cells": [
+        [
+          -2,
+          8
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_clearing_demo_north_east_8_-1",
+      "source_cells": [
+        [
+          8,
+          -1
+        ]
+      ],
+      "exit_direction": "north_east",
+      "target_map_id": "hex_clearing_demo",
+      "target_entry_direction": "south_west",
+      "target_cells": [
+        [
+          -1,
+          8
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_clearing_demo_north_east_8_0",
+      "source_cells": [
+        [
+          8,
+          0
+        ]
+      ],
+      "exit_direction": "north_east",
+      "target_map_id": "hex_clearing_demo",
+      "target_entry_direction": "south_west",
+      "target_cells": [
+        [
+          0,
+          8
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_forest_demo_north_west_-8_0",
+      "source_cells": [
+        [
+          -8,
+          0
+        ]
+      ],
+      "exit_direction": "north_west",
+      "target_map_id": "hex_forest_demo",
+      "target_entry_direction": "south_east",
+      "target_cells": [
+        [
+          -8,
+          8
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_forest_demo_north_west_-7_-1",
+      "source_cells": [
+        [
+          -7,
+          -1
+        ]
+      ],
+      "exit_direction": "north_west",
+      "target_map_id": "hex_forest_demo",
+      "target_entry_direction": "south_east",
+      "target_cells": [
+        [
+          -7,
+          8
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_forest_demo_north_west_-6_-2",
+      "source_cells": [
+        [
+          -6,
+          -2
+        ]
+      ],
+      "exit_direction": "north_west",
+      "target_map_id": "hex_forest_demo",
+      "target_entry_direction": "south_east",
+      "target_cells": [
+        [
+          -6,
+          8
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_forest_demo_north_west_-5_-3",
+      "source_cells": [
+        [
+          -5,
+          -3
+        ]
+      ],
+      "exit_direction": "north_west",
+      "target_map_id": "hex_forest_demo",
+      "target_entry_direction": "south_east",
+      "target_cells": [
+        [
+          -5,
+          8
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_forest_demo_north_west_-4_-4",
+      "source_cells": [
+        [
+          -4,
+          -4
+        ]
+      ],
+      "exit_direction": "north_west",
+      "target_map_id": "hex_forest_demo",
+      "target_entry_direction": "south_east",
+      "target_cells": [
+        [
+          -4,
+          8
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_forest_demo_north_west_-3_-5",
+      "source_cells": [
+        [
+          -3,
+          -5
+        ]
+      ],
+      "exit_direction": "north_west",
+      "target_map_id": "hex_forest_demo",
+      "target_entry_direction": "south_east",
+      "target_cells": [
+        [
+          -3,
+          8
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_forest_demo_north_west_-2_-6",
+      "source_cells": [
+        [
+          -2,
+          -6
+        ]
+      ],
+      "exit_direction": "north_west",
+      "target_map_id": "hex_forest_demo",
+      "target_entry_direction": "south_east",
+      "target_cells": [
+        [
+          -2,
+          8
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_forest_demo_north_west_-1_-7",
+      "source_cells": [
+        [
+          -1,
+          -7
+        ]
+      ],
+      "exit_direction": "north_west",
+      "target_map_id": "hex_forest_demo",
+      "target_entry_direction": "south_east",
+      "target_cells": [
+        [
+          -1,
+          8
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_forest_demo_north_west_0_-8",
+      "source_cells": [
+        [
+          0,
+          -8
+        ]
+      ],
+      "exit_direction": "north_west",
+      "target_map_id": "hex_forest_demo",
+      "target_entry_direction": "south_east",
+      "target_cells": [
+        [
+          0,
+          8
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_forest_demo_north_west_1_-8",
+      "source_cells": [
+        [
+          1,
+          -8
+        ]
+      ],
+      "exit_direction": "north_west",
+      "target_map_id": "hex_forest_demo",
+      "target_entry_direction": "south_east",
+      "target_cells": [
+        [
+          1,
+          7
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_forest_demo_north_west_2_-8",
+      "source_cells": [
+        [
+          2,
+          -8
+        ]
+      ],
+      "exit_direction": "north_west",
+      "target_map_id": "hex_forest_demo",
+      "target_entry_direction": "south_east",
+      "target_cells": [
+        [
+          2,
+          6
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_forest_demo_north_west_3_-8",
+      "source_cells": [
+        [
+          3,
+          -8
+        ]
+      ],
+      "exit_direction": "north_west",
+      "target_map_id": "hex_forest_demo",
+      "target_entry_direction": "south_east",
+      "target_cells": [
+        [
+          3,
+          5
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_forest_demo_north_west_4_-8",
+      "source_cells": [
+        [
+          4,
+          -8
+        ]
+      ],
+      "exit_direction": "north_west",
+      "target_map_id": "hex_forest_demo",
+      "target_entry_direction": "south_east",
+      "target_cells": [
+        [
+          4,
+          4
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_forest_demo_north_west_5_-8",
+      "source_cells": [
+        [
+          5,
+          -8
+        ]
+      ],
+      "exit_direction": "north_west",
+      "target_map_id": "hex_forest_demo",
+      "target_entry_direction": "south_east",
+      "target_cells": [
+        [
+          5,
+          3
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_forest_demo_north_west_6_-8",
+      "source_cells": [
+        [
+          6,
+          -8
+        ]
+      ],
+      "exit_direction": "north_west",
+      "target_map_id": "hex_forest_demo",
+      "target_entry_direction": "south_east",
+      "target_cells": [
+        [
+          6,
+          2
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_forest_demo_north_west_7_-8",
+      "source_cells": [
+        [
+          7,
+          -8
+        ]
+      ],
+      "exit_direction": "north_west",
+      "target_map_id": "hex_forest_demo",
+      "target_entry_direction": "south_east",
+      "target_cells": [
+        [
+          7,
+          1
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_forest_demo_north_west_8_-8",
+      "source_cells": [
+        [
+          8,
+          -8
+        ]
+      ],
+      "exit_direction": "north_west",
+      "target_map_id": "hex_forest_demo",
+      "target_entry_direction": "south_east",
+      "target_cells": [
+        [
+          8,
+          0
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_southwest_demo_west_0_-8",
+      "source_cells": [
+        [
+          0,
+          -8
+        ]
+      ],
+      "exit_direction": "west",
+      "target_map_id": "hex_southwest_demo",
+      "target_entry_direction": "east",
+      "target_cells": [
+        [
+          8,
+          -8
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_southwest_demo_west_-1_-7",
+      "source_cells": [
+        [
+          -1,
+          -7
+        ]
+      ],
+      "exit_direction": "west",
+      "target_map_id": "hex_southwest_demo",
+      "target_entry_direction": "east",
+      "target_cells": [
+        [
+          8,
+          -7
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_southwest_demo_west_-2_-6",
+      "source_cells": [
+        [
+          -2,
+          -6
+        ]
+      ],
+      "exit_direction": "west",
+      "target_map_id": "hex_southwest_demo",
+      "target_entry_direction": "east",
+      "target_cells": [
+        [
+          8,
+          -6
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_southwest_demo_west_-3_-5",
+      "source_cells": [
+        [
+          -3,
+          -5
+        ]
+      ],
+      "exit_direction": "west",
+      "target_map_id": "hex_southwest_demo",
+      "target_entry_direction": "east",
+      "target_cells": [
+        [
+          8,
+          -5
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_southwest_demo_west_-4_-4",
+      "source_cells": [
+        [
+          -4,
+          -4
+        ]
+      ],
+      "exit_direction": "west",
+      "target_map_id": "hex_southwest_demo",
+      "target_entry_direction": "east",
+      "target_cells": [
+        [
+          8,
+          -4
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_southwest_demo_west_-5_-3",
+      "source_cells": [
+        [
+          -5,
+          -3
+        ]
+      ],
+      "exit_direction": "west",
+      "target_map_id": "hex_southwest_demo",
+      "target_entry_direction": "east",
+      "target_cells": [
+        [
+          8,
+          -3
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_southwest_demo_west_-6_-2",
+      "source_cells": [
+        [
+          -6,
+          -2
+        ]
+      ],
+      "exit_direction": "west",
+      "target_map_id": "hex_southwest_demo",
+      "target_entry_direction": "east",
+      "target_cells": [
+        [
+          8,
+          -2
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_southwest_demo_west_-7_-1",
+      "source_cells": [
+        [
+          -7,
+          -1
+        ]
+      ],
+      "exit_direction": "west",
+      "target_map_id": "hex_southwest_demo",
+      "target_entry_direction": "east",
+      "target_cells": [
+        [
+          8,
+          -1
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_southwest_demo_west_-8_0",
+      "source_cells": [
+        [
+          -8,
+          0
+        ]
+      ],
+      "exit_direction": "west",
+      "target_map_id": "hex_southwest_demo",
+      "target_entry_direction": "east",
+      "target_cells": [
+        [
+          8,
+          0
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_southwest_demo_west_-8_1",
+      "source_cells": [
+        [
+          -8,
+          1
+        ]
+      ],
+      "exit_direction": "west",
+      "target_map_id": "hex_southwest_demo",
+      "target_entry_direction": "east",
+      "target_cells": [
+        [
+          7,
+          1
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_southwest_demo_west_-8_2",
+      "source_cells": [
+        [
+          -8,
+          2
+        ]
+      ],
+      "exit_direction": "west",
+      "target_map_id": "hex_southwest_demo",
+      "target_entry_direction": "east",
+      "target_cells": [
+        [
+          6,
+          2
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_southwest_demo_west_-8_3",
+      "source_cells": [
+        [
+          -8,
+          3
+        ]
+      ],
+      "exit_direction": "west",
+      "target_map_id": "hex_southwest_demo",
+      "target_entry_direction": "east",
+      "target_cells": [
+        [
+          5,
+          3
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_southwest_demo_west_-8_4",
+      "source_cells": [
+        [
+          -8,
+          4
+        ]
+      ],
+      "exit_direction": "west",
+      "target_map_id": "hex_southwest_demo",
+      "target_entry_direction": "east",
+      "target_cells": [
+        [
+          4,
+          4
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_southwest_demo_west_-8_5",
+      "source_cells": [
+        [
+          -8,
+          5
+        ]
+      ],
+      "exit_direction": "west",
+      "target_map_id": "hex_southwest_demo",
+      "target_entry_direction": "east",
+      "target_cells": [
+        [
+          3,
+          5
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_southwest_demo_west_-8_6",
+      "source_cells": [
+        [
+          -8,
+          6
+        ]
+      ],
+      "exit_direction": "west",
+      "target_map_id": "hex_southwest_demo",
+      "target_entry_direction": "east",
+      "target_cells": [
+        [
+          2,
+          6
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_southwest_demo_west_-8_7",
+      "source_cells": [
+        [
+          -8,
+          7
+        ]
+      ],
+      "exit_direction": "west",
+      "target_map_id": "hex_southwest_demo",
+      "target_entry_direction": "east",
+      "target_cells": [
+        [
+          1,
+          7
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    },
+    {
+      "id": "hex_southeast_demo_to_hex_southwest_demo_west_-8_8",
+      "source_cells": [
+        [
+          -8,
+          8
+        ]
+      ],
+      "exit_direction": "west",
+      "target_map_id": "hex_southwest_demo",
+      "target_entry_direction": "east",
+      "target_cells": [
+        [
+          0,
+          8
+        ]
+      ],
+      "active": true,
+      "traversal_mode": "bidirectional"
+    }
+  ]
+}
