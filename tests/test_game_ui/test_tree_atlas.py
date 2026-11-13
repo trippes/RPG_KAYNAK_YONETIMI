@@ -96,6 +96,22 @@ class TestTreePartsAtlas(unittest.TestCase):
             with self.assertRaises(TreeAtlasError):
                 TreePartsAtlas.load(FakePygame, atlas_path, manifest_path)
 
+    def test_rejects_invalid_rig_motion_binding(self):
+        with tempfile.TemporaryDirectory() as directory:
+            atlas_path, manifest_path = self._write_files(directory)
+            data = json.loads(manifest_path.read_text(encoding="utf-8"))
+            data["rig_layers"] = [{
+                "component_id": "branch.left",
+                "order": 0,
+                "anchor": [0.5, 0.5],
+                "pivot": [0.5, 0.5],
+                "size": [0.2, 0.2],
+                "motion": {"kind": "branch", "index": -1},
+            }]
+            manifest_path.write_text(json.dumps(data), encoding="utf-8")
+            with self.assertRaises(TreeAtlasError):
+                TreePartsAtlas.load(FakePygame, atlas_path, manifest_path)
+
     def test_rejects_component_outside_atlas_bounds(self):
         with tempfile.TemporaryDirectory() as directory:
             atlas_path, manifest_path = self._write_files(
