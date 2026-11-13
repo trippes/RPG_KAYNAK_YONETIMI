@@ -192,7 +192,7 @@ class TestHexWorldView(unittest.TestCase):
         self.view._zoom = 1.4
         fake_renderer = FakeRenderer()
         self.view.render(fake_renderer)
-        self.assertEqual(fake_renderer.fill_color, (83, 132, 73))
+        self.assertEqual(fake_renderer.fill_color, (76, 124, 66))
         self.assertGreater(FakeDraw.polygons, 0)
         self.assertGreater(FakeDraw.circles, 0)
 
