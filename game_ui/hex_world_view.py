@@ -420,8 +420,10 @@ class HexWorldView:
 
         drawables = [(item.position, "landmark", item) for item in definition.landmarks]
         drawables.append((entity.position.cell, "player", entity))
-        for position, drawable_type, drawable in DepthSorter.sort(
-            drawables, lambda item: item[0],
+        for position, drawable_type, drawable in DepthSorter.sort_by_depth(
+            drawables,
+            lambda item: centers[item[0]][1],
+            lambda item: (item[0].q, item[0].r, item[1]),
         ):
             center = centers[position]
             if drawable_type == "landmark":
