@@ -1,8 +1,7 @@
-"""Reusable technical skeletons for sprite-backed trees.
+"""PNG-independent tree geometry and animation skeleton definitions.
 
-The skeleton owns geometry (ground/depth anchors and trunk collision), while
-PNG artwork remains a replaceable visual layer. All normalized coordinates
-are relative to the source sprite rectangle.
+The skeleton is authored in its own normalized local coordinate space.
+Artwork is only a visual skin mapped onto this geometry by the renderer.
 """
 from __future__ import annotations
 
@@ -36,33 +35,135 @@ def _rect(value, name):
         raise ValueError(f"{name} values must be finite numbers.")
     x, y, width, height = (float(item) for item in value)
     if x < 0 or y < 0 or width < 0 or height < 0 or x + width > 1 or y + height > 1:
-        raise ValueError(f"{name} must fit inside the normalized sprite rectangle.")
+        raise ValueError(f"{name} must fit inside the normalized rectangle.")
     return x, y, width, height
+
+
+def _unit_interval(value, name):
+    if (
+        isinstance(value, bool)
+        or not isinstance(value, (int, float))
+        or not math.isfinite(value)
+        or not 0.0 <= value <= 1.0
+    ):
+        raise ValueError(f"{name} must be a finite value from 0 to 1.")
+    return float(value)
+
+
+@dataclass(frozen=True, slots=True)
+class TreeBranch:
+    """One articulated branch in tree-local space, independent of any PNG."""
+
+    start: tuple[float, float]
+    end: tuple[float, float]
+    thickness: float = 0.08
+    sway_weight: float = 0.45
+    phase: float = 0.0
+    parent_index: int | None = None
+
+    def __post_init__(self):
+        object.__setattr__(self, "start", _point(self.start, "branch.start"))
+        object.__setattr__(self, "end", _point(self.end, "branch.end"))
+        object.__setattr__(self, "thickness", _unit_interval(self.thickness, "branch.thickness"))
+        object.__setattr__(self, "sway_weight", _unit_interval(self.sway_weight, "branch.sway_weight"))
+        if isinstance(self.phase, bool) or not isinstance(self.phase, (int, float)) or not math.isfinite(self.phase):
+            raise ValueError("branch.phase must be a finite number.")
+        if self.parent_index is not None and (
+            isinstance(self.parent_index, bool)
+            or not isinstance(self.parent_index, int)
+            or self.parent_index < 0
+        ):
+            raise ValueError("branch.parent_index must be a non-negative index or None.")
+
+
+@dataclass(frozen=True, slots=True)
+class TreeLeafCluster:
+    """A foliage cluster attached to a branch endpoint or tree-local point."""
+
+    anchor: tuple[float, float]
+    radius: float = 0.12
+    sway_weight: float = 1.0
+    phase: float = 0.0
+    branch_index: int | None = None
+
+    def __post_init__(self):
+        object.__setattr__(self, "anchor", _point(self.anchor, "leaf_cluster.anchor"))
+        object.__setattr__(self, "radius", _unit_interval(self.radius, "leaf_cluster.radius"))
+        object.__setattr__(self, "sway_weight", _unit_interval(self.sway_weight, "leaf_cluster.sway_weight"))
+        if isinstance(self.phase, bool) or not isinstance(self.phase, (int, float)) or not math.isfinite(self.phase):
+            raise ValueError("leaf_cluster.phase must be a finite number.")
+        if self.branch_index is not None and (
+            isinstance(self.branch_index, bool)
+            or not isinstance(self.branch_index, int)
+            or self.branch_index < 0
+        ):
+            raise ValueError("leaf_cluster.branch_index must be a non-negative index or None.")
+
+
+_DEFAULT_BRANCHES = (
+    TreeBranch((0.50, 0.78), (0.22, 0.48), thickness=0.12, sway_weight=0.35),
+    TreeBranch((0.50, 0.70), (0.78, 0.42), thickness=0.11, sway_weight=0.35),
+    TreeBranch((0.48, 0.56), (0.34, 0.25), thickness=0.08, sway_weight=0.65, parent_index=0),
+    TreeBranch((0.72, 0.48), (0.88, 0.22), thickness=0.07, sway_weight=0.65, parent_index=1),
+)
+_DEFAULT_LEAF_CLUSTERS = (
+    TreeLeafCluster((0.22, 0.48), radius=0.18, phase=0.0, branch_index=0),
+    TreeLeafCluster((0.78, 0.42), radius=0.19, phase=1.2, branch_index=1),
+    TreeLeafCluster((0.34, 0.25), radius=0.17, phase=2.4, branch_index=2),
+    TreeLeafCluster((0.88, 0.22), radius=0.16, phase=3.6, branch_index=3),
+    TreeLeafCluster((0.52, 0.20), radius=0.22, phase=4.8),
+)
 
 
 @dataclass(frozen=True, slots=True)
 class TreeSkeleton:
-    """Geometry contract shared by every tree PNG variant.
+    """Tree-local geometry plus legacy artwork attachment metadata.
 
-    ground_anchor places the sprite in the world.
-    depth_anchor selects the point used for front/behind ordering.
-    trunk_collision is independent of the full visual canopy.
-    canopy_bounds describes foliage for future editor/debug tools.
+    Branches, foliage clusters and animation weights are defined in a
+    normalized skeleton space, not measured from the PNG. The legacy sprite
+    anchors remain an adapter for the current artwork renderer.
     """
 
     ground_anchor: tuple[float, float] = (0.5, 0.985)
     depth_anchor: tuple[float, float] = (0.5, 0.955)
     trunk_collision: tuple[float, float, float, float] = (0.39, 0.82, 0.22, 0.16)
     canopy_bounds: tuple[float, float, float, float] = (0.03, 0.02, 0.94, 0.76)
+    branches: tuple[TreeBranch, ...] = _DEFAULT_BRANCHES
+    leaf_clusters: tuple[TreeLeafCluster, ...] = _DEFAULT_LEAF_CLUSTERS
+    wind_response: float = 0.7
+    sway_frequency: float = 1.0
 
     def __post_init__(self):
         object.__setattr__(self, "ground_anchor", _point(self.ground_anchor, "ground_anchor"))
         object.__setattr__(self, "depth_anchor", _point(self.depth_anchor, "depth_anchor"))
         object.__setattr__(self, "trunk_collision", _rect(self.trunk_collision, "trunk_collision"))
         object.__setattr__(self, "canopy_bounds", _rect(self.canopy_bounds, "canopy_bounds"))
+        branches = tuple(self.branches)
+        leaves = tuple(self.leaf_clusters)
+        if any(not isinstance(branch, TreeBranch) for branch in branches):
+            raise ValueError("branches must contain TreeBranch values.")
+        if any(not isinstance(cluster, TreeLeafCluster) for cluster in leaves):
+            raise ValueError("leaf_clusters must contain TreeLeafCluster values.")
+        for branch in branches:
+            if branch.parent_index is not None and branch.parent_index >= len(branches):
+                raise ValueError("branch.parent_index refers to a missing branch.")
+        for cluster in leaves:
+            if cluster.branch_index is not None and cluster.branch_index >= len(branches):
+                raise ValueError("leaf_cluster.branch_index refers to a missing branch.")
+        object.__setattr__(self, "branches", branches)
+        object.__setattr__(self, "leaf_clusters", leaves)
+        object.__setattr__(self, "wind_response", _unit_interval(self.wind_response, "wind_response"))
+        if (
+            isinstance(self.sway_frequency, bool)
+            or not isinstance(self.sway_frequency, (int, float))
+            or not math.isfinite(self.sway_frequency)
+            or self.sway_frequency < 0
+        ):
+            raise ValueError("sway_frequency must be a finite non-negative number.")
+        object.__setattr__(self, "sway_frequency", float(self.sway_frequency))
 
     def sprite_top_left(self, world_anchor, sprite_size, scale=1.0):
-        """Return the sprite's top-left world point for its ground anchor."""
+        """Return the artwork's top-left world point for its ground anchor."""
         width, height = self._scaled_size(sprite_size, scale)
         return (
             float(world_anchor[0]) - width * self.ground_anchor[0],
@@ -70,14 +171,14 @@ class TreeSkeleton:
         )
 
     def depth_y(self, world_anchor, sprite_size, scale=1.0):
-        """Return the world-space depth line, independent of the canopy height."""
+        """Return the world-space depth line, independent of canopy height."""
         _, height = self._scaled_size(sprite_size, scale)
         return float(world_anchor[1]) + height * (
             self.depth_anchor[1] - self.ground_anchor[1]
         )
 
     def trunk_collision_bounds(self, world_anchor, sprite_size, scale=1.0):
-        """Return an x/y/width/height trunk rectangle in world coordinates."""
+        """Return the legacy artwork-adapter trunk rectangle in world coordinates."""
         width, height = self._scaled_size(sprite_size, scale)
         left, top = self.sprite_top_left(world_anchor, sprite_size, scale)
         x, y, collision_width, collision_height = self.trunk_collision
