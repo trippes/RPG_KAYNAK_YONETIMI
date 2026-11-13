@@ -57,6 +57,8 @@ class HexWorldView:
         self._scene_object_renderer = None
         self._tree_parts_atlas = None
         self._tree_rig_renderer = TreeRigRenderer()
+        # Keep the proven full-tree PNG active until atlas pivots are visually calibrated.
+        self._tree_rig_enabled = False
         self._character_visual_loaded = False
         self._character_animator = None
         self._character_asset = None
@@ -511,7 +513,11 @@ class HexWorldView:
             ):
                 return
             rig_drawn = False
-            if skeleton is not None and self._tree_parts_atlas is not None:
+            if (
+                self._tree_rig_enabled
+                and skeleton is not None
+                and self._tree_parts_atlas is not None
+            ):
                 rig_drawn = self._tree_rig_renderer.draw(
                     renderer,
                     self._tree_parts_atlas,
