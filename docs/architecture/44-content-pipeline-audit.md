@@ -124,7 +124,7 @@ AssetCatalog.objects_for_map(map_id)
 HexWorldView.render() -> drawable list
         |
         v
-_hdraw_placed_scene_object()
+_draw_placed_scene_object()
         |
         +--> asset metadata çözümleme
         +--> q/r hücre merkezi + offset_x/offset_y
