@@ -64,6 +64,7 @@ class HexWorldView:
         self._mouse_position = None
         self._viewport_size = (960, 640)
         self._frame_elapsed = 0.0
+        self._environment_time = 0.0
 
     def _load_package(self):
         if self._package is None:
@@ -317,6 +318,7 @@ class HexWorldView:
 
     def update(self, elapsed_seconds):
         self._frame_elapsed = max(0.0, float(elapsed_seconds))
+        self._environment_time += self._frame_elapsed
         if self._character_animator is not None:
             self._character_animator.update(self._frame_elapsed)
         if not self._movement_path or elapsed_seconds <= 0:
@@ -454,7 +456,7 @@ class HexWorldView:
         # authored content readable without turning every missing asset into a dot.
         pg = renderer.pg
         x, y = round(anchor[0]), round(anchor[1])
-        pulse = math.sin(self._frame_elapsed * 3.0 + placement.q * 0.7 + placement.r) * self._zoom
+        pulse = math.sin(self._environment_time * 3.0 + placement.q * 0.7 + placement.r) * self._zoom
         kind = placement.kind.lower()
         asset_id = placement.asset_id.lower()
         if "tree" in asset_id or kind == "flora" and "shrub" not in asset_id:
