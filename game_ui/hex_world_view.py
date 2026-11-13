@@ -733,10 +733,13 @@ class HexWorldView:
                     self._character_animator.current_frame
                     if self._character_animator is not None else None
                 )
+                player_foot_position = (
+                    player_center[0], player_center[1] + render_radius * 0.28
+                )
                 if frame is not None:
                     HexCharacterRenderer.draw_sprite(
                         renderer, frame,
-                        (player_center[0], player_center[1] + render_radius * 0.28),
+                        player_foot_position,
                         render_radius * self._character_asset.scale,
                         anchor=self._character_asset.anchor,
                         cache=self._character_scaled_frames,
@@ -745,6 +748,15 @@ class HexWorldView:
                     HexCharacterRenderer.draw(
                         renderer, player_center, render_radius,
                         self._movement_elapsed, moving=bool(self._movement_path),
+                    )
+                if self._scene_debug_visible:
+                    HexCharacterRenderer.draw_debug_skeleton(
+                        renderer,
+                        player_foot_position if frame is not None else (
+                            player_center[0], player_center[1] + render_radius * 0.28
+                        ),
+                        render_radius * (self._character_asset.scale if frame is not None else 1.0),
+                        sprite_size=frame.get_size() if frame is not None else None,
                     )
 
         # A small natural target ring gives mouse feedback without exposing a
