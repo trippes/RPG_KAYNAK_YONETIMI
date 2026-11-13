@@ -21,6 +21,9 @@ class TestContentPackageLoader(unittest.TestCase):
 
         self.assertEqual(package.package_id, "demo_eldoria")
         self.assertEqual(package.package_version, "0.6.0")
+        self.assertEqual(package.asset_catalog_path.name, "asset_catalog.json")
+        self.assertEqual(package.map_placements_path.name, "placements")
+        self.assertEqual(package.presentation_assets_path.name, "presentation_assets.json")
         self.assertIn("starter", package.files)
         self.assertIn("npcs", package.files)
         self.assertIn("quests", package.files)
