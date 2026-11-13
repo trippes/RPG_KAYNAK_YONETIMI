@@ -64,6 +64,38 @@ class TestTreePartsAtlas(unittest.TestCase):
         self.assertEqual(tuple(atlas.by_type("branch")), ("branch.left",))
         self.assertIsNone(atlas.get("missing"))
 
+    def test_load_preserves_validated_rig_layer_metadata(self):
+        with tempfile.TemporaryDirectory() as directory:
+            atlas_path, manifest_path = self._write_files(directory)
+            data = json.loads(manifest_path.read_text(encoding="utf-8"))
+            data["rig_layers"] = [{
+                "component_id": "branch.left",
+                "order": 1,
+                "anchor": [0.5, 0.6],
+                "pivot": [0.5, 1.0],
+                "size": [0.3, 0.4],
+                "motion": {"kind": "branch", "index": 0},
+            }]
+            manifest_path.write_text(json.dumps(data), encoding="utf-8")
+            atlas = TreePartsAtlas.load(FakePygame, atlas_path, manifest_path)
+        self.assertEqual(len(atlas.rig_layers), 1)
+        self.assertEqual(atlas.rig_layers[0]["component_id"], "branch.left")
+
+    def test_rejects_rig_layer_referencing_missing_component(self):
+        with tempfile.TemporaryDirectory() as directory:
+            atlas_path, manifest_path = self._write_files(directory)
+            data = json.loads(manifest_path.read_text(encoding="utf-8"))
+            data["rig_layers"] = [{
+                "component_id": "missing",
+                "order": 0,
+                "anchor": [0.5, 0.5],
+                "pivot": [0.5, 0.5],
+                "size": [0.2, 0.2],
+            }]
+            manifest_path.write_text(json.dumps(data), encoding="utf-8")
+            with self.assertRaises(TreeAtlasError):
+                TreePartsAtlas.load(FakePygame, atlas_path, manifest_path)
+
     def test_rejects_component_outside_atlas_bounds(self):
         with tempfile.TemporaryDirectory() as directory:
             atlas_path, manifest_path = self._write_files(
