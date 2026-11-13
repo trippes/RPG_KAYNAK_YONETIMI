@@ -66,3 +66,22 @@ The starter presentation_assets.json intentionally contains empty assets and obj
 ## Verification and limitations
 
 Stage 6 tests cover catalog validation, path traversal rejection, missing assets, multi-cell footprints, independent collision/visual bounds, full-sprite culling, and directional animation selection. Existing terrain, camera, transform, character, and runtime tests remain part of release verification. Automated tests cannot certify art quality or actual display behavior. No authored terrain, tree, building, or character sprite pack is claimed unless files are added to the content package.
+
+
+## Visual acceptance revision — tree test
+
+The demo package now includes `assets/tree_test.png` and registers it as
+`flora.tree.test` at axial cell `(2, 0)`. The asset uses source-image
+dimensions (`width: 0`, `height: 0`) so the renderer reads the actual PNG
+surface dimensions rather than relying on guessed metadata. Its ground anchor
+is centered at the bottom of the sprite. The trunk test cell is blocked in the
+hex map, leaving neighboring cells available for pathing around the tree.
+This first pass deliberately uses cell-level movement collision: the optional
+pixel collision rectangle remains metadata and is not represented as free-form
+sub-cell physics.
+
+Terrain fallback stamps now overlap as soft circular ground marks rather than
+drawing an individual hex polygon for every cell. This is an initial reduction
+of visible hex tiling, not a finished organic terrain-transition system.
+A target-PC game-window test is still required to judge the actual sprite scale,
+transparency, depth overlap, and whether the tree can be comfortably circled.
