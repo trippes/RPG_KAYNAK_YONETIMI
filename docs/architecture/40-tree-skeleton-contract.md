@@ -44,3 +44,29 @@ Press **F3** in the hex-world view to display developer guides: red trunk collis
 - Renderer: mapping skeleton coordinates to visuals, animation and draw order.
 
 The current hex simulation still resolves movement through its existing cell occupancy rules and does not yet perform precise world-space trunk collision.
+
+
+## Tree parts atlas extraction
+
+The demo content package now includes `assets/tree_parts_atlas.png` and its
+pixel-coordinate manifest `assets/tree_parts_atlas.json`. The manifest regions
+were recalculated from the source PNG alpha connected components (threshold 8),
+not estimated from the contact-sheet preview. It defines 24 isolated regions:
+one assembled reference tree, one root/base region, a trunk, branch pieces,
+and foliage/leaf clusters.
+
+`game_ui.world_rendering.tree_atlas.TreePartsAtlas` loads the atlas once and
+extracts each manifest rectangle into its own copied Pygame surface. Transparent
+pixels are retained, components are addressable by stable IDs, and the loader
+validates schema version, duplicate IDs, rectangle types and atlas bounds.
+`HexWorldView` loads this component cache when the demo package contains both
+atlas files. Missing or invalid optional atlas data does not prevent the
+existing tree PNG renderer from starting.
+
+This completes the asset-to-independent-sprite conversion in memory. The
+existing assembled tree PNG remains the production fallback while the
+individual pieces are available for the next layered tree renderer. The
+current atlas does not by itself define final in-world transforms/pivots for
+every branch and foliage sprite; those placements must be calibrated against
+the tree skeleton before replacing the assembled artwork or enabling visible
+deformation.
