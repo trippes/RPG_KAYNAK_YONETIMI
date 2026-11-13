@@ -112,6 +112,22 @@ class TestTreePartsAtlas(unittest.TestCase):
             with self.assertRaises(TreeAtlasError):
                 TreePartsAtlas.load(FakePygame, atlas_path, manifest_path)
 
+    def test_demo_rig_manifest_uses_existing_components_and_skeleton_indices(self):
+        root = Path(__file__).resolve().parents[2]
+        manifest = json.loads(
+            (root / "content" / "demo_eldoria" / "assets" / "tree_parts_atlas.json")
+            .read_text(encoding="utf-8")
+        )
+        component_ids = {item["id"] for item in manifest["components"]}
+        self.assertTrue(manifest["rig_layers"])
+        for layer in manifest["rig_layers"]:
+            self.assertIn(layer["component_id"], component_ids)
+            motion = layer.get("motion", {})
+            if motion.get("kind") == "branch":
+                self.assertIn(motion["index"], range(4))
+            elif motion.get("kind") == "leaf":
+                self.assertIn(motion["index"], range(5))
+
     def test_rejects_component_outside_atlas_bounds(self):
         with tempfile.TemporaryDirectory() as directory:
             atlas_path, manifest_path = self._write_files(
