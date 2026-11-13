@@ -15,6 +15,15 @@ class HexTerrainRenderer:
 
     def __init__(self):
         self._scaled_textures = {}
+        self._frame_surface_size = None
+
+    def begin_frame(self, renderer, terrain_ids=()):
+        """Paint one continuous ground base before organic cell details."""
+        colors = [self.TERRAIN_COLORS.get(item) for item in terrain_ids]
+        colors = [item for item in colors if item is not None]
+        base = colors[0] if colors else (74, 111, 68)
+        renderer.surface.fill(base)
+        self._frame_surface_size = (renderer.width, renderer.height)
 
     def _scaled_texture(self, pg, texture, size):
         key = (id(texture), size)
@@ -48,15 +57,10 @@ class HexTerrainRenderer:
 
     def draw_cell(self, renderer, cell, cell_data, center, radius, selected=False, image=None, images=()):
         pg = renderer.pg
-        # Use overlapping organic ground stamps instead of visible hex polygons.
-        # Axial cells remain the data grid; their boundaries are not a player-facing tile grid.
+        # Axial cells are simulation data only. Large overlapping organic
+        # stamps deliberately hide the underlying hex boundaries.
         base = self.color_for(cell_data, selected=False)
-        stamp_radius = max(1, round(radius * 1.04))
-        pg.draw.circle(
-            renderer.surface, (24, 34, 29),
-            (round(center[0]), round(center[1] + max(2, radius * 0.08))),
-            stamp_radius,
-        )
+        stamp_radius = max(1, round(radius * 1.32))
         pg.draw.circle(
             renderer.surface, base, (round(center[0]), round(center[1])),
             stamp_radius,
@@ -71,7 +75,7 @@ class HexTerrainRenderer:
         seed = (cell.q * 73856093) ^ (cell.r * 19349663)
         detail = (111, 157, 83) if cell_data.terrain_id == "grass" else (39, 86, 54)
         if not textures and cell_data.terrain_id in ("grass", "forest_floor", "clearing_floor"):
-            for index in range(3):
+            for index in range(9):
                 dx = ((seed >> (index * 4)) % 13 - 6) * radius / 22
                 dy = ((seed >> (index * 6 + 1)) % 13 - 6) * radius / 22
                 pg.draw.circle(renderer.surface, detail,
