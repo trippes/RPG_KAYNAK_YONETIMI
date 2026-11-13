@@ -39,6 +39,8 @@ class AssetDefinition:
             raise AssetCatalogError("collision must be an x/y/width/height tuple.")
         if not isinstance(self.depth_offset, (int, float)) or isinstance(self.depth_offset, bool) or not math.isfinite(self.depth_offset):
             raise AssetCatalogError("depth_offset must be finite and numeric.")
+        if isinstance(self.terrain_types, str):
+            raise AssetCatalogError("terrain_types must be a list of strings.")
         terrain_types = tuple(self.terrain_types)
         if any(not isinstance(value, str) or not value.strip() for value in terrain_types):
             raise AssetCatalogError("terrain_types must contain non-empty strings.")
