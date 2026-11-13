@@ -9,7 +9,11 @@ class TestMixedMapPackage(unittest.TestCase):
   p=load_content_package(ROOT/"content"/"demo_eldoria")
   expected={"village","forest","north_mine","east_forest","east_mine","south_forest","south_mine","west_forest","west_mine"}
   self.assertEqual(set(p.map_definitions),expected)
-  self.assertEqual(set(p.hex_map_definitions),{"hex_forest_demo", "hex_clearing_demo"})
+  self.assertEqual(set(p.hex_map_definitions), {
+        "hex_forest_demo", "hex_clearing_demo", "hex_northeast_demo",
+        "hex_northwest_demo", "hex_west_demo", "hex_southwest_demo",
+        "hex_southeast_demo",
+    })
   self.assertEqual(p.schema_version,1)
  def test_hex_fixture_does_not_become_starting_map(self):
   p=load_content_package(ROOT/"content"/"demo_eldoria")

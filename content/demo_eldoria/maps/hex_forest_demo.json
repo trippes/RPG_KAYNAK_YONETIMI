@@ -1106,7 +1106,7 @@
       "traversal_mode": "bidirectional"
     },
     {
-      "id": "hex_forest_demo_to_hex_clearing_demo_east_8_0",
+      "id": "forest_to_clearing",
       "source_cells": [
         [
           8,
