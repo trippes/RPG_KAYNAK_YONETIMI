@@ -3,6 +3,41 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 @dataclass(frozen=True, slots=True)
+class SceneObjectPlacement:
+    object_id: str
+    asset_id: str
+    map_id: str
+    q: int
+    r: int
+    offset_x: float = 0.0
+    offset_y: float = 0.0
+    footprint: tuple[int, int] = (1, 1)
+    collision_box: tuple[float, float, float, float] | None = None
+    depth_offset: float = 0.0
+    layer: str = "ground"
+    kind: str = "prop"
+
+    def __post_init__(self):
+        if any(not isinstance(value, str) or not value.strip() for value in
+               (self.object_id, self.asset_id, self.map_id, self.kind)):
+            raise ValueError("Placement IDs and kind must be non-empty strings.")
+        if any(type(value) is not int for value in (self.q, self.r)):
+            raise TypeError("Placement cell coordinates must be integers.")
+        if any(isinstance(value, bool) or not isinstance(value, (int, float))
+               for value in (self.offset_x, self.offset_y, self.depth_offset)):
+            raise TypeError("Placement offsets must be numeric.")
+        if len(self.footprint) != 2 or any(type(value) is not int or value <= 0 for value in self.footprint):
+            raise ValueError("Placement footprint must contain positive integers.")
+        if self.layer not in {"underlay", "ground", "canopy", "overlay"}:
+            raise ValueError("Unsupported placement layer.")
+        if self.collision_box is not None and (
+            len(self.collision_box) != 4
+            or any(isinstance(value, bool) or not isinstance(value, (int, float)) for value in self.collision_box)
+            or self.collision_box[2] < 0 or self.collision_box[3] < 0
+        ):
+            raise ValueError("Collision box must be x/y/width/height.")
+
+@dataclass(frozen=True, slots=True)
 class SceneObject:
     object_id: str
     asset_id: str

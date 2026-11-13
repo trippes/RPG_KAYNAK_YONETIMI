@@ -45,9 +45,10 @@ class AssetDefinition:
 class AssetCatalog:
     """Load reusable visual metadata without importing Pygame."""
     SCHEMA_VERSION = 1
-    def __init__(self, root, assets):
+    def __init__(self, root, assets, objects=()):
         self.root = Path(root).resolve()
         self.assets = dict(assets)
+        self.objects = tuple(objects)
     @classmethod
     def load(cls, source):
         source = Path(source).resolve()
@@ -58,8 +59,9 @@ class AssetCatalog:
         if not isinstance(payload, dict) or payload.get("schema_version") != cls.SCHEMA_VERSION:
             raise AssetCatalogError("Unsupported presentation asset catalog schema.")
         records = payload.get("assets")
-        if not isinstance(records, list):
-            raise AssetCatalogError("Catalog assets must be a list.")
+        object_records = payload.get("objects", [])
+        if not isinstance(records, list) or not isinstance(object_records, list):
+            raise AssetCatalogError("Catalog assets and objects must be lists.")
         assets = {}
         for index, record in enumerate(records):
             if not isinstance(record, dict):
@@ -84,7 +86,33 @@ class AssetCatalog:
             if not resolved.is_relative_to(source.parent):
                 raise AssetCatalogError(f"Asset path escapes catalog root: {asset.asset_id}")
             assets[asset.asset_id] = asset
-        return cls(source.parent, assets)
+        from game_ui.world_rendering.scene_object import SceneObjectPlacement
+        objects = []
+        seen_object_ids = set()
+        for index, record in enumerate(object_records):
+            if not isinstance(record, dict):
+                raise AssetCatalogError(f"Object placement at index {index} must be an object.")
+            try:
+                placement = SceneObjectPlacement(
+                    object_id=record["object_id"], asset_id=record["asset_id"],
+                    map_id=record["map_id"], q=record["q"], r=record["r"],
+                    offset_x=record.get("offset_x", 0.0),
+                    offset_y=record.get("offset_y", 0.0),
+                    footprint=tuple(record.get("footprint", (1, 1))),
+                    collision_box=tuple(record["collision_box"]) if record.get("collision_box") is not None else None,
+                    depth_offset=record.get("depth_offset", 0.0),
+                    layer=record.get("layer", "ground"),
+                    kind=record.get("kind", "prop"),
+                )
+            except (KeyError, TypeError, ValueError) as error:
+                raise AssetCatalogError(f"Invalid object placement at index {index}.") from error
+            if placement.object_id in seen_object_ids:
+                raise AssetCatalogError(f"Duplicate scene object id: {placement.object_id}")
+            if placement.asset_id not in assets:
+                raise AssetCatalogError(f"Object placement references unknown asset: {placement.asset_id}")
+            seen_object_ids.add(placement.object_id)
+            objects.append(placement)
+        return cls(source.parent, assets, objects)
     def get(self, asset_id):
         return self.assets.get(asset_id)
     def resolve_path(self, asset_id):
@@ -98,3 +126,5 @@ class AssetCatalog:
     def available(self, asset_id):
         path = self.resolve_path(asset_id)
         return path is not None and path.is_file()
+    def objects_for_map(self, map_id):
+        return tuple(item for item in self.objects if item.map_id == map_id)
