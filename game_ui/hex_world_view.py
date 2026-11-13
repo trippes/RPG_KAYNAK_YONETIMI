@@ -11,6 +11,7 @@ from pathlib import Path
 
 from game_ui.assets.asset_definition import AssetCatalog, AssetCatalogError
 from game_ui.assets.asset_manager import AssetManager
+from game_ui.world_rendering.scene_object import SceneObject, SceneObjectRenderer
 from application.hex_world_runtime import HexWorldRuntime
 from core.domain.spatial import (
     EntityPosition, HexCoord, HexDirection, LocalHexPosition, MovementProfile,
@@ -312,6 +313,54 @@ class HexWorldView:
             for cell in definition.valid_cells
         }
 
+    def _draw_landmark(self, renderer, landmark, center, render_radius):
+        """Draw an authored sprite when available, otherwise retain the marker fallback."""
+        if self._presentation_catalog is not None and self._asset_manager is not None:
+            asset = (
+                self._presentation_catalog.get(landmark.visual_type)
+                or self._presentation_catalog.get(f"landmark.{landmark.visual_type}")
+            )
+            if asset is not None:
+                path = self._presentation_catalog.resolve_path(asset.asset_id)
+                if path is not None and path.is_file():
+                    try:
+                        image = self._asset_manager.load_image(asset.asset_id, path, alpha=True)
+                        obj = SceneObject(
+                            object_id=landmark.landmark_id,
+                            asset_id=asset.asset_id,
+                            world_x=center[0], world_y=center[1],
+                            visual_width=asset.width * asset.scale,
+                            visual_height=asset.height * asset.scale,
+                            anchor_x=asset.anchor[0], anchor_y=asset.anchor[1],
+                            depth_offset=asset.depth_offset,
+                            layer=asset.placement,
+                        )
+                        if SceneObjectRenderer.is_visible(
+                            obj, (0, 0, renderer.width, renderer.height)
+                        ):
+                            SceneObjectRenderer(self._asset_manager).draw(
+                                renderer, obj, center, self._zoom
+                            )
+                        return
+                    except (OSError, RuntimeError, ValueError):
+                        pass
+        if not self._terrain_renderer.is_visible(
+            center, render_radius, renderer.width, renderer.height
+        ):
+            return
+        renderer.pg.draw.circle(
+            renderer.surface, (180, 145, 83),
+            (round(center[0]), round(center[1])),
+            max(5, round(render_radius * 0.22)),
+        )
+        renderer.text(
+            landmark.name,
+            round(center[0] - render_radius),
+            round(center[1] + render_radius * 0.28),
+            (245, 225, 180),
+            max_width=round(render_radius * 2),
+        )
+
     def render(self, renderer):
         if not self.active:
             return
@@ -356,25 +405,14 @@ class HexWorldView:
                     max(7, round(render_radius * 0.48)), 2,
                 )
 
-        drawables = [(item.position, "landmark", item) for item in definition.landmarks if self._terrain_renderer.is_visible(centers[item.position], render_radius, renderer.width, renderer.height)]
+        drawables = [(item.position, "landmark", item) for item in definition.landmarks]
         drawables.append((entity.position.cell, "player", entity))
         for position, drawable_type, drawable in DepthSorter.sort(
             drawables, lambda item: item[0],
         ):
             center = centers[position]
             if drawable_type == "landmark":
-                renderer.pg.draw.circle(
-                    renderer.surface, (180, 145, 83),
-                    (round(center[0]), round(center[1])),
-                    max(5, round(render_radius * 0.22)),
-                )
-                renderer.text(
-                    drawable.name,
-                    round(center[0] - render_radius),
-                    round(center[1] + render_radius * 0.28),
-                    (245, 225, 180),
-                    max_width=round(render_radius * 2),
-                )
+                self._draw_landmark(renderer, drawable, center, render_radius)
             else:
                 player_center = center
                 if self._movement_path:
