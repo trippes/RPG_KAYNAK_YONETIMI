@@ -385,9 +385,8 @@
         0.31
       ],
       "motion": {
-        "kind": "branch",
-        "index": 2,
-        "weight": 0.6
+        "kind": "trunk",
+        "weight": 0.65
       }
     },
     {
@@ -567,7 +566,7 @@
       ],
       "motion": {
         "kind": "leaf",
-        "index": 1
+        "index": 3
       }
     },
     {
@@ -607,7 +606,7 @@
       ],
       "motion": {
         "kind": "leaf",
-        "index": 1
+        "index": 3
       }
     },
     {
