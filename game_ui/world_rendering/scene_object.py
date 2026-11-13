@@ -46,6 +46,7 @@ class SceneObjectRenderer:
     """Draw cached sprites and cull against complete visual bounds."""
     def __init__(self, asset_manager):
         self.asset_manager = asset_manager
+        self._scaled_images = {}
     @staticmethod
     def is_visible(obj, camera_rect):
         left, top, right, bottom = obj.visual_bounds
@@ -56,7 +57,12 @@ class SceneObjectRenderer:
         if image is None:
             return False
         width, height = max(1, round(obj.visual_width * zoom)), max(1, round(obj.visual_height * zoom))
-        if image.get_size() != (width, height):
-            image = renderer.pg.transform.smoothscale(image, (width, height))
+        key = (obj.asset_id, width, height)
+        if key not in self._scaled_images:
+            self._scaled_images[key] = (
+                image if image.get_size() == (width, height)
+                else renderer.pg.transform.smoothscale(image, (width, height))
+            )
+        image = self._scaled_images[key]
         renderer.surface.blit(image, (round(screen_anchor[0] - width * obj.anchor_x), round(screen_anchor[1] - height * obj.anchor_y)))
         return True

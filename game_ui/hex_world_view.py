@@ -50,6 +50,7 @@ class HexWorldView:
         self._presentation_catalog = None
         self._presentation_assets_loaded = False
         self._asset_manager = None
+        self._scene_object_renderer = None
         self._character_visual_loaded = False
         self._character_animator = None
         self._character_asset = None
@@ -87,6 +88,7 @@ class HexWorldView:
         try:
             self._presentation_catalog = AssetCatalog.load(catalog_path)
             self._asset_manager = AssetManager(pygame_module)
+            self._scene_object_renderer = SceneObjectRenderer(self._asset_manager)
         except (AssetCatalogError, OSError, ValueError):
             self._presentation_catalog = None
             self._asset_manager = None
@@ -432,7 +434,7 @@ class HexWorldView:
                         if SceneObjectRenderer.is_visible(
                             obj, (0, 0, renderer.width, renderer.height)
                         ):
-                            SceneObjectRenderer(self._asset_manager).draw(
+                            self._scene_object_renderer.draw(
                                 renderer, obj, center, self._zoom
                             )
                         return

@@ -13,6 +13,18 @@ class HexTerrainRenderer:
     BLOCKED_COLOR = (45, 65, 91)
     SELECTED_COLOR = (132, 157, 83)
 
+    def __init__(self):
+        self._scaled_textures = {}
+
+    def _scaled_texture(self, pg, texture, size):
+        key = (id(texture), size)
+        if key not in self._scaled_textures:
+            self._scaled_textures[key] = (
+                texture if texture.get_size() == (size, size)
+                else pg.transform.smoothscale(texture, (size, size))
+            )
+        return self._scaled_textures[key]
+
     @staticmethod
     def is_visible(center, radius, width, height):
         x, y = center
@@ -44,10 +56,10 @@ class HexTerrainRenderer:
         textures = tuple(images) + ((image,) if image is not None else ())
         size = max(1, round(radius * 2))
         for texture in textures:
-            current = texture
-            if current.get_size() != (size, size):
-                current = pg.transform.smoothscale(current, (size, size))
-            renderer.surface.blit(current, (round(center[0] - radius), round(center[1] - radius)))
+            renderer.surface.blit(
+                self._scaled_texture(pg, texture, size),
+                (round(center[0] - radius), round(center[1] - radius)),
+            )
         seed = (cell.q * 73856093) ^ (cell.r * 19349663)
         detail = (111, 157, 83) if cell_data.terrain_id == "grass" else (39, 86, 54)
         if not textures and cell_data.terrain_id in ("grass", "forest_floor", "clearing_floor"):
