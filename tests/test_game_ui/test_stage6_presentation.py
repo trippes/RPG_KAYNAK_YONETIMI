@@ -15,7 +15,7 @@ class TestStage6Presentation(unittest.TestCase):
         self.assertEqual(package.presentation_assets_path.name, "presentation_assets.json")
         self.assertTrue(package.presentation_assets_path.is_file())
 
-    def test_demo_tree_sprite_is_packaged_and_blocks_only_its_trunk_cell(self):
+    def test_demo_tree_sprite_and_three_additional_forest_trees_are_packaged(self):
         package_root = Path(__file__).resolve().parents[2] / "content" / "demo_eldoria"
         package = load_content_package(package_root)
         catalog = AssetCatalog.load(package.presentation_assets_path)
@@ -23,11 +23,11 @@ class TestStage6Presentation(unittest.TestCase):
         self.assertIsNotNone(tree)
         self.assertEqual((tree.width, tree.height), (0, 0))
         self.assertTrue(catalog.available("flora.tree.test"))
-        self.assertEqual(len(catalog.objects_for_map("hex_forest_demo")), 1)
+        self.assertEqual(len(catalog.objects_for_map("hex_forest_demo")), 4)
         tree_cell = package.hex_map_definitions["hex_forest_demo"].get_cell(
             __import__("core.domain.spatial", fromlist=["LocalHexPosition"]).LocalHexPosition(2, 0)
         )
-        self.assertTrue(tree_cell.blocked)
+        self.assertFalse(tree_cell.blocked)
 
     def test_content_package_rejects_presentation_catalog_path_traversal(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -166,6 +166,7 @@ class TestHexWorldView(unittest.TestCase):
                 self.fill_color = None
                 self.surface = SimpleNamespace()
                 self.width = 960
+                self.height = 640
 
             def _fill(self, color):
                 self.fill_color = color
