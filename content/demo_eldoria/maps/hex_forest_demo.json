@@ -4374,8 +4374,13 @@
   ],
   "cell_overrides": [
     {
-      "q": 1,
-      "r": 0,
+      "q": -4,
+      "r": -3,
+      "terrain": "forest_floor"
+    },
+    {
+      "q": -4,
+      "r": 4,
       "terrain": "forest_floor"
     },
     {
@@ -4385,22 +4390,17 @@
       "blocked": true
     },
     {
+      "q": 1,
+      "r": 0,
+      "terrain": "forest_floor"
+    },
+    {
       "q": 2,
       "r": 0
     },
     {
-      "q": -4,
-      "r": -3,
-      "terrain": "forest_floor"
-    },
-    {
       "q": 4,
       "r": -4,
-      "terrain": "forest_floor"
-    },
-    {
-      "q": -4,
-      "r": 4,
       "terrain": "forest_floor"
     }
   ],
@@ -4437,7 +4437,7 @@
       "id": "forest_to_clearing",
       "source_cells": [
         [
-          16,
+          8,
           0
         ]
       ],
