@@ -1,0 +1,272 @@
+{
+  "schema_version": 1,
+  "atlas": "tree_parts_atlas.png",
+  "source_size": [
+    1339,
+    1174
+  ],
+  "coordinate_system": "pixel",
+  "extraction": "Each rect is [x,y,width,height] in the source atlas. Transparent pixels outside the connected sprite are retained inside the crop rectangle.",
+  "components": [
+    {
+      "id": "reference_full_tree",
+      "type": "reference",
+      "rect": [
+        0,
+        5,
+        518,
+        692
+      ]
+    },
+    {
+      "id": "foliage_crown_large_01",
+      "type": "foliage",
+      "rect": [
+        953,
+        18,
+        379,
+        342
+      ]
+    },
+    {
+      "id": "branch_secondary_01",
+      "type": "branch",
+      "rect": [
+        769,
+        64,
+        160,
+        193
+      ]
+    },
+    {
+      "id": "trunk_main_branch_structure",
+      "type": "trunk",
+      "rect": [
+        490,
+        81,
+        376,
+        437
+      ]
+    },
+    {
+      "id": "branch_secondary_02",
+      "type": "branch",
+      "rect": [
+        806,
+        276,
+        182,
+        237
+      ]
+    },
+    {
+      "id": "foliage_crown_large_02",
+      "type": "foliage",
+      "rect": [
+        966,
+        362,
+        367,
+        299
+      ]
+    },
+    {
+      "id": "branch_secondary_03",
+      "type": "branch",
+      "rect": [
+        498,
+        529,
+        240,
+        244
+      ]
+    },
+    {
+      "id": "branch_secondary_04",
+      "type": "branch",
+      "rect": [
+        766,
+        528,
+        166,
+        170
+      ]
+    },
+    {
+      "id": "foliage_crown_large_03",
+      "type": "foliage",
+      "rect": [
+        960,
+        611,
+        342,
+        234
+      ]
+    },
+    {
+      "id": "branch_small_01",
+      "type": "branch",
+      "rect": [
+        897,
+        625,
+        59,
+        52
+      ]
+    },
+    {
+      "id": "branch_small_02",
+      "type": "branch",
+      "rect": [
+        728,
+        636,
+        60,
+        98
+      ]
+    },
+    {
+      "id": "branch_secondary_05",
+      "type": "branch",
+      "rect": [
+        518,
+        706,
+        175,
+        216
+      ]
+    },
+    {
+      "id": "branch_secondary_06",
+      "type": "branch",
+      "rect": [
+        833,
+        710,
+        105,
+        110
+      ]
+    },
+    {
+      "id": "branch_small_03",
+      "type": "branch",
+      "rect": [
+        724,
+        767,
+        61,
+        131
+      ]
+    },
+    {
+      "id": "branch_small_04",
+      "type": "branch",
+      "rect": [
+        796,
+        802,
+        39,
+        145
+      ]
+    },
+    {
+      "id": "foliage_cluster_wide_01",
+      "type": "foliage",
+      "rect": [
+        862,
+        815,
+        275,
+        148
+      ]
+    },
+    {
+      "id": "foliage_cluster_medium_01",
+      "type": "foliage",
+      "rect": [
+        1153,
+        846,
+        165,
+        131
+      ]
+    },
+    {
+      "id": "root_base",
+      "type": "roots",
+      "rect": [
+        56,
+        909,
+        437,
+        231
+      ]
+    },
+    {
+      "id": "foliage_cluster_large_01",
+      "type": "foliage",
+      "rect": [
+        535,
+        943,
+        249,
+        203
+      ]
+    },
+    {
+      "id": "foliage_cluster_small_01",
+      "type": "foliage",
+      "rect": [
+        849,
+        977,
+        104,
+        52
+      ]
+    },
+    {
+      "id": "foliage_cluster_medium_02",
+      "type": "foliage",
+      "rect": [
+        999,
+        978,
+        141,
+        97
+      ]
+    },
+    {
+      "id": "foliage_cluster_small_02",
+      "type": "foliage",
+      "rect": [
+        1165,
+        989,
+        94,
+        66
+      ]
+    },
+    {
+      "id": "foliage_cluster_wide_02",
+      "type": "foliage",
+      "rect": [
+        809,
+        1040,
+        196,
+        119
+      ]
+    },
+    {
+      "id": "leaf_sprig_01",
+      "type": "leaf",
+      "rect": [
+        1255,
+        1066,
+        50,
+        50
+      ]
+    },
+    {
+      "id": "foliage_cluster_small_03",
+      "type": "foliage",
+      "rect": [
+        1160,
+        1069,
+        94,
+        77
+      ]
+    },
+    {
+      "id": "leaf_sprig_02",
+      "type": "leaf",
+      "rect": [
+        1040,
+        1082,
+        85,
+        72
+      ]
+    }
+  ]
+}
