@@ -278,9 +278,12 @@ class AssetCatalog:
             cls._resolve_safe_path(source.parent, asset.path, asset.asset_id)
             assets[asset.asset_id] = asset
 
-        from game_ui.world_rendering.scene_object import SceneObjectPlacement
-
+        # Legacy schema-v1 presentation_assets.json may still embed placements.
+        # The split asset_catalog.json format intentionally contains assets only.
         objects = []
+        if object_records:
+            from game_ui.world_rendering.scene_object import SceneObjectPlacement
+
         seen_object_ids = set()
         for index, record in enumerate(object_records):
             if not isinstance(record, dict):
