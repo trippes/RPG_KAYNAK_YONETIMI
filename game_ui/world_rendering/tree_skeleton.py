@@ -50,10 +50,10 @@ class TreeSkeleton:
     canopy_bounds describes foliage for future editor/debug tools.
     """
 
-    ground_anchor: tuple[float, float] = (0.5, 1.0)
-    depth_anchor: tuple[float, float] = (0.5, 0.96)
-    trunk_collision: tuple[float, float, float, float] = (0.40, 0.78, 0.20, 0.20)
-    canopy_bounds: tuple[float, float, float, float] = (0.08, 0.02, 0.84, 0.76)
+    ground_anchor: tuple[float, float] = (0.5, 0.985)
+    depth_anchor: tuple[float, float] = (0.5, 0.955)
+    trunk_collision: tuple[float, float, float, float] = (0.39, 0.82, 0.22, 0.16)
+    canopy_bounds: tuple[float, float, float, float] = (0.03, 0.02, 0.94, 0.76)
 
     def __post_init__(self):
         object.__setattr__(self, "ground_anchor", _point(self.ground_anchor, "ground_anchor"))
