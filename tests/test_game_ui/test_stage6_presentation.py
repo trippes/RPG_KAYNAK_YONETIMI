@@ -22,6 +22,38 @@ class TestStage6Presentation(unittest.TestCase):
             self.assertTrue(catalog.available("tree.oak"))
             self.assertEqual(catalog.get("tree.oak").anchor, (0.5, 0.95))
             self.assertTrue(catalog.resolve_path("tree.oak").samefile(root / "tree.png"))
+    def test_catalog_loads_map_specific_scene_object_placements(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "assets.json"
+            source.write_text(json.dumps({
+                "schema_version": 1,
+                "assets": [{"asset_id": "tree", "path": "tree.png", "width": 80, "height": 120}],
+                "objects": [{
+                    "object_id": "oak-01", "asset_id": "tree", "map_id": "forest",
+                    "q": 2, "r": -1, "offset_x": 4, "offset_y": -8,
+                    "footprint": [2, 3], "collision_box": [10, 40, 20, 30],
+                    "depth_offset": 1, "layer": "canopy", "kind": "flora"
+                }]
+            }), encoding="utf-8")
+            catalog = AssetCatalog.load(source)
+            placements = catalog.objects_for_map("forest")
+            self.assertEqual(len(placements), 1)
+            self.assertEqual(placements[0].footprint, (2, 3))
+            self.assertEqual(placements[0].kind, "flora")
+            self.assertEqual(catalog.objects_for_map("village"), ())
+
+    def test_catalog_rejects_scene_object_unknown_asset(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "assets.json"
+            source.write_text(json.dumps({
+                "schema_version": 1, "assets": [],
+                "objects": [{"object_id": "bad", "asset_id": "missing",
+                             "map_id": "forest", "q": 0, "r": 0}]
+            }), encoding="utf-8")
+            with self.assertRaises(AssetCatalogError):
+                AssetCatalog.load(source)
+
     def test_catalog_rejects_path_traversal_and_duplicate_ids(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
