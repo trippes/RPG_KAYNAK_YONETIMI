@@ -6,7 +6,7 @@ Stage 6 extends the Stage 5 presentation adapters. Axial coordinates, map defini
 
 ## Asset metadata
 
-The Pygame-independent JSON catalog in game_ui/assets/asset_definition.py uses schema version 1 and an assets array. Records support asset_id, relative path, width, height, scale, normalized anchor, optional collision box, depth_offset, terrain_types, placement, interaction, spritesheet metadata, and animation metadata. Paths are resolved under the catalog directory and traversal is rejected. The starter package includes an empty presentation_assets.json catalog, so the format is immediately available to content authors. Missing files are reported by available() without crashing the game.
+The Pygame-independent JSON catalog in game_ui/assets/asset_definition.py uses schema version 1 and an assets array. Records support asset_id, relative path, width, height, scale, normalized anchor, optional collision box, depth_offset, terrain_types, placement, interaction, spritesheet metadata, and animation metadata. Paths are resolved under the catalog directory and traversal is rejected. The starter package includes an empty presentation_assets.json catalog, so the format is immediately available to content authors. Its optional objects array places reusable asset IDs on a map and axial cell, with pixel offsets, multi-cell footprint, separate collision box, depth offset, layer, and kind (for example prop, flora, resource, or NPC). Missing files are reported by available() without crashing the game.
 
 ## Scene objects
 
