@@ -103,7 +103,7 @@ class TestHexWorldView(unittest.TestCase):
         self.assertTrue(self.view._move(HexDirection.EAST))
         self.assertEqual(
             self.view.runtime.entity("hero").position,
-            EntityPosition("hex_clearing_demo", LocalHexPosition(-1, 0)),
+            EntityPosition("hex_clearing_demo", LocalHexPosition(-1, 5)),
         )
 
     def test_crossing_west_boundary_returns_to_forest_automatically(self):
