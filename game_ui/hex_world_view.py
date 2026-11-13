@@ -450,12 +450,31 @@ class HexWorldView:
                 return
             self._scene_object_renderer.draw(renderer, obj, anchor, self._zoom)
             return
-        # Missing artwork remains visible as a low-cost, non-interactive marker.
-        color = (112, 151, 91) if placement.kind in {"flora", "resource"} else (150, 126, 88)
-        renderer.pg.draw.circle(
-            renderer.surface, color, (round(anchor[0]), round(anchor[1])),
-            max(3, round(5 * self._zoom)),
-        )
+        # Missing artwork uses deterministic procedural silhouettes. This keeps
+        # authored content readable without turning every missing asset into a dot.
+        pg = renderer.pg
+        x, y = round(anchor[0]), round(anchor[1])
+        pulse = math.sin(self._frame_elapsed * 3.0 + placement.q * 0.7 + placement.r) * self._zoom
+        kind = placement.kind.lower()
+        asset_id = placement.asset_id.lower()
+        if "tree" in asset_id or kind == "flora" and "shrub" not in asset_id:
+            trunk_h = max(7, round(16 * self._zoom))
+            canopy = max(8, round(13 * self._zoom))
+            pg.draw.rect(renderer.surface, (91, 66, 40), (x - max(2, canopy // 5), y - trunk_h, max(4, canopy * 2 // 5), trunk_h))
+            for dx, dy, scale in ((0, -trunk_h, 1.0), (-canopy * 0.55, -trunk_h * 0.65, 0.72), (canopy * 0.55, -trunk_h * 0.7, 0.76)):
+                pg.draw.circle(renderer.surface, (48, 112, 61), (round(x + dx + pulse), round(y + dy)), max(4, round(canopy * scale)))
+        elif "rock" in asset_id or kind == "rock":
+            radius = max(5, round(10 * self._zoom))
+            pg.draw.polygon(renderer.surface, (105, 106, 102), ((x - radius, y), (x - radius // 2, y - radius), (x + radius // 2, y - radius + 2), (x + radius, y), (x + radius // 2, y + radius // 2), (x - radius // 2, y + radius // 2)))
+        elif "plant" in asset_id or "flower" in asset_id:
+            radius = max(3, round(5 * self._zoom))
+            pg.draw.line(renderer.surface, (57, 118, 61), (x, y), (x + round(pulse), y - radius * 2), max(1, round(self._zoom)))
+            pg.draw.circle(renderer.surface, (180, 145, 92), (x + round(pulse), y - radius * 2), radius)
+        else:
+            radius = max(4, round(9 * self._zoom))
+            pg.draw.circle(renderer.surface, (63, 124, 70), (x - radius // 2, y - radius // 3), radius)
+            pg.draw.circle(renderer.surface, (54, 111, 62), (x + radius // 2, y - radius // 4), radius)
+            pg.draw.circle(renderer.surface, (49, 101, 56), (x, y - radius), radius)
 
     def _draw_landmark(self, renderer, landmark, center, render_radius):
         """Draw an authored sprite when available, otherwise retain the marker fallback."""
@@ -516,6 +535,11 @@ class HexWorldView:
         self._load_presentation_assets(renderer.pg)
         self._load_character_visual()
 
+        self._terrain_renderer.begin_frame(
+            renderer,
+            [definition.get_cell(cell).terrain_id for cell in definition.valid_cells],
+        )
+
         for cell in sorted(definition.valid_cells, key=lambda item: (item.r, item.q)):
             if not self._terrain_renderer.is_visible(centers[cell], render_radius, renderer.width, renderer.height):
                 continue
@@ -537,20 +561,7 @@ class HexWorldView:
                         max(4, round(render_radius * 0.32)),
                     )
 
-        for transition in definition.transitions:
-            if not transition.active:
-                continue
-            for cell in transition.source_cells:
-                center = centers[cell]
-                if not self._terrain_renderer.is_visible(center, render_radius, renderer.width, renderer.height):
-                    continue
-                renderer.pg.draw.circle(
-                    renderer.surface, (102, 219, 230),
-                    (round(center[0]), round(center[1])),
-                    max(7, round(render_radius * 0.48)), 2,
-                )
-
-        drawables = [(item.position, "landmark", item) for item in definition.landmarks]
+        # Map links remain simulation-only; normal play does not reveal hex exits.\n\n        drawables = [(item.position, "landmark", item) for item in definition.landmarks]
         if self._presentation_catalog is not None:
             for placement in self._presentation_catalog.objects_for_map(definition.map_id):
                 position = LocalHexPosition(placement.q, placement.r)
@@ -612,8 +623,20 @@ class HexWorldView:
                         self._movement_elapsed, moving=bool(self._movement_path),
                     )
 
+        # A small natural target ring gives mouse feedback without exposing a
+        # hex cell outline or movement grid.
+        if self._mouse_position is not None:
+            target = self._world_transform.screen_to_axial(*self._mouse_position)
+            target_cell = LocalHexPosition(target.q, target.r)
+            if definition.has_cell(target_cell):
+                target_center = centers[target_cell]
+                renderer.pg.draw.circle(
+                    renderer.surface, (214, 190, 112),
+                    (round(target_center[0]), round(target_center[1])),
+                    max(4, round(render_radius * 0.12)), 1,
+                )
         renderer.text(
-            f"Harita: {definition.name}   Axial: q={entity.position.cell.q}, r={entity.position.cell.r}",
+            f"Harita: {definition.name}",
             28, 76, (225, 215, 185), max_width=renderer.width - 56,
         )
         renderer.text(
