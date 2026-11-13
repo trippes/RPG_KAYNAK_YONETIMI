@@ -1183,6 +1183,11 @@
       "r": -1,
       "terrain": "water",
       "blocked": true
+    },
+    {
+      "q": 2,
+      "r": 0,
+      "blocked": true
     }
   ],
   "features": [
@@ -1202,16 +1207,6 @@
     }
   ],
   "landmarks": [
-    {
-      "id": "demo_old_tree",
-      "name": "Yaşlı Ağaç",
-      "position": [
-        -1,
-        0
-      ],
-      "type": "nature",
-      "visual_type": "tree"
-    },
     {
       "id": "demo_ore_vein",
       "name": "Cevher Damarı",

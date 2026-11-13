@@ -1,5 +1,36 @@
 {
   "schema_version": 1,
-  "assets": [],
-  "objects": []
+  "assets": [
+    {
+      "asset_id": "flora.tree.test",
+      "path": "assets/tree_test.png",
+      "width": 0,
+      "height": 0,
+      "scale": 0.19,
+      "anchor": [
+        0.5,
+        1
+      ],
+      "placement": "ground",
+      "depth_offset": 0
+    }
+  ],
+  "objects": [
+    {
+      "object_id": "tree-test-oak-01",
+      "asset_id": "flora.tree.test",
+      "map_id": "hex_forest_demo",
+      "q": 2,
+      "r": 0,
+      "offset_x": 0,
+      "offset_y": 0,
+      "footprint": [
+        2,
+        2
+      ],
+      "depth_offset": 0,
+      "layer": "ground",
+      "kind": "flora"
+    }
+  ]
 }
