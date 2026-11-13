@@ -579,9 +579,21 @@ class HexWorldView:
                 round(top + point[1] * height * scale),
             )
 
-        for branch in skeleton.branches:
-            start = to_screen(branch.start)
-            end = to_screen(branch.end)
+        trunk_start, trunk_end = skeleton.animated_trunk_points(
+            self._environment_time
+        )
+        renderer.pg.draw.line(
+            renderer.surface, (185, 115, 65),
+            to_screen(trunk_start), to_screen(trunk_end),
+            max(2, round(skeleton.trunk.thickness * min(width, height) * scale * 0.12)),
+        )
+
+        for index, branch in enumerate(skeleton.branches):
+            branch_start, branch_end = skeleton.animated_branch_points(
+                index, self._environment_time
+            )
+            start = to_screen(branch_start)
+            end = to_screen(branch_end)
             thickness = max(1, round(branch.thickness * min(width, height) * scale * 0.12))
             renderer.pg.draw.line(
                 renderer.surface, (255, 145, 55), start, end, thickness,
@@ -595,8 +607,10 @@ class HexWorldView:
                 max(3, round(4 * self._zoom)),
             )
 
-        for cluster in skeleton.leaf_clusters:
-            center = to_screen(cluster.anchor)
+        for index, cluster in enumerate(skeleton.leaf_clusters):
+            center = to_screen(
+                skeleton.animated_leaf_anchor(index, self._environment_time)
+            )
             radius = max(
                 3,
                 round(cluster.radius * min(width, height) * scale * 0.22),
