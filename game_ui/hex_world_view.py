@@ -114,7 +114,7 @@ class HexWorldView:
                 if path is not None and path.is_file():
                     try:
                         image = self._asset_manager.load_image(asset.asset_id, path, alpha=True)
-                    except (OSError, RuntimeError, ValueError):
+                    except Exception:
                         image = None
                 self._terrain_texture_cache[asset.asset_id] = image
             image = self._terrain_texture_cache[asset.asset_id]
@@ -436,7 +436,7 @@ class HexWorldView:
                                 renderer, obj, center, self._zoom
                             )
                         return
-                    except (OSError, RuntimeError, ValueError):
+                    except Exception:
                         pass
         if not self._terrain_renderer.is_visible(
             center, render_radius, renderer.width, renderer.height
