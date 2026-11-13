@@ -60,7 +60,7 @@ class TestTreeSkeleton(unittest.TestCase):
         )
         skeleton = TreeSkeleton(
             branches=(parent, child),
-            leaf_clusters=(TreeLeafCluster((0.2, 0.3), branch_index=1),),
+            leaf_clusters=(TreeLeafCluster((0.2, 0.3), sway_weight=0.0, branch_index=1),),
         )
         start, end = skeleton.animated_branch_points(1, 1.0)
         self.assertNotEqual(start, child.start)
