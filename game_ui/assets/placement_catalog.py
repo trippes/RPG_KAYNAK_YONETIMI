@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 from pathlib import Path
 from types import MappingProxyType
 
@@ -13,8 +14,12 @@ class ScenePlacementCatalogError(ValueError):
     """Invalid map placement data or unresolved asset reference."""
 
 
+@dataclass(frozen=True, slots=True, init=False)
 class ScenePlacementCatalog:
     """Immutable, UI-independent collection of map-authored scene placements."""
+
+    _placements: tuple[SceneObjectPlacement, ...]
+    _by_map: object
 
     SCHEMA_VERSION = 1
     ALLOWED_ROOT_FIELDS = {"schema_version", "map_id", "objects"}
@@ -24,13 +29,18 @@ class ScenePlacementCatalog:
     }
 
     def __init__(self, placements=()):
-        self.placements = tuple(placements)
+        normalized = tuple(placements)
         by_map = {}
-        for placement in self.placements:
+        for placement in normalized:
             by_map.setdefault(placement.map_id, []).append(placement)
-        self._by_map = MappingProxyType({
+        object.__setattr__(self, "_placements", normalized)
+        object.__setattr__(self, "_by_map", MappingProxyType({
             map_id: tuple(items) for map_id, items in by_map.items()
-        })
+        }))
+
+    @property
+    def placements(self):
+        return self._placements
 
     @classmethod
     def load_directory(cls, directory, asset_catalog):
@@ -44,6 +54,10 @@ class ScenePlacementCatalog:
         placements = []
         seen_ids = set()
         for source in sorted(root.glob("*.json")):
+            if not source.resolve().is_relative_to(root):
+                raise ScenePlacementCatalogError(
+                    f"Placement file escapes content directory: {source.name}"
+                )
             try:
                 payload = json.loads(source.read_text(encoding="utf-8"))
             except (OSError, json.JSONDecodeError) as error:
