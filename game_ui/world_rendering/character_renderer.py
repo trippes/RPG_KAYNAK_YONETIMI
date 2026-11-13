@@ -6,7 +6,7 @@ class HexCharacterRenderer:
     """Draw a placeholder humanoid or an authored sprite anchored at its feet."""
 
     @staticmethod
-    def draw_sprite(renderer, sprite, foot_position, world_scale, anchor=(0.5, 1.0)):
+    def draw_sprite(renderer, sprite, foot_position, world_scale, anchor=(0.5, 1.0), cache=None):
         """Draw a sprite with normalized pivot; runtime position is never mutated."""
         if len(anchor) != 2 or any(not 0 <= value <= 1 for value in anchor):
             raise ValueError("anchor must contain two normalized coordinates.")
@@ -16,7 +16,13 @@ class HexCharacterRenderer:
         height = max(1, round(source_height * scale / 64))
         image = sprite
         if image.get_size() != (width, height):
-            image = renderer.pg.transform.smoothscale(image, (width, height))
+            key = (id(sprite), width, height)
+            if cache is not None and key in cache:
+                image = cache[key]
+            else:
+                image = renderer.pg.transform.smoothscale(image, (width, height))
+                if cache is not None:
+                    cache[key] = image
         x = round(foot_position[0] - width * anchor[0])
         y = round(foot_position[1] - height * anchor[1])
         renderer.surface.blit(image, (x, y))

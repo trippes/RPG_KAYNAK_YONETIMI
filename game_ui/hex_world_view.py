@@ -54,6 +54,7 @@ class HexWorldView:
         self._character_visual_loaded = False
         self._character_animator = None
         self._character_asset = None
+        self._character_scaled_frames = {}
         self._terrain_texture_cache = {}
         self._zoom = 1.0
         self._movement_path = ()
@@ -599,6 +600,7 @@ class HexWorldView:
                         (player_center[0], player_center[1] + render_radius * 0.28),
                         render_radius * self._character_asset.scale,
                         anchor=self._character_asset.anchor,
+                        cache=self._character_scaled_frames,
                     )
                 else:
                     HexCharacterRenderer.draw(
