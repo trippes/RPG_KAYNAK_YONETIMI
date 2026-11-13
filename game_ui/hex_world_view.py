@@ -15,6 +15,7 @@ from core.domain.spatial import (
 from core.domain.spatial.hex_geometry import axial_to_pixel
 from game_ui.world_transform import WorldTransform
 from game_ui.world_rendering.camera import HexCamera
+from game_ui.world_rendering.character_renderer import HexCharacterRenderer
 from game_ui.world_rendering.terrain_renderer import HexTerrainRenderer
 from game_ui.world_rendering.depth_sorter import DepthSorter
 from application.content_loader import load_content_package
@@ -346,10 +347,9 @@ class HexWorldView:
                             move_start[0] + (move_end[0] - move_start[0]) * progress,
                             move_start[1] + (move_end[1] - move_start[1]) * progress,
                         )
-                renderer.pg.draw.circle(
-                    renderer.surface, (118, 238, 166),
-                    (round(player_center[0]), round(player_center[1])),
-                    max(6, round(render_radius * 0.24)),
+                HexCharacterRenderer.draw(
+                    renderer, player_center, render_radius,
+                    self._movement_elapsed, moving=bool(self._movement_path),
                 )
 
         renderer.text(
