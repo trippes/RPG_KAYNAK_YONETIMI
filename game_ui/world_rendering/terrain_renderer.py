@@ -48,17 +48,25 @@ class HexTerrainRenderer:
 
     def draw_cell(self, renderer, cell, cell_data, center, radius, selected=False, image=None, images=()):
         pg = renderer.pg
-        polygon = self.polygon_for(center, radius)
-        base = self.color_for(cell_data, selected)
-        shadow = tuple((x, y + max(2, round(radius * 0.08))) for x, y in polygon)
-        pg.draw.polygon(renderer.surface, (24, 34, 29), shadow)
-        pg.draw.polygon(renderer.surface, base, polygon)
+        # Use overlapping organic ground stamps instead of visible hex polygons.
+        # Axial cells remain the data grid; their boundaries are not a player-facing tile grid.
+        base = self.color_for(cell_data, selected=False)
+        stamp_radius = max(1, round(radius * 1.04))
+        pg.draw.circle(
+            renderer.surface, (24, 34, 29),
+            (round(center[0]), round(center[1] + max(2, radius * 0.08))),
+            stamp_radius,
+        )
+        pg.draw.circle(
+            renderer.surface, base, (round(center[0]), round(center[1])),
+            stamp_radius,
+        )
         textures = tuple(images) + ((image,) if image is not None else ())
-        size = max(1, round(radius * 2))
+        size = max(1, round(radius * 2.08))
         for texture in textures:
             renderer.surface.blit(
                 self._scaled_texture(pg, texture, size),
-                (round(center[0] - radius), round(center[1] - radius)),
+                (round(center[0] - size / 2), round(center[1] - size / 2)),
             )
         seed = (cell.q * 73856093) ^ (cell.r * 19349663)
         detail = (111, 157, 83) if cell_data.terrain_id == "grass" else (39, 86, 54)
