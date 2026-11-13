@@ -29,8 +29,8 @@ class AssetDefinition:
             raise AssetCatalogError("asset_id must be a non-empty string.")
         if not isinstance(self.path, str) or not self.path.strip():
             raise AssetCatalogError("asset path must be a non-empty string.")
-        if any(type(v) is not int or v <= 0 for v in (self.width, self.height)):
-            raise AssetCatalogError("asset dimensions must be positive integers.")
+        if any(type(v) is not int or v < 0 for v in (self.width, self.height)) or ((self.width == 0) != (self.height == 0)):
+            raise AssetCatalogError("asset dimensions must be positive integers, or both zero for source-image dimensions.")
         if isinstance(self.scale, bool) or not isinstance(self.scale, (int, float)) or not math.isfinite(self.scale) or self.scale <= 0:
             raise AssetCatalogError("asset scale must be a finite positive number.")
         if len(self.anchor) != 2 or any(isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v) or not 0 <= v <= 1 for v in self.anchor):
