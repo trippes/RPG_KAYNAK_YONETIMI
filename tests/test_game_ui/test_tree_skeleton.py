@@ -4,6 +4,8 @@ import unittest
 
 from game_ui.world_rendering.tree_skeleton import (
     DEFAULT_TREE_SKELETON,
+    TreeBranch,
+    TreeLeafCluster,
     TreeSkeleton,
 )
 
@@ -16,6 +18,31 @@ class TestTreeSkeleton(unittest.TestCase):
         self.assertEqual(skeleton.depth_anchor, (0.5, 0.955))
         self.assertEqual(skeleton.trunk_collision, (0.39, 0.82, 0.22, 0.16))
         self.assertEqual(skeleton.canopy_bounds, (0.03, 0.02, 0.94, 0.76))
+
+    def test_default_skeleton_contains_branches_and_leaf_clusters(self):
+        skeleton = DEFAULT_TREE_SKELETON
+        self.assertGreaterEqual(len(skeleton.branches), 2)
+        self.assertGreaterEqual(len(skeleton.leaf_clusters), 3)
+        self.assertTrue(all(isinstance(item, TreeBranch) for item in skeleton.branches))
+        self.assertTrue(all(isinstance(item, TreeLeafCluster) for item in skeleton.leaf_clusters))
+
+    def test_branch_and_leaf_animation_metadata_is_independent_of_png(self):
+        branch = TreeBranch((0.5, 0.8), (0.8, 0.4), sway_weight=0.6, phase=1.25)
+        leaves = TreeLeafCluster((0.8, 0.4), radius=0.2, sway_weight=1.0, branch_index=0)
+        skeleton = TreeSkeleton(branches=(branch,), leaf_clusters=(leaves,))
+        self.assertEqual(skeleton.branches[0].end, (0.8, 0.4))
+        self.assertEqual(skeleton.leaf_clusters[0].branch_index, 0)
+        self.assertEqual(skeleton.leaf_clusters[0].sway_weight, 1.0)
+
+    def test_rejects_invalid_branch_and_leaf_references(self):
+        with self.assertRaises(ValueError):
+            TreeSkeleton(branches=(TreeBranch((0.5, 0.8), (0.8, 0.4), parent_index=2),))
+        with self.assertRaises(ValueError):
+            TreeSkeleton(leaf_clusters=(TreeLeafCluster((0.5, 0.4), branch_index=1),))
+
+    def test_rejects_out_of_bounds_branch_geometry(self):
+        with self.assertRaises(ValueError):
+            TreeBranch((0.5, 0.8), (1.2, 0.4))
 
     def test_png_is_anchored_to_the_same_world_ground_point_at_any_scale(self):
         skeleton = TreeSkeleton()
