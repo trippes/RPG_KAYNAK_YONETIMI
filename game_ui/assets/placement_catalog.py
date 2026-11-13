@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from types import MappingProxyType
+from typing import Mapping
 
 from game_ui.world_rendering.scene_object import SceneObjectPlacement
 
@@ -18,8 +19,10 @@ class ScenePlacementCatalogError(ValueError):
 class ScenePlacementCatalog:
     """Immutable, UI-independent collection of map-authored scene placements."""
 
-    _placements: tuple[SceneObjectPlacement, ...]
-    _by_map: object
+    placements: tuple[SceneObjectPlacement, ...]
+    _by_map: Mapping[str, tuple[SceneObjectPlacement, ...]] = field(
+        repr=False, compare=False, hash=False
+    )
 
     SCHEMA_VERSION = 1
     ALLOWED_ROOT_FIELDS = {"schema_version", "map_id", "objects"}
@@ -33,14 +36,10 @@ class ScenePlacementCatalog:
         by_map = {}
         for placement in normalized:
             by_map.setdefault(placement.map_id, []).append(placement)
-        object.__setattr__(self, "_placements", normalized)
+        object.__setattr__(self, "placements", normalized)
         object.__setattr__(self, "_by_map", MappingProxyType({
             map_id: tuple(items) for map_id, items in by_map.items()
         }))
-
-    @property
-    def placements(self):
-        return self._placements
 
     @classmethod
     def load_directory(cls, directory, asset_catalog):
