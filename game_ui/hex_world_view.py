@@ -102,15 +102,18 @@ class HexWorldView:
             self._presentation_catalog = AssetCatalog.load(catalog_path)
             self._asset_manager = AssetManager(pygame_module)
             self._scene_object_renderer = SceneObjectRenderer(self._asset_manager)
-            atlas_path = Path(package_root) / "assets" / "tree_parts_atlas.png"
-            atlas_manifest = Path(package_root) / "assets" / "tree_parts_atlas.json"
-            if atlas_path.is_file() and atlas_manifest.is_file():
-                try:
-                    self._tree_parts_atlas = TreePartsAtlas.load(
-                        pygame_module, atlas_path, atlas_manifest
-                    )
-                except (OSError, ValueError, TreeAtlasError):
-                    self._tree_parts_atlas = None
+            if self._tree_rig_enabled:
+                atlas_path = Path(package_root) / "assets" / "tree_parts_atlas.png"
+                atlas_manifest = Path(package_root) / "assets" / "tree_parts_atlas.json"
+                if atlas_path.is_file() and atlas_manifest.is_file():
+                    try:
+                        self._tree_parts_atlas = TreePartsAtlas.load(
+                            pygame_module, atlas_path, atlas_manifest
+                        )
+                    except (OSError, ValueError, TreeAtlasError):
+                        self._tree_parts_atlas = None
+            else:
+                self._tree_parts_atlas = None
         except (AssetCatalogError, OSError, ValueError):
             self._presentation_catalog = None
             self._asset_manager = None
