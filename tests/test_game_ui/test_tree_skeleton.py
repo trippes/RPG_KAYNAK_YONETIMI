@@ -52,6 +52,12 @@ class TestTreeSkeleton(unittest.TestCase):
         self.assertEqual(root_b, skeleton.trunk.start)
         self.assertNotEqual(top_a, top_b)
 
+    def test_primary_branches_follow_trunk_top_sway(self):
+        skeleton = DEFAULT_TREE_SKELETON
+        start_a, _ = skeleton.animated_branch_points(0, 0.0)
+        start_b, _ = skeleton.animated_branch_points(0, 1.0)
+        self.assertNotEqual(start_a, start_b)
+
     def test_child_branch_inherits_parent_motion(self):
         parent = TreeBranch((0.5, 0.8), (0.3, 0.5), sway_weight=0.8)
         child = TreeBranch(
