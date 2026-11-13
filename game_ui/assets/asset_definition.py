@@ -356,7 +356,8 @@ class AssetCatalog:
     def available(self, asset_id):
         if self.get(asset_id) is None:
             return False
-        return self.source_size(asset_id) is not None
+        has_file_issue = any(issue.asset_id == asset_id for issue in self._validation_issues)
+        return self.source_size(asset_id) is not None and not has_file_issue
 
     def objects_for_map(self, map_id):
         return tuple(item for item in self.objects if item.map_id == map_id)
