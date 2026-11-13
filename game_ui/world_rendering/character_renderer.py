@@ -65,3 +65,55 @@ class HexCharacterRenderer:
         pg.draw.circle(renderer.surface, (83, 57, 42),
                        (head[0], head[1] - max(1, round(scale * 0.035))),
                        max(3, round(scale * 0.125)), max(1, line_width // 2))
+
+    @staticmethod
+    def draw_debug_skeleton(renderer, foot_position, world_scale, sprite_size=None):
+        """Overlay a readable humanoid rig guide while developer view is enabled."""
+        pg = renderer.pg
+        x, y = (float(foot_position[0]), float(foot_position[1]))
+        scale = max(14.0, float(world_scale))
+        if sprite_size is None:
+            height = scale
+            width = scale * 0.48
+        else:
+            source_width, source_height = sprite_size
+            factor = scale / 64.0
+            width = max(1.0, float(source_width) * factor)
+            height = max(1.0, float(source_height) * factor)
+        top = y - height
+        head = (round(x), round(top + height * 0.13))
+        neck = (round(x), round(top + height * 0.25))
+        shoulder_l = (round(x - width * 0.22), round(top + height * 0.31))
+        shoulder_r = (round(x + width * 0.22), round(top + height * 0.31))
+        hip = (round(x), round(top + height * 0.67))
+        elbow_l = (round(x - width * 0.28), round(top + height * 0.52))
+        elbow_r = (round(x + width * 0.28), round(top + height * 0.52))
+        hand_l = (round(x - width * 0.20), round(top + height * 0.68))
+        hand_r = (round(x + width * 0.20), round(top + height * 0.68))
+        knee_l = (round(x - width * 0.13), round(top + height * 0.82))
+        knee_r = (round(x + width * 0.13), round(top + height * 0.82))
+        foot_l = (round(x - width * 0.17), round(y))
+        foot_r = (round(x + width * 0.17), round(y))
+        bone = (80, 225, 235)
+        joint = (255, 190, 75)
+        pg.draw.rect(
+            renderer.surface, (100, 220, 150),
+            pg.Rect(round(x - width * 0.5), round(top), max(1, round(width)), max(1, round(height))), 1,
+        )
+        pg.draw.line(renderer.surface, bone, neck, hip, 2)
+        for start, end in (
+            (shoulder_l, shoulder_r), (shoulder_l, elbow_l),
+            (elbow_l, hand_l), (shoulder_r, elbow_r),
+            (elbow_r, hand_r), (hip, knee_l), (knee_l, foot_l),
+            (hip, knee_r), (knee_r, foot_r),
+        ):
+            pg.draw.line(renderer.surface, bone, start, end, 2)
+        pg.draw.circle(renderer.surface, (245, 220, 175), head, max(3, round(scale * 0.10)), 1)
+        for point in (neck, shoulder_l, shoulder_r, elbow_l, elbow_r, hand_l, hand_r, hip, knee_l, knee_r):
+            pg.draw.circle(renderer.surface, joint, point, max(2, round(scale * 0.035)))
+        pg.draw.line(
+            renderer.surface, (255, 255, 255),
+            (round(x - width * 0.35), round(y)),
+            (round(x + width * 0.35), round(y)), 2,
+        )
+        pg.draw.circle(renderer.surface, (255, 255, 255), (round(x), round(y)), 3, 1)
