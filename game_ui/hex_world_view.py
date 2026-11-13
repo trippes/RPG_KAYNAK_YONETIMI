@@ -168,7 +168,7 @@ class HexWorldView:
                     )
             self._character_animator = CharacterAnimator(animations)
             self._character_asset = asset
-        except (KeyError, TypeError, ValueError, OSError, RuntimeError):
+        except Exception:
             self._character_animator = None
             self._character_asset = None
 
