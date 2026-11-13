@@ -22,7 +22,12 @@ class HexTerrainRenderer:
         colors = [self.TERRAIN_COLORS.get(item) for item in terrain_ids]
         colors = [item for item in colors if item is not None]
         base = colors[0] if colors else (74, 111, 68)
-        renderer.surface.fill(base)
+        surface = renderer.surface
+        fill = getattr(surface, "fill", None)
+        if callable(fill):
+            fill(base)
+        elif hasattr(renderer, "_fill"):
+            renderer._fill(base)
         self._frame_surface_size = (renderer.width, renderer.height)
 
     def _scaled_texture(self, pg, texture, size):
