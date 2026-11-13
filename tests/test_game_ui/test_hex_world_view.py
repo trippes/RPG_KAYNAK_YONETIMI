@@ -196,6 +196,53 @@ class TestHexWorldView(unittest.TestCase):
         self.assertGreater(FakeDraw.polygons, 0)
         self.assertGreater(FakeDraw.circles, 0)
 
+    def test_tree_debug_view_draws_branch_and_leaf_skeleton_guides(self):
+        class FakeDraw:
+            lines = []
+            circles = []
+            rects = []
+
+            @classmethod
+            def line(cls, *args, **kwargs):
+                cls.lines.append(args)
+
+            @classmethod
+            def circle(cls, *args, **kwargs):
+                cls.circles.append(args)
+
+            @classmethod
+            def rect(cls, *args, **kwargs):
+                cls.rects.append(args)
+
+        class FakeImage:
+            def get_size(self):
+                return (200, 240)
+
+        class FakeRenderer:
+            pg = SimpleNamespace(
+                draw=FakeDraw,
+                Rect=lambda *args: tuple(args),
+            )
+            surface = object()
+
+        self.view._scene_debug_visible = True
+        self.view._zoom = 1.0
+        self.view._draw_tree_debug(
+            FakeRenderer(),
+            SimpleNamespace(object_id="oak_1"),
+            SimpleNamespace(asset_id="tree_oak"),
+            (100.0, 200.0),
+            FakeImage(),
+        )
+        self.assertGreaterEqual(len(FakeDraw.lines), 1 + len(self.view._tree_skeleton_for(
+            SimpleNamespace(asset_id="tree_oak")
+        ).branches))
+        self.assertGreaterEqual(len(FakeDraw.circles), 1 + 2 * len(
+            self.view._tree_skeleton_for(SimpleNamespace(asset_id="tree_oak")).branches
+        ) + 2 * len(
+            self.view._tree_skeleton_for(SimpleNamespace(asset_id="tree_oak")).leaf_clusters
+        ))
+
     def test_main_screen_h_key_enters_and_leaves_hex_world(self):
         screen = MainScreen(self.service)
         screen.handle(InputState(actions={"hex_portal"}))
