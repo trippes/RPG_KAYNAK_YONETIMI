@@ -7,7 +7,10 @@ is deliberately left to authored world content.
 from __future__ import annotations
 
 import math
+from pathlib import Path
 
+from game_ui.assets.asset_definition import AssetCatalog, AssetCatalogError
+from game_ui.assets.asset_manager import AssetManager
 from application.hex_world_runtime import HexWorldRuntime
 from core.domain.spatial import (
     EntityPosition, HexCoord, HexDirection, LocalHexPosition, MovementProfile,
@@ -40,6 +43,9 @@ class HexWorldView:
         self._center = (0, 0)
         self._world_transform = WorldTransform(hex_size=self.HEX_RADIUS)
         self._terrain_renderer = HexTerrainRenderer()
+        self._presentation_catalog = None
+        self._presentation_assets_loaded = False
+        self._asset_manager = None
         self._zoom = 1.0
         self._movement_path = ()
         self._movement_elapsed = 0.0
@@ -58,6 +64,39 @@ class HexWorldView:
         if not self._package.hex_map_definitions or self._package.world_map_definition is None:
             raise RuntimeError("İçerik paketinde doğrulanmış altıgen dünya bulunamadı.")
         return self._package
+
+    def _load_presentation_assets(self, pygame_module):
+        """Load optional image metadata once; missing art keeps procedural fallbacks."""
+        if self._presentation_assets_loaded:
+            return
+        self._presentation_assets_loaded = True
+        package_root = getattr(self.service, "_content_package_path", None)
+        if package_root is None:
+            return
+        catalog_path = Path(package_root) / "presentation_assets.json"
+        if not catalog_path.is_file():
+            return
+        try:
+            self._presentation_catalog = AssetCatalog.load(catalog_path)
+            self._asset_manager = AssetManager(pygame_module)
+        except (AssetCatalogError, OSError, ValueError):
+            self._presentation_catalog = None
+            self._asset_manager = None
+
+    def _terrain_image(self, terrain_id):
+        if self._presentation_catalog is None or self._asset_manager is None:
+            return None
+        for asset in self._presentation_catalog.assets.values():
+            if asset.placement != "underlay" or terrain_id not in asset.terrain_types:
+                continue
+            path = self._presentation_catalog.resolve_path(asset.asset_id)
+            if path is None or not path.is_file():
+                continue
+            try:
+                return self._asset_manager.load_image(asset.asset_id, path, alpha=True)
+            except (OSError, RuntimeError, ValueError):
+                return None
+        return None
 
     def enter(self):
         if self.active:
@@ -281,6 +320,7 @@ class HexWorldView:
         centers = self._layout(definition, renderer)
         renderer.frame(definition.name, 0)
         render_radius = self._hex_size * self._zoom
+        self._load_presentation_assets(renderer.pg)
 
         for cell in sorted(definition.valid_cells, key=lambda item: (item.r, item.q)):
             if not self._terrain_renderer.is_visible(centers[cell], render_radius, renderer.width, renderer.height):
@@ -288,6 +328,7 @@ class HexWorldView:
             self._terrain_renderer.draw_cell(
                 renderer, cell, definition.get_cell(cell), centers[cell],
                 render_radius, selected=(cell == self.selected),
+                image=self._terrain_image(definition.get_cell(cell).terrain_id),
             )
 
         for feature in definition.features:
