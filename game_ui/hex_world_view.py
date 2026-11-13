@@ -571,6 +571,44 @@ class HexWorldView:
             (round(anchor[0]), round(anchor[1])), max(2, round(3 * self._zoom)),
         )
 
+        # Articulated skeleton guides use tree-local normalized coordinates.
+        # They are deliberately drawn independently from the PNG's alpha mask.
+        def to_screen(point):
+            return (
+                round(left + point[0] * width * scale),
+                round(top + point[1] * height * scale),
+            )
+
+        for branch in skeleton.branches:
+            start = to_screen(branch.start)
+            end = to_screen(branch.end)
+            thickness = max(1, round(branch.thickness * min(width, height) * scale * 0.12))
+            renderer.pg.draw.line(
+                renderer.surface, (255, 145, 55), start, end, thickness,
+            )
+            renderer.pg.draw.circle(
+                renderer.surface, (255, 205, 120), start,
+                max(2, round(2 * self._zoom)),
+            )
+            renderer.pg.draw.circle(
+                renderer.surface, (255, 245, 180), end,
+                max(3, round(4 * self._zoom)),
+            )
+
+        for cluster in skeleton.leaf_clusters:
+            center = to_screen(cluster.anchor)
+            radius = max(
+                3,
+                round(cluster.radius * min(width, height) * scale * 0.22),
+            )
+            renderer.pg.draw.circle(
+                renderer.surface, (125, 245, 135), center, radius, 1,
+            )
+            renderer.pg.draw.circle(
+                renderer.surface, (205, 255, 190), center,
+                max(2, round(2 * self._zoom)),
+            )
+
     def _scene_object_depth_y(self, placement, center):
         """Use the tree's actual ground/depth anchor, not its hex-cell center."""
         asset = self._presentation_catalog.get(placement.asset_id)
