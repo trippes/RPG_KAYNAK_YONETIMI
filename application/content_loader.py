@@ -28,6 +28,8 @@ class ContentPackage:
     hex_map_definitions: Mapping[str, object]
     world_map_definition: object | None = None
     presentation_assets_path: Path | None = None
+    asset_catalog_path: Path | None = None
+    map_placements_path: Path | None = None
 
 
 def _load_hex_maps(maps_root: Path, square_maps: Mapping[str, object]) -> dict[str, object]:
@@ -80,7 +82,10 @@ def load_content_package(package_dir: str | Path) -> ContentPackage:
         ) from error
     if not isinstance(manifest, dict):
         raise ContentPackageError("Content package manifest must be a JSON object.")
-    allowed = {"schema_version", "package_id", "package_version", "files", "maps", "world_map", "presentation_assets"}
+    allowed = {
+        "schema_version", "package_id", "package_version", "files", "maps",
+        "world_map", "presentation_assets", "asset_catalog", "map_placements",
+    }
     extra = sorted(set(manifest) - allowed)
     if extra:
         raise ContentPackageError(
@@ -198,6 +203,45 @@ def load_content_package(package_dir: str | Path) -> ContentPackage:
             raise ContentPackageError("Presentation asset catalog has an invalid schema.")
         presentation_assets_path = candidate
 
+    asset_catalog_path = None
+    map_placements_path = None
+    asset_catalog_relative = manifest.get("asset_catalog")
+    map_placements_relative = manifest.get("map_placements")
+    if (asset_catalog_relative is None) != (map_placements_relative is None):
+        raise ContentPackageError(
+            "Split presentation content requires both asset_catalog and map_placements."
+        )
+    if asset_catalog_relative is not None:
+        if not isinstance(asset_catalog_relative, str) or not asset_catalog_relative.strip():
+            raise ContentPackageError("Asset catalog path must be a non-empty relative path.")
+        asset_catalog_path = (root / asset_catalog_relative).resolve()
+        if not asset_catalog_path.is_relative_to(root):
+            raise ContentPackageError("Asset catalog path resolves outside the package directory.")
+        if not asset_catalog_path.is_file():
+            raise ContentPackageError(f"Asset catalog could not be loaded: {asset_catalog_path}")
+        try:
+            asset_payload = json.loads(asset_catalog_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as error:
+            raise ContentPackageError("Asset catalog could not be parsed.") from error
+        if (
+            not isinstance(asset_payload, dict)
+            or type(asset_payload.get("schema_version")) is not int
+            or asset_payload.get("schema_version") != 1
+            or not isinstance(asset_payload.get("assets"), list)
+            or "objects" in asset_payload
+        ):
+            raise ContentPackageError(
+                "Split asset catalog must use schema_version 1 and contain assets only."
+            )
+
+        if not isinstance(map_placements_relative, str) or not map_placements_relative.strip():
+            raise ContentPackageError("Map placements path must be a non-empty relative path.")
+        map_placements_path = (root / map_placements_relative).resolve()
+        if not map_placements_path.is_relative_to(root):
+            raise ContentPackageError("Map placements path resolves outside the package directory.")
+        if not map_placements_path.is_dir():
+            raise ContentPackageError(f"Map placements directory could not be loaded: {map_placements_path}")
+
     return ContentPackage(
         package_id,
         package_version,
@@ -207,4 +251,6 @@ def load_content_package(package_dir: str | Path) -> ContentPackage:
         MappingProxyType(hexes),
         world_map,
         presentation_assets_path,
+        asset_catalog_path,
+        map_placements_path,
     )
