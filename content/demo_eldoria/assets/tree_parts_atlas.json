@@ -248,5 +248,467 @@
         75
       ]
     }
+  ],
+  "rig_layers": [
+    {
+      "component_id": "root_base",
+      "order": 0,
+      "anchor": [
+        0.5,
+        0.985
+      ],
+      "pivot": [
+        0.5,
+        0.9
+      ],
+      "size": [
+        0.84,
+        0.24
+      ],
+      "motion": {
+        "kind": "none"
+      }
+    },
+    {
+      "component_id": "trunk_main",
+      "order": 1,
+      "anchor": [
+        0.5,
+        0.88
+      ],
+      "pivot": [
+        0.5,
+        0.9
+      ],
+      "size": [
+        0.46,
+        0.68
+      ],
+      "motion": {
+        "kind": "trunk",
+        "weight": 0.7
+      }
+    },
+    {
+      "component_id": "branch_secondary_01",
+      "order": 2,
+      "anchor": [
+        0.36,
+        0.58
+      ],
+      "pivot": [
+        0.82,
+        0.9
+      ],
+      "size": [
+        0.31,
+        0.34
+      ],
+      "motion": {
+        "kind": "branch",
+        "index": 0
+      }
+    },
+    {
+      "component_id": "branch_secondary_02",
+      "order": 3,
+      "anchor": [
+        0.64,
+        0.56
+      ],
+      "pivot": [
+        0.18,
+        0.9
+      ],
+      "size": [
+        0.31,
+        0.35
+      ],
+      "motion": {
+        "kind": "branch",
+        "index": 1
+      }
+    },
+    {
+      "component_id": "branch_secondary_03",
+      "order": 4,
+      "anchor": [
+        0.28,
+        0.42
+      ],
+      "pivot": [
+        0.82,
+        0.9
+      ],
+      "size": [
+        0.28,
+        0.3
+      ],
+      "motion": {
+        "kind": "branch",
+        "index": 2
+      }
+    },
+    {
+      "component_id": "branch_secondary_04",
+      "order": 5,
+      "anchor": [
+        0.72,
+        0.4
+      ],
+      "pivot": [
+        0.18,
+        0.9
+      ],
+      "size": [
+        0.29,
+        0.31
+      ],
+      "motion": {
+        "kind": "branch",
+        "index": 3
+      }
+    },
+    {
+      "component_id": "branch_secondary_05",
+      "order": 6,
+      "anchor": [
+        0.5,
+        0.49
+      ],
+      "pivot": [
+        0.5,
+        0.94
+      ],
+      "size": [
+        0.26,
+        0.31
+      ],
+      "motion": {
+        "kind": "branch",
+        "index": 2,
+        "weight": 0.6
+      }
+    },
+    {
+      "component_id": "branch_small_01",
+      "order": 7,
+      "anchor": [
+        0.32,
+        0.32
+      ],
+      "pivot": [
+        0.8,
+        0.9
+      ],
+      "size": [
+        0.13,
+        0.18
+      ],
+      "motion": {
+        "kind": "branch",
+        "index": 2
+      }
+    },
+    {
+      "component_id": "branch_small_02",
+      "order": 8,
+      "anchor": [
+        0.75,
+        0.31
+      ],
+      "pivot": [
+        0.2,
+        0.9
+      ],
+      "size": [
+        0.17,
+        0.17
+      ],
+      "motion": {
+        "kind": "branch",
+        "index": 3
+      }
+    },
+    {
+      "component_id": "branch_small_03",
+      "order": 9,
+      "anchor": [
+        0.45,
+        0.24
+      ],
+      "pivot": [
+        0.5,
+        0.9
+      ],
+      "size": [
+        0.13,
+        0.19
+      ],
+      "motion": {
+        "kind": "branch",
+        "index": 2
+      }
+    },
+    {
+      "component_id": "branch_small_04",
+      "order": 10,
+      "anchor": [
+        0.57,
+        0.26
+      ],
+      "pivot": [
+        0.5,
+        0.9
+      ],
+      "size": [
+        0.09,
+        0.2
+      ],
+      "motion": {
+        "kind": "branch",
+        "index": 3
+      }
+    },
+    {
+      "component_id": "foliage_crown_large_01",
+      "order": 11,
+      "anchor": [
+        0.34,
+        0.27
+      ],
+      "pivot": [
+        0.5,
+        0.68
+      ],
+      "size": [
+        0.5,
+        0.44
+      ],
+      "motion": {
+        "kind": "leaf",
+        "index": 0
+      }
+    },
+    {
+      "component_id": "foliage_crown_large_02",
+      "order": 12,
+      "anchor": [
+        0.68,
+        0.3
+      ],
+      "pivot": [
+        0.5,
+        0.68
+      ],
+      "size": [
+        0.5,
+        0.48
+      ],
+      "motion": {
+        "kind": "leaf",
+        "index": 1
+      }
+    },
+    {
+      "component_id": "foliage_cluster_large_01",
+      "order": 13,
+      "anchor": [
+        0.22,
+        0.34
+      ],
+      "pivot": [
+        0.5,
+        0.72
+      ],
+      "size": [
+        0.34,
+        0.3
+      ],
+      "motion": {
+        "kind": "leaf",
+        "index": 0
+      }
+    },
+    {
+      "component_id": "foliage_cluster_wide_01",
+      "order": 14,
+      "anchor": [
+        0.51,
+        0.2
+      ],
+      "pivot": [
+        0.5,
+        0.72
+      ],
+      "size": [
+        0.36,
+        0.23
+      ],
+      "motion": {
+        "kind": "leaf",
+        "index": 4
+      }
+    },
+    {
+      "component_id": "foliage_cluster_medium_01",
+      "order": 15,
+      "anchor": [
+        0.82,
+        0.42
+      ],
+      "pivot": [
+        0.5,
+        0.7
+      ],
+      "size": [
+        0.24,
+        0.2
+      ],
+      "motion": {
+        "kind": "leaf",
+        "index": 1
+      }
+    },
+    {
+      "component_id": "foliage_cluster_small_01",
+      "order": 16,
+      "anchor": [
+        0.17,
+        0.47
+      ],
+      "pivot": [
+        0.5,
+        0.7
+      ],
+      "size": [
+        0.16,
+        0.12
+      ],
+      "motion": {
+        "kind": "leaf",
+        "index": 0
+      }
+    },
+    {
+      "component_id": "foliage_cluster_medium_02",
+      "order": 17,
+      "anchor": [
+        0.79,
+        0.49
+      ],
+      "pivot": [
+        0.5,
+        0.7
+      ],
+      "size": [
+        0.22,
+        0.16
+      ],
+      "motion": {
+        "kind": "leaf",
+        "index": 1
+      }
+    },
+    {
+      "component_id": "foliage_cluster_small_02",
+      "order": 18,
+      "anchor": [
+        0.67,
+        0.48
+      ],
+      "pivot": [
+        0.5,
+        0.7
+      ],
+      "size": [
+        0.15,
+        0.13
+      ],
+      "motion": {
+        "kind": "leaf",
+        "index": 1
+      }
+    },
+    {
+      "component_id": "foliage_cluster_wide_02",
+      "order": 19,
+      "anchor": [
+        0.5,
+        0.38
+      ],
+      "pivot": [
+        0.5,
+        0.72
+      ],
+      "size": [
+        0.28,
+        0.18
+      ],
+      "motion": {
+        "kind": "leaf",
+        "index": 4
+      }
+    },
+    {
+      "component_id": "foliage_cluster_small_03",
+      "order": 20,
+      "anchor": [
+        0.36,
+        0.18
+      ],
+      "pivot": [
+        0.5,
+        0.7
+      ],
+      "size": [
+        0.15,
+        0.13
+      ],
+      "motion": {
+        "kind": "leaf",
+        "index": 2
+      }
+    },
+    {
+      "component_id": "leaf_sprig_01",
+      "order": 21,
+      "anchor": [
+        0.84,
+        0.25
+      ],
+      "pivot": [
+        0.5,
+        0.8
+      ],
+      "size": [
+        0.09,
+        0.1
+      ],
+      "motion": {
+        "kind": "leaf",
+        "index": 3
+      }
+    },
+    {
+      "component_id": "leaf_sprig_02",
+      "order": 22,
+      "anchor": [
+        0.59,
+        0.15
+      ],
+      "pivot": [
+        0.5,
+        0.8
+      ],
+      "size": [
+        0.12,
+        0.12
+      ],
+      "motion": {
+        "kind": "leaf",
+        "index": 4
+      }
+    }
   ]
 }
