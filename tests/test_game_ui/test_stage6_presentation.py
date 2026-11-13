@@ -66,6 +66,16 @@ class TestStage6Presentation(unittest.TestCase):
             source.write_text(json.dumps({"schema_version": 1, "assets": [record, record]}), encoding="utf-8")
             with self.assertRaises(AssetCatalogError):
                 AssetCatalog.load(source)
+    def test_catalog_rejects_scalar_terrain_compatibility_metadata(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "assets.json"
+            source.write_text(json.dumps({"schema_version": 1, "assets": [{
+                "asset_id": "bad", "path": "bad.png", "width": 16, "height": 16,
+                "terrain_types": "grass"
+            }]}), encoding="utf-8")
+            with self.assertRaises(AssetCatalogError):
+                AssetCatalog.load(source)
+
     def test_scene_object_separates_visual_and_collision_geometry(self):
         obj = SceneObject("oak-1", "tree.oak", 100, 120, 80, 110, footprint=(2, 2), collision_box=(88, 90, 24, 30))
         self.assertEqual(obj.visual_bounds, (60.0, 10.0, 140.0, 120.0))
