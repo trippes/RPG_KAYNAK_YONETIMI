@@ -96,6 +96,16 @@ class TestHexWorldView(unittest.TestCase):
             EntityPosition("hex_clearing_demo", LocalHexPosition(-1, 0)),
         )
 
+    def test_any_east_edge_cell_transitions_to_clearing(self):
+        self.assertTrue(self.view.enter())
+        edge_cell = LocalHexPosition(8, 5)
+        self.assertTrue(self.view._move_to(edge_cell))
+        self.assertTrue(self.view._move(HexDirection.EAST))
+        self.assertEqual(
+            self.view.runtime.entity("hero").position,
+            EntityPosition("hex_clearing_demo", LocalHexPosition(-1, 0)),
+        )
+
     def test_crossing_west_boundary_returns_to_forest_automatically(self):
         self.assertTrue(self.view.enter())
         self.assertTrue(self.view._move_to(LocalHexPosition(8, 0)))
