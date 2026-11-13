@@ -1,6 +1,7 @@
 """Validated, data-driven presentation asset metadata."""
 from __future__ import annotations
 import json
+import math
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -30,17 +31,24 @@ class AssetDefinition:
             raise AssetCatalogError("asset path must be a non-empty string.")
         if any(type(v) is not int or v <= 0 for v in (self.width, self.height)):
             raise AssetCatalogError("asset dimensions must be positive integers.")
-        if isinstance(self.scale, bool) or not isinstance(self.scale, (int, float)) or self.scale <= 0:
-            raise AssetCatalogError("asset scale must be positive.")
-        if len(self.anchor) != 2 or any(isinstance(v, bool) or not isinstance(v, (int, float)) or not 0 <= v <= 1 for v in self.anchor):
-            raise AssetCatalogError("anchor must contain normalized coordinates.")
+        if isinstance(self.scale, bool) or not isinstance(self.scale, (int, float)) or not math.isfinite(self.scale) or self.scale <= 0:
+            raise AssetCatalogError("asset scale must be a finite positive number.")
+        if len(self.anchor) != 2 or any(isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v) or not 0 <= v <= 1 for v in self.anchor):
+            raise AssetCatalogError("anchor must contain finite normalized coordinates.")
         if self.collision is not None and (len(self.collision) != 4 or any(not isinstance(v, (int, float)) or isinstance(v, bool) for v in self.collision) or self.collision[2] < 0 or self.collision[3] < 0):
             raise AssetCatalogError("collision must be an x/y/width/height tuple.")
-        if not isinstance(self.depth_offset, (int, float)) or isinstance(self.depth_offset, bool):
-            raise AssetCatalogError("depth_offset must be numeric.")
+        if not isinstance(self.depth_offset, (int, float)) or isinstance(self.depth_offset, bool) or not math.isfinite(self.depth_offset):
+            raise AssetCatalogError("depth_offset must be finite and numeric.")
+        terrain_types = tuple(self.terrain_types)
+        if any(not isinstance(value, str) or not value.strip() for value in terrain_types):
+            raise AssetCatalogError("terrain_types must contain non-empty strings.")
+        if self.sheet is not None and not isinstance(self.sheet, dict):
+            raise AssetCatalogError("spritesheet metadata must be an object.")
+        if self.animations is not None and not isinstance(self.animations, dict):
+            raise AssetCatalogError("animation metadata must be an object.")
         if self.placement not in {"ground", "canopy", "overlay", "underlay"}:
             raise AssetCatalogError("unsupported placement layer.")
-        object.__setattr__(self, "terrain_types", tuple(self.terrain_types))
+        object.__setattr__(self, "terrain_types", terrain_types)
 
 class AssetCatalog:
     """Load reusable visual metadata without importing Pygame."""

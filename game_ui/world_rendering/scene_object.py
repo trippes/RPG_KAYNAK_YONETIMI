@@ -1,6 +1,7 @@
 """Presentation-only scene objects with independent visual and collision bounds."""
 from __future__ import annotations
 from dataclasses import dataclass
+import math
 
 @dataclass(frozen=True, slots=True)
 class SceneObjectPlacement:
@@ -23,9 +24,9 @@ class SceneObjectPlacement:
             raise ValueError("Placement IDs and kind must be non-empty strings.")
         if any(type(value) is not int for value in (self.q, self.r)):
             raise TypeError("Placement cell coordinates must be integers.")
-        if any(isinstance(value, bool) or not isinstance(value, (int, float))
+        if any(isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value)
                for value in (self.offset_x, self.offset_y, self.depth_offset)):
-            raise TypeError("Placement offsets must be numeric.")
+            raise TypeError("Placement offsets must be finite numbers.")
         if len(self.footprint) != 2 or any(type(value) is not int or value <= 0 for value in self.footprint):
             raise ValueError("Placement footprint must contain positive integers.")
         if self.layer not in {"underlay", "ground", "canopy", "overlay"}:
@@ -56,8 +57,8 @@ class SceneObject:
         if not self.object_id or not self.asset_id:
             raise ValueError("Scene object IDs must be non-empty.")
         values = (self.world_x, self.world_y, self.visual_width, self.visual_height, self.anchor_x, self.anchor_y, self.depth_offset)
-        if any(isinstance(v, bool) or not isinstance(v, (int, float)) for v in values):
-            raise TypeError("Scene object geometry must be numeric.")
+        if any(isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v) for v in values):
+            raise TypeError("Scene object geometry must be finite and numeric.")
         if self.visual_width <= 0 or self.visual_height <= 0:
             raise ValueError("Visual dimensions must be positive.")
         if not 0 <= self.anchor_x <= 1 or not 0 <= self.anchor_y <= 1:
