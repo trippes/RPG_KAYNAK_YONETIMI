@@ -409,6 +409,47 @@ class HexWorldView:
             for cell in definition.valid_cells
         }
 
+    def _draw_placed_scene_object(self, renderer, placement, center):
+        """Draw a map-authored prop/NPC/resource visual without owning its logic."""
+        if self._presentation_catalog is None or self._asset_manager is None:
+            return
+        asset = self._presentation_catalog.get(placement.asset_id)
+        if asset is None:
+            return
+        anchor = (
+            center[0] + placement.offset_x * self._zoom,
+            center[1] + placement.offset_y * self._zoom,
+        )
+        obj = SceneObject(
+            object_id=placement.object_id, asset_id=placement.asset_id,
+            world_x=anchor[0], world_y=anchor[1],
+            visual_width=asset.width * asset.scale,
+            visual_height=asset.height * asset.scale,
+            anchor_x=asset.anchor[0], anchor_y=asset.anchor[1],
+            footprint=placement.footprint,
+            collision_box=placement.collision_box,
+            depth_offset=asset.depth_offset + placement.depth_offset,
+            layer=placement.layer,
+        )
+        if not SceneObjectRenderer.is_visible(
+            obj, (0, 0, renderer.width, renderer.height)
+        ):
+            return
+        path = self._presentation_catalog.resolve_path(asset.asset_id)
+        if path is not None and path.is_file():
+            try:
+                self._asset_manager.load_image(asset.asset_id, path, alpha=True)
+                self._scene_object_renderer.draw(renderer, obj, anchor, self._zoom)
+                return
+            except Exception:
+                pass
+        # Missing artwork remains visible as a low-cost, non-interactive marker.
+        color = (112, 151, 91) if placement.kind in {"flora", "resource"} else (150, 126, 88)
+        renderer.pg.draw.circle(
+            renderer.surface, color, (round(anchor[0]), round(anchor[1])),
+            max(3, round(5 * self._zoom)),
+        )
+
     def _draw_landmark(self, renderer, landmark, center, render_radius):
         """Draw an authored sprite when available, otherwise retain the marker fallback."""
         if self._presentation_catalog is not None and self._asset_manager is not None:
@@ -503,15 +544,30 @@ class HexWorldView:
                 )
 
         drawables = [(item.position, "landmark", item) for item in definition.landmarks]
+        if self._presentation_catalog is not None:
+            for placement in self._presentation_catalog.objects_for_map(definition.map_id):
+                position = LocalHexPosition(placement.q, placement.r)
+                if definition.has_cell(position):
+                    drawables.append((position, "scene_object", placement))
         drawables.append((entity.position.cell, "player", entity))
+
+        def drawable_depth(item):
+            position, kind, value = item
+            layer = getattr(value, "layer", "ground")
+            layer_order = {"underlay": 0, "ground": 1, "canopy": 2, "overlay": 3}.get(layer, 1)
+            offset = value.offset_y * self._zoom + value.depth_offset * self._zoom if kind == "scene_object" else 0
+            return layer_order, centers[position][1] + offset
+
         for position, drawable_type, drawable in DepthSorter.sort_by_depth(
             drawables,
-            lambda item: centers[item[0]][1],
-            lambda item: (item[0].q, item[0].r, item[1]),
+            drawable_depth,
+            lambda item: (item[0].q, item[0].r, item[1], getattr(item[2], "object_id", getattr(item[2], "landmark_id", ""))),
         ):
             center = centers[position]
             if drawable_type == "landmark":
                 self._draw_landmark(renderer, drawable, center, render_radius)
+            elif drawable_type == "scene_object":
+                self._draw_placed_scene_object(renderer, drawable, center)
             else:
                 player_center = center
                 if self._movement_path:
