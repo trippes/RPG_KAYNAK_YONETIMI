@@ -7,78 +7,78 @@
       "width": 0,
       "height": 0,
       "scale": 0.19,
-      "anchor": [
-        0.5,
-        1
-      ],
+      "anchor": [0.5, 1.0],
+      "collision": [-8, -14, 16, 14],
       "placement": "ground",
       "depth_offset": 0
+    },
+    {
+      "asset_id": "flora.tree.young",
+      "path": "assets/tree_test.png",
+      "width": 0,
+      "height": 0,
+      "scale": 0.14,
+      "anchor": [0.5, 1.0],
+      "collision": [-6, -10, 12, 10],
+      "placement": "ground",
+      "depth_offset": -1
+    },
+    {
+      "asset_id": "flora.tree.old",
+      "path": "assets/tree_test.png",
+      "width": 0,
+      "height": 0,
+      "scale": 0.25,
+      "anchor": [0.5, 1.0],
+      "collision": [-10, -16, 20, 16],
+      "placement": "ground",
+      "depth_offset": 1
+    },
+    {
+      "asset_id": "prop.rock.large",
+      "path": "assets/rock_large.png",
+      "width": 0,
+      "height": 0,
+      "scale": 0.18,
+      "anchor": [0.5, 1.0],
+      "collision": [-9, -7, 18, 7],
+      "placement": "ground"
+    },
+    {
+      "asset_id": "flora.shrub.green",
+      "path": "assets/shrub_green.png",
+      "width": 0,
+      "height": 0,
+      "scale": 0.16,
+      "anchor": [0.5, 1.0],
+      "collision": [-8, -5, 16, 5],
+      "placement": "ground"
+    },
+    {
+      "asset_id": "flora.plant.wildflower",
+      "path": "assets/wildflower.png",
+      "width": 0,
+      "height": 0,
+      "scale": 0.12,
+      "anchor": [0.5, 1.0],
+      "collision": null,
+      "placement": "ground"
     }
   ],
   "objects": [
-    {
-      "object_id": "tree-test-oak-01",
-      "asset_id": "flora.tree.test",
-      "map_id": "hex_forest_demo",
-      "q": 2,
-      "r": 0,
-      "offset_x": 0,
-      "offset_y": 0,
-      "footprint": [
-        2,
-        2
-      ],
-      "depth_offset": 0,
-      "layer": "ground",
-      "kind": "flora"
-    },
-    {
-      "object_id": "tree-test-oak-02",
-      "asset_id": "flora.tree.test",
-      "map_id": "hex_forest_demo",
-      "q": -4,
-      "r": -3,
-      "offset_x": 0,
-      "offset_y": 0,
-      "footprint": [
-        2,
-        2
-      ],
-      "depth_offset": 0,
-      "layer": "ground",
-      "kind": "flora"
-    },
-    {
-      "object_id": "tree-test-oak-03",
-      "asset_id": "flora.tree.test",
-      "map_id": "hex_forest_demo",
-      "q": 4,
-      "r": -4,
-      "offset_x": 0,
-      "offset_y": 0,
-      "footprint": [
-        2,
-        2
-      ],
-      "depth_offset": 0,
-      "layer": "ground",
-      "kind": "flora"
-    },
-    {
-      "object_id": "tree-test-oak-04",
-      "asset_id": "flora.tree.test",
-      "map_id": "hex_forest_demo",
-      "q": -4,
-      "r": 4,
-      "offset_x": 0,
-      "offset_y": 0,
-      "footprint": [
-        2,
-        2
-      ],
-      "depth_offset": 0,
-      "layer": "ground",
-      "kind": "flora"
-    }
+    {"object_id":"tree-oak-01","asset_id":"flora.tree.test","map_id":"hex_forest_demo","q":2,"r":0,"offset_x":-7,"offset_y":4,"footprint":[1,1],"collision_box":[-8,-14,16,14],"layer":"ground","kind":"flora"},
+    {"object_id":"tree-oak-02","asset_id":"flora.tree.old","map_id":"hex_forest_demo","q":-4,"r":-3,"offset_x":5,"offset_y":1,"footprint":[1,1],"collision_box":[-10,-16,20,16],"layer":"ground","kind":"flora"},
+    {"object_id":"tree-oak-03","asset_id":"flora.tree.young","map_id":"hex_forest_demo","q":4,"r":-4,"offset_x":-3,"offset_y":6,"footprint":[1,1],"collision_box":[-6,-10,12,10],"layer":"ground","kind":"flora"},
+    {"object_id":"tree-oak-04","asset_id":"flora.tree.test","map_id":"hex_forest_demo","q":-4,"r":4,"offset_x":8,"offset_y":-2,"footprint":[1,1],"collision_box":[-8,-14,16,14],"layer":"ground","kind":"flora"},
+    {"object_id":"tree-oak-05","asset_id":"flora.tree.young","map_id":"hex_forest_demo","q":-1,"r":3,"offset_x":-9,"offset_y":2,"footprint":[1,1],"collision_box":[-6,-10,12,10],"layer":"ground","kind":"flora"},
+    {"object_id":"tree-oak-06","asset_id":"flora.tree.old","map_id":"hex_forest_demo","q":3,"r":-2,"offset_x":7,"offset_y":-3,"footprint":[1,1],"collision_box":[-10,-16,20,16],"layer":"ground","kind":"flora"},
+    {"object_id":"shrub-01","asset_id":"flora.shrub.green","map_id":"hex_forest_demo","q":0,"r":3,"offset_x":11,"offset_y":4,"footprint":[1,1],"collision_box":[-8,-5,16,5],"layer":"ground","kind":"shrub"},
+    {"object_id":"shrub-02","asset_id":"flora.shrub.green","map_id":"hex_forest_demo","q":-2,"r":1,"offset_x":-11,"offset_y":3,"footprint":[1,1],"collision_box":[-8,-5,16,5],"layer":"ground","kind":"shrub"},
+    {"object_id":"rock-01","asset_id":"prop.rock.large","map_id":"hex_forest_demo","q":1,"r":-3,"offset_x":9,"offset_y":5,"footprint":[1,1],"collision_box":[-9,-7,18,7],"layer":"ground","kind":"rock"},
+    {"object_id":"rock-02","asset_id":"prop.rock.large","map_id":"hex_forest_demo","q":-3,"r":2,"offset_x":-6,"offset_y":1,"footprint":[1,1],"collision_box":[-9,-7,18,7],"layer":"ground","kind":"rock"},
+    {"object_id":"plant-01","asset_id":"flora.plant.wildflower","map_id":"hex_forest_demo","q":0,"r":-2,"offset_x":-10,"offset_y":6,"footprint":[1,1],"layer":"ground","kind":"plant"},
+    {"object_id":"plant-02","asset_id":"flora.plant.wildflower","map_id":"hex_forest_demo","q":2,"r":2,"offset_x":8,"offset_y":5,"footprint":[1,1],"layer":"ground","kind":"plant"},
+    {"object_id":"clearing-tree-01","asset_id":"flora.tree.young","map_id":"hex_clearing_demo","q":-2,"r":1,"offset_x":7,"offset_y":3,"footprint":[1,1],"collision_box":[-6,-10,12,10],"layer":"ground","kind":"flora"},
+    {"object_id":"clearing-rock-01","asset_id":"prop.rock.large","map_id":"hex_clearing_demo","q":3,"r":-1,"offset_x":-7,"offset_y":5,"footprint":[1,1],"collision_box":[-9,-7,18,7],"layer":"ground","kind":"rock"}
   ]
 }
