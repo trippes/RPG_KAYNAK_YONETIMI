@@ -98,6 +98,24 @@ class TreePartsAtlas:
                 raise TreeAtlasError(
                     f"Tree rig layer {component_id} has invalid motion."
                 )
+            motion_index = motion.get("index")
+            if motion.get("kind") in {"branch", "leaf"} and (
+                isinstance(motion_index, bool)
+                or not isinstance(motion_index, int)
+                or motion_index < 0
+            ):
+                raise TreeAtlasError(
+                    f"Tree rig layer {component_id} has invalid motion index."
+                )
+            motion_weight = motion.get("weight", 1.0)
+            if (
+                isinstance(motion_weight, bool)
+                or not isinstance(motion_weight, (int, float))
+                or not 0.0 <= motion_weight <= 1.0
+            ):
+                raise TreeAtlasError(
+                    f"Tree rig layer {component_id} has invalid motion weight."
+                )
             validated_layers.append(dict(layer))
         return cls(image, components, validated_layers)
 
