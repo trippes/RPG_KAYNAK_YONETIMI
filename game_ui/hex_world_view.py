@@ -423,29 +423,33 @@ class HexWorldView:
             center[0] + placement.offset_x * self._zoom,
             center[1] + placement.offset_y * self._zoom,
         )
-        obj = SceneObject(
-            object_id=placement.object_id, asset_id=placement.asset_id,
-            world_x=anchor[0], world_y=anchor[1],
-            visual_width=asset.width * asset.scale,
-            visual_height=asset.height * asset.scale,
-            anchor_x=asset.anchor[0], anchor_y=asset.anchor[1],
-            footprint=placement.footprint,
-            collision_box=placement.collision_box,
-            depth_offset=asset.depth_offset + placement.depth_offset,
-            layer=placement.layer,
-        )
-        if not SceneObjectRenderer.is_visible(
-            obj, (0, 0, renderer.width, renderer.height), self._zoom
-        ):
-            return
         path = self._presentation_catalog.resolve_path(asset.asset_id)
+        image = None
         if path is not None and path.is_file():
             try:
-                self._asset_manager.load_image(asset.asset_id, path, alpha=True)
-                self._scene_object_renderer.draw(renderer, obj, anchor, self._zoom)
-                return
+                image = self._asset_manager.load_image(asset.asset_id, path, alpha=True)
             except Exception:
-                pass
+                image = None
+        if image is not None:
+            source_width, source_height = image.get_size()
+            visual_width = (asset.width or source_width) * asset.scale
+            visual_height = (asset.height or source_height) * asset.scale
+            obj = SceneObject(
+                object_id=placement.object_id, asset_id=placement.asset_id,
+                world_x=anchor[0], world_y=anchor[1],
+                visual_width=visual_width, visual_height=visual_height,
+                anchor_x=asset.anchor[0], anchor_y=asset.anchor[1],
+                footprint=placement.footprint,
+                collision_box=placement.collision_box,
+                depth_offset=asset.depth_offset + placement.depth_offset,
+                layer=placement.layer,
+            )
+            if not SceneObjectRenderer.is_visible(
+                obj, (0, 0, renderer.width, renderer.height), self._zoom
+            ):
+                return
+            self._scene_object_renderer.draw(renderer, obj, anchor, self._zoom)
+            return
         # Missing artwork remains visible as a low-cost, non-interactive marker.
         color = (112, 151, 91) if placement.kind in {"flora", "resource"} else (150, 126, 88)
         renderer.pg.draw.circle(
@@ -469,8 +473,8 @@ class HexWorldView:
                             object_id=landmark.landmark_id,
                             asset_id=asset.asset_id,
                             world_x=center[0], world_y=center[1],
-                            visual_width=asset.width * asset.scale,
-                            visual_height=asset.height * asset.scale,
+                            visual_width=(asset.width or image.get_width()) * asset.scale,
+                            visual_height=(asset.height or image.get_height()) * asset.scale,
                             anchor_x=asset.anchor[0], anchor_y=asset.anchor[1],
                             depth_offset=asset.depth_offset,
                             layer=asset.placement,
