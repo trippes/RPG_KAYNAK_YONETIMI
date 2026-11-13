@@ -76,6 +76,9 @@ class AssetCatalog:
         for index, record in enumerate(records):
             if not isinstance(record, dict):
                 raise AssetCatalogError(f"Asset at index {index} must be an object.")
+            terrain_values = record.get("terrain_types", ())
+            if isinstance(terrain_values, str) or not isinstance(terrain_values, (list, tuple)):
+                raise AssetCatalogError("terrain_types must be a list of strings.")
             try:
                 asset = AssetDefinition(
                     asset_id=record["asset_id"], path=record["path"],
@@ -84,7 +87,7 @@ class AssetCatalog:
                     anchor=tuple(record.get("anchor", (0.5, 1.0))),
                     collision=tuple(record["collision"]) if record.get("collision") is not None else None,
                     depth_offset=record.get("depth_offset", 0.0),
-                    terrain_types=tuple(record.get("terrain_types", ())),
+                    terrain_types=tuple(terrain_values),
                     placement=record.get("placement", "ground"),
                     interaction=record.get("interaction"),
                     sheet=record.get("sheet"), animations=record.get("animations"))
