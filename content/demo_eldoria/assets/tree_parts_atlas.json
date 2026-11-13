@@ -6,7 +6,7 @@
     1174
   ],
   "coordinate_system": "pixel",
-  "extraction": "Each rect is [x,y,width,height] in the source atlas. Transparent pixels outside the connected sprite are retained inside the crop rectangle.",
+  "alpha_threshold": 8,
   "components": [
     {
       "id": "reference_full_tree",
@@ -39,7 +39,7 @@
       ]
     },
     {
-      "id": "trunk_main_branch_structure",
+      "id": "trunk_main",
       "type": "trunk",
       "rect": [
         490,
@@ -62,24 +62,14 @@
       "id": "foliage_crown_large_02",
       "type": "foliage",
       "rect": [
-        966,
+        960,
         362,
-        367,
-        299
+        373,
+        483
       ]
     },
     {
       "id": "branch_secondary_03",
-      "type": "branch",
-      "rect": [
-        498,
-        529,
-        240,
-        244
-      ]
-    },
-    {
-      "id": "branch_secondary_04",
       "type": "branch",
       "rect": [
         766,
@@ -89,33 +79,23 @@
       ]
     },
     {
-      "id": "foliage_crown_large_03",
-      "type": "foliage",
+      "id": "branch_secondary_04",
+      "type": "branch",
       "rect": [
-        960,
-        611,
-        342,
-        234
+        498,
+        529,
+        240,
+        244
       ]
     },
     {
       "id": "branch_small_01",
       "type": "branch",
       "rect": [
-        897,
-        625,
-        59,
-        52
-      ]
-    },
-    {
-      "id": "branch_small_02",
-      "type": "branch",
-      "rect": [
         728,
         636,
         60,
-        98
+        99
       ]
     },
     {
@@ -129,7 +109,7 @@
       ]
     },
     {
-      "id": "branch_secondary_06",
+      "id": "branch_small_02",
       "type": "branch",
       "rect": [
         833,
@@ -142,9 +122,9 @@
       "id": "branch_small_03",
       "type": "branch",
       "rect": [
-        724,
+        723,
         767,
-        61,
+        63,
         131
       ]
     },
@@ -155,7 +135,7 @@
         796,
         802,
         39,
-        145
+        146
       ]
     },
     {
@@ -254,7 +234,7 @@
       "rect": [
         1160,
         1069,
-        94,
+        95,
         77
       ]
     },
@@ -263,9 +243,9 @@
       "type": "leaf",
       "rect": [
         1040,
-        1082,
+        1080,
         85,
-        72
+        75
       ]
     }
   ]
