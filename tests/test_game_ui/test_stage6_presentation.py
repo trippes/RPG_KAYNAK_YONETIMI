@@ -23,7 +23,9 @@ class TestStage6Presentation(unittest.TestCase):
         self.assertIsNotNone(tree)
         self.assertEqual((tree.width, tree.height), (0, 0))
         self.assertTrue(catalog.available("flora.tree.test"))
-        self.assertEqual(len(catalog.objects_for_map("hex_forest_demo")), 4)
+        # Phase 7 expands the forest beyond the original four-tree demo while
+        # preserving the original tree sprite and walkable placement contract.
+        self.assertGreaterEqual(len(catalog.objects_for_map("hex_forest_demo")), 4)
         tree_cell = package.hex_map_definitions["hex_forest_demo"].get_cell(
             __import__("core.domain.spatial", fromlist=["LocalHexPosition"]).LocalHexPosition(2, 0)
         )
