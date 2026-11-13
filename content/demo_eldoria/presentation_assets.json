@@ -31,6 +31,54 @@
       "depth_offset": 0,
       "layer": "ground",
       "kind": "flora"
+    },
+    {
+      "object_id": "tree-test-oak-02",
+      "asset_id": "flora.tree.test",
+      "map_id": "hex_forest_demo",
+      "q": -4,
+      "r": -3,
+      "offset_x": 0,
+      "offset_y": 0,
+      "footprint": [
+        2,
+        2
+      ],
+      "depth_offset": 0,
+      "layer": "ground",
+      "kind": "flora"
+    },
+    {
+      "object_id": "tree-test-oak-03",
+      "asset_id": "flora.tree.test",
+      "map_id": "hex_forest_demo",
+      "q": 4,
+      "r": -4,
+      "offset_x": 0,
+      "offset_y": 0,
+      "footprint": [
+        2,
+        2
+      ],
+      "depth_offset": 0,
+      "layer": "ground",
+      "kind": "flora"
+    },
+    {
+      "object_id": "tree-test-oak-04",
+      "asset_id": "flora.tree.test",
+      "map_id": "hex_forest_demo",
+      "q": -4,
+      "r": 4,
+      "offset_x": 0,
+      "offset_y": 0,
+      "footprint": [
+        2,
+        2
+      ],
+      "depth_offset": 0,
+      "layer": "ground",
+      "kind": "flora"
     }
   ]
 }

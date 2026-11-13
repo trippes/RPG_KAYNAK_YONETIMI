@@ -1188,6 +1188,24 @@
       "q": 2,
       "r": 0,
       "blocked": true
+    },
+    {
+      "q": -4,
+      "r": -3,
+      "terrain": "forest_floor",
+      "blocked": true
+    },
+    {
+      "q": 4,
+      "r": -4,
+      "terrain": "forest_floor",
+      "blocked": true
+    },
+    {
+      "q": -4,
+      "r": 4,
+      "terrain": "forest_floor",
+      "blocked": true
     }
   ],
   "features": [

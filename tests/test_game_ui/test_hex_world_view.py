@@ -163,8 +163,12 @@ class TestHexWorldView(unittest.TestCase):
         class FakeRenderer:
             def __init__(self):
                 self.pg = SimpleNamespace(draw=FakeDraw)
-                self.surface = object()
+                self.fill_color = None
+                self.surface = SimpleNamespace(fill=self._fill)
                 self.width = 960
+
+            def _fill(self, color):
+                self.fill_color = color
                 self.height = 640
 
             def frame(self, *args, **kwargs): pass
@@ -173,7 +177,9 @@ class TestHexWorldView(unittest.TestCase):
 
         self.assertTrue(self.view.enter())
         self.view._zoom = 1.4
-        self.view.render(FakeRenderer())
+        fake_renderer = FakeRenderer()
+        self.view.render(fake_renderer)
+        self.assertEqual(fake_renderer.fill_color, (49, 103, 62))
         self.assertGreater(FakeDraw.polygons, 0)
         self.assertGreater(FakeDraw.circles, 0)
 
