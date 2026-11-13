@@ -12,8 +12,10 @@ class TestTreeSkeleton(unittest.TestCase):
     def test_default_skeleton_exposes_separate_visual_and_physical_regions(self):
         skeleton = DEFAULT_TREE_SKELETON
         self.assertNotEqual(skeleton.canopy_bounds, skeleton.trunk_collision)
-        self.assertEqual(skeleton.ground_anchor, (0.5, 1.0))
-        self.assertEqual(skeleton.depth_anchor, (0.5, 0.96))
+        self.assertEqual(skeleton.ground_anchor, (0.5, 0.985))
+        self.assertEqual(skeleton.depth_anchor, (0.5, 0.955))
+        self.assertEqual(skeleton.trunk_collision, (0.39, 0.82, 0.22, 0.16))
+        self.assertEqual(skeleton.canopy_bounds, (0.03, 0.02, 0.94, 0.76))
 
     def test_png_is_anchored_to_the_same_world_ground_point_at_any_scale(self):
         skeleton = TreeSkeleton()
