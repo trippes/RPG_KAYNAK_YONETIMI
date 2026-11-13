@@ -25,6 +25,7 @@ from game_ui.world_rendering.camera import HexCamera
 from game_ui.world_rendering.character_renderer import HexCharacterRenderer
 from game_ui.world_rendering.terrain_renderer import HexTerrainRenderer
 from game_ui.world_rendering.depth_sorter import DepthSorter
+from game_ui.world_rendering.tree_skeleton import DEFAULT_TREE_SKELETON
 from application.content_loader import load_content_package
 
 
@@ -65,6 +66,7 @@ class HexWorldView:
         self._viewport_size = (960, 640)
         self._frame_elapsed = 0.0
         self._environment_time = 0.0
+        self._scene_debug_visible = False
 
     def _load_package(self):
         if self._package is None:
@@ -333,6 +335,9 @@ class HexWorldView:
         if not self.active:
             return None
         self._mouse_position = state.mouse_pos
+        if state.pressed("debug_view"):
+            self._scene_debug_visible = not self._scene_debug_visible
+            self.message = "Nesne iskeleti geliştirici görünümü: " + ("Açık" if self._scene_debug_visible else "Kapalı")
         if state.mouse_wheel:
             self._zoom = max(0.75, min(1.8, self._zoom + state.mouse_wheel * 0.1))
             self.message = f"Yakınlaştırma: {self._zoom:.1f}x"
@@ -436,11 +441,13 @@ class HexWorldView:
             source_width, source_height = image.get_size()
             visual_width = (asset.width or source_width) * asset.scale
             visual_height = (asset.height or source_height) * asset.scale
+            skeleton = self._tree_skeleton_for(asset)
+            sprite_anchor = skeleton.ground_anchor if skeleton is not None else asset.anchor
             obj = SceneObject(
                 object_id=placement.object_id, asset_id=placement.asset_id,
                 world_x=anchor[0], world_y=anchor[1],
                 visual_width=visual_width, visual_height=visual_height,
-                anchor_x=asset.anchor[0], anchor_y=asset.anchor[1],
+                anchor_x=sprite_anchor[0], anchor_y=sprite_anchor[1],
                 footprint=placement.footprint,
                 collision_box=placement.collision_box,
                 depth_offset=asset.depth_offset + placement.depth_offset,
@@ -451,6 +458,7 @@ class HexWorldView:
             ):
                 return
             self._scene_object_renderer.draw(renderer, obj, anchor, self._zoom)
+            self._draw_tree_debug(renderer, placement, asset, anchor, image)
             return
         # Missing artwork uses deterministic procedural silhouettes. This keeps
         # authored content readable without turning every missing asset into a dot.
@@ -480,6 +488,71 @@ class HexWorldView:
             pg.draw.circle(renderer.surface, (63, 124, 70), (x - radius // 2, y - radius // 3), radius)
             pg.draw.circle(renderer.surface, (54, 111, 62), (x + radius // 2, y - radius // 4), radius)
             pg.draw.circle(renderer.surface, (49, 101, 56), (x, y - radius), radius)
+
+    def _tree_skeleton_for(self, asset):
+        """Return the shared oak skeleton for tree artwork assets."""
+        if asset is not None and "tree" in asset.asset_id.lower():
+            return DEFAULT_TREE_SKELETON
+        return None
+
+    def _draw_tree_debug(self, renderer, placement, asset, anchor, image):
+        """Show tree ground anchor, trunk collision, canopy and depth guides."""
+        if not self._scene_debug_visible or image is None:
+            return
+        skeleton = self._tree_skeleton_for(asset)
+        if skeleton is None:
+            return
+        width, height = image.get_size()
+        scale = asset.scale * self._zoom
+        left, top = skeleton.sprite_top_left(anchor, (width, height), scale)
+        collision = skeleton.trunk_collision_bounds(anchor, (width, height), scale)
+        cx, cy, cw, ch = collision
+        canopy_x, canopy_y, canopy_w, canopy_h = skeleton.canopy_bounds
+        rect = renderer.pg.Rect
+        renderer.pg.draw.rect(
+            renderer.surface, (235, 75, 65),
+            rect(round(cx), round(cy), max(1, round(cw)), max(1, round(ch))), 2,
+        )
+        renderer.pg.draw.rect(
+            renderer.surface, (80, 190, 245),
+            rect(round(left + canopy_x * width * scale),
+                 round(top + canopy_y * height * scale),
+                 max(1, round(canopy_w * width * scale)),
+                 max(1, round(canopy_h * height * scale))), 1,
+        )
+        depth_y = skeleton.depth_y(anchor, (width, height), scale)
+        renderer.pg.draw.line(
+            renderer.surface, (250, 220, 70),
+            (round(anchor[0] - 12 * self._zoom), round(depth_y)),
+            (round(anchor[0] + 12 * self._zoom), round(depth_y)), 2,
+        )
+        renderer.pg.draw.circle(
+            renderer.surface, (255, 255, 255),
+            (round(anchor[0]), round(anchor[1])), max(2, round(3 * self._zoom)),
+        )
+
+    def _scene_object_depth_y(self, placement, center):
+        """Use the tree's actual ground/depth anchor, not its hex-cell center."""
+        asset = self._presentation_catalog.get(placement.asset_id)
+        anchor = (
+            center[0] + placement.offset_x * self._zoom,
+            center[1] + placement.offset_y * self._zoom,
+        )
+        skeleton = self._tree_skeleton_for(asset)
+        if skeleton is not None and self._asset_manager is not None:
+            path = self._presentation_catalog.resolve_path(asset.asset_id)
+            if path is not None and path.is_file():
+                try:
+                    image = self._asset_manager.load_image(asset.asset_id, path, alpha=True)
+                    return (
+                        skeleton.depth_y(
+                            anchor, image.get_size(), asset.scale * self._zoom
+                        )
+                        + (asset.depth_offset + placement.depth_offset) * self._zoom
+                    )
+                except Exception:
+                    pass
+        return anchor[1] + (asset.depth_offset + placement.depth_offset) * self._zoom
 
     def _draw_landmark(self, renderer, landmark, center, render_radius):
         """Draw an authored sprite when available, otherwise retain the marker fallback."""
@@ -576,12 +649,28 @@ class HexWorldView:
                     drawables.append((position, "scene_object", placement))
         drawables.append((entity.position.cell, "player", entity))
 
+        player_center = centers[entity.position.cell]
+        if self._movement_path:
+            elapsed = min(self._movement_elapsed, (len(self._movement_path) - 1) * self._movement_step_seconds)
+            segment = min(int(elapsed / self._movement_step_seconds), len(self._movement_path) - 2)
+            progress = min(1.0, (elapsed - segment * self._movement_step_seconds) / self._movement_step_seconds)
+            move_start = centers.get(self._movement_path[segment])
+            move_end = centers.get(self._movement_path[segment + 1])
+            if move_start is not None and move_end is not None:
+                player_center = (
+                    move_start[0] + (move_end[0] - move_start[0]) * progress,
+                    move_start[1] + (move_end[1] - move_start[1]) * progress,
+                )
+
         def drawable_depth(item):
             position, kind, value = item
             layer = getattr(value, "layer", "ground")
             layer_order = {"underlay": 0, "ground": 1, "canopy": 2, "overlay": 3}.get(layer, 1)
-            offset = value.offset_y * self._zoom + value.depth_offset * self._zoom if kind == "scene_object" else 0
-            return layer_order, centers[position][1] + offset
+            if kind == "scene_object":
+                return layer_order, self._scene_object_depth_y(value, centers[position])
+            if kind == "player":
+                return layer_order, player_center[1] + render_radius * 0.28
+            return layer_order, centers[position][1]
 
         for position, drawable_type, drawable in DepthSorter.sort_by_depth(
             drawables,
@@ -594,18 +683,6 @@ class HexWorldView:
             elif drawable_type == "scene_object":
                 self._draw_placed_scene_object(renderer, drawable, center)
             else:
-                player_center = center
-                if self._movement_path:
-                    elapsed = min(self._movement_elapsed, (len(self._movement_path) - 1) * self._movement_step_seconds)
-                    segment = min(int(elapsed / self._movement_step_seconds), len(self._movement_path) - 2)
-                    progress = min(1.0, (elapsed - segment * self._movement_step_seconds) / self._movement_step_seconds)
-                    move_start = centers.get(self._movement_path[segment])
-                    move_end = centers.get(self._movement_path[segment + 1])
-                    if move_start is not None and move_end is not None:
-                        player_center = (
-                            move_start[0] + (move_end[0] - move_start[0]) * progress,
-                            move_start[1] + (move_end[1] - move_start[1]) * progress,
-                        )
                 if self._character_animator is not None and self._character_asset is not None:
                     facing = self._player_facing()
                     self._character_animator.select(
