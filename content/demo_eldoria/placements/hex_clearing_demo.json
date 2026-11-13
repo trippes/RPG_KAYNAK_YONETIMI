@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "map_id": "hex_clearing_demo",
+  "objects": [
+    {
+      "object_id": "clearing-tree-01",
+      "asset_id": "flora.tree.young",
+      "q": -2,
+      "r": 1,
+      "offset_x": 7,
+      "offset_y": 3,
+      "footprint": [
+        1,
+        1
+      ],
+      "collision_box": [
+        -6,
+        -10,
+        12,
+        10
+      ],
+      "layer": "ground",
+      "kind": "flora"
+    },
+    {
+      "object_id": "clearing-rock-01",
+      "asset_id": "prop.rock.large",
+      "q": 3,
+      "r": -1,
+      "offset_x": -7,
+      "offset_y": 5,
+      "footprint": [
+        1,
+        1
+      ],
+      "collision_box": [
+        -9,
+        -7,
+        18,
+        7
+      ],
+      "layer": "ground",
+      "kind": "rock"
+    }
+  ]
+}
