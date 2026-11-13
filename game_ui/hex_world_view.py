@@ -563,7 +563,9 @@ class HexWorldView:
                         max(4, round(render_radius * 0.32)),
                     )
 
-        # Map links remain simulation-only; normal play does not reveal hex exits.\n\n        drawables = [(item.position, "landmark", item) for item in definition.landmarks]
+        # Map links remain simulation-only; normal play does not reveal hex exits.
+
+        drawables = [(item.position, "landmark", item) for item in definition.landmarks]
         if self._presentation_catalog is not None:
             for placement in self._presentation_catalog.objects_for_map(definition.map_id):
                 position = LocalHexPosition(placement.q, placement.r)
