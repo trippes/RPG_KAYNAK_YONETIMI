@@ -101,6 +101,7 @@ class InputMapper:
                 "down": "down",
                 "backspace": "backspace",
                 "delete": "delete",
+                "f3": "debug_view",
                 "f5": "save",
                 "f9": "load",
                 "f11": "fullscreen",
@@ -157,6 +158,7 @@ class InputMapper:
         if self.backend is not None:
             for letter in "gcipwqxlmdbnjtfhz":
                 names[getattr(self.backend, f"K_{letter}", object())] = letter
+            names[getattr(self.backend, "K_F3", object())] = "f3"
             names[getattr(self.backend, "K_F5", object())] = "f5"
             names[getattr(self.backend, "K_F9", object())] = "f9"
             names[getattr(self.backend, "K_F11", object())] = "f11"
