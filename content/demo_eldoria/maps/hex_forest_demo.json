@@ -4396,8 +4396,7 @@
     {
       "q": 4,
       "r": -4,
-      "terrain": "forest_floor",
-      "blocked": true
+      "terrain": "forest_floor"
     },
     {
       "q": -4,
