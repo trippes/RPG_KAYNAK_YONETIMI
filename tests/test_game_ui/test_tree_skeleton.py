@@ -44,6 +44,39 @@ class TestTreeSkeleton(unittest.TestCase):
         with self.assertRaises(ValueError):
             TreeBranch((0.5, 0.8), (1.2, 0.4))
 
+    def test_default_skeleton_has_a_fixed_trunk_root_and_wind_moving_top(self):
+        skeleton = DEFAULT_TREE_SKELETON
+        root_a, top_a = skeleton.animated_trunk_points(0.0)
+        root_b, top_b = skeleton.animated_trunk_points(1.0)
+        self.assertEqual(root_a, skeleton.trunk.start)
+        self.assertEqual(root_b, skeleton.trunk.start)
+        self.assertNotEqual(top_a, top_b)
+
+    def test_child_branch_inherits_parent_motion(self):
+        parent = TreeBranch((0.5, 0.8), (0.3, 0.5), sway_weight=0.8)
+        child = TreeBranch(
+            (0.3, 0.5), (0.2, 0.3),
+            sway_weight=0.0, parent_index=0,
+        )
+        skeleton = TreeSkeleton(
+            branches=(parent, child),
+            leaf_clusters=(TreeLeafCluster((0.2, 0.3), branch_index=1),),
+        )
+        start, end = skeleton.animated_branch_points(1, 1.0)
+        self.assertNotEqual(start, child.start)
+        self.assertNotEqual(end, child.end)
+        self.assertEqual(
+            skeleton.animated_leaf_anchor(0, 1.0),
+            end,
+        )
+
+    def test_branch_pose_is_deterministic_for_the_same_time(self):
+        skeleton = DEFAULT_TREE_SKELETON
+        self.assertEqual(
+            skeleton.animated_branch_points(0, 2.5),
+            skeleton.animated_branch_points(0, 2.5),
+        )
+
     def test_png_is_anchored_to_the_same_world_ground_point_at_any_scale(self):
         skeleton = TreeSkeleton()
         self.assertEqual(skeleton.sprite_top_left((100, 100), (100, 200), 0.5), (75.0, 1.5))
