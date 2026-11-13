@@ -119,7 +119,8 @@ class TestAssetCatalogContract(unittest.TestCase):
         )
         catalog = self.load()
         self.assertEqual(catalog.validate_assets()[0].code, "dimension_mismatch")
-        self.assertFalse(catalog.available("flora.tree"))
+        self.assertTrue(catalog.available("flora.tree"))
+        self.assertFalse(catalog.is_valid("flora.tree"))
 
     def test_missing_and_corrupt_pngs_are_reported_without_rejecting_catalog(self):
         self.write_catalog(
@@ -135,7 +136,9 @@ class TestAssetCatalogContract(unittest.TestCase):
             {"missing_file", "invalid_png"},
         )
         self.assertFalse(catalog.available("missing"))
-        self.assertFalse(catalog.available("corrupt"))
+        self.assertTrue(catalog.available("corrupt"))
+        self.assertFalse(catalog.is_valid("missing"))
+        self.assertFalse(catalog.is_valid("corrupt"))
 
     def test_categories_are_queryable_without_ui_dependencies(self):
         catalog = self.load()
