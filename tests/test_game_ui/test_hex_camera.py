@@ -24,7 +24,7 @@ class TestHexCamera(unittest.TestCase):
         self.camera.update((0, 0), (799, 300), (800, 600), self.bounds, 1.0, 0.1)
         self.assertTrue(self.camera.free_look)
         free_x = self.camera.x
-        self.camera.update((300, 0), (400, 300), (800, 600), self.bounds, 1.0, 0.1)
+        self.camera.update((0, 0), (400, 300), (800, 600), self.bounds, 1.0, 0.1)
         self.assertFalse(self.camera.free_look)
         self.assertLess(self.camera.x, free_x)
 

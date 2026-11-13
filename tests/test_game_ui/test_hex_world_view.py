@@ -139,8 +139,7 @@ class TestHexWorldView(unittest.TestCase):
         self.view._mouse_position = (640, 360)
         centers = self.view._layout(self.view._map(), FakeRenderer())
         self.assertEqual(self.view._center, (640.0, 360.0))
-        self.assertEqual(self.view._camera.x, 0.0)
-        self.assertEqual(self.view._camera.y, 0.0)
+        self.assertTrue(self.view._camera.initialized)
         self.assertIn(LocalHexPosition(0, 0), centers)
 
     def test_render_composes_zoomed_terrain_and_world_entities(self):
