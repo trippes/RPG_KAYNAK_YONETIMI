@@ -75,6 +75,10 @@ class TestStage6Presentation(unittest.TestCase):
         obj = SceneObject("oak-1", "tree.oak", 100, 100, 80, 120)
         self.assertTrue(SceneObjectRenderer.is_visible(obj, (0, 0, 100, 30)))
         self.assertFalse(SceneObjectRenderer.is_visible(obj, (200, 200, 50, 50)))
+    def test_sprite_culling_expands_visual_bounds_with_zoom(self):
+        obj = SceneObject("oak-zoom", "tree.oak", 125, 50, 20, 20, anchor_x=1.0, anchor_y=0.5)
+        self.assertFalse(SceneObjectRenderer.is_visible(obj, (0, 0, 100, 100)))
+        self.assertTrue(SceneObjectRenderer.is_visible(obj, (0, 0, 100, 100), zoom=2.0))
     def test_character_animator_selects_direction_and_state(self):
         animation = Animation(("idle-0", "idle-1"), 0.1)
         animator = CharacterAnimator({"south": {"idle": animation}})
