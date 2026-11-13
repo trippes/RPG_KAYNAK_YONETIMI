@@ -4,7 +4,7 @@ import math
 
 class HexTerrainRenderer:
     TERRAIN_COLORS = {
-        "grass": (83, 132, 73), "forest_floor": (49, 103, 62),
+        "grass": (76, 124, 66), "forest_floor": (49, 103, 62),
         "clearing_floor": (137, 119, 76), "water": (47, 102, 150),
         "soil": (112, 88, 58), "sand": (190, 166, 112),
         "rock": (105, 105, 99), "snow": (218, 226, 229),
@@ -78,7 +78,7 @@ class HexTerrainRenderer:
                 (round(center[0] - size / 2), round(center[1] - size / 2)),
             )
         seed = (cell.q * 73856093) ^ (cell.r * 19349663)
-        detail = (111, 157, 83) if cell_data.terrain_id == "grass" else (39, 86, 54)
+        detail = (103, 148, 76) if cell_data.terrain_id == "grass" else (39, 86, 54)
         if not textures and cell_data.terrain_id in ("grass", "forest_floor", "clearing_floor"):
             for index in range(9):
                 dx = ((seed >> (index * 4)) % 13 - 6) * radius / 22
