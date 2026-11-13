@@ -8,6 +8,23 @@ Stage 6 extends the Stage 5 presentation adapters. Axial coordinates, map defini
 
 The Pygame-independent JSON catalog in game_ui/assets/asset_definition.py uses schema version 1 and an assets array. Records support asset_id, relative path, width, height, scale, normalized anchor, optional collision box, depth_offset, terrain_types, placement, interaction, spritesheet metadata, and animation metadata. Paths are resolved under the catalog directory and traversal is rejected. The starter package includes an empty presentation_assets.json catalog, so the format is immediately available to content authors. Its optional objects array places reusable asset IDs on a map and axial cell, with pixel offsets, multi-cell footprint, separate collision box, depth offset, layer, and kind (for example prop, flora, resource, or NPC). Missing files are reported by available() without crashing the game.
 
+Example scene placement (the referenced asset must exist in the same catalog):
+
+    {
+      "object_id": "oak-west-01",
+      "asset_id": "flora.oak",
+      "map_id": "hex_forest_demo",
+      "q": 2,
+      "r": -1,
+      "offset_x": 8,
+      "offset_y": -4,
+      "footprint": [2, 2],
+      "collision_box": [28, 74, 32, 40],
+      "depth_offset": 0,
+      "layer": "ground",
+      "kind": "flora"
+    }
+
 ## Scene objects
 
 SceneObject separates world anchor, visual dimensions, normalized ground anchor, multi-cell footprint, and optional collision box. SceneObjectRenderer draws cached images and culls by complete visual bounds, so tall objects remain visible even when their ground anchor is outside the viewport. Hex-world landmarks resolve an authored visual_type (or landmark.visual_type) asset ID and retain the existing marker fallback when no sprite is available. It does not own collision or placement decisions.
