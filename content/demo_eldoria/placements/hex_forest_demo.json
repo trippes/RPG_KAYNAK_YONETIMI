@@ -1,0 +1,234 @@
+{
+  "schema_version": 1,
+  "map_id": "hex_forest_demo",
+  "objects": [
+    {
+      "object_id": "tree-oak-01",
+      "asset_id": "flora.tree.test",
+      "q": 2,
+      "r": 0,
+      "offset_x": -7,
+      "offset_y": 4,
+      "footprint": [
+        1,
+        1
+      ],
+      "collision_box": [
+        -8,
+        -14,
+        16,
+        14
+      ],
+      "layer": "ground",
+      "kind": "flora"
+    },
+    {
+      "object_id": "tree-oak-02",
+      "asset_id": "flora.tree.old",
+      "q": -4,
+      "r": -3,
+      "offset_x": 5,
+      "offset_y": 1,
+      "footprint": [
+        1,
+        1
+      ],
+      "collision_box": [
+        -10,
+        -16,
+        20,
+        16
+      ],
+      "layer": "ground",
+      "kind": "flora"
+    },
+    {
+      "object_id": "tree-oak-03",
+      "asset_id": "flora.tree.young",
+      "q": 4,
+      "r": -4,
+      "offset_x": -3,
+      "offset_y": 6,
+      "footprint": [
+        1,
+        1
+      ],
+      "collision_box": [
+        -6,
+        -10,
+        12,
+        10
+      ],
+      "layer": "ground",
+      "kind": "flora"
+    },
+    {
+      "object_id": "tree-oak-04",
+      "asset_id": "flora.tree.test",
+      "q": -4,
+      "r": 4,
+      "offset_x": 8,
+      "offset_y": -2,
+      "footprint": [
+        1,
+        1
+      ],
+      "collision_box": [
+        -8,
+        -14,
+        16,
+        14
+      ],
+      "layer": "ground",
+      "kind": "flora"
+    },
+    {
+      "object_id": "tree-oak-05",
+      "asset_id": "flora.tree.young",
+      "q": -1,
+      "r": 3,
+      "offset_x": -9,
+      "offset_y": 2,
+      "footprint": [
+        1,
+        1
+      ],
+      "collision_box": [
+        -6,
+        -10,
+        12,
+        10
+      ],
+      "layer": "ground",
+      "kind": "flora"
+    },
+    {
+      "object_id": "tree-oak-06",
+      "asset_id": "flora.tree.old",
+      "q": 3,
+      "r": -2,
+      "offset_x": 7,
+      "offset_y": -3,
+      "footprint": [
+        1,
+        1
+      ],
+      "collision_box": [
+        -10,
+        -16,
+        20,
+        16
+      ],
+      "layer": "ground",
+      "kind": "flora"
+    },
+    {
+      "object_id": "shrub-01",
+      "asset_id": "flora.shrub.green",
+      "q": 0,
+      "r": 3,
+      "offset_x": 11,
+      "offset_y": 4,
+      "footprint": [
+        1,
+        1
+      ],
+      "collision_box": [
+        -8,
+        -5,
+        16,
+        5
+      ],
+      "layer": "ground",
+      "kind": "shrub"
+    },
+    {
+      "object_id": "shrub-02",
+      "asset_id": "flora.shrub.green",
+      "q": -2,
+      "r": 1,
+      "offset_x": -11,
+      "offset_y": 3,
+      "footprint": [
+        1,
+        1
+      ],
+      "collision_box": [
+        -8,
+        -5,
+        16,
+        5
+      ],
+      "layer": "ground",
+      "kind": "shrub"
+    },
+    {
+      "object_id": "rock-01",
+      "asset_id": "prop.rock.large",
+      "q": 1,
+      "r": -3,
+      "offset_x": 9,
+      "offset_y": 5,
+      "footprint": [
+        1,
+        1
+      ],
+      "collision_box": [
+        -9,
+        -7,
+        18,
+        7
+      ],
+      "layer": "ground",
+      "kind": "rock"
+    },
+    {
+      "object_id": "rock-02",
+      "asset_id": "prop.rock.large",
+      "q": -3,
+      "r": 2,
+      "offset_x": -6,
+      "offset_y": 1,
+      "footprint": [
+        1,
+        1
+      ],
+      "collision_box": [
+        -9,
+        -7,
+        18,
+        7
+      ],
+      "layer": "ground",
+      "kind": "rock"
+    },
+    {
+      "object_id": "plant-01",
+      "asset_id": "flora.plant.wildflower",
+      "q": 0,
+      "r": -2,
+      "offset_x": -10,
+      "offset_y": 6,
+      "footprint": [
+        1,
+        1
+      ],
+      "layer": "ground",
+      "kind": "plant"
+    },
+    {
+      "object_id": "plant-02",
+      "asset_id": "flora.plant.wildflower",
+      "q": 2,
+      "r": 2,
+      "offset_x": 8,
+      "offset_y": 5,
+      "footprint": [
+        1,
+        1
+      ],
+      "layer": "ground",
+      "kind": "plant"
+    }
+  ]
+}
