@@ -48,7 +48,8 @@ class TestStage6RenderPrimitives(unittest.TestCase):
         calls = []
         draw = FakeDraw()
         surface = SimpleNamespace(blit=lambda image, position: calls.append(position))
-        renderer = SimpleNamespace(pg=SimpleNamespace(draw=draw), surface=surface)
+        transform = SimpleNamespace(smoothscale=lambda image, size: FakeImage())
+        renderer = SimpleNamespace(pg=SimpleNamespace(draw=draw, transform=transform), surface=surface)
         cell = SimpleNamespace(terrain_id="grass", blocked=False)
         HexTerrainRenderer().draw_cell(renderer, SimpleNamespace(q=0, r=0), cell,
                                        (100, 100), 32, image=FakeImage())
