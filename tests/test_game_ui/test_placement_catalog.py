@@ -36,6 +36,15 @@ class TestScenePlacementCatalog(unittest.TestCase):
         self.assertEqual(len(placements.objects_for_map("hex_clearing_demo")), 2)
         self.assertEqual(catalog.objects, ())
 
+    def test_placement_catalog_exposes_an_immutable_snapshot(self):
+        package = load_content_package(PACKAGE_ROOT)
+        catalog = AssetCatalog.load(package.asset_catalog_path)
+        placements = ScenePlacementCatalog.load_directory(
+            package.map_placements_path, catalog
+        )
+        with self.assertRaises(AttributeError):
+            placements.placements = ()
+
     def test_same_asset_can_be_reused_across_maps_and_instances(self):
         package = load_content_package(PACKAGE_ROOT)
         catalog = AssetCatalog.load(package.asset_catalog_path)
