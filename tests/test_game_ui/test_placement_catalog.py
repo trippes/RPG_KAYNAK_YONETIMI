@@ -3,6 +3,7 @@
 import json
 import tempfile
 import unittest
+from dataclasses import FrozenInstanceError
 from pathlib import Path
 
 from application.content_loader import load_content_package
@@ -42,7 +43,7 @@ class TestScenePlacementCatalog(unittest.TestCase):
         placements = ScenePlacementCatalog.load_directory(
             package.map_placements_path, catalog
         )
-        with self.assertRaises(AttributeError):
+        with self.assertRaises(FrozenInstanceError):
             placements.placements = ()
 
     def test_same_asset_can_be_reused_across_maps_and_instances(self):
