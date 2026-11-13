@@ -512,10 +512,6 @@ class HexWorldView:
         entity = self._entity()
         centers = self._layout(definition, renderer)
         renderer.frame(definition.name, 0)
-        # The playable forest backdrop fills viewport gaps beyond the finite map mask.
-        # This prevents the renderer's dark UI clear color from showing through.
-        if hasattr(renderer.surface, "fill"):
-            renderer.surface.fill((49, 103, 62))
         render_radius = self._hex_size * self._zoom
         self._load_presentation_assets(renderer.pg)
         self._load_character_visual()

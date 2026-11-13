@@ -89,7 +89,7 @@ class TestHexWorldView(unittest.TestCase):
 
     def test_crossing_east_boundary_automatically_enters_clearing(self):
         self.assertTrue(self.view.enter())
-        self.assertTrue(self.view._move_to(LocalHexPosition(8, 0)))
+        self.assertTrue(self.view._move_to(LocalHexPosition(16, 0)))
         self.assertTrue(self.view._move(HexDirection.EAST))
         self.assertEqual(
             self.view.runtime.entity("hero").position,
@@ -98,12 +98,12 @@ class TestHexWorldView(unittest.TestCase):
 
     def test_crossing_west_boundary_returns_to_forest_automatically(self):
         self.assertTrue(self.view.enter())
-        self.assertTrue(self.view._move_to(LocalHexPosition(8, 0)))
+        self.assertTrue(self.view._move_to(LocalHexPosition(16, 0)))
         self.assertTrue(self.view._move(HexDirection.EAST))
         self.assertTrue(self.view._move(HexDirection.WEST))
         self.assertEqual(
             self.view.runtime.entity("hero").position,
-            EntityPosition("hex_forest_demo", LocalHexPosition(8, 0)),
+            EntityPosition("hex_forest_demo", LocalHexPosition(16, 0)),
         )
 
     def test_unlinked_map_boundary_blocks_movement(self):
@@ -164,7 +164,7 @@ class TestHexWorldView(unittest.TestCase):
             def __init__(self):
                 self.pg = SimpleNamespace(draw=FakeDraw)
                 self.fill_color = None
-                self.surface = SimpleNamespace(fill=self._fill)
+                self.surface = SimpleNamespace()
                 self.width = 960
 
             def _fill(self, color):
@@ -179,7 +179,7 @@ class TestHexWorldView(unittest.TestCase):
         self.view._zoom = 1.4
         fake_renderer = FakeRenderer()
         self.view.render(fake_renderer)
-        self.assertEqual(fake_renderer.fill_color, (49, 103, 62))
+        self.assertIsNone(fake_renderer.fill_color)
         self.assertGreater(FakeDraw.polygons, 0)
         self.assertGreater(FakeDraw.circles, 0)
 
