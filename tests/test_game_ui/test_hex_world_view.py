@@ -230,7 +230,7 @@ class TestHexWorldView(unittest.TestCase):
         self.view._draw_tree_debug(
             FakeRenderer(),
             SimpleNamespace(object_id="oak_1"),
-            SimpleNamespace(asset_id="tree_oak"),
+            SimpleNamespace(asset_id="tree_oak", scale=1.0),
             (100.0, 200.0),
             FakeImage(),
         )
