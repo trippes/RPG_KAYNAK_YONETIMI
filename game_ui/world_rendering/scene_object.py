@@ -83,8 +83,12 @@ class SceneObjectRenderer:
         self.asset_manager = asset_manager
         self._scaled_images = {}
     @staticmethod
-    def is_visible(obj, camera_rect):
-        left, top, right, bottom = obj.visual_bounds
+    def is_visible(obj, camera_rect, zoom=1.0):
+        visual_width = obj.visual_width * zoom
+        visual_height = obj.visual_height * zoom
+        left = obj.world_x - visual_width * obj.anchor_x
+        top = obj.world_y - visual_height * obj.anchor_y
+        right, bottom = left + visual_width, top + visual_height
         x, y, width, height = camera_rect
         return not (right < x or bottom < y or left > x + width or top > y + height)
     def draw(self, renderer, obj, screen_anchor, zoom=1.0):

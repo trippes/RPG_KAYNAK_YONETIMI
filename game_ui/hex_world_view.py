@@ -432,7 +432,7 @@ class HexWorldView:
             layer=placement.layer,
         )
         if not SceneObjectRenderer.is_visible(
-            obj, (0, 0, renderer.width, renderer.height)
+            obj, (0, 0, renderer.width, renderer.height), self._zoom
         ):
             return
         path = self._presentation_catalog.resolve_path(asset.asset_id)
