@@ -54,10 +54,28 @@ class TestScenePlacementCatalog(unittest.TestCase):
         self.assertIsNotNone(first_tree.collision_box)
 
     def test_legacy_combined_presentation_file_remains_readable(self):
-        legacy = AssetCatalog.load(PACKAGE_ROOT / "presentation_assets.json")
+        legacy_path = PACKAGE_ROOT / "presentation_assets.json"
+        legacy = AssetCatalog.load(legacy_path)
         self.assertEqual(len(legacy.assets), 6)
         self.assertEqual(len(legacy.objects_for_map("hex_forest_demo")), 12)
         self.assertEqual(len(legacy.objects_for_map("hex_clearing_demo")), 2)
+
+        legacy_data = json.loads(legacy_path.read_text(encoding="utf-8"))
+        split_assets = json.loads(
+            (PACKAGE_ROOT / "asset_catalog.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(legacy_data["assets"], split_assets["assets"])
+        split_placements = []
+        for source in sorted((PACKAGE_ROOT / "placements").glob("*.json")):
+            data = json.loads(source.read_text(encoding="utf-8"))
+            split_placements.extend(
+                {**record, "map_id": data["map_id"]}
+                for record in data["objects"]
+            )
+        self.assertEqual(
+            sorted(legacy_data["objects"], key=lambda item: item["object_id"]),
+            sorted(split_placements, key=lambda item: item["object_id"]),
+        )
 
     def test_unknown_asset_reference_is_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
