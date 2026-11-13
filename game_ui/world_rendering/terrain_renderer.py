@@ -34,21 +34,23 @@ class HexTerrainRenderer:
             return self.BLOCKED_COLOR
         return self.TERRAIN_COLORS.get(cell_data.terrain_id, (91, 105, 79))
 
-    def draw_cell(self, renderer, cell, cell_data, center, radius, selected=False, image=None):
+    def draw_cell(self, renderer, cell, cell_data, center, radius, selected=False, image=None, images=()):
         pg = renderer.pg
         polygon = self.polygon_for(center, radius)
         base = self.color_for(cell_data, selected)
         shadow = tuple((x, y + max(2, round(radius * 0.08))) for x, y in polygon)
         pg.draw.polygon(renderer.surface, (24, 34, 29), shadow)
         pg.draw.polygon(renderer.surface, base, polygon)
-        if image is not None:
-            size = max(1, round(radius * 2))
-            if image.get_size() != (size, size):
-                image = pg.transform.smoothscale(image, (size, size))
-            renderer.surface.blit(image, (round(center[0] - radius), round(center[1] - radius)))
+        textures = tuple(images) + ((image,) if image is not None else ())
+        size = max(1, round(radius * 2))
+        for texture in textures:
+            current = texture
+            if current.get_size() != (size, size):
+                current = pg.transform.smoothscale(current, (size, size))
+            renderer.surface.blit(current, (round(center[0] - radius), round(center[1] - radius)))
         seed = (cell.q * 73856093) ^ (cell.r * 19349663)
         detail = (111, 157, 83) if cell_data.terrain_id == "grass" else (39, 86, 54)
-        if image is None and cell_data.terrain_id in ("grass", "forest_floor", "clearing_floor"):
+        if not textures and cell_data.terrain_id in ("grass", "forest_floor", "clearing_floor"):
             for index in range(3):
                 dx = ((seed >> (index * 4)) % 13 - 6) * radius / 22
                 dy = ((seed >> (index * 6 + 1)) % 13 - 6) * radius / 22

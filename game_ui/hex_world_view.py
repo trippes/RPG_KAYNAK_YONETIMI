@@ -84,20 +84,33 @@ class HexWorldView:
             self._presentation_catalog = None
             self._asset_manager = None
 
-    def _terrain_image(self, terrain_id):
+    def _terrain_images(self, cell, terrain_id, definition):
+        """Resolve deterministic base/detail/transition textures for one cell."""
         if self._presentation_catalog is None or self._asset_manager is None:
-            return None
+            return ()
+        adjacent = {terrain_id}
+        for direction in HexDirection:
+            neighbor = LocalHexPosition.from_hex_coord(
+                cell.to_hex_coord().neighbor(direction)
+            )
+            if definition.has_cell(neighbor):
+                adjacent.add(definition.get_cell(neighbor).terrain_id)
+        layers = {"underlay": 0, "ground": 1, "overlay": 2}
+        selected = []
         for asset in self._presentation_catalog.assets.values():
-            if asset.placement != "underlay" or terrain_id not in asset.terrain_types:
+            required = set(asset.terrain_types)
+            if asset.placement not in layers or not required or not required.issubset(adjacent):
                 continue
             path = self._presentation_catalog.resolve_path(asset.asset_id)
             if path is None or not path.is_file():
                 continue
             try:
-                return self._asset_manager.load_image(asset.asset_id, path, alpha=True)
+                image = self._asset_manager.load_image(asset.asset_id, path, alpha=True)
             except (OSError, RuntimeError, ValueError):
-                return None
-        return None
+                continue
+            selected.append((layers[asset.placement], asset.asset_id, image))
+        selected.sort(key=lambda item: (item[0], item[1]))
+        return tuple(item[2] for item in selected)
 
     def enter(self):
         if self.active:
@@ -377,7 +390,7 @@ class HexWorldView:
             self._terrain_renderer.draw_cell(
                 renderer, cell, definition.get_cell(cell), centers[cell],
                 render_radius, selected=(cell == self.selected),
-                image=self._terrain_image(definition.get_cell(cell).terrain_id),
+                images=self._terrain_images(cell, definition.get_cell(cell).terrain_id, definition),
             )
 
         for feature in definition.features:
