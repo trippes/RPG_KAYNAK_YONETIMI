@@ -12,5 +12,7 @@
   },
   "maps": "maps",
   "world_map": "world.json",
-  "presentation_assets": "presentation_assets.json"
+  "presentation_assets": "presentation_assets.json",
+  "asset_catalog": "asset_catalog.json",
+  "map_placements": "placements"
 }
