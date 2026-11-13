@@ -203,6 +203,19 @@ class TreeSkeleton:
                 parent_end[0] - parent.end[0],
                 parent_end[1] - parent.end[1],
             )
+        else:
+            # Primary branches inherit a proportional share of trunk-top sway.
+            _, animated_trunk_end = self.animated_trunk_points(time_seconds)
+            trunk_dx = animated_trunk_end[0] - self.trunk.end[0]
+            trunk_dy = animated_trunk_end[1] - self.trunk.end[1]
+            trunk_span = self.trunk.start[1] - self.trunk.end[1]
+            progress = (
+                max(0.0, min(1.0,
+                    (self.trunk.start[1] - branch.start[1]) / trunk_span
+                ))
+                if trunk_span else 0.0
+            )
+            inherited = (trunk_dx * progress, trunk_dy * progress)
         sway = self._sway_offset(branch.sway_weight, branch.phase, time_seconds)
         return (
             (branch.start[0] + inherited[0], branch.start[1] + inherited[1]),
