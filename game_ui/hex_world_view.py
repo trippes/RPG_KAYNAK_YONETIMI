@@ -462,7 +462,10 @@ class HexWorldView:
         if "tree" in asset_id or kind == "flora" and "shrub" not in asset_id:
             trunk_h = max(7, round(16 * self._zoom))
             canopy = max(8, round(13 * self._zoom))
-            pg.draw.rect(renderer.surface, (91, 66, 40), (x - max(2, canopy // 5), y - trunk_h, max(4, canopy * 2 // 5), trunk_h))
+            pg.draw.line(
+                renderer.surface, (91, 66, 40), (x, y), (x, y - trunk_h),
+                max(2, round(4 * self._zoom)),
+            )
             for dx, dy, scale in ((0, -trunk_h, 1.0), (-canopy * 0.55, -trunk_h * 0.65, 0.72), (canopy * 0.55, -trunk_h * 0.7, 0.76)):
                 pg.draw.circle(renderer.surface, (48, 112, 61), (round(x + dx + pulse), round(y + dy)), max(4, round(canopy * scale)))
         elif "rock" in asset_id or kind == "rock":
