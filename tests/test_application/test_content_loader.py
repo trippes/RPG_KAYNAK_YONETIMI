@@ -57,7 +57,10 @@ class TestContentPackageLoader(unittest.TestCase):
         for direction in HexDirection:
             self.assertIsNotNone(package.world_map_definition.neighbor("hex_forest_demo", direction))
         forest_exit = package.hex_map_definitions["hex_forest_demo"].transitions[0]
-        clearing_exit = package.hex_map_definitions["hex_clearing_demo"].transitions[0]
+        clearing_exit = next(
+            item for item in package.hex_map_definitions["hex_clearing_demo"].transitions
+            if item.target_map_id == "hex_forest_demo"
+        )
         self.assertTrue(forest_exit.active)
         self.assertTrue(clearing_exit.active)
         self.assertEqual(forest_exit.traversal_mode, "bidirectional")
