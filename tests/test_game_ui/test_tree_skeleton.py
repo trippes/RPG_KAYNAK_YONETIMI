@@ -38,7 +38,7 @@ class TestTreeSkeleton(unittest.TestCase):
         with self.assertRaises(ValueError):
             TreeSkeleton(branches=(TreeBranch((0.5, 0.8), (0.8, 0.4), parent_index=2),))
         with self.assertRaises(ValueError):
-            TreeSkeleton(leaf_clusters=(TreeLeafCluster((0.5, 0.4), branch_index=1),))
+            TreeSkeleton(branches=(), leaf_clusters=(TreeLeafCluster((0.5, 0.4), branch_index=1),))
 
     def test_rejects_out_of_bounds_branch_geometry(self):
         with self.assertRaises(ValueError):
@@ -46,19 +46,19 @@ class TestTreeSkeleton(unittest.TestCase):
 
     def test_png_is_anchored_to_the_same_world_ground_point_at_any_scale(self):
         skeleton = TreeSkeleton()
-        self.assertEqual(skeleton.sprite_top_left((100, 100), (100, 200), 0.5), (75.0, 0.0))
-        self.assertEqual(skeleton.sprite_top_left((100, 100), (100, 200), 1.0), (50.0, -100.0))
+        self.assertEqual(skeleton.sprite_top_left((100, 100), (100, 200), 0.5), (75.0, 1.5))
+        self.assertEqual(skeleton.sprite_top_left((100, 100), (100, 200), 1.0), (50.0, -97.0))
 
     def test_depth_anchor_uses_scaled_sprite_dimensions(self):
         skeleton = TreeSkeleton()
-        self.assertAlmostEqual(skeleton.depth_y((100, 100), (100, 200), 0.5), 96.0)
-        self.assertAlmostEqual(skeleton.depth_y((100, 100), (100, 200), 1.0), 92.0)
+        self.assertAlmostEqual(skeleton.depth_y((100, 100), (100, 200), 0.5), 97.0)
+        self.assertAlmostEqual(skeleton.depth_y((100, 100), (100, 200), 1.0), 94.0)
 
     def test_trunk_collision_is_independent_from_canopy_dimensions(self):
         skeleton = TreeSkeleton()
         self.assertEqual(
             skeleton.trunk_collision_bounds((100, 100), (100, 200), 0.5),
-            (95.0, 78.0, 10.0, 20.0),
+            (94.5, 83.5, 11.0, 16.0),
         )
 
     def test_rejects_out_of_bounds_normalized_geometry(self):
