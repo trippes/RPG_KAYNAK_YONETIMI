@@ -53,6 +53,7 @@ class HexWorldView:
         self._character_visual_loaded = False
         self._character_animator = None
         self._character_asset = None
+        self._terrain_texture_cache = {}
         self._zoom = 1.0
         self._movement_path = ()
         self._movement_elapsed = 0.0
@@ -107,12 +108,17 @@ class HexWorldView:
             required = set(asset.terrain_types)
             if asset.placement not in layers or not required or not required.issubset(adjacent):
                 continue
-            path = self._presentation_catalog.resolve_path(asset.asset_id)
-            if path is None or not path.is_file():
-                continue
-            try:
-                image = self._asset_manager.load_image(asset.asset_id, path, alpha=True)
-            except (OSError, RuntimeError, ValueError):
+            if asset.asset_id not in self._terrain_texture_cache:
+                path = self._presentation_catalog.resolve_path(asset.asset_id)
+                image = None
+                if path is not None and path.is_file():
+                    try:
+                        image = self._asset_manager.load_image(asset.asset_id, path, alpha=True)
+                    except (OSError, RuntimeError, ValueError):
+                        image = None
+                self._terrain_texture_cache[asset.asset_id] = image
+            image = self._terrain_texture_cache[asset.asset_id]
+            if image is None:
                 continue
             selected.append((layers[asset.placement], asset.asset_id, image))
         selected.sort(key=lambda item: (item[0], item[1]))
