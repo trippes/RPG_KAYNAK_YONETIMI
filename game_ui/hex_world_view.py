@@ -11,6 +11,9 @@ from pathlib import Path
 
 from game_ui.assets.asset_definition import AssetCatalog, AssetCatalogError
 from game_ui.assets.asset_manager import AssetManager
+from game_ui.assets.animation import Animation
+from game_ui.assets.sprite_sheet import SpriteSheet
+from game_ui.world_rendering.character_animation import CharacterAnimator
 from game_ui.world_rendering.scene_object import SceneObject, SceneObjectRenderer
 from application.hex_world_runtime import HexWorldRuntime
 from core.domain.spatial import (
@@ -47,6 +50,9 @@ class HexWorldView:
         self._presentation_catalog = None
         self._presentation_assets_loaded = False
         self._asset_manager = None
+        self._character_visual_loaded = False
+        self._character_animator = None
+        self._character_asset = None
         self._zoom = 1.0
         self._movement_path = ()
         self._movement_elapsed = 0.0
@@ -111,6 +117,73 @@ class HexWorldView:
             selected.append((layers[asset.placement], asset.asset_id, image))
         selected.sort(key=lambda item: (item[0], item[1]))
         return tuple(item[2] for item in selected)
+
+    def _load_character_visual(self):
+        """Build directional sprite animations from optional content metadata."""
+        if self._character_visual_loaded:
+            return
+        self._character_visual_loaded = True
+        if self._presentation_catalog is None or self._asset_manager is None:
+            return
+        asset = (
+            self._presentation_catalog.get("player")
+            or self._presentation_catalog.get("character.player")
+        )
+        if asset is None:
+            return
+        path = self._presentation_catalog.resolve_path(asset.asset_id)
+        if path is None or not path.is_file():
+            return
+        try:
+            surface = self._asset_manager.load_image(asset.asset_id, path, alpha=True)
+            sheet_data = asset.sheet or {}
+            if sheet_data:
+                sheet = SpriteSheet(
+                    surface, int(sheet_data["frame_width"]),
+                    int(sheet_data["frame_height"]),
+                )
+                frame_getter = sheet.frame
+            else:
+                frame_getter = lambda index: surface if index == 0 else None
+            definitions = asset.animations or {
+                "south": {"idle": {"frames": [0], "frame_duration": 0.5}}
+            }
+            animations = {}
+            for direction, states in definitions.items():
+                animations[direction] = {}
+                for state, definition in states.items():
+                    indices = definition.get("frames", [0])
+                    frames = tuple(frame_getter(int(index)) for index in indices)
+                    if not frames or any(frame is None for frame in frames):
+                        raise ValueError("Character animation references an invalid frame.")
+                    animations[direction][state] = Animation(
+                        frames, float(definition.get("frame_duration", 0.12)),
+                        loop=bool(definition.get("loop", True)),
+                    )
+            self._character_animator = CharacterAnimator(animations)
+            self._character_asset = asset
+        except (KeyError, TypeError, ValueError, OSError, RuntimeError):
+            self._character_animator = None
+            self._character_asset = None
+
+    def _player_facing(self):
+        if not self._movement_path or len(self._movement_path) < 2:
+            return None
+        elapsed = min(
+            self._movement_elapsed,
+            (len(self._movement_path) - 1) * self._movement_step_seconds,
+        )
+        segment = min(
+            int(elapsed / self._movement_step_seconds),
+            len(self._movement_path) - 2,
+        )
+        start, end = self._movement_path[segment:segment + 2]
+        delta = (end.q - start.q, end.r - start.r)
+        return {
+            (1, -1): "north_east", (1, 0): "east",
+            (0, 1): "south_east", (-1, 1): "south_west",
+            (-1, 0): "west", (0, -1): "north_west",
+        }.get(delta)
 
     def enter(self):
         if self.active:
@@ -233,6 +306,8 @@ class HexWorldView:
 
     def update(self, elapsed_seconds):
         self._frame_elapsed = max(0.0, float(elapsed_seconds))
+        if self._character_animator is not None:
+            self._character_animator.update(self._frame_elapsed)
         if not self._movement_path or elapsed_seconds <= 0:
             return
         self._movement_elapsed += float(elapsed_seconds)
@@ -383,6 +458,7 @@ class HexWorldView:
         renderer.frame(definition.name, 0)
         render_radius = self._hex_size * self._zoom
         self._load_presentation_assets(renderer.pg)
+        self._load_character_visual()
 
         for cell in sorted(definition.valid_cells, key=lambda item: (item.r, item.q)):
             if not self._terrain_renderer.is_visible(centers[cell], render_radius, renderer.width, renderer.height):
@@ -441,10 +517,28 @@ class HexWorldView:
                             move_start[0] + (move_end[0] - move_start[0]) * progress,
                             move_start[1] + (move_end[1] - move_start[1]) * progress,
                         )
-                HexCharacterRenderer.draw(
-                    renderer, player_center, render_radius,
-                    self._movement_elapsed, moving=bool(self._movement_path),
+                if self._character_animator is not None and self._character_asset is not None:
+                    facing = self._player_facing()
+                    self._character_animator.select(
+                        direction=facing or "south",
+                        state="walk" if self._movement_path else "idle",
+                    )
+                frame = (
+                    self._character_animator.current_frame
+                    if self._character_animator is not None else None
                 )
+                if frame is not None:
+                    HexCharacterRenderer.draw_sprite(
+                        renderer, frame,
+                        (player_center[0], player_center[1] + render_radius * 0.28),
+                        render_radius * self._character_asset.scale,
+                        anchor=self._character_asset.anchor,
+                    )
+                else:
+                    HexCharacterRenderer.draw(
+                        renderer, player_center, render_radius,
+                        self._movement_elapsed, moving=bool(self._movement_path),
+                    )
 
         renderer.text(
             f"Harita: {definition.name}   Axial: q={entity.position.cell.q}, r={entity.position.cell.r}",
