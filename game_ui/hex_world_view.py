@@ -28,6 +28,7 @@ from game_ui.world_rendering.terrain_renderer import HexTerrainRenderer
 from game_ui.world_rendering.depth_sorter import DepthSorter
 from game_ui.world_rendering.tree_skeleton import DEFAULT_TREE_SKELETON
 from game_ui.world_rendering.tree_atlas import TreePartsAtlas, TreeAtlasError
+from game_ui.world_rendering.tree_rig_renderer import TreeRigRenderer
 from application.content_loader import load_content_package
 
 
@@ -55,6 +56,7 @@ class HexWorldView:
         self._asset_manager = None
         self._scene_object_renderer = None
         self._tree_parts_atlas = None
+        self._tree_rig_renderer = TreeRigRenderer()
         self._character_visual_loaded = False
         self._character_animator = None
         self._character_asset = None
@@ -508,7 +510,19 @@ class HexWorldView:
                 obj, (0, 0, renderer.width, renderer.height), self._zoom
             ):
                 return
-            self._scene_object_renderer.draw(renderer, obj, anchor, self._zoom)
+            rig_drawn = False
+            if skeleton is not None and self._tree_parts_atlas is not None:
+                rig_drawn = self._tree_rig_renderer.draw(
+                    renderer,
+                    self._tree_parts_atlas,
+                    skeleton,
+                    anchor,
+                    (visual_width, visual_height),
+                    self._zoom,
+                    self._environment_time,
+                )
+            if not rig_drawn:
+                self._scene_object_renderer.draw(renderer, obj, anchor, self._zoom)
             self._draw_tree_debug(renderer, placement, asset, anchor, image)
             return
         # Missing artwork uses deterministic procedural silhouettes. This keeps
