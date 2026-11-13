@@ -168,7 +168,7 @@ class TestHexWorldRuntime(unittest.TestCase):
         )
         outbound = runtime.transition("hero", "forest_to_clearing")
         self.assertTrue(outbound.success)
-        self.assertEqual(outbound.position, EntityPosition("hex_clearing_demo", LocalHexPosition(-1, 0)))
+        self.assertEqual(outbound.position, EntityPosition("hex_clearing_demo", LocalHexPosition(-8, 0)))
         inbound = runtime.transition("hero", "clearing_to_forest")
         self.assertTrue(inbound.success)
         self.assertEqual(inbound.position, EntityPosition("hex_forest_demo", LocalHexPosition(8, 0)))
