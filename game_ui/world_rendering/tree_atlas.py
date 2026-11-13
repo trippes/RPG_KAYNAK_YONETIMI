@@ -12,9 +12,10 @@ class TreeAtlasError(ValueError):
 class TreePartsAtlas:
     """Loads atlas regions as independent, cached Pygame surfaces."""
 
-    def __init__(self, source, components):
+    def __init__(self, source, components, rig_layers=()):
         self.source = source
         self.components = dict(components)
+        self.rig_layers = tuple(rig_layers)
 
     @classmethod
     def load(cls, pygame_module, atlas_path, manifest_path):
@@ -55,7 +56,50 @@ class TreePartsAtlas:
             }
         if not components:
             raise TreeAtlasError("Tree atlas manifest contains no components.")
-        return cls(image, components)
+        rig_layers = manifest.get("rig_layers", ())
+        if not isinstance(rig_layers, list):
+            raise TreeAtlasError("Tree atlas rig_layers must be a list.")
+        validated_layers = []
+        for layer in rig_layers:
+            if not isinstance(layer, dict):
+                raise TreeAtlasError("Every tree rig layer must be an object.")
+            component_id = layer.get("component_id")
+            if component_id not in components:
+                raise TreeAtlasError(
+                    f"Tree rig layer references missing component: {component_id}."
+                )
+            for field in ("anchor", "pivot", "size"):
+                value = layer.get(field)
+                if (
+                    not isinstance(value, list) or len(value) != 2
+                    or any(
+                        isinstance(number, bool)
+                        or not isinstance(number, (int, float))
+                        or not 0.0 <= number <= 1.0
+                        for number in value
+                    )
+                ):
+                    raise TreeAtlasError(
+                        f"Tree rig layer {component_id} has invalid {field}."
+                    )
+            if any(number <= 0 for number in layer["size"]):
+                raise TreeAtlasError(
+                    f"Tree rig layer {component_id} must have positive size."
+                )
+            order = layer.get("order", 0)
+            if isinstance(order, bool) or not isinstance(order, int):
+                raise TreeAtlasError(
+                    f"Tree rig layer {component_id} has invalid order."
+                )
+            motion = layer.get("motion", {"kind": "none"})
+            if not isinstance(motion, dict) or motion.get(
+                "kind", "none"
+            ) not in {"none", "trunk", "branch", "leaf"}:
+                raise TreeAtlasError(
+                    f"Tree rig layer {component_id} has invalid motion."
+                )
+            validated_layers.append(dict(layer))
+        return cls(image, components, validated_layers)
 
     def get(self, component_id):
         entry = self.components.get(component_id)
