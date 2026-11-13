@@ -56,7 +56,7 @@ class TreePartsAtlas:
             }
         if not components:
             raise TreeAtlasError("Tree atlas manifest contains no components.")
-        rig_layers = manifest.get("rig_layers", ())
+        rig_layers = manifest.get("rig_layers", [])
         if not isinstance(rig_layers, list):
             raise TreeAtlasError("Tree atlas rig_layers must be a list.")
         validated_layers = []
