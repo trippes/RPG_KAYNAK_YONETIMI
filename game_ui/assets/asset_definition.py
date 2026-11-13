@@ -354,10 +354,14 @@ class AssetCatalog:
         return self._validation_issues
 
     def available(self, asset_id):
-        if self.get(asset_id) is None:
-            return False
-        has_file_issue = any(issue.asset_id == asset_id for issue in self._validation_issues)
-        return self.source_size(asset_id) is not None and not has_file_issue
+        """Return whether the referenced file exists (legacy runtime semantics)."""
+        path = self.resolve_path(asset_id)
+        return path is not None and path.is_file()
+
+    def is_valid(self, asset_id: str) -> bool:
+        """Return whether the source PNG passed the cached catalog checks."""
+        self.require(asset_id)
+        return not any(issue.asset_id == asset_id for issue in self._validation_issues)
 
     def objects_for_map(self, map_id):
         return tuple(item for item in self.objects if item.map_id == map_id)
