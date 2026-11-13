@@ -473,7 +473,7 @@ class HexWorldView:
                             layer=asset.placement,
                         )
                         if SceneObjectRenderer.is_visible(
-                            obj, (0, 0, renderer.width, renderer.height)
+                            obj, (0, 0, renderer.width, renderer.height), self._zoom
                         ):
                             self._scene_object_renderer.draw(
                                 renderer, obj, center, self._zoom
