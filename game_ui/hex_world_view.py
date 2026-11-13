@@ -14,6 +14,7 @@ from core.domain.spatial import (
 )
 from core.domain.spatial.hex_geometry import axial_to_pixel
 from game_ui.world_transform import WorldTransform
+from game_ui.world_rendering.camera import HexCamera
 from game_ui.world_rendering.terrain_renderer import HexTerrainRenderer
 from game_ui.world_rendering.depth_sorter import DepthSorter
 from application.content_loader import load_content_package
@@ -42,6 +43,10 @@ class HexWorldView:
         self._movement_path = ()
         self._movement_elapsed = 0.0
         self._movement_step_seconds = 0.18
+        self._camera = HexCamera()
+        self._mouse_position = None
+        self._viewport_size = (960, 640)
+        self._frame_elapsed = 0.0
 
     def _load_package(self):
         if self._package is None:
@@ -84,6 +89,9 @@ class HexWorldView:
                 MovementProfile(),
             )
             self.selected = start
+            self._movement_path = ()
+            self._movement_elapsed = 0.0
+            self._camera = HexCamera()
             self.active = True
             self.message = "Altıgen dünyaya geçildi. Bağlı haritalara sınırdan geçebilirsin. H: kare dünyaya dön."
             return True
@@ -99,6 +107,8 @@ class HexWorldView:
         self.entity_id = None
         self.selected = None
         self.active = False
+        self._movement_path = ()
+        self._camera = HexCamera()
         self.message = "Kare dünyaya geri dönüldü."
 
     def _entity(self):
@@ -168,6 +178,7 @@ class HexWorldView:
         self._movement_elapsed = 0.0
 
     def update(self, elapsed_seconds):
+        self._frame_elapsed = max(0.0, float(elapsed_seconds))
         if not self._movement_path or elapsed_seconds <= 0:
             return
         self._movement_elapsed += float(elapsed_seconds)
@@ -179,6 +190,7 @@ class HexWorldView:
     def handle(self, state):
         if not self.active:
             return None
+        self._mouse_position = state.mouse_pos
         if state.mouse_wheel:
             self._zoom = max(0.75, min(1.8, self._zoom + state.mouse_wheel * 0.1))
             self.message = f"Yakınlaştırma: {self._zoom:.1f}x"
@@ -208,30 +220,51 @@ class HexWorldView:
         # Enter does not change maps; travel is triggered by crossing a linked boundary.
         return None
 
+    def _visual_player_world_position(self):
+        entity = self._entity()
+        cell = entity.position.cell
+        if not self._movement_path:
+            return axial_to_pixel(HexCoord(cell.q, cell.r), self._hex_size)
+        duration = (len(self._movement_path) - 1) * self._movement_step_seconds
+        elapsed = min(self._movement_elapsed, duration)
+        segment = min(int(elapsed / self._movement_step_seconds), len(self._movement_path) - 2)
+        progress = min(1.0, (elapsed - segment * self._movement_step_seconds) / self._movement_step_seconds)
+        start = self._movement_path[segment]
+        end = self._movement_path[segment + 1]
+        start_x, start_y = axial_to_pixel(HexCoord(start.q, start.r), self._hex_size)
+        end_x, end_y = axial_to_pixel(HexCoord(end.q, end.r), self._hex_size)
+        return (
+            start_x + (end_x - start_x) * progress,
+            start_y + (end_y - start_y) * progress,
+        )
+
     def _layout(self, definition, renderer):
-        unit_centers = {
-            cell: axial_to_pixel(HexCoord(cell.q, cell.r), 1)
+        # Keep a stable world scale; the camera reveals a viewport-sized part
+        # of the map instead of shrinking the entire region into a small panel.
+        size = float(self.HEX_RADIUS)
+        self._hex_size = size
+        self._center = (renderer.width / 2.0, renderer.height / 2.0)
+        world_centers = {
+            cell: axial_to_pixel(HexCoord(cell.q, cell.r), size)
             for cell in definition.valid_cells
         }
-        min_x = min(point[0] for point in unit_centers.values())
-        max_x = max(point[0] for point in unit_centers.values())
-        min_y = min(point[1] for point in unit_centers.values())
-        max_y = max(point[1] for point in unit_centers.values())
-        span_x = max(1.0, max_x - min_x + math.sqrt(3))
-        span_y = max(1.0, max_y - min_y + 2.0)
-        size = min(
-            float(self.HEX_RADIUS),
-            max(12.0, (renderer.width - 100) / span_x),
-            max(12.0, (renderer.height - 190) / span_y),
+        xs = [point[0] for point in world_centers.values()]
+        ys = [point[1] for point in world_centers.values()]
+        radius_x = math.sqrt(3) * size
+        radius_y = 2.0 * size
+        bounds = (
+            min(xs) - radius_x, min(ys) - radius_y,
+            max(xs) + radius_x, max(ys) + radius_y,
         )
-        self._hex_size = size
-        self._center = (renderer.width // 2, renderer.height // 2 + 4)
-        camera_x = camera_y = 0.0
-        if self._zoom > 1.0:
-            player_cell = self._entity().position.cell
-            camera_x, camera_y = axial_to_pixel(HexCoord(player_cell.q, player_cell.r), size)
+        target = self._visual_player_world_position()
+        self._camera.update(
+            target, self._mouse_position, (renderer.width, renderer.height),
+            bounds, self._zoom, self._frame_elapsed,
+        )
+        self._frame_elapsed = 0.0
+        self._viewport_size = (renderer.width, renderer.height)
         self._world_transform.configure(
-            hex_size=size, camera_x=camera_x, camera_y=camera_y,
+            hex_size=size, camera_x=self._camera.x, camera_y=self._camera.y,
             viewport_center=self._center, zoom=self._zoom,
         )
         return {

@@ -131,6 +131,18 @@ class TestHexWorldView(unittest.TestCase):
         self.view.handle(InputState(mouse_wheel=-20))
         self.assertEqual(self.view._zoom, 0.75)
 
+    def test_default_zoom_camera_follows_player_and_uses_full_viewport_center(self):
+        self.assertTrue(self.view.enter())
+        class FakeRenderer:
+            width = 1280
+            height = 720
+        self.view._mouse_position = (640, 360)
+        centers = self.view._layout(self.view._map(), FakeRenderer())
+        self.assertEqual(self.view._center, (640.0, 360.0))
+        self.assertEqual(self.view._camera.x, 0.0)
+        self.assertEqual(self.view._camera.y, 0.0)
+        self.assertIn(LocalHexPosition(0, 0), centers)
+
     def test_render_composes_zoomed_terrain_and_world_entities(self):
         class FakeDraw:
             polygons = 0

@@ -21,7 +21,9 @@ The runtime continues to own discrete cell movement and authoritative entity pos
 ## Camera and input
 
 - Mouse wheel adjusts hex-world zoom within a bounded range.
-- At zoom levels above the default, the camera follows the active player.
+- The camera follows the rendered/interpolated player position at every zoom level.
+- Camera follow is time-based and smooth; mouse edge scrolling temporarily enables free-look and leaving the edge resumes player follow.
+- The world viewport uses the full game surface and keeps a stable hex scale instead of shrinking the complete map to fit.
 - Mouse selection first reverses the screen/camera/zoom transform and then resolves the nearest axial cell.
 - Existing hex movement controls and authored map-boundary transitions remain runtime-driven.
 

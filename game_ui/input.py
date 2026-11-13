@@ -129,6 +129,13 @@ class InputMapper:
                 if character and character.isprintable():
                     state.text += character
 
+        # Camera edge-scrolling needs a current pointer position every frame,
+        # not only on frames that receive a mouse event.
+        mouse = getattr(self.backend, "mouse", None)
+        get_pos = getattr(mouse, "get_pos", None)
+        if get_pos is not None:
+            state.mouse_pos = get_pos()
+
         return state
 
     def _key_name(self, key) -> str:
