@@ -100,11 +100,15 @@ class TreeLeafCluster:
             raise ValueError("leaf_cluster.branch_index must be a non-negative index or None.")
 
 
+_DEFAULT_TRUNK = TreeBranch(
+    (0.50, 0.985), (0.50, 0.68),
+    thickness=0.18, sway_weight=0.08, phase=0.4,
+)
 _DEFAULT_BRANCHES = (
-    TreeBranch((0.50, 0.78), (0.22, 0.48), thickness=0.12, sway_weight=0.35),
-    TreeBranch((0.50, 0.70), (0.78, 0.42), thickness=0.11, sway_weight=0.35),
-    TreeBranch((0.48, 0.56), (0.34, 0.25), thickness=0.08, sway_weight=0.65, parent_index=0),
-    TreeBranch((0.72, 0.48), (0.88, 0.22), thickness=0.07, sway_weight=0.65, parent_index=1),
+    TreeBranch((0.50, 0.78), (0.22, 0.48), thickness=0.12, sway_weight=0.30, phase=0.2),
+    TreeBranch((0.50, 0.76), (0.78, 0.42), thickness=0.11, sway_weight=0.32, phase=1.1),
+    TreeBranch((0.22, 0.48), (0.34, 0.25), thickness=0.075, sway_weight=0.62, phase=2.0, parent_index=0),
+    TreeBranch((0.78, 0.42), (0.88, 0.22), thickness=0.07, sway_weight=0.66, phase=3.0, parent_index=1),
 )
 _DEFAULT_LEAF_CLUSTERS = (
     TreeLeafCluster((0.22, 0.48), radius=0.18, phase=0.0, branch_index=0),
@@ -128,6 +132,7 @@ class TreeSkeleton:
     depth_anchor: tuple[float, float] = (0.5, 0.955)
     trunk_collision: tuple[float, float, float, float] = (0.39, 0.82, 0.22, 0.16)
     canopy_bounds: tuple[float, float, float, float] = (0.03, 0.02, 0.94, 0.76)
+    trunk: TreeBranch = _DEFAULT_TRUNK
     branches: tuple[TreeBranch, ...] = _DEFAULT_BRANCHES
     leaf_clusters: tuple[TreeLeafCluster, ...] = _DEFAULT_LEAF_CLUSTERS
     wind_response: float = 0.7
@@ -138,15 +143,17 @@ class TreeSkeleton:
         object.__setattr__(self, "depth_anchor", _point(self.depth_anchor, "depth_anchor"))
         object.__setattr__(self, "trunk_collision", _rect(self.trunk_collision, "trunk_collision"))
         object.__setattr__(self, "canopy_bounds", _rect(self.canopy_bounds, "canopy_bounds"))
+        if not isinstance(self.trunk, TreeBranch):
+            raise ValueError("trunk must be a TreeBranch.")
         branches = tuple(self.branches)
         leaves = tuple(self.leaf_clusters)
         if any(not isinstance(branch, TreeBranch) for branch in branches):
             raise ValueError("branches must contain TreeBranch values.")
         if any(not isinstance(cluster, TreeLeafCluster) for cluster in leaves):
             raise ValueError("leaf_clusters must contain TreeLeafCluster values.")
-        for branch in branches:
-            if branch.parent_index is not None and branch.parent_index >= len(branches):
-                raise ValueError("branch.parent_index refers to a missing branch.")
+        for index, branch in enumerate(branches):
+            if branch.parent_index is not None and branch.parent_index >= index:
+                raise ValueError("branch.parent_index must refer to an earlier branch.")
         for cluster in leaves:
             if cluster.branch_index is not None and cluster.branch_index >= len(branches):
                 raise ValueError("leaf_cluster.branch_index refers to a missing branch.")
@@ -161,6 +168,72 @@ class TreeSkeleton:
         ):
             raise ValueError("sway_frequency must be a finite non-negative number.")
         object.__setattr__(self, "sway_frequency", float(self.sway_frequency))
+
+    def _sway_offset(self, weight, phase, time_seconds):
+        """Small local-space wind displacement; roots remain anchored."""
+        angle = time_seconds * self.sway_frequency + phase
+        amplitude = self.wind_response * weight
+        return (
+            math.sin(angle) * amplitude * 0.014,
+            math.cos(angle * 0.83) * amplitude * 0.004,
+        )
+
+    def animated_trunk_points(self, time_seconds):
+        """Return trunk endpoints with a restrained top sway and fixed ground root."""
+        offset = self._sway_offset(
+            self.trunk.sway_weight, self.trunk.phase, time_seconds
+        )
+        return self.trunk.start, (
+            self.trunk.end[0] + offset[0],
+            self.trunk.end[1] + offset[1],
+        )
+
+    def animated_branch_points(self, index, time_seconds):
+        """Return a branch pose, inheriting its parent's endpoint movement."""
+        if not 0 <= index < len(self.branches):
+            raise IndexError("branch index is outside this skeleton.")
+        branch = self.branches[index]
+        inherited = (0.0, 0.0)
+        if branch.parent_index is not None:
+            _, parent_end = self.animated_branch_points(
+                branch.parent_index, time_seconds
+            )
+            parent = self.branches[branch.parent_index]
+            inherited = (
+                parent_end[0] - parent.end[0],
+                parent_end[1] - parent.end[1],
+            )
+        sway = self._sway_offset(branch.sway_weight, branch.phase, time_seconds)
+        return (
+            (branch.start[0] + inherited[0], branch.start[1] + inherited[1]),
+            (
+                branch.end[0] + inherited[0] + sway[0],
+                branch.end[1] + inherited[1] + sway[1],
+            ),
+        )
+
+    def animated_leaf_anchor(self, index, time_seconds):
+        """Return foliage position following its parent branch plus its own wind."""
+        if not 0 <= index < len(self.leaf_clusters):
+            raise IndexError("leaf cluster index is outside this skeleton.")
+        cluster = self.leaf_clusters[index]
+        inherited = (0.0, 0.0)
+        if cluster.branch_index is not None:
+            _, endpoint = self.animated_branch_points(
+                cluster.branch_index, time_seconds
+            )
+            branch = self.branches[cluster.branch_index]
+            inherited = (
+                endpoint[0] - branch.end[0],
+                endpoint[1] - branch.end[1],
+            )
+        sway = self._sway_offset(
+            cluster.sway_weight, cluster.phase, time_seconds
+        )
+        return (
+            cluster.anchor[0] + inherited[0] + sway[0],
+            cluster.anchor[1] + inherited[1] + sway[1],
+        )
 
     def sprite_top_left(self, world_anchor, sprite_size, scale=1.0):
         """Return the artwork's top-left world point for its ground anchor."""
