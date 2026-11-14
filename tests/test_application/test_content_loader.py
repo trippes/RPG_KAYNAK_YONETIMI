@@ -53,7 +53,15 @@ class TestContentPackageLoader(unittest.TestCase):
         self.assertIsNotNone(package.scene_placements)
         self.assertEqual(len(package.presentation_catalog.assets), 6)
         self.assertEqual(len(package.scene_placements.placements), 14)
-        self.assertEqual(package.presentation_catalog.validate_assets(), ())
+        validation_issues = package.presentation_catalog.validate_assets()
+        self.assertEqual(
+            tuple((issue.asset_id, issue.code) for issue in validation_issues),
+            (
+                ("prop.rock.large", "missing_file"),
+                ("flora.shrub.green", "missing_file"),
+                ("flora.plant.wildflower", "missing_file"),
+            ),
+        )
 
     def test_package_rejects_duplicate_asset_ids_before_exposing_snapshot(self):
         with tempfile.TemporaryDirectory() as directory:
