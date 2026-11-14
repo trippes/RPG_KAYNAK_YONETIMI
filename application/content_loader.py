@@ -30,6 +30,8 @@ class ContentPackage:
     presentation_assets_path: Path | None = None
     asset_catalog_path: Path | None = None
     map_placements_path: Path | None = None
+    presentation_catalog: object | None = None
+    scene_placements: object | None = None
 
 
 def _load_hex_maps(maps_root: Path, square_maps: Mapping[str, object]) -> dict[str, object]:
@@ -242,6 +244,44 @@ def load_content_package(package_dir: str | Path) -> ContentPackage:
         if not map_placements_path.is_dir():
             raise ContentPackageError(f"Map placements directory could not be loaded: {map_placements_path}")
 
+    # Build a complete presentation snapshot before exposing the package.
+    # Missing/corrupt PNGs remain non-fatal catalog diagnostics so the existing
+    # deterministic renderer fallback can operate; malformed metadata and broken
+    # placement references reject the package as a whole.
+    presentation_catalog = None
+    scene_placements = None
+    if asset_catalog_path is not None or presentation_assets_path is not None:
+        from game_ui.assets.asset_definition import AssetCatalog, AssetCatalogError
+        from game_ui.assets.placement_catalog import (
+            ScenePlacementCatalog,
+            ScenePlacementCatalogError,
+        )
+
+        try:
+            if asset_catalog_path is not None:
+                presentation_catalog = AssetCatalog.load(asset_catalog_path)
+                scene_placements = ScenePlacementCatalog.load_directory(
+                    map_placements_path,
+                    presentation_catalog,
+                    valid_map_ids=set(hexes),
+                )
+            else:
+                presentation_catalog = AssetCatalog.load(presentation_assets_path)
+                known_map_ids = set(hexes)
+                unknown_maps = sorted({
+                    item.map_id for item in presentation_catalog.objects
+                    if item.map_id not in known_map_ids
+                })
+                if unknown_maps:
+                    raise ValueError(
+                        "Legacy placements reference unknown hex maps: "
+                        + ", ".join(unknown_maps)
+                    )
+        except (AssetCatalogError, ScenePlacementCatalogError, OSError, ValueError) as error:
+            raise ContentPackageError(
+                f"Invalid presentation content in package '{package_id}': {error}"
+            ) from error
+
     return ContentPackage(
         package_id,
         package_version,
@@ -253,4 +293,6 @@ def load_content_package(package_dir: str | Path) -> ContentPackage:
         presentation_assets_path,
         asset_catalog_path,
         map_placements_path,
+        presentation_catalog,
+        scene_placements,
     )
