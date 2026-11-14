@@ -112,6 +112,23 @@ class TestPresentationContentService(unittest.TestCase):
         self.assertEqual(self.service.get_asset(draft["assets"][0]["asset_id"]).category, "service-test")
         self.assertTrue((self.root / "asset_catalog.json.bak").is_file())
 
+    def test_placement_save_uses_safe_store_and_refreshes_package_snapshot(self):
+        path = self.root / "placements" / "hex_forest_demo.json"
+        draft = self.read_json(path)
+        draft["objects"][0]["offset_y"] = -3.5
+        object_id = draft["objects"][0]["object_id"]
+
+        result = self.service.save_map_placements("hex_forest_demo", draft)
+
+        self.assertEqual(result.written_paths, (path.resolve(),))
+        self.assertTrue(path.with_name(path.name + ".bak").is_file())
+        self.assertEqual(self.read_json(path), draft)
+        saved = next(
+            item for item in self.service.load_map_placements("hex_forest_demo")
+            if item.object_id == object_id
+        )
+        self.assertEqual(saved.offset_y, -3.5)
+
     def test_migration_status_is_read_only_for_split_package(self):
         before = (self.root / "manifest.json").read_bytes()
 
