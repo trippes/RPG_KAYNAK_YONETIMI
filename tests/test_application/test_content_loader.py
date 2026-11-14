@@ -77,6 +77,18 @@ class TestContentPackageLoader(unittest.TestCase):
             with self.assertRaisesRegex(ContentPackageError, "unknown map"):
                 load_content_package(root)
 
+    def test_package_rejects_placement_coordinates_outside_map_cells(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = self._copy_demo_package(directory)
+            placement_path = root / "placements" / "hex_forest_demo.json"
+            payload = json.loads(placement_path.read_text(encoding="utf-8"))
+            payload["objects"][0]["q"] = 9999
+            payload["objects"][0]["r"] = 9999
+            placement_path.write_text(json.dumps(payload), encoding="utf-8")
+
+            with self.assertRaisesRegex(ContentPackageError, "outside map"):
+                load_content_package(root)
+
     def test_missing_png_is_reported_but_keeps_existing_fallback_path(self):
         with tempfile.TemporaryDirectory() as directory:
             root = self._copy_demo_package(directory)
