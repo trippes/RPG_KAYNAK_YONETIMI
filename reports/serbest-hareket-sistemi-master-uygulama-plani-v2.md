@@ -57,6 +57,8 @@ Bu commit'in ebeveyni `a8aed387cb71e96037c0d67bdc000f77c8314c4e` idi. Dal HEAD'i
 | Core uzamsal model | `core/domain/spatial/position.py`, `local_hex_position.py`, `world_hex_position.py`, `hex_geometry.py`, `movement.py` |
 | Dünya ve NPC | `world/local_map.py`, `world/movement.py`, `npc/npc.py`, harita ve içerik tanımları |
 | Kayıt ve zaman | `application/save_document.py`, `actor_persistence.py`, `migrations.py`, `core/time/tick.py`, zaman ve simulation mimari belgeleri |
+
+**Dizin yapısı notu:** İstenen `inventory/` ve `save/` adlarında kök dizinler bu branch tree'sinde bulunmuyor. Envanter domain'i `resources/inventory.py` altında; kayıt/persistence akışı `application/actor_persistence.py`, `application/save_document.py`, `application/migrations.py`, `application/game_application.py` ve `application/save_*` dosyaları altında. Denetim bu gerçek dosya yerleşimine göre yapıldı.
 | Testler | `tests/test_application/test_movement.py`, `test_hex_movement_rules.py`, `tests/test_game_ui/test_hex_camera.py`, `test_depth_sorter.py`, ilgili MainScreen, world-transform, geçiş ve persistence test grupları |
 | Mimari belgeler | `docs/architecture/09-time-model.md`, `13-simulation-runtime.md`, `41-hex-movement-stage4.md`, `42-main-screen-hex-runtime-integration.md`, `46-presentation-geometry-contract.md`, Master Roadmap ve mevcut serbest hareket raporu |
 
