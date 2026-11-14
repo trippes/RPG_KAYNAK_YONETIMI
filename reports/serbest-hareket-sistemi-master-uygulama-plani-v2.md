@@ -11,6 +11,12 @@
 
 ---
 
+## Kullanıcı tarafından kesinleştirilen canon harita kararı
+
+**Altıgen harita canon haritadır.** Kare harita ilk deneysel harita olarak kalır ve yeni serbest hareket sisteminin hedefi değildir. Bu karar Aşama 0'da yeniden tartışmaya açılmayacaktır; Aşama 0'ın görevi bu kararı teknik koordinat/ownership sözleşmesine dönüştürmek ve hex runtime baseline'ını doğrulamaktır. Yeni fiziksel hareketin authoritative entegrasyon noktası `HexWorldView` + `HexWorldRuntime` olacaktır. `MainScreen` yalnız legacy/prototip regresyon kapsamındadır.
+
+---
+
 # 1. Yönetici özeti
 
 Eldoria'da tek bir hareket sistemi yoktur. Denetlenen dalda birbirinden ayrılmış iki yerel oynanış yolu bulunuyor:
@@ -252,7 +258,7 @@ Mevcut hex renderer oyuncu için `player_center[1] + render_radius * 0.28` değe
 - `InputMapper/InputState`: event action yerine sürekli held-key state.
 - `WorldActor` ve `NPC`: physical map position ve fizik gövdesi bağlama.
 - `game_application.py` restore: int cast yerine typed physical position restore.
-- Kare harita `blocked_tiles/features/landmarks` ve dünya nesnesi placement verileri: collision proxy üretimi.
+- Canon altıgen harita blocked/walkable hücreleri, hex scene-object placement ve collision metadata: hex polygon/footprint proxy üretimi.
 - HexWorldView: aynı fiziksel hareket sözleşmesini kullanacak şekilde ileride ortaklaştırma; geliştirme köprüsü ayrı kalabilir.
 - Kamera ve renderer: world coordinate, viewport ve foot anchor ortak sözleşmesi.
 
@@ -321,7 +327,7 @@ Canonical SimulationRuntime bu veri akışının dışında kalır. Oyun kuralla
 | Axial mantıksal konum | `EntityPosition + LocalHexPosition` | q/r hücre | Hex topology |
 | Ekran konumu | tuple/Vector2 | ekran pikseli | Renderer/input pointer |
 
-**Sabit dünya birimi şartı:** Render sırasında değişen `MainScreen.TILE_SIZE` fizik birimi olamaz. Fiziksel tile ölçüsü içerik/harita sözleşmesinde sabit olmalı; ekran ölçeği, zoom ve viewport yalnızca world-to-screen dönüşümünde uygulanmalıdır. Başlangıçta kare harita için bir tile = 16 world unit seçilebilir, ancak bu değer içerik boyutları ve sprite collision metadata'sıyla doğrulanmadan kodda sabitlenmemelidir.
+**Sabit dünya birimi şartı:** Fizik birimi render pixel'i veya `MainScreen.TILE_SIZE` olamaz. Canon hex haritanın `hex_geometry` orientation, origin ve hex-size sözleşmesinden bağımsız, sabit world-unit koordinat sistemi tanımlanmalıdır. Hex hücre ölçüsü world unit'e bir kez çevrilir; ekran ölçeği, zoom ve viewport yalnızca world-to-screen dönüşümünde uygulanır. Başlangıç world-unit/hex-size oranı gerçek hex content ve sprite collision metadata'sıyla doğrulanmadan sabitlenmemelidir.
 
 ## 6.3 Sorumluluk sınırları
 
@@ -550,7 +556,7 @@ Aşamalar sıralıdır. Her aşamanın tamamlanma koşulları ve test kapısı g
 
 **İncelenecek dosyalar:** `game_ui/camera.py`, `world_transform.py`, `world_rendering/camera.py`, `depth_sorter.py`, `scene_object.py`, `character_renderer.py`, `hex_world_view.py:_layout/render`.
 
-**Değiştirilecek dosyalar:** `world_transform.py`, `world_rendering/camera.py`, `depth_sorter.py`, `MainScreen` render hattı.  
+**Değiştirilecek dosyalar:** `world_transform.py`, `world_rendering/camera.py`, `depth_sorter.py`, `HexWorldView` render hattı.  
 **Yeni dosyalar:** `tests/test_game_ui/test_camera_2d.py`, `test_physical_y_sort.py` ve gerekirse `camera_2d.py`.
 
 **Sınıf/fonksiyon işleri:** Camera2D.update; world_to_screen/screen_to_world; foot_anchor; `sort_by_depth`; camera rect culling.
@@ -601,7 +607,7 @@ Aşamalar sıralıdır. Her aşamanın tamamlanma koşulları ve test kapısı g
 - Resource node identity ve location ID korunmalı.
 - Target selection fiziksel mouse world coordinate üzerinden yapılmalı.
 
-**İncelenecek dosyalar:** `MainScreen._landmark_at/_gather_at_selected_tree`, `application/gameplay_service.py`, resource node modelleri, `application/world_object_placement.py`, quest condition/query akışı.
+**İncelenecek dosyalar:** `HexWorldView` hex object/interaction picking, `application/hex_world_runtime.py`, resource node modelleri, `SceneObjectPlacement`, quest condition/query akışı.
 
 **Değiştirilecek dosyalar:** `game_ui/screens/main_screen.py`, interaction service façade ve gerektiğinde resource/quest query adapter'ları.  
 **Yeni dosyalar:** `application/spatial_query.py`, `application/interaction_range.py`, testler.
@@ -681,7 +687,7 @@ Aşamalar sıralıdır. Her aşamanın tamamlanma koşulları ve test kapısı g
 - Collision update ve render culling ayrı ölçülmeli.
 - Object allocation azaltılmalı; frame içinde gereksiz list/dict üretimi ölçülmeli.
 
-**İncelenecek dosyalar:** `physics/*`, `SceneObjectRenderer`, `HexWorldView` culling, `MainScreen` render, asset cache.
+**İncelenecek dosyalar:** `physics/*`, `SceneObjectRenderer`, `HexWorldView` culling/render, asset cache.
 
 **Değiştirilecek dosyalar:** Spatial hash ve render culling entegrasyonları.  
 **Yeni dosyalar:** `tests/test_physics/test_spatial_hash.py`, benchmark script/raporu.
@@ -734,7 +740,7 @@ flowchart TD
     A3 --> A4["4 Tile/feature collision adapter"]
     A1 --> A5["5 Camera + transform + Y-sort"]
     A2 --> A5
-    A4 --> A6["6 MainScreen fizik entegrasyonu"]
+    A4 --> A6["6 Canon HexWorldRuntime fizik entegrasyonu"]
     A5 --> A6
     A6 --> A7["7 Spatial query + interaction"]
     A3 --> A8["8 NPC ortak fizik"]
@@ -835,7 +841,7 @@ V2, bu farkları kod kanıtına göre düzelterek uygulama aşamalarını geniş
 
 Kod yazılmadan önce şu kararlar ürün/oyun tasarımı olarak onaylanmalıdır:
 
-- [ ] Serbest hareketin ilk hedefi ana kare MainScreen mi? HexWorldView de aynı sürümde mi taşınacak?
+- [x] Serbest hareketin hedefi canon altıgen dünya: `HexWorldView` + `HexWorldRuntime`. Kare `MainScreen` legacy/prototip kapsamındadır.
 - [ ] Fiziksel world unit / tile oranı (öneri: başlangıçta 1 tile = 16 world unit; içerik doğrulaması şart).
 - [ ] Oyuncu collider şekli ve yarıçapı.
 - [ ] Temel hareket hızı (world unit/second) ve varsa sprint.
