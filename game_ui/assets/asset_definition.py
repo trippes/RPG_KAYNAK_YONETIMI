@@ -254,7 +254,11 @@ class AssetCatalog:
             payload = json.loads(source.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as error:
             raise AssetCatalogError("Presentation asset catalog could not be read.") from error
-        if not isinstance(payload, dict) or payload.get("schema_version") != cls.SCHEMA_VERSION:
+        if (
+            not isinstance(payload, dict)
+            or type(payload.get("schema_version")) is not int
+            or payload.get("schema_version") != cls.SCHEMA_VERSION
+        ):
             raise AssetCatalogError("Unsupported presentation asset catalog schema.")
         records = payload.get("assets")
         object_records = payload.get("objects", [])
