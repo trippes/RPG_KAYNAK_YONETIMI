@@ -2,7 +2,7 @@
 
 ## Durum
 
-**Uygulama ve otomatik test hazırlığı tamamlandı; CI doğrulaması commit sonrasında yapılacaktır.**
+**TAMAMLANDI — Uygulama, otomatik testler ve her iki CI workflow başarıyla tamamlandı.**
 
 Çalışma yalnızca `demo_eldoria` dalında yürütülmüştür. `main` dalına işlem yapılmamıştır.
 
@@ -90,6 +90,30 @@ Aşama 8.6 yalnızca split asset catalog ve map placement dosyalarını güvenli
 
 ## 6. Doğrulama
 
-CI workflow sonuçları henüz bu raporun oluşturulduğu anda alınmamıştır. Commit sonrası Eldoria CI (Windows/Linux Python 3.11/3.12 ve Pygame headless smoke) ile Core Quality (Linux/Windows release-candidate verification) sonuçları ayrıca kontrol edilip bu rapora işlenecektir.
+<badge color="success">Başarılı</badge>
 
-Aşama 8.6, otomatik testler ve CI başarıyla tamamlanmadan kapatılmış sayılmayacaktır.
+Son kod commit'i: `51db80079071ca0bea537ee8a3c0e992a9e22215`
+
+Eldoria CI run `43594237579` — SUCCESS:
+- Ubuntu Python 3.11: 1.445 test geçti.
+- Ubuntu Python 3.12: 1.445 test geçti.
+- Windows Python 3.11: 1.445 test geçti.
+- Windows Python 3.12: 1.445 test geçti.
+- Pygame headless smoke test: SUCCESS.
+
+Core Quality run `43594237563` — SUCCESS:
+- Linux release-candidate verification: SUCCESS.
+- Windows release-candidate verification: SUCCESS.
+- Wheel build, isolated install ve application smoke adımları geçti.
+
+CI bağlantıları:
+- https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43594237579
+- https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43594237563
+
+### CI sırasında bulunan ve giderilen sorunlar
+
+1. Windows, aktif byte-range lock taşıyan `.manifest.json.lock` dosyasının staging kopyasına alınmasını engelledi. Staging kopyası bu yan dosyayı dışarıda bırakacak şekilde düzeltildi.
+2. Windows geçici dizinleri kısa ve uzun yol adlarını farklı gösterebildiği için iki testte yol karşılaştırması kanonik `Path.resolve()` üzerinden yapıldı.
+3. Düzeltmelerden sonra tam CI matrisi yeniden çalıştırıldı ve tüm sonuçlar başarıyla tamamlandı.
+
+Aşama 8.6'nın otomatik kabul ve CI kapıları tamamlanmıştır.
