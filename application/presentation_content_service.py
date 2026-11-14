@@ -184,7 +184,7 @@ class PresentationContentService:
             posix_path.is_absolute()
             or windows_path.is_absolute()
             or windows_path.drive
-            or "\\\\" in source_path
+            or "\\" in source_path
             or ".." in posix_path.parts
         ):
             raise PresentationContentServiceError(
