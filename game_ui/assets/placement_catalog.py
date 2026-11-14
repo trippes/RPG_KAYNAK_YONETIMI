@@ -8,6 +8,7 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import Mapping
 
+from core.domain.spatial import LocalHexPosition
 from game_ui.world_rendering.scene_object import SceneObjectPlacement
 
 
@@ -42,7 +43,7 @@ class ScenePlacementCatalog:
         }))
 
     @classmethod
-    def load_directory(cls, directory, asset_catalog, *, valid_map_ids=None):
+    def load_directory(cls, directory, asset_catalog, *, valid_map_ids=None, map_definitions=None):
         """Load map placements and optionally validate their target map IDs."""
         root = Path(directory).resolve()
         if not root.is_dir():
@@ -131,6 +132,18 @@ class ScenePlacementCatalog:
                         f"Placement '{placement.object_id}' references unknown asset: "
                         f"{placement.asset_id}"
                     )
+                if map_definitions is not None:
+                    map_definition = map_definitions.get(map_id)
+                    if map_definition is None:
+                        raise ScenePlacementCatalogError(
+                            f"Placement '{placement.object_id}' references unknown map: {map_id}"
+                        )
+                    position = LocalHexPosition(placement.q, placement.r)
+                    if not map_definition.has_cell(position):
+                        raise ScenePlacementCatalogError(
+                            f"Placement '{placement.object_id}' uses a cell outside map "
+                            f"'{map_id}': q={placement.q}, r={placement.r}"
+                        )
                 seen_ids.add(placement.object_id)
                 placements.append(placement)
 
