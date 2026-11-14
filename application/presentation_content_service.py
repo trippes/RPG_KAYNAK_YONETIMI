@@ -10,7 +10,7 @@ import json
 import shutil
 import tempfile
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
 from .content_loader import ContentPackage, ContentPackageError, load_content_package
 from .presentation_content_store import (
@@ -178,10 +178,25 @@ class PresentationContentService:
             return ContentMigrationStatus(source_format, None, migration_available)
         if not isinstance(source_path, str) or not source_path.strip():
             raise PresentationContentServiceError("Presentation source path is invalid.")
-        try:
-            schema_document = json.loads(
-                (self.content_root / source_path).read_text(encoding="utf-8")
+        posix_path = PurePosixPath(source_path)
+        windows_path = PureWindowsPath(source_path)
+        if (
+            posix_path.is_absolute()
+            or windows_path.is_absolute()
+            or windows_path.drive
+            or "\\\\" in source_path
+            or ".." in posix_path.parts
+        ):
+            raise PresentationContentServiceError(
+                f"Unsafe presentation schema source path: {source_path}"
             )
+        schema_path = (self.content_root / Path(*posix_path.parts)).resolve()
+        if not schema_path.is_relative_to(self.content_root) or not schema_path.is_file():
+            raise PresentationContentServiceError(
+                f"Presentation schema source is missing or outside the package: {source_path}"
+            )
+        try:
+            schema_document = json.loads(schema_path.read_text(encoding="utf-8"))
         except (OSError, UnicodeError, json.JSONDecodeError) as error:
             raise PresentationContentServiceError(
                 f"Presentation schema source could not be read: {source_path}"
