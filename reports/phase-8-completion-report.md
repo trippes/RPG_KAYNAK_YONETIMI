@@ -1,136 +1,154 @@
 # Eldoria RPG — Aşama 8 Kapanış Raporu
 
-## Durum
+<badge>**TAMAMLANDI**</badge>
 
-**KAPANIŞ BEKLİYOR — Entegrasyon/regresyon kapsamı denetlendi ve ek bir servis-kayıt entegrasyon testi eklendi. Son test commit'inin CI sonucu ve birleşik manuel oyun kabulü henüz doğrulanmadı.**
-
-- Depo: `trippes/RPG_KAYNAK_YONETIMI`
-- Çalışma dalı: `demo_eldoria`
-- Korunan dal: `main` — bu çalışma boyunca değiştirilmedi.
-- Referans plan: `reports/phase-8-content-editor-foundation-plan.md`
-- Son 8.8 test commit'i: `0e302909b3b18f265401b220698060b6399824c6`
-- Content Editor UI: geliştirilmedi; kapsam dışında tutuldu.
-
-Bu belge, otomatik doğrulama ve kullanıcı manuel kabul kapıları tamamen kapanmadan Aşama 8'i tamamlandı ilan etmez.
-
-## 1. Kapsam ve korunan mimari sınırlar
-
-Aşama 8.8 kapsamında Aşama 8.2–8.7'de oluşturulan asset catalog, placement, geometry, validation, persistence ve UI bağımsız service katmanlarının mevcut runtime ile birlikte çalışması denetlendi.
-
-Aşağıdaki sistemlerde yeniden tasarım veya kapsam dışı özellik geliştirmesi yapılmadı:
-
-- Hex geometri, axial koordinatlar, `HexWorldRuntime` ve `WorldTransform`.
-- Kamera, zoom, hareket, occupancy, collision ve pathfinding.
-- Harita bağlantıları ve altı yönlü geçiş davranışları.
-- Kare harita tanımları ve runtime.
-- AssetManager cache politikası ve mevcut PNG fallback davranışı.
-- Doğal ağaç PNG çizimi, depth/Y-sort ve ağaç rig/atlas varsayılan kapalı davranışı.
-- Normal oyun HUD'ı ve oyun pencereleri.
-- NPC, görev, savaş, ekonomi ve envanter sistemleri.
-
-Content Editor penceresi, placement arayüzü, drag-drop, preview veya oyun içi düzenleme modu eklenmedi.
-
-## 2. Entegrasyon ve regresyon kapsamı
-
-Mevcut testler ve üretim kodu üzerinden aşağıdaki zincirler doğrulama kapsamına alındı:
-
-| Entegrasyon / regresyon alanı | Kanıt / test |
+| Alan | Değer |
 |---|---|
-| Asset Catalog kimlik, yol, PNG ve kategori sözleşmesi | `tests/test_game_ui/test_asset_catalog_contract.py` |
-| AssetManager cache reuse, clear ve başarısız yüklemenin cache'e alınmaması | `tests/test_game_ui/test_asset_manager_cache.py` |
-| Asset Catalog + map placement referansları, legacy uyumluluk ve tekrar kullanılabilir asset'ler | `tests/test_game_ui/test_placement_catalog.py` |
-| Placement + harita kimliği ve geçerli hücre kontrolü; split ve legacy paket yükleme | `tests/test_application/test_content_loader.py` |
-| Geometry: anchor, scale, depth, layer, collision ve footprint | `tests/test_game_ui/test_scene_object_geometry_contract.py` |
-| Güvenli kayıt, backup, atomik değiştirme, rollback ve migration | `tests/test_application/test_presentation_content_store.py` |
-| UI bağımsız servis: okuma, doğrulama, kayıt ve migration | `tests/test_application/test_presentation_content_service.py` |
-| Hex world view, hareket, engel, kamera/zoom, map geçişleri ve çizim | `tests/test_game_ui/test_hex_world_view.py` |
-| Depth sıralaması ve eşit derinlikte kararlılık | `tests/test_game_ui/test_depth_sorter.py` |
-| Ağaç PNG anchor/depth geometrisi ve rig iskeleti sözleşmesi | `tests/test_game_ui/test_tree_skeleton.py` |
-| Paketlenmiş içerik, kare/hex harita sayıları ve release smoke | `scripts/verify_release.py` ve Core quality workflow |
+| Proje | Eldoria — Kaynak Yönetimi RPG |
+| Depo | `trippes/RPG_KAYNAK_YONETIMI` |
+| Çalışma dalı | `demo_eldoria` |
+| Aşama | 8 — Content Editor İçin Altyapı Hazırlığı |
+| Kapanış tarihi | 14 Kasım 2026 |
+| Nihai durum | **TAMAMLANDI** |
+| Son kapsam denetimi | Bölüm 14 — GEÇTİ |
+| Referans plan | `reports/phase-8-content-editor-foundation-plan.md` |
+| Bölüm 14 denetimi | `reports/phase-8-section-14-final-scope-decision-audit.md` |
 
-### 2.1. Aşama 8.8 için eklenen entegrasyon testi
+## 1. Yönetici özeti
 
-Dosya: `tests/test_application/test_presentation_content_service.py`
+Aşama 8'in amacı Content Editor arayüzünü geliştirmek değil, ileride ayrı bir aşamada geliştirilecek editörün kullanacağı güvenilir içerik altyapısını hazırlamaktı.
 
-Yeni test:
-`test_placement_save_uses_safe_store_and_refreshes_package_snapshot`
+Bu hedef doğrultusunda Asset Catalog, asset metadata/map placement ayrımı, geometri metadata sözleşmesi, içerik doğrulama ve güvenli yükleme, güvenli persistence/migration ve UI bağımsız Content Services API tamamlandı. Entegrasyon/regresyon kapsamı ve ilgili CI kalite kapıları başarılı oldu. Bölüm 7–14 arasındaki mimari, test, risk, kabul, gelecek kapsamı ve nihai karar denetimleri tamamlandı.
 
-Bu test tek akışta şunları kontrol eder:
+**Nihai karar: AŞAMA 8 TAMAMLANDI.**
 
-1. Bilinen haritanın mevcut placement JSON taslağını okur.
-2. Bir placement alanında geçerli değişiklik yapar.
-3. Kaydı `PresentationContentService.save_map_placements` üzerinden gerçekleştirir.
-4. Yazımın doğru harita dosyasına yapıldığını doğrular.
-5. Önceki dosyanın `.bak` yedeğinin oluştuğunu doğrular.
-6. Kaydedilen JSON'un taslakla eşit olduğunu kontrol eder.
-7. Servisin canonical package loader üzerinden yenilenen snapshot'ında değişen placement değerini tekrar okur.
+Manuel oyun içi kabul listesi kullanıcı kararıyla kapanışın zorunlu koşulu olmaktan çıkarılmıştır. Bu kontroller yapılmamıştır ve yapılmış gibi raporlanmamaktadır. Teknik testler ve CI başarılı olduğu için kullanıcı tarafından onaylanan muafiyetle kapanış yapılmıştır.
 
-Böylece servis → güvenli store → tam paket doğrulaması → atomik kayıt/backup → canonical loader ile yeniden yükleme zinciri doğrudan test edilir.
+## 2. Kapsam ve amaç
 
-Commit: `0e302909b3b18f265401b220698060b6399824c6`
+Aşama 8 sonunda aşağıdaki altyapıların hazır olması hedeflendi:
 
-## 3. Önceden doğrulanmış CI tabanı
+- Tekil ve merkezi Asset Catalog sözleşmesi.
+- Görsel dosyası ile asset metadata sorumluluğunun ayrılması.
+- Asset ID üzerinden referans veren bağımsız map placement verisi.
+- Anchor, pivot, scale, depth, layer, collision ve footprint alanlarının tutarlı geometri sözleşmesi.
+- Güvenli dosya yolu, PNG, şema, kimlik ve referans doğrulaması.
+- Eski içerikler için kontrollü migration ve şema sürümleme.
+- Hatalı kayıtların geçerli içeriği bozmamasını sağlayan güvenli persistence.
+- Pygame/UI katmanından bağımsız Content Services API.
+- Otomatik birim, entegrasyon, regresyon ve CI doğrulaması.
 
-Önceki son rapor commit'i `3b1011fc4a11e0ba9f4b8628690ab14e9756ce55` için aşağıdaki workflow sonuçları GitHub Actions job loglarından doğrulanmıştır:
+Aşama 8'in kesin kapsam dışında tuttuğu işler: Content Editor UI, asset preview, harita üzerinde fareyle düzenleme, drag-drop, görsel metadata düzenleme araçları, undo/redo, çoklu seçim, genel import/export ve profesyonel sanat varlığı üretim hattı.
 
-### Eldoria CI
+## 3. Tamamlanan alt aşamalar
 
-Run: [43596806406](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43596806406)
+| Alt aşama | Çıktı | Durum |
+|---|---|---|
+| 8.1 — Mevcut içerik altyapısının teknik denetimi | `docs/architecture/44-content-pipeline-audit.md` | **Tamamlandı** |
+| 8.2 — Asset Catalog sözleşmesinin sağlamlaştırılması | Katalog sözleşmesi, kimlik/yol/PNG doğrulaması ve cache testleri | **Tamamlandı** |
+| 8.3 — Metadata ve yerleşim verilerinin ayrıştırılması | `asset_catalog.json`, placement kaynakları ve legacy uyumluluk | **Tamamlandı** |
+| 8.4 — Metadata geometri sözleşmesi | `docs/architecture/46-presentation-geometry-contract.md` | **Tamamlandı** |
+| 8.5 — Güvenli içerik doğrulama ve yükleme | `docs/architecture/47-content-validation-and-safe-loading.md` | **Tamamlandı** |
+| 8.6 — Güvenli kayıt ve migration | `application/presentation_content_store.py`, mimari belge 48 | **Tamamlandı** |
+| 8.7 — UI bağımsız servis/API | `application/presentation_content_service.py`, mimari belge 49 | **Tamamlandı** |
+| 8.8 — Entegrasyon, regresyon ve kapanış | Servis–store–loader entegrasyon testi ve CI doğrulaması | **Tamamlandı** |
 
-- Ubuntu / Python 3.11: 1.458 test geçti.
-- Ubuntu / Python 3.12: 1.458 test geçti.
-- Windows / Python 3.11: 1.458 test geçti.
-- Windows / Python 3.12: 1.458 test geçti.
-- Pygame headless smoke test: başarılı.
+## 4. Teknik teslimatlar
 
-### Core quality
+### 4.1. Asset Catalog ve placement ayrımı
 
-Run: [43596806302](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43596806302)
+Asset tanımları merkezi katalogda tutulur. Harita üzerindeki nesne örnekleri ayrı placement kaynaklarında saklanır ve asset kimliği üzerinden katalog kaydına bağlanır. Legacy `presentation_assets.json` uyumluluk yolu korunmuştur; split kaynaklar normal paket hattındaki güncel veri sözleşmesidir.
 
-- Linux release-candidate verification: başarılı.
-- Windows release-candidate verification: başarılı.
-- Her iki platformda release doğrulaması 1.462 test ve 237 subtest geçti.
-- Wheel oluşturma ve izole kurulum başarılı.
-- Paketlenmiş demo içerik doğrulaması: 9 kare harita ve 7 karşılıklı bağlantılı hex harita bulundu.
-- Application smoke başarılı.
+### 4.2. Geometri metadata sözleşmesi
 
-### Son 8.8 test commit'inin CI durumu
+Asset'in kaynak görsel boyutu, çizim ölçeği, anchor/pivot, depth/layer ve collision bilgileri; harita yerleşiminin koordinat, offset, footprint ve override verilerinden ayrılmıştır. Görsel boyut ile fiziksel çarpışma alanı birbirine karıştırılmaz. Hex ve kare harita koordinat modelleri tek biçime zorlanmamıştır.
 
-Yeni entegrasyon testi commit'i `0e302909b3b18f265401b220698060b6399824c6` için CI sonucu bu rapor hazırlanırken henüz doğrulanmış değildir. Önceki commit'in başarılı CI sonuçları, yeni commit'in testinin geçtiği anlamına gelmez. Aşama 8 kapanışından önce bu commit'i kapsayan Eldoria CI ve Core quality sonuçları ayrıca doğrulanmalıdır.
+### 4.3. Güvenli yükleme ve doğrulama
 
-## 4. Manuel oyun kabulü — bekleyen kapı
+Paket yükleme öncesinde şema sürümü, asset kimlikleri, güvenli göreli yollar, dosya kaynakları, placement referansları ve harita bağları doğrulanır. Geçersiz paket snapshot'ı kısmi ve güvenilmez biçimde runtime'a sunulmaz. Eksik/bozuk PNG durumunda mevcut deterministik fallback yaklaşımı korunur.
 
-Otomatik testler görsel davranışın kullanıcı ekranında doğru göründüğünü tek başına kanıtlamaz. Aşağıdaki kontroller gerçek Pygame oturumunda yapılmalı ve sonuçları kullanıcı tarafından bildirilmelidir.
+### 4.4. Güvenli persistence ve migration
 
-- [ ] `python main.py --play` ile Eldoria demo normal açılıyor.
-- [ ] Hex orman haritasında mevcut ağaç, kaya, çalı ve çiçek görselleri beklenen yerlerinde görünüyor.
-- [ ] Oyuncu ağaçların önünden ve arkasından geçtiğinde depth/Y-sort doğru çalışıyor.
-- [ ] Kamera hareketi ve zoom sırasında dünya nesneleri ile oyuncu konumu birbirine göre kaymıyor.
-- [ ] Orman–açıklık sınırından geçiş ve geri dönüş çalışıyor; altı yönlü geçiş davranışı bozulmamış.
-- [ ] H ile kare dünya görünümüne dönüldüğünde kare harita normal açılıyor ve çalışıyor.
-- [ ] Normal oyun arayüzünde Content Editor, düzenleme modu veya yeni editör araçları görünmüyor.
+Taslak içerik staging alanında doğrulanır. Geçerli mevcut içerik, başarısız doğrulama veya yazma girişimiyle kontrolsüz biçimde ezilmez. Backup, atomik dosya değiştirme, manifest-last yayınlama ve rollback/recovery yaklaşımı uygulanmıştır. Legacy migration açık çağrıyla yürütülür.
 
-Bu maddeler otomatik test sonucu olarak işaretlenemez. Kullanıcı manuel kontrolü tamamlayıp sonucu bildirdiğinde rapor güncellenecektir.
+### 4.5. UI bağımsız servis/API
 
-## 5. Aşama 8 teslimat envanteri
+`PresentationContentService`, katalog/asset/placement okuma, taslak doğrulama, kayıt ve migration işlevlerini Pygame ekranlarından bağımsız sunar. Gelecekteki editörün doğrudan JSON dosyalarına veya renderer'a bağlanması yerine bu servis sınırını kullanması hedeflenir.
 
-- Aşama 8.1 denetim belgesi: `docs/architecture/44-content-pipeline-audit.md`
-- Aşama 8.2: Asset Catalog sözleşmesi ve cache regresyon testleri.
-- Aşama 8.3: `asset_catalog.json`, harita bazlı `placements/` kaynakları ve geriye dönük uyumluluk.
-- Aşama 8.4: `docs/architecture/46-presentation-geometry-contract.md`
-- Aşama 8.5: `docs/architecture/47-content-validation-and-safe-loading.md`
-- Aşama 8.6: `application/presentation_content_store.py` ve `docs/architecture/48-presentation-content-safe-persistence.md`
-- Aşama 8.7: `application/presentation_content_service.py` ve `docs/architecture/49-presentation-content-service-api.md`
-- Aşama 8.7 raporu: `reports/phase-8.7-ui-independent-service-api-report.md`
-- Aşama 8.8 ek entegrasyon testi: `tests/test_application/test_presentation_content_service.py`
+## 5. Test ve CI sonuçları
 
-## 6. Kapanış kararı
+Aşama 8'in uygulama/test kapanışını taşıyan kod commit'i:
 
-Aşama 8'in teknik altyapı kapsamı uygulanmıştır. Mevcut test paketi; katalog, placement, geometry, loader, persistence, service, cache, hex world view, depth sorting ve tree skeleton sözleşmelerini kapsar. Aşama 8.8'de servis üzerinden placement kaydının uçtan uca entegrasyon testi de eklenmiştir.
+`8ebbeaeae9dda3bf803056fba0879da49292b838`
 
-Bununla birlikte, aşağıdaki iki kalite kapısı tamamlanmadan Aşama 8 **TAMAMLANDI** olarak işaretlenmeyecektir:
+### Eldoria CI — Run 43597419514
 
-1. `0e302909b3b18f265401b220698060b6399824c6` commit'ini kapsayan Eldoria CI ve Core quality workflow'larının başarıyla tamamlanması.
-2. Bölüm 4'teki kullanıcı manuel oyun kabul kontrollerinin tamamlanması.
+- Windows / Python 3.11: başarılı.
+- Ubuntu / Python 3.11: başarılı.
+- Windows / Python 3.12: başarılı.
+- Ubuntu / Python 3.12: başarılı.
+- Dört test matrisinin her birinde 1.459 test sonucu raporlandı.
+- Pygame headless smoke testi başarılı.
 
-Her iki kapı da başarılı olduğunda bu raporun durumu güncellenecek ve Aşama 8 kapanışı kesinleştirilecektir.
+[GitHub Actions — Eldoria CI](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43597419514)
+
+### Core Quality — Run 43597419523
+
+- Windows release-candidate doğrulaması başarılı.
+- Linux release-candidate doğrulaması başarılı.
+- Her iki platformda 1.463 test ve 237 subtest geçti.
+- Wheel build ve izole kurulum başarılı.
+- Paketlenmiş içerik doğrulaması ve application smoke başarılı.
+- Release-candidate verification başarılı.
+
+[GitHub Actions — Core Quality](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43597419523)
+
+CI loglarında Node.js/action sürümleri ve Python araç zincirine ilişkin deprecation uyarıları vardır. İlgili işlerin tamamı başarılı sonuçlanmıştır; uyarılar kapanış engeli değildir.
+
+Bu CI çalışmaları uygulama/test commit'ini doğrular. Sonraki Bölüm 7–14 raporları dokümantasyon değişiklikleridir; bunlar için yeni bir kod CI çalışması yapıldığı iddia edilmemektedir.
+
+## 6. Mimari koruma ve kapsam dışı işler
+
+Bölüm 7 mimari sınırlar denetimi ve Bölüm 12 mimari sonuç denetimi geçti. HexWorldRuntime, WorldTransform, kamera, hareket, geçiş, occupancy, pathfinding, kare harita runtime'ı, mevcut oyun pencereleri/HUD ve ağaç çizim/rig davranışları Aşama 8 kapsamında yeniden tasarlanmadı.
+
+Bölüm 13 denetimiyle gelecek editör işleri Aşama 8 dışında tutuldu. Content Editor UI, görsel asset kütüphanesi, etkileşimli placement düzenleme, drag-drop, undo/redo, toplu düzenleme, genel import/export ve profesyonel sanat varlığı pipeline'ı geliştirilmedi.
+
+## 7. Manuel oyun kabulü — kullanıcı kararı
+
+Planın ilk sürümünde manuel Pygame kabul listesi bulunuyordu. Kullanıcı, manuel kontrollerin Aşama 8 kapanışında zorunlu olmamasına ve teknik kontroller başarılıysa aşamanın kapatılmasına açıkça karar verdi.
+
+Nihai kayıt:
+
+- Manuel oyun içi kabul kontrolleri **yapılmadı**.
+- Kullanıcı kararıyla zorunlu kapanış kapısı olmaktan **muaf tutuldu**.
+- Headless smoke ve otomatik testler manuel görsel doğrulama olarak sunulmamaktadır.
+- Teknik test ve CI kapıları başarılı olduğu için aşama, bu açık muafiyet temelinde kapatılmıştır.
+
+## 8. Bölüm 7–14 denetim sonuçları
+
+| Denetim | Sonuç | Rapor |
+|---|---|---|
+| Bölüm 7 — Mimari sınırlar | **GEÇTİ** | `reports/phase-8-section-7-architecture-boundaries-audit.md` |
+| Bölüm 8 — Test stratejisi ve kalite kapıları | **GEÇTİ** | `reports/phase-8-section-8-test-strategy-quality-gates-audit.md` |
+| Bölüm 9 — Risk önleme | **GEÇTİ** | `reports/phase-8-section-9-risk-prevention-audit.md` |
+| Bölüm 10 — Uygulama sırası ve karar kapıları | **GEÇTİ** | `reports/phase-8-section-10-implementation-sequence-gates-audit.md` |
+| Bölüm 11 — Tamamlanma ölçütleri | **GEÇTİ** | `reports/phase-8-section-11-completion-criteria-audit.md` |
+| Bölüm 12 — Mimari sonuç | **GEÇTİ** | `reports/phase-8-section-12-architecture-outcome-audit.md` |
+| Bölüm 13 — Kapsam dışı gelecek işler | **GEÇTİ** | `reports/phase-8-section-13-out-of-scope-future-work-audit.md` |
+| Bölüm 14 — Nihai kapsam kararı | **GEÇTİ** | `reports/phase-8-section-14-final-scope-decision-audit.md` |
+
+Planın 16 tamamlanma maddesinden 15'i karşılanmıştır. Manuel oyun kabuline ilişkin madde kullanıcı kararıyla muaf tutulmuştur; tamamlandı olarak işaretlenmemiştir.
+
+## 9. Dal ve değişiklik sınırı
+
+Aşama 8 uygulama ve kapanış raporları `demo_eldoria` dalında tutulmuştur. Bu kapanış çalışması kapsamında `main` dalına yazma işlemi yapılmamıştır.
+
+Bölüm 7–14 raporları da `demo_eldoria` dalına eklenmiştir. Bu raporlar, uygulama koduna müdahale etmeyen denetim/kapanış belgeleridir.
+
+## 10. Nihai kapanış kararı
+
+**AŞAMA 8 — CONTENT EDITOR İÇİN ALTYAPI HAZIRLIĞI TAMAMLANDI.**
+
+Gelecekteki Content Editor'ün kullanacağı temel veri biçimi, asset katalog ve placement ayrımı, geometri metadata sözleşmesi, validation kuralları, safe persistence/migration yaklaşımı ve UI bağımsız servis/API sınırı hazırdır. Otomatik test ve CI kalite kapıları başarılıdır. Korunan runtime mimarisi ve kapsam dışı iş sınırları denetlenmiştir.
+
+Content Editor arayüzü henüz geliştirilmemiştir. Bu rapor yalnızca altyapı aşamasını kapatır; Content Editor geliştirmesini başlatmaz. Sonraki aşama ayrıca planlanmalı ve onaylanmalıdır.
