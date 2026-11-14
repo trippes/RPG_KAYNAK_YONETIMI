@@ -233,7 +233,7 @@ def load_content_package(package_dir: str | Path) -> ContentPackage:
             or "objects" in asset_payload
         ):
             raise ContentPackageError(
-                "Split asset catalog must use schema_version 1 and contain assets only."
+                "Unsupported split asset catalog schema; expected schema_version 1 and assets only."
             )
 
         if not isinstance(map_placements_relative, str) or not map_placements_relative.strip():
