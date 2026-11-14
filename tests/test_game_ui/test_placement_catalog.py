@@ -116,6 +116,38 @@ class TestScenePlacementCatalog(unittest.TestCase):
             with self.assertRaisesRegex(ScenePlacementCatalogError, "unknown asset"):
                 ScenePlacementCatalog.load_directory(placements_dir, catalog)
 
+    def test_unknown_map_id_is_rejected_when_package_map_ids_are_supplied(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            catalog_path = root / "asset_catalog.json"
+            catalog_path.write_text(json.dumps({
+                "schema_version": 1,
+                "assets": [{
+                    "asset_id": "flora.tree",
+                    "path": "missing.png",
+                    "width": 0,
+                    "height": 0,
+                }],
+            }), encoding="utf-8")
+            catalog = AssetCatalog.load(catalog_path)
+            placements_dir = root / "placements"
+            placements_dir.mkdir()
+            (placements_dir / "forest.json").write_text(json.dumps({
+                "schema_version": 1,
+                "map_id": "missing_map",
+                "objects": [{
+                    "object_id": "tree-1",
+                    "asset_id": "flora.tree",
+                    "q": 0,
+                    "r": 0,
+                }],
+            }), encoding="utf-8")
+
+            with self.assertRaisesRegex(ScenePlacementCatalogError, "unknown map"):
+                ScenePlacementCatalog.load_directory(
+                    placements_dir, catalog, valid_map_ids={"forest"}
+                )
+
     def test_duplicate_object_ids_are_rejected_across_map_files(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
