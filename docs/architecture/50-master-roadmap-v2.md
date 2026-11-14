@@ -107,6 +107,10 @@ Temel yönelim:
 
 Bu görsel referanslar doğrudan kopyalama hedefi değildir; atmosfer, sistem derinliği ve oynanış yaklaşımı için yön gösterir.
 
+## 2.4. Tarihsel kaynak notu
+
+GitHub deposunun ilk commit'i 31 Ekim 2026 tarihli `Initial commit` kaydıdır ve o commit'teki README yalnızca proje başlığını içerir. Bu nedenle ilk ürün vizyonu, tek başına ilk commit'ten çıkarılmış değildir. Bu bölüm; proje boyunca alınan tasarım kararları, önceki çalışma bağlamı ve daha sonra depoya eklenen mimari/oynanış belgelerinin birlikte değerlendirilmesiyle oluşturulmuştur. Tarihsel bir fikrin ilk commit'te yazılı olduğu varsayılmamalıdır.
+
 ## 2.3. Erken tasarım notları ve doğrulama durumu
 
 Projenin önceki tasarım görüşmelerinde aşağıdaki simülasyon fikirleri de ele alınmıştır:
