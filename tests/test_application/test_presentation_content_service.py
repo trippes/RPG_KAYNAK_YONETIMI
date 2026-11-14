@@ -32,9 +32,9 @@ class TestPresentationContentService(unittest.TestCase):
     def test_lists_and_resolves_assets_without_exposing_ui_types(self):
         assets = self.service.list_assets()
         self.assertEqual(len(assets), 6)
-        asset = self.service.get_asset("flora.tree.oak")
+        asset = self.service.get_asset("flora.tree.test")
         self.assertIsNotNone(asset)
-        self.assertEqual(asset.asset_id, "flora.tree.oak")
+        self.assertEqual(asset.asset_id, "flora.tree.test")
         self.assertIsNone(self.service.get_asset("missing.asset"))
         self.assertEqual(self.service.list_assets("not-a-category"), ())
 
