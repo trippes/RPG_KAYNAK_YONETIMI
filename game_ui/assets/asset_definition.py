@@ -15,6 +15,10 @@ from pathlib import Path, PurePosixPath, PureWindowsPath
 from types import MappingProxyType
 
 
+MIN_DRAW_SCALE = 0.01
+MAX_DRAW_SCALE = 8.0
+
+
 class AssetCatalogError(ValueError):
     """Invalid presentation asset metadata or unsafe asset reference."""
 
@@ -67,9 +71,11 @@ class AssetDefinition:
             isinstance(self.scale, bool)
             or not isinstance(self.scale, (int, float))
             or not math.isfinite(self.scale)
-            or self.scale <= 0
+            or not MIN_DRAW_SCALE <= self.scale <= MAX_DRAW_SCALE
         ):
-            raise AssetCatalogError("asset scale must be a finite positive number.")
+            raise AssetCatalogError(
+                f"asset scale must be finite and between {MIN_DRAW_SCALE} and {MAX_DRAW_SCALE}."
+            )
         if (
             len(self.anchor) != 2
             or any(
@@ -89,10 +95,12 @@ class AssetDefinition:
                 or not math.isfinite(v)
                 for v in self.collision
             )
-            or self.collision[2] < 0
-            or self.collision[3] < 0
+            or self.collision[2] <= 0
+            or self.collision[3] <= 0
         ):
-            raise AssetCatalogError("collision must be a finite x/y/width/height tuple.")
+            raise AssetCatalogError(
+                "collision must be a finite local-pixel x/y/width/height box with positive area."
+            )
         if (
             not isinstance(self.depth_offset, (int, float))
             or isinstance(self.depth_offset, bool)
@@ -114,6 +122,11 @@ class AssetDefinition:
             raise AssetCatalogError("asset category must be a non-empty string when provided.")
         if self.placement not in {"ground", "canopy", "overlay", "underlay"}:
             raise AssetCatalogError("unsupported placement layer.")
+        object.__setattr__(self, "anchor", tuple(float(value) for value in self.anchor))
+        if self.collision is not None:
+            object.__setattr__(self, "collision", tuple(float(value) for value in self.collision))
+        object.__setattr__(self, "scale", float(self.scale))
+        object.__setattr__(self, "depth_offset", float(self.depth_offset))
         object.__setattr__(self, "terrain_types", terrain_types)
 
 
