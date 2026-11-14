@@ -118,8 +118,18 @@ class TestPresentationContentService(unittest.TestCase):
         status = self.service.migration_status()
 
         self.assertEqual(status.source_format, "split")
+        self.assertEqual(status.schema_version, 1)
         self.assertFalse(status.migration_available)
         self.assertEqual((self.root / "manifest.json").read_bytes(), before)
+
+    def test_migration_status_rejects_manifest_path_traversal(self):
+        manifest_path = self.root / "manifest.json"
+        manifest = self.read_json(manifest_path)
+        manifest["asset_catalog"] = "../outside.json"
+        manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+        with self.assertRaisesRegex(PresentationContentServiceError, "Unsafe"):
+            self.service.migration_status()
 
     def test_legacy_migration_is_explicit_and_updates_status(self):
         manifest_path = self.root / "manifest.json"
