@@ -143,3 +143,19 @@ __all__ += [
     "MovementRules", "HexPathfinder", "HexOccupant", "HexOccupancyRegistry",
     "HexMovableEntity", "HexWorldRuntime", "HexMapTransitionService",
 ]
+
+from .presentation_content_service import (
+    ContentMigrationStatus,
+    ContentValidationIssue,
+    ContentValidationResult,
+    PresentationContentService,
+    PresentationContentServiceError,
+)
+
+__all__ += [
+    "ContentMigrationStatus",
+    "ContentValidationIssue",
+    "ContentValidationResult",
+    "PresentationContentService",
+    "PresentationContentServiceError",
+]
