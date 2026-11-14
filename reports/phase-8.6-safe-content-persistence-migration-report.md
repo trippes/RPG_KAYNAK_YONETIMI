@@ -90,7 +90,7 @@ Aşama 8.6 yalnızca split asset catalog ve map placement dosyalarını güvenli
 
 ## 6. Doğrulama
 
-<badge color="success">Başarılı</badge>
+**CI: SUCCESS**
 
 Son kod commit'i: `51db80079071ca0bea537ee8a3c0e992a9e22215`
 
