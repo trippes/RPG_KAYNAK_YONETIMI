@@ -42,8 +42,8 @@ class ScenePlacementCatalog:
         }))
 
     @classmethod
-    def load_directory(cls, directory, asset_catalog):
-        """Load one JSON document per map and resolve every asset_id reference."""
+    def load_directory(cls, directory, asset_catalog, *, valid_map_ids=None):
+        """Load map placements and optionally validate their target map IDs."""
         root = Path(directory).resolve()
         if not root.is_dir():
             raise ScenePlacementCatalogError(
@@ -80,6 +80,10 @@ class ScenePlacementCatalog:
             if not isinstance(map_id, str) or not map_id.strip():
                 raise ScenePlacementCatalogError(
                     f"Placement file '{source.name}' requires a non-empty map_id."
+                )
+            if valid_map_ids is not None and map_id not in valid_map_ids:
+                raise ScenePlacementCatalogError(
+                    f"Placement file '{source.name}' references unknown map: {map_id}"
                 )
             records = payload.get("objects")
             if not isinstance(records, list):
