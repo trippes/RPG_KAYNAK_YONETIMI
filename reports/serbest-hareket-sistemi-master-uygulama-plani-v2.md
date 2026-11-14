@@ -402,27 +402,31 @@ Aşamalar sıralıdır. Her aşamanın tamamlanma koşulları ve test kapısı g
 
 ## Aşama 0 — Baseline, kapsam ve sözleşme dondurma
 
-**Amaç:** Ana oynanabilir yüzeyin kare harita mı yoksa hex dünya mı olacağına dair kararın, gerçek kod ve içerik üzerinden kesinleştirilmesi; ölçülebilir başlangıç davranışının kaydı.
+**Amaç:** Kullanıcı tarafından kesinleştirilen canon dünya kararını teknik sözleşmeye dönüştürmek ve altıgen dünya üzerinde ölçülebilir baseline çıkarmak.
+
+**Kanonik dünya kararı (onaylı):** Altıgen harita Eldoria'nın ana/canon oynanış haritasıdır. Kare harita projenin ilk deneysel haritası ve legacy/prototip yüzeyidir; yeni serbest hareket sisteminin hedef runtime'ı değildir. Serbest hareket mimarisi `HexWorldView` + `HexWorldRuntime` + altıgen içerik/geometry sözleşmesi üzerinden şekillendirilecektir. Kare harita kodu bu çalışmada yalnızca geriye dönük referans/regresyon kapsamındadır; yeni fiziğin authoritative sahibi yapılmayacaktır.
 
 **Teknik gereksinimler**
-- MainScreen ana gameplay yüzeyi olarak mı kalacak, HexWorldView ayrı keşif modu mu olacak, yoksa hex dünya ana harita mı olacak? Tek authoritative player session seçilmeli.
-- Mevcut v1 rapor ile gerçek kod arasındaki farklar belgelenmeli.
-- Sabit world unit, tile size, actor foot anchor ve map identity sözleşmesi belirlenmeli.
+- HexWorldView/HexWorldRuntime tek authoritative local gameplay path olarak doğrulanmalı; actor fiziksel state'inin sahibi açıkça tanımlanmalı.
+- Axial (q,r) hücre koordinatı mantıksal dünya adresi olarak korunmalı; fiziksel world-unit X/Y konumu ayrı ve authoritative hareket state'i olmalı.
+- Hex geometry'nin axial ↔ world-unit dönüşümü, origin, orientation, hex size, map identity ve foot-anchor sözleşmesi sabitlenmeli.
+- Kare haritanın legacy kapsamı ve yeni fizik entegrasyonunun dışında kalacağı açıkça belgelenmeli.
+- Mevcut v1 rapor ile gerçek kod arasındaki farklar ve baseline test sonuçları kaydedilmeli.
 
-**İncelenecek dosyalar:** `game_ui/screens/main_screen.py`, `hex_world_view.py`, `game_window.py`, `content/demo_eldoria/maps/*.json`, `docs/architecture/41-hex-movement-stage4.md`, `42-main-screen-hex-runtime-integration.md`.
+**İncelenecek dosyalar:** `game_ui/hex_world_view.py`, `application/hex_world_runtime.py`, `core/domain/spatial/hex_coord.py`, `hex_geometry.py`, `local_hex_position.py`, `world_hex_position.py`, hex content/placement/occupancy dosyaları ve ilgili testler.
 
-**Değiştirilecek dosyalar:** Yalnız plan/karar belgesi gerekiyorsa; uygulama kodu yok.  
-**Yeni dosyalar:** `docs/architecture/51-free-movement-contract.md` (uygulama başlamadan önce sözleşme gerekiyorsa).
+**Değiştirilecek dosyalar:** Yalnız plan/karar belgesi; uygulama kodu yok.  
+**Yeni dosyalar:** `docs/architecture/51-free-movement-contract.md` (canon hex sözleşmesini uygulama başlamadan önce dondurmak için).
 
-**Sınıf/fonksiyon işleri:** MainScreen ve HexWorldView sorumluluk matrisi; map coordinate contract; mevcut kontrollerin input envanteri.
+**Sınıf/fonksiyon işleri:** HexWorldView ve HexWorldRuntime sorumluluk matrisi; axial/world coordinate contract; actor fiziksel state sahipliği; hex collision/interaction veri envanteri.
 
 **Bağımlılıklar:** Yok.  
-**Riskler:** İki farklı yerel dünya sisteminin birbiriyle karıştırılması.  
-**Birim testleri:** Mevcut testlerin baseline listesi; henüz yeni fizik kodu yok.  
-**Entegrasyon testleri:** MainScreen ve HexWorldView actor state izolasyonu.  
-**Manuel test:** Başlangıç menüsü → ana kare harita → H ile hex bridge → geri dönüş.  
-**Başarı kriteri:** Tek authoritative gameplay path ve koordinat birimleri yazılı karara bağlanmış olmalı.  
-**Tamamlanma koşulu:** Sözleşme onaylı, baseline test raporu alınmış ve kod değişikliği yapılmamış olmalı.
+**Riskler:** Axial hücre koordinatının fiziksel koordinat sanılması; kare harita varsayımlarının hex runtime'a taşınması; iki runtime'ın aynı actor state'ini eşzamanlı değiştirmesi.  
+**Birim testleri:** Mevcut hex geometry, axial/world dönüşüm, occupancy, movement ve runtime testlerinin baseline listesi.  
+**Entegrasyon testleri:** HexWorldView → HexWorldRuntime actor state akışı ve legacy MainScreen izolasyonu.  
+**Manuel test:** Başlangıç menüsünden canon altıgen haritaya giriş; mevcut altıgen dünya hareketi, kamera, nesne yerleşimi ve harita sınırlarının baseline kaydı.  
+**Başarı kriteri:** Canon hex gameplay path ve axial/fiziksel koordinat sözleşmesi yazılı olarak sabitlenmiş olmalı.  
+**Tamamlanma koşulu:** Canon sözleşmesi onaylı, hex baseline test raporu alınmış ve uygulama kodu değiştirilmemiş olmalı.
 
 ## Aşama 1 — Physical coordinate ve actor veri modeli
 
@@ -504,32 +508,33 @@ Aşamalar sıralıdır. Her aşamanın tamamlanma koşulları ve test kapısı g
 **Başarı kriteri:** Oyuncu fiziksel engellerden geçmemeli; slide kararlı ve titreşimsiz olmalı.  
 **Tamamlanma koşulu:** Collision unit/integration testleri geçmeden harita adapter aşamasına geçilmez.
 
-## Aşama 4 — Kare tile ve içerik collision adapter'ı
+## Aşama 4 — Hex tile ve dünya nesnesi collision adapter'ı
 
-**Amaç:** Mevcut kare harita JSON ve dünya nesnelerini fizik collision region'larına dönüştürmek.
+**Amaç:** Canon altıgen harita hücrelerini ve hex scene-object collision metadata'sını fizik motorunun world-unit geometri sözleşmesine dönüştürmek.
 
 **Teknik gereksinimler**
-- Blocked tile → sabit world-unit AABB.
-- Non-walkable feature → engel; walkable feature → açık alan.
-- Water/river/bridge semantiği korunmalı.
-- Landmark walkable/interactable ayrımı collision ile karıştırılmamalı.
-- World object footprint ve collision metadata aynı geometri sözleşmesine çevrilmeli.
-- Harita dışı ve eksik valid bölgeler kapatılmalı.
+- Axial hücre (q,r) merkezleri mevcut `hex_geometry` sözleşmesiyle fiziksel world-unit koordinatlarına çevrilmeli.
+- Walkable/blocked hücre semantiği fiziksel valid-region ve collision-region olarak ayrıştırılmalı.
+- Blocked hex hücreleri nihai olarak gerçek hex polygon/edge geometrisiyle temsil edilmeli; AABB yalnız ölçülmüş ve köşe davranışı test edilmiş geçici broadphase proxy olabilir.
+- `SceneObjectPlacement` içindeki world-pixel offset ve collision AABB metadata'sı sabit world-unit sözleşmesine normalize edilmeli.
+- Ağaç, kaya, bina, su, köprü ve diğer nesnelerin fiziksel footprint'i görsel sprite sınırından bağımsız tanımlanmalı.
+- Landmark/interactable semantiği fiziksel engel semantiğinden ayrı kalmalı.
+- Harita dışı axial hücreler ve eksik valid bölgeler kapatılmalı.
 
-**İncelenecek dosyalar:** `application/content_loader.py`, `application/world_object_placement.py`, `world/local_map.py`, `game_ui/screens/main_screen.py:_blocked_tiles/_landmarks`, `content/demo_eldoria/maps/*.json`, `46-presentation-geometry-contract.md`.
+**İncelenecek dosyalar:** `core/domain/spatial/hex_geometry.py`, `hex_coord.py`, `application/hex_world_runtime.py`, hex occupancy/movement rules, `SceneObjectPlacement` tanımı, `game_ui/hex_world_view.py`, hex map/scene-object content ve `46-presentation-geometry-contract.md`.
 
-**Değiştirilecek dosyalar:** `application/content_loader.py` veya uygun map adapter; `MainScreen` yalnız yeni runtime'a bağlanacak.  
-**Yeni dosyalar:** `application/tile_collision_adapter.py`, `tests/test_application/test_tile_collision_adapter.py`.
+**Değiştirilecek dosyalar:** Hex content loader/placement adapter'ı; `HexWorldRuntime` yalnız fizik world adaptörünü sunacak şekilde.  
+**Yeni dosyalar:** `application/hex_collision_adapter.py`, `tests/test_application/test_hex_collision_adapter.py`.
 
-**Sınıf/fonksiyon işleri:** `build_static_colliders(map_definition)`; tile bounds; blocked tile merge; landmark/placement proxy; map boundary builder.
+**Sınıf/fonksiyon işleri:** `build_hex_colliders(map_definition)`; axial cell polygon builder; walkable-region builder; scene-object footprint proxy; collision metadata normalization; map boundary builder.
 
 **Bağımlılıklar:** Aşama 3.  
-**Riskler:** Köprü üstünün yanlışlıkla bloke olması; landmark'ın etkileşimli olduğu için yanlışlıkla geçilebilir sayılması; footprint kaybı.  
-**Birim testleri:** blocked/walkable tile, river/bridge, overlapping collider merge, footprint, out-of-map.  
-**Entegrasyon testleri:** İçerik paketi → adapter → PhysicsWorld.  
-**Manuel test:** Köy, orman, maden, su ve köprü üzerinde engel davranışı.  
-**Başarı kriteri:** İçerik haritaları değiştirilmeden fizik engelleri tutarlı üretilmeli.  
-**Tamamlanma koşulu:** Tüm mevcut map JSON fixture'ları collision adapter testinden geçmeli.
+**Riskler:** Hex orientation/origin uyuşmazlığı; altıgen köşelerinde yanlış blokaj; köprü ve geçitlerin kapanması; sprite boyutunun collider sanılması; world-pixel ile world-unit karışması.  
+**Birim testleri:** axial→world polygon bounds, blocked/walkable cell, adjacent hex edge continuity, corner grazing, bridge/water, object footprint, out-of-map ve orientation/origin varyantları.  
+**Entegrasyon testleri:** Hex content → adapter → PhysicsWorld; scene-object placement → collider registry.  
+**Manuel test:** Canon altıgen köy/orman/maden/su/köprü alanlarında kenar ve köşe çarpışmaları; dar geçit ve nesne çevresinde kayma.  
+**Başarı kriteri:** Canon hex içerikleri değiştirilmeden fizik engelleri tutarlı üretilmeli ve hücre sınırlarında boşluk/örtüşme olmamalı.  
+**Tamamlanma koşulu:** Tüm hex map fixture'ları collision adapter testlerinden geçmeli.
 
 ## Aşama 5 — Camera2D, world transform ve Y-sort
 
@@ -558,31 +563,32 @@ Aşamalar sıralıdır. Her aşamanın tamamlanma koşulları ve test kapısı g
 **Başarı kriteri:** Kamera ve render float world position'ı kesmeden takip etmeli.  
 **Tamamlanma koşulu:** Camera/transform/sort testleri ve manuel görsel doğrulama geçmeli.
 
-## Aşama 6 — MainScreen fizik entegrasyonu ve geçiş adaptörü
+## Aşama 6 — Canon HexWorldRuntime fizik entegrasyonu ve harita geçişleri
 
-**Amaç:** Ana kare harita oyuncusunu tile adımı yerine ortak fizik motoruyla hareket ettirmek.
+**Amaç:** Altıgen canon haritadaki oyuncuyu hücre adımları/interpolasyonu yerine ortak fizik motoruyla kesintisiz hareket ettirmek.
 
 **Teknik gereksinimler**
-- MainScreen input'u yalnız MovementInput üretmeli.
-- Actor physical position authoritative olmalı; tile position yalnız adapter'dan türetilmeli.
-- `_complete_tile_move` hareket yolu ana oynanıştan çıkarılmalı; eski path-to-tile fare davranışı opsiyonel hedefleme olabilir.
-- Tile sınırları fiziksel map bounds/valid region olarak uygulanmalı.
-- Eski `_cross_boundary` kardinal tile kontrolü trigger region geçişine taşınmalı.
+- `HexWorldView` input'u yalnız MovementInput üretmeli; fizik güncellemesi uygulama hareket oturumuna devredilmeli.
+- Actor physical position authoritative olmalı; axial (q,r) hücresi fiziksel konumdan türetilen mantıksal adres/occupancy olmalı.
+- Mevcut `_movement_path` / `_movement_elapsed` hücre interpolasyonu, authoritative hareket yolu olmaktan çıkarılmalı; istenirse ayrı görsel/path-following katmanı olarak tutulmalı.
+- Hex map bounds ve walkable-region fiziksel world geometry üzerinden uygulanmalı.
+- Hex transition edge/region trigger'ları kullanılmalı; komşu map'e girişte axial spawn ve physical spawn tek atomik transferde eşleştirilmeli.
+- Kare `MainScreen` yeni fizik runtime'ının hedefi değildir; legacy/prototip olarak izole kalmalı.
 
-**İncelenecek dosyalar:** `MainScreen` hareket ve render metotları, `GameplayService.set_actor_tile_position`, `game_application.py` actor restore, `hex_transition_service.py`.
+**İncelenecek dosyalar:** `game_ui/hex_world_view.py` hareket/render metotları, `application/hex_world_runtime.py`, `hex_transition_service.py`, actor restore/persistence ve HexWorldView kamera/transform bileşenleri.
 
-**Değiştirilecek dosyalar:** `game_ui/screens/main_screen.py`, `application/gameplay_service.py`, ilgili actor service façade.  
-**Yeni dosyalar:** `application/local_map_movement_session.py`, `application/map_transition_trigger.py`, MainScreen integration tests.
+**Değiştirilecek dosyalar:** `game_ui/hex_world_view.py`, `application/hex_world_runtime.py`, gerekli actor/application façade'ları.  
+**Yeni dosyalar:** `application/hex_local_movement_session.py`, `application/hex_transition_trigger.py`, HexWorldRuntime integration tests.
 
-**Sınıf/fonksiyon işleri:** MainScreen.update → movement session fixed-step; `_position()` yerine typed physical state; map exit trigger; transfer actor map_id + spawn position atomically.
+**Sınıf/fonksiyon işleri:** HexWorldView.update → movement session fixed-step; `hex_to_world` / `world_to_hex` adapter'ları; actor physical state; hex map exit trigger; transfer actor map_id + axial spawn + physical spawn atomically.
 
 **Bağımlılıklar:** Aşama 1–5.  
-**Riskler:** Eski tile path ve yeni physical path'in aynı anda actor'ı güncellemesi; geçişte iki harita arasında actor kaybı.  
-**Birim testleri:** map trigger bounds, entry point, blocked entry, failed transition rollback.  
-**Entegrasyon testleri:** Input → physics → actor → camera → map transition.  
-**Manuel test:** Ana oyunda WASD ile serbest hareket; köşe, sınır, köprü ve kapı geçişleri.  
-**Başarı kriteri:** MainScreen gerçek serbest hareket kullanmalı ve her hareket adımı canonical tick'i artırmamalı.  
-**Tamamlanma koşulu:** Eski tile hareket regresyonları kontrollü biçimde güncellenmiş, yeni fizik entegrasyonu testli olmalı.
+**Riskler:** Hücre occupancy ile fizik konumunun yarışması; hex edge geçişinde yanlış komşu map seçimi; axial/world transform yönelim hatası; eski interpolation ile physics'in actor'ı çift güncellemesi.  
+**Birim testleri:** Hex transition trigger bounds, entry point, blocked entry, failed transition rollback, physical↔axial dönüşüm tutarlılığı.  
+**Entegrasyon testleri:** Input → physics → actor → hex camera/render → hex map transition.  
+**Manuel test:** Canon altıgen haritada WASD ile serbest hareket; altıgen köşeleri, sınırları, köprü/geçitleri ve komşu harita geçişleri.  
+**Başarı kriteri:** HexWorldView gerçek serbest hareket kullanmalı; axial hücre sorguları tutarlı kalmalı ve hareket canonical tick'i artırmamalı.  
+**Tamamlanma koşulu:** Hex runtime entegrasyon testleri ve manuel kabul testleri geçmeli; MainScreen legacy davranışı bu aşamadan etkilenmemeli.
 
 ## Aşama 7 — Mantıksal dünya sorgusu, kaynak ve etkileşim
 
