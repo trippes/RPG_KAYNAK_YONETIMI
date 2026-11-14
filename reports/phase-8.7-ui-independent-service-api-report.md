@@ -2,11 +2,11 @@
 
 ## Durum
 
-**TAMAMLANDI — Servis altyapısı, testler ve CI kalite kapıları başarılı.**
+**TAMAMLANDI — Servis altyapısı, otomatik testler ve CI kalite kapıları başarılı.**
 
 Çalışma yalnızca `demo_eldoria` dalında yürütüldü. `main` dalına işlem yapılmadı.
 
-Son doğrulanan uygulama HEAD'i: `1168b3f7cfbbd6e7151d2110cf6d3b4d25806072`
+Son uygulama kodu commit'i: `1168b3f7cfbbd6e7151d2110cf6d3b4d25806072`
 
 ## 1. Hedef ve kapsam
 
@@ -66,7 +66,7 @@ Her iki işlem de mevcut `PresentationContentStore` servisine delegasyon yapar. 
 
 Durum modeli: `ContentMigrationStatus`
 
-Migration durumu salt okunur biçimde raporlanır. Legacy migration yalnızca açıkça çağrıldığında çalışır; normal okuma sırasında otomatik migration yapılmaz. Şema sürümü mevcut version 1 sözleşmesinden değiştirilmedi.
+Migration durumu salt okunur biçimde raporlanır. Manifestteki kaynak yolu mutlak yol, sürücü, parent traversal, Windows ayıracı ve symlink escape açısından kontrol edilmeden okunmaz. Legacy migration yalnızca açıkça çağrıldığında çalışır; normal okuma sırasında otomatik migration yapılmaz. Şema sürümü mevcut version 1 sözleşmesinden değiştirilmedi.
 
 ## 3. Paket dışa aktarımı
 
@@ -93,8 +93,9 @@ Yeni test dosyası: `tests/test_application/test_presentation_content_service.py
 8. Geçersiz placement taslağının reddi ve kaynak dosyanın korunması.
 9. Asset kaydının güvenli store üzerinden yapılması ve yeni sonucun okunması.
 10. Split migration durumunun salt okunur raporlanması.
-11. Legacy migration'ın açık çağrıyla yapılması ve durumun güncellenmesi.
-12. Geçersiz paketin yapılandırılmış sonuçla raporlanması.
+11. Manifest kaynak yolunda path traversal girişiminin reddi.
+12. Legacy migration'ın açık çağrıyla yapılması ve durumun güncellenmesi.
+13. Geçersiz paketin yapılandırılmış sonuçla raporlanması.
 
 ## 5. Mimari sınırlar
 
@@ -111,33 +112,46 @@ Mimari belge: `docs/architecture/49-presentation-content-service-api.md`
 
 ## 6. CI doğrulaması
 
-Son uygulama commit'i `cb694f7a38de69632e6c505cc08617ade509c6ad` için:
+### Son uygulama kodu
+
+Uygulama kodu commit'i `1168b3f7cfbbd6e7151d2110cf6d3b4d25806072` için:
 
 **Eldoria CI — SUCCESS**
-Run: `43596267421` (uygulama kodu ve ilk 13 testli servis doğrulaması için)\n\nGüvenli migration-status path guard eklendikten sonra son kod HEAD'i için CI yeniden çalıştırıldı; aşağıdaki son koşular esas alınmalıdır.
+Run: `43596561474`
 
 - Ubuntu Python 3.11: 1.458 test geçti.
-- Ubuntu Python 3.12: 1.457 test geçti.
-- Windows Python 3.11: 1.457 test geçti.
-- Windows Python 3.12: 1.457 test geçti.
+- Ubuntu Python 3.12: 1.458 test geçti.
+- Windows Python 3.11: 1.458 test geçti.
+- Windows Python 3.12: 1.458 test geçti.
 - Pygame headless smoke: SUCCESS.
 
 **Core quality — SUCCESS**
-Run: `43596267420` (uygulama kodu için)\n\nSon path-guard düzeltmesi sonrası tekrar çalıştırılan Core quality workflow'un sonucu aşağıdaki son doğrulama bölümünde yer alır.
+Run: `43596561462`
 
 - Linux release-candidate verification: SUCCESS.
 - Windows release-candidate verification: SUCCESS.
 - Wheel build, isolated install, content package verification ve application smoke adımları geçti.
 
+### Rapor ve mimari belgenin son commit'i
+
+Rapor/mimari belge commit'i `a4fcd0123fe8ad206c304658b59dd25e87adf401` için de iki workflow başarıyla tamamlandı:
+
+- Eldoria CI: `43596577473` — SUCCESS.
+- Core quality: `43596577424` — SUCCESS.
+
 CI bağlantıları:
-- https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43596267421
-- https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43596267420
+- https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43596561474
+- https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43596561462
+- https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43596577473
+- https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43596577424
 
 ### CI sırasında bulunan ve giderilen test sorunu
 
 İlk test commit'inde `get_asset` testi, fixture'da bulunmayan `flora.tree.oak` kimliğini kullanıyordu. Gerçek katalogdaki kimlik `flora.tree.test` olduğundan Ubuntu Python 3.11/3.12 testleri başarısız oldu.
 
-Test, gerçek katalog kimliğini kullanacak şekilde düzeltildi. Üretim kodunda veya içerik dosyalarında değişiklik gerekmedi. Düzeltme sonrası son uygulama HEAD'i üzerinde dört test matrisi ve iki kalite workflow'u başarılı tamamlandı.
+Test, gerçek katalog kimliğini kullanacak şekilde düzeltildi. Üretim kodunda veya içerik dosyalarında değişiklik gerekmedi.
+
+Ayrıca migration-status sorgusunda manifest kaynak yolunun güvenli çözülmesi eklendi ve path traversal regresyon testi yazıldı. Son uygulama kodu commit'inde dört test matrisi 1.458 testin tamamını geçti. Core quality ve son rapor commit'inin CI workflow'ları da başarılı tamamlandı.
 
 ## 7. Teslimatlar
 
@@ -145,5 +159,6 @@ Test, gerçek katalog kimliğini kullanacak şekilde düzeltildi. Üretim kodund
 - `tests/test_application/test_presentation_content_service.py`
 - `docs/architecture/49-presentation-content-service-api.md`
 - `application/__init__.py` servis dışa aktarımı
+- `reports/phase-8.7-ui-independent-service-api-report.md`
 
 Aşama 8.7'nin servis/API kabul ölçütleri ve CI kalite kapıları karşılanmıştır. Content Editor arayüzü bilinçli olarak kapsam dışında bırakılmıştır.
