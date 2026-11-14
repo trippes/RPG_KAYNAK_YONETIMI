@@ -62,9 +62,12 @@ class TestContentPackageLoader(unittest.TestCase):
             payload = json.loads(catalog_path.read_text(encoding="utf-8"))
             payload["assets"][1]["asset_id"] = payload["assets"][0]["asset_id"]
             catalog_path.write_text(json.dumps(payload), encoding="utf-8")
+            invalid_bytes = catalog_path.read_bytes()
 
             with self.assertRaisesRegex(ContentPackageError, "Duplicate asset id"):
                 load_content_package(root)
+
+            self.assertEqual(catalog_path.read_bytes(), invalid_bytes)
 
     def test_package_rejects_unknown_placement_map_reference(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -115,6 +118,21 @@ class TestContentPackageLoader(unittest.TestCase):
 
             with self.assertRaisesRegex(ContentPackageError, "Unsupported"):
                 load_content_package(root)
+
+    def test_legacy_combined_catalog_is_prevalidated_when_split_sources_are_absent(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = self._copy_demo_package(directory)
+            manifest_path = root / "manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest.pop("asset_catalog")
+            manifest.pop("map_placements")
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+            package = load_content_package(root)
+
+            self.assertIsNotNone(package.presentation_catalog)
+            self.assertIsNone(package.scene_placements)
+            self.assertEqual(len(package.presentation_catalog.objects), 14)
 
     def test_demo_package_separates_hex_maps_from_square_maps(self):
         package = load_content_package(DEMO_PACKAGE)
