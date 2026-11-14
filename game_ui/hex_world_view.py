@@ -15,7 +15,9 @@ from game_ui.assets.placement_catalog import ScenePlacementCatalog
 from game_ui.assets.animation import Animation
 from game_ui.assets.sprite_sheet import SpriteSheet
 from game_ui.world_rendering.character_animation import CharacterAnimator
-from game_ui.world_rendering.scene_object import SceneObject, SceneObjectRenderer
+from game_ui.world_rendering.scene_object import (
+    SCENE_LAYER_ORDER, SceneObject, SceneObjectRenderer,
+)
 from application.hex_world_runtime import HexWorldRuntime
 from application.hex_occupancy import HexOccupant
 from core.domain.spatial import (
@@ -830,7 +832,7 @@ class HexWorldView:
         def drawable_depth(item):
             position, kind, value = item
             layer = getattr(value, "layer", "ground")
-            layer_order = {"underlay": 0, "ground": 1, "canopy": 2, "overlay": 3}.get(layer, 1)
+            layer_order = SCENE_LAYER_ORDER.get(layer, SCENE_LAYER_ORDER["ground"])
             if kind == "scene_object":
                 return layer_order, self._scene_object_depth_y(value, centers[position])
             if kind == "player":
