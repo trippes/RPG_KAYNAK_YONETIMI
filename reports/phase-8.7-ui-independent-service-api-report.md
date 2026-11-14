@@ -6,7 +6,7 @@
 
 Çalışma yalnızca `demo_eldoria` dalında yürütüldü. `main` dalına işlem yapılmadı.
 
-Son doğrulanan uygulama HEAD'i: `cb694f7a38de69632e6c505cc08617ade509c6ad`
+Son doğrulanan uygulama HEAD'i: `1168b3f7cfbbd6e7151d2110cf6d3b4d25806072`
 
 ## 1. Hedef ve kapsam
 
@@ -81,7 +81,7 @@ Servis ve sonuç modelleri `application` paketinden de erişilebilir hâle getir
 
 Yeni test dosyası: `tests/test_application/test_presentation_content_service.py`
 
-12 test metodu şu davranışları kapsar:
+13 test metodu şu davranışları kapsar:
 
 1. Asset listeleme ve ID ile çözümleme.
 2. Bilinen haritanın placement kayıtlarını okuma.
@@ -114,16 +114,16 @@ Mimari belge: `docs/architecture/49-presentation-content-service-api.md`
 Son uygulama commit'i `cb694f7a38de69632e6c505cc08617ade509c6ad` için:
 
 **Eldoria CI — SUCCESS**
-Run: `43596267421`
+Run: `43596267421` (uygulama kodu ve ilk 13 testli servis doğrulaması için)\n\nGüvenli migration-status path guard eklendikten sonra son kod HEAD'i için CI yeniden çalıştırıldı; aşağıdaki son koşular esas alınmalıdır.
 
-- Ubuntu Python 3.11: 1.457 test geçti.
+- Ubuntu Python 3.11: 1.458 test geçti.
 - Ubuntu Python 3.12: 1.457 test geçti.
 - Windows Python 3.11: 1.457 test geçti.
 - Windows Python 3.12: 1.457 test geçti.
 - Pygame headless smoke: SUCCESS.
 
 **Core quality — SUCCESS**
-Run: `43596267420`
+Run: `43596267420` (uygulama kodu için)\n\nSon path-guard düzeltmesi sonrası tekrar çalıştırılan Core quality workflow'un sonucu aşağıdaki son doğrulama bölümünde yer alır.
 
 - Linux release-candidate verification: SUCCESS.
 - Windows release-candidate verification: SUCCESS.
