@@ -23,7 +23,7 @@ Aşama 8'in amacı bir Content Editor uygulaması üretmek değildir. Amaç, ile
 
 Bu nedenle Aşama 8 sonunda kullanıcı harita düzenleyebileceği yeni bir pencere, araç çubuğu veya oyun içi düzenleme modu görmeyecektir. Bunun yerine, editörün ileride çağırabileceği kararlı ve test edilebilir altyapı bileşenleri bulunacaktır.
 
-Bu belge uygulama sırasında teknik referans olarak kullanılacaktır. Aşama 8.1'de gerçek depo kodu yeniden denetlenmeli; burada adı geçen mevcut sınıf, dosya veya sorumlulukların gerçek karşılıkları doğrulanmalıdır. Kod tabanında bulunmayan bir sınıfın var olduğu varsayılmayacak, aynı işi yapan mevcut bileşen varsa ikinci bir paralel sistem oluşturulmayacaktır.
+Bu belge uygulama sırasında teknik referans olarak kullanılacaktır. Aşama 6.1'de gerçek depo kodu yeniden denetlenmeli; burada adı geçen mevcut sınıf, dosya veya sorumlulukların gerçek karşılıkları doğrulanmalıdır. Kod tabanında bulunmayan bir sınıfın var olduğu varsayılmayacak, aynı işi yapan mevcut bileşen varsa ikinci bir paralel sistem oluşturulmayacaktır.
 
 **Önemli karar:** Aşama 8, Content Editor'ün altyapısını hazırlar; Content Editor'ü yazmaz.
 
@@ -186,7 +186,7 @@ Bu sınır UI teknolojisine bağımlı olmamalıdır. İleride Pygame içinden, 
 
 ## 5. Önerilen veri sözleşmeleri
 
-Bu bölüm nihai sınıf adlarını zorunlu kılmaz. Aşama 8.1'de mevcut uygulama incelendikten sonra, gerçek kod tabanına en az müdahale eden karşılık seçilecektir. Buradaki alanlar anlamsal sözleşmedir.
+Bu bölüm nihai sınıf adlarını zorunlu kılmaz. Aşama 6.1'de mevcut uygulama incelendikten sonra, gerçek kod tabanına en az müdahale eden karşılık seçilecektir. Buradaki alanlar anlamsal sözleşmedir.
 
 ### 5.1. Asset tanımı
 
@@ -247,7 +247,7 @@ Kurallar:
 
 ## 6. Alt aşamalar ve ayrıntılı iş planı
 
-## 8.1 — Mevcut içerik altyapısının teknik denetimi
+## 6.1 — Mevcut içerik altyapısının teknik denetimi
 
 **Amaç:** Yeni bir sistem yazmadan önce gerçek kod tabanındaki varlık, dosya yükleme, yerleşim ve doğrulama akışını çıkarmak.
 
@@ -286,7 +286,7 @@ Kabul ölçütleri:
 - Hex ve kare harita ayrımları belgelenmeli.
 - Denetim tamamlanmadan veri şeması veya yükleyici yeniden yazılmamalı.
 
-## 8.2 — Asset Catalog sözleşmesinin sağlamlaştırılması
+## 6.2 — Asset Catalog sözleşmesinin sağlamlaştırılması
 
 **Amaç:** PNG varlıklarının tekil, kararlı ve doğrulanabilir tanımlara sahip olmasını sağlamak.
 
@@ -320,13 +320,13 @@ Kabul ölçütleri:
 - Eksik veya bozuk PNG oyunu beklenmedik biçimde çökertmez; fallback ve tanımlı hata davranışı korunur.
 - Aynı PNG/asset tekrar kullanıldığında mevcut cache politikası bozulmaz.
 
-## 8.3 — Metadata ve yerleşim verilerinin ayrıştırılması
+## 6.3 — Metadata ve yerleşim verilerinin ayrıştırılması
 
 **Amaç:** Bir görsel varlığın tanımıyla o varlığın harita üzerindeki örneklerini birbirinden ayırmak.
 
 Yapılacak işler:
 - Asset katalog verisi ve map placement verisi ayrı sorumluluklara ayrılacak.
-- Dosyaların fiziksel olarak ayrılması, 8.1 denetiminden sonra en düşük riskli biçimde kararlaştırılacak.
+- Dosyaların fiziksel olarak ayrılması, 6.1 denetiminden sonra en düşük riskli biçimde kararlaştırılacak.
 - `presentation_assets.json` geriye dönük uyumluluk planı olmadan bir anda kaldırılmayacak.
 - Yeni placement verileri asset ID referansı kullanacak.
 - Harita nesnesi, PNG yolunu kendi içinde tekrar taşımayacak.
@@ -350,7 +350,7 @@ Kabul ölçütleri:
 - Mevcut demo haritalarının nesne görünümü ve konumları değişmemeli.
 - Kare harita içerik akışı regresyona uğramamalı.
 
-## 8.4 — Konum, anchor, pivot, scale, depth ve collision standartları
+## 6.4 — Konum, anchor, pivot, scale, depth ve collision standartları
 
 **Amaç:** İleride editörün göstereceği ve düzenleteceği değerlerin teknik anlamlarını belirsizlikten kurtarmak.
 
@@ -389,7 +389,7 @@ Kabul ölçütleri:
 - Görsel boyut değişimi collision alanını kendiliğinden ve kontrolsüz biçimde değiştirmemeli.
 - Derinlik sıralaması ve mevcut hareket davranışı korunmalı.
 
-## 8.5 — İçerik doğrulama ve güvenli yükleme
+## 6.5 — İçerik doğrulama ve güvenli yükleme
 
 **Amaç:** Hatalı içerik verisinin oyunun çalışma anında belirsiz davranışlara veya veri kaybına yol açmasını önlemek.
 
@@ -421,7 +421,7 @@ Kabul ölçütleri:
 - Desteklenmeyen schema version testleri.
 - Hatalı veri nedeniyle geçerli dosyanın kaybolmadığını gösteren güvenli kayıt testleri.
 
-## 8.6 — Güvenli kayıt ve şema geçişi altyapısı
+## 6.6 — Güvenli kayıt ve şema geçişi altyapısı
 
 **Amaç:** Gelecekte editörün üreteceği içerik dosyalarının kontrollü ve kurtarılabilir biçimde yazılabilmesini sağlamak.
 
@@ -454,7 +454,7 @@ Kabul ölçütleri:
 - Aynı migration'ın tekrar uygulanması veri bozulmasına yol açmaz.
 - Dosya yolu güvenliği test edilir.
 
-## 8.7 — Content Editor için UI bağımsız servis/API sözleşmesi
+## 6.7 — Content Editor için UI bağımsız servis/API sözleşmesi
 
 **Amaç:** İleride yazılacak editörün doğrudan JSON dosyalarını veya renderer iç yapılarını yönetmesini önlemek.
 
@@ -498,7 +498,7 @@ Kabul ölçütleri:
 - Runtime aynı içerik sözleşmesini kullanmaya devam etmeli.
 - Editör UI'si yazılmadan servis sözleşmeleri otomatik testlerle doğrulanmalı.
 
-## 8.8 — Entegrasyon, regresyon ve kapanış
+## 6.8 — Entegrasyon, regresyon ve kapanış
 
 **Amaç:** Yeni altyapının var olan oyun deneyimini değiştirmediğini ve gelecekte editörün güvenle üzerine kurulabileceğini doğrulamak.
 
@@ -594,7 +594,7 @@ Her alt aşama kendi testleriyle kapanmalıdır. Büyük bir değişiklik tek se
 
 | Risk | Olası sonuç | Önlem |
 |---|---|---|
-| Mevcut Asset Catalog'ın yeniden yazılması | Çalışan yükleme hattının bozulması | Önce 8.1 denetimi, mevcut sınıfı genişletme |
+| Mevcut Asset Catalog'ın yeniden yazılması | Çalışan yükleme hattının bozulması | Önce 6.1 denetimi, mevcut sınıfı genişletme |
 | Asset ve placement verisinin karışık kalması | Editörün aynı bilgiyi farklı yerlerde değiştirmesi | Ayrı veri sorumlulukları ve tekil referans |
 | Anchor biriminin belirsizliği | Nesnelerin yanlış konumlanması/depth sort | Koordinat uzayını belgelemek ve fixture testleri |
 | Collision ile görsel boyutun karışması | Oyuncunun nesneye yaklaşamaması veya içinden geçmesi | Ayrı geometri sözleşmeleri |
@@ -609,22 +609,22 @@ Her alt aşama kendi testleriyle kapanmalıdır. Büyük bir değişiklik tek se
 
 Önerilen sıra:
 
-1. 8.1 — Denetim ve envanter.
-2. 8.2 — Asset Catalog sözleşmesi.
-3. 8.3 — Asset/placement ayrımı.
-4. 8.4 — Metadata alanlarının standartlaştırılması.
-5. 8.5 — Doğrulama ve güvenli yükleme.
-6. 8.6 — Güvenli kayıt ve migration.
-7. 8.7 — UI bağımsız servis/API.
+1. 6.1 — Denetim ve envanter.
+2. 6.2 — Asset Catalog sözleşmesi.
+3. 6.3 — Asset/placement ayrımı.
+4. 6.4 — Metadata alanlarının standartlaştırılması.
+5. 6.5 — Doğrulama ve güvenli yükleme.
+6. 6.6 — Güvenli kayıt ve migration.
+7. 6.7 — UI bağımsız servis/API.
 8. 8.8 — Entegrasyon, regresyon, CI, manuel kabul ve kapanış raporu.
 
 Karar kapıları:
-- 8.1 tamamlanmadan veri modeli değiştirilmeyecek.
-- 8.2 ve 8.3 tamamlanmadan yeni editör odaklı servisler genişletilmeyecek.
-- 8.4 sözleşmeleri belgelenmeden anchor/collision/depth alanları topluca dönüştürülmeyecek.
-- 8.5 doğrulaması olmadan kayıt servisi geçerli içerik dosyalarını değiştirmeyecek.
-- 8.6 güvenli kayıt testleri geçmeden migration mevcut içerik dosyalarına uygulanmayacak.
-- 8.7 servisleri UI bağımsız test edilmeden editör geliştirmeye hazır olduğu iddia edilmeyecek.
+- 6.1 tamamlanmadan veri modeli değiştirilmeyecek.
+- 6.2 ve 6.3 tamamlanmadan yeni editör odaklı servisler genişletilmeyecek.
+- 6.4 sözleşmeleri belgelenmeden anchor/collision/depth alanları topluca dönüştürülmeyecek.
+- 6.5 doğrulaması olmadan kayıt servisi geçerli içerik dosyalarını değiştirmeyecek.
+- 6.6 güvenli kayıt testleri geçmeden migration mevcut içerik dosyalarına uygulanmayacak.
+- 6.7 servisleri UI bağımsız test edilmeden editör geliştirmeye hazır olduğu iddia edilmeyecek.
 
 ## 11. Aşama 8 tamamlanma ölçütleri
 
