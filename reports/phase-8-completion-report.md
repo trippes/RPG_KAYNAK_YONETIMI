@@ -1,6 +1,6 @@
 # Eldoria RPG — Aşama 8 Kapanış Raporu
 
-<badge>**TAMAMLANDI**</badge>
+**Durum: TAMAMLANDI**
 
 | Alan | Değer |
 |---|---|
