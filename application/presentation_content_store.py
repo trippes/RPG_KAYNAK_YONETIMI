@@ -278,7 +278,14 @@ class PresentationContentStore:
             dir=self.package_root.parent,
         ) as temporary_directory:
             stage_root = Path(temporary_directory) / self.package_root.name
-            shutil.copytree(self.package_root, stage_root, symlinks=True)
+            # The package-scoped lock is held by this process and must not
+            # be copied: Windows forbids reading a byte-range-locked file.
+            shutil.copytree(
+                self.package_root,
+                stage_root,
+                symlinks=True,
+                ignore=shutil.ignore_patterns(f".{self.MANIFEST_NAME}.lock"),
+            )
             yield stage_root
 
     def _read_manifest(self, stage_root: Path) -> dict[str, Any]:
