@@ -96,6 +96,14 @@ class HexWorldView:
             return
         self._presentation_data_loaded = True
         package = self._load_package()
+        # Content loading validates and constructs the complete immutable
+        # presentation snapshot before the runtime receives the package.
+        validated_catalog = getattr(package, "presentation_catalog", None)
+        if validated_catalog is not None:
+            self._presentation_catalog = validated_catalog
+            self._scene_placements = getattr(package, "scene_placements", None)
+            return
+
         asset_catalog_path = getattr(package, "asset_catalog_path", None)
         placements_path = getattr(package, "map_placements_path", None)
         if asset_catalog_path is not None and placements_path is not None:
