@@ -616,7 +616,7 @@ Her alt aşama kendi testleriyle kapanmalıdır. Büyük bir değişiklik tek se
 5. 6.5 — Doğrulama ve güvenli yükleme.
 6. 6.6 — Güvenli kayıt ve migration.
 7. 6.7 — UI bağımsız servis/API.
-8. 8.8 — Entegrasyon, regresyon, CI, manuel kabul ve kapanış raporu.
+8. 6.8 — Entegrasyon, regresyon, CI, manuel kabul ve kapanış raporu.
 
 Karar kapıları:
 - 6.1 tamamlanmadan veri modeli değiştirilmeyecek.
