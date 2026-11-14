@@ -44,8 +44,8 @@ class TestPresentationContentStore(unittest.TestCase):
         self.assertEqual(target.read_bytes(), first_bytes)
         self.assertEqual(json.loads(target.read_text(encoding="utf-8")), payload)
         self.assertEqual((self.root / "asset_catalog.json.bak").read_bytes(), first_bytes)
-        self.assertEqual(first.backup_paths, (self.root / "asset_catalog.json.bak",))
-        self.assertEqual(second.written_paths, (target,))
+        self.assertEqual(first.backup_paths, ((self.root / "asset_catalog.json.bak").resolve(),))
+        self.assertEqual(second.written_paths, (target.resolve(),))
         self.assertNotEqual(previous, first_bytes)
 
     def test_invalid_asset_catalog_is_rejected_without_replacing_source(self):
@@ -105,7 +105,7 @@ class TestPresentationContentStore(unittest.TestCase):
 
         self.assertEqual(self.read_json(target)["objects"][0]["offset_x"], -12.5)
         self.assertEqual(target.with_name(target.name + ".bak").read_bytes(), original)
-        self.assertEqual(result.written_paths, (target,))
+        self.assertEqual(result.written_paths, (target.resolve(),))
         from application.content_loader import load_content_package
         package = load_content_package(self.root)
         placement = next(
