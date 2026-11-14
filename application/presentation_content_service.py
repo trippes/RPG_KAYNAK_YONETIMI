@@ -164,11 +164,37 @@ class PresentationContentService:
             raise PresentationContentServiceError(
                 "Package declares an incomplete split presentation source."
             )
+        source_format = "none"
+        source_path = None
+        migration_available = False
         if has_catalog:
-            return ContentMigrationStatus("split", 1, False)
-        if manifest.get("presentation_assets") is not None:
-            return ContentMigrationStatus("legacy_combined", 1, True)
-        return ContentMigrationStatus("none", None, False)
+            source_format = "split"
+            source_path = manifest.get("asset_catalog")
+        elif manifest.get("presentation_assets") is not None:
+            source_format = "legacy_combined"
+            source_path = manifest.get("presentation_assets")
+            migration_available = True
+        if source_path is None:
+            return ContentMigrationStatus(source_format, None, migration_available)
+        if not isinstance(source_path, str) or not source_path.strip():
+            raise PresentationContentServiceError("Presentation source path is invalid.")
+        try:
+            schema_document = json.loads(
+                (self.content_root / source_path).read_text(encoding="utf-8")
+            )
+        except (OSError, UnicodeError, json.JSONDecodeError) as error:
+            raise PresentationContentServiceError(
+                f"Presentation schema source could not be read: {source_path}"
+            ) from error
+        schema_version = (
+            schema_document.get("schema_version")
+            if isinstance(schema_document, dict)
+            and type(schema_document.get("schema_version")) is int
+            else None
+        )
+        return ContentMigrationStatus(
+            source_format, schema_version, migration_available
+        )
 
     def migrate_legacy_content(self) -> ContentMigrationResult:
         """Explicitly migrate legacy presentation data; never run during reads."""
