@@ -16,7 +16,7 @@ Eldoria'nın canon altıgen dünya mimarisini bağımsız olarak araştırmak, p
 - [Test ve Kabul Ölçütleri](docs/TESTING_AND_ACCEPTANCE_CRITERIA.md) — doğrulama ve aşama kapıları.
 - [ADR Şablonu](docs/decisions/ADR-TEMPLATE.md) — mimari karar kayıt formatı.
 - [Aşama 0 Kapanış Raporu](reports/PHASE-00-FOUNDATION-CLOSURE.md) — planlama çıktıları.
-- [Aşama 1 Uygulama Raporu](reports/PHASE-01-INFRASTRUCTURE-REPORT.md) — altyapı uygulaması ve doğrulama durumu.
+- [Aşama 1 Uygulama Raporu](reports/PHASE-01-INFRASTRUCTURE-REPORT.md) — altyapı uygulaması ve doğrulama kanıtları.
 
 ## Kurulum (Windows PowerShell)
 
@@ -29,7 +29,7 @@ cd experiments/hex_world_laboratory
 Sanal ortam oluştur ve etkinleştir:
 
 ```powershell
-py -3 -m venv .venv
+py -3.12 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 ```
 
@@ -40,7 +40,7 @@ python -m pip install --upgrade pip
 python -m pip install -e ".[test]"
 ```
 
-Python 3.11 veya üzeri gereklidir. Bilgisayarında birden fazla Python sürümü varsa `py -0p` ile kurulu sürümleri görebilirsin.
+Bu aşamanın Windows doğrulaması Python 3.12.10 ile yapılmıştır. Pygame 2.6.1 için hazır Windows wheel paketi bu ortamda başarıyla kurulmuştur. Farklı Python sürümlerinde paket wheel kullanılabilirliği değişebileceğinden, laboratuvar için doğrulanmış sürüm olan Python 3.12 tercih edilir.
 
 ## Çalıştırma
 
@@ -48,7 +48,7 @@ Python 3.11 veya üzeri gereklidir. Bilgisayarında birden fazla Python sürüm�
 python -m hex_world_lab
 ```
 
-Pencereyi kapatmak uygulamayı sonlandırır.
+960×640 Pygame penceresi açılır. Pencereyi kapatmak uygulamayı sonlandırır.
 
 ## Test
 
@@ -60,4 +60,6 @@ Pygame yaşam döngüsü integration testi SDL dummy video/audio sürücülerini
 
 ## Mevcut durum
 
-**Aşama 1 — Bağımsız paket, minimal Pygame uygulaması ve başlangıç testleri eklendi.** Temiz ortam kurulumu ve yerel test sonuçları kullanıcı makinesinde doğrulanmayı bekliyor. Henüz hex geometri, hareket, fizik, kamera veya render sistemi uygulanmadı.
+**Aşama 1 — TAMAMLANDI VE KULLANICI MAKİNESİNDE DOĞRULANDI.** Bağımsız Python paketi, minimal Pygame uygulaması ve başlangıç testleri hazırdır. Kullanıcının Windows ortamında pytest sonucu 2 passed olarak doğrulanmış; gerçek 960×640 Pygame penceresi açılmış ve hatasız kapatılmıştır. Doğrulanan ortam Python 3.12.10, Pygame 2.6.1 ve pytest 8.4.2'dir.
+
+Henüz hex geometri, dünya, hareket, fizik, kamera veya render sistemi uygulanmadı. Aşama 2 için ayrıca plan ve kullanıcı onayı gereklidir.
