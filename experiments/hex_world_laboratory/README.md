@@ -44,6 +44,8 @@ python -m pytest -q
 Geometri çekirdeği saf Python'dur ve Pygame yüklemeden import edilebilir.
 
 ## Mevcut durum
-**Aşama 2 — GEOMETRİ UYGULANDI; ADR-003 KULLANICI KARARIYLA KABUL EDİLDİ.** Eşit mesafede ve karakterin önceki hücresi eşit yakınlıktaki hücrelerden biriyse önceki hücre korunur. Sınır geçilip yeni hücre daha yakın hâle geldiğinde yeni hücre seçilir. Önceki hücre bilgisi verilmezse deterministik cube-rounding yedek kuralı kullanılır.
+**Aşama 2 — TAMAMLANDI VE TEKNİK OLARAK KABUL EDİLDİ.** Son kod revizyonu Windows / Python 3.12.10 ortamında kullanıcı tarafından `python -m pytest -q` komutuyla doğrulandı: **53 passed**.
 
-Son sınır davranışı değişikliğinden önce kullanıcı ortamında 49 test geçmişti. Son değişiklik iki parametrik sınır testi eklediğinden, nihai revizyonun doğrulanması için `python -m pytest -q` yeniden çalıştırılmalıdır (beklenen toplam 53 test). Nihai oyun yönelimi henüz seçilmedi. Dünya hücre modeli, hareket, fizik, kamera ve render sonraki aşamalardadır.
+ADR-003 sınır davranışı: eşit mesafede karakterin önceki hücresi korunur; sınır geçilip diğer hücre daha yakın hâle geldiğinde yeni hücre seçilir. Önceki hücre bilgisi verilmezse deterministik cube-rounding yedek kuralı kullanılır.
+
+Nihai oyun yönelimi henüz seçilmedi. Dünya hücre modeli, hareket, fizik, kamera ve render sonraki aşamalardadır. Aşama 3 için ayrıca plan ve kullanıcı onayı gerekir.
