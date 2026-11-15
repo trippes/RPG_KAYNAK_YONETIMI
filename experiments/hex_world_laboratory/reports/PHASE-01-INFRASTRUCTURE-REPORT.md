@@ -1,9 +1,9 @@
-# Aşama 1 — Bağımsız Çalışma ve Test Altyapısı Uygulama Raporu
+# Aşama 1 — Bağımsız Çalışma ve Test Altyapısı Kapanış Raporu
 
 - **Proje:** Eldoria — Hex World Laboratory
 - **Dal:** `experiment/hex-world-laboratory`
 - **Aşama:** 1
-- **Durum:** UYGULAMA DOSYALARI HAZIR — YEREL DOĞRULAMA BEKLENİYOR
+- **Durum:** TAMAMLANDI — KULLANICI MAKİNESİNDE DOĞRULANDI
 - **Kapsam:** Bağımsız Python paketi, Pygame uygulama kabuğu ve başlangıç testleri.
 
 ## 1. Uygulanan işler
@@ -33,27 +33,38 @@
 
 Bu aşamada geometri, dünya, hareket, fizik, kamera ve render katmanları oluşturulmadı. Ana oyun modüllerine bağımlılık eklenmedi. Pygame yalnızca laboratuvar uygulama kabuğunda kullanılıyor.
 
-## 4. Kullanıcı makinesinde çalıştırılacak doğrulama
+## 4. Kullanıcı makinesinde doğrulama
 
-Laboratuvar dizininde:
+Kullanıcı, Windows PowerShell üzerinde laboratuvar dizinindeki sanal ortamı Python 3.12.10 ile oluşturup etkinleştirdi.
 
-```powershell
-py -3 -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-python -m pip install -e ".[test]"
-python -m pytest -q
-python -m hex_world_lab
-```
+Başarıyla kurulan bileşenler:
+- Python 3.12.10
+- Pygame 2.6.1 (Windows x64 wheel)
+- pytest 8.4.2
+- eldoria-hex-world-laboratory 0.1.0 (editable kurulum)
 
-Beklenen otomatik test sonucu: 2 testin geçmesi. Pencere testi SDL dummy sürücüsünü kullanır; gerçek pencere açılışı ayrıca son komutla görsel olarak kontrol edilir.
+Doğrulama sonuçları:
+- `python -m pytest -q`: **2 passed** (kullanıcı tarafından çalıştırıldı ve beklenen sonuç teyit edildi).
+- `python -m hex_world_lab`: 960×640 Pygame penceresi açıldı; kullanıcı pencereyi kapattığında uygulama hatasız sonlandı.
 
-## 5. Doğrulama sınırı
+İlk kurulum denemesinde Python 3.15.2 kullanılmış ve Pygame 2.6.1 için uygun hazır wheel bulunamadığından kaynak kod derlemesi başarısız olmuştur. Laboratuvarın bağımsız sanal ortamı Python 3.12.10 ile yeniden oluşturulmuş; hazır wheel üzerinden kurulum başarılı olmuştur. Bu nedenle README kurulum yönergesi doğrulanmış Python 3.12 sürümünü kullanacak şekilde güncellenmiştir.
 
-Bu rapor, dosyaların depoya eklenmesini ve yapılandırmanın hazırlanmasını kaydeder. Bu çalışma ortamında kullanıcının Windows makinesinde temiz sanal ortam kurulumu, bağımlılık kurulumu, pytest ve gerçek pencere açılışı çalıştırılamadı. Bu nedenle testler **geçti** olarak raporlanmıyor.
+## 5. Kabul ölçütleri
 
-## 6. Kabul durumu
+| Ölçüt | Sonuç | Kanıt |
+|---|---|---|
+| Bağımsız paket kurulumu | BAŞARILI | Editable kurulum tamamlandı |
+| Pygame bağımlılığı | BAŞARILI | Pygame 2.6.1 wheel kuruldu |
+| pytest bağımlılığı | BAŞARILI | pytest 8.4.2 kuruldu |
+| Otomatik testler | BAŞARILI | 2 passed |
+| Uygulama başlangıcı | BAŞARILI | Gerçek pencere açıldı |
+| Uygulama kapanışı | BAŞARILI | Pencere kapatılınca hatasız sonlandı |
+| Ana oyun modüllerinden izolasyon | KOD KAPSAMIYLA UYUMLU | Bu aşamada ana oyun bağımlılığı eklenmedi |
 
-**BEKLEMEDE — KULLANICI MAKİNESİNDE TEST KANITI GEREKLİ.**
+## 6. Sonuç ve sınırlar
 
-Kullanıcı kurulum ve test komutlarını çalıştırıp sonuçları paylaştığında hata varsa düzeltilecek; tüm kabul ölçütleri doğrulanınca Aşama 1 kapanış durumu güncellenecek. Bu rapor Aşama 2'ye geçiş izni değildir.
+**AŞAMA 1 KABUL EDİLDİ VE KAPATILDI.**
+
+Aşama 1'in bağımsız paket, uygulama yaşam döngüsü ve başlangıç test altyapısı hedefleri tamamlandı. Otomatik testler ve gerçek pencere açılış/kapanış kontrolü kullanıcı bilgisayarında doğrulandı.
+
+Bu kapanış, altıgen geometri veya sonraki laboratuvar katmanlarının uygulandığı anlamına gelmez. Aşama 2'ye geçiş için önce ayrı, ayrıntılı bir uygulama planı hazırlanmalı ve kullanıcı onayı alınmalıdır. Bu rapor tek başına Aşama 2 uygulama izni vermez.
