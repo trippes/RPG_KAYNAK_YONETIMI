@@ -6,6 +6,7 @@
 - Tarih: 15 Kasım 2026
 - Durum: UYGULANDI — KULLANICI MAKİNESİNDE DOĞRULAMA VE KABUL BEKLİYOR
 - Başlangıç HEAD: a36ea81b7defb8d307fd62015367a142996587f3
+- Geometri uygulama commit'i: 32c0ab33cf1b10b8dfe5d8f75aa76c5d446dec69
 
 ## 1. Hedef
 Pygame'den bağımsız saf Python hex koordinat ve geometri çekirdeği. Dünya modeli, hareket, fizik, kamera ve render kapsam dışıdır.
