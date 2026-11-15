@@ -22,7 +22,10 @@ def make_cell(terrain_id="grass"):
     )
 
 
-def make_map(cells=None, **overrides):
+_UNSET = object()
+
+
+def make_map(cells=_UNSET, **overrides):
     values = {
         "world_id": WorldId("eldoria"),
         "map_id": MapId("starting_valley"),
@@ -32,7 +35,7 @@ def make_map(cells=None, **overrides):
             radius=1.0,
             origin=WorldPoint(0.0, 0.0),
         ),
-        "cells": {} if cells is None else cells,
+        "cells": {} if cells is _UNSET else cells,
     }
     values.update(overrides)
     return HexMapDefinition(**values)
