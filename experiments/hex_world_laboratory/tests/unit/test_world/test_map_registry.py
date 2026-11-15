@@ -1,6 +1,6 @@
 import pytest
 
-from hex_world_lab.geometry import AxialCoord, HexLayout, Orientation
+from hex_world_lab.geometry import AxialCoord, HexLayout, HexOrientation
 from hex_world_lab.world import HexCellData, HexMapDefinition, MapId, WorldId
 from hex_world_lab.world.map_registry import (
     DuplicateMapError,
@@ -17,7 +17,7 @@ from hex_world_lab.world.map_registry import (
 WORLD_ID = WorldId("eldoria")
 MAP_ID = MapId("valley")
 NAME = "Starting Valley"
-LAYOUT = HexLayout(orientation=Orientation.POINTY, radius=1.0)
+LAYOUT = HexLayout(orientation=HexOrientation.POINTY_TOP, radius=1.0)
 
 
 def make_definition(*, world_id=WORLD_ID, map_id=MAP_ID, name=NAME):
@@ -26,7 +26,7 @@ def make_definition(*, world_id=WORLD_ID, map_id=MAP_ID, name=NAME):
         map_id=map_id,
         name=name,
         layout=LAYOUT,
-        cells={AxialCoord(0, 0): HexCellData(terrain_id="grass")},
+        cells={AxialCoord(0, 0): HexCellData(terrain_id="grass", is_walkable=True, has_obstacle=False)},
     )
 
 
