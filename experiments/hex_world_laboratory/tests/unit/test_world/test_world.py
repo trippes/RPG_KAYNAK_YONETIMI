@@ -5,13 +5,13 @@ from hex_world_lab.world import HexCellData, HexMapDefinition, HexWorld, MapId, 
 from hex_world_lab.world.map_registry import MapWorldMismatchError
 
 
-def make_definition(world_id, map_id, name):
+def make_definition(world_id, map_id, name, terrain_id="grass"):
     return HexMapDefinition(
         world_id=world_id,
         map_id=map_id,
         name=name,
         layout=HexLayout(orientation=HexOrientation.POINTY_TOP, radius=1.0),
-        cells={AxialCoord(0, 0): HexCellData(terrain_id="grass", is_walkable=True, has_obstacle=False)},
+        cells={AxialCoord(0, 0): HexCellData(terrain_id=terrain_id, is_walkable=True, has_obstacle=False)},
     )
 
 
@@ -35,13 +35,13 @@ def test_same_axial_coordinate_is_independent_between_maps():
     first_id, second_id = MapId("first"), MapId("second")
     world.register_map(first_id, "First")
     world.register_map(second_id, "Second")
-    first = make_definition(world_id, first_id, "First")
-    second = make_definition(world_id, second_id, "Second")
+    first = make_definition(world_id, first_id, "First", terrain_id="grass")
+    second = make_definition(world_id, second_id, "Second", terrain_id="stone")
     world.load_map(first)
     world.load_map(second)
     coord = AxialCoord(0, 0)
     assert world.get_map(first_id).get_cell_data(coord).terrain_id == "grass"
-    assert world.get_map(second_id).get_cell_data(coord).terrain_id == "grass"
+    assert world.get_map(second_id).get_cell_data(coord).terrain_id == "stone"
     assert first is not second
     assert first.map_id != second.map_id
 
@@ -65,3 +65,9 @@ def test_world_exposes_no_mutable_registry_storage():
 def test_world_requires_world_id():
     with pytest.raises(TypeError):
         HexWorld("eldoria")
+
+
+def test_world_identity_cannot_be_reassigned():
+    world = HexWorld(WorldId("eldoria"))
+    with pytest.raises(AttributeError):
+        world._world_id = WorldId("changed")
