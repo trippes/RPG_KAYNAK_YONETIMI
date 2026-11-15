@@ -1,20 +1,20 @@
-# Aşama 2 — Hex Geometri Çekirdeği Uygulama Raporu
+# Aşama 2 — Hex Geometri Çekirdeği Kapanış Raporu
 
 - Proje: Eldoria — Kaynak Yönetimi RPG
 - Depo: trippes/RPG_KAYNAK_YONETIMI
 - Dal: experiment/hex-world-laboratory
 - Tarih: 15 Kasım 2026
-- Durum: UYGULANDI — SON SINIR DAVRANIŞI DEĞİŞİKLİĞİNDEN SONRA TEST TEKRARI BEKLENİYOR
+- Durum: **TAMAMLANDI — TEKNİK KABUL EDİLDİ**
 - Başlangıç HEAD: a36ea81b7defb8d307fd62015367a142996587f3
 - İlk geometri uygulama commit'i: 32c0ab33cf1b10b8dfe5d8f75aa76c5d446dec69
 
-## 1. Hedef
-Pygame'den bağımsız saf Python hex koordinat ve geometri çekirdeği. Dünya modeli, hareket, fizik, kamera ve render kapsam dışıdır.
+## 1. Hedef ve kapsam
+Pygame'den bağımsız saf Python hex koordinat ve geometri çekirdeği oluşturuldu. Dünya modeli, hareket, fizik, kamera ve render bu aşamanın kapsamı dışındadır.
 
 ## 2. Onaylanan tercihler
 - Flat-top ve pointy-top desteklenir.
 - Dünya eksenleri matematiksel: X sağa, Y yukarı.
-- Hex boyutu circumradius.
+- Hex boyutu circumradius olarak tanımlanır.
 - Axial (0,0) hücresinin merkezi layout origin'idir.
 - Nihai görsel yönelim bu aşamada seçilmemiştir.
 
@@ -29,30 +29,32 @@ Pygame'den bağımsız saf Python hex koordinat ve geometri çekirdeği. Dünya 
 - tolerance.py: merkezi mutlak/göreli tolerans.
 - geometry/__init__.py: geometri API dışa aktarımı.
 
-## 4. ADR kayıtları
-- ADR-001: İki yönelimi destekleme — kullanıcı tercihiyle kabul edildi.
-- ADR-002: Matematiksel eksen, origin ve circumradius — kullanıcı tercihiyle kabul edildi.
+## 4. Mimari karar kayıtları
+- ADR-001: İki yönelimi destekleme — kabul edildi.
+- ADR-002: Matematiksel eksen, origin ve circumradius — kabul edildi.
 - ADR-003: Eşit mesafede önceki hücreyi koruma, sınır geçilince en yakın hücreye geçme ve deterministik yedek seçim — kullanıcı kararıyla kabul edildi ve uygulandı.
 
-## 5. Test kapsamı
-Axial/cube invariant, dönüşüm döngüsü, iki yönelim, farklı radius/origin, polygon köşe/kenar eşitliği, komşuluk simetrisi, mesafe, negatif koordinat, paylaşılan kenar davranışı, tolerans ve Pygame'siz import. Son güncellemede iki parametrik sınır testi eklendi: her iki yönelimde sınırın tam ortasında önceki hücreyi koruma ve sınır geçildikten sonra yeni hücreyi seçme.
+## 5. Sınır davranışı sözleşmesi
+1. Dünya noktasına en yakın hücre seçilir.
+2. Nokta iki hücrenin tam eşit uzaklıkta olduğu sınırdaysa ve karakterin önceki hücresi bu hücrelerden biriyse önceki hücre korunur.
+3. Sınır geçilip diğer hücre daha yakın olduğunda yeni hücre seçilir.
+4. Önceki hücre bilgisi verilmezse deterministik cube-rounding yedek kuralı kullanılır.
+5. Yedek kuralda half-up yuvarlama ve q/r/s düzeltme sırası uygulanır.
+6. Mutlak ve göreli tolerans 1e-9'dur; yalnızca sayısal eşitlik değerlendirmesinde kullanılır.
 
 ## 6. Test kanıtı
+- Kullanıcı ortamı: Windows, Python 3.12.10.
+- Komut: `python -m pytest -q`.
+- Son kod revizyonu için kullanıcı tarafından bildirilen sonuç: **53 passed**.
+- Bu doğrulama, önceki hücreyi sınırda koruma ve sınır geçişinde yeni hücreyi seçme testlerini içeren son revizyona aittir.
+- Önceki geliştirme ortamı izole geometri testi: Python 3.13.5 / Linux, 47 passed. Bu ayrı test paketi kullanıcı ortamındaki tam laboratuvar testinin yerine geçmez.
 
-### Önceki kod revizyonu — kullanıcı ortamı
-- İşletim sistemi: Windows
-- Python: 3.12.10
-- Komut: `python -m pytest -q`
-- Kullanıcının teyit ettiği sonuç: **49 passed**
+## 7. Bilinen sonraki aşama konuları
+- Nihai görsel yönelim kamera/render çalışmaları sırasında seçilecek.
+- Çok büyük koordinatlarda floating-point hassasiyeti ayrıca stres testine tabi tutulabilir.
+- Dünya hücre modeli, hareket, fizik, kamera ve render ayrı aşamalarda ele alınacaktır.
 
-Bu 49 test, son önceki-hücre sınır davranışı değişikliğinden önceki revizyona aittir. Son değişiklikle iki parametrik test (Flat-top ve Pointy-top için toplam dört test durumu) eklendi. Dolayısıyla son revizyon için yeniden test gerekir; beklenen toplam 53 testtir.
+## 8. Kapanış kararı
+**AŞAMA 2 TAMAMLANDI VE TEKNİK OLARAK KABUL EDİLDİ.** Onaylı geometri kapsamı uygulandı, ADR kararları kaydedildi ve son kod revizyonu için 53/53 test sonucu kullanıcı tarafından doğrulandı.
 
-## 7. Açık konular
-- Nihai görsel yönelim kamera/render aşamasında seçilecek.
-- Çok büyük koordinatlarda floating-point hassasiyeti ayrıca stres testine tabi tutulmalı.
-- WorldPosition, dünya hücre verisi, hareket, fizik, kamera ve render bu aşamanın dışındadır.
-
-## 8. Kabul durumu
-**ADR-003 KULLANICI KARARIYLA KABUL EDİLDİ VE UYGULANDI. SON KOD REVİZYONUNUN TEST DOĞRULAMASI BEKLENİYOR.**
-
-Bu rapor Aşama 3 uygulama izni değildir.
+Bu kapanış, Aşama 3'ün otomatik olarak başladığı veya uygulama izni verildiği anlamına gelmez. Aşama 3 öncesinde ayrı ayrıntılı plan sunulacak ve kullanıcı onayı alınacaktır.
