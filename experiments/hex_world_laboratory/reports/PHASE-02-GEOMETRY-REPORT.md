@@ -4,7 +4,7 @@
 - Depo: trippes/RPG_KAYNAK_YONETIMI
 - Dal: experiment/hex-world-laboratory
 - Tarih: 15 Kasım 2026
-- Durum: UYGULANDI — KULLANICI MAKİNESİNDE DOĞRULAMA VE KABUL BEKLİYOR
+- Durum: UYGULANDI — TEKNİK TESTLER GEÇTİ; ADR-003 VE KULLANICI KAPANIŞ KABULÜ BEKLENİYOR
 - Başlangıç HEAD: a36ea81b7defb8d307fd62015367a142996587f3
 - Geometri uygulama commit'i: 32c0ab33cf1b10b8dfe5d8f75aa76c5d446dec69
 
@@ -32,30 +32,34 @@ Pygame'den bağımsız saf Python hex koordinat ve geometri çekirdeği. Dünya 
 ## 4. ADR kayıtları
 - ADR-001: İki yönelimi destekleme — kullanıcı tercihiyle kabul edildi.
 - ADR-002: Matematiksel eksen, origin ve circumradius — kullanıcı tercihiyle kabul edildi.
-- ADR-003: Half-up cube rounding, q/r/s düzeltme önceliği ve tolerans — uygulandı; kullanıcı kapanış kabuline sunulacak.
+- ADR-003: Half-up cube rounding, q/r/s düzeltme önceliği ve tolerans — uygulandı; nihai mimari karar için kullanıcı değerlendirmesi bekleniyor.
 
 ## 5. Test kapsamı
 Axial/cube invariant, dönüşüm döngüsü, iki yönelim, farklı radius/origin, polygon köşe/kenar eşitliği, komşuluk simetrisi, mesafe, negatif koordinat, paylaşılan kenar tie-break, tolerans ve Pygame'siz import.
 
 ## 6. Test kanıtı
-İzole geometri test paketi geliştirme ortamında:
+
+### Geliştirme ortamı — izole geometri test paketi
 - Python 3.13.5
 - Linux x86_64
 - 47 passed
-Bu sonuç kullanıcının Windows/Python 3.12 tam laboratuvar testinin yerine geçmez.
 
-Kullanıcı ortamında çalıştırılacak komut:
-```powershell
-python -m pytest -q
-```
+### Kullanıcı ortamı — tam laboratuvar test paketi
+- İşletim sistemi: Windows
+- Python: 3.12.10
+- Komut: `python -m pytest -q`
+- Kullanıcının teyit ettiği sonuç: **49 passed**
+- Kullanıcı, 49/49 sonucunun yukarıdaki tam laboratuvar test komutundan alındığını açıkça doğruladı.
+
+İki sonuç farklı ortamlara ve test kapsamlarına aittir; birbirinin yerine yazılmamıştır.
 
 ## 7. Açık konular
 - Nihai görsel yönelim kamera/render aşamasında seçilecek.
-- Tie-break formülü kullanıcı kapanışında değerlendirilecek.
+- Tie-break ve tolerans politikası ADR-003 kapsamında kullanıcı kapanışında kabul edilmeli veya revize edilmelidir.
 - Çok büyük koordinatlarda floating-point hassasiyeti ayrıca stres testine tabi tutulmalı.
 - WorldPosition, dünya hücre verisi, hareket, fizik, kamera ve render bu aşamanın dışındadır.
 
 ## 8. Kabul durumu
-**BEKLEMEDE — KULLANICI MAKİNESİNDE TAM TEST VE KULLANICI KABULÜ GEREKLİ.**
+**TEKNİK TESTLER GEÇTİ (49/49, kullanıcı ortamı). AŞAMA KAPANIŞI ADR-003'ÜN KULLANICI TARAFINDAN DEĞERLENDİRİLMESİ VE KABULÜNE BAĞLIDIR.**
 
 Bu rapor Aşama 3 uygulama izni değildir.
