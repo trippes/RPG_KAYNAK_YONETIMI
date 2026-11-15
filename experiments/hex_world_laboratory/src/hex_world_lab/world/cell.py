@@ -58,7 +58,7 @@ def _hashable_json_value(value: FrozenJSONValue) -> object:
         return ("mapping", tuple(sorted((key, _hashable_json_value(item)) for key, item in value.items())))
     if isinstance(value, tuple):
         return ("sequence", tuple(_hashable_json_value(item) for item in value))
-    return (type(value).__name__, value)
+    return value
 
 
 @dataclass(frozen=True, slots=True, eq=True)
