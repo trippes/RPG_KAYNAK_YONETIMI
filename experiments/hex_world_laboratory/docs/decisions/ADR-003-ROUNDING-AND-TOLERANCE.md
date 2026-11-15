@@ -1,27 +1,36 @@
-# ADR-003 — Cell selection rounding and numeric tolerance
+# ADR-003 — Hücre seçimi, sınır davranışı ve sayısal tolerans
 
-- Durum: ÖNERİ — uygulandı, aşama kapanışında kullanıcı kabulü bekliyor
+- Durum: KABUL EDİLDİ — kullanıcı kararıyla
 - Tarih: 2026-11-15
 - Aşama: 2
-- Onay: Kullanıcı deterministik sınır davranışını istedi; kesin formül kapanışta değerlendirilecek.
 
-## Problem
-World-to-axial dönüşümü kesirli cube koordinatlarını bir hücreye yuvarlar. Kenar/köşe noktaları eşit uzaklık durumları oluşturur.
+## Bağlam
+Dünya koordinatındaki bir nokta axial hücreye dönüştürülürken, iki veya üç hücreye eşit uzaklıkta olan sınır noktaları ortaya çıkabilir. Karakter hareket ederken tam sınırda önceki hücresini kaybetmemelidir.
 
-## Seçenekler
-- Python round (banker's rounding).
-- Bileşenleri bağımsız yuvarlamak.
-- Cube rounding ve deterministik düzeltme sırası.
+## Karar
+1. Nokta için geometrik olarak en yakın hücre seçilir.
+2. Nokta iki hücrenin tam sınırındaysa ve önceki hücre bu eşit uzaklıktaki hücrelerden biriyse önceki hücre korunur.
+3. Önceki hücre en yakın hücrelerden biri değilse, en yakın hücre seçilir.
+4. Önceki hücre bilgisi verilmemişse deterministik cube rounding kullanılır.
+5. Cube rounding'de yarım değerler half-up yuvarlanır; düzeltme eşitliğinde q, r, s sırası yedek deterministik önceliktir.
+6. Mutlak ve göreli sayısal toleranslar 1e-9'dur. Tolerans yalnızca sayısal eşitliği değerlendirmek içindir; sınırdan gerçekten geçişi engellemez.
 
-## Uygulanan öneri
-- En yakın tam sayıya half-up rounding (tam yarımlar pozitif sonsuza).
-- Cube toplamı sıfır değilse en büyük mutlak yuvarlama hatasına sahip bileşen düzeltilir.
-- Eşitlik önceliği q, r, s sırasıdır.
-- Mutlak ve göreli tolerans 1e-9.
-- Toleranslar hücre atama kuralını değiştirmez.
+## Hareket açısından beklenen davranış
+- Karakter A hücresinden B hücresine ilerlerken ortak sınıra tam geldiğinde, önceki hücresi A ise A korunur.
+- Sınırı B tarafına geçtiğinde B, A'dan daha yakın hâle gelir ve seçilir.
+- Karakter B'den sınıra geri geldiğinde aynı kural simetrik olarak B hücresini korur.
+- Böylece karakter tam sınırda hücreler arasında titreşmez; sınırı geçtiğinde hücresi güncellenir.
 
-## Gerekçe ve ödünleşimler
-Aynı girdinin her çalıştırmada aynı hücreyi seçmesini sağlar. Sınırın iki tarafında hücre seçimi kesikli değişir; sınırın kendisi tek hücreye atanır. Çok büyük dünya koordinatlarında float çözünürlüğü ayrıca ölçülmelidir.
+## Uygulama notu
+Geometri dönüşüm fonksiyonu `world_to_axial(point, layout, previous_cell=None)` önceki hücreyi isteğe bağlı alır. Bu bilgi karakter/hareket katmanından sağlanır. Önceki hücre, yalnızca gerçekten eşit uzaklıktaki hücrelerden biriyse korunur.
 
-## Doğrulama
-Pozitif/negatif koordinatlar, paylaşılan kenar, köşe ve dönüşüm testleri.
+## Ödünleşimler ve kapsam
+- Önceki hücre bilgisi saf geometri fonksiyonuna isteğe bağlı parametre olarak eklenir; geometri katmanı karakter durumunu kendisi saklamaz.
+- Önceki hücre verilmezse sonuç yine deterministiktir.
+- Bu karar karakterin hareket sistemini uygulamaz; hareket katmanı bu parametreyi her güncellemede sağlamalıdır.
+- Çok büyük dünya koordinatlarında floating-point hassasiyeti ayrıca stres testine tabi tutulmalıdır.
+
+## Doğrulama ölçütleri
+- Flat-top ve pointy-top yönelimlerinde sınırın tam ortasında önceki hücre korunmalı.
+- Sınır geçildikten sonra daha yakın olan yeni hücre seçilmeli.
+- Önceki hücre verilmediğinde deterministik yedek seçim sürmeli.
