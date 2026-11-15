@@ -1,6 +1,6 @@
 import pytest
 
-from hex_world_lab.geometry import AxialCoord, HexLayout, Orientation
+from hex_world_lab.geometry import AxialCoord, HexLayout, HexOrientation
 from hex_world_lab.world import HexCellData, HexMapDefinition, HexWorld, MapId, WorldId
 from hex_world_lab.world.map_registry import MapWorldMismatchError
 
@@ -10,8 +10,8 @@ def make_definition(world_id, map_id, name):
         world_id=world_id,
         map_id=map_id,
         name=name,
-        layout=HexLayout(orientation=Orientation.POINTY, radius=1.0),
-        cells={AxialCoord(0, 0): HexCellData(terrain_id="grass")},
+        layout=HexLayout(orientation=HexOrientation.POINTY_TOP, radius=1.0),
+        cells={AxialCoord(0, 0): HexCellData(terrain_id="grass", is_walkable=True, has_obstacle=False)},
     )
 
 
