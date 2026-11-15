@@ -28,7 +28,7 @@ def make_map(cells=None, **overrides):
         "map_id": MapId("starting_valley"),
         "name": "Başlangıç Vadisi",
         "layout": HexLayout(
-            orientation=HexOrientation.POINTY,
+            orientation=HexOrientation.POINTY_TOP,
             radius=1.0,
             origin=WorldPoint(0.0, 0.0),
         ),
@@ -47,7 +47,7 @@ def test_map_definition_accepts_valid_identity_layout_and_cells():
     assert map_definition.world_id == WorldId("eldoria")
     assert map_definition.map_id == MapId("starting_valley")
     assert map_definition.name == "Başlangıç Vadisi"
-    assert map_definition.layout.orientation is HexOrientation.POINTY
+    assert map_definition.layout.orientation is HexOrientation.POINTY_TOP
     assert map_definition.get_cell_data(coord) is cell
 
 
