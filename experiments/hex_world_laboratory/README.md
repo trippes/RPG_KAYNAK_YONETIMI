@@ -25,7 +25,7 @@ Laboratuvar dizinine geç:
 ```powershell
 cd experiments/hex_world_laboratory
 py -3.12 -m venv .venv
-.\.venv\Scripts\Activate.ps1
+.\\.venv\\Scripts\\Activate.ps1
 python -m pip install --upgrade pip
 python -m pip install -e ".[test]"
 ```
@@ -44,6 +44,6 @@ python -m pytest -q
 Geometri çekirdeği saf Python'dur ve Pygame yüklemeden import edilebilir.
 
 ## Mevcut durum
-**Aşama 2 — UYGULANDI, KULLANICI MAKİNESİNDE DOĞRULAMA BEKLENİYOR.** Flat-top ve pointy-top, axial/cube koordinatları, axial/world dönüşümleri, polygon, komşuluk, mesafe, deterministik rounding ve tolerans sabitleri eklendi. İzole geometri testlerinde geliştirme ortamında 47 test geçti (Python 3.13.5, Linux). Bu sonuç Windows/Python 3.12 tam laboratuvar testi yerine geçmez.
+**Aşama 2 — UYGULANDI; TAM LABORATUVAR TESTLERİ KULLANICI ORTAMINDA 49/49 GEÇTİ.** Kullanıcı Windows / Python 3.12.10 ortamında `python -m pytest -q` komutunu çalıştırdığını ve 49/49 sonucunu teyit etti. Geliştirme ortamındaki izole geometri testleri ayrıca Python 3.13.5 / Linux üzerinde 47 test olarak raporlanmıştır.
 
-Nihai oyun yönelimi henüz seçilmedi. Dünya hücre modeli, hareket, fizik, kamera ve render sonraki aşamalardadır.
+ADR-003'teki deterministik tie-break ve tolerans politikası nihai kullanıcı değerlendirmesini beklemektedir. Nihai oyun yönelimi henüz seçilmedi. Dünya hücre modeli, hareket, fizik, kamera ve render sonraki aşamalardadır.
