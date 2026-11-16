@@ -22,6 +22,7 @@ from hex_world_lab.physics import (
     BoundaryPolicy,
     BodyDefinition,
     CircleShape,
+    ContinuousCollisionResolution,
     ConvexPolygonShape,
     ObstacleDefinition,
     build_hex_map_collision_geometry,
@@ -186,7 +187,7 @@ class MovementDemo:
         return self.movement_system.state
 
     @property
-    def last_collision_resolution(self):
+    def last_collision_resolution(self) -> ContinuousCollisionResolution | None:
         """Return the most recent read-only collision resolution snapshot."""
         return self.movement_system.last_resolution
 
@@ -324,7 +325,10 @@ class MovementDemo:
             f"Mode: {mode.name}",
             f"Multiplier: {multiplier:.2f}x | Mode speed: {mode_speed:.1f} units/s",
             f"Cell: {cell} | data: {cell_data}",
-            f"Collider: circle r={PLAYER_COLLIDER_RADIUS:.1f} | contacts: {contact_count} | impacts: {impact_count}",
+            (
+                f"Collider: circle r={PLAYER_COLLIDER_RADIUS:.1f} | "
+                f"contacts: {contact_count} | impacts: {impact_count}"
+            ),
             f"Last tick: {completed_tick if completed_tick >= 0 else '—'}",
             f"Render FPS: {render_fps:.1f}",
             f"Ticks this frame: {diagnostics.last_frame_tick_count}",
