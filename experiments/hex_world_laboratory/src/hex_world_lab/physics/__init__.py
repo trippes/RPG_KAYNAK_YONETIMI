@@ -12,6 +12,7 @@ from .hex_geometry import (
 from .narrowphase import collide_shapes
 from .obstacle import ObstacleDefinition
 from .shapes import CircleShape, ColliderShape, ConvexPolygonShape
+from .solver import CollisionResolution, resolve_kinematic_motion
 
 __all__ = [
     "AABB",
@@ -19,6 +20,7 @@ __all__ = [
     "BodyDefinition",
     "BoundaryPolicy",
     "CircleShape",
+    "CollisionResolution",
     "ColliderShape",
     "Contact",
     "ContactManifold",
@@ -29,4 +31,5 @@ __all__ = [
     "build_hex_map_collision_geometry",
     "collide_shapes",
     "gather_candidates",
+    "resolve_kinematic_motion",
 ]
