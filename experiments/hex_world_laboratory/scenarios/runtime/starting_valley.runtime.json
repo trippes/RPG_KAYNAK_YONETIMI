@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "kind": "hex_world_runtime_snapshot",
+  "world_id": "eldoria",
+  "map_id": "starting_valley",
+  "base_map_sha256": "3af0aaffcb61275b28cb3d73a5619417caab66418d90df82f9b2ae645bd89a83",
+  "overrides": [
+    {
+      "q": 0,
+      "r": 0,
+      "terrain_id": "burned_grass",
+      "has_obstacle": true
+    }
+  ]
+}
