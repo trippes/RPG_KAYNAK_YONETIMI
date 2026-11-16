@@ -11,3 +11,4 @@ class AppConfig:
     window_width: int = 960
     window_height: int = 640
     target_fps: int = 60
+    movement_speed: float = 60.0
