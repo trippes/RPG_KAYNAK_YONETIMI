@@ -4,7 +4,7 @@
 > **Proje:** Eldoria — Hex World Laboratory  
 > **Dal:** `experiment/hex-world-laboratory`  
 > **Tarih:** 16 Kasım 2026  
-> **Durum:** KULLANICI ONAYI BEKLİYOR — kod değişikliği için yetki vermez  
+> **Durum:** TEKNİK DOĞRULAMASI TAMAMLANDI — ALT AŞAMA KAPATILDI  
 > **Üst belge:** `docs/PHASE-04.7-TECHNICAL-PLAN.md`  
 > **Başlangıç HEAD:** `0b6dafe4d346c6f61a6fc03282eb81c2fdb68f75`
 
@@ -138,7 +138,7 @@ Kabul ölçütleri:
 5. Değişiklik kapsamı test dosyasıyla sınırlı olduğundan Core Quality workflow tetiklenmiyorsa bu durum açıkça raporlanır; tetiklenmişse Linux/Windows sonuçları doğrulanır.
 6. Benchmark veya FPS testleri için kod değişikliği gerekmiyorsa tekrar çalıştırma zorunlu değildir; tam pytest içindeki regresyon sonucu kaydedilir.
 
-CI başarısı yerel bilgisayar testinin yerine geçmez. Kullanıcının masaüstü manuel kontrolü bu alt aşamanın otomatik test hedefi değildir; Aşama 4.7.5/4.7.6 kabul listesinde açık kalır.
+CI başarısı yerel bilgisayar testinin yerine geçmez. Kullanıcının kararıyla masaüstü manuel kabul kontrolleri Aşama 4.7.4 kapanış şartı olmaktan çıkarılmış ve Aşama 4'ün genel kapanışına ertelenmiştir. Bu nedenle alt aşama teknik doğrulama kapsamında kapatılabilir; masaüstü davranışları Aşama 4 genel kapanışında birlikte kontrol edilecektir.
 
 ## 6. Tamamlanma ölçütleri
 
@@ -153,6 +153,8 @@ Aşama 4.7.4 bu plan kapsamında ancak aşağıdaki koşulların tümü sağlan�
 - Commit yalnızca `experiment/hex-world-laboratory` dalına yazılmıştır.
 - Commit SHA, branch HEAD ve değişen dosya listesi GitHub'dan tekrar okunarak doğrulanmıştır.
 - Kapanış özeti kullanıcıya sunulmuştur.
+
+**Not:** Yerel bilgisayarda manuel masaüstü kabulü bu alt aşamanın tamamlanma ölçütü değildir. Bu kontroller Aşama 4 genel kapanışında yapılacaktır.
 
 ## 7. Riskler ve önlemler
 
@@ -176,9 +178,9 @@ Aşama 4.7.4 bu plan kapsamında ancak aşağıdaki koşulların tümü sağlan�
 
 ## 9. Onay kapısı ve dal güvenliği
 
-Bu belge yalnızca teknik uygulama planıdır. Kod değişikliği için kullanıcı onayı gereklidir.
+Kullanıcı bu teknik planı 16 Kasım 2026 tarihinde onaylamıştır. Uygulama ve otomatik teknik doğrulama tamamlanmıştır.
 
-Onaydan sonra:
+Uygulama sürecinde:
 
 - Yalnızca `experiment/hex-world-laboratory` dalında çalışılır.
 - Yazma öncesi branch HEAD ve hedef dosyanın güncel SHA'sı yeniden doğrulanır.
