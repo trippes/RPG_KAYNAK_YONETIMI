@@ -18,6 +18,8 @@ _ORIENTATIONS = {"flat_top", "pointy_top"}
 def _object(value: Any, path: str, allowed: set[str], required: set[str] | None = None) -> dict:
     if not isinstance(value, dict):
         raise MapValidationError("must be an object", path)
+    if any(not isinstance(key, str) for key in value):
+        raise MapValidationError("object field names must be strings", path)
     unknown = set(value) - allowed
     if unknown:
         key = sorted(unknown)[0]
@@ -37,8 +39,12 @@ def _nonempty_string(value: Any, path: str) -> None:
 def _number(value: Any, path: str, *, positive: bool = False) -> None:
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise MapValidationError("must be a number", path)
-    if not math.isfinite(value):
-        raise MapValidationError("must be finite", path)
+    try:
+        finite_value = math.isfinite(float(value))
+    except (OverflowError, ValueError):
+        finite_value = False
+    if not finite_value:
+        raise MapValidationError("must be finite and representable", path)
     if positive and value <= 0:
         raise MapValidationError("must be greater than zero", path)
 
@@ -84,7 +90,7 @@ def validate_map_payload(payload: Any) -> dict:
     _nonempty_string(data["name"], "$.name")
 
     layout = _object(data["layout"], "$.layout", _LAYOUT)
-    if layout["orientation"] not in _ORIENTATIONS:
+    if not isinstance(layout["orientation"], str) or layout["orientation"] not in _ORIENTATIONS:
         raise MapValidationError(
             "must be 'flat_top' or 'pointy_top'", "$.layout.orientation"
         )
