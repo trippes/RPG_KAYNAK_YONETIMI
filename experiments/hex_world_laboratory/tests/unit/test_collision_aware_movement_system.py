@@ -91,6 +91,38 @@ def test_collision_aware_system_preserves_movement_mode_speed_profiles(
     assert system.state.mode is mode
 
 
+
+@pytest.mark.parametrize("mode", [MovementMode.NORMAL, MovementMode.RUNNING, MovementMode.STEALTH])
+def test_collision_blocks_normal_running_and_stealth_modes(mode):
+    system = make_system(obstacles=(wall(),))
+    for tick in range(8):
+        system.step(tick, MovementIntent(Vector2(1.0, 0.0), mode))
+    assert system.state.position.x == pytest.approx(1.5, abs=1e-5)
+    assert system.state.velocity.x == pytest.approx(0.0, abs=1e-5)
+    assert system.state.mode is mode
+
+
+def test_collision_aware_system_resolves_two_wall_corner_contacts():
+    vertical = wall(obstacle_id="vertical")
+    horizontal = ObstacleDefinition(
+        "horizontal",
+        MAP,
+        ConvexPolygonShape((
+            Vector2(-3.0, -0.25),
+            Vector2(3.0, -0.25),
+            Vector2(3.0, 0.25),
+            Vector2(-3.0, 0.25),
+        )),
+        WorldPoint(0.0, 2.0),
+    )
+    system = make_system(obstacles=(horizontal, vertical))
+    for tick in range(8):
+        system.step(tick, MovementIntent(Vector2(1.0, 1.0)))
+    assert system.state.position.x <= 1.50001
+    assert system.state.position.y <= 1.50001
+    assert system.last_resolution is not None
+    assert len(system.last_resolution.contacts) >= 1
+
 def test_body_local_offset_is_respected_without_changing_ground_anchor():
     system = make_system(
         obstacles=(wall(x=2.0),),
