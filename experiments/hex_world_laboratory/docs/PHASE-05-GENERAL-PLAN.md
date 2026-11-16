@@ -183,7 +183,7 @@ Otomatik doğrulama kanıtları:
 - Bütünleşik çarpışma benchmark'ı (GitHub Linux runner, 10 tick/batch): 1 aktör 198.492 µs/actor-tick; 10 aktör 190.8413 µs; 100 aktör 194.7613 µs; 1.000 aktör 196.2149 µs. Bu ölçüm render, input polling, NPC mantığı ve dünya simülasyonunu kapsamaz; kullanıcının bilgisayarında FPS garantisi değildir.
 - BLOCKED harita sınırı artık gerçek çarpışma engellerine dönüştürülür; OPEN davranışı ayrıca test edilir. Collision-aware movement sistemi farklı harita kimliklerini karıştırmayı reddeder.
 
-Son denetimde Pygame kabul demosunun eski hareket sistemiyle çalıştığı görüldü. Demo artık CollisionAwareMovementSystem'e bağlandı; fiziksel engeller ve collider görselleştirmesi eklendi, bu entegrasyon için yeni regresyon testleri yazıldı. Önceki CI sonuçları bu son demo entegrasyonunu kapsamaz. Bu nedenle kullanıcının bilgisayarındaki tam pytest çalıştırması son demo değişikliğini de doğrulayacak; başarılı olursa yalnızca masaüstü/görsel kabul kalacaktır. Herhangi bir kusur bulunursa kapanıştan önce düzeltilir ve ilgili test tekrarlanır.
+Son denetimde Pygame kabul demosunun eski hareket sistemiyle çalıştığı görüldü. Demo artık CollisionAwareMovementSystem'e bağlandı; fiziksel engeller ve collider görselleştirmesi eklendi, bu entegrasyon için yeni regresyon testleri yazıldı. Başlangıç evi de beş ayrı duvar collider'ı ve kapı boşluğu olan basit bir yapı iskeleti olarak eklendi; duvar/çatı çizgileri nihai sanat varlığı değildir. Önceki CI sonuçları bu son demo entegrasyonunu kapsamaz. Bu nedenle kullanıcının bilgisayarındaki tam pytest çalıştırması son demo değişikliğini de doğrulayacak; başarılı olursa yalnızca masaüstü/görsel kabul kalacaktır. Herhangi bir kusur bulunursa kapanıştan önce düzeltilir ve ilgili test tekrarlanır.
 
 ### Kullanıcının yapacağı son kontroller
 
@@ -191,6 +191,7 @@ Son denetimde Pygame kabul demosunun eski hareket sistemiyle çalıştığı gö
 2. `python -m hex_world_lab` ile Pygame laboratuvarını açmak.
 3. Tek hücre ve bitişik engellerde oyuncunun engelin içinden geçmediğini doğrulamak.
 4. Daire oyuncu collider'ı ile ağaç/kaya/duvar temsili engellerin temasını kontrol etmek.
+5. Başlangıç evi iskeletinin duvarlarına çarpışmayı, kapı boşluğundan geçişi ve evin çevresinden dolaşmayı kontrol etmek.
 5. Duvar boyunca kaymayı ve dar geçitlerden geçişi kontrol etmek.
 6. Köşe ve birden fazla temas durumunda takılma/titreşim olmadığını kontrol etmek.
 7. Normal, koşma ve gizlilik hızlarında çarpışmayı kontrol etmek.
