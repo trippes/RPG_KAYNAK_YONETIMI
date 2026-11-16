@@ -1,11 +1,17 @@
 # Aşama 3 — Hex Dünya Veri Modeli ve Runtime Teknik Planı
 
-**Durum:** PLAN ONAYLANDI — UYGULAMA HENÜZ BAŞLAMADI  
+**Durum:** UYGULAMA VE TEKNİK DOĞRULAMA TAMAMLANDI — NİHAİ KULLANICI KABULÜ BEKLİYOR  
 **Hedef dal:** `experiment/hex-world-laboratory`  
 **Laboratuvar:** `experiments/hex_world_laboratory/`  
 **Bağımlı aşama:** Aşama 2 — Hex Geometri Çekirdeği (teknik olarak kabul edildi)
 
 ---
+
+## Uygulama durumu ve plan geçmişi
+
+Bu belge ilk onaylandığında 3.7 numarası bütünleşik doğrulama ve kapanış için ayrılmıştı. Aşama 3.6 sonrasında, ayrı teknik plan ve kullanıcı onayıyla runtime değişikliklerinin kalıcılaştırılması da 3.7 olarak eklendi. Bu nedenle runtime persistence'ın uygulama kayıtları `PHASE-03.7-TECHNICAL-PLAN.md` ve `PHASE-03.7-REPORT.md` belgelerinde; ilk plandaki bütünleşik kapanış ise bu belgenin son bütünleşik doğrulama maddesinde izlenir. Bu numaralandırma açıklaması mimari kapsamı değiştirmez.
+
+Aşama 3.1–3.6 ve onaylanan runtime persistence uygulandı. Bütünleşik denetim ve kanıtlar `reports/PHASE-03-WORLD-REPORT.md` belgesinde kayıtlıdır. Teknik kapanış tamamlanmış olsa da kullanıcı nihai kabulü beklenmektedir; Aşama 4'e geçiş izni verilmiş değildir.
 
 ## 1. Amaç ve kapsam
 
@@ -329,7 +335,7 @@ Her alt aşama kendi testleriyle doğrulanmadan sonraki alt aşamaya geçilmeyec
 - Hata durumunda kısmi dünya/harita üretilmemesi.
 - Loader'ın Pygame olmadan import ve kullanım testi.
 
-### 3.7 — Bütünleşik doğrulama ve kapanış
+### Son bütünleşik doğrulama ve kapanış (ilk plandaki 3.7)
 
 **İşler**
 - Tüm laboratuvar testlerini çalıştırmak.

@@ -5,8 +5,8 @@
 > **Depo:** `trippes/RPG_KAYNAK_YONETIMI`  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Hedef entegrasyon dalı:** `demo_eldoria`  
-> **Durum:** PLAN — uygulama başlamadı  
-> **Belge sürümü:** 1.0
+> **Durum:** LABORATUVAR UYGULAMASI DEVAM EDİYOR — AŞAMA 3 TEKNİK KAPANIŞI HAZIR, KULLANICI KABULÜ BEKLİYOR  
+> **Belge sürümü:** 1.1
 
 ---
 
@@ -263,6 +263,8 @@ Kabul koşulları:
 - Harita dışı sorgu davranışı açık ve testli.
 - Dünya verisi ile ekran çizimi birbirinden bağımsız.
 - Runtime güncellemesi geometri kurallarını bozmuyor.
+
+**Aşama 3 güncel uygulama kaydı (16 Kasım 2026):** Aşama 3.1–3.6 kapsamı ve sonradan ayrıca onaylanan runtime persistence çalışması tamamlandı. Bütünleşik teknik denetim ve kapanış kanıtları `reports/PHASE-03-WORLD-REPORT.md` içinde toplandı. Laboratuvarın 288 testlik tam paketi ve iki persistence benchmark'ı başarılı CI koşusunda doğrulandı. Ana deponun `Core quality` iş akışındaki paket kurulum eksikliği de laboratuvar paketini Linux ve Windows işlerine kuracak şekilde düzeltildi; bu düzeltmenin CI sonucu kapanış raporunda kayıt altına alınacaktır. **Aşama 4 henüz başlatılmamıştır; Aşama 3 kullanıcı tarafından nihai olarak kabul edilene kadar bloke kalır.**
 
 ### Aşama 4 — Sürekli hareket sistemi
 

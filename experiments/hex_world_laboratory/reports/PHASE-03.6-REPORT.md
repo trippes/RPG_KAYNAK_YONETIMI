@@ -1,6 +1,6 @@
 # Aşama 3.6 — Harita Dosya Sistemi ve JSON Veri Doğrulama Raporu
 
-**Durum:** UYGULAMA TAMAMLANDI — KULLANICI KABULÜ BEKLİYOR  
+**Durum:** UYGULAMA VE DOĞRULAMA TAMAMLANDI — AŞAMA 3 GENEL KAPANIŞINA DAHİL EDİLDİ  
 **Hedef dal:** `experiment/hex-world-laboratory`  
 **Teknik plan:** [PHASE-03.6-TECHNICAL-PLAN.md](../docs/PHASE-03.6-TECHNICAL-PLAN.md)  
 **Şema belgesi:** [MAP_JSON_SCHEMA_V1.md](../docs/MAP_JSON_SCHEMA_V1.md)
@@ -34,7 +34,7 @@ Mevcut geometry, world, map registry, runtime ve view modüllerinde değişiklik
 
 GitHub Actions — Hex World Laboratory CI:
 
-- Run: [43839646819](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43839500786)
+- Run: [43839646819](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43839646819)
 - Sonuç: **success**
 - Python: 3.12.16
 - Tam test paketi: **249 passed in 0.45s**
@@ -67,4 +67,4 @@ Tepe bellek ölçümü, benchmark sırasında Python `tracemalloc` tarafından i
 
 Aşama 3.6'nın planlanan kodu, testleri, örnek verisi, dokümantasyonu ve benchmark aracı uygulandı. Özel laboratuvar CI başarılıdır. Bu rapor teknik kapanış adayıdır; aşama kullanıcı tarafından kabul edilmeden Aşama 3.6 resmen kapanmış sayılmaz.
 
-Aşama 3.7 ve Aşama 4 başlatılmamıştır.
+Aşama 3.7 runtime persistence daha sonra ayrı plan ve onayla uygulanmıştır. Bütün Aşama 3'ün güncel durumu, test kanıtları ve açık sınırları [Genel Aşama 3 Kapanış Raporu](PHASE-03-WORLD-REPORT.md) içinde birleştirilmiştir. Aşama 4 henüz başlatılmamıştır.

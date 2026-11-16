@@ -1,86 +1,70 @@
-# Phase 3.7 — Runtime Persistence Implementation Report
+# Aşama 3.7 — Runtime Persistence Uygulama ve Doğrulama Raporu
 
-**Status:** Implementation complete; local verification passed.  
-**Branch:** `experiment/hex-world-laboratory`  
-**Plan:** `reports/PHASE-03.7-TECHNICAL-PLAN.md`
+**Durum:** UYGULAMA VE DOĞRULAMA TAMAMLANDI — AŞAMA 3 GENEL KAPANIŞINA DAHİL EDİLDİ  
+**Dal:** `experiment/hex-world-laboratory`  
+**Teknik plan:** [PHASE-03.7-TECHNICAL-PLAN.md](PHASE-03.7-TECHNICAL-PLAN.md)
 
-## 1. Objective and scope
+## 1. Amaç
 
-Phase 3.7 adds persistence for sparse runtime cell changes while preserving the immutable base-map JSON introduced in Phase 3.6. Runtime snapshots contain only changes to `terrain_id`, `is_walkable`, and `has_obstacle`; they do not duplicate map geometry or base cell data.
+Aşama 3.6'da tanımlanan immutable harita başlangıç verisini değiştirmeden, oyun sırasında oluşan seyrek hücre değişikliklerini ayrı dosyalarda kalıcılaştırmak.
 
-The implementation remains isolated to the Hex World Laboratory. It does not add player/entity/NPC/inventory/quest persistence, full save slots, autosave, multi-map transactional manifests, automatic map loading/eviction, offline simulation, movement, rendering, or main-game integration.
+Runtime snapshot yalnızca `terrain_id`, `is_walkable` ve `has_obstacle` alanlarının temel haritadan farklı değerlerini saklar. Harita geometrisi, hücre varlık kümesi, metadata veya oyun nesneleri snapshot'a dahil değildir.
 
-## 2. Delivered implementation
+## 2. Teslim edilenler
 
-- Added runtime snapshot validation, serialization, deserialization, typed errors, and UTF-8 file storage.
-- Added deterministic schema v1 payloads containing WorldId, MapId, base-map SHA-256, and sparse coordinate overrides.
-- Added immutable decoded snapshots and runtime APIs to export and atomically replace one map's override set.
-- Added compatibility validation against the canonical Stage 3.6 map serialization fingerprint.
-- Added strict checks for schema version, kind, IDs, hash, duplicate keys/coordinates, unknown fields, invalid values, missing cells, redundant base-equal values, and malformed JSON.
-- Added safe `create` behavior that refuses overwrite and explicit `replace` behavior using temporary-file publication and atomic replacement.
-- Restore fully parses and validates before replacing the target map's complete override set; a failed restore leaves existing runtime state unchanged.
-- Added the Starting Valley runtime sample, schema documentation, integration/unit tests, and a 100/1,000/10,000 override benchmark.
-- Extended the dedicated laboratory CI workflow to execute the runtime persistence benchmark.
+- Runtime snapshot doğrulayıcısı, serializer, deserializer, hata türleri ve UTF-8 dosya depolaması.
+- WorldId, MapId ve canonical harita JSON'undan hesaplanan SHA-256 parmak izini içeren şema v1.
+- Deterministik koordinat sıralaması ve sparse override kayıtları.
+- Runtime override kümesini dışa aktarma ve tek işlemde değiştirme API'leri.
+- Bozuk/uyumsuz dosyanın mevcut runtime durumunu kısmen değiştirmesini engelleyen doğrulama akışı.
+- `create` modunda mevcut dosyayı koruma; açık `replace` modunda atomik değiştirme.
+- Starting Valley örnek runtime snapshot, şema dokümantasyonu, unit/integration testleri ve benchmark aracı.
+- Laboratuvar CI hattına runtime persistence benchmark adımı.
 
-## 3. Verification
+## 3. Test doğrulaması
 
-### Local Windows test suite
-
-Executed by the project owner in the laboratory virtual environment:
+### Kullanıcının Windows ortamı
 
 ```text
 python -m pytest -q
 288 passed in 2.01s
 ```
 
-The initial run exposed two issues: one test fixture referenced coordinates absent from its map, and one error construction did not pass the required world/map/coordinate context. Both were corrected. The complete suite was then rerun successfully: **288 passed, 0 failed**.
+### GitHub Actions — Hex World Laboratory CI
 
-### Runtime persistence benchmark
+[Run 43843535280](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43843535280)
 
-The owner supplied the following benchmark output from the laboratory environment:
+- Sonuç: başarılı.
+- Python 3.12.16, Pygame 2.6.1, pytest 8.4.2.
+- Tam test paketi: **288 passed in 0.51s**.
+- Harita persistence benchmark: başarılı.
+- Runtime persistence benchmark: başarılı.
 
-| Overrides | JSON size | Serialize | Deserialize | Save | Load | Peak traced memory |
+Sonraki bütünleşik doğrulama koşusu ve genel kapanış kanıtları [PHASE-03-WORLD-REPORT.md](PHASE-03-WORLD-REPORT.md) içinde tutulur.
+
+## 4. Runtime persistence benchmark
+
+Aşağıdaki değerler CI koşucusundaki tek çalıştırmadan alınmıştır; süre garantisi veya eşik değildir.
+
+| Override | JSON boyutu | Serialize | Deserialize | Save | Load | Tepe izlenen bellek |
 |---:|---:|---:|---:|---:|---:|---:|
-| 100 | 7,706 bytes | 5.89 ms | 10.62 ms | 3.27 ms | 9.38 ms | 81.6 KiB |
-| 1,000 | 77,007 bytes | 47.99 ms | 62.88 ms | 7.69 ms | 20.04 ms | 810.3 KiB |
-| 10,000 | 788,008 bytes | 460.14 ms | 996.30 ms | 63.37 ms | 117.44 ms | 7,333.9 KiB |
+| 100 | 7,706 B | 4.95 ms | 4.62 ms | 1.58 ms | 1.01 ms | 165 KiB |
+| 1,000 | 77,007 B | 46.35 ms | 46.23 ms | 8.23 ms | 8.94 ms | 1,604.6 KiB |
+| 10,000 | 788,008 B | 495.36 ms | 503.51 ms | 85.20 ms | 96.90 ms | 14,899.4 KiB |
 
-These are single-run measurements, not performance guarantees or CI thresholds. The 10,000-override deserialization time is a candidate for later profiling; no speculative optimization was introduced in this phase.
+10.000 override için serileştirme/deserileştirme yaklaşık yarım saniye seviyesindedir. Bu ölçüm daha sonraki profiling için referans olabilir; bu aşamada ölçüm dışı optimizasyon yapılmamıştır.
 
-### GitHub Actions
+## 5. Korunan tasarım garantileri
 
-At report preparation time, the GitHub connector returned no workflow run or commit status associated with the latest implementation commit. Therefore, no remote CI success is claimed in this report. The dedicated workflow is configured to run the full laboratory test suite and both persistence benchmarks on pushes to this branch.
+- Immutable temel harita verisi runtime değişikliklerinden ayrıdır.
+- Runtime override'ları WorldId kapsamında MapId ile ayrılır.
+- Snapshot geri yüklemesi birleştirme değil, hedef haritanın override kümesini tam değiştirme işlemidir.
+- Temel harita fingerprint uyuşmazlığı runtime mutasyonundan önce reddedilir.
+- Harita unload/reload işlemi bellekteki override'ları silmez.
+- Dosya yükleme ve doğrulama Pygame/render katmanına bağlı değildir.
 
-## 4. Design guarantees retained
+## 6. Kapsam sınırları
 
-- Base map definitions remain immutable and separate from runtime deltas.
-- Runtime overrides remain sparse and scoped by MapId within their owning WorldId.
-- Snapshot restore replaces the complete override set for one map rather than merging stale values.
-- Save and restore require the target map to be registered and loaded.
-- In-memory runtime overrides continue to survive map unload/reload, as specified in Phase 3.5.
-- A base-map fingerprint mismatch rejects restoration before runtime mutation.
-- The persistence API does not depend on Pygame or rendering.
+Bu aşama oyuncu, NPC, envanter, görev, kaynak, bina, oyun nesnesi, tam save slot, autosave, dünya çapında çoklu harita transaction, otomatik harita yükleme/tahliye, offline progression, hareket, fizik, kamera, render veya ana oyun entegrasyonu sağlamaz.
 
-## 5. Files delivered
-
-Implementation and tests are contained in:
-
-- `src/hex_world_lab/world/runtime.py`
-- `src/hex_world_lab/world/persistence/runtime_errors.py`
-- `src/hex_world_lab/world/persistence/runtime_validator.py`
-- `src/hex_world_lab/world/persistence/runtime_serializer.py`
-- `src/hex_world_lab/world/persistence/runtime_deserializer.py`
-- `src/hex_world_lab/world/persistence/runtime_file_storage.py`
-- `tests/unit/test_world/test_runtime.py`
-- `tests/unit/test_persistence/test_runtime_validator.py`
-- `tests/unit/test_persistence/test_runtime_serializer.py`
-- `tests/unit/test_persistence/test_runtime_file_storage.py`
-- `tests/integration/test_runtime_persistence.py`
-- `scenarios/runtime/starting_valley.runtime.json`
-- `docs/RUNTIME_JSON_SCHEMA_V1.md`
-- `scripts/benchmark_runtime_persistence.py`
-- `.github/workflows/hex-world-lab-ci.yml`
-
-## 6. Phase boundary and next decision
-
-Phase 3.7 implementation and the owner's local full-suite verification are complete. This report does not itself authorize Phase 4. The overall Phase 3 closure still requires an integrated review of Phases 3.1–3.7, confirmation of any outstanding CI status, and explicit owner acceptance. Phase 4 remains blocked until that process is complete.
+Aşama 3'ün bütünleşik kabul kriterleri ve kalan sınırlar [Genel Aşama 3 Kapanış Raporu](PHASE-03-WORLD-REPORT.md) içindedir.
