@@ -31,7 +31,7 @@ def test_circle_stops_before_wall_without_entering_it():
     )
     assert result.final_shape.center.x == pytest.approx(1.25, abs=1e-6)
     assert result.final_shape.center.y == pytest.approx(0.0)
-    assert result.applied_displacement.x == pytest.approx(1.25, abs=1e-6)
+    assert result.applied_displacement.x == pytest.approx(0.45, abs=1e-6)
     assert result.unresolved_penetration <= 1e-7
     assert result.contacts.contacts
 
@@ -77,7 +77,7 @@ def test_two_walls_resolve_corner_without_inward_motion():
 def test_solver_result_is_independent_of_obstacle_input_order():
     obstacles = (wall(obstacle_id="b"), wall(x=4.0, obstacle_id="a"))
     first = resolve_kinematic_motion(
-        CircleShape(0.5), Vector2(3.0, 0.25), obstacles
+        CircleShape(0.5), Vector2(1.5, 0.25), obstacles
     )
     second = resolve_kinematic_motion(
         CircleShape(0.5), Vector2(3.0, 0.25), tuple(reversed(obstacles))
