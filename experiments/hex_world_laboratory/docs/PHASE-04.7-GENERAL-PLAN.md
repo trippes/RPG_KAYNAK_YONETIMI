@@ -13,7 +13,7 @@ Aşama 4.7, mevcut sürekli hareket sistemine üç açık hareket modu ekler:
 
 1. **Normal:** temel hareket hızı.
 2. **Koşma:** Shift basılıyken artırılmış hareket hızı.
-3. **Gizlilik:** Alt basılıyken azaltılmış hareket hızı.
+3. **Gizlilik:** Alt'a bir kez basıldığında açılır; tekrar basıldığında kapanır. Açık kaldığı sürece azaltılmış hareket hızı uygulanır.
 
 Kullanıcının kabul ettiği hız çarpanları:
 - Normal: **1,0x**.
@@ -56,11 +56,11 @@ Aşama 2 geometri, Aşama 3 dünya/persistence ve Aşama 4.1–4.6 test sözleş
 
 ### 3.3 Gizlilik
 
-- Sol veya sağ Alt basılıyken Gizlilik modu seçilir.
-- Hız çarpanı 0,5'tir.
-- Alt bırakıldığında, Shift basılı değilse Normal moda dönülür.
-- Sol ve sağ Alt eşdeğer kabul edilir; ikisi birlikte basıldığında çarpan birikmez.
-- Shift ve Alt birlikte basılıysa Gizlilik modu kazanır.
+- Sol veya sağ Alt'a bir kez basıldığında Gizlilik modu açılır; sonraki Alt basışı modu kapatır.
+- Alt'ın basılı tutulması gerekmez; Gizlilik açık kaldığı sürece hız çarpanı 0,5'tir.
+- Gizlilik kapatıldığında Shift basılıysa Koşma, değilse Normal modu seçilir.
+- Sol ve sağ Alt aynı fiziksel basış olarak ele alınır; iki Alt tuşunu birlikte tutmak veya klavye otomatik tekrarları modu art arda açıp kapatmaz.
+- Shift basılıyken Alt ile Gizlilik açılırsa Gizlilik önceliklidir; Alt ile kapatılırsa Shift hâlâ basılıysa Koşma etkinleşir.
 
 ### 3.4 Mod ve hareket yönü bağımsızlığı
 
@@ -76,7 +76,7 @@ Bu aşamada ivme, sürtünme, hızlanma/yavaşlama eğrisi veya animasyon eklenm
 2. `MovementIntent` içine varsayılanı Normal olan hareket modu bilgisini eklemek.
 3. `MovementConfig` içine koşma ve gizlilik hız çarpanlarını eklemek; değerleri sonlu ve negatif olmayan sayılar olarak doğrulamak.
 4. `MovementIntegrator` içinde seçilen moda ait etkin hızı hesaplamak; yön normalleştirmesini ve 60 TPS zaman hesabını korumak.
-5. `PygameKeyboardAdapter` içine sol/sağ Shift ve sol/sağ Alt örneklemesini eklemek.
+5. `PygameKeyboardAdapter` içinde Shift'i basılı-tutma, Alt'ı kenar-tetiklemeli aç/kapa olarak ele almak; sol/sağ tuşları tek mantıksal değiştirici olarak birleştirmek.
 6. Öncelik kuralını tek yerde ve açık biçimde uygulamak: Gizlilik > Koşma > Normal.
 7. Odak kaybında nötr yön ve Normal mod üretmek; takılı kalmış değiştirici tuşları önlemek.
 8. Hareket demosu teşhis panelinde aktif hareket modunu ve etkin hız çarpanını göstermek.
@@ -89,7 +89,7 @@ Bu aşamada ivme, sürtünme, hızlanma/yavaşlama eğrisi veya animasyon eklenm
 |---|---|---|
 | 4.7.1 — Hareket modu sözleşmesi | Normal/Koşma/Gizlilik modlarını ve varsayılan davranışı tanımlamak | Cihazdan bağımsız MovementMode sözleşmesi |
 | 4.7.2 — Hız profilleri | Config ve integrator üzerinden çarpanları uygulamak | 1,0x / 1,5x / 0,5x deterministik hız hesabı |
-| 4.7.3 — Klavye bağdaştırıcısı | Shift/Alt, sol/sağ tuşlar ve öncelik kuralı | Yeni MovementIntent üretimi |
+| 4.7.3 — Klavye bağdaştırıcısı | Shift basılı-tutma, Alt aç/kapa, sol/sağ tuşlar ve öncelik kuralı | Yeni MovementIntent üretimi |
 | 4.7.4 — Uçtan uca entegrasyon | Hareket sistemi ve demo akışını bağlamak | Modların gerçek tick akışında çalışması |
 | 4.7.5 — Teşhis görünümü | Mod ve etkin hızı görünür kılmak | Salt okunur diagnostics |
 | 4.7.6 — Doğrulama ve kapanış | Regresyon, FPS, odak, benchmark ve manuel kontroller | Test kanıtları ve kapanış raporu |
@@ -109,10 +109,13 @@ Alt aşamaların kesin dosya sınırları, API imzaları, hata davranışları v
 ### 6.2 Klavye
 
 - WASD ve ok tuşları mevcut davranışını korumalıdır.
-- Sol/sağ Shift koşmayı; sol/sağ Alt gizliliği seçmelidir.
-- Shift + Alt aynı anda: Gizlilik.
-- Shift bırakılıp Alt basılı kalırsa Gizlilik sürmeli; Alt bırakılıp Shift basılı kalırsa Koşma sürmelidir.
-- Tüm değiştiriciler bırakılınca Normal seçilmelidir.
+- Sol/sağ Shift basılı tutulduğu sürece Koşma seçilmelidir.
+- Sol/sağ Alt'a ilk basış Gizlilik'i açmalı; sonraki Alt basışı kapatmalıdır.
+- Alt'ın basılı tutulması Gizlilik'i tekrar tekrar tetiklememeli; klavye otomatik tekrarı da toggle üretmemelidir.
+- Gizlilik açıkken Shift basılı/bırakılması Gizlilik'i kapatmamalıdır.
+- Gizlilik kapatıldığında Shift basılıysa Koşma, değilse Normal seçilmelidir.
+- Sol/sağ Alt birlikte tutulduğunda tek toggle olmalı; bir Alt bırakılırken diğeri hâlâ basılıysa ikinci toggle oluşmamalıdır.
+- Odak kaybında hareket yönü sıfırlanmalı ve toggle Gizlilik durumu güvenli biçimde Normal'e sıfırlanmalıdır; odak geri kazanımında Alt'ın basılı bulunması kendiliğinden toggle etmemelidir.
 - Pencere odağı kaybında hareket yönü sıfırlanmalı ve mod Normal olmalıdır.
 - Sol/sağ aynı tür değiştiricilerin birlikte basılması hız çarpanını katlamamalıdır.
 
