@@ -193,7 +193,7 @@ Görsel demo için gerekirse `application` katmanında bir demo tick pump buluna
 
 Böylece uzun karede simülasyon tick'i atlanmaz. Catch-up sınırı yalnızca tek render karesindeki CPU yükünü sınırlar. Sürekli performans yetersizliğinde borç artabilir; sistem bunu gizlemek yerine ölçer. Simülasyon zamanı sessizce düşürülmez.
 
-Bu demo tick pump, `movement/fixed_step.py` gibi üretim hareket modülünde bulunmaz ve ana oyunun zaman motoru olarak sunulmaz. Ana oyuna geçişte demo pump kaldırılır; canonical simülasyon orkestrasyonu tick'leri sağlar.
+Bu demo tick pump, `movement` gibi üretim hareket modüllerinde bulunmaz ve ana oyunun zaman motoru olarak sunulmaz. Ana oyuna geçişte demo pump kaldırılır; canonical simülasyon orkestrasyonu tick'leri sağlar.
 
 ### 6.4 Determinizm
 
@@ -429,8 +429,11 @@ Uygulama öncesi kullanıcıdan açık onay beklenen kararlar:
 - Mevcut `WorldPoint` tipinin sürekli fiziksel konum olarak kullanılması.
 - Dünya biriminin `HexLayout.radius` ile aynı ölçekte olması; hızın dünya birimi/saniye tanımlanması.
 - İlk sürümde ivmesiz, sabit hızlı hareket modeli.
-- Hareketin dışarıdan sağlanan canonical 60 TPS tick'inde bir kez çalışması; hareket çekirdeğinde bağımsız saat/accumulator bulunmaması.\n- Demo tick pump'ta kare başına en fazla 8 tick işlenmesi ve kalan tick borcunun korunması.
+- Hareketin dışarıdan sağlanan canonical 60 TPS tick'inde bir kez çalışması; hareket çekirdeğinde bağımsız saat/accumulator bulunmaması.
+- Demo tick pump'ta kare başına en fazla 8 tick işlenmesi ve kalan tick borcunun korunması.
 - Harita dışı konumda hareketin engellenmemesi; hücre sonucunun `None` olması.
 - Bu belgede belirtilen dosya sınırları, alt aşama sırası ve test kabul ölçütleri.
 
-**Revizyon notu (16 Kasım 2026):** Önceki taslaktaki `simulation/fixed_step.py` üretim tick biriktiricisi kaldırılmıştır. Hareket sistemi artık tick üretmez; dışarıdan verilen canonical tick başına bir kez ilerler. Demo amaçlı gerçek-zaman tick pump yalnızca application/demo katmanında bulunabilir ve kalan tick borcunu atmaz. Ana projedeki `SimulationRuntime.advance_to()` ara tick callback'i vermediğinden doğrudan hareket callback'i olarak kullanılmayacaktır.\n\n**Durum:** REVİZE EDİLMİŞ TEKNİK MİMARİ PLAN SUNULDU — KULLANICI ONAYI BEKLENİYOR. Onay gelmeden kod, test, prototip veya mimari değişiklik uygulanmayacaktır.
+**Revizyon notu (16 Kasım 2026):** Önceki taslaktaki `simulation/fixed_step.py` üretim tick biriktiricisi kaldırılmıştır. Hareket sistemi artık tick üretmez; dışarıdan verilen canonical tick başına bir kez ilerler. Demo amaçlı gerçek-zaman tick pump yalnızca application/demo katmanında bulunabilir ve kalan tick borcunu atmaz. Ana projedeki `SimulationRuntime.advance_to()` ara tick callback'i vermediğinden doğrudan hareket callback'i olarak kullanılmayacaktır.
+
+**Durum:** REVİZE EDİLMİŞ TEKNİK MİMARİ PLAN SUNULDU — KULLANICI ONAYI BEKLENİYOR. Onay gelmeden kod, test, prototip veya mimari değişiklik uygulanmayacaktır.
