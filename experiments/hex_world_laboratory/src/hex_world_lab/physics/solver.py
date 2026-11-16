@@ -175,6 +175,7 @@ def resolve_kinematic_motion(
         _swept_bounds(moving_shape, desired_displacement),
         obstacle_values,
     )
+    original_reference = _reference_point(moving_shape)
     current, initial_contacts, used, unresolved = _depenetrate(
         moving_shape,
         candidates,
@@ -186,17 +187,16 @@ def resolve_kinematic_motion(
         return CollisionResolution(
             current,
             Vector2(
-                _reference_point(current).x - _reference_point(moving_shape).x,
-                _reference_point(current).y - _reference_point(moving_shape).y,
+                _reference_point(current).x - original_reference.x,
+                _reference_point(current).y - original_reference.y,
             ),
             ContactManifold(tuple(all_contacts)),
             used,
             unresolved,
         )
 
-    movement_origin = _reference_point(current)
     remaining = desired_displacement
-    for _ in range(max_iterations - used):
+    while used < max_iterations:
         if remaining.length <= _EPSILON:
             break
         proposed = _translated(current, remaining)
@@ -233,8 +233,8 @@ def resolve_kinematic_motion(
 
     final_reference = _reference_point(current)
     applied = Vector2(
-        final_reference.x - movement_origin.x,
-        final_reference.y - movement_origin.y,
+        final_reference.x - original_reference.x,
+        final_reference.y - original_reference.y,
     )
     return CollisionResolution(
         current,
