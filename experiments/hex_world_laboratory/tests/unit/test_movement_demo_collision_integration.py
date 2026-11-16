@@ -12,11 +12,16 @@ from hex_world_lab.physics import CircleShape
 from hex_world_lab.simulation import CollisionAwareMovementSystem
 
 
-def _pressed_keys(*key_codes: int) -> list[bool]:
-    keys = [False] * 512
-    for key_code in key_codes:
-        keys[key_code] = True
-    return keys
+class _PressedKeys:
+    def __init__(self, active: set[int]) -> None:
+        self.active = active
+
+    def __getitem__(self, key_code: int) -> bool:
+        return key_code in self.active
+
+
+def _pressed_keys(*key_codes: int) -> _PressedKeys:
+    return _PressedKeys(set(key_codes))
 
 
 def test_pygame_demo_uses_collision_aware_movement_and_map_geometry() -> None:
@@ -42,14 +47,16 @@ def test_pygame_demo_uses_collision_aware_movement_and_map_geometry() -> None:
 
 
 def test_pygame_demo_player_stops_at_adjacent_hex_obstacle_wall() -> None:
-    keys = _pressed_keys(pygame.K_d)
+    # Approach the q=2, r=0 blocked hex diagonally; the horizontal
+    # y=0 lane remains clear for the legacy continuous-movement scenarios.
+    keys = _pressed_keys(pygame.K_d, pygame.K_w)
     demo = MovementDemo(key_state_provider=lambda: keys)
 
     for tick in range(100):
         demo._advance_tick(tick)
 
-    assert demo.state.position.x < 60.0
-    assert demo.state.position.x > 45.0
+    assert 30.0 < demo.state.position.x < 45.0
+    assert 30.0 < demo.state.position.y < 45.0
     assert demo.last_collision_resolution is not None
     assert demo.last_collision_resolution.contacts
 
