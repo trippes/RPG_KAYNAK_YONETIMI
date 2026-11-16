@@ -100,4 +100,4 @@ Aşama 4'te çarpışma/engel çözümü, collider, pathfinding, NPC kararları,
 
 Aşama 4'ün planlanan teknik işleri, otomatik doğrulamaları ve kullanıcı masaüstü kabulü tamamlanmıştır. Aşama 4 resmen kapatılmıştır.
 
-**Kapanış commit'i:** Bu rapor ve eşlik eden plan güncellemeleri GitHub'a yazıldıktan sonra oluşan son commit SHA'sı ile doldurulacaktır.
+**Kapanış raporunun oluşturma commit'i:** `eafbf8e59864bd64da27e517627f5eb9973b44ac`. Eşlik eden plan ve alt aşama raporu güncellemeleri Git geçmişinde bu commit'i izleyen ayrı dokümantasyon commit'leri olarak kayıtlıdır.
