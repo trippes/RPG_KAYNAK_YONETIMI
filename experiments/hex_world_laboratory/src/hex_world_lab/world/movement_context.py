@@ -1,7 +1,7 @@
 """Validated bridge from continuous world positions to one loaded hex map."""
 
 from hex_world_lab.geometry import AxialCoord, WorldPoint, world_to_axial
-from hex_world_lab.world.identity import CellAddress, MapId
+from hex_world_lab.world.identity import CellAddress, MapId, WorldId
 from hex_world_lab.world.map_registry import MapNotLoadedError, UnknownMapError
 from hex_world_lab.world.movement_resolution import MovementCellResolution
 from hex_world_lab.world.world import HexWorld
@@ -26,7 +26,7 @@ class MovementWorldContext:
         self._require_loaded_map()
 
     @property
-    def world_id(self):
+    def world_id(self) -> WorldId:
         """World identity for this context."""
         return self._world.world_id
 
