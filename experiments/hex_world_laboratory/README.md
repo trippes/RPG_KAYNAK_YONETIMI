@@ -87,19 +87,11 @@ Varsayılan `create` modu mevcut dosyayı ezmez. Değiştirme için açıkça `m
 
 ## Mevcut durum
 
-**Aşama 0–4:** Tamamlandı ve teknik olarak kabul edildi.
-
-**Aşama 5:** 5.1–5.7 kodlaması, teknik inceleme, otomatik testler, Linux/Windows CI ve benchmark tamamlandı. Kullanıcının bilgisayarında tam test ve nihai görsel kabul bekleniyor; aşama henüz kapatılmadı.
-
-**Aşama 3.1–3.6:** Dünya kimlikleri, hücre/harita modeli, çoklu harita kaydı, View/Runtime ayrımı ve harita JSON persistence uygulandı.
-
-**Aşama 3.7:** Runtime persistence uygulandı; sparse override kayıtları, SHA-256 temel harita uyumluluk kontrolü, atomik geri yükleme ve benchmark'lar eklendi.
-
-**Aşama 3 genel teknik kapanışı:** Bütünleşik denetim ve raporlama tamamlandı.
+**Aşama 0–3:** Tamamlandı ve teknik olarak kabul edildi. Dünya kimlikleri, hücre/harita modeli, çoklu harita kaydı, View/Runtime ayrımı ve map/runtime JSON persistence dahildir.
 
 **Aşama 4:** Sürekli hareket sistemi kullanıcı tarafından kabul edilerek kapatıldı.
 
-**Aşama 5:** Gövde modeli, hex çarpışma geometrisi, broadphase/narrowphase, çözümleyici, CCD ve 60 TPS bütünleşik hareket sistemi tamamlandı. Son otomatik doğrulamalar: laboratuvar 584 test; Core Quality Linux ve Windows 2.047'şer test. Yalnızca kullanıcı bilgisayarındaki tam test ve nihai masaüstü kabulü bekleniyor.
+**Aşama 5:** 5.1–5.7 kodlaması, teknik inceleme, otomatik testler, Linux/Windows CI ve benchmark tamamlandı. Son otomatik doğrulamalar: laboratuvar **584 test**; Core Quality Linux ve Windows **2.047'şer test**. Kullanıcının bilgisayarında tam test ve nihai görsel kabul bekleniyor; aşama henüz kapatılmadı.
 
 ### Mimari sınırlar
 
@@ -107,6 +99,6 @@ Varsayılan `create` modu mevcut dosyayı ezmez. Değiştirme için açıkça `m
 - Kayıtlı her harita aynı anda bellekte veya simülasyonda tutulmaz.
 - Runtime override'ları harita unload/reload sırasında bellekte korunur; disk kaydı açık persistence API'siyle yapılır.
 - Otomatik harita yükleme/tahliye, cache politikası ve offline progression henüz uygulanmadı.
-- Hareket, çarpışma/fizik, kamera, render, NPC/kaynak simülasyonu, oyun nesnesi sistemi ve ana oyuna entegrasyon bu aşamanın kapsamı dışındadır.
+- Kamera, nihai render, NPC/kaynak simülasyonu, oyun nesnesi sistemi ve ana oyuna entegrasyon sonraki aşamaların kapsamındadır. Sürekli hareket Aşama 4'te, fizik/çarpışma Aşama 5'te laboratuvar içinde uygulanmıştır.
 
 ADR-003 sınır davranışı: eşit mesafede karakterin önceki hücresi korunur; sınır geçilip diğer hücre daha yakın hâle geldiğinde yeni hücre seçilir. Önceki hücre bilgisi verilmezse deterministik cube-rounding yedek kuralı kullanılır.
