@@ -11,7 +11,11 @@ from .shapes import CircleShape, ColliderShape, ConvexPolygonShape
 
 @dataclass(frozen=True, slots=True)
 class BodyDefinition:
-    """Immutable physical properties, independent of visual sprites."""
+    """Immutable physical properties, independent of visual sprites.
+
+    body_height is descriptive metadata for later layered-world rules. It
+    does not add a vertical axis to the current 2D collider.
+    """
 
     body_id: str
     collider: ColliderShape
@@ -36,7 +40,11 @@ class BodyDefinition:
 
 @dataclass(frozen=True, slots=True)
 class ActorBodyTransform:
-    """World transform whose position is the actor's ground anchor."""
+    """World transform anchored at the actor's ground-contact point.
+
+    Visual sprite pivots are intentionally absent: changing render placement
+    must never change this authoritative physics anchor.
+    """
 
     ground_anchor: WorldPoint
     rotation_radians: float = 0.0
