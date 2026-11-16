@@ -8,6 +8,13 @@ from typing import Callable
 import pygame
 
 from hex_world_lab.application.demo_tick_pump import DemoTickPump, TickPumpDiagnostics
+from hex_world_lab.camera import (
+    CameraBoundsPolicy,
+    CameraController,
+    ScreenPoint,
+    Viewport,
+    bounds_from_hex_cells,
+)
 from hex_world_lab.geometry import (
     AxialCoord,
     HexLayout,
@@ -15,8 +22,17 @@ from hex_world_lab.geometry import (
     WorldPoint,
     axial_to_world,
     hex_polygon,
+    world_to_axial,
 )
 from hex_world_lab.input import PygameKeyboardAdapter
+from hex_world_lab.rendering.pygame_world_renderer import PygameWorldRenderer
+from hex_world_lab.rendering.snapshot import (
+    CellVisual,
+    CircleVisual,
+    LineVisual,
+    PolygonVisual,
+    WorldRenderSnapshot,
+)
 from hex_world_lab.movement import MovementConfig, MovementState, Vector2
 from hex_world_lab.physics import (
     BoundaryPolicy,
@@ -112,6 +128,9 @@ class MovementDemo:
         "_font",
         "_small_font",
         "_last_diagnostics",
+        "camera",
+        "renderer",
+        "selected_cell",
     )
 
     def __init__(
@@ -126,6 +145,16 @@ class MovementDemo:
         assert definition is not None
         self._layout = definition.layout
         start_position = axial_to_world(AxialCoord(0, 0), self._layout)
+        map_bounds = bounds_from_hex_cells(definition.cells, self._layout)
+        self.camera = CameraController(
+            Viewport(960, 640),
+            start_position,
+            bounds=map_bounds,
+            bounds_policy=CameraBoundsPolicy.UNBOUNDED,
+        )
+        self.camera.set_target(start_position)
+        self.renderer = PygameWorldRenderer()
+        self.selected_cell: AxialCoord | None = None
         self._movement_config = MovementConfig(max_speed=movement_speed)
         tree_center = axial_to_world(AxialCoord(0, 2), self._layout)
         rock_center = axial_to_world(AxialCoord(-2, 2), self._layout)
@@ -242,6 +271,101 @@ class MovementDemo:
 
     def handle_event(self, event: pygame.event.Event) -> None:
         self.keyboard.handle_event(event)
+        if event.type == pygame.MOUSEWHEEL:
+            self.camera.zoom_by_steps(event.y)
+        elif event.type == pygame.VIDEORESIZE:
+            self.camera.set_viewport(Viewport(*event.size))
+        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            self.select_screen_point(ScreenPoint(*event.pos))
+
+    def update_camera(self, delta_seconds: float):
+        """Update presentation-only follow using elapsed render time."""
+        self.camera.set_target(self.state.position)
+        return self.camera.update(delta_seconds)
+
+    def select_screen_point(self, point: ScreenPoint) -> AxialCoord | None:
+        """Resolve a viewport pixel to an existing map cell, or None."""
+        if not isinstance(point, ScreenPoint):
+            raise TypeError("point must be a ScreenPoint")
+        world_point = self.camera.transform.screen_to_world(point)
+        candidate = world_to_axial(world_point, self._layout, self.selected_cell)
+        definition = self.world.get_map(self.map_id)
+        assert definition is not None
+        self.selected_cell = candidate if candidate in definition.cells else None
+        return self.selected_cell
+
+    def build_render_snapshot(self) -> WorldRenderSnapshot:
+        """Create immutable world-space render data without changing simulation."""
+        definition = self.world.get_map(self.map_id)
+        assert definition is not None
+        active = self.current_resolution
+        active_coord = None if active is None else active.coord
+        cells = tuple(
+            CellVisual(coord, cell.has_obstacle, coord == active_coord)
+            for coord, cell in definition.cells.items()
+        )
+        circles = []
+        polygons = []
+        for obstacle in self.collision_geometry.obstacles:
+            shape = obstacle.world_shape()
+            if isinstance(shape, CircleShape):
+                circles.append(
+                    CircleVisual(
+                        WorldPoint(shape.center.x, shape.center.y),
+                        shape.radius,
+                    )
+                )
+            else:
+                polygons.append(
+                    PolygonVisual(
+                        tuple(WorldPoint(vertex.x, vertex.y) for vertex in shape.vertices),
+                        obstacle.obstacle_id.startswith("cell:"),
+                    )
+                )
+
+        boundaries = tuple(
+            LineVisual(edge.start, edge.end, "boundary", 2)
+            for edge in self.collision_geometry.boundary_edges
+        )
+
+        def house_point(offset_x: float, offset_y: float) -> WorldPoint:
+            return WorldPoint(
+                self.house_center.x + offset_x,
+                self.house_center.y + offset_y,
+            )
+
+        frame_segments = (
+            ((-17, 17), (17, 17)),
+            ((-17, 17), (-17, -17)),
+            ((17, 17), (17, -17)),
+            ((-HOUSE_HALF_WIDTH, -HOUSE_HALF_WIDTH), (-HOUSE_DOORWAY_HALF_WIDTH, -HOUSE_HALF_WIDTH)),
+            ((HOUSE_DOORWAY_HALF_WIDTH, -HOUSE_HALF_WIDTH), (HOUSE_HALF_WIDTH, -HOUSE_HALF_WIDTH)),
+            ((-HOUSE_DOORWAY_HALF_WIDTH, -HOUSE_HALF_WIDTH), (-HOUSE_DOORWAY_HALF_WIDTH, -8)),
+            ((HOUSE_DOORWAY_HALF_WIDTH, -HOUSE_HALF_WIDTH), (HOUSE_DOORWAY_HALF_WIDTH, -8)),
+        )
+        detail_segments = (
+            ((-12, 0), (12, 0)),
+            ((-12, 0), (-17, 17)),
+            ((12, 0), (17, 17)),
+            ((-5, -8), (5, -8)),
+        )
+        house_lines = tuple(
+            LineVisual(house_point(*start), house_point(*end), "frame", 3)
+            for start, end in frame_segments
+        ) + tuple(
+            LineVisual(house_point(*start), house_point(*end), "detail", 2)
+            for start, end in detail_segments
+        )
+        return WorldRenderSnapshot(
+            cells=cells,
+            circles=tuple(circles),
+            polygons=tuple(polygons),
+            boundaries=boundaries,
+            house_lines=house_lines,
+            actor_position=self.state.position,
+            actor_radius=PLAYER_COLLIDER_RADIUS,
+            selected_cell=self.selected_cell,
+        )
 
     def pump(self) -> TickPumpDiagnostics:
         self._last_diagnostics = self.tick_pump.pump()
@@ -269,70 +393,11 @@ class MovementDemo:
             self._font = pygame.font.Font(None, 23)
             self._small_font = pygame.font.Font(None, 19)
 
-        surface.fill(BACKGROUND)
-        width, height = surface.get_size()
-        center = (width // 2, height // 2 + 8)
-        definition = self.world.get_map(self.map_id)
-        assert definition is not None
-
-        for coord, cell in definition.cells.items():
-            corners = [
-                self._screen_point(point, center)
-                for point in hex_polygon(coord, self._layout)
-            ]
-            fill = CELL_OBSTACLE_FILL if cell.has_obstacle else HEX_FILL
-            pygame.draw.polygon(surface, fill, corners)
-            edge_color = (
-                ACTIVE_EDGE
-                if self.current_resolution is not None
-                and self.current_resolution.coord == coord
-                else HEX_EDGE
-            )
-            pygame.draw.polygon(surface, edge_color, corners, width=1)
-
-        for obstacle in self.collision_geometry.obstacles:
-            shape = obstacle.world_shape()
-            if isinstance(shape, CircleShape):
-                point = self._screen_point(
-                    WorldPoint(shape.center.x, shape.center.y), center
-                )
-                pygame.draw.circle(
-                    surface, OBJECT_CIRCLE_COLOR, point, round(shape.radius)
-                )
-                pygame.draw.circle(
-                    surface, (206, 224, 208), point, round(shape.radius), width=2
-                )
-            else:
-                points = [
-                    self._screen_point(WorldPoint(vertex.x, vertex.y), center)
-                    for vertex in shape.vertices
-                ]
-                color = (
-                    CELL_OBSTACLE_FILL
-                    if obstacle.obstacle_id.startswith("cell:")
-                    else OBJECT_POLYGON_COLOR
-                )
-                pygame.draw.polygon(surface, color, points)
-                pygame.draw.polygon(surface, (205, 211, 222), points, width=2)
-
-        self._draw_house_skeleton(surface, center)
-
-        for edge in self.collision_geometry.boundary_edges:
-            pygame.draw.line(
-                surface,
-                BOUNDARY_COLOR,
-                self._screen_point(edge.start, center),
-                self._screen_point(edge.end, center),
-                2,
-            )
-
-        actor = self._screen_point(self.state.position, center)
-        pygame.draw.circle(
-            surface, ACTOR_COLOR, actor, round(PLAYER_COLLIDER_RADIUS)
-        )
-        pygame.draw.circle(
-            surface, (255, 235, 225), actor,
-            round(PLAYER_COLLIDER_RADIUS), width=2
+        self.renderer.render(
+            surface,
+            self.build_render_snapshot(),
+            self._layout,
+            self.camera.transform,
         )
 
         self._draw_diagnostics(surface, render_fps)
