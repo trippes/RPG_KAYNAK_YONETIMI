@@ -14,6 +14,8 @@ from .map_registry import (
     MapWorldMismatchError,
     UnknownMapError,
 )
+from .movement_context import MovementWorldContext
+from .movement_resolution import MovementCellResolution
 from .runtime import HexWorldRuntime, RuntimeCellOverride
 from .world_view import HexWorldView
 from .world import HexWorld
@@ -34,6 +36,8 @@ __all__ = [
     "MapRegistry",
     "MapRegistryError",
     "MapWorldMismatchError",
+    "MovementCellResolution",
+    "MovementWorldContext",
     "RuntimeCellOverride",
     "UnknownCellError",
     "UnknownMapError",
