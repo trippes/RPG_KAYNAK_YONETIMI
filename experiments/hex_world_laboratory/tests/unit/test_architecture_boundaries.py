@@ -33,3 +33,33 @@ def test_simulation_core_packages_do_not_import_pygame() -> None:
          "Pygame imports must stay outside camera/geometry/movement/physics/simulation/world: "
         + ", ".join(violations)
     )
+
+
+def test_rendering_adapters_do_not_import_simulation_packages() -> None:
+    package_root = Path(__file__).resolve().parents[2] / "src" / "hex_world_lab"
+    rendering_path = package_root / "rendering"
+    forbidden = ("movement", "physics", "simulation", "world")
+    violations: list[str] = []
+
+    for source_path in sorted(rendering_path.rglob("*.py")):
+        tree = ast.parse(source_path.read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                imported = [alias.name for alias in node.names]
+            elif isinstance(node, ast.ImportFrom):
+                imported = [node.module or ""]
+            else:
+                continue
+            if any(
+                name == package or name.startswith(package + ".")
+                or name.endswith("." + package)
+                for name in imported
+                for package in forbidden
+            ):
+                relative_path = source_path.relative_to(package_root)
+                violations.append(f"{relative_path}:{node.lineno}")
+
+    assert not violations, (
+        "Rendering may depend on geometry/camera/Pygame, not simulation packages: "
+        + ", ".join(violations)
+    )
