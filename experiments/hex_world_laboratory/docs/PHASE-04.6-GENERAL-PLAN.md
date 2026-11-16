@@ -3,7 +3,7 @@
 > **Belge türü:** Alt aşama genel planı  
 > **Proje:** Eldoria — Hex World Laboratory  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
-> **Durum:** KULLANICI ONAYI BEKLİYOR — teknik mimari planı henüz hazırlanmadı  
+> **Durum:** GENEL PLAN KULLANICI TARAFINDAN ONAYLANDI — teknik mimari plan hazır, ayrıca onay bekliyor  
 > **Tarih:** 16 Kasım 2026  
 > **Ön koşul:** Aşama 4.5 kullanıcı tarafından kapatıldı.
 
@@ -234,9 +234,9 @@ Aşama 4.6'nın kabulü için aşağıdaki kanıtlar gereklidir:
 
 ## 9. Uygulama, onay ve kapanış kapıları
 
-1. Bu genel plan kullanıcıya sunulur ve onayı beklenir.
-2. Onaydan sonra mevcut dosya ağacı ve 4.1–4.5 uygulaması tekrar incelenerek 4.6 teknik mimari planı hazırlanır.
-3. Teknik mimari planı kullanıcı tarafından ayrıca onaylanır.
+1. Genel plan kullanıcı tarafından 16 Kasım 2026 tarihinde onaylandı.
+2. Mevcut dosya ve uygulama sözleşmeleri incelenerek teknik mimari plan hazırlandı.
+3. Teknik mimari plan kullanıcı tarafından ayrıca onaylanır.
 4. Yalnızca onaylanan kapsam `experiment/hex-world-laboratory` dalında uygulanır.
 5. Hedefli testler, tam pytest, laboratuvar CI ve Core Quality CI çalıştırılır.
 6. Bilgisayara erişim olduğunda manuel görsel kontrol yapılır; erişim yoksa açık takip maddesi olarak raporlanır.
@@ -256,4 +256,4 @@ Bu genel planın onayı teknik planı veya kod uygulamasını otomatik olarak on
 
 Bu belge, Aşama 4 genel planındaki 4.6 kabul prototipi hedefini ve 4.1–4.5 boyunca kesinleşen gerçek mimari sözleşmeleri esas alır.
 
-**Mevcut durum:** Aşama 4.6 genel planı hazırlandı ve laboratuvar dalına eklendi. Kullanıcı onayı beklenmektedir. Teknik plan ve kod uygulaması henüz başlatılmamıştır.
+**Mevcut durum:** Genel plan kullanıcı tarafından onaylandı ve teknik mimari plan hazırlandı. Teknik planın kullanıcı onayı beklenmektedir. Kod uygulaması henüz başlatılmamıştır.
