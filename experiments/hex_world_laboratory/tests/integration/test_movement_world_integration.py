@@ -3,7 +3,15 @@ import pytest
 from hex_world_lab.geometry import AxialCoord, HexLayout, HexOrientation, WorldPoint, axial_to_world
 from hex_world_lab.movement import MovementConfig, MovementIntent, MovementState, Vector2
 from hex_world_lab.simulation import MovementCellTracker, MovementSystem
-from hex_world_lab.world import HexCellData, HexMapDefinition, HexWorld, MapId, MovementWorldContext, WorldId
+from hex_world_lab.world import (
+    HexCellData,
+    HexMapDefinition,
+    HexWorld,
+    MapId,
+    MapNotLoadedError,
+    MovementWorldContext,
+    WorldId,
+)
 
 
 def make_world():
@@ -35,7 +43,7 @@ def test_movement_tick_updates_position_then_cell_resolution_without_snapping():
         resolution = tracker.update(state.position)
 
     assert movement.next_tick_number == 4
-    assert movement.state.position == WorldPoint(pytest.approx(4.2), pytest.approx(0.1))
+    assert (movement.state.position.x, movement.state.position.y) == pytest.approx((4.2, 0.1))
     assert resolution.coord == AxialCoord(3, -1)
     assert movement.state.position != axial_to_world(resolution.coord, layout)
 
@@ -61,10 +69,9 @@ def test_same_axial_coordinate_on_different_maps_has_distinct_address():
 
 
 def test_tracker_does_not_auto_load_unloaded_map():
-    world, map_id, layout = make_world()
+    world, map_id, _ = make_world()
     tracker = MovementCellTracker(MovementWorldContext(world, map_id))
     world.unload_map(map_id)
-    from hex_world_lab.world import MapNotLoadedError
 
     with pytest.raises(MapNotLoadedError):
         tracker.update(WorldPoint(0.0, 0.0))
