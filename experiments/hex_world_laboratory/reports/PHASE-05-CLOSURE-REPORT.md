@@ -69,6 +69,16 @@ GitHub Linux runner üzerinde daha önce ölçülen entegre fizik benchmark'ı:
 
 Benchmark yalnızca hareket ve çarpışma çekirdeğini kapsar; render, input polling, NPC mantığı ve dünya simülasyonunu kapsamaz. Tam oyun FPS'si veya kullanıcının bilgisayarında performans garantisi değildir.
 
+### 6.1 Son entegrasyon kodu için Linux/Windows CI kanıtı
+
+Son entegrasyon kodunun ardından yapılan altı commit yalnızca dokümantasyon ve kapanış raporu konumunu değiştirmiştir; karşılaştırmada uygulama/test kaynak dosyalarında değişiklik yoktur. Bu nedenle aşağıdaki CI koşuları, Aşama 5'in son entegrasyon kodunu içeren `00924f486d59e4a03b414a1d9a8d4ef798d04a8d` HEAD'inde çalıştırılmıştır.
+
+- [Hex World Laboratory CI — run 43963816312](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43963816312): **Başarılı**. Laboratuvar tam test paketi **588 passed**; harita persistence, runtime persistence, movement ve collision-aware movement benchmark adımlarının tamamı başarılı.
+- [Core Quality — run 43963816299](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43963816299): **Başarılı**. Linux: **2.051 passed, 1 warning**. Windows: **2.051 passed**. Her iki platformda release-candidate verification başarılı.
+- Uyarı notu: Linux'taki tek pytest uyarısı Pygame `pkg_resources` deprecation uyarısıdır. GitHub Actions tarafında Node/punycode deprecation uyarıları da görüldü; bunlar job başarısızlığı değildir.
+
+**CI kabul kararı:** Laboratuvar Linux CI ve Core Quality Linux/Windows doğrulamaları başarılıdır. Bu aşama için CI istisnası kaydedilmesine gerek yoktur.
+
 ## 7. Kapsam dışı kalanlar
 
 Nihai ev modeli/kaplama/inşa arayüzü, kamera ve nihai render katmanı, pathfinding, NPC AI, dinamik aktör itişmesi ve genel rigid-body fiziği bu aşamanın kapsamı dışındadır.
