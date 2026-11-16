@@ -21,7 +21,7 @@ Eldoria'nın canon altıgen dünya mimarisini ana oyundan bağımsız araştırm
 - [Aşama 4 Genel Planı](docs/PHASE-04-GENERAL-PLAN.md)
 - [Aşama 4 Teknik Planı](docs/PHASE-04-TECHNICAL-PLAN.md)
 - [Aşama 5 Genel Planı](docs/PHASE-05-GENERAL-PLAN.md)
-- [Aşama 5 Teknik Planı](docs/PHASE-05-TECHNICAL-PLAN.md)
+- [Aşama 5 Teknik Planı](docs/PHASE-05-TECHNICAL-PLAN.md)\n- [Aşama 6 Genel Planı](docs/PHASE-06-GENERAL-PLAN.md)\n- [Aşama 6 Teknik Planı](docs/PHASE-06-TECHNICAL-PLAN.md)\n- [Aşama 6 Görsel Kabul Kontrol Listesi](docs/PHASE-06-MANUAL-ACCEPTANCE-CHECKLIST.md)
 - [Aşama 3.6 Teknik Planı](docs/PHASE-03.6-TECHNICAL-PLAN.md)
 - [Aşama 3.7 Runtime Persistence Teknik Planı](reports/PHASE-03.7-TECHNICAL-PLAN.md)
 - [Harita JSON Şema v1](docs/MAP_JSON_SCHEMA_V1.md)
@@ -36,7 +36,7 @@ Eldoria'nın canon altıgen dünya mimarisini ana oyundan bağımsız araştırm
 - [Aşama 3.7 — Runtime Persistence](reports/PHASE-03.7-REPORT.md)
 - [Aşama 3 — Genel Dünya Modeli Kapanış Raporu](reports/PHASE-03-WORLD-REPORT.md)
 - [Aşama 4 — Sürekli Hareket Kapanış Raporu](reports/PHASE-04-CLOSURE-REPORT.md)
-- [Aşama 5 — Gövde Modeli, Çarpışma ve Fizik Kapanış Raporu](reports/PHASE-05-CLOSURE-REPORT.md)
+- [Aşama 5 — Gövde Modeli, Çarpışma ve Fizik Kapanış Raporu](reports/PHASE-05-CLOSURE-REPORT.md)\n- [Aşama 6 — Otomatik Doğrulama Günlüğü](reports/PHASE-06-VALIDATION-LOG.md)
 
 ## Kurulum (Windows PowerShell)
 
@@ -68,7 +68,7 @@ python -m pytest -q
 
 Son kullanıcı tarafından bildirilen yerel tam test sonucu **588/588 başarılıdır**. Bu sayı, son Pygame demo entegrasyonunu da kapsayan yerel çalıştırma sonucudur; GitHub Actions CI sonucu olarak sunulmaz.
 
-Son entegrasyon commit'i için CI, laboratuvar dalına yapılan push ile otomatik tetiklenir. Laboratuvar CI iş akışı Linux üzerinde tam laboratuvar test paketini ve benchmark'ları; Core Quality iş akışı ise Linux ve Windows doğrulama job'larını çalıştırır. En güncel run bağlantıları ve sonuçları Aşama 5 kapanış raporunda kaydedilir.
+Aşama 6 son otomatik doğrulamasında GitHub Actions Laboratuvar CI 681/681 testle başarılıdır; tüm benchmark adımları tamamlanmıştır. Aynı commit için Core Quality Linux ve Windows job'ları başarılıdır. Run bağlantıları ve alt aşama kanıtları reports/PHASE-06-VALIDATION-LOG.md içinde kayıtlıdır.
 
 ## Harita ve runtime persistence
 
@@ -90,7 +90,7 @@ Varsayılan `create` modu mevcut dosyayı ezmez. Değiştirme için açıkça `m
 
 **Aşama 0–5:** Tamamlandı ve kabul edildi. Aşama 3 dünya/runtime ve persistence; Aşama 4 sürekli hareket; Aşama 5 gövde, hex/nesne çarpışmaları, kayma, CCD ve 60 TPS entegrasyonunu kapsar. Aşama 5 son kullanıcı bildirimiyle 588/588 yerel test ve başarılı masaüstü kabulüyle kapatılmıştır.
 
-**Aşama 6:** Kamera ve dünya-ekran dönüşümü, sıradaki izinli teknik aşamadır. Kodlamadan önce teknik plan ve kabul kapsamı hazırlanacaktır. Aşama 7–13 henüz başlatılmamıştır.
+**Aşama 6:** Kamera ve dünya-ekran dönüşümünün 6.1–6.5 teknik uygulaması tamamlandı. Son otomatik doğrulama 681/681 test, Linux/Windows Core Quality ve benchmark adımlarında başarılıdır. Kamera, zoom, yumuşak takip, harita bounds politikası, Pygame renderer, pencere resize ve fareyle hex seçimi entegre edildi. Masaüstü görsel kabul kullanıcı tarafından henüz yapılmadı; bu nedenle Aşama 6 bütünüyle kapanmış sayılmaz. Kontrol adımları docs/PHASE-06-MANUAL-ACCEPTANCE-CHECKLIST.md içindedir. Aşama 7–13 başlatılmamıştır.
 
 ### Mimari sınırlar
 
