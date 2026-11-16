@@ -164,6 +164,13 @@ def test_movement_modes_flow_through_demo_ticks_without_position_snapping() -> N
         clock.advance(1.0 / 60.0)
         demo.pump()
         assert demo.state.position.x == 3.0
+        assert demo.state.mode is MovementMode.STEALTH
+        assert demo.state.velocity.x == 0.0
+
+        keys.add(pygame.K_LALT)
+        clock.advance(1.0 / 60.0)
+        demo.pump()
+        assert demo.state.position.x == 3.0
         assert demo.state.mode is MovementMode.NORMAL
         assert demo.state.velocity.x == 0.0
         assert demo.current_resolution is not None
