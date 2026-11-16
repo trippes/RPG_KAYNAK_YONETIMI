@@ -577,6 +577,8 @@ Son denetimde `app.py` ve `application/movement_demo.py` dosyalarının hâlâ e
 - BLOCKED harita sınırları gerçek collision geometry üzerinden sisteme bağlanır.
 - Oyuncu collider'ı ve engeller Pygame penceresinde çizilir; tanı paneli temas ve impact sayılarını gösterir.
 - `tests/unit/test_movement_demo_collision_integration.py` dosyasına demo sistem türü, engel sahnesi, duvara çarpma ve render regresyon testleri eklendi.
+- Başlangıç evi yalnızca yapı iskeletidir: beş ayrı convex duvar collider'ı kullanır ve ön cephede kapı boşluğu bırakır. Basit duvar/çatı çizgileri görsel rehberdir; nihai model, kaplama veya inşa arayüzü değildir.
+- Ev duvarlarının fiziksel engel olarak kaydedildiği ve iskeletin beş parçalı kaldığı regresyon testi eklendi. Kapı boşluğu ve ev çevresinde dolaşma ayrıca masaüstü kabulünde kontrol edilir.
 
 Bu entegrasyonun ardından tam test paketi yeniden çalıştırılmalıdır. Önceki 584/2.047 CI sonuçları bu son demo değişikliğini kapsamaz.
 
