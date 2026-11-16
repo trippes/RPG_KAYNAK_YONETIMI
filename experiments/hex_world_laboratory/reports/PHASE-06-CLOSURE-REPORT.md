@@ -3,7 +3,7 @@
 > **Rapor durumu:** TEKNİK UYGULAMA VE OTOMATİK DOĞRULAMA TAMAM — KULLANICI GÖRSEL KABULÜ BEKLENİYOR  
 > **Tarih:** 17 Kasım 2026  
 > **Çalışma dalı:** experiment/hex-world-laboratory  
-> **Son doğrulanan HEAD:** 6807341881e438c6b940be84d683558ec0aba1cf  
+> **Son doğrulanan kod ve belge commit'i:** bcfdb5573880e58cf53112edd32ab2df6d4e2097  
 > **Aşama kararı:** Henüz nihai olarak kapatılmadı.
 
 ---
@@ -72,11 +72,11 @@ Belgeler:
 
 ## 5. Otomatik test ve CI sonuçları
 
-Son doğrulama, dokümantasyon dahil son branch HEAD'i 6807341881e438c6b940be84d683558ec0aba1cf üzerinde çalıştırılmıştır.
+Son kod ve belge doğrulaması bcfdb5573880e58cf53112edd32ab2df6d4e2097 commit'i üzerinde çalıştırılmıştır.
 
-- Laboratuvar CI: [43971405992](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43971405992) — SUCCESS; **681/681 test geçti**.
+- Laboratuvar CI: [43971952721](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43971952721) — SUCCESS; **681/681 test geçti**.
 - Laboratuvar benchmark adımları: tamamı SUCCESS.
-- Core Quality: [43971406187](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43971406187) — Linux ve Windows job'larının ikisi de SUCCESS.
+- Core Quality: [43971952428](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43971952428) — Linux ve Windows job'larının ikisi de SUCCESS.
 - Önceki alt aşama CI run'ları, test sayıları ve düzeltme geçmişi: PHASE-06-VALIDATION-LOG.md.
 
 Bu sonuçlar otomatik doğrulamadır. Kullanıcının bilgisayarındaki görsel kabulün yerine geçmez.
