@@ -43,7 +43,7 @@ class MovementIntegrator:
         if delta_time < 0.0:
             raise ValueError("delta_time must not be negative")
 
-        if not intent.is_moving or self._config.max_speed == 0.0 or delta_time == 0.0:
+        if not intent.is_moving or self._config.max_speed == 0.0:
             velocity = Vector2(0.0, 0.0)
         else:
             velocity = intent.direction.normalized() * self._config.max_speed
