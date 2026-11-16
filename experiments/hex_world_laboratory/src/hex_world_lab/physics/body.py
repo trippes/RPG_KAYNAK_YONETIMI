@@ -60,7 +60,7 @@ class ActorBodyTransform:
         offset_y = self.ground_anchor.y + body.local_offset.x * sine + body.local_offset.y * cosine
 
         if isinstance(body.collider, CircleShape):
-            return CircleShape(body.collider.radius)
+            return CircleShape(body.collider.radius, Vector2(offset_x, offset_y))
 
         transformed = tuple(
             Vector2(
