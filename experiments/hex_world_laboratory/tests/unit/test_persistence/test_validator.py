@@ -134,3 +134,25 @@ def test_reports_precise_cell_field_path():
     with pytest.raises(MapValidationError) as error:
         validate_map_payload(payload)
     assert error.value.path == "$.cells[0].terrain_id"
+
+
+
+def test_rejects_non_string_orientation_without_type_error():
+    payload = valid_payload()
+    payload["layout"]["orientation"] = []
+    with pytest.raises(MapValidationError):
+        validate_map_payload(payload)
+
+
+def test_rejects_unrepresentably_large_geometry_number():
+    payload = valid_payload()
+    payload["layout"]["radius"] = 10 ** 10000
+    with pytest.raises(MapValidationError):
+        validate_map_payload(payload)
+
+
+def test_rejects_non_string_object_keys():
+    payload = valid_payload()
+    payload["layout"] = {1: "unexpected"}
+    with pytest.raises(MapValidationError):
+        validate_map_payload(payload)
