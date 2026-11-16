@@ -125,3 +125,48 @@ def test_cell_tracker_does_not_snap_physical_position() -> None:
         assert demo.state.position == WorldPoint(1.0, 0.0)
     finally:
         pygame.quit()
+
+
+def test_movement_modes_flow_through_demo_ticks_without_position_snapping() -> None:
+    from hex_world_lab.movement import MovementMode
+
+    pygame.init()
+    try:
+        clock = FakeClock()
+        keys = {pygame.K_d}
+        demo = MovementDemo(
+            movement_speed=60.0,
+            key_state_provider=lambda: _PressedKeys(keys),
+            clock=clock,
+        )
+        demo.start()
+
+        clock.advance(1.0 / 60.0)
+        demo.pump()
+        assert demo.state.position.x == 1.0
+        assert demo.state.mode is MovementMode.NORMAL
+
+        keys.add(pygame.K_LSHIFT)
+        clock.advance(1.0 / 60.0)
+        demo.pump()
+        assert demo.state.position.x == 2.5
+        assert demo.state.mode is MovementMode.RUNNING
+        assert demo.state.velocity.x == 90.0
+
+        keys.add(pygame.K_LALT)
+        clock.advance(1.0 / 60.0)
+        demo.pump()
+        assert demo.state.position.x == 3.0
+        assert demo.state.mode is MovementMode.STEALTH
+        assert demo.state.velocity.x == 30.0
+
+        keys.clear()
+        clock.advance(1.0 / 60.0)
+        demo.pump()
+        assert demo.state.position.x == 3.0
+        assert demo.state.mode is MovementMode.NORMAL
+        assert demo.state.velocity.x == 0.0
+        assert demo.current_resolution is not None
+        assert demo.current_resolution.coord is not None
+    finally:
+        pygame.quit()
