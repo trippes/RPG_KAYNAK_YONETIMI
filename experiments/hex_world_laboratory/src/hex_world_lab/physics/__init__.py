@@ -3,6 +3,12 @@
 from .body import ActorBodyTransform, BodyDefinition
 from .broadphase import AABB, gather_candidates
 from .contacts import Contact, ContactManifold
+from .continuous import (
+    ContinuousCollisionResolution,
+    SweepHit,
+    resolve_continuous_motion,
+    sweep_circle_polygon,
+)
 from .hex_geometry import (
     BoundaryPolicy,
     HexBoundaryEdge,
@@ -23,13 +29,17 @@ __all__ = [
     "CollisionResolution",
     "ColliderShape",
     "Contact",
+    "ContinuousCollisionResolution",
     "ContactManifold",
     "ConvexPolygonShape",
     "HexBoundaryEdge",
     "HexMapCollisionGeometry",
     "ObstacleDefinition",
+    "SweepHit",
     "build_hex_map_collision_geometry",
     "collide_shapes",
     "gather_candidates",
     "resolve_kinematic_motion",
+    "resolve_continuous_motion",
+    "sweep_circle_polygon",
 ]
