@@ -3,7 +3,7 @@
 > **Belge türü:** Aşama genel planı  
 > **Proje:** Eldoria — Hex World Laboratory  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
-> **Durum:** GENEL PLAN ONAYLANDI — TEKNİK UYGULAMA TAMAMLANDI; KULLANICI MASAÜSTÜ KABULİ BEKLENİYOR  
+> **Durum:** KAPATILDI — TEKNİK UYGULAMA, OTOMATİK DOĞRULAMA VE KULLANICI MASAÜSTÜ KABULÜ TAMAMLANDI  
 > **Tarih:** 16 Kasım 2026  
 > **Ön koşul:** Aşama 3 genel kapanış raporu kullanıcı tarafından kabul edildi.
 
@@ -271,4 +271,4 @@ Bir alt çalışmada yeni ve onaylanmamış kapsam ihtiyacı ortaya çıkarsa uy
 
 Kullanıcı, 16 Kasım 2026 tarihinde Aşama 4 genel planını onaylamıştır. Bu belge, onaylanan genel planın ayrıntılı ve izlenebilir sürümüdür.
 
-**Mevcut aşama durumu:** Genel plan ve teknik mimari plan kullanıcı tarafından onaylandı. Aşama 4.1–4.7.6 teknik uygulama ve otomatik doğrulama tamamlandı. Gerçek Pygame masaüstü kabulü kullanıcı kararıyla Aşama 4 genel kapanışına bırakıldı. Bu kabul yapılmadan Aşama 4 kapatılmış sayılmayacak ve sonraki aşamaya geçilmeyecektir.
+**Nihai durum — KAPATILDI (16 Kasım 2026):** Aşama 4.1–4.7.6 kapsamındaki teknik uygulama ve otomatik doğrulamalar tamamlanmıştır. Kullanıcı, Aşama 4 bilgisayar kabul kontrolündeki 11 maddenin tamamını başarılı olarak doğruladığını ve Aşama 4'ü kabul ettiğini bildirmiştir. Kabul kaydı `reports/PHASE-04-CLOSURE-REPORT.md` içindedir. Aşama 4'ün kapsamı dışında bırakılan çarpışma/fizik, pathfinding, kamera ve nihai render işleri sonraki aşamaların kapsamına tabidir. Bu kapanış `experiment/hex-world-laboratory` dalında kayıt altına alınmıştır; `main` ve `demo_eldoria` dallarına aktarım yapılmamıştır.
