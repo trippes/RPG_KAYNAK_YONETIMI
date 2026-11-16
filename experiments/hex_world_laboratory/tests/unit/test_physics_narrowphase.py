@@ -1,5 +1,7 @@
 """Tests for exact convex narrowphase contact queries."""
 
+import math
+
 import pytest
 
 from hex_world_lab.geometry import (
@@ -85,7 +87,7 @@ def test_circle_contact_against_real_hex_polygon_in_both_layouts(orientation):
     polygon = ConvexPolygonShape(tuple(Vector2(point.x, point.y) for point in vertices))
     contact = collide_shapes(CircleShape(0.5), polygon, "hex")
     assert contact is not None
-    assert contact.penetration_depth > 0
+    assert contact.penetration_depth == pytest.approx(0.5 + 2.0 * math.cos(math.pi / 6))
     assert contact.normal.length == pytest.approx(1.0)
 
 

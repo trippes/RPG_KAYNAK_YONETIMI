@@ -119,20 +119,14 @@ def _circle_circle(
 def _circle_polygon(
     circle: CircleShape, polygon: ConvexPolygonShape, obstacle_id: str
 ) -> Contact | None:
-    closest_vertex = min(
-        polygon.vertices,
-        key=lambda point: (
-            (point.x - circle.center.x) ** 2 + (point.y - circle.center.y) ** 2,
-            point.x, point.y,
-        ),
-    )
-    vertex_axis = Vector2(
-        circle.center.x - closest_vertex.x,
-        circle.center.y - closest_vertex.y,
+    closest_boundary_point = _closest_polygon_point(circle.center, polygon)
+    boundary_axis = Vector2(
+        circle.center.x - closest_boundary_point.x,
+        circle.center.y - closest_boundary_point.y,
     )
     axes = list(_axes(polygon))
-    if vertex_axis.length > _EPSILON:
-        axes.append(vertex_axis.normalized())
+    if boundary_axis.length > _EPSILON:
+        axes.append(boundary_axis.normalized())
 
     polygon_center = _centroid(polygon)
     direction = Vector2(
