@@ -36,7 +36,7 @@ Eldoria'nın canon altıgen dünya mimarisini ana oyundan bağımsız araştırm
 - [Aşama 3.7 — Runtime Persistence](reports/PHASE-03.7-REPORT.md)
 - [Aşama 3 — Genel Dünya Modeli Kapanış Raporu](reports/PHASE-03-WORLD-REPORT.md)
 - [Aşama 4 — Sürekli Hareket Kapanış Raporu](reports/PHASE-04-CLOSURE-REPORT.md)
-- [Aşama 5 — Gövde Modeli, Çarpışma ve Fizik Kapanış Raporu](reports/PHASE-05-CLOSURE-REPORT.md)\n- [Aşama 6 — Otomatik Doğrulama Günlüğü](reports/PHASE-06-VALIDATION-LOG.md)
+- [Aşama 5 — Gövde Modeli, Çarpışma ve Fizik Kapanış Raporu](reports/PHASE-05-CLOSURE-REPORT.md)\n- [Aşama 6 — Otomatik Doğrulama Günlüğü](reports/PHASE-06-VALIDATION-LOG.md)\n- [Aşama 6 — Kapanış Raporu (Görsel Kabul Bekliyor)](reports/PHASE-06-CLOSURE-REPORT.md)
 
 ## Kurulum (Windows PowerShell)
 
