@@ -36,6 +36,7 @@ Eldoria'nın canon altıgen dünya mimarisini ana oyundan bağımsız araştırm
 - [Aşama 3.7 — Runtime Persistence](reports/PHASE-03.7-REPORT.md)
 - [Aşama 3 — Genel Dünya Modeli Kapanış Raporu](reports/PHASE-03-WORLD-REPORT.md)
 - [Aşama 4 — Sürekli Hareket Kapanış Raporu](reports/PHASE-04-CLOSURE-REPORT.md)
+- [Aşama 5 — Gövde Modeli, Çarpışma ve Fizik Kapanış Raporu](reports/PHASE-05-CLOSURE-REPORT.md)
 
 ## Kurulum (Windows PowerShell)
 
@@ -65,9 +66,9 @@ python -m hex_world_lab
 python -m pytest -q
 ```
 
-Aşama 5'in son GitHub laboratuvar CI doğrulaması **584 passed** sonucunu verdi. Kullanıcının Windows bilgisayarındaki son tam test çalıştırması henüz bekleniyor.
+Son kullanıcı tarafından bildirilen yerel tam test sonucu **588/588 başarılıdır**. Bu sayı, son Pygame demo entegrasyonunu da kapsayan yerel çalıştırma sonucudur; GitHub Actions CI sonucu olarak sunulmaz.
 
-Özel GitHub Actions laboratuvar iş akışı tam test paketini ve harita/runtime persistence benchmark'larını başarıyla çalıştırdı. Ana `Core quality` iş akışının Linux ve Windows job'ları da laboratuvar paketi kurulum düzeltmesinden sonra başarılı oldu. Run bağlantıları genel kapanış raporunda kayıtlıdır.
+Son entegrasyon commit'i için CI, laboratuvar dalına yapılan push ile otomatik tetiklenir. Laboratuvar CI iş akışı Linux üzerinde tam laboratuvar test paketini ve benchmark'ları; Core Quality iş akışı ise Linux ve Windows doğrulama job'larını çalıştırır. En güncel run bağlantıları ve sonuçları Aşama 5 kapanış raporunda kaydedilir.
 
 ## Harita ve runtime persistence
 
@@ -87,11 +88,9 @@ Varsayılan `create` modu mevcut dosyayı ezmez. Değiştirme için açıkça `m
 
 ## Mevcut durum
 
-**Aşama 0–3:** Tamamlandı ve teknik olarak kabul edildi. Dünya kimlikleri, hücre/harita modeli, çoklu harita kaydı, View/Runtime ayrımı ve map/runtime JSON persistence dahildir.
+**Aşama 0–5:** Tamamlandı ve kabul edildi. Aşama 3 dünya/runtime ve persistence; Aşama 4 sürekli hareket; Aşama 5 gövde, hex/nesne çarpışmaları, kayma, CCD ve 60 TPS entegrasyonunu kapsar. Aşama 5 son kullanıcı bildirimiyle 588/588 yerel test ve başarılı masaüstü kabulüyle kapatılmıştır.
 
-**Aşama 4:** Sürekli hareket sistemi kullanıcı tarafından kabul edilerek kapatıldı.
-
-**Aşama 5:** 5.1–5.7 fizik çekirdeği ve otomatik doğrulamaları tamamlandı. Son denetimde Pygame kabul demosu da CollisionAwareMovementSystem'e bağlandı; demo için yeni regresyon testleri eklendi. Laboratuvar 584 ve Core Quality Linux/Windows 2.047'şer test sonuçları bu son demo entegrasyonundan önceki kod sürümüne aittir. Kullanıcının bilgisayarında güncel tam test paketi ve nihai görsel kabul bekleniyor; aşama henüz kapatılmadı.
+**Aşama 6:** Kamera ve dünya-ekran dönüşümü, sıradaki izinli teknik aşamadır. Kodlamadan önce teknik plan ve kabul kapsamı hazırlanacaktır. Aşama 7–13 henüz başlatılmamıştır.
 
 ### Mimari sınırlar
 
