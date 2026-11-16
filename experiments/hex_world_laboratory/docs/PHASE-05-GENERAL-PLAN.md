@@ -3,7 +3,7 @@
 > Belge türü: Aşama genel planı  
 > Proje: Eldoria — Hex World Laboratory  
 > Çalışma dalı: experiment/hex-world-laboratory  
-> Durum: ONAYLANDI — TEKNİK PLAN VE UYGULAMA BEKLİYOR  
+> Durum: UYGULAMA VE OTOMATİK TEKNİK DOĞRULAMA TAMAMLANDI — NİHAİ MASAÜSTÜ KABULÜ BEKLİYOR  
 > Tarih: 16 Kasım 2026  
 > Ön koşul: Aşama 4 kapatıldı ve kullanıcı tarafından kabul edildi.
 
@@ -170,3 +170,32 @@ Aşama 5 ancak aşağıdakilerin tamamı sağlandığında kapatılabilir:
 ---
 
 Bu genel plan Aşama 5'in kapsamını ve kabul yöntemini tanımlar. Ayrıntılı teknik plan, modül/API sözleşmelerini, algoritmaları, test matrisini ve alt aşama kapılarını belirler. Teknik planın onaylanması kod uygulamasına ayrıca izin verilmesini gerektirir.
+
+
+## 10. 16 Kasım 2026 — Uygulama ve otomatik doğrulama durumu
+
+5.1–5.7 alt aşamalarının uygulaması tamamlandı. 5.7 bütünleşik hareket/çarpışma sistemi, harita sınırı entegrasyonu, harita kapsamı doğrulaması ve benchmark p95 düzeltmesi dâhil teknik incelemede bulunan düzeltmeler de çalışma dalına işlendi.
+
+Otomatik doğrulama kanıtları:
+
+- Hex World Laboratory CI: run `43932344855` — **584 test geçti**; harita persistence, runtime persistence, hareket ve bütünleşik çarpışma benchmark adımları başarılı.
+- Core Quality: run `43932344956` — Linux **2.047 test geçti**, Windows **2.047 test geçti**; iki platformda release-candidate verification başarılı.
+- Bütünleşik çarpışma benchmark'ı (GitHub Linux runner, 10 tick/batch): 1 aktör 198.492 µs/actor-tick; 10 aktör 190.8413 µs; 100 aktör 194.7613 µs; 1.000 aktör 196.2149 µs. Bu ölçüm render, input polling, NPC mantığı ve dünya simülasyonunu kapsamaz; kullanıcının bilgisayarında FPS garantisi değildir.
+- BLOCKED harita sınırı artık gerçek çarpışma engellerine dönüştürülür; OPEN davranışı ayrıca test edilir. Collision-aware movement sistemi farklı harita kimliklerini karıştırmayı reddeder.
+
+Bu noktadan sonra teknik kodlama, otomatik test, CI veya benchmark işi açık kalmamıştır. Aşama 5'in kapanması için yalnızca kullanıcının Windows bilgisayarında tam test komutunu çalıştırması ve aşağıdaki nihai masaüstü/görsel kabul listesini tamamlaması beklenir. Herhangi bir kusur bulunursa kapanıştan önce düzeltilir ve ilgili test tekrarlanır.
+
+### Kullanıcının yapacağı son kontroller
+
+1. Laboratuvar kök dizininde `python -m pytest -q` komutunu çalıştırmak ve başarılı sonucu bildirmek.
+2. `python -m hex_world_lab` ile Pygame laboratuvarını açmak.
+3. Tek hücre ve bitişik engellerde oyuncunun engelin içinden geçmediğini doğrulamak.
+4. Daire oyuncu collider'ı ile ağaç/kaya/duvar temsili engellerin temasını kontrol etmek.
+5. Duvar boyunca kaymayı ve dar geçitlerden geçişi kontrol etmek.
+6. Köşe ve birden fazla temas durumunda takılma/titreşim olmadığını kontrol etmek.
+7. Normal, koşma ve gizlilik hızlarında çarpışmayı kontrol etmek.
+8. Flat-top ve pointy-top haritalarda çarpışmayı kontrol etmek.
+9. BLOCKED sınırda harita dışına çıkılamadığını, OPEN sınırda çıkışın mümkün olduğunu doğrulamak.
+10. Pencerenin normal açılıp kapanmasını doğrulamak.
+
+Bu liste tamamlanıp kullanıcı sonucu onayladıktan sonra `reports/PHASE-05-CLOSURE-REPORT.md` gerçek yerel sonuçlarla hazırlanacak ve Aşama 5 kapatılacaktır.
