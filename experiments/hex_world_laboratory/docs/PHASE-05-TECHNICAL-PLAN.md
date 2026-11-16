@@ -3,7 +3,7 @@
 > Belge türü: Ayrıntılı teknik mimari, API sözleşmeleri ve uygulama planı  
 > Proje: Eldoria — Hex World Laboratory  
 > Çalışma dalı: experiment/hex-world-laboratory  
-> Durum: TASLAK — KULLANICI TEKNİK ONAYI BEKLİYOR  
+> Durum: KULLANICI TARAFINDAN ONAYLANDI — 5.1–5.7 UYGULAMA VE OTOMATİK TEKNİK DOĞRULAMA TAMAMLANDI; NİHAİ MASAÜSTÜ KABULÜ BEKLİYOR  
 > Tarih: 16 Kasım 2026  
 > Ön koşullar: Aşama 4 kapalı; Aşama 5 Genel Planı kullanıcı tarafından onaylandı.  
 > Kod durumu: Bu belgeyle kod değişikliği yapılmaz.
@@ -521,4 +521,57 @@ Bu ihtiyaçlardan biri zorunlu hâle gelirse uygulama sırasında sessizce eklen
 
 ---
 
-Bu belge teknik mimari önerisini ve uygulama kapılarını tanımlar. Kullanıcı teknik planı açıkça onaylamadan 5.1 kodlamasına başlanamaz. Her alt aşamanın tamamlanması, sonraki alt aşamaya otomatik onay anlamına gelmez.
+Bu belge kullanıcı tarafından onaylanmış teknik mimari planıdır. 5.1–5.7 uygulaması ve otomatik teknik doğrulaması tamamlanmıştır. Aşağıdaki gerçekleşen durum ve kalan kabul adımları, ilk planın fiilî uygulama sonuçlarını kaydeder.
+
+
+## 17. 16 Kasım 2026 — Gerçekleşen uygulama ve teknik kabul durumu
+
+### 17.1 Alt aşama durumu
+
+| Alt aşama | Gerçekleşen çıktı | Teknik durum |
+|---|---|---|
+| 5.1 | Circle/convex polygon shape, BodyDefinition, ActorBodyTransform | Tamamlandı |
+| 5.2 | Ground anchor, local offset ve body_height sözleşmesi | Tamamlandı |
+| 5.3 | ObstacleDefinition, flat/pointy hex collision geometry, BLOCKED/OPEN boundary policy | Tamamlandı |
+| 5.4 | AABB broadphase, circle/circle, circle/polygon, polygon/polygon narrowphase, ContactManifold | Tamamlandı |
+| 5.5 | Depenetration, duvar boyunca kayma ve çoklu temas çözümü | Tamamlandı |
+| 5.6 | Swept circle CCD, time-of-impact, tunneling önleme ve temas sonrası kayma | Tamamlandı |
+| 5.7 | CollisionAwareMovementSystem, 60 TPS entegrasyonu, rollback ve benchmark | Tamamlandı |
+
+### 17.2 Son teknik incelemede yapılan düzeltmeler
+
+- `HexBoundaryEdge.as_obstacle()` ile gerçek hex perimeter kenarlarından ince convex collision wall üretilir.
+- `HexMapCollisionGeometry.collision_obstacles`, hücre/nesne engellerini ve BLOCKED sınır duvarlarını birlikte sunar; OPEN sınırda yapay sınır duvarı üretmez.
+- `CollisionAwareMovementSystem`, doğrudan `HexMapCollisionGeometry` alabilir; BLOCKED sınırlar otomatik olarak çarpışma çözümüne katılır.
+- Hareket sistemi tek MapId kapsamını doğrular; farklı haritalara ait engellerin karışmasını ve açıkça yanlış map_id verilmesini reddeder.
+- Benchmark p95 hesabı nearest-rank `ceil(0.95 * n)` yöntemine göre düzeltildi.
+- BLOCKED/OPEN sınır, harita kimliği uyuşmazlığı ve karışık harita engelleri için regresyon testleri eklendi.
+
+### 17.3 CI kanıtları
+
+- Hex World Laboratory CI run: `43932344855` — **584 passed**. Tam laboratuvar test paketi ve dört benchmark adımı başarılı.
+- Core Quality run: `43932344956` — Linux **2,047 passed, 1 warning**; Windows **2,047 passed**. Her iki job'da release-candidate verification başarılı.
+- CI uyarıları test başarısızlığı değildir; Linux'taki Pygame pkg_resources deprecation uyarısı ve Actions/Node bağımlılık uyarılarıdır.
+
+### 17.4 Son bütünleşik hareket/çarpışma benchmark'ı
+
+GitHub Linux runner üzerinde 2 warmup batch, 8 ölçüm batch'i ve batch başına 10 tick kullanıldı:
+
+| Aktör | Ortalama µs / aktör-tick | p95 batch süresi |
+|---:|---:|---:|
+| 1 | 198.4920 | 2.2275 ms |
+| 10 | 190.8413 | 19.2886 ms |
+| 100 | 194.7613 | 197.3374 ms |
+| 1.000 | 196.2149 | 1,982.7576 ms |
+
+Ölçüm yalnızca MovementIntegrator ve ortak statik convex wall'a karşı swept circle collision kapsamındadır. Render, input polling, NPC mantığı ve dünya simülasyonu dahil değildir. Bu nedenle bu sonuçlar tam oyun FPS'si veya kullanıcının düşük donanımlı bilgisayarında performans garantisi olarak yorumlanamaz.
+
+### 17.5 Kullanıcı bilgisayarında kalan kabul
+
+Teknik kod, birim/entegrasyon/regresyon testleri, mimari kontroller, Linux/Windows CI ve benchmark çalışmaları tamamlanmıştır. Kullanıcı tarafında yalnızca:
+
+1. Laboratuvar kökünde `python -m pytest -q` çalıştırılması.
+2. `python -m hex_world_lab` ile masaüstü uygulamasının açılması.
+3. Genel Aşama 5 planındaki nihai görsel kabul listesinin tamamlanması.
+
+beklenmektedir. Bu kontrollerin sonucu kullanıcı tarafından bildirilmeden yerel doğrulama yapılmış sayılmayacak ve aşama kapatılmayacaktır. Başarılı sonuçtan sonra kapanış raporu hazırlanır.
