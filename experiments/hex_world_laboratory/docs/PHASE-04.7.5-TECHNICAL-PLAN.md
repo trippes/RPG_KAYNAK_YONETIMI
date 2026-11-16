@@ -3,7 +3,7 @@
 > **Proje:** Eldoria — Hex World Laboratory  
 > **Dal:** `experiment/hex-world-laboratory`  
 > **Ön koşul:** Aşama 4.7.4 kodu ve GitHub CI doğrulamaları başarılıdır.  
-> **Durum:** ONAYLANDI — uygulama ve otomatik doğrulama tamamlandı; gerçek Pygame masaüstü kabulü bekleniyor.
+> **Durum:** TEKNİK DOĞRULAMA TAMAMLANDI — KAPATILDI; masaüstü kabulü Aşama 4 genel kapanışına ertelendi.
 
 ## 1. Amaç
 
@@ -91,7 +91,7 @@ Teşhis hesapları yalnızca `state` ve config değerlerini okur. Render çağr�
 12. `render()` çağrıları state, tick sayısı, hücre çözümlemesi ve hareket konumunu değiştirmez.
 13. Var olan uygulama yaşam döngüsü, hücre çizimi ve hareket modu entegrasyon testleri regresyona uğramaz.
 14. Tam laboratuvar pytest, Lab CI ve Core Quality Linux/Windows başarılı olur.
-15. Gerçek Pygame penceresinde kullanıcı manuel kontrol listesindeki mod ve teşhis satırı maddelerini doğrular; headless CI masaüstü kabulünün yerine geçmez.
+15. Gerçek Pygame penceresindeki mod ve teşhis satırı kontrolleri, kullanıcının kararı doğrultusunda Aşama 4 genel kapanışındaki toplu masaüstü kabulünde yapılır; headless CI bu manuel kabulün yerine geçmez.
 
 ## 7. Manuel kontrol listesi ekleri
 
@@ -129,4 +129,4 @@ Teşhis hesapları yalnızca `state` ve config değerlerini okur. Render çağr�
 
 ## 10. Uygulama kapısı
 
-Kullanıcı 2026-11-16 tarihinde planı onaylamıştır. Plan kapsamındaki kod, otomatik testler ve GitHub CI doğrulamaları tamamlanmıştır. Gerçek Pygame masaüstü kabulü kullanıcı tarafından yapılacaktır; bu kontrol tamamlanmadan 4.7.5 alt aşaması resmen kapatılmayacaktır. Tüm değişiklikler yalnızca `experiment/hex-world-laboratory` dalında tutulur.
+Kullanıcı 2026-11-16 tarihinde planı onaylamıştır. Plan kapsamındaki kod, otomatik testler ve GitHub CI doğrulamaları tamamlanmıştır. Kullanıcı kararıyla gerçek Pygame masaüstü kabulü Aşama 4 genel kapanışına ertelenmiştir. Bu erteleme 4.7.5 teknik kapanışını engellemez; manuel maddeler genel kapanış kontrol listesinde açık kalır. Tüm değişiklikler yalnızca `experiment/hex-world-laboratory` dalında tutulur.
