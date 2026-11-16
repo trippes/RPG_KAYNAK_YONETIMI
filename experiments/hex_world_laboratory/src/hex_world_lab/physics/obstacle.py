@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 from hex_world_lab.geometry import WorldPoint
 from hex_world_lab.movement.vector import Vector2
+from hex_world_lab.world.identity import CellAddress, MapId
 
 from .shapes import CircleShape, ColliderShape, ConvexPolygonShape
 
@@ -13,16 +14,14 @@ class ObstacleDefinition:
     """Immutable obstacle whose shape is expressed relative to its position."""
 
     obstacle_id: str
-    map_id: object
+    map_id: MapId
     shape: ColliderShape
     position: WorldPoint
-    source_cell: object | None = None
+    source_cell: CellAddress | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.obstacle_id, str) or not self.obstacle_id.strip():
             raise ValueError("obstacle_id must be a non-empty string")
-        from hex_world_lab.world.identity import CellAddress, MapId
-
         if not isinstance(self.map_id, MapId):
             raise TypeError("map_id must be a MapId")
         if not isinstance(self.shape, (CircleShape, ConvexPolygonShape)):
