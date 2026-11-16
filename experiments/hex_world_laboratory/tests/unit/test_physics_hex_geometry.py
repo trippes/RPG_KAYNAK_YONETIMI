@@ -11,7 +11,10 @@ from hex_world_lab.physics.hex_geometry import (
     BoundaryPolicy, build_hex_map_collision_geometry,
 )
 from hex_world_lab.physics.obstacle import ObstacleDefinition
-from hex_world_lab.world import HexCellData, HexMapDefinition, HexWorld, MapId, WorldId
+from hex_world_lab.world import (
+    CellAddress, HexCellData, HexMapDefinition, HexWorld, MapId,
+    MapNotLoadedError, UnknownMapError, WorldId,
+)
 
 
 def make_world(orientation=HexOrientation.FLAT_TOP, cells=None):
@@ -72,7 +75,6 @@ def test_runtime_obstacle_override_is_reflected_and_can_be_removed():
     world, map_id, _ = make_world(cells={
         AxialCoord(0, 0): HexCellData("grass", True, False),
     })
-    from hex_world_lab.world import CellAddress
     cell_address = CellAddress(world.world_id, map_id, AxialCoord(0, 0))
 
     assert build_hex_map_collision_geometry(world.view, world.runtime, map_id).obstacles == ()
@@ -88,6 +90,17 @@ def test_duplicate_object_obstacle_ids_are_rejected():
     with pytest.raises(ValueError, match="unique"):
         build_hex_map_collision_geometry(
             world.view, world.runtime, map_id, object_obstacles=(item, item)
+        )
+
+
+def test_duplicate_cell_and_object_ids_are_rejected():
+    world, map_id, _ = make_world()
+    duplicate = ObstacleDefinition(
+        "cell:0:0", map_id, CircleShape(0.5), WorldPoint(1.0, 2.0)
+    )
+    with pytest.raises(ValueError, match="unique"):
+        build_hex_map_collision_geometry(
+            world.view, world.runtime, map_id, object_obstacles=(duplicate,)
         )
 
 
@@ -109,7 +122,6 @@ def test_object_circle_and_polygon_obstacles_are_supported():
 def test_unloaded_map_is_rejected_without_automatic_loading():
     world, map_id, _ = make_world()
     world.unload_map(map_id)
-    from hex_world_lab.world import MapNotLoadedError
     with pytest.raises(MapNotLoadedError):
         build_hex_map_collision_geometry(world.view, world.runtime, map_id)
     assert world.is_loaded(map_id) is False
@@ -117,7 +129,6 @@ def test_unloaded_map_is_rejected_without_automatic_loading():
 
 def test_unknown_map_is_rejected():
     world, _, _ = make_world()
-    from hex_world_lab.world import UnknownMapError
     with pytest.raises(UnknownMapError):
         build_hex_map_collision_geometry(world.view, world.runtime, MapId("missing"))
 
@@ -126,4 +137,6 @@ def test_object_obstacle_cannot_claim_a_different_map():
     world, map_id, _ = make_world(cells={AxialCoord(0, 0): HexCellData("grass", True, False)})
     other = ObstacleDefinition("tree", MapId("other"), CircleShape(0.5), WorldPoint(0, 0))
     with pytest.raises(ValueError, match="belong to the collision map"):
-        build_hex_map_collision_geometry(world.view, world.runtime, map_id, object_obstacles=(other,))
+        build_hex_map_collision_geometry(
+            world.view, world.runtime, map_id, object_obstacles=(other,)
+        )
