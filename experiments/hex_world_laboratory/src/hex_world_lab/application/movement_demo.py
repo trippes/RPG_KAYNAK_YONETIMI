@@ -54,6 +54,17 @@ BOUNDARY_COLOR = (201, 160, 91)
 TEXT_COLOR = (225, 231, 240)
 MUTED_TEXT = (157, 170, 188)
 PLAYER_COLLIDER_RADIUS = 8.0
+HOUSE_ID = "structure:starter-house"
+
+
+def _box_shape(half_width: float, half_height: float) -> ConvexPolygonShape:
+    """Build a local-axis-aligned convex wall segment for the demo house."""
+    return ConvexPolygonShape((
+        Vector2(-half_width, -half_height),
+        Vector2(half_width, -half_height),
+        Vector2(half_width, half_height),
+        Vector2(-half_width, half_height),
+    ))
 
 
 def build_demo_world() -> tuple[HexWorld, MapId]:
@@ -95,6 +106,7 @@ class MovementDemo:
         "tick_pump",
         "_layout",
         "_movement_config",
+        "house_center",
         "_font",
         "_small_font",
         "_last_diagnostics",
@@ -116,6 +128,7 @@ class MovementDemo:
         tree_center = axial_to_world(AxialCoord(0, 2), self._layout)
         rock_center = axial_to_world(AxialCoord(-2, 2), self._layout)
         wall_center = axial_to_world(AxialCoord(0, -2), self._layout)
+        self.house_center = axial_to_world(AxialCoord(1, 1), self._layout)
         object_obstacles = (
             ObstacleDefinition(
                 "object:tree",
@@ -146,6 +159,28 @@ class MovementDemo:
                 wall_center,
             ),
         )
+        # Placeholder structure only: independent convex walls leave a doorway.
+        house_wall_specs = (
+            ("left", -15.0, 0.0, 2.0, 15.0),
+            ("right", 15.0, 0.0, 2.0, 15.0),
+            ("back", 0.0, 13.0, 13.0, 2.0),
+            ("front-left", -10.0, -13.0, 5.0, 2.0),
+            ("front-right", 10.0, -13.0, 5.0, 2.0),
+        )
+        house_obstacles = tuple(
+            ObstacleDefinition(
+                f"{HOUSE_ID}:{wall_name}",
+                self.map_id,
+                _box_shape(half_width, half_height),
+                WorldPoint(
+                    self.house_center.x + offset_x,
+                    self.house_center.y + offset_y,
+                ),
+            )
+            for wall_name, offset_x, offset_y, half_width, half_height
+            in house_wall_specs
+        )
+        object_obstacles = (*object_obstacles, *house_obstacles)
         self.collision_geometry = build_hex_map_collision_geometry(
             self.world.view,
             self.world.runtime,
@@ -278,6 +313,8 @@ class MovementDemo:
                 pygame.draw.polygon(surface, color, points)
                 pygame.draw.polygon(surface, (205, 211, 222), points, width=2)
 
+        self._draw_house_skeleton(surface, center)
+
         for edge in self.collision_geometry.boundary_edges:
             pygame.draw.line(
                 surface,
@@ -297,6 +334,41 @@ class MovementDemo:
         )
 
         self._draw_diagnostics(surface, render_fps)
+
+    def _draw_house_skeleton(
+        self,
+        surface: pygame.Surface,
+        screen_center: tuple[int, int],
+    ) -> None:
+        """Draw a placeholder house frame; this is not final art or build UI."""
+        def point(offset_x: float, offset_y: float) -> tuple[int, int]:
+            return self._screen_point(
+                WorldPoint(
+                    self.house_center.x + offset_x,
+                    self.house_center.y + offset_y,
+                ),
+                screen_center,
+            )
+
+        frame_color = (190, 151, 103)
+        detail_color = (225, 190, 139)
+        segments = (
+            ((-17, 17), (17, 17)),
+            ((-17, 17), (-17, -17)),
+            ((17, 17), (17, -17)),
+            ((-17, -17), (-5, -17)),
+            ((5, -17), (17, -17)),
+            ((-5, -17), (-5, -8)),
+            ((5, -17), (5, -8)),
+        )
+        for start, end in segments:
+            pygame.draw.line(surface, frame_color, point(*start), point(*end), 3)
+
+        # Roof ridge and rafters are visual guides, not colliders.
+        pygame.draw.line(surface, detail_color, point(-12, 0), point(12, 0), 2)
+        pygame.draw.line(surface, detail_color, point(-12, 0), point(-17, 17), 2)
+        pygame.draw.line(surface, detail_color, point(12, 0), point(17, 17), 2)
+        pygame.draw.line(surface, detail_color, point(-5, -8), point(5, -8), 2)
 
     def _draw_diagnostics(self, surface: pygame.Surface, render_fps: float) -> None:
         assert self._font is not None and self._small_font is not None
