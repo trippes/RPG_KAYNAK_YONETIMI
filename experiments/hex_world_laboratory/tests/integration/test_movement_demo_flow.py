@@ -210,31 +210,31 @@ def test_cell_boundary_crossing_remains_continuous_across_movement_modes() -> No
         assert demo.state.mode is MovementMode.NORMAL
         assert cells[-1] == AxialCoord(0, 0)
 
-        # Ten running ticks move from x=10 to x=25, across the
-        # shared boundary at x=24 into axial cell (1, 0).
+        # Fifteen running ticks move from x=10 to x=32.5, across the
+        # actual y=0 cell boundary at x=32 into axial cell (1, -1).
         keys.add(pygame.K_LSHIFT)
-        for _ in range(10):
+        for _ in range(15):
             tick()
         assert demo.state.mode is MovementMode.RUNNING
-        assert cells[-1] == AxialCoord(1, 0)
+        assert cells[-1] == AxialCoord(1, -1)
 
         # Stealth changes speed only; it must not snap the physical position.
         keys.add(pygame.K_LALT)
         for _ in range(2):
             tick()
         assert demo.state.mode is MovementMode.STEALTH
-        assert cells[-1] == AxialCoord(1, 0)
+        assert cells[-1] == AxialCoord(1, -1)
 
         assert positions[:10] == [float(value) for value in range(1, 11)]
-        assert positions[10:20] == [
-            10.0 + 1.5 * value for value in range(1, 11)
+        assert positions[10:25] == [
+            10.0 + 1.5 * value for value in range(1, 16)
         ]
-        assert positions[20:] == [25.5, 26.0]
+        assert positions[25:] == [33.0, 33.5]
         assert all(
             later > earlier
             for earlier, later in zip(positions, positions[1:])
         )
-        assert demo.state.position == WorldPoint(26.0, 0.0)
+        assert demo.state.position == WorldPoint(33.5, 0.0)
     finally:
         pygame.quit()
 
