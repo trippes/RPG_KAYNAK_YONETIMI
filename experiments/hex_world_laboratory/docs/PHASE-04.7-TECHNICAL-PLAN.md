@@ -15,7 +15,7 @@ Mevcut sürekli hareket hattı korunarak üç cihazdan bağımsız hareket modu 
 |---|---|---:|---:|
 | Normal | Shift/Alt yok | 1,0x | 60 birim/sn |
 | Koşma | Sol veya sağ Shift | 1,5x | 90 birim/sn |
-| Gizlilik | Sol veya sağ Alt | 0,5x | 30 birim/sn |
+| Gizlilik | Sol veya sağ Alt'a basışla aç/kapa (toggle) | 0,5x | 30 birim/sn |
 
 Öncelik: **Gizlilik > Koşma > Normal**.
 
@@ -99,22 +99,24 @@ Tick doğrulama, ardışık tick kuralı ve 1/60 saniyelik adım değişmez. Yen
 
 Dosya: `input/pygame_keyboard.py`
 
-Aynı keyboard snapshot içinden aşağıdaki değiştiriciler okunur:
+Shift ve Alt farklı giriş semantiğine sahiptir:
 
-- Shift: `pygame.K_LSHIFT` veya `pygame.K_RSHIFT`.
-- Alt: `pygame.K_LALT` veya `pygame.K_RALT`.
+- Shift: `pygame.K_LSHIFT` veya `pygame.K_RSHIFT` basılı tutulduğu sürece RUNNING. Tuş bırakılınca diğer etkin duruma göre mod yeniden çözülür.
+- Alt: `pygame.K_LALT` veya `pygame.K_RALT` için basış kenarı (aggregate rising edge) algılanır. İlk basış STEALTH toggle durumunu açar; sonraki ayrı basış kapatır. Basılı tutma ve OS key-repeat yeni toggle üretmez.
 
-Mod seçimi tek bir açık karar sırasıyla yapılır:
+Sol ve sağ Shift tek bir boolean RUNNING girdisidir. Sol ve sağ Alt da tek bir mantıksal Alt girdisi olarak birleştirilir: iki Alt tuşunun aynı anda basılması tek toggle üretir; bir Alt bırakılırken diğeri hâlâ basılıysa yeni basış kenarı sayılmaz.
 
-1. Herhangi bir Alt basılıysa STEALTH.
+Etkin mod çözümleme sırası:
+
+1. Toggle STEALTH açık ise STEALTH.
 2. Değilse herhangi bir Shift basılıysa RUNNING.
 3. Aksi halde NORMAL.
 
-Sol ve sağ aynı tür tuşların birlikte basılması tek boolean durum sayılır; çarpan birikmez. Alt+Shift birlikteyse Alt kazanır.
+Böylece Shift basılıyken Alt'a basılması STEALTH'i açar ve öncelik kazanır. Alt'a tekrar basılıp STEALTH kapatıldığında Shift hâlâ basılıysa RUNNING anında geri gelir.
 
-WASD/ok yön eşlemesi, karşıt yönlerin iptali, ham çapraz vektörün integrator'da normalize edilmesi ve her tick'te provider'ın yeniden örneklenmesi korunur.
+Adaptör, önceki aggregate Alt-down durumunu ve toggle STEALTH durumunu saklar. WASD/ok yön eşlemesi, karşıt yönlerin iptali, ham çapraz vektörün integrator'da normalize edilmesi korunur.
 
-Odak kaybında `MovementIntent()` döndürülür: yön sıfır ve mod NORMAL. Odak geri geldiğinde o anki gerçek keyboard snapshot yeniden okunur. Eski değiştirici durumu saklanmaz.
+Odak kaybında `MovementIntent()` döndürülür: yön sıfır ve mod NORMAL; toggle durumu ve Alt kenar hafızası temizlenir. Odak geri kazanımında mevcut keyboard snapshot kenar üretmeden senkronize edilir; odak geri geldiği anda Alt basılı bulunması stealth'i kendiliğinden açmaz. Böylece takılı kalmış modifier veya sahte toggle önlenir.
 
 ## 5. Demo ve teşhis paneli
 
@@ -186,16 +188,16 @@ Gerekirse yalnızca doğrudan ilgili test dosyaları genişletilir. `MovementSys
 
 ### 7.4 Keyboard
 
-- Sol Shift, sağ Shift, sol Alt, sağ Alt ayrı ayrı test edilir.
-- Shift+Alt → STEALTH.
-- Alt basılı kalırken Shift'in bırakılması → STEALTH.
-- Shift basılı kalırken Alt'ın bırakılması → RUNNING.
-- İkisi bırakılınca → NORMAL.
-- Sol+sağ Shift birlikte → yalnızca RUNNING; çarpan iki kat olmaz.
-- Sol+sağ Alt birlikte → yalnızca STEALTH; çarpan iki kat olmaz.
+- Sol/sağ Shift ayrı ayrı basılı-tutma ile RUNNING üretir; bırakma RUNNING'i sonlandırır.
+- Sol/sağ Alt'ın ilk basış kenarı STEALTH'i açar; sonraki ayrı basış kapatır.
+- Alt basılı tutulması ve OS key-repeat toggle'ı tekrarlamaz.
+- Shift basılıyken Alt toggle açılırsa STEALTH; Alt toggle kapanırsa Shift hâlâ basılı olduğunda RUNNING.
+- STEALTH açıkken Shift'in basılı/bırakılması STEALTH durumunu değiştirmez.
+- Sol+sağ Shift birlikte → yalnızca RUNNING.
+- Sol+sağ Alt birlikte → tek toggle; bir Alt bırakılırken diğeri basılıysa ikinci toggle yok.
 - Hareket yönü testleri ve karşıt tuş iptali korunur.
-- Focus lost → yön sıfır, mod NORMAL ve provider çağrılmaz.
-- Focus gained → güncel snapshot yeniden okunur.
+- Focus lost → yön sıfır, mod NORMAL, toggle kapalı ve provider çağrılmaz.
+- Focus gained → snapshot kenar üretmeden senkronize edilir; Alt basılı bulunması toggle başlatmaz.
 
 ### 7.5 Uçtan uca ve zaman
 
@@ -221,22 +223,24 @@ Mevcut Aşama 4.6 maddeleri korunur; aşağıdakiler eklenir:
 1. Normal hız: 60 temel hız örneğinde 1 saniyede yaklaşık 60 dünya birimi.
 2. Shift basılı: yaklaşık 90 birim/sn.
 3. Shift bırak: Normal hıza dönüş.
-4. Alt basılı: yaklaşık 30 birim/sn.
-5. Alt bırak: Normal hıza dönüş.
-6. Shift+Alt birlikte: 30 birim/sn gizlilik önceliği.
-7. Alt basılıyken Shift'i bırakma: gizlilik sürer.
-8. Shift basılıyken Alt'ı bırakma: koşma sürer.
-9. Pencere odağı kaybı: hareket ve mod Normal/nötr duruma döner.
-10. Teşhis paneli doğru mod ve çarpanı gösterir.
-11. Çapraz koşma ve çapraz gizlilikte yön normalizasyonu korunur.
-12. 30/60/120 FPS altında aynı tick-input dizisi aynı sonucu üretir.
+4. Alt'a bir kez bas: yaklaşık 30 birim/sn Stealth açılır; Alt'ı basılı tutmak gerekmez.
+5. Alt'a ikinci kez bas: Stealth kapanır; Shift basılı değilse Normal'e dönülür.
+6. Shift basılıyken Alt toggle aç: Stealth öncelikli; Alt toggle kapat: Shift hâlâ basılıysa Koşma.
+7. Stealth açıkken Shift'i basıp bırak: Stealth açık kalır.
+8. Alt tuşunu basılı tut ve otomatik tekrarın toggle üretmediğini doğrula.
+9. Sol ve sağ Alt'ı birlikte kullan: tek toggle; birini bırakmak diğer basılıyken ikinci toggle üretmez.
+10. Pencere odağı kaybı: hareket, toggle ve mod Normal/nötr duruma döner.
+11. Odak geri geldiğinde Alt basılıysa sahte toggle oluşmaz.
+12. Teşhis paneli doğru mod ve çarpanı gösterir.
+13. Çapraz koşma ve çapraz gizlilikte yön normalizasyonu korunur.
+14. 30/60/120 FPS altında aynı tick-input dizisi aynı sonucu üretir.
 
 ## 9. Hata davranışı ve uyumluluk
 
 - Geçersiz mod/çarpan sessizce varsayılana çevrilmez; giriş doğrulamasında reddedilir.
 - Eski MovementIntent ve MovementState constructor çağrıları Normal varsayılanıyla çalışır.
 - Eski MovementConfig(max_speed=...) çağrısı varsayılan çarpanları alır.
-- Pygame focus loss nötr intent üretir; modifier keydown/keyup geçmişi tutulmaz.
+- Pygame focus loss nötr intent üretir; toggle stealth ve Alt basış-kenarı hafızası temizlenir. Focus gain mevcut Alt durumunu toggle üretmeden senkronize eder.
 - MovementSystem tick sırası ve atomic commit davranışı değişmez.
 - Dünya haritası, hücre kimliği, runtime persistence ve geometri API'leri değişmez.
 
