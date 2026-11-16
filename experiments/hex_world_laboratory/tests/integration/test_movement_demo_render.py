@@ -9,7 +9,7 @@ import pygame
 import pytest
 
 from hex_world_lab.application.movement_demo import MovementDemo
-from hex_world_lab.movement import MovementIntent, MovementMode
+from hex_world_lab.movement import MovementIntent, MovementMode, Vector2
 
 
 class RecordingFont:
@@ -80,7 +80,7 @@ def test_diagnostics_keep_actual_velocity_separate_from_mode_speed():
         demo.movement_system.step(
             0,
             MovementIntent(
-                direction=__import__("hex_world_lab.movement", fromlist=["Vector2"]).Vector2(1.0, 0.0),
+                direction=Vector2(1.0, 0.0),
                 mode=MovementMode.RUNNING,
             ),
         )
