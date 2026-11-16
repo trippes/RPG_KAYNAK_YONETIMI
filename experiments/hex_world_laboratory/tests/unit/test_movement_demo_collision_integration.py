@@ -8,7 +8,9 @@ from hex_world_lab.application.movement_demo import (
     PLAYER_COLLIDER_RADIUS,
     MovementDemo,
 )
-from hex_world_lab.physics import CircleShape
+from hex_world_lab.geometry import WorldPoint
+from hex_world_lab.movement import Vector2
+from hex_world_lab.physics import CircleShape, collide_shapes
 from hex_world_lab.simulation import CollisionAwareMovementSystem
 
 
@@ -46,19 +48,33 @@ def test_pygame_demo_uses_collision_aware_movement_and_map_geometry() -> None:
     }
 
 
-def test_pygame_demo_player_stops_at_adjacent_hex_obstacle_wall() -> None:
-    # Approach the q=2, r=0 blocked hex diagonally; the horizontal
-    # y=0 lane remains clear for the legacy continuous-movement scenarios.
+def test_pygame_demo_player_collides_and_slides_along_adjacent_hex_obstacle() -> None:
+    # Approach the q=2, r=0 blocked hex diagonally. Collision response may
+    # slide the actor along the hex edge, so final coordinates are not fixed.
     keys = _pressed_keys(pygame.K_d, pygame.K_w)
     demo = MovementDemo(key_state_provider=lambda: keys)
+    target_id = "cell:2:0"
+    target = next(
+        item for item in demo.collision_geometry.obstacles
+        if item.obstacle_id == target_id
+    )
+    observed_impacts: set[str] = set()
 
     for tick in range(100):
         demo._advance_tick(tick)
+        resolution = demo.last_collision_resolution
+        assert resolution is not None
+        observed_impacts.update(hit.obstacle_id for hit in resolution.impacts)
 
-    assert 50.0 < demo.state.position.x < 60.0
-    assert 50.0 < demo.state.position.y < 70.0
-    assert demo.last_collision_resolution is not None
-    assert demo.last_collision_resolution.contacts
+    assert target_id in observed_impacts
+    final_circle = CircleShape(
+        PLAYER_COLLIDER_RADIUS,
+        Vector2(demo.state.position.x, demo.state.position.y),
+    )
+    final_contact = collide_shapes(
+        final_circle, target.world_shape(), target_id
+    )
+    assert final_contact is None or final_contact.penetration_depth <= 1e-7
 
 
 def test_pygame_demo_house_is_a_skeleton_with_a_doorway_gap() -> None:
