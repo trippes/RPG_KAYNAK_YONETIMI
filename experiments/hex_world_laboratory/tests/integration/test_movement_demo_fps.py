@@ -22,15 +22,34 @@ class FakeClock:
 
 
 class PressedKeys:
+    def __init__(self, active: set[int]) -> None:
+        self.active = active
+
     def __getitem__(self, key: int) -> bool:
-        return key == pygame.K_d
+        return key in self.active
+
+
+class TickSequenceProvider:
+    """Return the same input sequence regardless of render-frame grouping."""
+
+    def __init__(self) -> None:
+        self.tick = 0
+
+    def __call__(self) -> PressedKeys:
+        current = self.tick
+        self.tick += 1
+        if current < 20:
+            return PressedKeys({pygame.K_d})
+        if current < 40:
+            return PressedKeys({pygame.K_w})
+        return PressedKeys(set())
 
 
 def run_for_one_simulated_second(render_fps: int):
     clock = FakeClock()
     demo = MovementDemo(
         movement_speed=60.0,
-        key_state_provider=PressedKeys,
+        key_state_provider=TickSequenceProvider(),
         clock=clock,
     )
     demo.start()
