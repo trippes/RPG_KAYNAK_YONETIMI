@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "world_id": "eldoria",
+  "map_id": "starting_valley",
+  "name": "Başlangıç Vadisi",
+  "layout": {
+    "orientation": "pointy_top",
+    "radius": 1.0,
+    "origin": {
+      "x": 0.0,
+      "y": 0.0
+    }
+  },
+  "cells": [
+    {
+      "q": 0,
+      "r": 0,
+      "terrain_id": "grass",
+      "is_walkable": true,
+      "has_obstacle": false,
+      "metadata": {
+        "biome": "meadow",
+        "tags": ["starting_area", "temperate"]
+      }
+    },
+    {
+      "q": 1,
+      "r": 0,
+      "terrain_id": "stone",
+      "is_walkable": true,
+      "has_obstacle": false,
+      "metadata": {
+        "surface": "rocky"
+      }
+    },
+    {
+      "q": -1,
+      "r": 1,
+      "terrain_id": "water",
+      "is_walkable": false,
+      "has_obstacle": false,
+      "metadata": null
+    }
+  ]
+}
