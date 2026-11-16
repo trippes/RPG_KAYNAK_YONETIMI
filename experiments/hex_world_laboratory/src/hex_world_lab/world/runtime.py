@@ -128,6 +128,80 @@ class HexWorldRuntime:
         self._validate_address_world(address)
         return self._overrides.get((address.map_id, address.coord))
 
+
+    def require_loaded_map(self, map_id: MapId):
+        """Return the immutable definition for a registered, currently loaded map."""
+        if not isinstance(map_id, MapId):
+            raise TypeError("map_id must be a MapId")
+        if self._map_registry.get_registration(map_id) is None:
+            raise UnknownMapError(f"map '{map_id.value}' is not registered")
+        definition = self._map_registry.get_map(map_id)
+        if definition is None:
+            raise MapNotLoadedError(f"map '{map_id.value}' is not loaded")
+        return definition
+
+    def export_map_overrides(self, map_id: MapId):
+        """Return a deterministic, read-only snapshot for one map."""
+        from types import MappingProxyType
+
+        if not isinstance(map_id, MapId):
+            raise TypeError("map_id must be a MapId")
+        if self._map_registry.get_registration(map_id) is None:
+            raise UnknownMapError(f"map '{map_id.value}' is not registered")
+        snapshot = {
+            coord: override
+            for (stored_map_id, coord), override in sorted(
+                self._overrides.items(),
+                key=lambda item: (item[0][0].value, item[0][1].q, item[0][1].r),
+            )
+            if stored_map_id == map_id
+        }
+        return MappingProxyType(snapshot)
+
+    def replace_map_overrides(self, map_id: MapId, overrides) -> None:
+        """Atomically replace one loaded map's complete sparse override set."""
+        from collections.abc import Mapping
+
+        if not isinstance(map_id, MapId):
+            raise TypeError("map_id must be a MapId")
+        definition = self.require_loaded_map(map_id)
+        if not isinstance(overrides, Mapping):
+            raise TypeError("overrides must be a mapping of AxialCoord to RuntimeCellOverride")
+
+        staged = {}
+        for coord, override in overrides.items():
+            if not isinstance(coord, AxialCoord):
+                raise TypeError("override keys must be AxialCoord values")
+            if not isinstance(override, RuntimeCellOverride):
+                raise TypeError("override values must be RuntimeCellOverride values")
+            base = definition.get_cell_data(coord)
+            if base is None:
+                raise UnknownCellError(
+                    f"cell ({coord.q}, {coord.r}) does not exist in map '{map_id.value}'"
+                )
+            if override.is_empty:
+                continue
+            if override.terrain_id is not None:
+                self._validate_terrain_id(override.terrain_id)
+            if override.is_walkable is not None and not isinstance(override.is_walkable, bool):
+                raise TypeError("is_walkable override must be a boolean or None")
+            if override.has_obstacle is not None and not isinstance(override.has_obstacle, bool):
+                raise TypeError("has_obstacle override must be a boolean or None")
+            normalized = RuntimeCellOverride(
+                terrain_id=override.terrain_id if override.terrain_id != base.terrain_id else None,
+                is_walkable=override.is_walkable if override.is_walkable != base.is_walkable else None,
+                has_obstacle=override.has_obstacle if override.has_obstacle != base.has_obstacle else None,
+            )
+            if not normalized.is_empty:
+                staged[(map_id, coord)] = normalized
+
+        # No mutation occurs until every entry has passed validation.
+        replacement = {
+            key: value for key, value in self._overrides.items() if key[0] != map_id
+        }
+        replacement.update(staged)
+        self._overrides = replacement
+
     def clear_map(self, map_id: MapId) -> None:
         """Clear a map's sparse state; called when its registration is removed."""
         if not isinstance(map_id, MapId):
