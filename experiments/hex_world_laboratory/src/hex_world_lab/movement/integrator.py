@@ -43,13 +43,19 @@ class MovementIntegrator:
         if delta_time < 0.0:
             raise ValueError("delta_time must not be negative")
 
-        if not intent.is_moving or self._config.max_speed == 0.0:
+        multiplier = self._config.speed_multiplier_for(intent.mode)
+        effective_speed = self._config.max_speed * multiplier
+        if not intent.is_moving or effective_speed == 0.0:
             velocity = Vector2(0.0, 0.0)
         else:
-            velocity = intent.direction.normalized() * self._config.max_speed
+            velocity = intent.direction.normalized() * effective_speed
 
         position = WorldPoint(
             state.position.x + velocity.x * delta_time,
             state.position.y + velocity.y * delta_time,
         )
-        return MovementState(position=position, velocity=velocity)
+        return MovementState(
+            position=position,
+            velocity=velocity,
+            mode=intent.mode,
+        )
