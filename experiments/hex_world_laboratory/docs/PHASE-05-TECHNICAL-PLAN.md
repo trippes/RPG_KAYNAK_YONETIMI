@@ -591,3 +591,28 @@ Teknik kod, birim/entegrasyon/regresyon testleri, mimari kontroller, Linux/Windo
 3. Genel Aşama 5 planındaki nihai görsel kabul listesinin tamamlanması.
 
 beklenmektedir. Bu kontrollerin sonucu kullanıcı tarafından bildirilmeden yerel doğrulama yapılmış sayılmayacak ve aşama kapatılmayacaktır. Başarılı sonuçtan sonra kapanış raporu hazırlanır.
+
+## 18. 17 Kasım 2026 — Nihai kabul ve kapanış
+
+**Durum: TAMAMLANDI — OTOMATİK VE MANUEL KABUL BAŞARILI**
+
+Kullanıcı, son Pygame demo entegrasyonundan sonra laboratuvar kök dizininde `python -m pytest -q` komutunun **588/588 başarılı** sonuçlandığını bildirdi. Kullanıcı ayrıca genel plandaki nihai masaüstü kabul listesinin tamamını başarılı olarak doğruladı.
+
+Masaüstü kabulünde hareket kontrolleri, altıgen ve nesne engelleri, duvar boyunca kayma, ev iskeletinin beş parçalı duvar çarpışmaları, kapı açıklığı, ev çevresinde dolaşma, köşe/çoklu temas, koşma/gizlilik hız kipleri ve OPEN harita sınırından çıkış kontrol edildi. Bütün kontroller kullanıcı bildirimine göre başarılıdır.
+
+### 18.1 Sonuç
+
+- 5.1–5.7 teknik uygulama ve otomatik testleri tamamlandı.
+- Son yerel tam test paketi: **588/588 başarılı** (kullanıcı tarafından bildirildi).
+- Nihai Pygame masaüstü kabulü: **başarılı** (kullanıcı tarafından bildirildi).
+- Aşama 5 kapatıldı.
+
+### 18.2 CI kanıtlarının sınırı
+
+Hex World Laboratory CI run `43932344855` ve Core Quality run `43932344956`, Pygame demo entegrasyonundan önceki `04baa16c1f3230f4d117a896cc4cd83e0556367c` HEAD'inde çalışmıştır. Bu CI sonuçları son demo entegrasyonunu kapsamaz. Son entegrasyonun 588/588 testi kullanıcı bilgisayarında çalıştırılmıştır; bu kapanış kaydı son HEAD için yeni CI çalışması bulunduğunu iddia etmez.
+
+### 18.3 Performans ölçümünün sınırı
+
+Önceki bölümdeki benchmark değerleri GitHub Linux runner üzerinde fizik/hareket çekirdeği ölçümüdür. Render, input polling, NPC mantığı ve dünya simülasyonunu kapsamaz; tam oyun FPS'si veya kullanıcının donanımı için performans garantisi değildir.
+
+Aşama 5 kapsamı dışında kalan özellikler (nihai ev modeli/kaplama/inşa arayüzü, kamera ve render katmanları, pathfinding ve NPC AI gibi) bu kabul ile tamamlanmış sayılmaz.
