@@ -10,7 +10,7 @@ from hex_world_lab.physics.solver import resolve_kinematic_motion
 from hex_world_lab.world.identity import MapId
 
 
-MAP = MapId("world", "map")
+MAP = MapId("map")
 
 
 def wall(x=2.0, y=0.0, half_width=0.25, half_height=3.0, obstacle_id="wall"):
