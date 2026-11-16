@@ -36,3 +36,33 @@ def test_load_does_not_change_any_world_registry(tmp_path):
     except Exception:
         pass
     assert world.map_registry.map_ids == before
+
+
+
+def test_committed_starting_valley_scenario_loads():
+    from pathlib import Path
+
+    scenario = Path(__file__).parents[2] / "scenarios" / "maps" / "starting_valley.json"
+    loaded = load_map_file(scenario)
+    assert loaded.world_id == WorldId("eldoria")
+    assert loaded.map_id == MapId("starting_valley")
+    assert len(loaded.cells) == 3
+
+
+def test_successful_load_has_no_world_registry_side_effect(tmp_path):
+    from hex_world_lab.world import HexWorld
+
+    original = HexMapDefinition(
+        world_id=WorldId("eldoria"),
+        map_id=MapId("starting_valley"),
+        name="Başlangıç Vadisi",
+        layout=HexLayout(HexOrientation.POINTY_TOP),
+        cells={},
+    )
+    path = tmp_path / "map.json"
+    save_map_file(original, path)
+    world = HexWorld(WorldId("eldoria"))
+    loaded = load_map_file(path)
+    assert loaded == original
+    assert world.map_registry.map_ids == ()
+    assert world.map_registry.loaded_map_ids == ()
