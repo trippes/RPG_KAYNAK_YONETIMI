@@ -56,8 +56,14 @@ class ActorBodyTransform:
 
         cosine = math.cos(self.rotation_radians)
         sine = math.sin(self.rotation_radians)
-        offset_x = self.ground_anchor.x + body.local_offset.x * cosine - body.local_offset.y * sine
-        offset_y = self.ground_anchor.y + body.local_offset.x * sine + body.local_offset.y * cosine
+        shape_offset = body.local_offset
+        if isinstance(body.collider, CircleShape):
+            shape_offset = Vector2(
+                body.local_offset.x + body.collider.center.x,
+                body.local_offset.y + body.collider.center.y,
+            )
+        offset_x = self.ground_anchor.x + shape_offset.x * cosine - shape_offset.y * sine
+        offset_y = self.ground_anchor.y + shape_offset.x * sine + shape_offset.y * cosine
 
         if isinstance(body.collider, CircleShape):
             return CircleShape(body.collider.radius, Vector2(offset_x, offset_y))
