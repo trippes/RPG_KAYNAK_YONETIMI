@@ -99,11 +99,11 @@ def test_movement_can_continue_beyond_the_explicit_map_cell_set() -> None:
             clock=clock,
         )
         demo.start()
-        for _ in range(7):
+        for _ in range(24):
             clock.advance(1.0 / 60.0)
             demo.pump()
 
-        assert demo.state.position.x > 128.0
+        assert demo.state.position.x > 224.0
         assert demo.current_resolution is not None
         assert demo.current_resolution.cell_data is None
     finally:
