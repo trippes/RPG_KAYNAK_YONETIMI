@@ -40,7 +40,7 @@ python -m pytest -q
 - Harita persistence benchmark: başarılı.
 - Runtime persistence benchmark: başarılı.
 
-Sonraki bütünleşik doğrulama koşusu ve genel kapanış kanıtları [PHASE-03-WORLD-REPORT.md](PHASE-03-WORLD-REPORT.md) içinde tutulur.
+Bütünleşik doğrulama ve kapanış için son laboratuvar CI koşusu [Run 43844555405](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43844555405) başarılıdır. Ana deponun düzeltilmiş Linux ve Windows Core quality job'ları da [Run 43844555225](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43844555225) kapsamında başarılıdır. Genel kapanış kanıtları [PHASE-03-WORLD-REPORT.md](PHASE-03-WORLD-REPORT.md) içinde tutulur.
 
 ## 4. Runtime persistence benchmark
 

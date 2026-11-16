@@ -62,7 +62,7 @@ python -m pytest -q
 
 Son yerel Windows tam test doğrulaması: **288 passed in 2.01s**.
 
-Özel GitHub Actions laboratuvar iş akışı da tam test paketini ve harita/runtime persistence benchmark'larını çalıştırır. Sonuçlar genel kapanış raporunda bağlantılarıyla kayıtlıdır.
+Özel GitHub Actions laboratuvar iş akışı tam test paketini ve harita/runtime persistence benchmark'larını başarıyla çalıştırdı. Ana `Core quality` iş akışının Linux ve Windows job'ları da laboratuvar paketi kurulum düzeltmesinden sonra başarılı oldu. Run bağlantıları genel kapanış raporunda kayıtlıdır.
 
 ## Harita ve runtime persistence
 

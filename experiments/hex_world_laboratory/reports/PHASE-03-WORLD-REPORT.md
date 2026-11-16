@@ -135,7 +135,7 @@ python -m pytest -q
 - Tam test paketi: 288 passed in 0.51s.
 - Harita ve runtime persistence benchmark adımları başarılı.
 
-- [Son laboratuvar CI — Run 43844555405](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43844555405): CI düzeltmesi commit'inde tetiklendi; nihai sonucu bu raporun güncel sürümünde ayrıca kaydedilecektir.
+- [Son laboratuvar CI — Run 43844555405](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43844555405): başarılı; tam test paketi ve iki benchmark adımı tamamlandı.
 
 ### Ana depo Core quality CI düzeltmesi
 
@@ -143,7 +143,7 @@ python -m pytest -q
 
 - Önceki başarısız run: [43843535450](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43843535450).
 - Düzeltme commit'i: `9b8ce67e49cee686a3dbde8f7459c845995d230e`.
-- Düzeltme sonrası Core quality run: [43844555225](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43844555225); nihai sonucu bu raporun güncel sürümünde ayrıca kaydedilecektir.
+- Düzeltme sonrası Core quality run: [43844555225](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43844555225); Ubuntu `verify` ve Windows `verify-windows` job'larının ikisi de başarılı oldu.
 
 ## 6. Persistence benchmark sonuçları
 
