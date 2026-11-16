@@ -552,6 +552,7 @@ Bu belge kullanıcı tarafından onaylanmış teknik mimari planıdır. 5.1–5.
 - Hex World Laboratory CI run: `43932344855` — **584 passed**. Tam laboratuvar test paketi ve dört benchmark adımı başarılı.
 - Core Quality run: `43932344956` — Linux **2,047 passed, 1 warning**; Windows **2,047 passed**. Her iki job'da release-candidate verification başarılı.
 - CI uyarıları test başarısızlığı değildir; Linux'taki Pygame pkg_resources deprecation uyarısı ve Actions/Node bağımlılık uyarılarıdır.
+- Önemli kapsam notu: Bu CI çalışmaları, Pygame kabul demosu çarpışma sistemine bağlanmadan önceki kod HEAD'i `04baa16c1f3230f4d117a896cc4cd83e0556367c` üzerinde tamamlandı. Sonraki demo entegrasyonu ve yeni regresyon testleri henüz bu CI sonuçlarıyla doğrulanmış sayılmaz.
 
 ### 17.4 Son bütünleşik hareket/çarpışma benchmark'ı
 
@@ -566,7 +567,20 @@ GitHub Linux runner üzerinde 2 warmup batch, 8 ölçüm batch'i ve batch başı
 
 Ölçüm yalnızca MovementIntegrator ve ortak statik convex wall'a karşı swept circle collision kapsamındadır. Render, input polling, NPC mantığı ve dünya simülasyonu dahil değildir. Bu nedenle bu sonuçlar tam oyun FPS'si veya kullanıcının düşük donanımlı bilgisayarında performans garantisi olarak yorumlanamaz.
 
-### 17.5 Kullanıcı bilgisayarında kalan kabul
+### 17.5 Pygame kabul demosu entegrasyonu
+
+Son denetimde `app.py` ve `application/movement_demo.py` dosyalarının hâlâ eski `MovementSystem` kullandığı ve haritada fiziksel engel bulunmadığı tespit edildi. Bu durum masaüstü kabul testlerini geçersiz kılacağından düzeltildi:
+
+- Pygame demosu artık `CollisionAwareMovementSystem` kullanır.
+- Demo haritasında bitişik hex hücre engel duvarı ve tek hücre engeli vardır.
+- Daire biçimli ağaç, dışbükey polygon kaya ve ince duvar nesne engelleri eklenmiştir.
+- BLOCKED harita sınırları gerçek collision geometry üzerinden sisteme bağlanır.
+- Oyuncu collider'ı ve engeller Pygame penceresinde çizilir; tanı paneli temas ve impact sayılarını gösterir.
+- `tests/unit/test_movement_demo_collision_integration.py` dosyasına demo sistem türü, engel sahnesi, duvara çarpma ve render regresyon testleri eklendi.
+
+Bu entegrasyonun ardından tam test paketi yeniden çalıştırılmalıdır. Önceki 584/2.047 CI sonuçları bu son demo değişikliğini kapsamaz.
+
+### 17.6 Kullanıcı bilgisayarında kalan kabul
 
 Teknik kod, birim/entegrasyon/regresyon testleri, mimari kontroller, Linux/Windows CI ve benchmark çalışmaları tamamlanmıştır. Kullanıcı tarafında yalnızca:
 
