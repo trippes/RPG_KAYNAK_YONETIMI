@@ -55,6 +55,8 @@ TEXT_COLOR = (225, 231, 240)
 MUTED_TEXT = (157, 170, 188)
 PLAYER_COLLIDER_RADIUS = 8.0
 HOUSE_ID = "structure:starter-house"
+HOUSE_HALF_WIDTH = 17.0
+HOUSE_DOORWAY_HALF_WIDTH = 10.0
 
 
 def _box_shape(half_width: float, half_height: float) -> ConvexPolygonShape:
@@ -164,8 +166,8 @@ class MovementDemo:
             ("left", -15.0, 0.0, 2.0, 15.0),
             ("right", 15.0, 0.0, 2.0, 15.0),
             ("back", 0.0, 13.0, 13.0, 2.0),
-            ("front-left", -10.0, -13.0, 5.0, 2.0),
-            ("front-right", 10.0, -13.0, 5.0, 2.0),
+            ("front-left", -(HOUSE_HALF_WIDTH + HOUSE_DOORWAY_HALF_WIDTH) / 2, -13.0, (HOUSE_HALF_WIDTH - HOUSE_DOORWAY_HALF_WIDTH) / 2, 2.0),
+            ("front-right", (HOUSE_HALF_WIDTH + HOUSE_DOORWAY_HALF_WIDTH) / 2, -13.0, (HOUSE_HALF_WIDTH - HOUSE_DOORWAY_HALF_WIDTH) / 2, 2.0),
         )
         house_obstacles = tuple(
             ObstacleDefinition(
@@ -356,10 +358,10 @@ class MovementDemo:
             ((-17, 17), (17, 17)),
             ((-17, 17), (-17, -17)),
             ((17, 17), (17, -17)),
-            ((-17, -17), (-5, -17)),
-            ((5, -17), (17, -17)),
-            ((-5, -17), (-5, -8)),
-            ((5, -17), (5, -8)),
+            ((-HOUSE_HALF_WIDTH, -HOUSE_HALF_WIDTH), (-HOUSE_DOORWAY_HALF_WIDTH, -HOUSE_HALF_WIDTH)),
+            ((HOUSE_DOORWAY_HALF_WIDTH, -HOUSE_HALF_WIDTH), (HOUSE_HALF_WIDTH, -HOUSE_HALF_WIDTH)),
+            ((-HOUSE_DOORWAY_HALF_WIDTH, -HOUSE_HALF_WIDTH), (-HOUSE_DOORWAY_HALF_WIDTH, -8)),
+            ((HOUSE_DOORWAY_HALF_WIDTH, -HOUSE_HALF_WIDTH), (HOUSE_DOORWAY_HALF_WIDTH, -8)),
         )
         for start, end in segments:
             pygame.draw.line(surface, frame_color, point(*start), point(*end), 3)
