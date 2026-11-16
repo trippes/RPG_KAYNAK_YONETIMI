@@ -5,8 +5,8 @@
 > **Depo:** `trippes/RPG_KAYNAK_YONETIMI`  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Hedef entegrasyon dalı:** `demo_eldoria`  
-> **Durum:** AŞAMA 0–5 TAMAMLANDI VE KABUL EDİLDİ — AŞAMA 6 SIRADAKİ İZİNLİ TEKNİK AŞAMA  
-> **Belge sürümü:** 1.2
+> **Durum:** AŞAMA 0–5 KABUL EDİLDİ — AŞAMA 6 TEKNİK UYGULAMASI TAMAM; GÖRSEL KULLANICI KABULÜ BEKLİYOR  
+> **Belge sürümü:** 1.3
 
 ---
 
@@ -750,17 +750,24 @@ Bu liste tamamlanmadan laboratuvarın ana oyuna aktarılmaya hazır olduğu söy
 | 3 | Hex dünya veri modeli ve runtime | Tamamlandı |
 | 4 | Sürekli hareket sistemi | Tamamlandı |
 | 5 | Gövde modeli, çarpışma ve fizik | Tamamlandı; kullanıcı kabulü alındı |
-| 6 | Kamera ve dünya-ekran dönüşümü | **Sıradaki izinli teknik aşama** |
-| 7–13 | Render, spatial, entities, interaction, simulation, robustness ve entegrasyon hazırlığı | Başlatılmadı |
+| 6.1 | Koordinat ve viewport sözleşmesi | Teknik olarak tamamlandı; CI başarılı |
+| 6.2 | Kamera çekirdeği ve zoom | Teknik olarak tamamlandı; CI başarılı |
+| 6.3 | Takip ve kamera sınırları | Teknik olarak tamamlandı; CI başarılı |
+| 6.4 | Render ve fare girdisi entegrasyonu | Teknik olarak tamamlandı; CI başarılı |
+| 6.5 | Bütünleşik doğrulama ve kabul hazırlığı | Otomatik doğrulama tamamlandı; masaüstü görsel kabul bekliyor |
+| 7–13 | Spatial, entities, interaction, simulation, robustness ve entegrasyon hazırlığı | Aşama 6 kullanıcı kabulünden sonra ayrıca planlanacak |
 
 - Çalışma dalı: `experiment/hex-world-laboratory`.
-- Aşama 5'in son kullanıcı bildirimiyle yerel test sonucu 588/588 başarılıdır; masaüstü kabul kontrol listesi de başarılı tamamlanmıştır.
-- Son entegrasyon HEAD'i için Linux/Windows CI kanıtı bu doküman güncellemesi sırasında henüz mevcut değildir. Yeni dokümantasyon commit'i push tetiklemeli CI'yi çalıştıracaktır; sonuçlar ilgili kapanış/kanıt kaydına işlenecektir.
-- Aşama 5 kapanış raporunun standart konumu `experiments/hex_world_laboratory/reports/PHASE-05-CLOSURE-REPORT.md` olacaktır.
+- Aşama 6 son otomatik test kapısında Laboratuvar CI 681/681 testle başarılıdır.
+- Aynı commit için Core Quality Linux ve Windows job'ları başarılıdır; laboratuvar benchmark adımları da başarılı tamamlanmıştır.
+- Aşama 6 alt aşama commit'leri, CI run kimlikleri ve teknik kanıtlar `experiments/hex_world_laboratory/reports/PHASE-06-VALIDATION-LOG.md` içindedir.
+- Kullanıcının son masaüstü/görsel kabul adımları `experiments/hex_world_laboratory/docs/PHASE-06-MANUAL-ACCEPTANCE-CHECKLIST.md` içindedir.
+- Aşama 6 teknik uygulaması tamamlanmış olsa da kullanıcı görsel kabulü henüz verilmedi. Bu nedenle aşama bütünüyle kapanmış veya kabul edilmiş sayılmaz.
+- Korunan `main` ve `demo_eldoria` dallarına bu çalışma kapsamında yazılmamıştır.
 
 ### Bir sonraki izinli adım
 
-Aşama 6 — Kamera ve dünya-ekran dönüşümü. Bu işin kodlamasına başlamadan önce Aşama 6 teknik planı, dosya kapsamı, API sözleşmeleri ve test/kabul ölçütleri hazırlanır. Bu izin Aşama 6 kapsamıyla sınırlıdır; sonraki aşamalara otomatik izin vermez.
+Önce kullanıcı Aşama 6 masaüstü/görsel kabul kontrol listesini tamamlar ve sonucu bildirir. Başarısız maddeler varsa yalnızca ilgili düzeltmeler yapılır ve CI yeniden çalıştırılır. Görsel kabulden sonra Aşama 6 kapanış raporu hazırlanır. Aşama 7 için genel plan ve teknik kapsam ayrı hazırlanıp kullanıcı onayı alınmadan kodlamaya başlanmaz.
 
 **Her aşama ve kapsam değişikliği ayrıca onaylanır. Korunan `main` ve `demo_eldoria` dallarına bu laboratuvar çalışması kapsamında yazılmaz.**
 
@@ -772,4 +779,4 @@ Aşama 6 — Kamera ve dünya-ekran dönüşümü. Bu işin kodlamasına başlam
 |---|---|---|
 | 1.0 | İlk taslak | Hex World Laboratory için kapsamlı aşamalı yol haritası ve çalışma sözleşmesi |
 | 1.1 | Önceki sürüm | Aşamalı laboratuvar planı |
-| 1.2 | Güncellendi — 17 Kasım 2026 | Aşama 0–5 kapanış durumu, Aşama 6 izinli sıradaki aşama ve CI kanıt durumu güncellendi |
+| 1.2 | Önceki sürüm | Aşama 0–5 kapanış durumu ve Aşama 6 izinli aşama |\n| 1.3 | Güncellendi — 17 Kasım 2026 | Aşama 6.1–6.5 teknik uygulama, 681 test ve Linux/Windows CI sonuçları; görsel kullanıcı kabulü bekleme durumu |
