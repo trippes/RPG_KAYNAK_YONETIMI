@@ -2,7 +2,15 @@ import pytest
 
 from hex_world_lab.geometry import AxialCoord, HexLayout, HexOrientation, WorldPoint, axial_to_world
 from hex_world_lab.simulation import MovementCellTracker
-from hex_world_lab.world import HexCellData, HexMapDefinition, HexWorld, MapId, MovementWorldContext, WorldId
+from hex_world_lab.world import (
+    HexCellData,
+    HexMapDefinition,
+    HexWorld,
+    MapId,
+    MapNotLoadedError,
+    MovementWorldContext,
+    WorldId,
+)
 
 
 def make_tracker():
@@ -69,7 +77,7 @@ def test_tracker_state_is_atomic_when_map_is_unloaded():
     world, map_id, layout, tracker = make_tracker()
     previous = tracker.update(axial_to_world(AxialCoord(0, 0), layout))
     world.unload_map(map_id)
-    with pytest.raises(Exception):
+    with pytest.raises(MapNotLoadedError):
         tracker.update(WorldPoint(10.0, 10.0))
     assert tracker.current_resolution is previous
     assert tracker.previous_cell == AxialCoord(0, 0)
