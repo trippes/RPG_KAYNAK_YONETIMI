@@ -18,7 +18,7 @@ Eldoria'nın canon altıgen dünya mimarisini bağımsız araştırmak ve doğru
 - ADR Şablonu: docs/decisions/ADR-TEMPLATE.md
 - Aşama 0 Raporu: reports/PHASE-00-FOUNDATION-CLOSURE.md
 - Aşama 1 Raporu: reports/PHASE-01-INFRASTRUCTURE-REPORT.md
-- Aşama 2 Raporu: reports/PHASE-02-GEOMETRY-REPORT.md\n- Aşama 3.6 Teknik Planı: docs/PHASE-03.6-TECHNICAL-PLAN.md\n- Harita JSON Şema v1: docs/MAP_JSON_SCHEMA_V1.md
+- Aşama 2 Raporu: reports/PHASE-02-GEOMETRY-REPORT.md\n- Aşama 3.6 Teknik Planı: docs/PHASE-03.6-TECHNICAL-PLAN.md\n- Harita JSON Şema v1: docs/MAP_JSON_SCHEMA_V1.md\n- Aşama 3.6 Uygulama Raporu: reports/PHASE-03.6-REPORT.md
 
 ## Kurulum (Windows PowerShell)
 Laboratuvar dizinine geç:
@@ -60,7 +60,7 @@ Varsayılan `create` modu mevcut dosyanın üzerine yazmaz. Değiştirme için a
 ## Mevcut durum
 **Aşama 2 — TAMAMLANDI VE TEKNİK OLARAK KABUL EDİLDİ.** Geometri çekirdeğinin önceki doğrulaması 53 testti.
 
-**Aşama 3.1–3.5 — UYGULANDI. Aşama 3.6 — UYGULAMA VE TEST DOĞRULAMASI SÜRÜYOR.** Bu aşamanın henüz kapanış kabulü verilmemiştir.
+**Aşama 3.1–3.5 — UYGULANDI. Aşama 3.6 — UYGULAMA VE ÖZEL CI DOĞRULAMASI TAMAMLANDI; KULLANICI KABULÜ BEKLİYOR.** Son doğrulama 249 testin başarılı olduğunu ve 100 / 1.000 / 10.000 hücre benchmark adımının tamamlandığını gösterir. Ayrıntılar: [Aşama 3.6 Raporu](reports/PHASE-03.6-REPORT.md).
 
 ADR-003 sınır davranışı: eşit mesafede karakterin önceki hücresi korunur; sınır geçilip diğer hücre daha yakın hâle geldiğinde yeni hücre seçilir. Önceki hücre bilgisi verilmezse deterministik cube-rounding yedek kuralı kullanılır.
 
