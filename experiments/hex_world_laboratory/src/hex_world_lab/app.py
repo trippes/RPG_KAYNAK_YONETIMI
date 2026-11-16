@@ -53,8 +53,8 @@ class LabApplication:
                 if not self._running:
                     break
 
-                self._demo.update_camera(clock.get_time() / 1000.0)
                 self._demo.pump()
+                self._demo.update_camera(clock.get_time() / 1000.0)
                 render_fps = clock.get_fps()
                 self._demo.render(screen, render_fps)
                 pygame.display.flip()
