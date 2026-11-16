@@ -186,3 +186,61 @@ def test_runtime_requires_map_registry_from_same_world():
 
     with pytest.raises(ValueError):
         HexWorldRuntime(WORLD_ID, MapRegistry(WorldId("other")))
+
+
+def test_export_map_overrides_is_sorted_and_read_only():
+    world = make_world()
+    world.runtime.set_terrain(address(coord=AxialCoord(2, 0)), "mud")
+    world.runtime.set_terrain(address(coord=AxialCoord(0, 0)), "stone")
+    snapshot = world.runtime.export_map_overrides(MAP_ID)
+    assert list(snapshot) == [AxialCoord(0, 0), AxialCoord(2, 0)]
+    with pytest.raises(TypeError):
+        snapshot[COORD] = world.runtime.get_override(address())
+
+
+def test_replace_map_overrides_replaces_only_target_map_atomically():
+    from hex_world_lab.world import RuntimeCellOverride
+
+    first, second = MapId("first"), MapId("second")
+    world = make_world(first, second)
+    world.runtime.set_terrain(address(first), "mud")
+    world.runtime.set_terrain(address(second), "stone")
+    world.runtime.replace_map_overrides(
+        first, {COORD: RuntimeCellOverride(has_obstacle=True)}
+    )
+    assert world.runtime.get_override(address(first)).terrain_id is None
+    assert world.runtime.get_override(address(first)).has_obstacle is True
+    assert world.runtime.get_override(address(second)).terrain_id == "stone"
+
+
+def test_replace_map_overrides_failure_preserves_previous_state():
+    from hex_world_lab.world import RuntimeCellOverride
+
+    world = make_world()
+    world.runtime.set_terrain(address(), "mud")
+    before = world.runtime.export_map_overrides(MAP_ID)
+    invalid = {
+        COORD: RuntimeCellOverride(terrain_id="stone"),
+        AxialCoord(99, 99): RuntimeCellOverride(has_obstacle=True),
+    }
+    with pytest.raises(UnknownCellError):
+        world.runtime.replace_map_overrides(MAP_ID, invalid)
+    assert dict(world.runtime.export_map_overrides(MAP_ID)) == dict(before)
+
+
+def test_replace_map_overrides_normalizes_base_equal_values():
+    from hex_world_lab.world import RuntimeCellOverride
+
+    world = make_world()
+    world.runtime.replace_map_overrides(
+        MAP_ID,
+        {COORD: RuntimeCellOverride(terrain_id="grass", is_walkable=True)},
+    )
+    assert world.runtime.override_count == 0
+
+
+def test_require_loaded_map_rejects_unloaded_map():
+    world = make_world()
+    world.unload_map(MAP_ID)
+    with pytest.raises(MapNotLoadedError):
+        world.runtime.require_loaded_map(MAP_ID)
