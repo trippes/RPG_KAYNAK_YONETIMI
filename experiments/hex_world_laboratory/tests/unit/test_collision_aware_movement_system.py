@@ -189,3 +189,129 @@ def test_failed_collision_resolution_rolls_back_state_tick_and_diagnostics(monke
     assert system.state is original
     assert system.next_tick_number == 0
     assert system.last_resolution is None
+
+
+def test_hex_map_geometry_blocks_movement_at_map_perimeter():
+    from hex_world_lab.geometry import AxialCoord, HexLayout, HexOrientation
+    from hex_world_lab.physics.hex_geometry import (
+        BoundaryPolicy, build_hex_map_collision_geometry,
+    )
+    from hex_world_lab.world import HexCellData, HexMapDefinition, HexWorld, WorldId
+
+    world_id = WorldId("boundary_world")
+    map_id = MapId("boundary_map")
+    world = HexWorld(world_id)
+    world.register_map(map_id, "Boundary test")
+    world.load_map(HexMapDefinition(
+        world_id,
+        map_id,
+        "Boundary test",
+        HexLayout(HexOrientation.FLAT_TOP, radius=2.0, origin=WorldPoint(10.0, -4.0)),
+        {AxialCoord(0, 0): HexCellData("grass", True, False)},
+    ))
+    geometry = build_hex_map_collision_geometry(
+        world.view, world.runtime, map_id, boundary_policy=BoundaryPolicy.BLOCKED
+    )
+    system = CollisionAwareMovementSystem(
+        MovementState(WorldPoint(10.0, -4.0)),
+        MovementConfig(max_speed=600.0),
+        BodyDefinition("player", CircleShape(0.25)),
+        geometry,
+    )
+
+    system.step(0, MovementIntent(Vector2(1.0, 0.0)))
+
+    assert system.map_id == map_id
+    assert system.state.position.x < 12.0
+    assert system.state.position.x == pytest.approx(11.75, abs=2e-3)
+
+
+def test_open_hex_map_boundary_allows_movement_outside_map():
+    from hex_world_lab.geometry import AxialCoord, HexLayout, HexOrientation
+    from hex_world_lab.physics.hex_geometry import (
+        BoundaryPolicy, build_hex_map_collision_geometry,
+    )
+    from hex_world_lab.world import HexCellData, HexMapDefinition, HexWorld, WorldId
+
+    world_id = WorldId("open_boundary_world")
+    map_id = MapId("open_boundary_map")
+    world = HexWorld(world_id)
+    world.register_map(map_id, "Open boundary test")
+    world.load_map(HexMapDefinition(
+        world_id,
+        map_id,
+        "Open boundary test",
+        HexLayout(HexOrientation.FLAT_TOP, radius=2.0, origin=WorldPoint(10.0, -4.0)),
+        {AxialCoord(0, 0): HexCellData("grass", True, False)},
+    ))
+    geometry = build_hex_map_collision_geometry(
+        world.view, world.runtime, map_id, boundary_policy=BoundaryPolicy.OPEN
+    )
+    system = CollisionAwareMovementSystem(
+        MovementState(WorldPoint(10.0, -4.0)),
+        MovementConfig(max_speed=600.0),
+        BodyDefinition("player", CircleShape(0.25)),
+        geometry,
+    )
+
+    system.step(0, MovementIntent(Vector2(1.0, 0.0)))
+
+    assert system.state.position.x == pytest.approx(20.0)
+
+
+def test_movement_system_rejects_wrong_or_mixed_map_obstacles():
+    wrong_map = wall()
+    with pytest.raises(ValueError, match="movement system map"):
+        CollisionAwareMovementSystem(
+            MovementState(WorldPoint(0.0, 0.0)),
+            MovementConfig(max_speed=60.0),
+            BodyDefinition("player", CircleShape(0.25)),
+            (wrong_map,),
+            map_id=MapId("different_map"),
+        )
+
+    other_map_wall = ObstacleDefinition(
+        "other_wall",
+        MapId("another_map"),
+        ConvexPolygonShape((
+            Vector2(-0.25, -3.0), Vector2(0.25, -3.0),
+            Vector2(0.25, 3.0), Vector2(-0.25, 3.0),
+        )),
+        WorldPoint(4.0, 0.0),
+    )
+    with pytest.raises(ValueError, match="different maps"):
+        CollisionAwareMovementSystem(
+            MovementState(WorldPoint(0.0, 0.0)),
+            MovementConfig(max_speed=60.0),
+            BodyDefinition("player", CircleShape(0.25)),
+            (wrong_map, other_map_wall),
+        )
+
+
+def test_geometry_map_id_cannot_be_overridden_by_constructor():
+    from hex_world_lab.physics.hex_geometry import (
+        BoundaryPolicy, build_hex_map_collision_geometry,
+    )
+    from hex_world_lab.geometry import AxialCoord, HexLayout, HexOrientation
+    from hex_world_lab.world import HexCellData, HexMapDefinition, HexWorld, WorldId
+
+    world_id = WorldId("geometry_map_world")
+    map_id = MapId("geometry_map")
+    world = HexWorld(world_id)
+    world.register_map(map_id, "Geometry map")
+    world.load_map(HexMapDefinition(
+        world_id, map_id, "Geometry map",
+        HexLayout(HexOrientation.FLAT_TOP, radius=2.0, origin=WorldPoint(0.0, 0.0)),
+        {AxialCoord(0, 0): HexCellData("grass", True, False)},
+    ))
+    geometry = build_hex_map_collision_geometry(
+        world.view, world.runtime, map_id, boundary_policy=BoundaryPolicy.OPEN
+    )
+    with pytest.raises(ValueError, match="does not match"):
+        CollisionAwareMovementSystem(
+            MovementState(WorldPoint(0.0, 0.0)),
+            MovementConfig(max_speed=60.0),
+            BodyDefinition("player", CircleShape(0.25)),
+            geometry,
+            map_id=MapId("wrong_map"),
+        )

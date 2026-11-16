@@ -140,3 +140,25 @@ def test_object_obstacle_cannot_claim_a_different_map():
         build_hex_map_collision_geometry(
             world.view, world.runtime, map_id, object_obstacles=(other,)
         )
+
+
+def test_blocked_boundary_edges_are_exposed_as_real_collision_obstacles():
+    world, map_id, _ = make_world()
+    geometry = build_hex_map_collision_geometry(world.view, world.runtime, map_id)
+
+    collision_obstacles = geometry.collision_obstacles
+    boundary_obstacles = tuple(
+        item for item in collision_obstacles if item.obstacle_id.startswith("boundary:")
+    )
+    assert len(boundary_obstacles) == 10
+    assert len(collision_obstacles) == len(geometry.obstacles) + 10
+    assert all(item.map_id == map_id for item in boundary_obstacles)
+    assert all(len(item.world_shape().vertices) == 4 for item in boundary_obstacles)
+
+
+def test_open_boundary_policy_has_no_boundary_collision_obstacles():
+    world, map_id, _ = make_world()
+    geometry = build_hex_map_collision_geometry(
+        world.view, world.runtime, map_id, boundary_policy=BoundaryPolicy.OPEN
+    )
+    assert geometry.collision_obstacles == geometry.obstacles
