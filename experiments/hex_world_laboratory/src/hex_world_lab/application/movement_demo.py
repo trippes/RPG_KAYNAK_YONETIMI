@@ -73,6 +73,7 @@ class MovementDemo:
         "cell_tracker",
         "tick_pump",
         "_layout",
+        "_movement_config",
         "_font",
         "_small_font",
         "_last_diagnostics",
@@ -90,9 +91,10 @@ class MovementDemo:
         assert definition is not None
         self._layout = definition.layout
         start_position = axial_to_world(AxialCoord(0, 0), self._layout)
+        self._movement_config = MovementConfig(max_speed=movement_speed)
         self.movement_system = MovementSystem(
             MovementState(position=start_position),
-            MovementConfig(max_speed=movement_speed),
+            self._movement_config,
         )
         context = MovementWorldContext(self.world, self.map_id)
         self.cell_tracker = MovementCellTracker(context)
@@ -189,6 +191,9 @@ class MovementDemo:
         diagnostics = self._last_diagnostics or self.tick_pump.diagnostics
         velocity = self.state.velocity
         speed = math.hypot(velocity.x, velocity.y)
+        mode = self.state.mode
+        multiplier = self._movement_config.speed_multiplier_for(mode)
+        mode_speed = self._movement_config.max_speed * multiplier
         cell = "—" if resolution is None else f"q={resolution.coord.q}, r={resolution.coord.r}"
         cell_data = (
             "unknown"
@@ -201,13 +206,18 @@ class MovementDemo:
             f"Map: {self.map_id.value}",
             f"Position: x={self.state.position.x:.3f}, y={self.state.position.y:.3f}",
             f"Velocity: x={velocity.x:.2f}, y={velocity.y:.2f}, speed={speed:.2f}",
+            f"Mode: {mode.name}",
+            f"Multiplier: {multiplier:.2f}x | Mode speed: {mode_speed:.1f} units/s",
             f"Cell: {cell} | data: {cell_data}",
             f"Last tick: {completed_tick if completed_tick >= 0 else '—'}",
             f"Render FPS: {render_fps:.1f}",
             f"Ticks this frame: {diagnostics.last_frame_tick_count}",
             f"Pending ticks: {diagnostics.pending_full_ticks} | debt: {diagnostics.time_debt_seconds:.4f}s",
         )
-        panel_width = min(440, max(300, surface.get_width() - 24))
+        panel_width = min(
+            max(440, max(self._small_font.size(line)[0] for line in lines) + 20),
+            max(300, surface.get_width() - 24),
+        )
         panel_height = 18 + len(lines) * 23
         panel = pygame.Surface((panel_width, panel_height), pygame.SRCALPHA)
         panel.fill((9, 13, 20, 218))
