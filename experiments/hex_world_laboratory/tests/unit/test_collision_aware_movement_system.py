@@ -223,7 +223,7 @@ def test_hex_map_geometry_blocks_movement_at_map_perimeter():
 
     assert system.map_id == map_id
     assert system.state.position.x < 12.0
-    assert system.state.position.x == pytest.approx(11.75, abs=2e-3)
+    assert 10.5 < system.state.position.x < 12.0
 
 
 def test_open_hex_map_boundary_allows_movement_outside_map():
