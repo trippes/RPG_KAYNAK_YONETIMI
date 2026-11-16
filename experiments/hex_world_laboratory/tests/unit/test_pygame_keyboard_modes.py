@@ -55,12 +55,15 @@ def test_left_and_right_alt_do_not_stack():
     assert adapter.read_intent().mode is MovementMode.STEALTH
 
 
-def test_releasing_alt_while_shift_remains_selects_running():
+def test_alt_toggle_stays_stealth_after_release_and_second_press_selects_running():
     keys = FakeKeys({pygame.K_LSHIFT, pygame.K_LALT})
     adapter = PygameKeyboardAdapter(lambda: keys)
     assert adapter.read_intent().mode is MovementMode.STEALTH
 
     keys.pressed.remove(pygame.K_LALT)
+    assert adapter.read_intent().mode is MovementMode.STEALTH
+
+    keys.pressed.add(pygame.K_LALT)
     assert adapter.read_intent().mode is MovementMode.RUNNING
 
 
@@ -73,12 +76,15 @@ def test_releasing_shift_while_alt_remains_selects_stealth():
     assert adapter.read_intent().mode is MovementMode.STEALTH
 
 
-def test_releasing_all_modifiers_selects_normal():
+def test_releasing_all_modifiers_keeps_stealth_until_alt_is_toggled_off():
     keys = FakeKeys({pygame.K_LSHIFT, pygame.K_LALT})
     adapter = PygameKeyboardAdapter(lambda: keys)
     assert adapter.read_intent().mode is MovementMode.STEALTH
 
     keys.pressed.clear()
+    assert adapter.read_intent().mode is MovementMode.STEALTH
+
+    keys.pressed.add(pygame.K_LALT)
     assert adapter.read_intent().mode is MovementMode.NORMAL
 
 
@@ -107,11 +113,16 @@ def test_focus_loss_clears_direction_and_mode_without_sampling_provider():
     assert calls == []
 
 
-def test_focus_gain_reads_current_modifier_snapshot():
+def test_focus_gain_requires_alt_release_then_a_fresh_press():
     keys = FakeKeys({pygame.K_RALT})
     adapter = PygameKeyboardAdapter(lambda: keys)
     adapter.handle_event(pygame.event.Event(pygame.WINDOWFOCUSLOST))
     assert adapter.read_intent().mode is MovementMode.NORMAL
 
     adapter.handle_event(pygame.event.Event(pygame.WINDOWFOCUSGAINED))
+    assert adapter.read_intent().mode is MovementMode.NORMAL
+
+    keys.pressed.clear()
+    assert adapter.read_intent().mode is MovementMode.NORMAL
+    keys.pressed.add(pygame.K_RALT)
     assert adapter.read_intent().mode is MovementMode.STEALTH
