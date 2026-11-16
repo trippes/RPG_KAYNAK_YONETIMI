@@ -3,8 +3,8 @@
 > Belge türü: Aşama genel planı  
 > Proje: Eldoria — Hex World Laboratory  
 > Çalışma dalı: experiment/hex-world-laboratory  
-> Durum: UYGULAMA VE OTOMATİK TEKNİK DOĞRULAMA TAMAMLANDI — NİHAİ MASAÜSTÜ KABULÜ BEKLİYOR  
-> Tarih: 16 Kasım 2026  
+> Durum: TAMAMLANDI — OTOMATİK VE MANUEL KABUL BAŞARILI  
+> Tarih: 17 Kasım 2026  
 > Ön koşul: Aşama 4 kapatıldı ve kullanıcı tarafından kabul edildi.
 
 ---
@@ -200,3 +200,38 @@ Son denetimde Pygame kabul demosunun eski hareket sistemiyle çalıştığı gö
 11. Pencerenin normal açılıp kapanmasını doğrulamak.
 
 Bu liste tamamlanıp kullanıcı sonucu onayladıktan sonra `reports/PHASE-05-CLOSURE-REPORT.md` gerçek yerel sonuçlarla hazırlanacak ve Aşama 5 kapatılacaktır.
+
+## 8. 17 Kasım 2026 — Nihai kabul ve aşama kapanışı
+
+**Durum: TAMAMLANDI — OTOMATİK VE MANUEL KABUL BAŞARILI**
+
+Kullanıcı, son Pygame demo entegrasyonundan sonra laboratuvar kök dizininde tam test paketini çalıştırdığını ve **588/588 testin başarılı** olduğunu bildirdi. Kullanıcı ayrıca aşağıdaki masaüstü kabul kontrollerinin tamamının başarılı olduğunu bildirdi:
+
+1. WASD ve yön tuşlarıyla hareket.
+2. Altıgen engellere çarpışma ve engellerin içinden geçememe.
+3. Çapraz yaklaşımda duvar boyunca kayma.
+4. Ağaç, kaya ve duvar çarpışmaları.
+5. Başlangıç evi iskeletinin duvarlarıyla çarpışma.
+6. Kapı boşluğundan geçiş.
+7. Evin çevresinden dolaşma.
+8. Köşe ve birden fazla engele temas davranışı.
+9. Shift koşma ve Alt gizlilik modlarında hareket.
+10. OPEN harita sınırından dışarı hareket.
+
+Bu sonuçlar kullanıcı bildirimi olarak kaydedilmiştir; yerel komutlar asistan tarafından çalıştırılmış gibi sunulmamaktadır.
+
+### 8.1 Kabul kararı
+
+- 5.1–5.7 alt aşamaları tamamlandı.
+- Otomatik regresyon paketi: **588/588 başarılı**.
+- Kullanıcı masaüstü kabulü: **başarılı**.
+- Aşama 5'in kapsamındaki gövde modeli, hex/nesne çarpışma geometrisi, broadphase/narrowphase, kinematik temas çözümü, duvar kayması, CCD ve Pygame demo entegrasyonu kabul edildi.
+- Aşama 5 kapatıldı.
+
+### 8.2 CI kapsam notu
+
+Önceki CI kanıtları (Hex World Laboratory CI run `43932344855` ve Core Quality run `43932344956`) demo entegrasyonundan önceki kod HEAD'ine aittir. Bu nedenle son Pygame demo entegrasyonunun CI tarafından doğrulandığı iddia edilmez. Son entegrasyon için 588/588 sonucu kullanıcı tarafından yerel olarak doğrulanmıştır. Kapanış anında son HEAD için yeni bir GitHub Actions sonucu mevcut değildir.
+
+### 8.3 Sonraki aşamaya geçiş
+
+Aşama 5 için yeni kapsam açılmadan, sonraki onaylı yol haritası aşamasının kapsamı ve teknik kabul kapıları ayrı olarak incelenmelidir.
