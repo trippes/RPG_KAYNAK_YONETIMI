@@ -87,3 +87,55 @@ def test_30_60_and_120_render_fps_produce_equivalent_60_tick_state() -> None:
         assert states[0].velocity.x == 30.0
     finally:
         pygame.quit()
+
+
+class TickModeSequenceProvider:
+    """Sample normal, running and stealth input in a deterministic tick sequence."""
+
+    def __init__(self) -> None:
+        self.tick = 0
+
+    def __call__(self) -> PressedKeys:
+        current = self.tick
+        self.tick += 1
+        if current < 20:
+            return PressedKeys({pygame.K_d})
+        if current < 40:
+            return PressedKeys({pygame.K_d, pygame.K_LSHIFT})
+        return PressedKeys({pygame.K_d, pygame.K_LALT})
+
+
+def run_mode_sequence(render_fps: int):
+    clock = FakeClock()
+    demo = MovementDemo(
+        movement_speed=60.0,
+        key_state_provider=TickModeSequenceProvider(),
+        clock=clock,
+    )
+    demo.start()
+    for _ in range(render_fps):
+        clock.advance(1.0 / render_fps)
+        demo.pump()
+    return demo.state, demo.current_resolution, demo.tick_pump.diagnostics
+
+
+def test_normal_running_and_stealth_modes_are_equivalent_at_30_60_120_fps() -> None:
+    pygame.init()
+    try:
+        results = [run_mode_sequence(fps) for fps in (30, 60, 120)]
+        states = [result[0] for result in results]
+        resolutions = [result[1] for result in results]
+        diagnostics = [result[2] for result in results]
+
+        from hex_world_lab.movement import MovementMode
+
+        assert all(item.total_ticks == 60 for item in diagnostics)
+        assert states[0] == states[1] == states[2]
+        assert resolutions[0] == resolutions[1] == resolutions[2]
+        assert states[0].position.x == 60.0
+        assert states[0].position.y == 0.0
+        assert states[0].velocity.x == 30.0
+        assert states[0].mode is MovementMode.STEALTH
+        assert all(item.pending_full_ticks == 0 for item in diagnostics)
+    finally:
+        pygame.quit()
