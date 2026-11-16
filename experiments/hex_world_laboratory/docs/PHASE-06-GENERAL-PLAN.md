@@ -3,7 +3,7 @@
 > Belge türü: Aşama genel planı  
 > Proje: Eldoria — Hex World Laboratory  
 > Çalışma dalı: experiment/hex-world-laboratory  
-> Durum: PLAN TASLAĞI — TEKNİK MİMARİ VE UYGULAMA ONAYI BEKLİYOR  
+> Durum: ONAYLANDI — 6.1–6.5 TEKNİK UYGULAMA TAMAMLANDI; GÖRSEL KULLANICI KABULÜ BEKLİYOR  
 > Tarih: 17 Kasım 2026  
 > Ön koşul: Aşama 0–5 tamamlandı ve kabul edildi.
 
@@ -197,4 +197,4 @@ Aşama 6 ancak aşağıdakilerin tamamı sağlandığında kapatılabilir:
 
 ---
 
-Bu genel plan Aşama 6'nın hedefini, kapsamını, alt aşama sırasını ve kabul kapılarını tanımlar. Ayrıntılı teknik mimari belgesi; dönüşüm formüllerini, sınıf/fonksiyon sözleşmelerini, dosya değişiklik listesini, bağımlılık şemasını, algoritmaları ve ayrıntılı test matrisini belirleyecektir. Bu genel planın kabulü tek başına kod uygulamasına izin vermez.
+Bu genel plan kullanıcı tarafından onaylanmış, ayrıntılı teknik mimari de uygulama öncesinde kabul edilmiştir. 6.1–6.5 alt aşamalarının teknik uygulaması ve otomatik CI doğrulamaları tamamlanmıştır. Son durum ve CI kanıtları `../reports/PHASE-06-VALIDATION-LOG.md` belgesinde; masaüstü görsel kabul adımları `PHASE-06-MANUAL-ACCEPTANCE-CHECKLIST.md` belgesindedir. Aşama 6, kullanıcı görsel kabulü bildirilene kadar tamamen kapanmış sayılmaz.
