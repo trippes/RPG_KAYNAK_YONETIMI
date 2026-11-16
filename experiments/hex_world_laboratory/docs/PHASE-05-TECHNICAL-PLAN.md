@@ -3,7 +3,7 @@
 > Belge türü: Ayrıntılı teknik mimari, API sözleşmeleri ve uygulama planı  
 > Proje: Eldoria — Hex World Laboratory  
 > Çalışma dalı: experiment/hex-world-laboratory  
-> Durum: KULLANICI TARAFINDAN ONAYLANDI — 5.1–5.7 UYGULAMA VE OTOMATİK TEKNİK DOĞRULAMA TAMAMLANDI; NİHAİ MASAÜSTÜ KABULÜ BEKLİYOR  
+> Durum: KAPATILDI — 5.1–5.7 UYGULAMA, 588/588 YEREL TEST VE NİHAİ MASAÜSTÜ KABULÜ BAŞARILI  
 > Tarih: 16 Kasım 2026  
 > Ön koşullar: Aşama 4 kapalı; Aşama 5 Genel Planı kullanıcı tarafından onaylandı.  
 > Kod durumu: Bu belgeyle kod değişikliği yapılmaz.
@@ -580,17 +580,16 @@ Son denetimde `app.py` ve `application/movement_demo.py` dosyalarının hâlâ e
 - Başlangıç evi yalnızca yapı iskeletidir: beş ayrı convex duvar collider'ı kullanır ve ön cephede kapı boşluğu bırakır. Basit duvar/çatı çizgileri görsel rehberdir; nihai model, kaplama veya inşa arayüzü değildir.
 - Ev duvarlarının fiziksel engel olarak kaydedildiği ve iskeletin beş parçalı kaldığı regresyon testi eklendi. Kapı boşluğu ve ev çevresinde dolaşma ayrıca masaüstü kabulünde kontrol edilir.
 
-Bu entegrasyonun ardından tam test paketi yeniden çalıştırılmalıdır. Önceki 584/2.047 CI sonuçları bu son demo değişikliğini kapsamaz.
+Son Pygame demo entegrasyonunun ardından kullanıcı laboratuvar kökünde `python -m pytest -q` komutunun **588/588 başarılı** olduğunu bildirdi ve nihai masaüstü kabul listesindeki 10 kontrolün tamamını başarılı olarak doğruladı. Bu kullanıcı bildirimi Aşama 5'in kapanış kabul kanıtıdır. Önceki 584/2.047 CI koşuları entegrasyon öncesi HEAD'e aittir; son HEAD için yeni CI kanıtı ayrı olarak kaydedilir.
 
-### 17.6 Kullanıcı bilgisayarında kalan kabul
+### 17.6 Kullanıcı kabulü ve kapanış
 
-Teknik kod, birim/entegrasyon/regresyon testleri, mimari kontroller, Linux/Windows CI ve benchmark çalışmaları tamamlanmıştır. Kullanıcı tarafında yalnızca:
+- Yerel tam test paketi: **588/588 başarılı** (kullanıcı tarafından bildirildi).
+- Pygame masaüstü kabulü: **10/10 kontrol başarılı** (kullanıcı tarafından bildirildi).
+- Aşama 5: **KAPATILDI**.
+- Kapanış raporu: `experiments/hex_world_laboratory/reports/PHASE-05-CLOSURE-REPORT.md`.
 
-1. Laboratuvar kökünde `python -m pytest -q` çalıştırılması.
-2. `python -m hex_world_lab` ile masaüstü uygulamasının açılması.
-3. Genel Aşama 5 planındaki nihai görsel kabul listesinin tamamlanması.
-
-beklenmektedir. Bu kontrollerin sonucu kullanıcı tarafından bildirilmeden yerel doğrulama yapılmış sayılmayacak ve aşama kapatılmayacaktır. Başarılı sonuçtan sonra kapanış raporu hazırlanır.
+Bu bölümdeki yerel test ve görsel kabul sonuçları kullanıcı bildirimidir; GitHub Actions CI kanıtı olarak değerlendirilmez.
 
 ## 18. 17 Kasım 2026 — Nihai kabul ve kapanış
 
