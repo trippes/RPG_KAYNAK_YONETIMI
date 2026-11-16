@@ -3,7 +3,7 @@
 > Belge türü: Ayrıntılı teknik mimari, API sözleşmeleri, bağımlılık şeması ve uygulama/test planı  
 > Proje: Eldoria — Hex World Laboratory  
 > Çalışma dalı: `experiment/hex-world-laboratory`  
-> Durum: TEKNİK TASARIM HAZIR — 6.1 UYGULAMASI BAŞLATILABİLİR  
+> Durum: ONAYLANDI — 6.1–6.5 UYGULANDI; GÖRSEL KULLANICI KABULÜ BEKLİYOR  
 > Tarih: 17 Kasım 2026  
 > Ön koşullar: Aşama 0–5 kapalı; Aşama 6 genel planı kullanıcı tarafından onaylandı.  
 > Kod durumu: Bu belge tek başına kod değişikliği içermez.
@@ -62,7 +62,7 @@ Yeni/etkilenecek dosyalar:
 | `src/hex_world_lab/camera/follow.py` | Render delta-time kullanan frame-rate bağımsız takip |
 | `src/hex_world_lab/camera/controller.py` | Camera state, viewport, zoom, takip ve bounds orkestrasyonu |
 | `src/hex_world_lab/camera/__init__.py` | Desteklenen kamera API dışa aktarımları |
-| `src/hex_world_lab/rendering/pygame_world_renderer.py` | Kamera dönüşümü kullanan dünya çizim adaptörü; Pygame bağımlılığı burada kalır |
+| `src/hex_world_lab/rendering/snapshot.py` | Pygame/simülasyon bağımsız immutable world render DTO'ları |\n| `src/hex_world_lab/rendering/pygame_world_renderer.py` | Kamera dönüşümü kullanan dünya çizim adaptörü; Pygame bağımlılığı burada kalır |\n| `src/hex_world_lab/rendering/__init__.py` | Renderer ve snapshot dışa aktarımları |
 | `application/movement_demo.py` | Kamera controller, fare seçimi, wheel/resize event ve renderer entegrasyonu |
 | `tests/unit/test_camera_*.py` | Kamera çekirdeği birim testleri |
 | `tests/integration/test_movement_demo_camera.py` | Demo, render, input ve simülasyon izolasyonu testleri |
@@ -75,7 +75,7 @@ Uygulama alt aşamalara göre dar kapsamlı commit'lerle ilerler. Her alt aşama
 
 - `ScreenPoint(x: float, y: float)`: viewport içindeki piksel koordinatı; sonlu değer kabul eder.
 - `Viewport(width: int, height: int)`: pozitif tam piksel boyutları; bool ve sıfır/negatif değer reddedilir.
-- `CameraState(center: WorldPoint, zoom: float = 1.0)`: immutable kamera snapshot'ı; zoom sonlu ve pozitif olmalıdır.
+- `CameraState(center: WorldPoint, viewport: Viewport, zoom: float = 1.0)`: immutable kamera snapshot'ı; viewport geçerli, zoom sonlu ve pozitif olmalıdır.
 - `WorldBounds(min_x, min_y, max_x, max_y)`: sonlu ve sıralı dünya AABB'si.
 
 Tüm değer nesneleri Pygame import etmez. Ekran koordinatı için `pygame.Vector2` kullanılmaz.
@@ -91,15 +91,21 @@ Dönüşümler saf fonksiyondur; girdi nesnelerini değiştirmez. Round-trip tes
 
 ### 4.3 Kamera controller API'si
 
-`CameraController(viewport, initial_state, zoom_limits, follow_settings, bounds_policy)`
+Gerçekleştirilen controller sözleşmesi:
 
-- `resize(viewport) -> None`
-- `set_zoom(value) -> None`
-- `zoom_by(factor) -> None`
-- `set_target(point: WorldPoint | None) -> None`
-- `update(delta_seconds: float) -> CameraState`
-- `world_to_screen(point) -> ScreenPoint`
-- `screen_to_world(point) -> WorldPoint`
+`CameraController(viewport, center=WorldPoint(0, 0), *, zoom=1.0, min_zoom=0.5, max_zoom=3.0, zoom_factor=1.1, follow_smoothing=8.0, bounds=None, bounds_policy=UNBOUNDED)`
+
+- `state -> CameraState`: immutable anlık kamera snapshot'ı.
+- `transform -> WorldScreenTransform`: geçerli state için dönüşüm nesnesi.
+- `set_zoom(value) -> float`: zoom'u sınırlar içinde tutar.
+- `zoom_by_steps(steps) -> float`: pozitif wheel adımı yakınlaştırır; negatif adım uzaklaştırır.
+- `set_viewport(viewport) -> None`: viewport boyutunu günceller.
+- `set_center(point) -> None`: kamera merkezini dünya koordinatında ayarlar.
+- `set_target(point | None) -> None`: takip hedefini ayarlar/temizler.
+- `set_bounds(bounds | None, policy) -> None`: kamera sınır politikasını ayarlar.
+- `update(delta_seconds) -> CameraState`: frame delta-time ile takibi günceller ve snapshot döndürür.
+
+`CameraBoundsPolicy` değerleri `UNBOUNDED` ve `CLAMP_TO_MAP`'tir. `WorldBounds` gerçek hex polygon köşelerinden `bounds_from_hex_cells(cells, layout)` ile üretilir. `clamp_camera_center(center, bounds, viewport, zoom)` görünür world rectangle'ını dikkate alır. `CameraFollowController` üstel yaklaşım uygular; varsayılan smoothing 8.0 s⁻¹, güvenli maksimum delta 0.25 saniyedir.
 
 Controller kamera state'ini yönetir; MovementState'e veya world runtime'a referans tutmaz. Hedef noktası uygulama katmanından salt okunur snapshot olarak verilir.
 
@@ -143,7 +149,7 @@ Bu aralık ilk laboratuvar kabulü içindir; görsel testte kullanılabilirlik s
 - Bounds viewport'tan küçükse ilgili eksende merkez bounds orta noktasına alınır; ters min/max clamp uygulanmaz.
 - Kamera sınır politikası `CLAMP_TO_MAP` veya `UNBOUNDED` olur.
 - OPEN/BLOCKED fizik sınır politikası değiştirilmez ve kamera politikasından türetilmez.
-- İlk demo varsayılanı `CLAMP_TO_MAP`; unbounded politika test edilebilir ve ileride açık dünya senaryosunda kullanılabilir.
+- Mevcut hareket demosunun fizik sınırı `OPEN` olduğundan, oyuncunun tanımlı hücre kümesinin ötesine hareketi sürerken kamera takibinin durmaması için demo `UNBOUNDED` politikasını kullanır. `CLAMP_TO_MAP` ayrı bir sunum politikası olarak kamera birim testlerinde doğrulanmıştır; fiziksel OPEN/BLOCKED kararıyla otomatik eşleştirilmez.
 
 ## 6. Render entegrasyonu
 
@@ -189,9 +195,9 @@ Bağımlılık yönü:
 Her alt aşama sonunda:
 1. hedef dosyaların ve dal HEAD'inin güncel SHA'sı doğrulanır;
 2. yalnızca ilgili alt aşamanın kodu ve testleri değiştirilir;
-3. test sonuçları kaydedilir;
-4. kullanıcıya yerel test komutu ve beklenen sonuç verilir;
-5. kullanıcı yerel testleri doğrulamadan sonraki riskli entegrasyon adımına geçilmez.
+3. GitHub Actions Laboratuvar CI ve Core Quality sonuçları kaydedilir;
+4. başarısız CI varsa neden incelenir, düzeltilir ve tekrar çalıştırılır;
+5. kullanıcı masaüstü/görsel kabulünü yalnızca 6.5 teknik işleri tamamlandıktan sonra yapar; kullanıcı kabulü olmadan Aşama 6 kapatılmaz.
 
 ## 9. Test matrisi
 
