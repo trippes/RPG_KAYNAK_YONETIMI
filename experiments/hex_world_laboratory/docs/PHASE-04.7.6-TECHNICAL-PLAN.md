@@ -4,7 +4,7 @@
 > **Dal:** `experiment/hex-world-laboratory`  
 > **Tarih:** 16 Kasım 2026  
 > **Ön koşul:** Aşama 4.7.5 teknik kapanışı tamamlandı.  
-> **Durum:** TEKNİK PLAN SUNULDU — KULLANICI ONAYI BEKLİYOR
+> **Durum:** TEKNİK DOĞRULAMA TAMAMLANDI — KAPATILDI; Aşama 4 masaüstü kabulini bekliyor
 
 ## 1. Amaç
 
@@ -167,3 +167,44 @@ Bu belge yalnızca teknik plan önerisidir. Kullanıcı açıkça onaylamadan:
 - Aşama 4.7.6 uygulaması başlatılmayacaktır.
 
 **Önerilen karar:** Aşama 4.7.6'yı üretim koduna dokunmadan, otomatik doğrulama + gözlemsel hareket benchmark'ı + dokümantasyon kapanışı olarak tamamlamak; gerçek Pygame masaüstü kabulini Aşama 4 genel kapanışında yapmak.
+
+
+## 9. Uygulama ve doğrulama sonuçları
+
+Kullanıcı planı 16 Kasım 2026 tarihinde onayladı. Onaylı kapsam uygulandı; üretim hareket kodunda özellik/refaktör değişikliği yapılmadı.
+
+### 9.1 Test ve CI
+
+- Laboratuvar tam test paketi: **505 passed**.
+- Core Quality Linux: **1.968 passed, 1 warning**.
+- Core Quality Windows: **1.968 passed**.
+- Harita persistence benchmark: başarılı.
+- Runtime persistence benchmark: başarılı.
+- Hareket + hex hücre takip benchmark'ı: 1 / 10 / 100 / 1.000 aktör ölçümleri üretildi.
+- Mimari sınır testi eklendi: geometry, movement, simulation ve world paketlerinde Pygame import'u yasaklanır.
+
+Kanıt commit'i: `dafb5ce674c2356b1e07c4fde1965c7ee67ec611`.
+
+- Hex World Laboratory CI run: [43882088050](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43882088050)
+- Core Quality run: [43882087966](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43882087966)
+
+Her iki workflow da aynı commit üzerinde başarılı tamamlanmıştır. Sonuçlar GitHub Actions ortamına aittir; kullanıcının yerel bilgisayarında test veya masaüstü kabulü yapıldığı anlamına gelmez.
+
+### 9.2 Hareket benchmark sonucu
+
+Ortam: Python 3.12.16, Linux 7.0.0-1019-azure x86_64, glibc 2.43. İşlemci adı CI ortamında sağlanmadı. Her aktör sayısında 3 ısınma partisi ve 20 ölçüm partisi; parti başına 10 simülasyon tick'i kullanıldı.
+
+| Aktör | Ortalama parti (ms) | P95 parti (ms) | Ortalama aktör-tick (µs) |
+|---:|---:|---:|---:|
+| 1 | 0.1548 | 0.1756 | 15.4797 |
+| 10 | 1.5196 | 1.5367 | 15.1961 |
+| 100 | 15.1547 | 15.3680 | 15.1547 |
+| 1.000 | 153.4378 | 156.1921 | 15.3438 |
+
+Bu ölçüm yalnızca hareket adımı ve hex hücre çözümleme maliyetini kapsar. Render, NPC kararları, çarpışma, görevler, kaynak simülasyonu ve diğer oyun sistemleri dahil değildir. Bu nedenle sonuçlardan toplam oyun FPS'i veya hedef donanım performansı garantisi çıkarılmaz. 1.000 aktör için 10 tick'lik partinin ortalama süresi yaklaşık 153.44 ms'dir; sonraki optimizasyon kararı ancak hedef donanımda ve daha geniş simülasyon yüküyle yapılacak ölçümden sonra verilmelidir.
+
+### 9.3 Manuel kabul
+
+Kullanıcının kararı gereği gerçek Pygame masaüstü kabulü Aşama 4 genel kapanışına ertelenmiştir. `docs/MANUAL-MOVEMENT-DEMO-CHECKLIST.md` maddeleri kullanıcı bilgisayarında kontrol edilene kadar açık kalır ve PASS olarak işaretlenmez.
+
+**Karar:** Aşama 4.7.6 teknik doğrulama kapsamında kapatılmıştır. Bu karar Aşama 4'ün genel kapanışı değildir.

@@ -3,7 +3,7 @@
 > **Belge türü:** Aşama genel planı  
 > **Proje:** Eldoria — Hex World Laboratory  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
-> **Durum:** GENEL PLAN KULLANICI TARAFINDAN ONAYLANDI — TEKNİK MİMARİ PLANI HAZIRLANACAK  
+> **Durum:** GENEL PLAN ONAYLANDI — TEKNİK UYGULAMA TAMAMLANDI; KULLANICI MASAÜSTÜ KABULİ BEKLENİYOR  
 > **Tarih:** 16 Kasım 2026  
 > **Ön koşul:** Aşama 3 genel kapanış raporu kullanıcı tarafından kabul edildi.
 
@@ -271,4 +271,4 @@ Bir alt çalışmada yeni ve onaylanmamış kapsam ihtiyacı ortaya çıkarsa uy
 
 Kullanıcı, 16 Kasım 2026 tarihinde Aşama 4 genel planını onaylamıştır. Bu belge, onaylanan genel planın ayrıntılı ve izlenebilir sürümüdür.
 
-**Mevcut aşama durumu:** Genel plan onaylandı. Sıradaki izinli iş Aşama 4 Teknik Mimari Planı'nın hazırlanmasıdır. Kod uygulaması henüz başlamamıştır.
+**Mevcut aşama durumu:** Genel plan ve teknik mimari plan kullanıcı tarafından onaylandı. Aşama 4.1–4.7.6 teknik uygulama ve otomatik doğrulama tamamlandı. Gerçek Pygame masaüstü kabulü kullanıcı kararıyla Aşama 4 genel kapanışına bırakıldı. Bu kabul yapılmadan Aşama 4 kapatılmış sayılmayacak ve sonraki aşamaya geçilmeyecektir.

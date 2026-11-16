@@ -5,7 +5,7 @@
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Tarih:** 16 Kasım 2026  
 > **Ön koşul:** Aşama 4.6 kullanıcı kabulüyle kapatıldı.  
-> **Durum:** GENEL PLAN KULLANICI ONAYI BEKLİYOR — teknik mimari plan henüz hazırlanmadı.
+> **Durum:** KULLANICI ONAYI ALINDI — 4.7.1–4.7.6 teknik uygulama ve otomatik doğrulama tamamlandı; masaüstü kabulü Aşama 4 genel kapanışına ertelendi.
 
 ## 1. Amaç
 
@@ -177,18 +177,18 @@ Alt aşamaların kesin dosya sınırları, API imzaları, hata davranışları v
 - Manuel kabul kontrol listesi.
 - `reports/PHASE-04.7-CLOSURE-REPORT.md`.
 
-## 10. Onay ve uygulama kapıları
+## 10. Onay ve uygulama kapılarının gerçekleşen durumu
 
 1. Kullanıcı hız çarpanlarını ve öncelik kuralını kabul etti.
-2. Bu genel plan kullanıcı tarafından ayrıca onaylanmalıdır.
-3. Genel plan onayından sonra dosya ve API düzeyinde teknik mimari plan hazırlanır.
-4. Teknik plan ayrıca kullanıcı onayına sunulur.
-5. Kod yalnızca onaylı kapsamda `experiment/hex-world-laboratory` dalında uygulanır.
-6. Hedefli testler, tam pytest, Lab CI ve Core Quality Linux/Windows doğrulamaları yürütülür.
-7. Gerçek masaüstü manuel kabul testleri tamamlanır.
-8. Kapanış raporu GitHub'a eklenir ve geri okunarak doğrulanır.
+2. Aşama 4.7 genel planı kullanıcı tarafından onaylandı.
+3. Dosya ve API düzeyindeki teknik mimari plan hazırlandı.
+4. Teknik plan kullanıcı tarafından onaylandı; uygulama yalnızca onaylı kapsamda yürütüldü.
+5. Kod ve test çalışmaları `experiment/hex-world-laboratory` dalında tamamlandı.
+6. Hedefli hareket davranışları tam laboratuvar paketi, Lab CI ve Core Quality Linux/Windows doğrulamalarıyla denetlendi.
+7. Gerçek masaüstü manuel kabul testleri, kullanıcının kararıyla Aşama 4 genel kapanışına ertelendi.
+8. Aşama 4.7 kapanış raporu ve Aşama 4.7.6 teknik kapanış raporu oluşturuldu.
 
-Genel planın veya hız değerlerinin kabulü, teknik planı ya da kod uygulamasını otomatik olarak onaylamaz.
+Genel plan veya hız değerlerinin kabulü tek başına teknik planı ya da kod uygulamasını onaylamıyordu; gerekli ayrı teknik plan onayı da alınmış ve uygulanmıştır.
 
 ## 11. Dal güvenliği
 

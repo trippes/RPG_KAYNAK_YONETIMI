@@ -3,7 +3,7 @@
 > **Belge türü:** Teknik mimari ve uygulama planı  
 > **Proje:** Eldoria — Hex World Laboratory  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
-> **Durum:** REVİZE EDİLMİŞ TEKNİK PLAN — KULLANICI ONAYI BEKLİYOR  
+> **Durum:** KULLANICI TARAFINDAN ONAYLANDI — Aşama 4.1–4.7.6 teknik çalışmaları tamamlandı; masaüstü kabulini bekliyor  
 > **Tarih:** 16 Kasım 2026 — Tick mimarisi uyum revizyonu  
 > **Ön koşul:** Aşama 4 Genel Planı kullanıcı tarafından onaylandı.
 
@@ -421,19 +421,17 @@ Bu kapsam dışı maddelerden biri teknik olarak zorunlu görünürse doğrudan 
 8. Gerekli ADR ve alt aşama raporları.
 9. Aşama 4 genel kapanış raporu.
 
-## 16. Onay kapısı ve mevcut durum
+## 16. Onay kapısı ve gerçekleşen durum
 
-Bu belge teknik uygulama planıdır; henüz uygulama izni değildir. Tick mimarisi revizyonu, ana projedeki mevcut canonical zaman sözleşmesini dikkate alır.
+Bu teknik mimari plan, kod uygulamasından önce kullanıcı tarafından 16 Kasım 2026 tarihinde onaylanmıştır. Plan kapsamındaki sürekli hareket çekirdeği, sabit tick entegrasyonu, klavye adaptörü, world/hex hücre takibi, Pygame kabul prototipi ve hareket modları Aşama 4.1–4.7.6 boyunca uygulanmış ve otomatik doğrulamalardan geçirilmiştir.
 
-Uygulama öncesi kullanıcıdan açık onay beklenen kararlar:
-- Mevcut `WorldPoint` tipinin sürekli fiziksel konum olarak kullanılması.
-- Dünya biriminin `HexLayout.radius` ile aynı ölçekte olması; hızın dünya birimi/saniye tanımlanması.
-- İlk sürümde ivmesiz, sabit hızlı hareket modeli.
-- Hareketin dışarıdan sağlanan canonical 60 TPS tick'inde bir kez çalışması; hareket çekirdeğinde bağımsız saat/accumulator bulunmaması.
-- Demo tick pump'ta kare başına en fazla 8 tick işlenmesi ve kalan tick borcunun korunması.
-- Harita dışı konumda hareketin engellenmemesi; hücre sonucunun `None` olması.
-- Bu belgede belirtilen dosya sınırları, alt aşama sırası ve test kabul ölçütleri.
+Teknik doğrulama kanıtları:
+- Laboratuvar test paketi: 505 başarılı.
+- Core Quality Linux ve Windows: 1.968'er başarılı.
+- Hareket, harita persistence ve runtime persistence benchmark adımları başarılı.
+- Hareket benchmark sonuçları Aşama 4.7.6 kapanış raporunda kayıtlıdır.
+- Mimari sınır testi, geometry/movement/simulation/world çekirdeğinin Pygame'e bağımlı olmadığını denetler.
 
-**Revizyon notu (16 Kasım 2026):** Önceki taslaktaki `simulation/fixed_step.py` üretim tick biriktiricisi kaldırılmıştır. Hareket sistemi artık tick üretmez; dışarıdan verilen canonical tick başına bir kez ilerler. Demo amaçlı gerçek-zaman tick pump yalnızca application/demo katmanında bulunabilir ve kalan tick borcunu atmaz. Ana projedeki `SimulationRuntime.advance_to()` ara tick callback'i vermediğinden doğrudan hareket callback'i olarak kullanılmayacaktır.
+Gerçek Pygame masaüstü kabulü kullanıcı kararıyla Aşama 4 genel kapanışına ertelenmiştir. Bu nedenle teknik planın uygulanmış olması Aşama 4'ün genel kabul edildiği veya kapandığı anlamına gelmez.
 
-**Durum:** REVİZE EDİLMİŞ TEKNİK MİMARİ PLAN SUNULDU — KULLANICI ONAYI BEKLENİYOR. Onay gelmeden kod, test, prototip veya mimari değişiklik uygulanmayacaktır.
+**Mevcut durum:** Teknik uygulama ve otomatik doğrulama tamamlandı. Sıradaki genel kapı, kullanıcının gerçek bilgisayarında `docs/MANUAL-MOVEMENT-DEMO-CHECKLIST.md` listesini çalıştırması ve Aşama 4 genel kapanışını kabul etmesidir.
