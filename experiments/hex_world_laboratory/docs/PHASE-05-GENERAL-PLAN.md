@@ -183,7 +183,7 @@ Otomatik doğrulama kanıtları:
 - Bütünleşik çarpışma benchmark'ı (GitHub Linux runner, 10 tick/batch): 1 aktör 198.492 µs/actor-tick; 10 aktör 190.8413 µs; 100 aktör 194.7613 µs; 1.000 aktör 196.2149 µs. Bu ölçüm render, input polling, NPC mantığı ve dünya simülasyonunu kapsamaz; kullanıcının bilgisayarında FPS garantisi değildir.
 - BLOCKED harita sınırı artık gerçek çarpışma engellerine dönüştürülür; OPEN davranışı ayrıca test edilir. Collision-aware movement sistemi farklı harita kimliklerini karıştırmayı reddeder.
 
-Bu noktadan sonra teknik kodlama, otomatik test, CI veya benchmark işi açık kalmamıştır. Aşama 5'in kapanması için yalnızca kullanıcının Windows bilgisayarında tam test komutunu çalıştırması ve aşağıdaki nihai masaüstü/görsel kabul listesini tamamlaması beklenir. Herhangi bir kusur bulunursa kapanıştan önce düzeltilir ve ilgili test tekrarlanır.
+Son denetimde Pygame kabul demosunun eski hareket sistemiyle çalıştığı görüldü. Demo artık CollisionAwareMovementSystem'e bağlandı; fiziksel engeller ve collider görselleştirmesi eklendi, bu entegrasyon için yeni regresyon testleri yazıldı. Önceki CI sonuçları bu son demo entegrasyonunu kapsamaz. Bu nedenle kullanıcının bilgisayarındaki tam pytest çalıştırması son demo değişikliğini de doğrulayacak; başarılı olursa yalnızca masaüstü/görsel kabul kalacaktır. Herhangi bir kusur bulunursa kapanıştan önce düzeltilir ve ilgili test tekrarlanır.
 
 ### Kullanıcının yapacağı son kontroller
 
@@ -194,7 +194,7 @@ Bu noktadan sonra teknik kodlama, otomatik test, CI veya benchmark işi açık k
 5. Duvar boyunca kaymayı ve dar geçitlerden geçişi kontrol etmek.
 6. Köşe ve birden fazla temas durumunda takılma/titreşim olmadığını kontrol etmek.
 7. Normal, koşma ve gizlilik hızlarında çarpışmayı kontrol etmek.
-8. Flat-top ve pointy-top haritalarda çarpışmayı kontrol etmek.
+8. Flat-top demo haritasında çarpışmayı kontrol etmek; pointy-top geometri doğrulaması tam pytest paketi içindeki otomatik testlerle yapılır.
 9. BLOCKED sınırda harita dışına çıkılamadığını, OPEN sınırda çıkışın mümkün olduğunu doğrulamak.
 10. Pencerenin normal açılıp kapanmasını doğrulamak.
 
