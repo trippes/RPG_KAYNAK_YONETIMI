@@ -126,3 +126,51 @@ def test_focus_gain_requires_alt_release_then_a_fresh_press():
     assert adapter.read_intent().mode is MovementMode.NORMAL
     keys.pressed.add(pygame.K_RALT)
     assert adapter.read_intent().mode is MovementMode.STEALTH
+
+
+def test_holding_alt_does_not_toggle_repeatedly():
+    keys = FakeKeys({pygame.K_LALT})
+    adapter = PygameKeyboardAdapter(lambda: keys)
+
+    assert adapter.read_intent().mode is MovementMode.STEALTH
+    for _ in range(5):
+        assert adapter.read_intent().mode is MovementMode.STEALTH
+
+
+def test_left_and_right_alt_overlap_produces_only_one_toggle():
+    keys = FakeKeys({pygame.K_LALT})
+    adapter = PygameKeyboardAdapter(lambda: keys)
+
+    assert adapter.read_intent().mode is MovementMode.STEALTH
+
+    keys.pressed.add(pygame.K_RALT)
+    assert adapter.read_intent().mode is MovementMode.STEALTH
+
+    keys.pressed.remove(pygame.K_LALT)
+    assert adapter.read_intent().mode is MovementMode.STEALTH
+
+    keys.pressed.remove(pygame.K_RALT)
+    assert adapter.read_intent().mode is MovementMode.STEALTH
+
+    keys.pressed.add(pygame.K_RALT)
+    assert adapter.read_intent().mode is MovementMode.NORMAL
+
+
+def test_alt_toggle_off_restores_running_only_while_shift_is_held():
+    keys = FakeKeys({pygame.K_LSHIFT})
+    adapter = PygameKeyboardAdapter(lambda: keys)
+
+    assert adapter.read_intent().mode is MovementMode.RUNNING
+
+    keys.pressed.add(pygame.K_LALT)
+    assert adapter.read_intent().mode is MovementMode.STEALTH
+
+    keys.pressed.remove(pygame.K_LALT)
+    assert adapter.read_intent().mode is MovementMode.STEALTH
+
+    keys.pressed.add(pygame.K_LALT)
+    assert adapter.read_intent().mode is MovementMode.RUNNING
+
+    keys.pressed.remove(pygame.K_LSHIFT)
+    assert adapter.read_intent().mode is MovementMode.NORMAL
+
