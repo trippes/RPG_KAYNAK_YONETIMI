@@ -3,7 +3,15 @@
 from .config import MovementConfig
 from .integrator import MovementIntegrator
 from .intent import MovementIntent
+from .mode import MovementMode
 from .state import MovementState
 from .vector import Vector2
 
-__all__ = ["MovementConfig", "MovementIntegrator", "MovementIntent", "MovementState", "Vector2"]
+__all__ = [
+    "MovementConfig",
+    "MovementIntegrator",
+    "MovementIntent",
+    "MovementMode",
+    "MovementState",
+    "Vector2",
+]
