@@ -4,7 +4,7 @@ import pygame
 import pytest
 
 from hex_world_lab.input import PygameKeyboardAdapter
-from hex_world_lab.movement import MovementIntent, Vector2
+from hex_world_lab.movement import MovementIntent, MovementMode, Vector2
 
 
 class FakeKeys:
@@ -110,3 +110,76 @@ def test_unknown_events_do_not_change_focus_state():
     adapter = PygameKeyboardAdapter(lambda: FakeKeys())
     adapter.handle_event(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_w))
     assert adapter.focused is True
+
+
+def test_alt_toggles_stealth_on_and_off_after_release():
+    keys = FakeKeys()
+    adapter = PygameKeyboardAdapter(lambda: keys)
+
+    assert adapter.read_intent().mode is MovementMode.NORMAL
+    keys.pressed = {pygame.K_LALT}
+    assert adapter.read_intent().mode is MovementMode.STEALTH
+    assert adapter.read_intent().mode is MovementMode.STEALTH
+    keys.pressed.clear()
+    assert adapter.read_intent().mode is MovementMode.STEALTH
+    keys.pressed = {pygame.K_LALT}
+    assert adapter.read_intent().mode is MovementMode.NORMAL
+
+
+def test_holding_alt_does_not_retrigger_toggle():
+    keys = FakeKeys({pygame.K_LALT})
+    adapter = PygameKeyboardAdapter(lambda: keys)
+
+    modes = [adapter.read_intent().mode for _ in range(8)]
+    assert modes == [MovementMode.STEALTH] * 8
+
+
+def test_left_and_right_alt_together_are_one_toggle_press():
+    keys = FakeKeys({pygame.K_LALT, pygame.K_RALT})
+    adapter = PygameKeyboardAdapter(lambda: keys)
+
+    assert adapter.read_intent().mode is MovementMode.STEALTH
+    assert adapter.read_intent().mode is MovementMode.STEALTH
+    keys.pressed = {pygame.K_RALT}
+    assert adapter.read_intent().mode is MovementMode.STEALTH
+    keys.pressed.clear()
+    adapter.read_intent()
+    keys.pressed = {pygame.K_LALT}
+    assert adapter.read_intent().mode is MovementMode.NORMAL
+
+
+def test_shift_is_hold_to_run_and_stealth_has_priority():
+    keys = FakeKeys()
+    adapter = PygameKeyboardAdapter(lambda: keys)
+
+    keys.pressed = {pygame.K_LSHIFT}
+    assert adapter.read_intent().mode is MovementMode.RUNNING
+    keys.pressed.clear()
+    assert adapter.read_intent().mode is MovementMode.NORMAL
+
+    keys.pressed = {pygame.K_LALT}
+    assert adapter.read_intent().mode is MovementMode.STEALTH
+    keys.pressed = {pygame.K_LALT, pygame.K_LSHIFT}
+    assert adapter.read_intent().mode is MovementMode.STEALTH
+
+    keys.pressed = {pygame.K_LSHIFT}
+    assert adapter.read_intent().mode is MovementMode.STEALTH
+    keys.pressed = {pygame.K_LSHIFT, pygame.K_LALT}
+    assert adapter.read_intent().mode is MovementMode.RUNNING
+
+
+def test_focus_loss_resets_stealth_and_requires_alt_release_after_regain():
+    keys = FakeKeys({pygame.K_LALT})
+    adapter = PygameKeyboardAdapter(lambda: keys)
+    assert adapter.read_intent().mode is MovementMode.STEALTH
+
+    adapter.handle_event(pygame.event.Event(pygame.WINDOWFOCUSLOST))
+    assert adapter.read_intent().mode is MovementMode.NORMAL
+    adapter.handle_event(pygame.event.Event(pygame.WINDOWFOCUSGAINED))
+
+    # Alt is still physically held: it must not be interpreted as a new press.
+    assert adapter.read_intent().mode is MovementMode.NORMAL
+    keys.pressed.clear()
+    assert adapter.read_intent().mode is MovementMode.NORMAL
+    keys.pressed = {pygame.K_LALT}
+    assert adapter.read_intent().mode is MovementMode.STEALTH
