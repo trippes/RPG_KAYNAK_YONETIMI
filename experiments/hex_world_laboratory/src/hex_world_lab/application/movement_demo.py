@@ -79,7 +79,7 @@ def build_demo_world() -> tuple[HexWorld, MapId]:
         origin=WorldPoint(0.0, 0.0),
     )
     blocked_cells = {
-        AxialCoord(2, r) for r in range(-3, 2)
+        AxialCoord(2, r) for r in range(0, 3)
     } | {AxialCoord(-2, 0)}
     cells = {
         AxialCoord(q, r): HexCellData(
