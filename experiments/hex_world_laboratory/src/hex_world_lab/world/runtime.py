@@ -148,13 +148,16 @@ class HexWorldRuntime:
             raise TypeError("map_id must be a MapId")
         if self._map_registry.get_registration(map_id) is None:
             raise UnknownMapError(f"map '{map_id.value}' is not registered")
+        map_items = (
+            (coord, override)
+            for (stored_map_id, coord), override in self._overrides.items()
+            if stored_map_id == map_id
+        )
         snapshot = {
             coord: override
-            for (stored_map_id, coord), override in sorted(
-                self._overrides.items(),
-                key=lambda item: (item[0][0].value, item[0][1].q, item[0][1].r),
+            for coord, override in sorted(
+                map_items, key=lambda item: (item[0].q, item[0].r)
             )
-            if stored_map_id == map_id
         }
         return MappingProxyType(snapshot)
 
