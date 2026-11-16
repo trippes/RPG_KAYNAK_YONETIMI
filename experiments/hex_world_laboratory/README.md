@@ -18,6 +18,10 @@ Eldoria'nın canon altıgen dünya mimarisini ana oyundan bağımsız araştırm
 - [Test ve Kabul Ölçütleri](docs/TESTING_AND_ACCEPTANCE_CRITERIA.md)
 - [Hex Koordinat Sözleşmesi](docs/HEX_COORDINATE_CONVENTION.md)
 - [Aşama 3 Teknik Planı](docs/PHASE-03-TECHNICAL-PLAN.md)
+- [Aşama 4 Genel Planı](docs/PHASE-04-GENERAL-PLAN.md)
+- [Aşama 4 Teknik Planı](docs/PHASE-04-TECHNICAL-PLAN.md)
+- [Aşama 5 Genel Planı](docs/PHASE-05-GENERAL-PLAN.md)
+- [Aşama 5 Teknik Planı](docs/PHASE-05-TECHNICAL-PLAN.md)
 - [Aşama 3.6 Teknik Planı](docs/PHASE-03.6-TECHNICAL-PLAN.md)
 - [Aşama 3.7 Runtime Persistence Teknik Planı](reports/PHASE-03.7-TECHNICAL-PLAN.md)
 - [Harita JSON Şema v1](docs/MAP_JSON_SCHEMA_V1.md)
@@ -31,6 +35,7 @@ Eldoria'nın canon altıgen dünya mimarisini ana oyundan bağımsız araştırm
 - [Aşama 3.6 — Harita JSON Persistence](reports/PHASE-03.6-REPORT.md)
 - [Aşama 3.7 — Runtime Persistence](reports/PHASE-03.7-REPORT.md)
 - [Aşama 3 — Genel Dünya Modeli Kapanış Raporu](reports/PHASE-03-WORLD-REPORT.md)
+- [Aşama 4 — Sürekli Hareket Kapanış Raporu](reports/PHASE-04-CLOSURE-REPORT.md)
 
 ## Kurulum (Windows PowerShell)
 
@@ -60,7 +65,7 @@ python -m hex_world_lab
 python -m pytest -q
 ```
 
-Son yerel Windows tam test doğrulaması: **288 passed in 2.01s**.
+Aşama 5'in son GitHub laboratuvar CI doğrulaması **584 passed** sonucunu verdi. Kullanıcının Windows bilgisayarındaki son tam test çalıştırması henüz bekleniyor.
 
 Özel GitHub Actions laboratuvar iş akışı tam test paketini ve harita/runtime persistence benchmark'larını başarıyla çalıştırdı. Ana `Core quality` iş akışının Linux ve Windows job'ları da laboratuvar paketi kurulum düzeltmesinden sonra başarılı oldu. Run bağlantıları genel kapanış raporunda kayıtlıdır.
 
@@ -82,13 +87,19 @@ Varsayılan `create` modu mevcut dosyayı ezmez. Değiştirme için açıkça `m
 
 ## Mevcut durum
 
-**Aşama 0–2:** Tamamlandı ve teknik olarak kabul edildi.
+**Aşama 0–4:** Tamamlandı ve teknik olarak kabul edildi.
+
+**Aşama 5:** 5.1–5.7 kodlaması, teknik inceleme, otomatik testler, Linux/Windows CI ve benchmark tamamlandı. Kullanıcının bilgisayarında tam test ve nihai görsel kabul bekleniyor; aşama henüz kapatılmadı.
 
 **Aşama 3.1–3.6:** Dünya kimlikleri, hücre/harita modeli, çoklu harita kaydı, View/Runtime ayrımı ve harita JSON persistence uygulandı.
 
 **Aşama 3.7:** Runtime persistence uygulandı; sparse override kayıtları, SHA-256 temel harita uyumluluk kontrolü, atomik geri yükleme ve benchmark'lar eklendi.
 
-**Aşama 3 genel teknik kapanışı:** Bütünleşik denetim ve raporlama tamamlandı. Son test paketi 288 testten oluşuyor. Kullanıcı nihai kabulü bekleniyor; Aşama 4 başlamadı.
+**Aşama 3 genel teknik kapanışı:** Bütünleşik denetim ve raporlama tamamlandı.
+
+**Aşama 4:** Sürekli hareket sistemi kullanıcı tarafından kabul edilerek kapatıldı.
+
+**Aşama 5:** Gövde modeli, hex çarpışma geometrisi, broadphase/narrowphase, çözümleyici, CCD ve 60 TPS bütünleşik hareket sistemi tamamlandı. Son otomatik doğrulamalar: laboratuvar 584 test; Core Quality Linux ve Windows 2.047'şer test. Yalnızca kullanıcı bilgisayarındaki tam test ve nihai masaüstü kabulü bekleniyor.
 
 ### Mimari sınırlar
 
