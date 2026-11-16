@@ -64,7 +64,7 @@ def test_collision_aware_system_stops_at_wall_and_removes_inward_velocity():
 
 
 def test_collision_aware_system_slides_along_wall():
-    system = make_system(obstacles=(wall(),))
+    system = make_system(obstacles=(wall(half_height=100.0),))
     for tick in range(60):
         system.step(tick, MovementIntent(Vector2(1.0, 1.0)))
     assert system.state.position.x <= 1.500001
