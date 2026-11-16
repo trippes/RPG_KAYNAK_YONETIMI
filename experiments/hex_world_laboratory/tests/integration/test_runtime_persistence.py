@@ -98,3 +98,19 @@ def test_runtime_snapshots_are_isolated_between_maps(tmp_path):
     restore_runtime_file(fresh.runtime, first_definition, path)
     assert fresh.view.require_cell(first_address).terrain_id == "mud"
     assert fresh.view.require_cell(second_address).terrain_id == "grass"
+
+
+def test_checked_in_starting_valley_runtime_sample_matches_base_map():
+    from pathlib import Path
+
+    from hex_world_lab.world.persistence import load_map_file, load_runtime_file
+
+    lab_root = Path(__file__).resolve().parents[2]
+    base_map = load_map_file(lab_root / "scenarios" / "maps" / "starting_valley.json")
+    snapshot = load_runtime_file(
+        lab_root / "scenarios" / "runtime" / "starting_valley.runtime.json",
+        base_map,
+    )
+    assert snapshot.world_id == base_map.world_id
+    assert snapshot.map_id == base_map.map_id
+    assert snapshot.overrides[AxialCoord(0, 0)].terrain_id == "burned_grass"
