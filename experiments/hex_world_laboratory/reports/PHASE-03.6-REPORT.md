@@ -34,10 +34,10 @@ Mevcut geometry, world, map registry, runtime ve view modüllerinde değişiklik
 
 GitHub Actions — Hex World Laboratory CI:
 
-- Run: [43839500786](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43839500786)
+- Run: [43839646819](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43839500786)
 - Sonuç: **success**
 - Python: 3.12.16
-- Tam test paketi: **249 passed in 0.60s**
+- Tam test paketi: **249 passed in 0.45s**
 - Benchmark adımı: başarılı
 
 İlk test çalıştırmasında serializer'ın yanlış model türünü beklenmeyen hata sınıfına çevirdiği bir API testi yakalandı. Hata düzeltildi ve güncel tam test paketi başarılı oldu.
@@ -48,9 +48,9 @@ GitHub Actions — Hex World Laboratory CI:
 
 | Hücre | JSON boyutu | JSON serileştirme | Deserialization | Dosya kaydetme | Dosya yükleme | Tepe izlenen bellek |
 |---:|---:|---:|---:|---:|---:|---:|
-| 100 | 20,958 B | 7.184 ms | 4.068 ms | 8.164 ms | 5.537 ms | 321.4 KiB |
-| 1,000 | 207,170 B | 66.426 ms | 40.586 ms | 69.641 ms | 60.360 ms | 2,984.1 KiB |
-| 10,000 | 2,078,272 B | 740.426 ms | 444.439 ms | 735.998 ms | 583.634 ms | 29,016.9 KiB |
+| 100 | 20,958 B | 4.835 ms | 3.086 ms | 6.002 ms | 4.176 ms | 321.4 KiB |
+| 1,000 | 207,170 B | 50.335 ms | 30.305 ms | 47.571 ms | 40.862 ms | 2,984.1 KiB |
+| 10,000 | 2,078,272 B | 518.352 ms | 350.910 ms | 517.840 ms | 437.795 ms | 29,016.9 KiB |
 
 Tepe bellek ölçümü, benchmark sırasında Python `tracemalloc` tarafından izlenen tahsisleri kapsar; işletim sistemi toplam süreç belleği değildir. Ölçümler, 10.000 hücreli başlangıç haritasının yaklaşık 2.08 MB JSON dosyası olarak işlenebildiğini gösteriyor. Bu aşamada önbellek, otomatik harita yükleme/tahliye veya runtime simülasyonu eklenmedi.
 
