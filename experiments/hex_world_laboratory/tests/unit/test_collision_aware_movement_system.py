@@ -10,7 +10,7 @@ from hex_world_lab.movement import (
     MovementState,
     Vector2,
 )
-from hex_world_lab.physics import BodyDefinition, CircleShape, ObstacleDefinition
+from hex_world_lab.physics import (BodyDefinition, CircleShape, ConvexPolygonShape, ObstacleDefinition)
 from hex_world_lab.simulation import CollisionAwareMovementSystem
 from hex_world_lab.simulation.movement_system import TICK_DELTA_SECONDS
 from hex_world_lab.world.identity import MapId
@@ -23,9 +23,7 @@ def wall(*, x=2.0, half_width=0.25, half_height=3.0, obstacle_id="wall"):
     return ObstacleDefinition(
         obstacle_id,
         MAP,
-        CircleShape(0.0) if False else __import__(
-            "hex_world_lab.physics", fromlist=["ConvexPolygonShape"]
-        ).ConvexPolygonShape((
+        ConvexPolygonShape((
             Vector2(-half_width, -half_height),
             Vector2(half_width, -half_height),
             Vector2(half_width, half_height),
@@ -35,7 +33,7 @@ def wall(*, x=2.0, half_width=0.25, half_height=3.0, obstacle_id="wall"):
     )
 
 
-def make_system(*, mode=MovementMode.NORMAL, obstacles=(), body_offset=Vector2(0, 0)):
+def make_system(*, obstacles=(), body_offset=Vector2(0, 0)):
     return CollisionAwareMovementSystem(
         MovementState(WorldPoint(0.0, 0.0)),
         MovementConfig(max_speed=60.0),
