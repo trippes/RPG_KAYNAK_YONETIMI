@@ -180,7 +180,7 @@ class HexWorldRuntime:
             base = definition.get_cell_data(coord)
             if base is None:
                 raise UnknownCellError(
-                    f"cell ({coord.q}, {coord.r}) does not exist in map '{map_id.value}'"
+                    definition.world_id, definition.map_id, coord
                 )
             if override.is_empty:
                 continue
