@@ -5,8 +5,8 @@
 > **Depo:** `trippes/RPG_KAYNAK_YONETIMI`  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Hedef entegrasyon dalı:** `demo_eldoria`  
-> **Durum:** LABORATUVAR UYGULAMASI DEVAM EDİYOR — AŞAMA 3 TEKNİK KAPANIŞI HAZIR, KULLANICI KABULÜ BEKLİYOR  
-> **Belge sürümü:** 1.1
+> **Durum:** AŞAMA 0–5 TAMAMLANDI VE KABUL EDİLDİ — AŞAMA 6 SIRADAKİ İZİNLİ TEKNİK AŞAMA  
+> **Belge sürümü:** 1.2
 
 ---
 
@@ -264,7 +264,7 @@ Kabul koşulları:
 - Dünya verisi ile ekran çizimi birbirinden bağımsız.
 - Runtime güncellemesi geometri kurallarını bozmuyor.
 
-**Aşama 3 güncel uygulama kaydı (16 Kasım 2026):** Aşama 3.1–3.6 kapsamı ve sonradan ayrıca onaylanan runtime persistence çalışması tamamlandı. Bütünleşik teknik denetim ve kapanış kanıtları `reports/PHASE-03-WORLD-REPORT.md` içinde toplandı. Laboratuvarın 288 testlik tam paketi ve iki persistence benchmark'ı başarılı CI koşusunda doğrulandı. Ana deponun `Core quality` iş akışındaki paket kurulum eksikliği, laboratuvar paketini Linux ve Windows işlerine kuracak şekilde düzeltildi. Düzeltme sonrası her iki job da başarılı oldu ([Core quality run 43844555225](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43844555225)); laboratuvarın 288 test ve benchmark koşusu da başarılıdır ([Hex World Laboratory CI run 43844555405](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43844555405)). Ayrıntılar genel kapanış raporundadır. **Aşama 4 henüz başlatılmamıştır; Aşama 3 kullanıcı tarafından nihai olarak kabul edilene kadar bloke kalır.**
+**Aşama 3 uygulama ve kabul kaydı:** Dünya veri modeli, runtime ve persistence kapsamı tamamlandı ve kabul edildi. Bütünleşik kanıtlar laboratuvar raporları dizinindeki `PHASE-03-WORLD-REPORT.md` dosyasındadır. Aşama 3 kapanışından sonra Aşama 4 (sürekli hareket) ve Aşama 5 (gövde, çarpışma ve fizik) ayrı onaylı planları doğrultusunda tamamlanmış ve kabul edilmiştir. Güncel genel durum Bölüm 14'te tutulur.
 
 ### Aşama 4 — Sürekli hareket sistemi
 
@@ -740,19 +740,29 @@ Bu liste tamamlanmadan laboratuvarın ana oyuna aktarılmaya hazır olduğu söy
 
 ## 14. Şu anki durum ve bir sonraki izinli adım
 
-### Mevcut durum
+### Mevcut durum — 17 Kasım 2026
 
-- Laboratuvar dalı: `experiment/hex-world-laboratory`.
-- Başlangıç dosya/dizin iskeleti mevcut.
-- Bağımsız çalışma altyapısı henüz kurulmadı.
-- Geometri, hareket, fizik, kamera veya render uygulaması henüz başlamadı.
-- Bu Master Plan, planlama aşamasının ana belgesi olarak oluşturulmaktadır.
+| Aşama | Kapsam | Durum |
+|---|---|---|
+| 0 | Plan, sözleşme ve laboratuvar yönetişimi | Tamamlandı |
+| 1 | Bağımsız çalışma ve test altyapısı | Tamamlandı |
+| 2 | Hex geometri çekirdeği | Tamamlandı |
+| 3 | Hex dünya veri modeli ve runtime | Tamamlandı |
+| 4 | Sürekli hareket sistemi | Tamamlandı |
+| 5 | Gövde modeli, çarpışma ve fizik | Tamamlandı; kullanıcı kabulü alındı |
+| 6 | Kamera ve dünya-ekran dönüşümü | **Sıradaki izinli teknik aşama** |
+| 7–13 | Render, spatial, entities, interaction, simulation, robustness ve entegrasyon hazırlığı | Başlatılmadı |
 
-### Bir sonraki adım
+- Çalışma dalı: `experiment/hex-world-laboratory`.
+- Aşama 5'in son kullanıcı bildirimiyle yerel test sonucu 588/588 başarılıdır; masaüstü kabul kontrol listesi de başarılı tamamlanmıştır.
+- Son entegrasyon HEAD'i için Linux/Windows CI kanıtı bu doküman güncellemesi sırasında henüz mevcut değildir. Yeni dokümantasyon commit'i push tetiklemeli CI'yi çalıştıracaktır; sonuçlar ilgili kapanış/kanıt kaydına işlenecektir.
+- Aşama 5 kapanış raporunun standart konumu `experiments/hex_world_laboratory/reports/PHASE-05-CLOSURE-REPORT.md` olacaktır.
 
-Bu Master Plan'ın kullanıcı tarafından incelenip onaylanması. Onaydan sonra Aşama 0 kapsamındaki destekleyici belgeler, ayrı ayrı planlanıp onaylanarak hazırlanır. Ardından Aşama 1 için ayrıntılı uygulama planı çıkarılır.
+### Bir sonraki izinli adım
 
-**Bu belgenin varlığı, sonraki aşamalara otomatik uygulama izni vermez. Her aşama ve kapsam değişikliği ayrıca onaylanır.**
+Aşama 6 — Kamera ve dünya-ekran dönüşümü. Bu işin kodlamasına başlamadan önce Aşama 6 teknik planı, dosya kapsamı, API sözleşmeleri ve test/kabul ölçütleri hazırlanır. Bu izin Aşama 6 kapsamıyla sınırlıdır; sonraki aşamalara otomatik izin vermez.
+
+**Her aşama ve kapsam değişikliği ayrıca onaylanır. Korunan `main` ve `demo_eldoria` dallarına bu laboratuvar çalışması kapsamında yazılmaz.**
 
 ---
 
@@ -761,3 +771,5 @@ Bu Master Plan'ın kullanıcı tarafından incelenip onaylanması. Onaydan sonra
 | Sürüm | Durum | Açıklama |
 |---|---|---|
 | 1.0 | İlk taslak | Hex World Laboratory için kapsamlı aşamalı yol haritası ve çalışma sözleşmesi |
+| 1.1 | Önceki sürüm | Aşamalı laboratuvar planı |
+| 1.2 | Güncellendi — 17 Kasım 2026 | Aşama 0–5 kapanış durumu, Aşama 6 izinli sıradaki aşama ve CI kanıt durumu güncellendi |
