@@ -27,7 +27,7 @@ def wall(x=2.0, y=0.0, half_width=0.25, half_height=3.0, obstacle_id="wall"):
 
 def test_circle_stops_before_wall_without_entering_it():
     result = resolve_kinematic_motion(
-        CircleShape(0.5), Vector2(3.0, 0.0), (wall(),)
+        CircleShape(0.5, Vector2(0.8, 0.0)), Vector2(0.5, 0.0), (wall(),)
     )
     assert result.final_shape.center.x == pytest.approx(1.25, abs=1e-6)
     assert result.final_shape.center.y == pytest.approx(0.0)
@@ -38,7 +38,7 @@ def test_circle_stops_before_wall_without_entering_it():
 
 def test_circle_slides_along_wall_and_preserves_tangent_motion():
     result = resolve_kinematic_motion(
-        CircleShape(0.5), Vector2(3.0, 1.5), (wall(),)
+        CircleShape(0.5, Vector2(0.8, 0.0)), Vector2(0.5, 1.5), (wall(),)
     )
     assert result.final_shape.center.x == pytest.approx(1.25, abs=1e-6)
     assert result.final_shape.center.y == pytest.approx(1.5, abs=1e-6)
@@ -67,7 +67,7 @@ def test_two_walls_resolve_corner_without_inward_motion():
         obstacle_id="horizontal",
     )
     result = resolve_kinematic_motion(
-        CircleShape(0.5), Vector2(3.0, 3.0), (horizontal, vertical)
+        CircleShape(0.5), Vector2(1.5, 1.5), (horizontal, vertical)
     )
     assert result.final_shape.center.x <= 1.250001
     assert result.final_shape.center.y <= 1.250001
@@ -91,7 +91,7 @@ def test_polygon_actor_can_be_resolved_against_polygon_obstacle():
         Vector2(0.5, 0.5), Vector2(-0.5, 0.5),
     ))
     result = resolve_kinematic_motion(
-        actor, Vector2(3.0, 0.0), (wall(),)
+        actor, Vector2(1.5, 0.0), (wall(),)
     )
     xs = tuple(point.x for point in result.final_shape.vertices)
     assert max(xs) <= 1.750001
