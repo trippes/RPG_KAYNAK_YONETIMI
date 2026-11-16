@@ -18,7 +18,7 @@ Eldoria'nın canon altıgen dünya mimarisini bağımsız araştırmak ve doğru
 - ADR Şablonu: docs/decisions/ADR-TEMPLATE.md
 - Aşama 0 Raporu: reports/PHASE-00-FOUNDATION-CLOSURE.md
 - Aşama 1 Raporu: reports/PHASE-01-INFRASTRUCTURE-REPORT.md
-- Aşama 2 Raporu: reports/PHASE-02-GEOMETRY-REPORT.md
+- Aşama 2 Raporu: reports/PHASE-02-GEOMETRY-REPORT.md\n- Aşama 3.6 Teknik Planı: docs/PHASE-03.6-TECHNICAL-PLAN.md\n- Harita JSON Şema v1: docs/MAP_JSON_SCHEMA_V1.md
 
 ## Kurulum (Windows PowerShell)
 Laboratuvar dizinine geç:
@@ -43,9 +43,25 @@ python -m pytest -q
 ```
 Geometri çekirdeği saf Python'dur ve Pygame yüklemeden import edilebilir.
 
+## Harita JSON persistence
+
+Aşama 3.6 kapsamında harita başlangıç tanımları JSON şema v1 ile kaydedilip yüklenebilir. API ve alan sözleşmesi için [MAP_JSON_SCHEMA_V1.md](docs/MAP_JSON_SCHEMA_V1.md) belgesine bakın.
+
+```python
+from pathlib import Path
+from hex_world_lab.world.persistence import load_map_file, save_map_file
+
+map_definition = load_map_file(Path("scenarios/maps/starting_valley.json"))
+save_map_file(map_definition, Path("my_map.json"), mode="create")
+```
+
+Varsayılan `create` modu mevcut dosyanın üzerine yazmaz. Değiştirme için açıkça `mode="replace"` verilmelidir. Runtime override'ları bu dosyaya dahil değildir; ayrı Aşama 3.7 kapsamındadır.
+
 ## Mevcut durum
-**Aşama 2 — TAMAMLANDI VE TEKNİK OLARAK KABUL EDİLDİ.** Son kod revizyonu Windows / Python 3.12.10 ortamında kullanıcı tarafından `python -m pytest -q` komutuyla doğrulandı: **53 passed**.
+**Aşama 2 — TAMAMLANDI VE TEKNİK OLARAK KABUL EDİLDİ.** Geometri çekirdeğinin önceki doğrulaması 53 testti.
+
+**Aşama 3.1–3.5 — UYGULANDI. Aşama 3.6 — UYGULAMA VE TEST DOĞRULAMASI SÜRÜYOR.** Bu aşamanın henüz kapanış kabulü verilmemiştir.
 
 ADR-003 sınır davranışı: eşit mesafede karakterin önceki hücresi korunur; sınır geçilip diğer hücre daha yakın hâle geldiğinde yeni hücre seçilir. Önceki hücre bilgisi verilmezse deterministik cube-rounding yedek kuralı kullanılır.
 
-Nihai oyun yönelimi henüz seçilmedi. Dünya hücre modeli, hareket, fizik, kamera ve render sonraki aşamalardadır. Aşama 3 için ayrıca plan ve kullanıcı onayı gerekir.
+Aşama 3.6 yalnızca immutable harita başlangıç verisini kapsar. Runtime persistence, hareket, fizik, kamera, render ve ana oyuna entegrasyon bu aşamanın dışındadır.
