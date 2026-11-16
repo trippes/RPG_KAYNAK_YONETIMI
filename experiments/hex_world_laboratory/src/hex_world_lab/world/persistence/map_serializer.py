@@ -55,6 +55,8 @@ def map_to_payload(map_definition: HexMapDefinition) -> dict[str, Any]:
 
 def serialize_map(map_definition: HexMapDefinition) -> str:
     """Serialize a map to stable, UTF-8-compatible JSON text with a final newline."""
+    if not isinstance(map_definition, HexMapDefinition):
+        raise TypeError("map_definition must be a HexMapDefinition")
     try:
         return json.dumps(
             map_to_payload(map_definition),
