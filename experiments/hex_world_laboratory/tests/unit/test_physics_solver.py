@@ -80,7 +80,7 @@ def test_solver_result_is_independent_of_obstacle_input_order():
         CircleShape(0.5), Vector2(1.5, 0.25), obstacles
     )
     second = resolve_kinematic_motion(
-        CircleShape(0.5), Vector2(3.0, 0.25), tuple(reversed(obstacles))
+        CircleShape(0.5), Vector2(1.5, 0.25), tuple(reversed(obstacles))
     )
     assert first == second
 
