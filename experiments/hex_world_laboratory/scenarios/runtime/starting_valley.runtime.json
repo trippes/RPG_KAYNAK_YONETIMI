@@ -3,7 +3,7 @@
   "kind": "hex_world_runtime_snapshot",
   "world_id": "eldoria",
   "map_id": "starting_valley",
-  "base_map_sha256": "3af0aaffcb61275b28cb3d73a5619417caab66418d90df82f9b2ae645bd89a83",
+  "base_map_sha256": "c7302d7ea2c998d2653628b8d4e0e42fefdb033c9e38ffad8a4bde7d365a67a8",
   "overrides": [
     {
       "q": 0,
