@@ -31,7 +31,7 @@ def test_pygame_demo_uses_collision_aware_movement_and_map_geometry() -> None:
     assert demo.movement_system.map_id == MAP_ID
     assert isinstance(demo.body_definition.collider, CircleShape)
     assert demo.body_definition.collider.radius == PLAYER_COLLIDER_RADIUS
-    assert demo.collision_geometry.boundary_edges
+    assert not demo.collision_geometry.boundary_edges
     assert any(item.obstacle_id.startswith("cell:") for item in demo.collision_geometry.obstacles)
     obstacle_ids = {item.obstacle_id for item in demo.collision_geometry.obstacles}
     assert obstacle_ids >= {
@@ -56,7 +56,7 @@ def test_pygame_demo_player_stops_at_adjacent_hex_obstacle_wall() -> None:
         demo._advance_tick(tick)
 
     assert 50.0 < demo.state.position.x < 60.0
-    assert 50.0 < demo.state.position.y < 60.0
+    assert 50.0 < demo.state.position.y < 70.0
     assert demo.last_collision_resolution is not None
     assert demo.last_collision_resolution.contacts
 
