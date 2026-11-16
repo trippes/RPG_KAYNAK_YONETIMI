@@ -45,10 +45,10 @@ def test_bounds_cover_all_vertices_of_irregular_cell_collection():
     coords = [AxialCoord(-3, 1), AxialCoord(0, 0), AxialCoord(2, -2)]
     bounds = bounds_from_hex_cells(coords, layout)
     assert bounds is not None
-    assert bounds.min_x < -20.0
-    assert bounds.max_x > 20.0
-    assert bounds.min_y < -5.0
-    assert bounds.max_y > 5.0
+    assert bounds.min_x == pytest.approx(-27.5)
+    assert bounds.max_x == pytest.approx(20.0)
+    assert bounds.min_y == pytest.approx(-12.9903810568)
+    assert bounds.max_y == pytest.approx(4.3301270189)
 
 
 def test_empty_hex_collection_has_no_bounds():
