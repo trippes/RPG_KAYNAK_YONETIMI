@@ -104,3 +104,15 @@ def test_system_has_no_clock_or_accumulator_responsibility():
     system = make_system()
     assert not hasattr(system, "clock")
     assert not hasattr(system, "accumulator")
+
+
+def test_failed_integration_does_not_commit_state_or_tick():
+    initial = MovementState(WorldPoint(1.79e308, 0.0))
+    system = MovementSystem(
+        initial,
+        MovementConfig(max_speed=1.7976931348623157e308),
+    )
+    with pytest.raises(ValueError):
+        system.step(0, MovementIntent(Vector2(1.0, 0.0)))
+    assert system.state is initial
+    assert system.next_tick_number == 0

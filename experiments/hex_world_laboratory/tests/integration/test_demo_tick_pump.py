@@ -117,9 +117,10 @@ def test_callback_failure_does_not_consume_failed_tick_or_time_debt():
     # Remove the failure and retry the still-pending tick.
     pump._callback = lambda tick: seen.append(tick)
     diagnostics = pump.pump()
-    assert diagnostics.total_ticks == 8
-    assert diagnostics.next_tick_number == 8
-    assert seen[-1] == 7
+    assert diagnostics.total_ticks == 6
+    assert diagnostics.next_tick_number == 6
+    assert diagnostics.pending_full_ticks == 0
+    assert seen[-1] == 5
 
 
 def test_pump_rejects_clock_moving_backwards_without_corrupting_state():
