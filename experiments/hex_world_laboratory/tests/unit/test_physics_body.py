@@ -67,7 +67,7 @@ def test_ground_anchor_and_local_offset_define_circle_center_contract():
     body = BodyDefinition("player", CircleShape(0.4), Vector2(0.5, 0.0))
     transform = ActorBodyTransform(WorldPoint(10.0, 20.0))
     world_shape = transform.transform_shape(body)
-    assert world_shape == CircleShape(0.4)
+    assert world_shape == CircleShape(0.4, Vector2(10.5, 20.0))
     assert transform.ground_anchor == WorldPoint(10.0, 20.0)
 
 
