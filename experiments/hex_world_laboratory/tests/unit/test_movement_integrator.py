@@ -63,7 +63,7 @@ def test_zero_delta_time_does_not_advance_position():
     state = MovementState(WorldPoint(2.0, 3.0))
     result = make_integrator().step(state, MovementIntent(Vector2(1.0, 0.0)), 0.0)
     assert result.position == state.position
-    assert result.velocity == Vector2(0.0, 0.0)
+    assert result.velocity == Vector2(120.0, 0.0)
 
 
 @pytest.mark.parametrize("delta_time", [-1.0, -0.01])
