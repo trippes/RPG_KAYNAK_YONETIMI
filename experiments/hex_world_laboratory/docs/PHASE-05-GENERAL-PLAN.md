@@ -192,11 +192,11 @@ Son denetimde Pygame kabul demosunun eski hareket sistemiyle çalıştığı gö
 3. Tek hücre ve bitişik engellerde oyuncunun engelin içinden geçmediğini doğrulamak.
 4. Daire oyuncu collider'ı ile ağaç/kaya/duvar temsili engellerin temasını kontrol etmek.
 5. Başlangıç evi iskeletinin duvarlarına çarpışmayı, kapı boşluğundan geçişi ve evin çevresinden dolaşmayı kontrol etmek.
-5. Duvar boyunca kaymayı ve dar geçitlerden geçişi kontrol etmek.
-6. Köşe ve birden fazla temas durumunda takılma/titreşim olmadığını kontrol etmek.
-7. Normal, koşma ve gizlilik hızlarında çarpışmayı kontrol etmek.
-8. Flat-top demo haritasında çarpışmayı kontrol etmek; pointy-top geometri doğrulaması tam pytest paketi içindeki otomatik testlerle yapılır.
-9. BLOCKED sınırda harita dışına çıkılamadığını, OPEN sınırda çıkışın mümkün olduğunu doğrulamak.
-10. Pencerenin normal açılıp kapanmasını doğrulamak.
+6. Duvar boyunca kaymayı ve dar geçitlerden geçişi kontrol etmek.
+7. Köşe ve birden fazla temas durumunda takılma/titreşim olmadığını kontrol etmek.
+8. Normal, koşma ve gizlilik hızlarında çarpışmayı kontrol etmek.
+9. Flat-top demo haritasında çarpışmayı kontrol etmek; pointy-top geometri doğrulaması tam pytest paketi içindeki otomatik testlerle yapılır.
+10. BLOCKED sınırda harita dışına çıkılamadığını, OPEN sınırda çıkışın mümkün olduğunu doğrulamak.
+11. Pencerenin normal açılıp kapanmasını doğrulamak.
 
 Bu liste tamamlanıp kullanıcı sonucu onayladıktan sonra `reports/PHASE-05-CLOSURE-REPORT.md` gerçek yerel sonuçlarla hazırlanacak ve Aşama 5 kapatılacaktır.
