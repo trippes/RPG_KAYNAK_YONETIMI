@@ -32,7 +32,8 @@ class LabApplication:
         pygame.init()
         try:
             screen = pygame.display.set_mode(
-                (self.config.window_width, self.config.window_height)
+                (self.config.window_width, self.config.window_height),
+                pygame.RESIZABLE,
             )
             pygame.display.set_caption(self.config.window_title)
             clock = pygame.time.Clock()
@@ -43,6 +44,8 @@ class LabApplication:
             frame_count = 0
             while self._running:
                 for event in pygame.event.get():
+                    if event.type == pygame.VIDEORESIZE:
+                        screen = pygame.display.set_mode(event.size, pygame.RESIZABLE)
                     self._demo.handle_event(event)
                     if event.type == pygame.QUIT:
                         self._running = False
@@ -50,6 +53,7 @@ class LabApplication:
                 if not self._running:
                     break
 
+                self._demo.update_camera(clock.get_time() / 1000.0)
                 self._demo.pump()
                 render_fps = clock.get_fps()
                 self._demo.render(screen, render_fps)
