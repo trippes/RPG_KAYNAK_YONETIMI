@@ -8,6 +8,7 @@ Results are observational and deliberately impose no machine-specific threshold.
 from __future__ import annotations
 
 import json
+import math
 import platform
 import statistics
 import sys
@@ -42,8 +43,11 @@ def build_obstacle(actor_count: int) -> ObstacleDefinition:
 
 
 def percentile_95(values: list[float]) -> float:
+    """Return the nearest-rank 95th percentile (ceil(0.95 * n))."""
+    if not values:
+        raise ValueError("values must not be empty")
     ordered = sorted(values)
-    return ordered[max(0, min(len(ordered) - 1, int(0.95 * len(ordered)) - 1))]
+    return ordered[max(0, min(len(ordered) - 1, math.ceil(0.95 * len(ordered)) - 1))]
 
 
 def measure(actor_count: int) -> dict[str, float | int]:

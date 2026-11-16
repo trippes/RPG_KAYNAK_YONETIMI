@@ -20,6 +20,9 @@ from .obstacle import ObstacleDefinition
 from .shapes import ConvexPolygonShape
 
 
+_BOUNDARY_WALL_THICKNESS = 1e-4
+
+
 class BoundaryPolicy(Enum):
     """Whether the perimeter of a finite map blocks movement."""
 
@@ -49,6 +52,32 @@ class HexBoundaryEdge:
         if self.start == self.end:
             raise ValueError("boundary edge endpoints must differ")
 
+    def as_obstacle(self) -> ObstacleDefinition:
+        """Represent this perimeter edge as a thin, two-sided convex wall.
+
+        The wall is centered on the exact hex edge. Its thickness is only a
+        numerical collision tolerance; the swept circle still determines the
+        effective clearance from the map perimeter.
+        """
+        dx = self.end.x - self.start.x
+        dy = self.end.y - self.start.y
+        length = (dx * dx + dy * dy) ** 0.5
+        half = _BOUNDARY_WALL_THICKNESS / 2.0
+        nx = -dy / length * half
+        ny = dx / length * half
+        vertices = (
+            Vector2(self.start.x + nx, self.start.y + ny),
+            Vector2(self.end.x + nx, self.end.y + ny),
+            Vector2(self.end.x - nx, self.end.y - ny),
+            Vector2(self.start.x - nx, self.start.y - ny),
+        )
+        return ObstacleDefinition(
+            obstacle_id=self.edge_id,
+            map_id=self.map_id,
+            shape=ConvexPolygonShape(vertices),
+            position=WorldPoint(0.0, 0.0),
+        )
+
 
 @dataclass(frozen=True, slots=True)
 class HexMapCollisionGeometry:
@@ -75,6 +104,8 @@ class HexMapCollisionGeometry:
             raise ValueError("obstacle IDs must be unique within a map")
         if any(item.map_id != self.map_id for item in obstacles):
             raise ValueError("all obstacles must belong to the collision map")
+        if any(item.map_id != self.map_id for item in boundaries):
+            raise ValueError("all boundary edges must belong to the collision map")
         if self.boundary_policy is BoundaryPolicy.OPEN and boundaries:
             raise ValueError("OPEN boundary policy must not expose blocking boundary edges")
         object.__setattr__(
@@ -83,6 +114,17 @@ class HexMapCollisionGeometry:
         object.__setattr__(
             self, "boundary_edges", tuple(sorted(boundaries, key=lambda item: item.edge_id))
         )
+
+    @property
+    def collision_obstacles(self) -> tuple[ObstacleDefinition, ...]:
+        """Return object/cell obstacles plus physical walls for blocked edges."""
+        if self.boundary_policy is BoundaryPolicy.OPEN:
+            return self.obstacles
+        combined = self.obstacles + tuple(edge.as_obstacle() for edge in self.boundary_edges)
+        ids = [item.obstacle_id for item in combined]
+        if len(ids) != len(set(ids)):
+            raise ValueError("boundary and object obstacle IDs must be unique")
+        return tuple(sorted(combined, key=lambda item: item.obstacle_id))
 
 
 def _boundary_edges(

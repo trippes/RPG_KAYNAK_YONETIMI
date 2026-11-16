@@ -15,9 +15,11 @@ from hex_world_lab.physics import (
     BodyDefinition,
     CircleShape,
     ContinuousCollisionResolution,
+    HexMapCollisionGeometry,
     ObstacleDefinition,
     resolve_continuous_motion,
 )
+from hex_world_lab.world.identity import MapId
 
 from .movement_system import TICK_DELTA_SECONDS
 
@@ -25,8 +27,8 @@ from .movement_system import TICK_DELTA_SECONDS
 class CollisionAwareMovementSystem:
     """Advance one actor while resolving its circular body against static obstacles.
 
-    The system owns neither a wall clock nor an accumulator. Callers provide
-    consecutive canonical ticks, exactly as with MovementSystem.
+    Passing a HexMapCollisionGeometry automatically includes blocked perimeter
+    edges. Raw obstacle iterables may be bound to a map with map_id.
     """
 
     __slots__ = (
@@ -34,6 +36,7 @@ class CollisionAwareMovementSystem:
         "_state",
         "_body",
         "_obstacles",
+        "_map_id",
         "_next_tick_number",
         "_max_impacts",
         "_last_resolution",
@@ -44,8 +47,9 @@ class CollisionAwareMovementSystem:
         initial_state: MovementState,
         config: MovementConfig,
         body: BodyDefinition,
-        obstacles: Iterable[ObstacleDefinition] = (),
+        obstacles: Iterable[ObstacleDefinition] | HexMapCollisionGeometry = (),
         *,
+        map_id: MapId | None = None,
         first_tick_number: int = 0,
         max_impacts: int = 6,
     ) -> None:
@@ -65,21 +69,45 @@ class CollisionAwareMovementSystem:
             raise TypeError("max_impacts must be an integer")
         if max_impacts < 1:
             raise ValueError("max_impacts must be at least one")
+        if map_id is not None and not isinstance(map_id, MapId):
+            raise TypeError("map_id must be a MapId or None")
 
-        obstacle_values = tuple(obstacles)
+        if isinstance(obstacles, HexMapCollisionGeometry):
+            if map_id is not None and map_id != obstacles.map_id:
+                raise ValueError("map_id does not match collision geometry map")
+            resolved_map_id = obstacles.map_id
+            obstacle_values = obstacles.collision_obstacles
+        else:
+            obstacle_values = tuple(obstacles)
+            resolved_map_id = map_id
         if any(not isinstance(item, ObstacleDefinition) for item in obstacle_values):
             raise TypeError("obstacles must contain ObstacleDefinition values")
         obstacle_ids = tuple(item.obstacle_id for item in obstacle_values)
         if len(obstacle_ids) != len(set(obstacle_ids)):
             raise ValueError("obstacle IDs must be unique")
+        obstacle_maps = {item.map_id for item in obstacle_values}
+        if len(obstacle_maps) > 1:
+            raise ValueError("obstacles from different maps cannot share one movement system")
+        if resolved_map_id is not None and any(
+            item.map_id != resolved_map_id for item in obstacle_values
+        ):
+            raise ValueError("all obstacles must belong to the movement system map")
+        if resolved_map_id is None and obstacle_maps:
+            resolved_map_id = next(iter(obstacle_maps))
 
         self._integrator = MovementIntegrator(config)
         self._state = initial_state
         self._body = body
         self._obstacles = obstacle_values
+        self._map_id = resolved_map_id
         self._next_tick_number = first_tick_number
         self._max_impacts = max_impacts
         self._last_resolution: ContinuousCollisionResolution | None = None
+
+    @property
+    def map_id(self) -> MapId | None:
+        """Return the map scope associated with this movement system."""
+        return self._map_id
 
     @property
     def state(self) -> MovementState:
