@@ -432,19 +432,22 @@ Kapı: Test kapsamındaki hız ve frame-time koşullarında engel geçişi/tunne
 ### 5.7 — Entegrasyon ve teknik doğrulama
 
 İşler:
-- CollisionAwareMovementSystem.
-- 60 TPS ardışık tick ve atomik state commit.
-- MovementMode hız profillerinin korunması.
-- Collision snapshot/debug verisinin üretimi; yalnızca veri modeli, nihai görsel overlay değil.
-- Bütün test ve mimari doğrulamaların çalıştırılması.
+- CollisionAwareMovementSystem ile MovementIntegrator ve resolve_continuous_motion birleştirilir.
+- 60 TPS ardışık tick ve atomik state commit korunur.
+- Normal/koşma/gizlilik hız profilleri korunur.
+- BodyDefinition ground-anchor/local-offset sözleşmesi hareket entegrasyonunda korunur.
+- Çarpışma çözümünün son temas/impact tanıları CollisionResolution sonucu üzerinden sunulur; nihai görsel overlay bu aşamanın dışında kalır.
+- Entegre sistem performansı 1/10/100/1000 aktör senaryolarında ölçülür.
 
 Testler:
-- Hareket + dünya + fizik uçtan uca testleri.
-- 60 TPS tick tekrarı/atlama reddi.
-- Hata durumunda state/tick rollback.
-- Geçilebilir hücre, fiziksel engel ve harita sınırı ayrımı.
-- Pygame bağımsız tüm çekirdek testleri.
-- Önceki geometri/dünya/hareket regresyonları.
+- Hareket + fizik uçtan uca testleri.
+- 60 TPS tick ardışıklığı ve yanlış tick reddi.
+- Hata durumunda state/tick/diagnostic rollback.
+- Engel teması, duvar boyunca kayma ve köşe teması.
+- Normal/koşma/gizlilik modlarında engel davranışı.
+- Gövde yerel ofseti ve ground anchor ilişkisi.
+- Devre dışı gövde ve desteklenmeyen polygon actor sınırının açık reddi.
+- Pygame bağımsız tüm çekirdek testleri ve önceki geometri/dünya/hareket regresyonları.
 
 Kapı: Tüm alt sistemler teknik olarak birlikte çalışmalı; otomatik kabul paketi ve rapor girdileri hazır olmalı.
 
@@ -467,13 +470,15 @@ Her raporda komut, gerçek sonuç, test sayısı, CI run kimliği ve başarısı
 Hedef donanım düşük seviye kabul edildiğinden erken optimizasyon yerine ölçüm uygulanır.
 
 Ölçülecek senaryolar:
-- 1 aktör / az sayıda engel.
-- 10 aktör / orta engel sayısı.
-- 100 aktör / yoğun engel sayısı.
-- 1000 aktör / stres senaryosu.
-- Dar geçit ve çoklu temas yoğunluğu.
+- Mevcut hareket + hex-cell tracking benchmark'ı (1/10/100/1000 aktör).
+- Entegre CollisionAwareMovementSystem + swept circle collision benchmark'ı (1/10/100/1000 aktör).
+- Dar geçit ve çoklu temas yoğunluğu (ayrı senaryo olarak sonraki ölçüm/optimizasyon girdisi).
 - Broadphase aday sayısı ile narrowphase test sayısı.
 - Solver iterasyonu ve CCD impact sayısı.
+
+Entegre benchmark komutu:
+`python benchmarks/benchmark_collision_aware_movement.py` (laboratuvar kök dizininde).
+Çıktı; Python/platform/işlemci bilgisi, ısınma ve ölçüm tekrarları, batch ortalaması, p95 ve aktör-tick başına ortalama süreyi JSON olarak verir. Benchmark CI içinde çalışır; makineye özel süre eşiği koymaz.
 
 60 TPS tick bütçesi 16.67 ms'dir; bunun tamamı fizik için ayrılamaz. Fizik alt bütçesi benchmark sonuçları ve toplam demo yükü görülmeden sabit bir sayı olarak uydurulmayacaktır. Benchmark ortamı, Python sürümü, tekrar sayısı, ortalama ve üst yüzdelik süre raporlanır. Laboratuvar runner ölçümü kullanıcının i3/4 GB bilgisayarındaki FPS garantisi sayılmaz.
 
