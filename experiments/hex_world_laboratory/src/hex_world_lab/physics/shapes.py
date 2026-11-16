@@ -11,8 +11,11 @@ class CircleShape:
     """A circle centered at the local origin."""
 
     radius: float
+    center: Vector2 = Vector2(0.0, 0.0)
 
     def __post_init__(self) -> None:
+        if not isinstance(self.center, Vector2):
+            raise TypeError("center must be a Vector2")
         if isinstance(self.radius, bool) or not isinstance(self.radius, (int, float)):
             raise TypeError("radius must be a real number")
         if not math.isfinite(self.radius) or self.radius <= 0:
