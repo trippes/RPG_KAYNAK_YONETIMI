@@ -1,7 +1,6 @@
 """60 TPS movement orchestration with continuous static-obstacle collision."""
 
 from collections.abc import Iterable
-import math
 
 from hex_world_lab.geometry import WorldPoint
 from hex_world_lab.movement import (
