@@ -1,185 +1,128 @@
-"""Build deterministic collision geometry for one loaded hex map."""
+"""Tests for map-scoped hex and object collision geometry."""
 
-from dataclasses import dataclass
-from enum import Enum
+import pytest
 
 from hex_world_lab.geometry import (
-    AxialCoord,
-    WorldPoint,
-    axial_to_world,
-    hex_edges,
-    hex_neighbors,
-    hex_polygon,
+    AxialCoord, HexLayout, HexOrientation, WorldPoint, axial_to_world,
 )
 from hex_world_lab.movement.vector import Vector2
-from hex_world_lab.world.identity import MapId
-from hex_world_lab.world.map_registry import MapNotLoadedError, UnknownMapError
-from hex_world_lab.world.runtime import HexWorldRuntime
-from hex_world_lab.world.world_view import HexWorldView
-
-from .obstacle import ObstacleDefinition
-from .shapes import ConvexPolygonShape
-
-
-class BoundaryPolicy(Enum):
-    """Whether the perimeter of a finite map blocks movement."""
-
-    BLOCKED = "blocked"
-    OPEN = "open"
+from hex_world_lab.physics import CircleShape, ConvexPolygonShape
+from hex_world_lab.physics.hex_geometry import (
+    BoundaryPolicy, build_hex_map_collision_geometry,
+)
+from hex_world_lab.physics.obstacle import ObstacleDefinition
+from hex_world_lab.world import HexCellData, HexMapDefinition, HexWorld, MapId, WorldId
 
 
-@dataclass(frozen=True, slots=True)
-class HexBoundaryEdge:
-    """One exposed map edge, oriented by its source cell's polygon."""
-
-    edge_id: str
-    map_id: MapId
-    source_cell: AxialCoord
-    start: WorldPoint
-    end: WorldPoint
-
-    def __post_init__(self) -> None:
-        if not isinstance(self.edge_id, str) or not self.edge_id.strip():
-            raise ValueError("edge_id must be a non-empty string")
-        if not isinstance(self.map_id, MapId):
-            raise TypeError("map_id must be a MapId")
-        if not isinstance(self.source_cell, AxialCoord):
-            raise TypeError("source_cell must be an AxialCoord")
-        if not isinstance(self.start, WorldPoint) or not isinstance(self.end, WorldPoint):
-            raise TypeError("boundary endpoints must be WorldPoint values")
-        if self.start == self.end:
-            raise ValueError("boundary edge endpoints must differ")
-
-
-@dataclass(frozen=True, slots=True)
-class HexMapCollisionGeometry:
-    """Immutable collision snapshot for the currently loaded map."""
-
-    map_id: MapId
-    obstacles: tuple[ObstacleDefinition, ...]
-    boundary_edges: tuple[HexBoundaryEdge, ...]
-    boundary_policy: BoundaryPolicy
-
-    def __post_init__(self) -> None:
-        if not isinstance(self.map_id, MapId):
-            raise TypeError("map_id must be a MapId")
-        if not isinstance(self.boundary_policy, BoundaryPolicy):
-            raise TypeError("boundary_policy must be a BoundaryPolicy")
-        obstacles = tuple(self.obstacles)
-        boundaries = tuple(self.boundary_edges)
-        if any(not isinstance(item, ObstacleDefinition) for item in obstacles):
-            raise TypeError("obstacles must contain ObstacleDefinition values")
-        if any(not isinstance(item, HexBoundaryEdge) for item in boundaries):
-            raise TypeError("boundary_edges must contain HexBoundaryEdge values")
-        ids = [item.obstacle_id for item in obstacles]
-        if len(ids) != len(set(ids)):
-            raise ValueError("obstacle IDs must be unique within a map")
-        if any(item.map_id != self.map_id for item in obstacles):
-            raise ValueError("all obstacles must belong to the collision map")
-        if self.boundary_policy is BoundaryPolicy.OPEN and boundaries:
-            raise ValueError("OPEN boundary policy must not expose blocking boundary edges")
-        object.__setattr__(self, "obstacles", tuple(sorted(obstacles, key=lambda item: item.obstacle_id)))
-        object.__setattr__(self, "boundary_edges", tuple(sorted(
-            boundaries, key=lambda item: item.edge_id
-        )))
-
-
-def _boundary_edges(map_id: MapId, coords: set[AxialCoord], layout) -> tuple[HexBoundaryEdge, ...]:
-    edges: list[HexBoundaryEdge] = []
-    for coord in sorted(coords, key=lambda item: (item.q, item.r)):
-        center = axial_to_world(coord, layout)
-        corners = hex_polygon(coord, layout)
-        cell_edges = hex_edges(center, layout)
-        neighbors = hex_neighbors(coord)
-
-        # Match each geometric edge to the neighbor lying furthest along its
-        # outward normal. This works for both flat-top and pointy-top layouts.
-        for edge_index, (start, end) in enumerate(cell_edges):
-            midpoint_x = (start.x + end.x) / 2.0
-            midpoint_y = (start.y + end.y) / 2.0
-            normal_x = midpoint_x - center.x
-            normal_y = midpoint_y - center.y
-            neighbor = max(
-                neighbors,
-                key=lambda candidate: (
-                    (axial_to_world(candidate, layout).x - center.x) * normal_x
-                    + (axial_to_world(candidate, layout).y - center.y) * normal_y
-                ),
-            )
-            if neighbor not in coords:
-                edges.append(HexBoundaryEdge(
-                    edge_id=f"boundary:{coord.q}:{coord.r}:{edge_index}",
-                    map_id=map_id,
-                    source_cell=coord,
-                    start=start,
-                    end=end,
-                ))
-    return tuple(edges)
-
-
-def build_hex_map_collision_geometry(
-    world_view: HexWorldView,
-    runtime: HexWorldRuntime,
-    map_id: MapId,
-    *,
-    boundary_policy: BoundaryPolicy = BoundaryPolicy.BLOCKED,
-    object_obstacles: tuple[ObstacleDefinition, ...] = (),
-) -> HexMapCollisionGeometry:
-    """Build a stable snapshot without loading maps or reading runtime internals."""
-    if not isinstance(world_view, HexWorldView):
-        raise TypeError("world_view must be a HexWorldView")
-    if not isinstance(runtime, HexWorldRuntime):
-        raise TypeError("runtime must be a HexWorldRuntime")
-    if not isinstance(map_id, MapId):
-        raise TypeError("map_id must be a MapId")
-    if not isinstance(boundary_policy, BoundaryPolicy):
-        raise TypeError("boundary_policy must be a BoundaryPolicy")
-    if world_view.world_id != runtime.world_id:
-        raise ValueError("world view and runtime must belong to the same world")
-    if map_id.value == "":
-        raise ValueError("map_id must not be empty")
-
-    definition = runtime.require_loaded_map(map_id)
-    if definition.world_id != world_view.world_id:
-        raise ValueError("map and world view must belong to the same world")
-
-    obstacles: list[ObstacleDefinition] = []
-    coords = set(definition.cells)
-    for coord in sorted(coords, key=lambda item: (item.q, item.r)):
-        from hex_world_lab.world.identity import CellAddress
-
-        address = CellAddress(definition.world_id, map_id, coord)
-        cell = world_view.get_cell(address)
-        if cell is None:
-            continue
-        if cell.has_obstacle:
-            center = axial_to_world(coord, definition.layout)
-            world_vertices = hex_polygon(coord, definition.layout)
-            local_vertices = tuple(
-                Vector2(point.x - center.x, point.y - center.y)
-                for point in world_vertices
-            )
-            obstacles.append(ObstacleDefinition(
-                obstacle_id=f"cell:{coord.q}:{coord.r}",
-                map_id=map_id,
-                shape=ConvexPolygonShape(local_vertices),
-                position=center,
-                source_cell=address,
-            ))
-
-    supplied_objects = tuple(object_obstacles)
-    if any(not isinstance(item, ObstacleDefinition) for item in supplied_objects):
-        raise TypeError("object_obstacles must contain ObstacleDefinition values")
-    obstacles.extend(supplied_objects)
-
-    if boundary_policy is BoundaryPolicy.BLOCKED:
-        boundaries = _boundary_edges(map_id, coords, definition.layout)
-    else:
-        boundaries = ()
-
-    return HexMapCollisionGeometry(
-        map_id=map_id,
-        obstacles=tuple(obstacles),
-        boundary_edges=boundaries,
-        boundary_policy=boundary_policy,
+def make_world(orientation=HexOrientation.FLAT_TOP, cells=None):
+    world_id = WorldId("world")
+    map_id = MapId("map")
+    world = HexWorld(world_id)
+    world.register_map(map_id, "Test map")
+    definition = HexMapDefinition(
+        world_id, map_id, "Test map",
+        HexLayout(orientation, radius=2.0, origin=WorldPoint(10.0, -4.0)),
+        cells if cells is not None else {
+            AxialCoord(0, 0): HexCellData("grass", True, True),
+            AxialCoord(1, 0): HexCellData("grass", True, False),
+        },
     )
+    world.load_map(definition)
+    return world, map_id, definition
+
+
+@pytest.mark.parametrize("orientation", [HexOrientation.FLAT_TOP, HexOrientation.POINTY_TOP])
+def test_cell_obstacle_uses_exact_six_hex_vertices(orientation):
+    world, map_id, definition = make_world(orientation)
+    geometry = build_hex_map_collision_geometry(world.view, world.runtime, map_id)
+
+    assert len(geometry.obstacles) == 1
+    obstacle = geometry.obstacles[0]
+    assert obstacle.obstacle_id == "cell:0:0"
+    assert isinstance(obstacle.shape, ConvexPolygonShape)
+    assert len(obstacle.shape.vertices) == 6
+    world_shape = obstacle.world_shape()
+    expected_center = axial_to_world(AxialCoord(0, 0), definition.layout)
+    assert world_shape.vertices[0] == Vector2(
+        expected_center.x + obstacle.shape.vertices[0].x,
+        expected_center.y + obstacle.shape.vertices[0].y,
+    )
+
+
+@pytest.mark.parametrize("orientation", [HexOrientation.FLAT_TOP, HexOrientation.POINTY_TOP])
+def test_boundary_edges_follow_real_hex_edges_for_both_layouts(orientation):
+    world, map_id, _ = make_world(orientation)
+    geometry = build_hex_map_collision_geometry(world.view, world.runtime, map_id)
+
+    # Two adjacent hexes have ten exposed outer edges.
+    assert len(geometry.boundary_edges) == 10
+    assert len({edge.edge_id for edge in geometry.boundary_edges}) == 10
+
+
+def test_open_boundary_policy_emits_no_blocking_edges():
+    world, map_id, _ = make_world()
+    geometry = build_hex_map_collision_geometry(
+        world.view, world.runtime, map_id, boundary_policy=BoundaryPolicy.OPEN
+    )
+    assert geometry.boundary_policy is BoundaryPolicy.OPEN
+    assert geometry.boundary_edges == ()
+
+
+def test_runtime_obstacle_override_is_reflected_and_can_be_removed():
+    world, map_id, _ = make_world(cells={
+        AxialCoord(0, 0): HexCellData("grass", True, False),
+    })
+    address = world.view.require_cell
+    from hex_world_lab.world import CellAddress
+    cell_address = CellAddress(world.world_id, map_id, AxialCoord(0, 0))
+
+    assert build_hex_map_collision_geometry(world.view, world.runtime, map_id).obstacles == ()
+    world.runtime.set_obstacle(cell_address, True)
+    assert len(build_hex_map_collision_geometry(world.view, world.runtime, map_id).obstacles) == 1
+    world.runtime.set_obstacle(cell_address, False)
+    assert build_hex_map_collision_geometry(world.view, world.runtime, map_id).obstacles == ()
+
+
+def test_duplicate_object_obstacle_ids_are_rejected():
+    world, map_id, _ = make_world(cells={AxialCoord(0, 0): HexCellData("grass", True, False)})
+    item = ObstacleDefinition("tree-1", map_id, CircleShape(0.5), WorldPoint(1.0, 2.0))
+    with pytest.raises(ValueError, match="unique"):
+        build_hex_map_collision_geometry(
+            world.view, world.runtime, map_id, object_obstacles=(item, item)
+        )
+
+
+def test_object_circle_and_polygon_obstacles_are_supported():
+    world, map_id, _ = make_world(cells={AxialCoord(0, 0): HexCellData("grass", True, False)})
+    circle = ObstacleDefinition("tree", map_id, CircleShape(0.4), WorldPoint(2.0, 3.0))
+    polygon = ObstacleDefinition(
+        "rock", map_id,
+        ConvexPolygonShape((Vector2(-1, -1), Vector2(1, -1), Vector2(0, 1))),
+        WorldPoint(4.0, 5.0),
+    )
+    geometry = build_hex_map_collision_geometry(
+        world.view, world.runtime, map_id, object_obstacles=(polygon, circle)
+    )
+    assert [item.obstacle_id for item in geometry.obstacles] == ["rock", "tree"]
+    assert geometry.obstacles[1].world_shape() == CircleShape(0.4, Vector2(2.0, 3.0))
+
+
+def test_unloaded_map_is_rejected_without_automatic_loading():
+    world, map_id, _ = make_world()
+    world.unload_map(map_id)
+    with pytest.raises(Exception):
+        build_hex_map_collision_geometry(world.view, world.runtime, map_id)
+    assert world.is_loaded(map_id) is False
+
+
+def test_unknown_map_is_rejected():
+    world, _, _ = make_world()
+    with pytest.raises(Exception):
+        build_hex_map_collision_geometry(world.view, world.runtime, MapId("missing"))
+
+
+def test_object_obstacle_cannot_claim_a_different_map():
+    world, map_id, _ = make_world(cells={AxialCoord(0, 0): HexCellData("grass", True, False)})
+    other = ObstacleDefinition("tree", MapId("other"), CircleShape(0.5), WorldPoint(0, 0))
+    with pytest.raises(Exception):
+        build_hex_map_collision_geometry(world.view, world.runtime, map_id, object_obstacles=(other,))
