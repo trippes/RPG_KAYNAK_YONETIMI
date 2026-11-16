@@ -130,7 +130,7 @@ class MovementDemo:
         tree_center = axial_to_world(AxialCoord(0, 2), self._layout)
         rock_center = axial_to_world(AxialCoord(-2, 2), self._layout)
         wall_center = axial_to_world(AxialCoord(0, -2), self._layout)
-        self.house_center = axial_to_world(AxialCoord(1, 1), self._layout)
+        self.house_center = axial_to_world(AxialCoord(-3, 0), self._layout)
         object_obstacles = (
             ObstacleDefinition(
                 "object:tree",
@@ -187,7 +187,7 @@ class MovementDemo:
             self.world.view,
             self.world.runtime,
             self.map_id,
-            boundary_policy=BoundaryPolicy.BLOCKED,
+            boundary_policy=BoundaryPolicy.OPEN,
             object_obstacles=object_obstacles,
         )
         self.body_definition = BodyDefinition(
