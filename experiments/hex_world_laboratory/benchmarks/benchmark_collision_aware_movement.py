@@ -52,7 +52,7 @@ def measure(actor_count: int) -> dict[str, float | int]:
     body = BodyDefinition("benchmark_player", CircleShape(0.25))
     actors = [
         CollisionAwareMovementSystem(
-            MovementState(WorldPoint(0.0, index * 2.5)),
+            MovementState(WorldPoint(0.0, index * 1.0)),
             config,
             body,
             (obstacle,),
