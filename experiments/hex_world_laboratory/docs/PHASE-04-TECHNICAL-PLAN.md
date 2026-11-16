@@ -3,7 +3,7 @@
 > **Belge türü:** Teknik mimari ve uygulama planı  
 > **Proje:** Eldoria — Hex World Laboratory  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
-> **Durum:** KULLANICI TARAFINDAN ONAYLANDI — Aşama 4.1–4.7.6 teknik çalışmaları tamamlandı; masaüstü kabulini bekliyor  
+> **Durum:** KAPATILDI — Aşama 4.1–4.7.6 teknik çalışmaları, otomatik doğrulama ve kullanıcı masaüstü kabulü tamamlandı  
 > **Tarih:** 16 Kasım 2026 — Tick mimarisi uyum revizyonu  
 > **Ön koşul:** Aşama 4 Genel Planı kullanıcı tarafından onaylandı.
 
@@ -432,6 +432,6 @@ Teknik doğrulama kanıtları:
 - Hareket benchmark sonuçları Aşama 4.7.6 kapanış raporunda kayıtlıdır.
 - Mimari sınır testi, geometry/movement/simulation/world çekirdeğinin Pygame'e bağımlı olmadığını denetler.
 
-Gerçek Pygame masaüstü kabulü kullanıcı kararıyla Aşama 4 genel kapanışına ertelenmiştir. Bu nedenle teknik planın uygulanmış olması Aşama 4'ün genel kabul edildiği veya kapandığı anlamına gelmez.
+Gerçek Pygame masaüstü kabulü kullanıcı tarafından 16 Kasım 2026 tarihinde tamamlanmış ve Aşama 4 bilgisayar kabul kontrolündeki 11 maddenin tamamı başarılı olarak bildirilmiştir. Bu kullanıcı kabulü, teknik doğrulama kanıtlarıyla birlikte `reports/PHASE-04-CLOSURE-REPORT.md` içinde kayıtlıdır.
 
-**Mevcut durum:** Teknik uygulama ve otomatik doğrulama tamamlandı. Sıradaki genel kapı, kullanıcının gerçek bilgisayarında `docs/MANUAL-MOVEMENT-DEMO-CHECKLIST.md` listesini çalıştırması ve Aşama 4 genel kapanışını kabul etmesidir.
+**Nihai durum:** Teknik uygulama, otomatik doğrulama ve kullanıcı masaüstü kabulü tamamlandı. Aşama 4 kapatılmıştır. Bu kapanış tek başına `main` veya `demo_eldoria` dalına entegrasyon ya da sonraki aşamanın uygulamasına otomatik yetki vermez; sonraki aşama kendi plan ve onay kapılarına tabidir.
