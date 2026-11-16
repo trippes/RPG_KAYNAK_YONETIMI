@@ -21,7 +21,6 @@ from hex_world_lab.geometry import (
     HexOrientation,
     WorldPoint,
     axial_to_world,
-    hex_polygon,
     world_to_axial,
 )
 from hex_world_lab.input import PygameKeyboardAdapter
@@ -58,15 +57,6 @@ MAP_ID = MapId("movement-demo-map")
 MAP_NAME = "Movement Demo Map"
 HEX_RADIUS = 32.0
 MAP_DISK_RADIUS = 4
-BACKGROUND = (21, 25, 34)
-HEX_FILL = (42, 51, 65)
-HEX_EDGE = (104, 121, 143)
-ACTIVE_EDGE = (235, 190, 92)
-ACTOR_COLOR = (231, 93, 83)
-CELL_OBSTACLE_FILL = (91, 66, 55)
-OBJECT_CIRCLE_COLOR = (72, 122, 86)
-OBJECT_POLYGON_COLOR = (112, 119, 132)
-BOUNDARY_COLOR = (201, 160, 91)
 TEXT_COLOR = (225, 231, 240)
 MUTED_TEXT = (157, 170, 188)
 PLAYER_COLLIDER_RADIUS = 8.0
@@ -378,13 +368,6 @@ class MovementDemo:
         )
         self.cell_tracker.update(next_state.position)
 
-    @staticmethod
-    def _screen_point(point: WorldPoint, center: tuple[int, int]) -> tuple[int, int]:
-        return (
-            round(center[0] + point.x),
-            round(center[1] - point.y),
-        )
-
     def render(self, surface: pygame.Surface, render_fps: float = 0.0) -> None:
         """Draw the current snapshot without mutating simulation state."""
         if not isinstance(surface, pygame.Surface):
@@ -401,41 +384,6 @@ class MovementDemo:
         )
 
         self._draw_diagnostics(surface, render_fps)
-
-    def _draw_house_skeleton(
-        self,
-        surface: pygame.Surface,
-        screen_center: tuple[int, int],
-    ) -> None:
-        """Draw a placeholder house frame; this is not final art or build UI."""
-        def point(offset_x: float, offset_y: float) -> tuple[int, int]:
-            return self._screen_point(
-                WorldPoint(
-                    self.house_center.x + offset_x,
-                    self.house_center.y + offset_y,
-                ),
-                screen_center,
-            )
-
-        frame_color = (190, 151, 103)
-        detail_color = (225, 190, 139)
-        segments = (
-            ((-17, 17), (17, 17)),
-            ((-17, 17), (-17, -17)),
-            ((17, 17), (17, -17)),
-            ((-HOUSE_HALF_WIDTH, -HOUSE_HALF_WIDTH), (-HOUSE_DOORWAY_HALF_WIDTH, -HOUSE_HALF_WIDTH)),
-            ((HOUSE_DOORWAY_HALF_WIDTH, -HOUSE_HALF_WIDTH), (HOUSE_HALF_WIDTH, -HOUSE_HALF_WIDTH)),
-            ((-HOUSE_DOORWAY_HALF_WIDTH, -HOUSE_HALF_WIDTH), (-HOUSE_DOORWAY_HALF_WIDTH, -8)),
-            ((HOUSE_DOORWAY_HALF_WIDTH, -HOUSE_HALF_WIDTH), (HOUSE_DOORWAY_HALF_WIDTH, -8)),
-        )
-        for start, end in segments:
-            pygame.draw.line(surface, frame_color, point(*start), point(*end), 3)
-
-        # Roof ridge and rafters are visual guides, not colliders.
-        pygame.draw.line(surface, detail_color, point(-12, 0), point(12, 0), 2)
-        pygame.draw.line(surface, detail_color, point(-12, 0), point(-17, 17), 2)
-        pygame.draw.line(surface, detail_color, point(12, 0), point(17, 17), 2)
-        pygame.draw.line(surface, detail_color, point(-5, -8), point(5, -8), 2)
 
     def _draw_diagnostics(self, surface: pygame.Surface, render_fps: float) -> None:
         assert self._font is not None and self._small_font is not None
