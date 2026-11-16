@@ -46,21 +46,11 @@ CI kayıtları:
 
 Hareket benchmark'ının ayrıntılı ortam ve ölçüm değerleri `reports/PHASE-04.7.6-CLOSURE-REPORT.md` içindedir. Ölçümler yalnızca GitHub Linux CI makinesindeki MovementSystem + MovementCellTracker yükünü kapsar; toplam oyun performansı veya hedef bilgisayar için garanti değildir.
 
-## 4. Açık masaüstü kabulü
+## 4. Aşama 4 genel masaüstü kabulü
 
-Kullanıcı, bilgisayar başındaki manuel kontrollerin Aşama 4'ün en sonunda toplu yapılmasını istedi. Bu karar doğrultusunda Aşama 4.7 alt aşamalarının teknik kapanışı masaüstü testlerine bağlanmamıştır.
+Aşama 4.7'nin teknik kapanışı sırasında masaüstü kabulü Aşama 4 genel kapanışına ertelenmişti. Kullanıcı, 16 Kasım 2026 tarihinde Aşama 4 bilgisayar kabul kontrolündeki 11 maddenin tamamını başarılı olarak bildirmiştir.
 
-Aşağıdaki liste henüz kullanıcı bilgisayarında doğrulanmamıştır ve açık kalır:
-- Uygulama açılışı ve 61 hücreli haritanın görünmesi.
-- WASD/ok yönleri, durma, zıt yön ve çapraz hareket.
-- Shift basılı tutma ile koşma.
-- Alt toggle ile gizlilik, sol/sağ Alt örtüşmesi ve Shift önceliği.
-- Mod geçişi sırasında hücre sınırı sürekliliği.
-- Odak kaybı/geri kazanımı ve takılı modifier davranışı.
-- Teşhis panelinin gerçek pencerede doğru görünmesi.
-- Normal pencere kapanışı.
-
-Kontrol listesi: `docs/MANUAL-MOVEMENT-DEMO-CHECKLIST.md`. Maddeler kullanıcı gerçek masaüstü testini yapana kadar PASS olarak işaretlenmemelidir.
+Bu nedenle masaüstü kabulü artık açık değildir. Kullanıcı kabulinin kapsamı ve kayıt biçimi `reports/PHASE-04-CLOSURE-REPORT.md` belgesinde yer alır. Bu kabul, 4.7 alt aşamalarının teknik doğrulama kayıtlarını geriye dönük değiştirmez; Aşama 4'ün genel kapanış kapısını tamamlar.
 
 ## 5. Dal güvenliği
 
@@ -71,4 +61,4 @@ Kontrol listesi: `docs/MANUAL-MOVEMENT-DEMO-CHECKLIST.md`. Maddeler kullanıcı 
 
 ## 6. Sonuç
 
-**Aşama 4.7 teknik uygulama ve otomatik doğrulama bakımından tamamlanmıştır.** Gerçek masaüstü kabulü Aşama 4 genel kapanışında yapılacaktır. Bu rapor Aşama 4'ün tamamlandığını veya Aşama 5'e geçiş izni verildiğini ifade etmez.
+**Aşama 4.7 teknik uygulama ve otomatik doğrulama bakımından tamamlanmıştır.** Aşama 4 genel masaüstü kabulü kullanıcı tarafından 11/11 başarılı olarak bildirilmiş ve Aşama 4, `reports/PHASE-04-CLOSURE-REPORT.md` ile kapatılmıştır. Bu rapor, sonraki aşamaya otomatik uygulama izni vermez.
