@@ -17,8 +17,16 @@ from hex_world_lab.geometry import (
     hex_polygon,
 )
 from hex_world_lab.input import PygameKeyboardAdapter
-from hex_world_lab.movement import MovementConfig, MovementState
-from hex_world_lab.simulation import MovementCellTracker, MovementSystem
+from hex_world_lab.movement import MovementConfig, MovementState, Vector2
+from hex_world_lab.physics import (
+    BoundaryPolicy,
+    BodyDefinition,
+    CircleShape,
+    ConvexPolygonShape,
+    ObstacleDefinition,
+    build_hex_map_collision_geometry,
+)
+from hex_world_lab.simulation import CollisionAwareMovementSystem, MovementCellTracker
 from hex_world_lab.world import (
     HexCellData,
     HexMapDefinition,
@@ -38,8 +46,13 @@ HEX_FILL = (42, 51, 65)
 HEX_EDGE = (104, 121, 143)
 ACTIVE_EDGE = (235, 190, 92)
 ACTOR_COLOR = (231, 93, 83)
+CELL_OBSTACLE_FILL = (91, 66, 55)
+OBJECT_CIRCLE_COLOR = (72, 122, 86)
+OBJECT_POLYGON_COLOR = (112, 119, 132)
+BOUNDARY_COLOR = (201, 160, 91)
 TEXT_COLOR = (225, 231, 240)
 MUTED_TEXT = (157, 170, 188)
+PLAYER_COLLIDER_RADIUS = 8.0
 
 
 def build_demo_world() -> tuple[HexWorld, MapId]:
@@ -51,8 +64,13 @@ def build_demo_world() -> tuple[HexWorld, MapId]:
         radius=HEX_RADIUS,
         origin=WorldPoint(0.0, 0.0),
     )
+    blocked_cells = {
+        AxialCoord(2, r) for r in range(-3, 2)
+    } | {AxialCoord(-2, 0)}
     cells = {
-        AxialCoord(q, r): HexCellData("grass", True, False)
+        AxialCoord(q, r): HexCellData(
+            "grass", True, AxialCoord(q, r) in blocked_cells
+        )
         for q in range(-MAP_DISK_RADIUS, MAP_DISK_RADIUS + 1)
         for r in range(-MAP_DISK_RADIUS, MAP_DISK_RADIUS + 1)
         if max(abs(q), abs(r), abs(q + r)) <= MAP_DISK_RADIUS
@@ -70,6 +88,8 @@ class MovementDemo:
         "map_id",
         "keyboard",
         "movement_system",
+        "body_definition",
+        "collision_geometry",
         "cell_tracker",
         "tick_pump",
         "_layout",
@@ -92,9 +112,56 @@ class MovementDemo:
         self._layout = definition.layout
         start_position = axial_to_world(AxialCoord(0, 0), self._layout)
         self._movement_config = MovementConfig(max_speed=movement_speed)
-        self.movement_system = MovementSystem(
+        tree_center = axial_to_world(AxialCoord(0, 2), self._layout)
+        rock_center = axial_to_world(AxialCoord(-2, 2), self._layout)
+        wall_center = axial_to_world(AxialCoord(0, -2), self._layout)
+        object_obstacles = (
+            ObstacleDefinition(
+                "object:tree",
+                self.map_id,
+                CircleShape(8.5),
+                tree_center,
+            ),
+            ObstacleDefinition(
+                "object:rock",
+                self.map_id,
+                ConvexPolygonShape((
+                    Vector2(-9.0, -7.0),
+                    Vector2(7.0, -9.0),
+                    Vector2(10.0, 3.0),
+                    Vector2(-3.0, 10.0),
+                )),
+                rock_center,
+            ),
+            ObstacleDefinition(
+                "object:wall",
+                self.map_id,
+                ConvexPolygonShape((
+                    Vector2(-15.0, -4.0),
+                    Vector2(15.0, -4.0),
+                    Vector2(15.0, 4.0),
+                    Vector2(-15.0, 4.0),
+                )),
+                wall_center,
+            ),
+        )
+        self.collision_geometry = build_hex_map_collision_geometry(
+            self.world.view,
+            self.world.runtime,
+            self.map_id,
+            boundary_policy=BoundaryPolicy.BLOCKED,
+            object_obstacles=object_obstacles,
+        )
+        self.body_definition = BodyDefinition(
+            "demo-player",
+            CircleShape(PLAYER_COLLIDER_RADIUS),
+            body_height=1.8,
+        )
+        self.movement_system = CollisionAwareMovementSystem(
             MovementState(position=start_position),
             self._movement_config,
+            self.body_definition,
+            self.collision_geometry,
         )
         context = MovementWorldContext(self.world, self.map_id)
         self.cell_tracker = MovementCellTracker(context)
@@ -117,6 +184,11 @@ class MovementDemo:
     @property
     def state(self) -> MovementState:
         return self.movement_system.state
+
+    @property
+    def last_collision_resolution(self):
+        """Return the most recent read-only collision resolution snapshot."""
+        return self.movement_system.last_resolution
 
     @property
     def diagnostics(self) -> TickPumpDiagnostics:
@@ -165,12 +237,13 @@ class MovementDemo:
         definition = self.world.get_map(self.map_id)
         assert definition is not None
 
-        for coord in definition.cells:
+        for coord, cell in definition.cells.items():
             corners = [
                 self._screen_point(point, center)
                 for point in hex_polygon(coord, self._layout)
             ]
-            pygame.draw.polygon(surface, HEX_FILL, corners)
+            fill = CELL_OBSTACLE_FILL if cell.has_obstacle else HEX_FILL
+            pygame.draw.polygon(surface, fill, corners)
             edge_color = (
                 ACTIVE_EDGE
                 if self.current_resolution is not None
@@ -179,9 +252,48 @@ class MovementDemo:
             )
             pygame.draw.polygon(surface, edge_color, corners, width=1)
 
+        for obstacle in self.collision_geometry.obstacles:
+            shape = obstacle.world_shape()
+            if isinstance(shape, CircleShape):
+                point = self._screen_point(
+                    WorldPoint(shape.center.x, shape.center.y), center
+                )
+                pygame.draw.circle(
+                    surface, OBJECT_CIRCLE_COLOR, point, round(shape.radius)
+                )
+                pygame.draw.circle(
+                    surface, (206, 224, 208), point, round(shape.radius), width=2
+                )
+            else:
+                points = [
+                    self._screen_point(WorldPoint(vertex.x, vertex.y), center)
+                    for vertex in shape.vertices
+                ]
+                color = (
+                    CELL_OBSTACLE_FILL
+                    if obstacle.obstacle_id.startswith("cell:")
+                    else OBJECT_POLYGON_COLOR
+                )
+                pygame.draw.polygon(surface, color, points)
+                pygame.draw.polygon(surface, (205, 211, 222), points, width=2)
+
+        for edge in self.collision_geometry.boundary_edges:
+            pygame.draw.line(
+                surface,
+                BOUNDARY_COLOR,
+                self._screen_point(edge.start, center),
+                self._screen_point(edge.end, center),
+                2,
+            )
+
         actor = self._screen_point(self.state.position, center)
-        pygame.draw.circle(surface, ACTOR_COLOR, actor, 9)
-        pygame.draw.circle(surface, (255, 235, 225), actor, 9, width=2)
+        pygame.draw.circle(
+            surface, ACTOR_COLOR, actor, round(PLAYER_COLLIDER_RADIUS)
+        )
+        pygame.draw.circle(
+            surface, (255, 235, 225), actor,
+            round(PLAYER_COLLIDER_RADIUS), width=2
+        )
 
         self._draw_diagnostics(surface, render_fps)
 
@@ -201,6 +313,9 @@ class MovementDemo:
             else ("present" if resolution.cell_data is not None else "absent")
         )
         completed_tick = diagnostics.next_tick_number - 1
+        collision = self.last_collision_resolution
+        contact_count = 0 if collision is None else len(collision.contacts)
+        impact_count = 0 if collision is None else len(collision.impacts)
         lines = (
             f"World: {self.world.world_id.value}",
             f"Map: {self.map_id.value}",
@@ -209,6 +324,7 @@ class MovementDemo:
             f"Mode: {mode.name}",
             f"Multiplier: {multiplier:.2f}x | Mode speed: {mode_speed:.1f} units/s",
             f"Cell: {cell} | data: {cell_data}",
+            f"Collider: circle r={PLAYER_COLLIDER_RADIUS:.1f} | contacts: {contact_count} | impacts: {impact_count}",
             f"Last tick: {completed_tick if completed_tick >= 0 else '—'}",
             f"Render FPS: {render_fps:.1f}",
             f"Ticks this frame: {diagnostics.last_frame_tick_count}",
