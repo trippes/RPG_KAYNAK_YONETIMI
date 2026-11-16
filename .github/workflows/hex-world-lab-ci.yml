@@ -48,3 +48,6 @@ jobs:
 
       - name: Benchmark map persistence (100 / 1,000 / 10,000 cells)
         run: python scripts/benchmark_map_persistence.py
+
+      - name: Benchmark runtime persistence (100 / 1,000 / 10,000 overrides)
+        run: python scripts/benchmark_runtime_persistence.py
