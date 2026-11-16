@@ -3,7 +3,7 @@
 import ast
 from pathlib import Path
 
-CORE_PACKAGES = ("geometry", "movement", "simulation", "world")
+CORE_PACKAGES = ("geometry", "movement", "physics", "simulation", "world")
 
 
 def test_simulation_core_packages_do_not_import_pygame() -> None:
@@ -30,6 +30,6 @@ def test_simulation_core_packages_do_not_import_pygame() -> None:
                     violations.append(f"{relative_path}:{node.lineno}")
 
     assert not violations, (
-        "Pygame imports must stay outside geometry/movement/simulation/world: "
+         "Pygame imports must stay outside geometry/movement/physics/simulation/world: "
         + ", ".join(violations)
     )
