@@ -7,11 +7,8 @@ from hex_world_lab.application.movement_demo import (
     PLAYER_COLLIDER_RADIUS,
     MovementDemo,
 )
-from hex_world_lab.physics import (
-    CircleShape,
-    CollisionAwareMovementSystem,
-    ConvexPolygonShape,
-)
+from hex_world_lab.physics import CircleShape
+from hex_world_lab.simulation import CollisionAwareMovementSystem
 
 
 def _pressed_keys(*key_codes: int) -> list[bool]:
