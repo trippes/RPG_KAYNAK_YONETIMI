@@ -51,3 +51,6 @@ jobs:
 
       - name: Benchmark runtime persistence (100 / 1,000 / 10,000 overrides)
         run: python scripts/benchmark_runtime_persistence.py
+
+      - name: Benchmark movement and hex-cell tracking (1 / 10 / 100 / 1,000 actors)
+        run: python benchmarks/benchmark_movement_demo.py
