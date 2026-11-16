@@ -54,3 +54,6 @@ jobs:
 
       - name: Benchmark movement and hex-cell tracking (1 / 10 / 100 / 1,000 actors)
         run: python benchmarks/benchmark_movement_demo.py
+
+      - name: Benchmark integrated movement and continuous collision (1 / 10 / 100 / 1,000 actors)
+        run: python benchmarks/benchmark_collision_aware_movement.py
