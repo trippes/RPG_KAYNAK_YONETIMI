@@ -517,7 +517,7 @@ Bu ihtiyaçlardan biri zorunlu hâle gelirse uygulama sırasında sessizce eklen
 - Otomatik test ve CI kanıtları.
 - Benchmark ve bilinen sınırlar raporu.
 - Nihai görsel kabul kontrol listesi ve kullanıcı sonuçları.
-- reports/PHASE-05-CLOSURE-REPORT.md.
+- `experiments/hex_world_laboratory/reports/PHASE-05-CLOSURE-REPORT.md`.
 
 ---
 
