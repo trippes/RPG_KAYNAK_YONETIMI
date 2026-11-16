@@ -6,7 +6,7 @@ from hex_world_lab.geometry import (
     AxialCoord, HexLayout, HexOrientation, WorldPoint, axial_to_world,
 )
 from hex_world_lab.movement.vector import Vector2
-from hex_world_lab.physics import CircleShape, ConvexPolygonShape
+from .shapes import ConvexPolygonShape
 from hex_world_lab.physics.hex_geometry import (
     BoundaryPolicy, build_hex_map_collision_geometry,
 )
