@@ -3,6 +3,7 @@ from __future__ import annotations
 import pygame
 
 from hex_world_lab.application.movement_demo import (
+    HOUSE_DOORWAY_HALF_WIDTH,
     MAP_ID,
     PLAYER_COLLIDER_RADIUS,
     MovementDemo,
@@ -62,6 +63,7 @@ def test_pygame_demo_house_is_a_skeleton_with_a_doorway_gap() -> None:
     ]
 
     assert len(house_walls) == 5
+    assert HOUSE_DOORWAY_HALF_WIDTH > PLAYER_COLLIDER_RADIUS
     assert demo.house_center is not None
 
 
