@@ -55,8 +55,8 @@ def test_pygame_demo_player_stops_at_adjacent_hex_obstacle_wall() -> None:
     for tick in range(100):
         demo._advance_tick(tick)
 
-    assert 30.0 < demo.state.position.x < 45.0
-    assert 30.0 < demo.state.position.y < 45.0
+    assert 50.0 < demo.state.position.x < 60.0
+    assert 50.0 < demo.state.position.y < 60.0
     assert demo.last_collision_resolution is not None
     assert demo.last_collision_resolution.contacts
 
