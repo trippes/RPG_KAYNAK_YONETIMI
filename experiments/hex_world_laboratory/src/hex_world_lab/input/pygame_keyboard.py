@@ -7,7 +7,7 @@ from typing import Any
 
 import pygame
 
-from hex_world_lab.movement import MovementIntent, Vector2
+from hex_world_lab.movement import MovementIntent, MovementMode, Vector2
 
 
 class PygameKeyboardAdapter:
@@ -38,9 +38,9 @@ class PygameKeyboardAdapter:
             self._focused = True
 
     def read_intent(self) -> MovementIntent:
-        """Read the latest keyboard state and return a normalized-axis intent.
+        """Read the latest keyboard snapshot and return a movement intent.
 
-        The returned vector is intentionally not length-normalized; diagonal
+        Direction is intentionally not length-normalized; diagonal
         normalization belongs to the movement integrator.
         """
         if not self._focused:
@@ -53,9 +53,20 @@ class PygameKeyboardAdapter:
         up = bool(keys[pygame.K_w]) or bool(keys[pygame.K_UP])
         down = bool(keys[pygame.K_s]) or bool(keys[pygame.K_DOWN])
 
+        alt_pressed = bool(keys[pygame.K_LALT]) or bool(keys[pygame.K_RALT])
+        shift_pressed = bool(keys[pygame.K_LSHIFT]) or bool(keys[pygame.K_RSHIFT])
+
+        if alt_pressed:
+            mode = MovementMode.STEALTH
+        elif shift_pressed:
+            mode = MovementMode.RUNNING
+        else:
+            mode = MovementMode.NORMAL
+
         return MovementIntent(
-            Vector2(
+            direction=Vector2(
                 x=float(int(right) - int(left)),
                 y=float(int(up) - int(down)),
-            )
+            ),
+            mode=mode,
         )
