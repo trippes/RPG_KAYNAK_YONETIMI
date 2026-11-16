@@ -6,7 +6,7 @@ import pygame
 
 from .application.movement_demo import MovementDemo
 from .config import AppConfig
-from .simulation import MovementSystem
+from .simulation import CollisionAwareMovementSystem
 
 
 class LabApplication:
@@ -18,7 +18,7 @@ class LabApplication:
         self._demo: MovementDemo | None = None
 
     @property
-    def movement_system(self) -> MovementSystem | None:
+    def movement_system(self) -> CollisionAwareMovementSystem | None:
         """Preserve the original movement-system inspection API."""
         return None if self._demo is None else self._demo.movement_system
 
