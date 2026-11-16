@@ -45,3 +45,6 @@ jobs:
 
       - name: Run complete laboratory test suite
         run: python -m pytest -q
+
+      - name: Benchmark map persistence (100 / 1,000 / 10,000 cells)
+        run: python scripts/benchmark_map_persistence.py
