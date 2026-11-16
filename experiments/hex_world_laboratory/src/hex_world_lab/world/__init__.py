@@ -1,4 +1,4 @@
-"""World identity, map definitions, registry, and world aggregate."""
+"""World identity, map definitions, runtime, view, and world aggregate."""
 
 from .cell import HexCellData
 from .identity import CellAddress, MapId, WorldId
@@ -14,6 +14,8 @@ from .map_registry import (
     MapWorldMismatchError,
     UnknownMapError,
 )
+from .runtime import HexWorldRuntime, RuntimeCellOverride
+from .world_view import HexWorldView
 from .world import HexWorld
 
 __all__ = [
@@ -22,6 +24,8 @@ __all__ = [
     "HexCellData",
     "HexMapDefinition",
     "HexWorld",
+    "HexWorldRuntime",
+    "HexWorldView",
     "MapAlreadyLoadedError",
     "MapId",
     "MapNameMismatchError",
@@ -30,6 +34,7 @@ __all__ = [
     "MapRegistry",
     "MapRegistryError",
     "MapWorldMismatchError",
+    "RuntimeCellOverride",
     "UnknownCellError",
     "UnknownMapError",
     "WorldId",
