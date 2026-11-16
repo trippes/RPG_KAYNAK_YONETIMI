@@ -37,7 +37,9 @@ def make_definition(map_id=MAP_ID, terrain_id="grass"):
                 is_walkable=True,
                 has_obstacle=False,
                 metadata={"biome": "woodland", "tags": ["north"]},
-            )
+            ),
+            AxialCoord(0, 0): HexCellData("grass", True, False),
+            AxialCoord(2, 0): HexCellData("grass", True, False),
         },
     )
 
