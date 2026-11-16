@@ -3,8 +3,8 @@
 > **Belge türü:** Teknik mimari ve uygulama planı  
 > **Proje:** Eldoria — Hex World Laboratory  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
-> **Durum:** TEKNİK PLAN — KULLANICI ONAYI BEKLİYOR  
-> **Tarih:** 16 Kasım 2026  
+> **Durum:** REVİZE EDİLMİŞ TEKNİK PLAN — KULLANICI ONAYI BEKLİYOR  
+> **Tarih:** 16 Kasım 2026 — Tick mimarisi uyum revizyonu  
 > **Ön koşul:** Aşama 4 Genel Planı kullanıcı tarafından onaylandı.
 
 ---
@@ -13,17 +13,29 @@
 
 Aşama 4 sonunda bir hareketli varlık, altıgen hücrelerin merkezlerine sıçramadan dünya düzleminde kesintisiz hareket edebilmelidir. Hareketin gerçek konumu tek bir sürekli koordinat olarak tutulacak; hangi hex hücresinde bulunduğu bu konumdan türetilecektir.
 
-Kod incelemesinde önemli bir mevcut altyapı tespit edilmiştir: Aşama 2 geometri paketinde `WorldPoint(x, y)` zaten kesirli dünya koordinatını temsil ediyor. Bu nedenle aynı işi yapan ikinci bir `WorldPosition` sınıfı oluşturulmayacaktır. Genel planın kullandığı “WorldPosition” kavramı, uygulamada mevcut `WorldPoint` tipiyle karşılanacaktır. Böylece iki farklı konum tipinin zamanla birbirinden ayrışması önlenir.
+Kod incelemesinde mevcut geometri paketinde `WorldPoint(x, y)` bulunduğu doğrulanmıştır. Aynı işi yapan ikinci bir `WorldPosition` sınıfı oluşturulmayacaktır.
+
+**Tick mimarisi için ana karar:** Hareket paketi kendi oyun saatini, tick sayacını veya bağımsız bir zaman biriktiricisini üretmeyecektir. Hareket, ana simülasyon orkestrasyonunun verdiği her simülasyon tick'inde bir kez çalıştırılacaktır. Bir tick'in hareket süresi `1 / 60` saniyedir. Böylece hareket, Eldoria'nın 60 TPS zaman sözleşmesine bağlanır; render FPS'i hareket hızını değiştirmez.
+
+Mevcut ana projede:
+- `core.time.Tick`, canonical simülasyon zamanını temsil eden değişmez ve negatif olmayan tick değeridir.
+- `core.simulation.SimulationRuntime`, `advance_to(Tick)` / `advance_by(Tick)` ile mantıksal simülasyon zamanını ilerletir.
+- Eski `time_system/tick.py` içinde `TICKS_PER_SECOND = 60` tanımı bulunur.
+- Mimari belgeler `core.time.Tick` ve `SimulationRuntime` yapısını canonical 2.x zaman sınırı olarak tanımlar; eski `time_system.Tick` uyumluluk API'sidir.
+
+Önemli uygulama ayrıntısı: Mevcut `SimulationRuntime.advance_to()` hedef tick'e toplu ilerleyebilir ve tick listener'larını ilerleme sonunda çağırır. Bu listener mekanizması, her ara tick'te hareketi birer kez çalıştıran 60 Hz oyun döngüsü değildir. Bu nedenle hareketi doğrudan bir `advance_to()` listener'ına bağlamak yanlış olur. İleride ana oyun entegrasyonunda, simülasyon orkestratörü her canonical tick için hareket sistemini açıkça çağırmalıdır.
+
+Laboratuvar bağımsız paket olma kuralını korur. Bu nedenle laboratuvar kodu ana oyundan `core.time.Tick` import etmez ve ikinci bir Tick sınıfı da tanımlamaz. Laboratuvar sınırında tick kimliği ana sistemdeki `Tick.value` değerine karşılık gelen tam sayı olarak taşınır. Ana oyuna entegrasyon aşamasında ince bir adaptör bu değeri sağlar.
 
 Önerilen temel kararlar:
-
 1. **Konum:** Mevcut `geometry.WorldPoint` authoritative fiziksel konumdur.
-2. **Birim:** Dünya uzunluk birimi, ilgili haritanın `HexLayout.radius` değerinin kullandığı birimdir. Hız birimi dünya birimi/saniyedir.
-3. **İlk hareket modeli:** Sabit hız; hareket niyeti varsa seçilen yön boyunca `max_speed`, girdi yoksa sıfır hız. İlk sürümde ivme, sürtünme ve atalet yoktur.
-4. **Zaman:** Simülasyon sabit 1/60 saniyelik adımlarla ilerler. Render FPS'i simülasyon adımının uzunluğunu değiştirmez.
-5. **Girdi:** Pygame klavye adaptörü yalnızca yön niyeti üretir; hareket çekirdeği Pygame'i import etmez.
-6. **Hex eşleştirmesi:** Hücre tespiti yalnızca mevcut `world_to_axial` fonksiyonuyla yapılır. Önceki hücre bilgisi sınır eşitliğinde mevcut tie-break sözleşmesini korumak için taşınır.
-7. **Harita sınırı:** Bu aşamada çarpışma veya sınırda durdurma yoktur. Konum haritanın dışına çıkabilir; hücre sorgusu haritada bulunmayan konum için `None` verir. Bu davranış Aşama 5 fizik sistemiyle karıştırılmaz.
+2. **Birim:** Dünya uzunluk birimi, ilgili haritanın `HexLayout.radius` değerinin kullandığı birimdir. Hız dünya birimi/saniyedir.
+3. **Hareket modeli:** İlk sürüm sabit hızlıdır; ivme, sürtünme ve atalet yoktur.
+4. **Zaman:** Hareket her canonical simülasyon tick'inde tam bir kez `1 / 60` saniyelik adımla ilerler.
+5. **Zaman sahipliği:** Tick üretimi ve gerçek-zaman/tick eşlemesi Movement'in değil, üst seviye Simulation/Application döngüsünün sorumluluğudur.
+6. **Girdi:** Pygame adaptörü hareket niyeti üretir; hareket çekirdeği Pygame'i import etmez.
+7. **Hex eşleştirmesi:** Hücre tespiti mevcut `world_to_axial` fonksiyonuyla yapılır; önceki hücre tie-break için taşınır.
+8. **Harita sınırı:** Bu aşamada çarpışma veya sınırda durdurma yoktur. Konum korunur; haritada bulunmayan hücre sonucu `None` olur.
 
 Bu kararlar plan önerisidir; uygulama başlamadan önce kullanıcı onayına sunulur.
 
@@ -36,50 +48,48 @@ Bu kararlar plan önerisidir; uygulama başlamadan önce kullanıcı onayına su
 | `geometry/coordinates.py — WorldPoint` | Sonlu, kesirli dünya koordinatı | Hareketli varlığın gerçek konumu |
 | `geometry/layout.py — HexLayout` | Yönelim, circumradius ve origin | Dünya birimi ve hücre yerleşimi |
 | `geometry/transforms.py — world_to_axial` | Dünya noktasından axial hücre seçimi | Mevcut hücrenin bulunması |
-| `geometry/transforms.py — axial_to_world` | Hücre merkezini dünya koordinatına çevirme | Test ve prototip başlangıç konumları |
 | `world/identity.py — WorldId, MapId, CellAddress` | Dünya/harita/hücre kimliği | Hareket bağlamının doğru haritaya bağlanması |
-| `world/map_registry.py — MapRegistry.get_map` | Yüklü harita tanımına erişim | Harita layout ve hücre varlığı sorgusu |
-| `world/map_definition.py — HexMapDefinition` | Değişmez harita, layout ve hücre kümesi | Konumun harita içindeki hücreyle eşleştirilmesi |
-| `world/world_view.py — HexWorldView` | Runtime dahil güncel hücre verisi | Hareket için gereken hücre verisine ihtiyaç doğarsa salt-okunur sorgu |
+| Ana proje `core/time/tick.py — Tick` | Canonical simülasyon tick değeri | Entegrasyon sınırında tick kimliğinin kaynağı |
+| Ana proje `core/simulation/runtime.py — SimulationRuntime` | Mantıksal simülasyon ilerletme ve tick listener yönetimi | Üst seviye zaman orkestrasyonunun mevcut sözleşmesi; doğrudan 60 Hz callback olarak kullanılmayacak |
+| Ana proje `time_system/tick.py — TICKS_PER_SECOND` | 60 tick/saniye sabiti (1.x uyumluluk zaman modeli) | 60 TPS tasarım kararının kaynak doğrulaması |
 
-Aşama 3'ün harita kayıt/yükleme ayrımı korunur. Hareket sistemi kayıtlı fakat belleğe yüklenmemiş haritayı kendiliğinden yüklemez. Hareket bağlamı yalnızca açıkça seçilmiş ve yüklü harita için oluşturulur.
+Ana oyunun `core.time.Tick` ve `SimulationRuntime` kodu laboratuvara bağımlılık olarak eklenmeyecektir. Laboratuvarın bağımsız kurulabilir/test edilebilir olması korunur. Ana projeye aktarım sırasında adaptör, canonical `Tick.value` değerini laboratuvar hareket sisteminin beklediği tick numarasına dönüştürür.
 
-`HexWorldRuntime.require_loaded_map` mevcut olsa da runtime sınıfının hareket katmanının harita erişim servisi olarak kullanılmasına gerek yoktur. Harita tanımına erişim için `MapRegistry.get_map` kullanılmalı; hareket çekirdeği registry'yi doğrudan bilmemelidir.
+`SimulationRuntime.advance_to(target)` birden fazla tick ilerleyebilir. Hareket sistemi bu çağrının sonunda yalnızca bir defa çalıştırılamaz; aradaki tick'ler atlanmış olur. Ana oyun entegrasyonunda orkestratör, sürekli hareket gerektiren her tick'i sırayla işleyip hareket sistemine birer kez iletmelidir. Toplu zaman atlatma/offline progression gibi işlemler ayrı bir politika gerektirir ve Aşama 4 kapsamı dışındadır.
+
+Aşama 3'ün harita kayıt/yükleme ayrımı korunur. Hareket sistemi kayıtlı fakat belleğe yüklenmemiş haritayı kendiliğinden yüklemez.
 
 ## 3. Katman ve bağımlılık yönü
 
 Önerilen bağımlılık akışı:
 
 ```text
-Pygame Keyboard Adapter
+Application / Simulation Orchestrator
         |
+        | canonical tick başına bir çağrı
         v
-MovementIntent (saf veri)
-        |
-        v
-Fixed-Step Simulation
+MovementSystem.step(tick_number, intent)
         |
         v
 Movement Core -----> WorldPoint
-        |
-        v
-Continuous Position
         |
         v
 World/Hex Resolver -----> HexLayout + world_to_axial
         |
         v
 CellAddress / current cell result
+
+Pygame Input Adapter ------> MovementIntent
+Render Loop ---------------> yalnızca state okur
 ```
 
 Kurallar:
-
-- `movement` paketi `pygame`, `application`, `rendering` veya `camera` import edemez.
-- `simulation` paketi hareket fonksiyonlarını çağırır; hareket çekirdeğine zamanlayıcı veya pencere bağımlılığı sokmaz.
-- `input` adaptörü Pygame olaylarını okur ve yalnızca `MovementIntent` üretir.
-- `world` entegrasyonu, konumun hangi haritaya ait olduğunu ve hangi hücreye denk geldiğini çözer; hareket matematiğini yeniden yazmaz.
-- Render/prototip katmanı state'i yalnızca okur. Hareket state'ini doğrudan değiştiremez.
-- Geometri ve dünya paketlerinin mevcut API'leri, gerekçe ve ayrı onay olmadan geriye dönük uyumsuz biçimde değiştirilmez.
+- `movement` paketi `pygame`, `application`, `rendering`, `camera` veya ana oyunun `core.time` paketini import edemez.
+- Movement kendi tick sayacını, oyun saatini veya gerçek zaman biriktiricisini yönetmez.
+- Üst seviye orkestratör, her simülasyon tick'i için hareket adımını tam bir kez çağırır.
+- Pygame girdi adaptörü güncel tuş durumundan `MovementIntent` üretir; bu niyet ilgili simülasyon tick'inde tüketilir.
+- Render/prototip katmanı state'i yalnızca okur; hareket state'ini doğrudan değiştiremez.
+- Laboratuvarın bağımsız demo döngüsü, yalnızca demo/test amacıyla gerçek zamanı 60 TPS adım çağrılarına dönüştürebilir. Bu yardımcı döngü üretim hareket çekirdeğinin parçası veya ana oyunun canonical clock'u değildir.
 
 ## 4. Hareket veri sözleşmeleri
 
@@ -138,53 +148,56 @@ Bu aşamada tam Entity/Component sistemi kurulmaz. `MovementState` tek bir harek
 
 `advance_movement(state, intent, config, delta_seconds) -> MovementState`
 
-İşlem sırası:
+Fonksiyon tek bir hareket adımını hesaplar. Üretim çağrısında `delta_seconds` sabiti `1 / 60` olur. Bu değer çağıran simülasyon orkestrasyonu tarafından belirlenir; hareket fonksiyonu gerçek saat okumaz.
 
+İşlem sırası:
 1. Girdi ve zaman değerleri doğrulanır.
 2. Hareket niyeti normalize edilir.
 3. Anlık hız vektörü hesaplanır: `velocity = normalized_direction * max_speed`.
-4. Yeni konum hesaplanır: `position += velocity * delta_seconds`.
+4. Yeni konum hesaplanır: `position += velocity * (1 / 60)`.
 5. Yeni state döndürülür; girdi state'i yerinde değiştirilmez.
 
 Önemli davranışlar:
 - Konum hücre merkezine yuvarlanmaz.
 - Yön değiştirme aynı konumdan devam eder; konum sıçramaz.
-- Sıfır niyet, aynı tick'te hızı sıfırlayıp hareketi durdurur.
+- Sıfır niyet, o tick'te hızı sıfırlayıp hareketi durdurur.
 - Negatif delta, NaN/Infinity veya geçersiz tipler sessizce kabul edilmez.
-- İlk sürümde hız sabit ve anlık değişir. İvme/yavaşlama sonradan eklenecekse ayrı tasarım kararı ve kullanıcı onayı gerekir.
+- İlk sürümde hız sabit ve anlık değişir. İvme/yavaşlama ayrı tasarım kararıdır.
 
-**Neden ilk sürümde ivme yok?** Önce doğru konum, hız birimi, çapraz yön ve zaman davranışını kanıtlamak gerekir. İvme eklemek kontrol hissi ve fizik parametreleri doğurur; çarpışma aşamasından önce gereksiz karmaşıklık yaratır. Sabit hız modeli kabul testlerini netleştirir ve daha sonra ivmeli modele geçişi engellemez.
+Hareket fonksiyonunun genel amaçlı `delta_seconds` kabul etmesi test edilebilirliği artırır; ancak normal simülasyon yolu yalnızca sabit 1/60 değerini kullanır. Başka delta ile çağırmak, normal oyun tick sözleşmesinin parçası değildir.
 
-## 6. Sabit zaman adımı ve büyük gecikme politikası
+## 6. Tick yürütümü ve gerçek zaman eşlemesi
 
-### 6.1 Seçim
+### 6.1 Canonical tick sözleşmesi
 
-Sabit simülasyon adımı önerilir:
+- Oyun simülasyon hızı: `60 tick/saniye`.
+- Bir hareket tick'i: `1 / 60` saniye.
+- Her tick numarası için hareket adımı en fazla bir kez çalıştırılır.
+- Hareket sistemi tick numarasının kaynağı değildir; üst katmandan alır.
+- Render FPS'i simülasyon tick sayısını veya hareket adımının süresini değiştirmez.
 
-- `FIXED_DELTA_SECONDS = 1 / 60`
-- Render döngüsü her karede geçen gerçek süreyi simülasyon zaman biriktiricisine ekler.
-- Biriken süre bir veya daha fazla sabit tick'e ulaştığında hareket çekirdeği o sabit süreyle çalıştırılır.
-- Render 30 FPS ise tipik olarak kare başına iki tick; 60 FPS ise bir tick; 120 FPS ise her iki render karesinde bir tick çalışır.
+### 6.2 Ana proje ile entegrasyon
 
-Bu yaklaşım, hareketin render FPS'e doğrudan bağlanmasını önler ve aynı simülasyon tick dizisiyle tekrarlanabilir sonuç sağlar.
+Canonical zaman tipi ana projedeki `core.time.Tick`'tir. Laboratuvar bağımsızlığını korumak için hareket çekirdeği bu sınıfı import etmez; entegrasyon adaptörü `Tick.value` değerini tam sayı tick kimliği olarak aktarır.
 
-### 6.2 Gecikme koruması
+Mevcut `SimulationRuntime.advance_to()` hedef tick'e toplu ilerleyebildiğinden, sürekli hareketin doğru çalışması için oyun orkestrasyon katmanı ardışık tick'leri tek tek yürütmelidir. `register_tick_listener` yalnızca toplu ilerleme tamamlandığında çağrıldığı için doğrudan hareket güncelleme kancası olarak kullanılmayacaktır.
 
-Tek karede uzun süre duraklama, sınırsız sayıda tick çalıştırılmasına neden olmamalıdır.
+### 6.3 Laboratuvar demo döngüsü
 
-Önerilen koruma:
-- Tek render karesinden kabul edilen süre en fazla 0.25 saniye.
-- Tek render karesinde en fazla 8 simülasyon tick'i.
-- Bu sınırlar nedeniyle işlenemeyen fazla süre sessizce biriktirilmez; düşürülen süre ölçüm/diagnostic alanında raporlanır.
-- Normal çalışma koşullarında (30/60/120 FPS) bu koruma devreye girmemelidir.
+Görsel demo için gerekirse `application` katmanında bir demo tick pump bulunabilir. Bu yardımcı:
+- monotonic gerçek zamanı yalnızca render kareleri arasındaki süreyi ölçmek için kullanır;
+- geçen süreyi 1/60 saniyelik tick birikimine dönüştürür;
+- her üretilen demo tick'i için `MovementSystem.step()` çağırır;
+- kare başına en fazla 8 tick işleyebilir, fakat kalan tick borcunu silmez; sonraki karelere taşır;
+- borç miktarını diagnostics alanında raporlar.
 
-Bu politika, donma sonrası “spiral of death” olarak bilinen giderek artan simülasyon yükünü sınırlar. Zaman düşürme davranışı bir kabul testiyle açıkça kanıtlanır; oyun içi zamanın ne kadar atlandığı prototip teşhisinde gösterilir.
+Böylece uzun karede simülasyon tick'i atlanmaz. Catch-up sınırı yalnızca tek render karesindeki CPU yükünü sınırlar. Sürekli performans yetersizliğinde borç artabilir; sistem bunu gizlemek yerine ölçer. Simülasyon zamanı sessizce düşürülmez.
 
-### 6.3 Determinizm sınırı
+Bu demo tick pump, `movement/fixed_step.py` gibi üretim hareket modülünde bulunmaz ve ana oyunun zaman motoru olarak sunulmaz. Ana oyuna geçişte demo pump kaldırılır; canonical simülasyon orkestrasyonu tick'leri sağlar.
 
-Aynı başlangıç state'i ve aynı tick sırasına bağlanmış hareket niyeti dizisi aynı sonucu üretmelidir. Farklı render FPS testleri, aynı niyetin aynı toplam simülasyon süresince korunduğu senaryoları karşılaştırır.
+### 6.4 Determinizm
 
-Klavye girdisinin render kareleri arasında değiştiği anlarda tick sınırına hangi niyetin yetiştiği doğal olarak farklılaşabilir. Bu nedenle bu aşamada ağ senkronizasyonu veya tam input replay sistemi vaat edilmez. Deterministik doğrulama, sabit tick girdileri üzerinden yapılır.
+Aynı başlangıç state'i ve aynı sıralı `(tick_number, MovementIntent)` girdileri aynı hareket state'ini üretmelidir. Render FPS karşılaştırmaları aynı tick girdisi dizisinin 30/60/120 FPS çizim döngülerinde aynı sonucu verdiğini doğrular. Gerçek zamanlı klavye örneklemesinin farklı render karelerine denk gelmesi ayrı bir input-latency konusu olup bu aşamada ağ senkronizasyonu veya tam input replay garantisi verilmez.
 
 ## 7. Klavye adaptörü
 
@@ -198,7 +211,7 @@ Sorumlulukları:
 - Tuş bırakıldığında sıfır yön niyeti üretmek.
 
 Klavye tuş eşlemesi ilk prototipte:
-- W / Yukarı: y pozitif? **Hayır** — dünya ekseninde Y yukarı olduğundan W = `(0, +1)`.
+- W / Yukarı: `(0, +1)` (matematiksel dünya ekseninde Y yukarı).
 - S / Aşağı: `(0, -1)`.
 - A / Sol: `(-1, 0)`.
 - D / Sağ: `(+1, 0)`.
@@ -256,7 +269,7 @@ Aşağıdaki liste uygulama için hedef dosya sınırıdır. Teknik uygulama sı
 | `src/hex_world_lab/movement/state.py` | `MovementState` |
 | `src/hex_world_lab/movement/integrator.py` | Saf `advance_movement` fonksiyonu |
 | `src/hex_world_lab/simulation/__init__.py` | Simülasyon public API'si |
-| `src/hex_world_lab/simulation/fixed_step.py` | Sabit tick biriktirici, adım sınırı ve düşen süre ölçümü |
+| `src/hex_world_lab/application/demo_tick_pump.py` | Yalnızca laboratuvar demosu için gerçek zamanı 60 TPS çağrılarına dönüştürme; kalan tick borcunu koruma |
 | `src/hex_world_lab/input/__init__.py` | Girdi adaptörü public API'si |
 | `src/hex_world_lab/input/pygame_keyboard.py` | Pygame klavye → MovementIntent adaptörü |
 | `src/hex_world_lab/world/movement_context.py` | Yüklü harita bağlamı ve konum-hücre çözümlemesi |
@@ -269,7 +282,7 @@ Aşağıdaki liste uygulama için hedef dosya sınırıdır. Teknik uygulama sı
 | `tests/unit/test_movement_intent.py` | Hareket niyeti doğrulaması |
 | `tests/unit/test_movement_state.py` | State doğrulaması ve değişmezlik |
 | `tests/unit/test_movement_integrator.py` | Hız, yön, çapraz hareket, durma, konum sürekliliği |
-| `tests/unit/test_fixed_step.py` | Biriktirme, 1/60 tick, max step ve düşen süre |
+| `tests/integration/test_demo_tick_pump.py` | Demo tick üretimi, kare başına iş sınırı ve kalan tick borcunun korunması |
 | `tests/unit/test_pygame_keyboard.py` | Tuş eşlemesi ve zıt/çapraz tuşlar |
 | `tests/integration/test_movement_world.py` | WorldPoint → axial → CellAddress, sınır ve harita dışı davranış |
 | `tests/integration/test_movement_fps_independence.py` | 30/60/120 FPS eşdeğerliği |
@@ -294,7 +307,7 @@ Genel plandaki 4.1–4.6 sırası korunarak şu teknik kapılara ayrılması ön
 |---|---|---|
 | 4.1 — Konum ve veri sözleşmeleri | Vector2, MovementIntent, MovementConfig, MovementState | Tip doğrulama, immutable state ve birim sözleşmesi testleri |
 | 4.2 — Hareket çekirdeği | advance_movement, sabit hız ve normalize yön | Konum/hız/yön/durma unit testleri |
-| 4.3 — Zaman sistemi | FixedStepAccumulator, tick sınırı ve gecikme politikası | 30/60/120 FPS, büyük delta ve deterministik tick testleri |
+| 4.3 — Tick sözleşmesi | Hareketin dışarıdan verilen ardışık tick başına bir kez çalışması; demo tick pump | 60 TPS adım süresi, yinelenen/atlanan tick davranışı ve kalan tick borcu testleri |
 | 4.4 — Klavye adaptörü | Pygame keyboard adapter | Headless/uygun Pygame testleri, tuş kombinasyonları |
 | 4.5 — Dünya entegrasyonu | MovementWorldContext ve hücre çözümleyici | İki orientation, sınır tie-break, harita dışı ve yüklü harita testleri |
 | 4.6 — Prototip ve kabul | Minimal tek harita hareket demosu, benchmark, regresyon | Görsel inceleme, tam pytest ve CI |
@@ -342,7 +355,7 @@ Son konum farkı, floating-point toleransı içinde olmalıdır. Test hem tek ek
 - Tek aktör hareket tick süresi.
 - 10, 100 ve 1.000 bağımsız hareket state'i için toplam update süresi.
 - Ortalama ve P95 süre.
-- Fixed-step biriktiricisinin normal ve maksimum catch-up yükü.
+- Demo tick pump'ın normal ve maksimum catch-up yükü; ana hareket çekirdeğinde saat/accumulator bulunmadığının doğrulanması.
 - Hareket döngüsünde map cell koleksiyonu taraması veya gereksiz nesne üretimi olup olmadığı.
 
 Benchmark sonuçları donanım/işletim sistemi/Python sürümü ve commit SHA ile raporlanır. Önceden sabit FPS garantisi konmaz; ölçüm olmadan performans iddiası yapılmaz.
@@ -380,8 +393,8 @@ Bu kapsam dışı maddelerden biri teknik olarak zorunlu görünürse doğrudan 
 | WorldPoint ve WorldPosition için iki ayrı tip yaratılması | Konum sözleşmesinde ikilik | Mevcut WorldPoint'i kullanmak |
 | Dünya biriminin belirsiz kalması | Hız değerlerinin anlamsızlaşması | Hızı layout radius ile aynı dünya birimi/saniye olarak tanımlamak |
 | Y ekseninin girdi adaptöründe ters çevrilmesi | Kontrollerin yanlış yönlenmesi | Matematiksel Y yukarı kuralını test etmek |
-| Render delta ile doğrudan hareket | FPS'e göre hız farkı | Fixed timestep |
-| Uzun duraklama sonrası çok fazla tick | CPU yükünün katlanması | 0.25s frame clamp ve 8 tick sınırı |
+| Hareketin kendi saatini üretmesi | Ana oyun tick'iyle zaman ayrışması | Her canonical tick'te dışarıdan tek adım çağrısı |
+| Uzun kare sonrası catch-up yükü | Tek karede CPU sıçraması | Demo pump'ta kare başına en fazla 8 tick; kalan borcu koruma ve ölçme |
 | Hücre sınırında titreşim | Hücre bilgisinin kararsız değişmesi | previous_cell tie-break sözleşmesini kullanmak |
 | Harita dışı konumun sessizce düzeltilmesi | Fiziksel konumda sıçrama | Konumu koruyup cell result olarak None vermek |
 | Pygame'in core'a sızması | Headless test ve yeniden kullanım kaybı | Bağımlılık yönü testi |
@@ -410,14 +423,14 @@ Bu kapsam dışı maddelerden biri teknik olarak zorunlu görünürse doğrudan 
 
 ## 16. Onay kapısı ve mevcut durum
 
-Bu belge teknik uygulama planıdır; henüz uygulama izni değildir.
+Bu belge teknik uygulama planıdır; henüz uygulama izni değildir. Tick mimarisi revizyonu, ana projedeki mevcut canonical zaman sözleşmesini dikkate alır.
 
 Uygulama öncesi kullanıcıdan açık onay beklenen kararlar:
 - Mevcut `WorldPoint` tipinin sürekli fiziksel konum olarak kullanılması.
 - Dünya biriminin `HexLayout.radius` ile aynı ölçekte olması; hızın dünya birimi/saniye tanımlanması.
 - İlk sürümde ivmesiz, sabit hızlı hareket modeli.
-- 1/60 sabit simülasyon adımı; 0.25 saniye frame clamp ve kare başına en fazla 8 tick.
+- Hareketin dışarıdan sağlanan canonical 60 TPS tick'inde bir kez çalışması; hareket çekirdeğinde bağımsız saat/accumulator bulunmaması.\n- Demo tick pump'ta kare başına en fazla 8 tick işlenmesi ve kalan tick borcunun korunması.
 - Harita dışı konumda hareketin engellenmemesi; hücre sonucunun `None` olması.
 - Bu belgede belirtilen dosya sınırları, alt aşama sırası ve test kabul ölçütleri.
 
-**Durum:** TEKNİK MİMARİ PLAN SUNULDU — KULLANICI ONAYI BEKLENİYOR. Onay gelmeden kod, test, prototip veya mimari değişiklik uygulanmayacaktır.
+**Revizyon notu (16 Kasım 2026):** Önceki taslaktaki `simulation/fixed_step.py` üretim tick biriktiricisi kaldırılmıştır. Hareket sistemi artık tick üretmez; dışarıdan verilen canonical tick başına bir kez ilerler. Demo amaçlı gerçek-zaman tick pump yalnızca application/demo katmanında bulunabilir ve kalan tick borcunu atmaz. Ana projedeki `SimulationRuntime.advance_to()` ara tick callback'i vermediğinden doğrudan hareket callback'i olarak kullanılmayacaktır.\n\n**Durum:** REVİZE EDİLMİŞ TEKNİK MİMARİ PLAN SUNULDU — KULLANICI ONAYI BEKLENİYOR. Onay gelmeden kod, test, prototip veya mimari değişiklik uygulanmayacaktır.
