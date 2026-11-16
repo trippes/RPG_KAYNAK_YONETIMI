@@ -3,7 +3,7 @@
 > **Proje:** Eldoria — Hex World Laboratory  
 > **Dal:** `experiment/hex-world-laboratory`  
 > **Tarih:** 16 Kasım 2026  
-> **Durum:** TEKNİK UYGULAMA VE OTOMATİK DOĞRULAMA TAMAMLANDI; MASAÜSTÜ KABULİ AÇIK
+> **Durum:** ALT AŞAMA TEKNİK OLARAK KAPALI; AŞAMA 4 GENEL KULLANICI KABULÜ TAMAMLANDI
 
 ## 1. Amaç ve kapsam
 
