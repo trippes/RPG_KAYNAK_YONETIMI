@@ -41,7 +41,9 @@ class TickSequenceProvider:
         if current < 20:
             return PressedKeys({pygame.K_d})
         if current < 40:
-            return PressedKeys({pygame.K_w})
+            return PressedKeys({pygame.K_d, pygame.K_LSHIFT})
+        if current < 60:
+            return PressedKeys({pygame.K_d, pygame.K_LALT, pygame.K_LSHIFT})
         return PressedKeys(set())
 
 
@@ -74,5 +76,14 @@ def test_30_60_and_120_render_fps_produce_equivalent_60_tick_state() -> None:
         assert states[0] == states[1] == states[2]
         assert resolutions[0] == resolutions[1] == resolutions[2]
         assert all(item.pending_full_ticks == 0 for item in diagnostics)
+
+        # 20 normal ticks + 20 running ticks + 20 stealth ticks:
+        # 20*1.0 + 20*1.5 + 20*0.5 = 60 world units.
+        from hex_world_lab.movement import MovementMode
+
+        assert states[0].position.x == 60.0
+        assert states[0].position.y == 0.0
+        assert states[0].mode is MovementMode.STEALTH
+        assert states[0].velocity.x == 30.0
     finally:
         pygame.quit()
