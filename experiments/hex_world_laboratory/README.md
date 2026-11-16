@@ -91,7 +91,7 @@ Varsayılan `create` modu mevcut dosyayı ezmez. Değiştirme için açıkça `m
 
 **Aşama 4:** Sürekli hareket sistemi kullanıcı tarafından kabul edilerek kapatıldı.
 
-**Aşama 5:** 5.1–5.7 kodlaması, teknik inceleme, otomatik testler, Linux/Windows CI ve benchmark tamamlandı. Son otomatik doğrulamalar: laboratuvar **584 test**; Core Quality Linux ve Windows **2.047'şer test**. Kullanıcının bilgisayarında tam test ve nihai görsel kabul bekleniyor; aşama henüz kapatılmadı.
+**Aşama 5:** 5.1–5.7 fizik çekirdeği ve otomatik doğrulamaları tamamlandı. Son denetimde Pygame kabul demosu da CollisionAwareMovementSystem'e bağlandı; demo için yeni regresyon testleri eklendi. Laboratuvar 584 ve Core Quality Linux/Windows 2.047'şer test sonuçları bu son demo entegrasyonundan önceki kod sürümüne aittir. Kullanıcının bilgisayarında güncel tam test paketi ve nihai görsel kabul bekleniyor; aşama henüz kapatılmadı.
 
 ### Mimari sınırlar
 
