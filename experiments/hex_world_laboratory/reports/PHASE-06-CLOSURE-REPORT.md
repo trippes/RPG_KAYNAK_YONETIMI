@@ -110,6 +110,6 @@ Kullanıcı sonucu Kabul olarak bildirirse bu rapor güncellenerek Aşama 6 tama
 
 ## 8. Nihai karar
 
-<badge>GÖRSEL KABUL BEKLİYOR</badge>
+**GÖRSEL KABUL BEKLİYOR**
 
 Aşama 6'nın teknik uygulaması ve otomatik doğrulaması tamamlanmıştır. Kullanıcı görsel kabulü gelmeden Aşama 6 “tamamlandı ve kabul edildi” olarak işaretlenmeyecek; Aşama 7 uygulamasına başlanmayacaktır.
