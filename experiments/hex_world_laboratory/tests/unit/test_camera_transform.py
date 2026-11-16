@@ -91,3 +91,11 @@ def test_transform_rejects_wrong_argument_types():
         transform.world_to_screen(ScreenPoint(1.0, 2.0))
     with pytest.raises(TypeError):
         transform.screen_to_world(WorldPoint(1.0, 2.0))
+
+
+def test_transform_is_immutable():
+    transform = WorldScreenTransform(
+        Viewport(800, 600), WorldPoint(0.0, 0.0), zoom=1.0
+    )
+    with pytest.raises(AttributeError):
+        transform.zoom = 2.0
