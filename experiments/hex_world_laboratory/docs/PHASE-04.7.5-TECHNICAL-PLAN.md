@@ -3,7 +3,7 @@
 > **Proje:** Eldoria — Hex World Laboratory  
 > **Dal:** `experiment/hex-world-laboratory`  
 > **Ön koşul:** Aşama 4.7.4 kodu ve GitHub CI doğrulamaları başarılıdır.  
-> **Durum:** KULLANICI ONAYI BEKLİYOR — bu belge kod uygulama izni değildir.
+> **Durum:** ONAYLANDI — uygulama ve otomatik doğrulama tamamlandı; gerçek Pygame masaüstü kabulü bekleniyor.
 
 ## 1. Amaç
 
@@ -129,4 +129,4 @@ Teşhis hesapları yalnızca `state` ve config değerlerini okur. Render çağr�
 
 ## 10. Uygulama kapısı
 
-Bu belge kullanıcı onayına sunulur. Açık onay gelmeden kod veya manuel kontrol listesi değiştirilmez. Onay sonrası yalnızca bu kapsam uygulanır; hedefli testler, tam pytest ve GitHub CI çalıştırılır. Masaüstü manuel kabul kullanıcı tarafından gerçek pencerede yapılır. Tüm yazmalar yalnızca `experiment/hex-world-laboratory` dalına yapılır.
+Kullanıcı 2026-11-16 tarihinde planı onaylamıştır. Plan kapsamındaki kod, otomatik testler ve GitHub CI doğrulamaları tamamlanmıştır. Gerçek Pygame masaüstü kabulü kullanıcı tarafından yapılacaktır; bu kontrol tamamlanmadan 4.7.5 alt aşaması resmen kapatılmayacaktır. Tüm değişiklikler yalnızca `experiment/hex-world-laboratory` dalında tutulur.
