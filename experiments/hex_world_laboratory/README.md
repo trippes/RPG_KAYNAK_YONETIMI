@@ -90,7 +90,7 @@ Varsayılan `create` modu mevcut dosyayı ezmez. Değiştirme için açıkça `m
 
 **Aşama 0–5:** Tamamlandı ve kabul edildi. Aşama 3 dünya/runtime ve persistence; Aşama 4 sürekli hareket; Aşama 5 gövde, hex/nesne çarpışmaları, kayma, CCD ve 60 TPS entegrasyonunu kapsar. Aşama 5 son kullanıcı bildirimiyle 588/588 yerel test ve başarılı masaüstü kabulüyle kapatılmıştır.
 
-**Aşama 6 — TAMAMLANDI VE KABUL EDİLDİ:** Kamera ve dünya-ekran dönüşümünün 6.1–6.5 teknik uygulaması tamamlandı. Son otomatik doğrulama 681/681 test, Linux/Windows Core Quality ve benchmark adımlarında başarılıdır. Kamera, zoom, yumuşak takip, harita bounds politikası, Pygame renderer, pencere resize ve fareyle hex seçimi entegre edildi. Kullanıcı 17 Kasım 2026 tarihinde tüm masaüstü/görsel kontrollerin başarılı olduğunu bildirdi; Aşama 6 resmen kapatıldı. Kontrol adımları docs/PHASE-06-MANUAL-ACCEPTANCE-CHECKLIST.md içindedir. Aşama 7'nin 7.1–7.8 kodlama ve otomatik doğrulama çalışmaları tamamlanmıştır; kullanıcı manuel görsel kabulü beklenmektedir. Aşama 8–13 henüz başlatılmamıştır.
+**Aşama 6 — TAMAMLANDI VE KABUL EDİLDİ:** Kamera ve dünya-ekran dönüşümünün 6.1–6.5 teknik uygulaması tamamlandı. Son otomatik doğrulama 681/681 test, Linux/Windows Core Quality ve benchmark adımlarında başarılıdır. Kamera, zoom, yumuşak takip, harita bounds politikası, Pygame renderer, pencere resize ve fareyle hex seçimi entegre edildi. Kullanıcı 17 Kasım 2026 tarihinde tüm masaüstü/görsel kontrollerin başarılı olduğunu bildirdi; Aşama 6 resmen kapatıldı. Kontrol adımları docs/PHASE-06-MANUAL-ACCEPTANCE-CHECKLIST.md içindedir. Aşama 7'nin 7.1–7.8 uygulaması, 703/703 otomatik testi, Linux/Windows CI, benchmark ve kullanıcı görsel kabulü tamamlanmış; aşama 17 Kasım 2026 tarihinde kapatılmıştır. Aşama 8–13 henüz başlatılmamıştır.
 
 ### Mimari sınırlar
 
@@ -105,7 +105,7 @@ ADR-003 sınır davranışı: eşit mesafede karakterin önceki hücresi korunur
 
 ## Aşama 7 — Render ve görsel doğrulama
 
-**Durum:** Kodlama, 703 otomatik test ve performans benchmark'ları tamamlandı. Manuel görsel kabul bekleniyor; aşama henüz kapatılmadı.
+**Durum:** TAMAMLANDI VE KABUL EDİLDİ — 7.1–7.8, 703/703 otomatik test, Linux/Windows CI, benchmark ve kullanıcı görsel kabulü 17 Kasım 2026 tarihinde tamamlandı.
 
 - [Aşama 7 Genel Planı](docs/PHASE-07-GENERAL-PLAN.md)
 - [Aşama 7 Teknik Mimari Planı](docs/PHASE-07-TECHNICAL-PLAN.md)
@@ -113,4 +113,4 @@ ADR-003 sınır davranışı: eşit mesafede karakterin önceki hücresi korunur
 - [Uygulama ve Doğrulama Raporu](reports/PHASE-07-IMPLEMENTATION-VALIDATION-REPORT.md)
 - [Görsel test sahneleri — GitHub Actions artifact](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44045118838/artifacts/14311276474)
 
-Aşama 7'nin kullanıcı tarafından yapılacak son masaüstü görsel kontrolleri tamamlanmadan Aşama 7 kapatılmış sayılmaz.
+Aşama 7 kapanış raporu: [PHASE-07-CLOSURE-REPORT.md](reports/PHASE-07-CLOSURE-REPORT.md). Bir sonraki planlı aşama Aşama 8 — Mekânsal indeksleme ve performans karşılaştırmasıdır. Dünya görsel zenginleştirmesi bu aşamanın kapsamında değildir; ileriki aşamalarda ayrıca planlanacaktır.
