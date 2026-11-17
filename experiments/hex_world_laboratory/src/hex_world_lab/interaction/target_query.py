@@ -1,7 +1,8 @@
 """Spatially accelerated target candidates with exact world-distance filtering."""
 from dataclasses import dataclass
 from hex_world_lab.entities import EntityId, EntityRecord, EntityRegistry
-from hex_world_lab.geometry import WorldPoint, MapId
+from hex_world_lab.geometry import WorldPoint
+from hex_world_lab.world.identity import MapId
 from hex_world_lab.interaction.profile import InteractionProfile
 from hex_world_lab.interaction.range import world_distance
 from hex_world_lab.entities.spatial_index import EntityAABB, EntitySpatialIndex
@@ -20,7 +21,11 @@ class TargetQuery:
         if not isinstance(origin, WorldPoint): raise TypeError("origin must be a WorldPoint")
         if isinstance(radius, bool) or not isinstance(radius, (int,float)) or radius < 0:
             raise ValueError("radius must be non-negative")
-        area = EntityAABB(origin.x-radius, origin.y-radius, origin.x+radius, origin.y+radius)
+        profiles = [getattr(e.interaction_profile, "interaction_radius", 0.0)
+                    for e in self.registry.entities_for_map(self.registry.world_id, map_id)]
+        padding = max(profiles, default=0.0)
+        extent = radius + padding
+        area = EntityAABB(origin.x-extent, origin.y-extent, origin.x+extent, origin.y+extent)
         candidates=[]
         for entity in self.spatial_index.query(map_id, area):
             profile=entity.interaction_profile
