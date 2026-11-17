@@ -102,7 +102,7 @@ CI'ya Aşama 9 entity benchmark ve görsel artifact üretimi eklendi.
 
 ## 3. Otomatik test ve CI sonuçları
 
-<badge color="success">Başarılı</badge>
+**Sonuç: Başarılı**
 
 | Doğrulama | Sonuç |
 |---|---:|
