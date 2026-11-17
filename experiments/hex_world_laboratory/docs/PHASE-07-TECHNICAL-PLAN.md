@@ -3,7 +3,7 @@
 > **Belge türü:** Ayrıntılı teknik mimari, veri/API sözleşmeleri, uygulama sırası ve doğrulama planı  
 > **Proje:** Eldoria — Hex World Laboratory  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
-> **Durum:** TEKNİK PLAN HAZIR — KULLANICI ONAYI BEKLİYOR  
+> **Durum:** KULLANICI ONAYLADI — 7.1–7.8 UYGULAMA VE OTOMATİK DOĞRULAMA TAMAMLANDI — MANUEL GÖRSEL KABUL BEKLENİYOR  
 > **Ön koşullar:** Aşama 0–6 kabul edildi; Aşama 7 genel planı kullanıcı tarafından onaylandı.  
 > **Kod durumu:** Bu belge kod değişikliği içermez. Uygulama, teknik plan onaylandıktan sonra başlatılır.
 
@@ -637,4 +637,4 @@ Aşama 7 ancak otomatik testler, regresyon testleri, benchmark kanıtları ve ku
 
 ---
 
-**Uygulama kapısı:** Bu teknik planın kullanıcı tarafından onaylanmasından önce render kodunda değişiklik yapılmayacaktır. Onay sonrasında uygulama 7.1'den başlayacak; her alt aşama kendi test ve doğrulama kapısını geçtikten sonra ilerleyecektir.
+**Uygulama sonucu:** Teknik plan kullanıcı tarafından onaylandı. 7.1–7.8 kodlama, otomatik testler, benchmark ve görsel sahne üretimi tamamlandı. Aşama 7'nin son kabul kapısı, kullanıcının masaüstü manuel görsel testleridir.

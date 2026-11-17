@@ -5,8 +5,8 @@
 > **Depo:** `trippes/RPG_KAYNAK_YONETIMI`  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Hedef entegrasyon dalı:** `demo_eldoria`  
-> **Durum:** AŞAMA 0–6 KABUL EDİLDİ — AŞAMA 6 KAPATILDI  
-> **Belge sürümü:** 1.4
+> **Durum:** AŞAMA 0–6 KABUL EDİLDİ — AŞAMA 7 UYGULAMA VE OTOMATİK DOĞRULAMA TAMAM — MANUEL GÖRSEL KABUL BEKLENİYOR  
+> **Belge sürümü:** 1.5
 
 ---
 
@@ -343,6 +343,10 @@ Kabul koşulları:
 - Oyuncu takibi ve harita sınırları kararlı.
 
 ### Aşama 7 — Render ve görsel doğrulama
+
+**Durum:** 7.1–7.8 kodlama, otomatik testler, benchmark ve görsel test sahneleri tamamlandı. Kullanıcı masaüstü görsel kabulü bekleniyor; bu aşama henüz kapatılmadı.
+
+**Belgeler:** [Genel Plan](PHASE-07-GENERAL-PLAN.md) · [Teknik Plan](PHASE-07-TECHNICAL-PLAN.md) · [Manuel Görsel Kabul](PHASE-07-MANUAL-ACCEPTANCE-CHECKLIST.md) · [Uygulama ve Doğrulama Raporu](../reports/PHASE-07-IMPLEMENTATION-VALIDATION-REPORT.md)
 
 **Amaç:** Hex dünya topolojisini, varlık konumlarını ve derinlik ilişkilerini görsel olarak doğru sunmak.
 

@@ -90,7 +90,7 @@ Varsayılan `create` modu mevcut dosyayı ezmez. Değiştirme için açıkça `m
 
 **Aşama 0–5:** Tamamlandı ve kabul edildi. Aşama 3 dünya/runtime ve persistence; Aşama 4 sürekli hareket; Aşama 5 gövde, hex/nesne çarpışmaları, kayma, CCD ve 60 TPS entegrasyonunu kapsar. Aşama 5 son kullanıcı bildirimiyle 588/588 yerel test ve başarılı masaüstü kabulüyle kapatılmıştır.
 
-**Aşama 6 — TAMAMLANDI VE KABUL EDİLDİ:** Kamera ve dünya-ekran dönüşümünün 6.1–6.5 teknik uygulaması tamamlandı. Son otomatik doğrulama 681/681 test, Linux/Windows Core Quality ve benchmark adımlarında başarılıdır. Kamera, zoom, yumuşak takip, harita bounds politikası, Pygame renderer, pencere resize ve fareyle hex seçimi entegre edildi. Kullanıcı 17 Kasım 2026 tarihinde tüm masaüstü/görsel kontrollerin başarılı olduğunu bildirdi; Aşama 6 resmen kapatıldı. Kontrol adımları docs/PHASE-06-MANUAL-ACCEPTANCE-CHECKLIST.md içindedir. Aşama 7–13 başlatılmamıştır.
+**Aşama 6 — TAMAMLANDI VE KABUL EDİLDİ:** Kamera ve dünya-ekran dönüşümünün 6.1–6.5 teknik uygulaması tamamlandı. Son otomatik doğrulama 681/681 test, Linux/Windows Core Quality ve benchmark adımlarında başarılıdır. Kamera, zoom, yumuşak takip, harita bounds politikası, Pygame renderer, pencere resize ve fareyle hex seçimi entegre edildi. Kullanıcı 17 Kasım 2026 tarihinde tüm masaüstü/görsel kontrollerin başarılı olduğunu bildirdi; Aşama 6 resmen kapatıldı. Kontrol adımları docs/PHASE-06-MANUAL-ACCEPTANCE-CHECKLIST.md içindedir. Aşama 7'nin 7.1–7.8 kodlama ve otomatik doğrulama çalışmaları tamamlanmıştır; kullanıcı manuel görsel kabulü beklenmektedir. Aşama 8–13 henüz başlatılmamıştır.
 
 ### Mimari sınırlar
 
@@ -101,3 +101,16 @@ Varsayılan `create` modu mevcut dosyayı ezmez. Değiştirme için açıkça `m
 - Kamera, nihai render, NPC/kaynak simülasyonu, oyun nesnesi sistemi ve ana oyuna entegrasyon sonraki aşamaların kapsamındadır. Sürekli hareket Aşama 4'te, fizik/çarpışma Aşama 5'te laboratuvar içinde uygulanmıştır.
 
 ADR-003 sınır davranışı: eşit mesafede karakterin önceki hücresi korunur; sınır geçilip diğer hücre daha yakın hâle geldiğinde yeni hücre seçilir. Önceki hücre bilgisi verilmezse deterministik cube-rounding yedek kuralı kullanılır.
+
+
+## Aşama 7 — Render ve görsel doğrulama
+
+**Durum:** Kodlama, 703 otomatik test ve performans benchmark'ları tamamlandı. Manuel görsel kabul bekleniyor; aşama henüz kapatılmadı.
+
+- [Aşama 7 Genel Planı](docs/PHASE-07-GENERAL-PLAN.md)
+- [Aşama 7 Teknik Mimari Planı](docs/PHASE-07-TECHNICAL-PLAN.md)
+- [Manuel Görsel Kabul Kontrol Listesi](docs/PHASE-07-MANUAL-ACCEPTANCE-CHECKLIST.md)
+- [Uygulama ve Doğrulama Raporu](reports/PHASE-07-IMPLEMENTATION-VALIDATION-REPORT.md)
+- [Görsel test sahneleri — GitHub Actions artifact](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44044016648/artifacts/14310377737)
+
+Aşama 7'nin kullanıcı tarafından yapılacak son masaüstü görsel kontrolleri tamamlanmadan Aşama 7 kapatılmış sayılmaz.

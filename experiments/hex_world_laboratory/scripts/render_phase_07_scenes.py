@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+from dataclasses import replace
 from pathlib import Path
 
 import pygame
@@ -11,12 +12,14 @@ from hex_world_lab.application.movement_demo import MovementDemo
 from hex_world_lab.camera import WorldScreenTransform
 from hex_world_lab.geometry import AxialCoord, WorldPoint, axial_to_world
 from hex_world_lab.rendering import (
+    CellVisual,
     PygameWorldRenderer,
     RenderDebugOptions,
     SpriteVisual,
     WorldRenderSnapshot,
 )
 from hex_world_lab.rendering.pygame_world_renderer import SpriteAsset
+from hex_world_lab.rendering.visibility import VisibleAreaCuller
 
 
 def render_scenes(output_dir: str | Path) -> tuple[Path, ...]:
@@ -27,6 +30,8 @@ def render_scenes(output_dir: str | Path) -> tuple[Path, ...]:
         demo = MovementDemo()
         surface = pygame.Surface((960, 640))
         results: list[Path] = []
+        initial_transform = demo.camera.transform
+        culler = VisibleAreaCuller()
 
         def save_demo_scene(name: str, options: RenderDebugOptions,
                             transform: WorldScreenTransform | None = None) -> None:
@@ -36,12 +41,35 @@ def render_scenes(output_dir: str | Path) -> tuple[Path, ...]:
             pygame.image.save(surface, path)
             results.append(path)
 
+
+        def save_culling_scene(name: str, transform: WorldScreenTransform,
+                               options: RenderDebugOptions) -> None:
+            # A synthetic 41x41 map makes the viewport filter visible even
+            # though the interactive demo map is intentionally only 61 cells.
+            all_cells = {
+                AxialCoord(q, r): None
+                for q in range(-20, 21)
+                for r in range(-20, 21)
+            }
+            visible = culler.visible_cells(all_cells, demo._layout, transform)
+            base = demo.build_render_snapshot(debug_options=options)
+            snapshot = replace(
+                base,
+                cells=tuple(CellVisual(coord) for coord in visible),
+                visible_region=culler.visible_region(transform, demo._layout),
+            )
+            demo.renderer.render(surface, snapshot, demo._layout, transform)
+            path = output / name
+            pygame.image.save(surface, path)
+            results.append(path)
+
         save_demo_scene(
             "01-hex-geometry-debug.png",
             RenderDebugOptions(show_cell_centers=True, show_coordinate_labels=True),
         )
-        save_demo_scene(
+        save_culling_scene(
             "02-visible-region-culling.png",
+            initial_transform,
             RenderDebugOptions(show_culling_debug=True, show_cell_centers=True),
         )
         save_demo_scene(
@@ -55,16 +83,17 @@ def render_scenes(output_dir: str | Path) -> tuple[Path, ...]:
 
         demo.camera.set_zoom(3.0)
         demo.camera.set_center(axial_to_world(AxialCoord(4, 0), demo._layout))
-        save_demo_scene(
+        save_culling_scene(
             "05-viewport-edge-culling.png",
+            demo.camera.transform,
             RenderDebugOptions(show_culling_debug=True, show_coordinate_labels=True),
         )
 
         subpixel_transform = WorldScreenTransform(
-            demo.camera.transform.viewport,
-            WorldPoint(demo.camera.transform.center.x + 0.35,
-                       demo.camera.transform.center.y - 0.35),
-            demo.camera.transform.zoom,
+            initial_transform.viewport,
+            WorldPoint(initial_transform.center.x + 0.35,
+                       initial_transform.center.y - 0.35),
+            initial_transform.zoom,
         )
         save_demo_scene(
             "06-subpixel-camera-sample.png",

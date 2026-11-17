@@ -73,8 +73,11 @@ class PygameWorldRenderer:
             fill = CELL_OBSTACLE_FILL if cell.has_obstacle else HEX_FILL
             pygame.draw.polygon(surface, fill, points)
             if options.show_hex_edges:
-                edge = SELECTED_EDGE if snapshot.selected_cell == cell.coord else (
-                    ACTIVE_EDGE if cell.is_active else HEX_EDGE
+                edge = (
+                    SELECTED_EDGE if snapshot.selected_cell == cell.coord
+                    else ACTIVE_EDGE if cell.is_active
+                    else (88, 215, 225) if options.show_culling_debug
+                    else HEX_EDGE
                 )
                 pygame.draw.polygon(surface, edge, points, width=max(1, round(transform.zoom)))
             if options.show_cell_centers:
@@ -116,15 +119,13 @@ class PygameWorldRenderer:
         if options.show_collider_debug:
             for collider in snapshot.colliders:
                 self._draw_collider(surface, collider, transform)
-        if options.show_culling_debug and snapshot.visible_region is not None:
-            region = snapshot.visible_region
-            points = [
-                self._point(WorldPoint(region.min_x, region.min_y), transform),
-                self._point(WorldPoint(region.min_x, region.max_y), transform),
-                self._point(WorldPoint(region.max_x, region.max_y), transform),
-                self._point(WorldPoint(region.max_x, region.min_y), transform),
-            ]
-            pygame.draw.lines(surface, (88, 215, 225), True, points, 1)
+        if options.show_culling_debug:
+            # The conservative culling AABB includes a hex-radius safety margin
+            # and lies just outside the viewport; highlight visible cells and
+            # the actual viewport boundary so the active draw region is clear.
+            pygame.draw.rect(
+                surface, (88, 215, 225), surface.get_rect().inflate(-2, -2), 1
+            )
 
     def _draw_circle(self, surface, circle: CircleVisual, transform: WorldScreenTransform) -> None:
         center = self._point(circle.center, transform)
