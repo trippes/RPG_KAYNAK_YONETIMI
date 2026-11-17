@@ -1,7 +1,6 @@
 """Map-scoped entity broadphase adapter over the generic UniformGrid."""
 from dataclasses import dataclass
-from math import hypot
-from hex_world_lab.geometry import WorldPoint, MapId
+from hex_world_lab.world.identity import MapId
 from hex_world_lab.physics.body import ActorBodyTransform
 from hex_world_lab.physics.shapes import CircleShape, ConvexPolygonShape
 from hex_world_lab.spatial import UniformGrid
