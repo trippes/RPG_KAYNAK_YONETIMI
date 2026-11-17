@@ -61,3 +61,21 @@ def test_entity_demo_contains_player_two_npcs_two_resources_and_companion_comman
         assert surface.get_at((480,320))[:3] != (21,25,34)
     finally:
         pygame.quit()
+
+
+def test_entity_mouse_selection_is_zoom_invariant():
+    from hex_world_lab.camera import ScreenPoint
+    pygame.init()
+    try:
+        demo=EntityDemo()
+        target=demo.coordinator.registry.require(demo.npc_ids[0])
+        world_point=target.transform.location.position
+        assert demo.select_world_point(world_point)==demo.npc_ids[0]
+        screen=demo.movement.camera.transform.world_to_screen(world_point)
+        assert demo.select_screen_point(ScreenPoint(round(screen.x),round(screen.y)))==demo.npc_ids[0]
+        demo.movement.camera.zoom_by_steps(2)
+        zoomed=demo.movement.camera.transform.world_to_screen(world_point)
+        event=pygame.event.Event(pygame.MOUSEBUTTONDOWN,{"button":1,"pos":(round(zoomed.x),round(zoomed.y))})
+        assert demo.handle_event(event)==demo.npc_ids[0]
+    finally:
+        pygame.quit()
