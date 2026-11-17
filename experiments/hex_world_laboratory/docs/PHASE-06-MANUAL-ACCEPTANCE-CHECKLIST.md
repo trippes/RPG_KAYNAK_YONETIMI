@@ -1,14 +1,14 @@
 # Aşama 6 — Masaüstü Görsel Kabul Kontrol Listesi
 
-> Durum: Otomatik doğrulama tamamlandı; kullanıcı görsel kabulü bekleniyor.  
+> Durum: **KULLANICI TARAFINDAN KABUL EDİLDİ — 17 Kasım 2026.**  
 > Çalışma dalı: `experiment/hex-world-laboratory`  
 > Giriş noktası: `python -m hex_world_lab`
 
-Bu liste yalnızca son masaüstü/görsel kabul içindir. Otomatik testler GitHub Actions üzerinde yürütülmüştür; kullanıcıdan tekrar test komutu çalıştırması istenmez. Aşama 6, bu listenin sonuçları bildirilip kabul edilene kadar tamamen kapanmış sayılmaz.
+Bu liste yalnızca son masaüstü/görsel kabul içindir. Otomatik testler GitHub Actions üzerinde yürütülmüştür; kullanıcıdan tekrar test komutu çalıştırması istenmez. Kullanıcı, listedeki kontrollerin tamamını kendi bilgisayarında gerçekleştirdiğini ve hepsinin başarılı olduğunu 17 Kasım 2026 tarihinde bildirdi. Aşama 6 görsel kabul kapısı kapanmıştır.
 
 ## 1. Hazırlık
 
-- [ ] Depoda `experiment/hex-world-laboratory` dalına geçildi ve son değişiklikler alındı.
+- [x] Depoda `experiment/hex-world-laboratory` dalına geçildi ve son değişiklikler alındı.
 - [ ] Laboratuvar sanal ortamı etkinleştirildi.
 - [ ] Terminal laboratuvar dizininde açıldı: `experiments/hex_world_laboratory`.
 - [ ] `python -m hex_world_lab` komutuyla pencere açıldı.
@@ -57,9 +57,9 @@ Bu liste yalnızca son masaüstü/görsel kabul içindir. Otomatik testler GitHu
 
 Her madde için başarılı/başarısız işaretleyin. Başarısız maddelerde mümkünse ekran görüntüsü ve kısa açıklama ekleyin.
 
-- Genel sonuç: Bekliyor / Kabul / Düzeltme gerekli
+- Genel sonuç: **KABUL**
 - Bulunan görsel sorunlar:
 - Tekrarlanma adımları:
 - Ekran görüntüsü veya ek not:
 
-**Kapanış kuralı:** Kullanıcının görsel kabulü bildirilmeden Aşama 6 kapanış raporunda aşama “tamamlandı ve kabul edildi” olarak işaretlenmez.
+**Kabul kaydı:** Kullanıcı 17 Kasım 2026 tarihinde tüm masaüstü/görsel kontrollerin başarılı olduğunu bildirmiştir. Aşama 6 kapanış koşulu sağlanmıştır.
