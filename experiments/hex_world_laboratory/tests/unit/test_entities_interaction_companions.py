@@ -90,3 +90,17 @@ def test_map_transfer_updates_spatial_membership_without_changing_identity():
     old=EntityAABB(10,-10,30,10); new=EntityAABB(190,-10,210,10)
     assert spatial.query(map_id,old)==()
     assert tuple(e.entity_id.value for e in spatial.query(second,new))==("npc",)
+
+
+def test_presentation_keeps_sprite_anchor_and_physics_anchor_identical():
+    from hex_world_lab.entities.presentation import body_transform,collider_visual,sprite_visual
+    world,map_id,registry,spatial,player,npc,resource=fixture()
+    visual=sprite_visual(player,"player-art",layer_priority=7)
+    body=body_transform(player)
+    assert visual.ground_anchor==player.transform.location.position
+    assert body.ground_anchor==visual.ground_anchor
+    collider=collider_visual(player)
+    assert collider is not None and collider.owner_id==player.entity_id.value
+    assert collider.shape.center==player.transform.location.position
+    assert collider.shape.radius==7
+    assert collider_visual(resource) is None
