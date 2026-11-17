@@ -36,7 +36,7 @@ Eldoria'nın canon altıgen dünya mimarisini ana oyundan bağımsız araştırm
 - [Aşama 3.7 — Runtime Persistence](reports/PHASE-03.7-REPORT.md)
 - [Aşama 3 — Genel Dünya Modeli Kapanış Raporu](reports/PHASE-03-WORLD-REPORT.md)
 - [Aşama 4 — Sürekli Hareket Kapanış Raporu](reports/PHASE-04-CLOSURE-REPORT.md)
-- [Aşama 5 — Gövde Modeli, Çarpışma ve Fizik Kapanış Raporu](reports/PHASE-05-CLOSURE-REPORT.md)\n- [Aşama 6 — Otomatik Doğrulama Günlüğü](reports/PHASE-06-VALIDATION-LOG.md)\n- [Aşama 6 — Kapanış Raporu (Görsel Kabul Bekliyor)](reports/PHASE-06-CLOSURE-REPORT.md)
+- [Aşama 5 — Gövde Modeli, Çarpışma ve Fizik Kapanış Raporu](reports/PHASE-05-CLOSURE-REPORT.md)\n- [Aşama 6 — Otomatik Doğrulama Günlüğü](reports/PHASE-06-VALIDATION-LOG.md)\n- [Aşama 6 — Kapanış Raporu (Kabul Edildi)](reports/PHASE-06-CLOSURE-REPORT.md)
 
 ## Kurulum (Windows PowerShell)
 
@@ -90,7 +90,7 @@ Varsayılan `create` modu mevcut dosyayı ezmez. Değiştirme için açıkça `m
 
 **Aşama 0–5:** Tamamlandı ve kabul edildi. Aşama 3 dünya/runtime ve persistence; Aşama 4 sürekli hareket; Aşama 5 gövde, hex/nesne çarpışmaları, kayma, CCD ve 60 TPS entegrasyonunu kapsar. Aşama 5 son kullanıcı bildirimiyle 588/588 yerel test ve başarılı masaüstü kabulüyle kapatılmıştır.
 
-**Aşama 6:** Kamera ve dünya-ekran dönüşümünün 6.1–6.5 teknik uygulaması tamamlandı. Son otomatik doğrulama 681/681 test, Linux/Windows Core Quality ve benchmark adımlarında başarılıdır. Kamera, zoom, yumuşak takip, harita bounds politikası, Pygame renderer, pencere resize ve fareyle hex seçimi entegre edildi. Masaüstü görsel kabul kullanıcı tarafından henüz yapılmadı; bu nedenle Aşama 6 bütünüyle kapanmış sayılmaz. Kontrol adımları docs/PHASE-06-MANUAL-ACCEPTANCE-CHECKLIST.md içindedir. Aşama 7–13 başlatılmamıştır.
+**Aşama 6 — TAMAMLANDI VE KABUL EDİLDİ:** Kamera ve dünya-ekran dönüşümünün 6.1–6.5 teknik uygulaması tamamlandı. Son otomatik doğrulama 681/681 test, Linux/Windows Core Quality ve benchmark adımlarında başarılıdır. Kamera, zoom, yumuşak takip, harita bounds politikası, Pygame renderer, pencere resize ve fareyle hex seçimi entegre edildi. Kullanıcı 17 Kasım 2026 tarihinde tüm masaüstü/görsel kontrollerin başarılı olduğunu bildirdi; Aşama 6 resmen kapatıldı. Kontrol adımları docs/PHASE-06-MANUAL-ACCEPTANCE-CHECKLIST.md içindedir. Aşama 7–13 başlatılmamıştır.
 
 ### Mimari sınırlar
 
