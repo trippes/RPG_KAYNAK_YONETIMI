@@ -22,13 +22,13 @@ python scripts/run_phase_09_demo.py
 |---|---|
 | Oyuncu hareketi | WASD ile hareket et; Shift ile koşu, Alt ile gizlilik modunu dene |
 | Kamera | Fare tekerleğiyle yakınlaştır/uzaklaştır |
-| Hedef seçimi | Fareyle NPC veya kaynak üzerine tıkla |
-| Collider görünümü | C tuşuyla collider/interaction debug görünümünü açıp kapat |
-| Yoldaş edinme | R tuşuyla muhafız NPC'yi yoldaş olarak al |
-| FOLLOW | 1 tuşuna bas |
-| WAIT | 2 tuşuna bas |
-| RETURN | 3 tuşuna bas |
-| Çıkış | ESC |
+| Hedef seçimi | Fareyle NPC veya kaynak üzerine sol tıkla |
+| Collider görünümü | F3 tuşuyla collider/interaction debug görünümünü açıp kapat (C bu demo için ayrılmıştır; ana oyunda karakter ekranı kısayoludur) |
+| NPC eylem menüsü | Bir NPC üzerine sağ tıkla; eylem menüsünün doğru NPC için açıldığını doğrula |
+| Yoldaş edinme | NPC eylem menüsünden “Yoldaş olarak al” seçeneğine tıkla |
+| FOLLOW | Yoldaş NPC'ye sağ tıkla ve “Takip et (FOLLOW)” seçeneğine tıkla |
+| WAIT | Yoldaş NPC'ye sağ tıkla ve “Bekle (WAIT)” seçeneğine tıkla |
+| RETURN | Yoldaş NPC'ye sağ tıkla ve “Geri dön (RETURN)” seçeneğine tıkla |\n| Yoldaşlıktan çıkar | Yoldaş NPC'ye sağ tıkla ve “Yoldaşlıktan çıkar” seçeneğine tıkla |\n| Çıkış | ESC |
 
 ## 3. Görsel kontroller
 
