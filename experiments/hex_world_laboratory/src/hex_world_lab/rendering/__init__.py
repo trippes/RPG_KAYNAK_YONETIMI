@@ -1,6 +1,7 @@
 """Pygame rendering adapters and immutable world render snapshots."""
 
 from .pygame_world_renderer import PygameWorldRenderer
+from .visibility import VisibleAreaCuller, VisibleRegion
 from .snapshot import (
     CellVisual,
     CircleVisual,
@@ -16,4 +17,6 @@ __all__ = [
     "PolygonVisual",
     "PygameWorldRenderer",
     "WorldRenderSnapshot",
+    "VisibleAreaCuller",
+    "VisibleRegion",
 ]

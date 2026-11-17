@@ -25,6 +25,7 @@ from hex_world_lab.geometry import (
 )
 from hex_world_lab.input import PygameKeyboardAdapter
 from hex_world_lab.rendering.pygame_world_renderer import PygameWorldRenderer
+from hex_world_lab.rendering.visibility import VisibleAreaCuller
 from hex_world_lab.rendering.snapshot import (
     CellVisual,
     CircleVisual,
@@ -121,6 +122,7 @@ class MovementDemo:
         "camera",
         "renderer",
         "selected_cell",
+        "_visibility_culler",
     )
 
     def __init__(
@@ -144,6 +146,7 @@ class MovementDemo:
         )
         self.camera.set_target(start_position)
         self.renderer = PygameWorldRenderer()
+        self._visibility_culler = VisibleAreaCuller()
         self.selected_cell: AxialCoord | None = None
         self._movement_config = MovementConfig(max_speed=movement_speed)
         tree_center = axial_to_world(AxialCoord(0, 2), self._layout)
@@ -284,15 +287,26 @@ class MovementDemo:
         self.selected_cell = candidate if candidate in definition.cells else None
         return self.selected_cell
 
-    def build_render_snapshot(self) -> WorldRenderSnapshot:
-        """Create immutable world-space render data without changing simulation."""
+    def build_render_snapshot(self, *, cull_to_viewport: bool = True) -> WorldRenderSnapshot:
+        """Create immutable world-space render data without changing simulation.
+
+        Visible-area culling happens before DTO allocation, avoiding per-frame
+        snapshot objects for cells outside the viewport.
+        """
         definition = self.world.get_map(self.map_id)
         assert definition is not None
         active = self.current_resolution
         active_coord = None if active is None else active.coord
+        visible_coords = (
+            self._visibility_culler.visible_cells(
+                definition.cells, self._layout, self.camera.transform
+            )
+            if cull_to_viewport
+            else tuple(sorted(definition.cells, key=lambda item: (item.q, item.r)))
+        )
         cells = tuple(
-            CellVisual(coord, cell.has_obstacle, coord == active_coord)
-            for coord, cell in definition.cells.items()
+            CellVisual(coord, definition.cells[coord].has_obstacle, coord == active_coord)
+            for coord in visible_coords
         )
         circles = []
         polygons = []
