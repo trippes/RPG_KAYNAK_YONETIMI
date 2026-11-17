@@ -95,7 +95,7 @@ Varsayılan `create` modu mevcut dosyayı ezmez. Değiştirme için açıkça `m
 
 **Aşama 0–5:** Tamamlandı ve kabul edildi. Aşama 3 dünya/runtime ve persistence; Aşama 4 sürekli hareket; Aşama 5 gövde, hex/nesne çarpışmaları, kayma, CCD ve 60 TPS entegrasyonunu kapsar. Aşama 5 son kullanıcı bildirimiyle 588/588 yerel test ve başarılı masaüstü kabulüyle kapatılmıştır.
 
-**Aşama 6 — TAMAMLANDI VE KABUL EDİLDİ:** Kamera ve dünya-ekran dönüşümünün 6.1–6.5 teknik uygulaması tamamlandı. Son otomatik doğrulama 681/681 test, Linux/Windows Core Quality ve benchmark adımlarında başarılıdır. Kamera, zoom, yumuşak takip, harita bounds politikası, Pygame renderer, pencere resize ve fareyle hex seçimi entegre edildi. Kullanıcı 17 Kasım 2026 tarihinde tüm masaüstü/görsel kontrollerin başarılı olduğunu bildirdi; Aşama 6 resmen kapatıldı. Kontrol adımları docs/PHASE-06-MANUAL-ACCEPTANCE-CHECKLIST.md içindedir. Aşama 7'nin 7.1–7.8 uygulaması, 703/703 otomatik testi, Linux/Windows CI, benchmark ve kullanıcı görsel kabulü tamamlanmış; aşama 17 Kasım 2026 tarihinde kapatılmıştır. Aşama 8'in 8.1–8.8 teknik uygulaması, 729/729 test, Linux/Windows Core Quality, tüm benchmarklar ve kullanıcı görsel/regresyon kabulü tamamlanmıştır. Aşama 8 resmen kapatılmıştır. Aşama 9 genel planı kullanıcı tarafından onaylanmıştır. Ayrıntılı teknik mimari plan hazırlanmış ve kullanıcı onayına sunulmuştur; uygulama kodlaması henüz başlamamıştır.
+**Aşama 6 — TAMAMLANDI VE KABUL EDİLDİ:** Kamera ve dünya-ekran dönüşümünün 6.1–6.5 teknik uygulaması tamamlandı. Son otomatik doğrulama 681/681 test, Linux/Windows Core Quality ve benchmark adımlarında başarılıdır. Kamera, zoom, yumuşak takip, harita bounds politikası, Pygame renderer, pencere resize ve fareyle hex seçimi entegre edildi. Kullanıcı 17 Kasım 2026 tarihinde tüm masaüstü/görsel kontrollerin başarılı olduğunu bildirdi; Aşama 6 resmen kapatıldı. Kontrol adımları docs/PHASE-06-MANUAL-ACCEPTANCE-CHECKLIST.md içindedir. Aşama 7'nin 7.1–7.8 uygulaması, 703/703 otomatik testi, Linux/Windows CI, benchmark ve kullanıcı görsel kabulü tamamlanmış; aşama 17 Kasım 2026 tarihinde kapatılmıştır. Aşama 8'in 8.1–8.8 teknik uygulaması, 729/729 test, Linux/Windows Core Quality, tüm benchmarklar ve kullanıcı görsel/regresyon kabulü tamamlanmıştır. Aşama 8 resmen kapatılmıştır. Aşama 9 genel ve teknik planları kullanıcı tarafından onaylanmış; 9.1–9.9 uygulaması tamamlanmıştır. Laboratuvar 741/741 test, Core Quality Linux/Windows 2.204'er test, benchmark ve görsel artifact doğrulamaları başarılıdır. Kullanıcı manuel kabul kapısı beklenmektedir; aşama henüz resmen kapatılmamıştır.
 
 ### Mimari sınırlar
 
@@ -138,9 +138,13 @@ Aşama 8, kullanıcının manuel kontrolleri kabul etmesi üzerine 17 Kasım 202
 
 ## Aşama 9 — Varlıklar ve etkileşimler
 
-**Durum:** GENEL PLAN HAZIRLANDI — KULLANICI İNCELEMESİ VE ONAYI BEKLENİYOR. Kodlama başlamadı.
+**Durum:** 9.1–9.9 UYGULANDI VE OTOMATİK DOĞRULANDI — KULLANICI MANUEL KABULİNİ BEKLİYOR.
 
 - [Aşama 9 Genel Planı](docs/PHASE-09-GENERAL-PLAN.md)
 - [Aşama 9 Ayrıntılı Teknik Mimari Planı](docs/PHASE-09-TECHNICAL-PLAN.md)
+- [Uygulama ve Doğrulama Raporu](reports/PHASE-09-IMPLEMENTATION-VALIDATION-REPORT.md)
+- [Manuel Görsel/İşlevsel Kabul Kontrol Listesi](docs/PHASE-09-MANUAL-ACCEPTANCE-CHECKLIST.md)
+- [Phase 9 CI ve görsel artifact](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44150826442)
+- [Core Quality Linux/Windows doğrulaması](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44150826609)
 
-Aşama 9; ortak entity kimliği/konumu, foot-anchor ve collider ilişkisi, etkileşim menzili, fareyle hedef seçimi, Spatial indeks entegrasyonu ve oyuncu-NPC yoldaş ilişkisinin temel veri/komut altyapısını kapsar. FOLLOW, WAIT ve RETURN komutları bu aşamada yalnızca durum modeli olarak hazırlanır; gerçek takip hareketi, pathfinding, NPC AI, kaynak toplama oynanışı ve çevre sanat zenginleştirmesi bu aşamanın kapsamında değildir.
+İnteraktif kabul sahnesi laboratuvar kök dizininden `python scripts/run_phase_09_demo.py` komutuyla başlatılır. Aşama 9; ortak entity kimliği/konumu, foot-anchor ve collider ilişkisi, etkileşim menzili, fareyle hedef seçimi, Spatial indeks entegrasyonu ve oyuncu-NPC yoldaş ilişkisinin temel veri/komut altyapısını kurar. FOLLOW, WAIT ve RETURN komutları bu aşamada yalnızca durum modeli olarak saklanır; gerçek takip hareketi, pathfinding, NPC AI, kaynak toplama oynanışı ve çevre sanat zenginleştirmesi kapsam dışıdır.
