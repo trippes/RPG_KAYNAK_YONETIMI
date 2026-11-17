@@ -4,11 +4,11 @@
 > **Proje:** Eldoria — Hex World Laboratory  
 > **Depo:** trippes/RPG_KAYNAK_YONETIMI  
 > **Çalışma dalı:** experiment/hex-world-laboratory  
-> **Durum:** ONAYLANDI — 9.1–9.9 UYGULANDI VE OTOMATİK DOĞRULANDI; MANUEL KABUL BEKLENİYOR  
+> **Durum:** ONAYLANDI — 9.1–9.9 UYGULANDI; OTOMATİK VE MANUEL KABUL TAMAMLANDI  
 > **Hazırlanma tarihi:** 17 Kasım 2026  
 > **Genel plan:** [PHASE-09-GENERAL-PLAN.md](PHASE-09-GENERAL-PLAN.md)  
 > **Planın hazırlandığı HEAD:** 3f64a7030064fd40e25926e28066b45bb95af048  
-> **Uygulama durumu:** 9.1–9.9 tamamlandı; Linux/Windows CI ve laboratuvar testleri başarılı; kullanıcı manuel kabulini bekliyor
+> **Uygulama durumu:** 9.1–9.9 tamamlandı; 741/741 laboratuvar testi, Linux/Windows Core Quality, benchmarklar ve kullanıcı görsel/işlevsel kabulü başarılı
 
 ---
 
@@ -502,7 +502,7 @@ Aşama 9'un amacı yeni bir Spatial algoritması geliştirmek değildir. Ölçü
 - Laboratuvarın mevcut Linux ve Windows Core Quality workflow'ları başarılı olmalıdır.
 - Tam pytest sonucu ve CI run bağlantıları rapora yazılır.
 - Görsel kabulde player/NPC/resource ground anchor hizası, Y-sort, collider debug, mouse target selection, zoom invariance ve yoldaş komut durumları kontrol edilir.
-- Kullanıcı manuel kabulini bildirmeden Aşama 9 kapatılmış sayılmaz.
+- Kullanıcı 18 Kasım 2026 tarihinde görsel ve işlevsel kabul testlerinin tamamını başarılı bildirdi; Aşama 9 resmen kapatıldı.
 
 ## 8. Kabul kriterleri
 
@@ -582,7 +582,7 @@ Bu kapılarda genel planla çelişen bir bulgu çıkarsa uygulama durdurulur; ö
 3. Her dosya yazımından önce branch HEAD ve hedef dosya SHA doğrulandı; her yazım sonrasında commit/HEAD kontrol edildi.
 4. Laboratuvar pytest, Linux/Windows Core Quality, benchmark ve Phase 9 görsel artifact üretimi başarılı tamamlandı.
 5. Uygulama ve kanıtlar [PHASE-09-IMPLEMENTATION-VALIDATION-REPORT.md](../reports/PHASE-09-IMPLEMENTATION-VALIDATION-REPORT.md) içinde kayıtlıdır.
-6. Kullanıcı manuel görsel/işlevsel kabulini [PHASE-09-MANUAL-ACCEPTANCE-CHECKLIST.md](PHASE-09-MANUAL-ACCEPTANCE-CHECKLIST.md) üzerinden tamamlayacaktır.
-7. Kapanış raporu ve Master Plan'da resmî kapatma, yalnızca kullanıcı manuel kabulinden sonra yapılacaktır.
+6. Kullanıcı 18 Kasım 2026 tarihinde [PHASE-09-MANUAL-ACCEPTANCE-CHECKLIST.md](PHASE-09-MANUAL-ACCEPTANCE-CHECKLIST.md) kapsamındaki görsel/işlevsel kontrollerin tamamını başarılı bildirdi.
+7. [PHASE-09-CLOSURE-REPORT.md](../reports/PHASE-09-CLOSURE-REPORT.md) ve Master Plan Aşama 9'un resmî kapanışını kaydeder.
 
-**Sonuç:** Teknik planın 9.1–9.9 uygulaması tamamlanmıştır; Aşama 9 henüz resmen kapatılmamıştır. Yoldaş ilişki ve FOLLOW/WAIT/RETURN komut altyapısı mevcuttur; gerçek takip ve hareket davranışı sonraki AI/navigasyon aşamalarına bırakılmıştır.
+**Sonuç:** Teknik planın 9.1–9.9 uygulaması, otomatik doğrulaması ve kullanıcı manuel kabulü tamamlanmıştır; Aşama 9, 18 Kasım 2026 tarihinde resmen kapatılmıştır. Yoldaş ilişki ve FOLLOW/WAIT/RETURN komut altyapısı mevcuttur; gerçek takip ve hareket davranışı sonraki AI/navigasyon aşamalarına bırakılmıştır.
