@@ -2,7 +2,7 @@
 
 **Tarih:** 17 Kasım 2026  
 **Dal:** `experiment/hex-world-laboratory`  
-**Durum:** 7.1–7.8 uygulama ve otomatik doğrulama tamamlandı; kullanıcı manuel görsel kabulü bekleniyor. Aşama henüz kapatılmadı.
+**Durum:** TAMAMLANDI VE KABUL EDİLDİ — 7.1–7.8 uygulama, otomatik doğrulama ve kullanıcı masaüstü görsel kabulü 17 Kasım 2026 tarihinde tamamlandı.
 
 ## 1. Kapsam sonucu
 
@@ -74,11 +74,11 @@ python scripts/render_phase_07_scenes.py --output artifacts/phase-07
 
 ## 5. Manuel görsel kabul
 
-Otomatik testler, benchmark'lar ve görsel sahne üretimi tamamlandı. Ancak kamera titremesi, sprite zemine oturma, Y-sort ve collider hizasının gerçek masaüstü görünümü kullanıcı tarafından kontrol edilmelidir.
+Kullanıcı 17 Kasım 2026 tarihinde Aşama 7 testlerinin geçtiğini ve aşamanın kapatılmasını açıkça onayladı. Bu kabul, render altyapısının teknik doğruluğuna yöneliktir; dünya sanat varlıklarının/çevre görsellerinin zenginleştirildiği anlamına gelmez.
 
 Kontrol listesi: [PHASE-07-MANUAL-ACCEPTANCE-CHECKLIST.md](../docs/PHASE-07-MANUAL-ACCEPTANCE-CHECKLIST.md)
 
-**Aşama 7 henüz kapatılmadı.** Kullanıcı manuel görsel kabul sonuçlarını bildirdikten sonra bulgular rapora işlenecek ve kapanış kararı verilecektir.
+**Kabul sonucu:** Kullanıcı kabulü alındı; Aşama 7 kapatıldı.
 
 ## 6. Değişmezler
 
