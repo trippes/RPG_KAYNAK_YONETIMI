@@ -50,6 +50,8 @@ class EntitySpatialIndex:
             if bounds is not None:
                 index=self._indexes.setdefault(entity.map_id,UniformGrid(self.cell_size))
                 index.insert(entity.entity_id.value,bounds)
+                radius=float(getattr(entity.interaction_profile,"interaction_radius",0.0))
+                self._max_radius[entity.map_id]=max(self._max_radius.get(entity.map_id,0.0),radius)
     def remove_entity(self,entity_id)->None:
         for index in self._indexes.values():
             try: index.remove(entity_id.value)
