@@ -20,7 +20,7 @@ class EntityAABB:
 class EntitySpatialIndex:
     def __init__(self, registry: EntityRegistry, cell_size: float = 128.0) -> None:
         self.registry=registry; self.cell_size=cell_size
-        self._indexes: dict[MapId,UniformGrid]={}; self._loaded:set[MapId]=set()
+        self._indexes: dict[MapId,UniformGrid]={}; self._loaded:set[MapId]=set(); self._max_radius:dict[MapId,float]={}
     @staticmethod
     def bounds_for(entity: EntityRecord) -> EntityAABB | None:
         position=entity.transform.location.position
@@ -39,7 +39,7 @@ class EntitySpatialIndex:
     def activate_map(self,map_id:MapId)->None:
         self._loaded.add(map_id); self._rebuild(map_id)
     def deactivate_map(self,map_id:MapId)->None:
-        self._loaded.discard(map_id); self._indexes.pop(map_id,None)
+        self._loaded.discard(map_id); self._indexes.pop(map_id,None); self._max_radius.pop(map_id,None)
     def remove_map(self,map_id:MapId)->None: self.deactivate_map(map_id)
     def update_entity(self,entity:EntityRecord)->None:
         for map_id,index in tuple(self._indexes.items()):
@@ -54,6 +54,8 @@ class EntitySpatialIndex:
         for index in self._indexes.values():
             try: index.remove(entity_id.value)
             except KeyError: pass
+    def max_interaction_radius(self,map_id:MapId)->float:
+        return self._max_radius.get(map_id,0.0)
     def query(self,map_id:MapId,bounds:EntityAABB)->tuple[EntityRecord,...]:
         index=self._indexes.get(map_id)
         if index is None: return ()
@@ -66,11 +68,15 @@ class EntitySpatialIndex:
         return tuple(found)
     def _rebuild(self,map_id:MapId)->None:
         index=UniformGrid(self.cell_size)
+        maximum=0.0
         for entity in self.registry.entities_for_map(self.registry.world_id,map_id):
             if not entity.is_active: continue
             bounds=self.bounds_for(entity)
-            if bounds is not None: index.insert(entity.entity_id.value,bounds)
+            if bounds is not None:
+                index.insert(entity.entity_id.value,bounds)
+                maximum=max(maximum,float(getattr(entity.interaction_profile,"interaction_radius",0.0)))
         self._indexes[map_id]=index
+        self._max_radius[map_id]=maximum
     def differential_candidates(self,map_id:MapId,bounds:EntityAABB)->tuple[str,...]:
         indexed=tuple(e.entity_id.value for e in self.query(map_id,bounds))
         brute=tuple(e.entity_id.value for e in self.registry.entities_for_map(self.registry.world_id,map_id)
