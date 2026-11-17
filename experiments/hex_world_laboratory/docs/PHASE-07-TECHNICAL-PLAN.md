@@ -5,7 +5,7 @@
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Durum:** KULLANICI ONAYLADI — 7.1–7.8 UYGULAMA VE OTOMATİK DOĞRULAMA TAMAMLANDI — MANUEL GÖRSEL KABUL BEKLENİYOR  
 > **Ön koşullar:** Aşama 0–6 kabul edildi; Aşama 7 genel planı kullanıcı tarafından onaylandı.  
-> **Kod durumu:** Bu belge kod değişikliği içermez. Uygulama, teknik plan onaylandıktan sonra başlatılır.
+> **Kod durumu:** 7.1–7.8 uygulaması tamamlandı; otomatik doğrulama başarılı; kullanıcı manuel görsel kabulü bekleniyor.
 
 ---
 
@@ -450,7 +450,7 @@ Her profil için:
 5. Birden fazla tekrarın ortalama ve yüzdelik değerleri raporlanır.
 6. Görünür alan küçükken kazanç, viewport haritanın çoğunu kaplarken oluşan ek maliyet ve küçük haritadaki overhead ayrı raporlanır.
 
-Culling açıkken snapshot hazırlama süresi ve çizim sayısı düşmüyorsa optimizasyon başarılı sayılmaz. Küçük haritada culling overhead'i faydayı aşıyorsa küçük harita için culling'i atlama eşiği ancak ölçümle belirlenebilir.
+Culling açıkken snapshot hazırlama süresi ve çizim sayısı düşmüyorsa optimizasyon başarılı sayılmaz. Benchmark sonuçlarına göre 1.000 hücreden küçük haritalarda culling atlanır; 1.000 ve üzerindeki haritalarda görünür alan sorgusu kullanılır.
 
 ### 11.4 Benchmark dosyası
 
