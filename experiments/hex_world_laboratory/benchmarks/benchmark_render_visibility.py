@@ -15,7 +15,7 @@ from hex_world_lab.rendering import CellVisual, PygameWorldRenderer, WorldRender
 from hex_world_lab.rendering.visibility import VisibleAreaCuller
 
 
-PROFILES = (61, 1_000, 10_000, 50_000)
+PROFILES = (61, 128, 256, 1_000, 10_000, 50_000)
 
 
 def _percentile(samples: list[float], percentile: float) -> float:
@@ -97,6 +97,12 @@ def main() -> None:
                 lambda: renderer.render(surface, visible_snapshot, layout, transform), repetitions
             )
 
+            full_pipeline_ms = full_snapshot_metrics["avg_ms"] + full_render_metrics["avg_ms"]
+            culled_pipeline_ms = (
+                culling_metrics["avg_ms"]
+                + visible_snapshot_metrics["avg_ms"]
+                + visible_render_metrics["avg_ms"]
+            )
             report.append({
                 "map_cells": count,
                 "visible_cells": len(visible_coords),
@@ -109,6 +115,12 @@ def main() -> None:
                 "render_time_reduction_percent": (
                     0.0 if full_render_metrics["avg_ms"] <= 0.0 else
                     100.0 * (1.0 - visible_render_metrics["avg_ms"] / full_render_metrics["avg_ms"])
+                ),
+                "pipeline_full_avg_ms": full_pipeline_ms,
+                "pipeline_culled_avg_ms": culled_pipeline_ms,
+                "pipeline_time_reduction_percent": (
+                    0.0 if full_pipeline_ms <= 0.0 else
+                    100.0 * (1.0 - culled_pipeline_ms / full_pipeline_ms)
                 ),
             })
 
