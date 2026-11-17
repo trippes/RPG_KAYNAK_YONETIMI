@@ -4,10 +4,10 @@
 > **Proje:** Eldoria — Hex World Laboratory  
 > **Depo:** `trippes/RPG_KAYNAK_YONETIMI`  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
-> **Durum:** KULLANICI TARAFINDAN ONAYLANDI — 9.1–9.9 UYGULANDI; MANUEL KABUL BEKLENİYOR  
+> **Durum:** KULLANICI TARAFINDAN KABUL EDİLDİ — 9.1–9.9, OTOMATİK VE MANUEL KABUL TAMAMLANDI  
 > **Hazırlanma tarihi:** 17 Kasım 2026  
 > **Ön koşul:** Aşama 0–8 tamamlandı ve kabul edildi  
-> **Uygulama durumu:** 9.1–9.9 tamamlandı; otomatik test ve Linux/Windows CI başarılı; manuel kabul bekleniyor
+> **Uygulama durumu:** 9.1–9.9 tamamlandı; 741/741 laboratuvar testi, Linux/Windows Core Quality, benchmarklar ve kullanıcı görsel/işlevsel kabulü başarılı
 
 ---
 
@@ -266,7 +266,7 @@ Aşama 9, önceki aşamalardaki kabul edilmiş çalışma yöntemiyle yürütül
 6. Kullanıcıya manuel görsel kabul kontrol listesi sunulur.
 7. Kullanıcı görsel/işlevsel kabulünü bildirdikten sonra kapanış raporu ve Master Plan güncellemesi yapılır.
 
-Genel ve teknik plan onay kapıları tamamlanmıştır. Uygulama yalnızca onaylanmış teknik plan kapsamında yürütülmüştür; resmî kapanış kullanıcı manuel kabulinden sonra yapılacaktır.
+Genel ve teknik plan onay kapıları tamamlanmış; uygulama, otomatik doğrulama ve kullanıcı manuel kabulü başarıyla sonuçlanmıştır. Aşama 9, 18 Kasım 2026 tarihinde resmen kapatılmıştır.
 
 ## 12. Uygulama ve sonraki adım
 
@@ -274,9 +274,9 @@ Aşama 9 Genel Planı kullanıcı tarafından onaylanmış, ayrıntılı teknik 
 
 - Uygulama/doğrulama raporu: [PHASE-09-IMPLEMENTATION-VALIDATION-REPORT.md](../reports/PHASE-09-IMPLEMENTATION-VALIDATION-REPORT.md)
 - Manuel kabul listesi: [PHASE-09-MANUAL-ACCEPTANCE-CHECKLIST.md](PHASE-09-MANUAL-ACCEPTANCE-CHECKLIST.md)
-- İnteraktif demo: `python scripts/run_phase_09_demo.py`
+- İnteraktif demo: laboratuvar kök dizininden `python -m hex_world_lab`
 
-**Sonraki adım:** Kullanıcının yerel bilgisayarında manuel görsel/işlevsel kabul. Bu kabul bildirildikten sonra Aşama 9 kapanış raporu ve Master Plan kapatma güncellemesi hazırlanacaktır.
+**Sonraki adım:** Aşama 9 kapatılmıştır. Sıradaki planlı çalışma Aşama 10 — Simülasyon orkestrasyonu ve dünya bütünlüğüdür; genel plan ve teknik mimari kullanıcı onayı alınmadan kodlama başlamayacaktır.
 
 ---
 
