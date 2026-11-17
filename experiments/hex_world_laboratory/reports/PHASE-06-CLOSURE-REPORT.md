@@ -90,20 +90,9 @@ Bu sonuçlar otomatik doğrulamadır. Kullanıcının bilgisayarındaki görsel 
 
 ## 7. Kullanıcı masaüstü/görsel kabulü
 
-**<PRIVATE_PERSON> tarafından 17 Kasım 2026 tarihinde kabul edildi.** Kullanıcı, kontrol listesindeki kamera takibi, zoom, dünya/ekran hizalaması, fareyle hex seçimi, pencere boyutu, açık dünya davranışı, hareket/çarpışma regresyonu ve tanı paneli kontrollerinin tamamını kendi bilgisayarında gerçekleştirdiğini ve hepsinin başarılı olduğunu bildirdi.
+**Kullanıcı tarafından 17 Kasım 2026 tarihinde kabul edildi.** Kullanıcı; kamera takibi, zoom, dünya/ekran hizalaması, fareyle hex seçimi, pencere boyutu, açık dünya davranışı, hareket/çarpışma regresyonu ve tanı paneli kontrollerinin tamamını kendi bilgisayarında gerçekleştirdiğini ve hepsinin başarılı olduğunu bildirdi.
 
-Bu aşamada kullanıcıdan kod düzenlemesi veya otomatik test komutu çalıştırması istenmiyor. Kullanıcının rolü, laboratuvarı kendi bilgisayarında açıp aşağıdaki görsel davranışları kontrol etmek:
-
-1. Karakter takibinin akıcı olması.
-2. Fare tekerleğiyle zoom ve yakın/uzak sınırlarının doğru çalışması.
-3. Hex, karakter, ağaç, kaya, duvar ve ev çizgilerinin kamera ile birlikte hizalı hareket etmesi.
-4. Kamera hareketi ve zoom sonrasında fareyle doğru hex hücresinin seçilmesi.
-5. Pencere yeniden boyutlandırıldığında viewport'un doğru güncellenmesi.
-6. Harita dışına hareket ederken açık dünya davranışının ve kamera takibinin sürmesi.
-7. Zoom'un hareket hızı, collider ve simülasyon davranışını değiştirmemesi.
-8. Tanı panelinin ekran üzerinde sabit kalması.
-
-Adım adım kontrol için:
+Kabulün ayrıntılı kapsamı ve işaretlenmiş kontrol listesi:
 [PHASE-06-MANUAL-ACCEPTANCE-CHECKLIST.md](../docs/PHASE-06-MANUAL-ACCEPTANCE-CHECKLIST.md)
 
 Kullanıcı görsel kabulü verilmiştir. Açık kabul maddesi veya bilinen engelleyici sorun kalmamıştır.
