@@ -309,7 +309,7 @@ Dosya listesi uygulama hedefidir; mevcut API'yi korumak için küçük uyarlamal
 | `tests/integration/test_spatial_physics_integration.py` | Yeni | World/Physics/Spatial entegrasyonu |
 | `benchmarks/benchmark_spatial_index.py` | Yeni | Linear/grid/quadtree benchmark |
 | `benchmarks/benchmark_hex_neighborhood.py` | Yeni | Hex full-scan ve axial aday sorgusu |
-| `reports/PHASE-08-IMPLEMENTATION-VALIDATION-REPORT.md` | Aşama sonunda yeni | Ölçüm ve doğrulama sonuçları |
+| `reports/PHASE-08-CLOSURE-REPORT.md` | Aşama sonunda yeni | Ölçüm ve doğrulama sonuçları |
 | `reports/PHASE-08-CLOSURE-REPORT.md` | Aşama sonunda yeni | Kabul ve kapanış |
 
 Not: Unit test dosyalarının bir kısmı mevcut repository düzeninde zaten varsa yeni dosya açılmayacak; mevcut dosya genişletilecektir. Yukarıdaki liste hedef sorumlulukları tanımlar.

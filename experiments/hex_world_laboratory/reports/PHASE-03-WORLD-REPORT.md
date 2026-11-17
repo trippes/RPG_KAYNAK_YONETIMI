@@ -70,7 +70,7 @@ Bu rapor iki işi birbirine karıştırmadan kayıt altına alır. Numaralandır
 - Varsayılan `create` mevcut dosyayı ezmez; açık `replace` atomik değiştirme uygular.
 - Hatalı girdi kısmi harita nesnesi üretmez.
 
-Ayrıntı: [Aşama 3.6 Raporu](PHASE-03.6-REPORT.md).
+Ayrıntı: [Aşama 3.6 Raporu](PHASE-03.6-CLOSURE-REPORT.md).
 
 ### 3.7 Runtime persistence
 

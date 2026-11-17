@@ -197,4 +197,4 @@ Aşama 6 ancak aşağıdakilerin tamamı sağlandığında kapatılabilir:
 
 ---
 
-Bu genel plan kullanıcı tarafından onaylanmış, ayrıntılı teknik mimari de uygulama öncesinde kabul edilmiştir. 6.1–6.5 alt aşamalarının teknik uygulaması ve otomatik CI doğrulamaları tamamlanmıştır. Son durum ve CI kanıtları `../reports/PHASE-06-VALIDATION-LOG.md` belgesinde; masaüstü görsel kabul adımları `PHASE-06-MANUAL-ACCEPTANCE-CHECKLIST.md` belgesindedir. Aşama 6, kullanıcı görsel kabulü bildirilene kadar tamamen kapanmış sayılmaz.
+Bu genel plan kullanıcı tarafından onaylanmış, ayrıntılı teknik mimari de uygulama öncesinde kabul edilmiştir. 6.1–6.5 alt aşamalarının teknik uygulaması ve otomatik CI doğrulamaları tamamlanmıştır. Son durum ve CI kanıtları `../reports/PHASE-06-CLOSURE-REPORT.md` belgesinde; masaüstü görsel kabul adımları `PHASE-06-MANUAL-ACCEPTANCE-CHECKLIST.md` belgesindedir. Aşama 6, kullanıcı görsel kabulü bildirilene kadar tamamen kapanmış sayılmaz.

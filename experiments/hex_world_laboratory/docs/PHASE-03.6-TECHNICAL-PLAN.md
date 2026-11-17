@@ -313,7 +313,7 @@ experiments/hex_world_laboratory/
 ├── docs/
 │   └── PHASE-03.6-TECHNICAL-PLAN.md
 └── reports/
-    └── PHASE-03.6-REPORT.md
+    └── PHASE-03.6-CLOSURE-REPORT.md
 ```
 
 Test fixture'ları ve bozuk JSON örnekleri testlerin altında tutulabilir; üretim harita dizinine geçersiz dosyalar konulmaz. Gerçek klasör yerleşimi uygulama öncesi kontrol edilerek gereksiz taşıma yapılmaz.

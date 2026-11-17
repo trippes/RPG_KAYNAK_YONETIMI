@@ -581,7 +581,7 @@ Bu kapılarda genel planla çelişen bir bulgu çıkarsa uygulama durdurulur; ö
 2. 9.1–9.9 uygulaması yalnızca `experiment/hex-world-laboratory` dalında tamamlandı.
 3. Her dosya yazımından önce branch HEAD ve hedef dosya SHA doğrulandı; her yazım sonrasında commit/HEAD kontrol edildi.
 4. Laboratuvar pytest, Linux/Windows Core Quality, benchmark ve Phase 9 görsel artifact üretimi başarılı tamamlandı.
-5. Uygulama ve kanıtlar [PHASE-09-IMPLEMENTATION-VALIDATION-REPORT.md](../reports/PHASE-09-IMPLEMENTATION-VALIDATION-REPORT.md) içinde kayıtlıdır.
+5. Uygulama ve kanıtlar [PHASE-09-CLOSURE-REPORT.md](../reports/PHASE-09-CLOSURE-REPORT.md) içinde kayıtlıdır.
 6. Kullanıcı 18 Kasım 2026 tarihinde [PHASE-09-MANUAL-ACCEPTANCE-CHECKLIST.md](PHASE-09-MANUAL-ACCEPTANCE-CHECKLIST.md) kapsamındaki görsel/işlevsel kontrollerin tamamını başarılı bildirdi.
 7. [PHASE-09-CLOSURE-REPORT.md](../reports/PHASE-09-CLOSURE-REPORT.md) ve Master Plan Aşama 9'un resmî kapanışını kaydeder.
 

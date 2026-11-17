@@ -272,7 +272,7 @@ Genel ve teknik plan onay kapıları tamamlanmış; uygulama, otomatik doğrulam
 
 Aşama 9 Genel Planı kullanıcı tarafından onaylanmış, ayrıntılı teknik mimari plan ayrıca onaylandıktan sonra 9.1–9.9 uygulaması tamamlanmıştır.
 
-- Uygulama/doğrulama raporu: [PHASE-09-IMPLEMENTATION-VALIDATION-REPORT.md](../reports/PHASE-09-IMPLEMENTATION-VALIDATION-REPORT.md)
+- Uygulama/doğrulama raporu: [PHASE-09-CLOSURE-REPORT.md](../reports/PHASE-09-CLOSURE-REPORT.md)
 - Manuel kabul listesi: [PHASE-09-MANUAL-ACCEPTANCE-CHECKLIST.md](PHASE-09-MANUAL-ACCEPTANCE-CHECKLIST.md)
 - İnteraktif demo: laboratuvar kök dizininden `python -m hex_world_lab`
 

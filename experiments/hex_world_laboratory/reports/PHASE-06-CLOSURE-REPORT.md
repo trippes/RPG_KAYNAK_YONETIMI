@@ -66,7 +66,7 @@ Belgeler:
 - docs/PHASE-06-GENERAL-PLAN.md
 - docs/PHASE-06-TECHNICAL-PLAN.md
 - docs/PHASE-06-MANUAL-ACCEPTANCE-CHECKLIST.md
-- reports/PHASE-06-VALIDATION-LOG.md
+- reports/bu kapanış raporunun 9. bölümündeki alt aşama doğrulama geçmişi
 - README.md
 - docs/HEX_WORLD_LAB_MASTER_PLAN.md
 
@@ -77,7 +77,7 @@ Son kod ve belge doğrulaması bcfdb5573880e58cf53112edd32ab2df6d4e2097 commit'i
 - Laboratuvar CI: [43971952721](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43971952721) — SUCCESS; **681/681 test geçti**.
 - Laboratuvar benchmark adımları: tamamı SUCCESS.
 - Core Quality: [43971952428](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43971952428) — Linux ve Windows job'larının ikisi de SUCCESS.
-- Önceki alt aşama CI run'ları, test sayıları ve düzeltme geçmişi: PHASE-06-VALIDATION-LOG.md.
+- Önceki alt aşama CI run'ları, test sayıları ve düzeltme geçmişi: bu kapanış raporunun 9. bölümündeki alt aşama doğrulama geçmişi.
 
 Bu sonuçlar otomatik doğrulamadır. Kullanıcının bilgisayarındaki görsel kabulün yerine geçmez.
 
@@ -106,7 +106,7 @@ Teknik uygulama, otomatik doğrulama ve kullanıcı masaüstü/görsel kabulü t
 
 ## 9. Alt aşama otomatik doğrulama geçmişi
 
-Bu bölüm, daha önce ayrı tutulan `PHASE-06-VALIDATION-LOG.md` içindeki alt aşama commit ve CI kanıtlarını kapanış kaydına taşır. Eski günlük, kullanıcı masaüstü kabulü henüz yapılmamışken yazılmıştı; aşağıdaki nihai kabul bölümü ve bu raporun 7. bölümü daha sonraki 17 Kasım 2026 kabul kararını esas alır.
+Bu bölüm, daha önce ayrı tutulan `bu kapanış raporunun 9. bölümündeki alt aşama doğrulama geçmişi` içindeki alt aşama commit ve CI kanıtlarını kapanış kaydına taşır. Eski günlük, kullanıcı masaüstü kabulü henüz yapılmamışken yazılmıştı; aşağıdaki nihai kabul bölümü ve bu raporun 7. bölümü daha sonraki 17 Kasım 2026 kabul kararını esas alır.
 
 | Alt aşama | Laboratuvar test sayısı | Laboratory CI | Core Quality |
 |---|---:|---|---|

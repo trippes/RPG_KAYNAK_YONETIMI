@@ -95,7 +95,7 @@ Teknik doğrulama başarılı olursa:
 - Aşama 4.7 genel planındaki eski onay bekliyor durum metni güncellenir; 4.7.5 ve 4.7.6 sonuçları işlenir.
 - Aşama 4 teknik planındaki eski kullanıcı onayı bekliyor ifadesi, gerçekleşmiş onay ve uygulama durumuyla tutarlı hâle getirilir.
 - Aşama 4 genel planı 4.7 hareket modlarını kapsayacak şekilde güncellenir.
-- `reports/PHASE-04.7.6-CLOSURE-REPORT.md` oluşturulur.
+- `reports/PHASE-04.7-CLOSURE-REPORT.md` oluşturulur.
 - `reports/PHASE-04.7-CLOSURE-REPORT.md` hazırlanarak 4.7.1–4.7.6 kanıtları birleştirilir.
 - Aşama 4 genel kapanış raporu, masaüstü kabulü yapılmadan tamamlandı olarak işaretlenmez.
 
@@ -108,7 +108,7 @@ Teknik doğrulama başarılı olursa:
 - `docs/PHASE-04-GENERAL-PLAN.md`
 
 ### Yeni raporlar
-- `reports/PHASE-04.7.6-CLOSURE-REPORT.md`
+- `reports/PHASE-04.7-CLOSURE-REPORT.md`
 - `reports/PHASE-04.7-CLOSURE-REPORT.md`
 
 ### Koşullu test

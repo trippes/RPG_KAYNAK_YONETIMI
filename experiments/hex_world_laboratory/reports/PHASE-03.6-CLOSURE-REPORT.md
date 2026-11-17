@@ -89,7 +89,7 @@ Aşama 3.6'nın ardından runtime değişikliklerinin kalıcılaştırılması A
 
 ## 8. Birleştirilen uygulama kayıtları
 
-Bu kapanış raporu, önceki `PHASE-03.6-REPORT.md` uygulama raporundaki ayrı ve tekrar eden özeti tek kayıtta toplar. Uygulama raporundan korunan ek ayrıntılar:
+Bu kapanış raporu, önceki uygulama raporundaki ayrı ve tekrar eden özeti tek kayıtta toplar. Uygulama raporundan korunan ek ayrıntılar:
 
 ### 8.1 Değişen dosya ve modül grupları
 

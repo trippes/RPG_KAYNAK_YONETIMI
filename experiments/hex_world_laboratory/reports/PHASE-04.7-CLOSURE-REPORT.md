@@ -44,7 +44,7 @@ CI kayıtları:
 - [Laboratory CI run 43882088050](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43882088050)
 - [Core Quality run 43882087966](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43882087966)
 
-Hareket benchmark'ının ayrıntılı ortam ve ölçüm değerleri `reports/PHASE-04.7.6-CLOSURE-REPORT.md` içindedir. Ölçümler yalnızca GitHub Linux CI makinesindeki MovementSystem + MovementCellTracker yükünü kapsar; toplam oyun performansı veya hedef bilgisayar için garanti değildir.
+Hareket benchmark'ının ayrıntılı ortam ve ölçüm değerleri `bu raporun 7.3. bölüm` içindedir. Ölçümler yalnızca GitHub Linux CI makinesindeki MovementSystem + MovementCellTracker yükünü kapsar; toplam oyun performansı veya hedef bilgisayar için garanti değildir.
 
 ## 4. Aşama 4 genel masaüstü kabulü
 
