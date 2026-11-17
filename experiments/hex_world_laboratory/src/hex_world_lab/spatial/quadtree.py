@@ -75,10 +75,11 @@ class Quadtree:
         self._entries[item_id] = entry
         self._insert_node(self._root, entry)
 
-    def _rebuild(self) -> None:
-        self._root = _Node(self._root_bounds, 0)
-        for entry in self._entries.values():
-            self._insert_node(self._root, entry)
+    def _remove_node(self, node: _Node, item_id: str) -> bool:
+        if item_id in node.entries:
+            del node.entries[item_id]
+            return True
+        return any(self._remove_node(child, item_id) for child in node.children)
 
     def update(self, item_id: str, bounds: Bounds2D) -> None:
         if item_id not in self._entries:
@@ -86,14 +87,17 @@ class Quadtree:
         entry = SpatialEntry(item_id, bounds)
         if not self._contains(self._root_bounds, bounds):
             raise ValueError("entry bounds must be contained by quadtree root")
+        if not self._remove_node(self._root, item_id):
+            raise RuntimeError("quadtree entry table and node tree diverged")
         self._entries[item_id] = entry
-        self._rebuild()
+        self._insert_node(self._root, entry)
 
     def remove(self, item_id: str) -> None:
         if item_id not in self._entries:
             raise KeyError(item_id)
+        if not self._remove_node(self._root, item_id):
+            raise RuntimeError("quadtree entry table and node tree diverged")
         del self._entries[item_id]
-        self._rebuild()
 
     def _query_node(self, node: _Node, bounds: Bounds2D, found: set[str]) -> None:
         if not node.bounds.intersects(bounds):

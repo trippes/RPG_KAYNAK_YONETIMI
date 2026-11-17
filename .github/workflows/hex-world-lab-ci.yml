@@ -67,6 +67,15 @@ jobs:
       - name: Benchmark Phase 8 hex neighborhood queries
         run: python benchmarks/benchmark_hex_neighborhood.py
 
+      - name: Upload Phase 8 benchmark reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase-08-benchmark-reports
+          path: experiments/hex_world_laboratory/artifacts/phase-08/*.json
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Generate Phase 7 visual test scenes
         run: python scripts/render_phase_07_scenes.py --output artifacts/phase-07
 

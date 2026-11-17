@@ -63,3 +63,22 @@ def test_rendering_adapters_do_not_import_simulation_packages() -> None:
         "Rendering may depend on geometry/camera/Pygame, not simulation packages: "
         + ", ".join(violations)
     )
+
+
+def test_spatial_package_has_no_domain_dependencies() -> None:
+    package_root = Path(__file__).resolve().parents[2] / "src" / "hex_world_lab" / "spatial"
+    forbidden = ("pygame", "physics", "world", "movement", "simulation")
+    violations: list[str] = []
+    for source_path in sorted(package_root.rglob("*.py")):
+        tree = ast.parse(source_path.read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                imported = [alias.name for alias in node.names]
+            elif isinstance(node, ast.ImportFrom):
+                imported = [node.module or ""]
+            else:
+                continue
+            if any(name == item or name.startswith(item + ".") or name.endswith("." + item)
+                   for name in imported for item in forbidden):
+                violations.append(f"{source_path.name}:{node.lineno}")
+    assert not violations, "Spatial must remain domain-independent: " + ", ".join(violations)

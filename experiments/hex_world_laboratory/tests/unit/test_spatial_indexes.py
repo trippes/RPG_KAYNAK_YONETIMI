@@ -66,3 +66,27 @@ def test_randomized_queries_match_linear_reference(kind):
         query = AABB(x, y, x + rng.uniform(0, 180), y + rng.uniform(0, 180))
         expected = tuple(sorted(k for k, b in values.items() if query.intersects(b)))
         assert index.query(query) == expected
+
+
+def test_grid_inclusive_bucket_edges_and_deduplication():
+    grid = UniformGrid(10)
+    grid.insert("cross", AABB(0, 0, 20, 20))
+    assert grid.query(AABB(10, 10, 10, 10)) == ("cross",)
+    assert grid.bucket_count == 9
+
+
+def test_quadtree_retains_root_edge_and_removes_records():
+    tree = Quadtree(AABB(0, 0, 100, 100), capacity=1)
+    tree.insert("edge", AABB(100, 50, 100, 50))
+    assert tree.query(AABB(100, 50, 100, 50)) == ("edge",)
+    tree.remove("edge")
+    assert tree.query(AABB(100, 50, 100, 50)) == ()
+
+
+def test_quadtree_invalid_update_is_atomic():
+    tree = Quadtree(AABB(0, 0, 10, 10))
+    original = AABB(1, 1, 2, 2)
+    tree.insert("a", original)
+    with pytest.raises(ValueError):
+        tree.update("a", AABB(9, 9, 11, 11))
+    assert tree.query(original) == ("a",)
