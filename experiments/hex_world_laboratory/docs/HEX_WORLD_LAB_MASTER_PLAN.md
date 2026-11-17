@@ -762,7 +762,8 @@ Bu liste tamamlanmadan laboratuvarın ana oyuna aktarılmaya hazır olduğu söy
 | 6.4 | Render ve fare girdisi entegrasyonu | Teknik olarak tamamlandı; CI başarılı |
 | 6.5 | Bütünleşik doğrulama ve kabul | 681/681 test, benchmark, Linux/Windows CI ve kullanıcı görsel kabulü başarılı; Aşama 6 kapatıldı |
 | 7 | Render ve görsel doğrulama | 7.1–7.8 tamamlandı; 703/703 test, Linux/Windows CI, benchmark ve kullanıcı görsel kabulü başarılı; 17 Kasım 2026 tarihinde kapatıldı |
-| 8 | Mekânsal indeksleme ve performans karşılaştırması | 8.1–8.8 uygulandı; 729/729 test, Linux/Windows Core Quality ve tüm benchmarklar başarılı; kullanıcı görsel kabulü bekleniyor |\n| 9–13 | Entities, interaction, simulation, robustness ve entegrasyon hazırlığı | Aşama 8 kullanıcı kabulinden sonra kendi planlarıyla sırayla ele alınacak |
+| 8 | Mekânsal indeksleme ve performans karşılaştırması | 8.1–8.8 uygulandı; 729/729 test, Linux/Windows Core Quality ve tüm benchmarklar başarılı; kullanıcı görsel kabulü bekleniyor |
+| 9–13 | Entities, interaction, simulation, robustness ve entegrasyon hazırlığı | Aşama 8 kullanıcı kabulinden sonra kendi planlarıyla sırayla ele alınacak |
 
 - Çalışma dalı: `experiment/hex-world-laboratory`.
 - Aşama 6 son otomatik test kapısında Laboratuvar CI 681/681 testle başarılıdır.
@@ -788,5 +789,8 @@ Dünya görsel zenginleştirmesi (arazi dokuları, bitki örtüsü, ağaç/kaya/
 |---|---|---|
 | 1.0 | İlk taslak | Hex World Laboratory için kapsamlı aşamalı yol haritası ve çalışma sözleşmesi |
 | 1.1 | Önceki sürüm | Aşamalı laboratuvar planı |
-| 1.2 | Önceki sürüm | Aşama 0–5 kapanış durumu ve Aşama 6 izinli aşama |\n| 1.3 | Önceki sürüm | Aşama 6.1–6.5 teknik uygulama, 681 test ve Linux/Windows CI; görsel kabul bekleniyordu |\n| 1.4 | Güncellendi — 17 Kasım 2026 | Kullanıcı tüm masaüstü/görsel kontrolleri başarılı bildirdi; Aşama 6 resmen kapatıldı |
-| 1.6 | Güncellendi — 17 Kasım 2026 | Aşama 7.1–7.8 otomatik ve manuel kabulü tamamlandı; Aşama 7 kapatıldı, Aşama 8 sıradaki aşama olarak işaretlendi |\n| 1.7 | Güncellendi — 17 Kasım 2026 | Aşama 8.1–8.8 uygulama, 729 test, Linux/Windows CI ve benchmarklar tamamlandı; kullanıcı görsel kabul kapısı bekleniyor |
+| 1.2 | Önceki sürüm | Aşama 0–5 kapanış durumu ve Aşama 6 izinli aşama |
+| 1.3 | Önceki sürüm | Aşama 6.1–6.5 teknik uygulama, 681 test ve Linux/Windows CI; görsel kabul bekleniyordu |
+| 1.4 | Güncellendi — 17 Kasım 2026 | Kullanıcı tüm masaüstü/görsel kontrolleri başarılı bildirdi; Aşama 6 resmen kapatıldı |
+| 1.6 | Güncellendi — 17 Kasım 2026 | Aşama 7.1–7.8 otomatik ve manuel kabulü tamamlandı; Aşama 7 kapatıldı, Aşama 8 sıradaki aşama olarak işaretlendi |
+| 1.7 | Güncellendi — 17 Kasım 2026 | Aşama 8.1–8.8 uygulama, 729 test, Linux/Windows CI ve benchmarklar tamamlandı; kullanıcı görsel kabul kapısı bekleniyor |

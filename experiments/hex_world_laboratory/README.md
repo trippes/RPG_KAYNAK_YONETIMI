@@ -21,7 +21,10 @@ Eldoria'nın canon altıgen dünya mimarisini ana oyundan bağımsız araştırm
 - [Aşama 4 Genel Planı](docs/PHASE-04-GENERAL-PLAN.md)
 - [Aşama 4 Teknik Planı](docs/PHASE-04-TECHNICAL-PLAN.md)
 - [Aşama 5 Genel Planı](docs/PHASE-05-GENERAL-PLAN.md)
-- [Aşama 5 Teknik Planı](docs/PHASE-05-TECHNICAL-PLAN.md)\n- [Aşama 6 Genel Planı](docs/PHASE-06-GENERAL-PLAN.md)\n- [Aşama 6 Teknik Planı](docs/PHASE-06-TECHNICAL-PLAN.md)\n- [Aşama 6 Görsel Kabul Kontrol Listesi](docs/PHASE-06-MANUAL-ACCEPTANCE-CHECKLIST.md)
+- [Aşama 5 Teknik Planı](docs/PHASE-05-TECHNICAL-PLAN.md)
+- [Aşama 6 Genel Planı](docs/PHASE-06-GENERAL-PLAN.md)
+- [Aşama 6 Teknik Planı](docs/PHASE-06-TECHNICAL-PLAN.md)
+- [Aşama 6 Görsel Kabul Kontrol Listesi](docs/PHASE-06-MANUAL-ACCEPTANCE-CHECKLIST.md)
 - [Aşama 3.6 Teknik Planı](docs/PHASE-03.6-TECHNICAL-PLAN.md)
 - [Aşama 3.7 Runtime Persistence Teknik Planı](reports/PHASE-03.7-TECHNICAL-PLAN.md)
 - [Harita JSON Şema v1](docs/MAP_JSON_SCHEMA_V1.md)
@@ -36,7 +39,9 @@ Eldoria'nın canon altıgen dünya mimarisini ana oyundan bağımsız araştırm
 - [Aşama 3.7 — Runtime Persistence](reports/PHASE-03.7-REPORT.md)
 - [Aşama 3 — Genel Dünya Modeli Kapanış Raporu](reports/PHASE-03-WORLD-REPORT.md)
 - [Aşama 4 — Sürekli Hareket Kapanış Raporu](reports/PHASE-04-CLOSURE-REPORT.md)
-- [Aşama 5 — Gövde Modeli, Çarpışma ve Fizik Kapanış Raporu](reports/PHASE-05-CLOSURE-REPORT.md)\n- [Aşama 6 — Otomatik Doğrulama Günlüğü](reports/PHASE-06-VALIDATION-LOG.md)\n- [Aşama 6 — Kapanış Raporu (Kabul Edildi)](reports/PHASE-06-CLOSURE-REPORT.md)
+- [Aşama 5 — Gövde Modeli, Çarpışma ve Fizik Kapanış Raporu](reports/PHASE-05-CLOSURE-REPORT.md)
+- [Aşama 6 — Otomatik Doğrulama Günlüğü](reports/PHASE-06-VALIDATION-LOG.md)
+- [Aşama 6 — Kapanış Raporu (Kabul Edildi)](reports/PHASE-06-CLOSURE-REPORT.md)
 
 ## Kurulum (Windows PowerShell)
 
@@ -113,7 +118,7 @@ ADR-003 sınır davranışı: eşit mesafede karakterin önceki hücresi korunur
 - [Uygulama ve Doğrulama Raporu](reports/PHASE-07-IMPLEMENTATION-VALIDATION-REPORT.md)
 - [Görsel test sahneleri — GitHub Actions artifact](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44045118838/artifacts/14311276474)
 
-Aşama 7 kapanış raporu: [PHASE-07-CLOSURE-REPORT.md](reports/PHASE-07-CLOSURE-REPORT.md). Bir sonraki planlı aşama Aşama 8 — Mekânsal indeksleme ve performans karşılaştırmasıdır. Dünya görsel zenginleştirmesi bu aşamanın kapsamında değildir; ileriki aşamalarda ayrıca planlanacaktır.
+Aşama 7 kapanış raporu: [PHASE-07-CLOSURE-REPORT.md](reports/PHASE-07-CLOSURE-REPORT.md). Aşama 8'in teknik uygulaması tamamlandı; kullanıcı görsel kabulini bekliyor. Dünya görsel zenginleştirmesi Aşama 7'nin geriye dönük eksik işi değildir.
 
 
 ## Aşama 8 — Mekânsal indeksleme ve performans karşılaştırması

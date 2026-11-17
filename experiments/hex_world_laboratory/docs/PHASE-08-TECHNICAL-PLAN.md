@@ -599,5 +599,5 @@ Bu belge kullanıcı tarafından 17 Kasım 2026 tarihinde onaylanan Aşama 8 uyg
 5. İndeksli physics yolunun opsiyonel olması ve mevcut API'nin geriye dönük korunması.
 6. Performans faydası kanıtlanmazsa linear yöntemin korunabilmesi.
 
-**Uygulama durumu:** Başlatılmadı.  
-**Sonraki adım:** Kullanıcı teknik mimari planı onayladıktan sonra Aşama 8.1 baseline testleri ve uygulama hazırlığına geçilir.
+**Uygulama durumu:** 8.1–8.8 tamamlandı. 729/729 test, Linux/Windows Core Quality ve benchmarklar başarılıdır.  
+**Sonraki adım:** Kullanıcı PHASE-08-MANUAL-ACCEPTANCE-CHECKLIST.md listesini tamamlar; kabul sonrası kapanış raporu hazırlanır.
