@@ -346,7 +346,7 @@ Kabul koşulları:
 
 **Durum:** TAMAMLANDI VE KABUL EDİLDİ — 7.1–7.8 uygulaması, 703/703 otomatik test, Linux/Windows CI, benchmark ve kullanıcı masaüstü görsel kabulü 17 Kasım 2026 tarihinde tamamlandı.
 
-**Belgeler:** [Genel Plan](PHASE-07-GENERAL-PLAN.md) · [Teknik Plan](PHASE-07-TECHNICAL-PLAN.md) · [Manuel Görsel Kabul](PHASE-07-MANUAL-ACCEPTANCE-CHECKLIST.md) · [Uygulama ve Doğrulama Raporu](../reports/PHASE-07-CLOSURE-REPORT.md)
+**Plan belgeleri:** [Genel Plan](PHASE-07-GENERAL-PLAN.md) · [Teknik Plan](PHASE-07-TECHNICAL-PLAN.md) · [Manuel Görsel Kabul](PHASE-07-MANUAL-ACCEPTANCE-CHECKLIST.md)
 
 **Kapanış raporu:** [PHASE-07-CLOSURE-REPORT.md](../reports/PHASE-07-CLOSURE-REPORT.md)
 
