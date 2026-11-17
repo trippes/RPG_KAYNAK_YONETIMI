@@ -33,6 +33,7 @@ def run(size: int) -> dict:
         x, y = rng.uniform(-50000, 50000), rng.uniform(-50000, 50000)
         queries.append(AABB(x, y, x + 80, y + 80))
     results = {}
+    indexes = {}
     for name, factory in (
         ("grid", lambda: UniformGrid(64)),
         ("quadtree", lambda: Quadtree(AABB(-51000, -51000, 51000, 51000), capacity=8, max_depth=10)),
@@ -40,6 +41,7 @@ def run(size: int) -> dict:
         tracemalloc.start()
         started = time.perf_counter()
         index = factory()
+        indexes[name] = index
         for item_id, bounds in entries.items():
             index.insert(item_id, bounds)
         build_ms = (time.perf_counter() - started) * 1000
@@ -53,8 +55,7 @@ def run(size: int) -> dict:
     for query in queries:
         expected = linear_query(query)
         for name in ("grid", "quadtree"):
-            index = locals()[name]
-            if index.query(query) != expected:
+            if indexes[name].query(query) != expected:
                 raise AssertionError(f"{name} mismatch at size {size}")
     return {"obstacles": size, "results": results}
 

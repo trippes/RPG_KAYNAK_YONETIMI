@@ -7,7 +7,7 @@ from typing import Iterable
 from hex_world_lab.geometry import WorldPoint
 from hex_world_lab.movement.vector import Vector2
 
-from .broadphase import AABB, gather_candidates
+from .broadphase import AABB, ObstacleCandidateProvider, gather_candidates
 from .contacts import Contact, ContactManifold
 from .narrowphase import collide_shapes
 from .obstacle import ObstacleDefinition
@@ -207,6 +207,7 @@ def resolve_continuous_motion(
     max_impacts: int = 6,
     collision_skin: float = _DEFAULT_SKIN,
     penetration_slop: float = 1e-7,
+    candidate_provider: ObstacleCandidateProvider | None = None,
 ) -> ContinuousCollisionResolution:
     """Sweep a circle through static obstacles, sliding after each impact."""
     if not isinstance(moving_circle, CircleShape):
@@ -229,6 +230,7 @@ def resolve_continuous_motion(
     depenetrated = resolve_kinematic_motion(
         moving_circle, Vector2(0.0, 0.0), obstacle_values,
         max_iterations=max_impacts, penetration_slop=penetration_slop,
+        candidate_provider=candidate_provider,
     )
     current = depenetrated.final_shape
     remaining = desired_displacement
@@ -244,7 +246,10 @@ def resolve_continuous_motion(
             max(current.center.x + current.radius, current.center.x + remaining.x + current.radius),
             max(current.center.y + current.radius, current.center.y + remaining.y + current.radius),
         )
-        candidates = gather_candidates(bounds, obstacle_values)
+        candidates = (
+            gather_candidates(bounds, obstacle_values)
+            if candidate_provider is None else candidate_provider.query(bounds)
+        )
         hits: list[SweepHit] = []
         for obstacle in candidates:
             world_shape = obstacle.world_shape()
