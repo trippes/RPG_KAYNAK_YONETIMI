@@ -8,7 +8,7 @@ from .protocols import Bounds2D
 
 
 class UniformGrid:
-    def __init__(self, cell_size: float = 64.0) -> None:
+    def __init__(self, cell_size: float = 128.0) -> None:
         if isinstance(cell_size, bool) or not isinstance(cell_size, (int, float)):
             raise TypeError("cell_size must be a real number")
         if not 0 < cell_size < float("inf"):

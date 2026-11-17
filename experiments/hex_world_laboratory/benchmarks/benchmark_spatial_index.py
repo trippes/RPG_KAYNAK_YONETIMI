@@ -107,7 +107,7 @@ def run(size: int, profile: str) -> dict:
     results = {}
     indexes = {}
     for name, factory in (
-        ("grid", lambda: UniformGrid(64)),
+        ("grid", lambda: UniformGrid(128)),
         ("quadtree", lambda: Quadtree(root, capacity=8, max_depth=10)),
     ):
         tracemalloc.start()

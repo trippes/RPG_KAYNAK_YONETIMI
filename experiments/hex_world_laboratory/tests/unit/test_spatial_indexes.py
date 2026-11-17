@@ -90,3 +90,7 @@ def test_quadtree_invalid_update_is_atomic():
     with pytest.raises(ValueError):
         tree.update("a", AABB(9, 9, 11, 11))
     assert tree.query(original) == ("a",)
+
+
+def test_uniform_grid_default_cell_size_uses_measured_balanced_value():
+    assert UniformGrid().cell_size == 128.0

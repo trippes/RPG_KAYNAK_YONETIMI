@@ -15,7 +15,7 @@ class ObstacleSpatialIndex:
 
     __slots__ = ("map_id", "_obstacles", "_index")
 
-    def __init__(self, obstacles: Iterable[ObstacleDefinition], *, cell_size: float = 64.0) -> None:
+    def __init__(self, obstacles: Iterable[ObstacleDefinition], *, cell_size: float = 128.0) -> None:
         values = tuple(obstacles)
         if any(not isinstance(item, ObstacleDefinition) for item in values):
             raise TypeError("obstacles must contain ObstacleDefinition values")
