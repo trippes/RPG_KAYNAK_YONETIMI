@@ -5,8 +5,8 @@
 > **Depo:** `trippes/RPG_KAYNAK_YONETIMI`  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Hedef entegrasyon dalı:** `demo_eldoria`  
-> **Durum:** AŞAMA 0–5 KABUL EDİLDİ — AŞAMA 6 TEKNİK UYGULAMASI TAMAM; GÖRSEL KULLANICI KABULÜ BEKLİYOR  
-> **Belge sürümü:** 1.3
+> **Durum:** AŞAMA 0–6 KABUL EDİLDİ — AŞAMA 6 KAPATILDI  
+> **Belge sürümü:** 1.4
 
 ---
 
@@ -754,7 +754,7 @@ Bu liste tamamlanmadan laboratuvarın ana oyuna aktarılmaya hazır olduğu söy
 | 6.2 | Kamera çekirdeği ve zoom | Teknik olarak tamamlandı; CI başarılı |
 | 6.3 | Takip ve kamera sınırları | Teknik olarak tamamlandı; CI başarılı |
 | 6.4 | Render ve fare girdisi entegrasyonu | Teknik olarak tamamlandı; CI başarılı |
-| 6.5 | Bütünleşik doğrulama ve kabul hazırlığı | Otomatik doğrulama tamamlandı; masaüstü görsel kabul bekliyor |
+| 6.5 | Bütünleşik doğrulama ve kabul | 681/681 test, benchmark, Linux/Windows CI ve kullanıcı görsel kabulü başarılı; Aşama 6 kapatıldı |
 | 7–13 | Spatial, entities, interaction, simulation, robustness ve entegrasyon hazırlığı | Aşama 6 kullanıcı kabulünden sonra ayrıca planlanacak |
 
 - Çalışma dalı: `experiment/hex-world-laboratory`.
@@ -762,12 +762,12 @@ Bu liste tamamlanmadan laboratuvarın ana oyuna aktarılmaya hazır olduğu söy
 - Aynı commit için Core Quality Linux ve Windows job'ları başarılıdır; laboratuvar benchmark adımları da başarılı tamamlanmıştır.
 - Aşama 6 alt aşama commit'leri, CI run kimlikleri ve teknik kanıtlar `experiments/hex_world_laboratory/reports/PHASE-06-VALIDATION-LOG.md` içindedir.
 - Kullanıcının son masaüstü/görsel kabul adımları `experiments/hex_world_laboratory/docs/PHASE-06-MANUAL-ACCEPTANCE-CHECKLIST.md` içindedir.
-- Aşama 6 teknik uygulaması tamamlanmış olsa da kullanıcı görsel kabulü henüz verilmedi. Bu nedenle aşama bütünüyle kapanmış veya kabul edilmiş sayılmaz.
+- Kullanıcı 17 Kasım 2026 tarihinde masaüstü kontrol listesindeki tüm maddeleri kendi bilgisayarında doğruladığını ve hepsinin başarılı olduğunu bildirmiştir. Aşama 6 teknik, otomatik ve görsel kabul kapılarının tamamı geçilerek kapatılmıştır.
 - Korunan `main` ve `demo_eldoria` dallarına bu çalışma kapsamında yazılmamıştır.
 
 ### Bir sonraki izinli adım
 
-Önce kullanıcı Aşama 6 masaüstü/görsel kabul kontrol listesini tamamlar ve sonucu bildirir. Başarısız maddeler varsa yalnızca ilgili düzeltmeler yapılır ve CI yeniden çalıştırılır. Görsel kabulden sonra Aşama 6 kapanış raporu hazırlanır. Aşama 7 için genel plan ve teknik kapsam ayrı hazırlanıp kullanıcı onayı alınmadan kodlamaya başlanmaz.
+Aşama 6 kapanmıştır. Bir sonraki izinli çalışma Aşama 7'nin genel planı ve teknik kapsamının hazırlanmasıdır. Kullanıcı onayı alınmadan Aşama 7 kodlamasına başlanmaz.
 
 **Her aşama ve kapsam değişikliği ayrıca onaylanır. Korunan `main` ve `demo_eldoria` dallarına bu laboratuvar çalışması kapsamında yazılmaz.**
 
@@ -779,4 +779,4 @@ Bu liste tamamlanmadan laboratuvarın ana oyuna aktarılmaya hazır olduğu söy
 |---|---|---|
 | 1.0 | İlk taslak | Hex World Laboratory için kapsamlı aşamalı yol haritası ve çalışma sözleşmesi |
 | 1.1 | Önceki sürüm | Aşamalı laboratuvar planı |
-| 1.2 | Önceki sürüm | Aşama 0–5 kapanış durumu ve Aşama 6 izinli aşama |\n| 1.3 | Güncellendi — 17 Kasım 2026 | Aşama 6.1–6.5 teknik uygulama, 681 test ve Linux/Windows CI sonuçları; görsel kullanıcı kabulü bekleme durumu |
+| 1.2 | Önceki sürüm | Aşama 0–5 kapanış durumu ve Aşama 6 izinli aşama |\n| 1.3 | Önceki sürüm | Aşama 6.1–6.5 teknik uygulama, 681 test ve Linux/Windows CI; görsel kabul bekleniyordu |\n| 1.4 | Güncellendi — 17 Kasım 2026 | Kullanıcı tüm masaüstü/görsel kontrolleri başarılı bildirdi; Aşama 6 resmen kapatıldı |
