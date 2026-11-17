@@ -1,6 +1,7 @@
 """Small functional facade for deterministic target selection."""
 from hex_world_lab.entities import EntityId
-from hex_world_lab.geometry import WorldPoint, MapId
+from hex_world_lab.geometry import WorldPoint
+from hex_world_lab.world.identity import MapId
 from .target_query import TargetQuery
 
 def select_target(query: TargetQuery, point: WorldPoint, map_id: MapId,
