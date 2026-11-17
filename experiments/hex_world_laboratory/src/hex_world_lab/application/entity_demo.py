@@ -128,7 +128,7 @@ class EntityDemo:
             return None
         if event.button==3:
             world_point=self.movement.camera.transform.screen_to_world(ScreenPoint(*event.pos))
-            target_id=self.target_query.select_target(world_point,self.map_id)
+            target_id=self.target_query.select_target(world_point,self.map_id,frozenset({"talk"}))
             target=self.coordinator.registry.get(target_id) if target_id is not None else None
             if target is not None and target.kind is EntityKind.NPC:
                 self.action_menu_target_id=target_id
