@@ -4,7 +4,6 @@ import os
 os.environ.setdefault("PYGAME_HIDE_SUPPORT_PROMPT","1")
 import pygame
 from hex_world_lab.application.entity_demo import EntityDemo
-from hex_world_lab.companions import CompanionCommand,CompanionAlreadyRecruitedError,UnknownCompanionError
 from hex_world_lab.rendering import RenderDebugOptions
 
 def main()->int:
@@ -26,20 +25,8 @@ def main()->int:
             if event.type==pygame.KEYDOWN:
                 if event.key==pygame.K_ESCAPE:
                     running=False
-                elif event.key==pygame.K_c:
+                elif event.key==pygame.K_F3:
                     show_colliders=not show_colliders
-                elif event.key==pygame.K_r:
-                    try: demo.recruit_guard()
-                    except CompanionAlreadyRecruitedError: pass
-                elif event.key==pygame.K_1:
-                    try: demo.issue_guard_command(CompanionCommand.FOLLOW)
-                    except UnknownCompanionError: pass
-                elif event.key==pygame.K_2:
-                    try: demo.issue_guard_command(CompanionCommand.WAIT)
-                    except UnknownCompanionError: pass
-                elif event.key==pygame.K_3:
-                    try: demo.issue_guard_command(CompanionCommand.RETURN)
-                    except UnknownCompanionError: pass
         demo.movement.pump()
         demo.movement.update_camera(delta)
         demo.render(screen,clock.get_fps(),
