@@ -21,9 +21,7 @@ class TargetQuery:
         if not isinstance(origin, WorldPoint): raise TypeError("origin must be a WorldPoint")
         if isinstance(radius, bool) or not isinstance(radius, (int,float)) or radius < 0:
             raise ValueError("radius must be non-negative")
-        profiles = [getattr(e.interaction_profile, "interaction_radius", 0.0)
-                    for e in self.registry.entities_for_map(self.registry.world_id, map_id)]
-        padding = max(profiles, default=0.0)
+        padding = self.spatial_index.max_interaction_radius(map_id)
         extent = radius + padding
         area = EntityAABB(origin.x-extent, origin.y-extent, origin.x+extent, origin.y+extent)
         candidates=[]
