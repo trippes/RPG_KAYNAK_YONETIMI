@@ -50,6 +50,9 @@ class EntityDemo:
                 None,profile))
         self.target_query=TargetQuery(self.coordinator.registry,self.coordinator.spatial_index)
         self.selected_target_id:EntityId|None=None
+        self.action_menu_target_id:EntityId|None=None
+        self.action_menu_position:tuple[int,int]|None=None
+        self._action_menu_items:list[tuple[pygame.Rect,str,str]]=[]
         self._register_placeholder_assets()
     def _register_placeholder_assets(self)->None:
         colors={"npc-guard":(92,145,196),"npc-trader":(191,151,83),
@@ -89,9 +92,61 @@ class EntityDemo:
         if not isinstance(point,ScreenPoint): raise TypeError("point must be a ScreenPoint")
         world_point=self.movement.camera.transform.screen_to_world(point)
         return self.select_world_point(world_point)
+    def _action_items(self)->tuple[tuple[str,str],...]:
+        target=self.action_menu_target_id
+        if target is None:
+            return ()
+        relationship=self.coordinator.companions.get_relationship(target)
+        if relationship is None:
+            return (("Yoldaş olarak al","recruit"),)
+        return (
+            ("Takip et (FOLLOW)","follow"),
+            ("Bekle (WAIT)","wait"),
+            ("Geri dön (RETURN)","return"),
+            ("Yoldaşlıktan çıkar","dismiss"),
+        )
+    def _run_action(self,action:str)->None:
+        target=self.action_menu_target_id
+        if target is None:
+            return
+        if action=="recruit":
+            self.coordinator.companions.recruit(self.player_id,target)
+        elif action=="follow":
+            self.coordinator.companions.issue_command(target,CompanionCommand.FOLLOW)
+        elif action=="wait":
+            self.coordinator.companions.issue_command(target,CompanionCommand.WAIT)
+        elif action=="return":
+            self.coordinator.companions.issue_command(target,CompanionCommand.RETURN)
+        elif action=="dismiss":
+            self.coordinator.companions.dismiss(target)
+        self.action_menu_target_id=None
+        self.action_menu_position=None
+        self._action_menu_items=[]
     def handle_event(self,event:pygame.event.Event)->EntityId|None:
         self.movement.handle_event(event)
-        if event.type==pygame.MOUSEBUTTONDOWN and getattr(event,"button",None)==1:
+        if event.type!=pygame.MOUSEBUTTONDOWN:
+            return None
+        if event.button==3:
+            world_point=self.movement.camera.transform.screen_to_world(ScreenPoint(*event.pos))
+            target_id=self.target_query.select_target(world_point,self.map_id)
+            target=self.coordinator.registry.get(target_id) if target_id is not None else None
+            if target is not None and target.kind is EntityKind.NPC:
+                self.action_menu_target_id=target_id
+                self.action_menu_position=event.pos
+            else:
+                self.action_menu_target_id=None
+                self.action_menu_position=None
+                self._action_menu_items=[]
+            return target_id
+        if event.button==1:
+            for rect,_,action in self._action_menu_items:
+                if rect.collidepoint(event.pos):
+                    self._run_action(action)
+                    return self.selected_target_id
+            if self.action_menu_target_id is not None:
+                self.action_menu_target_id=None
+                self.action_menu_position=None
+                self._action_menu_items=[]
             return self.select_screen_point(ScreenPoint(*event.pos))
         return None
     def build_render_snapshot(self,debug_options:RenderDebugOptions|None=None)->WorldRenderSnapshot:
@@ -147,3 +202,34 @@ class EntityDemo:
         surface.blit(panel,(x,y))
         for index,line in enumerate(lines):
             surface.blit(font.render(line,True,(210,220,233)),(x+10,y+8+index*19))
+        self._draw_action_menu(surface)
+
+    def _draw_action_menu(self,surface:pygame.Surface)->None:
+        if self.action_menu_target_id is None or self.action_menu_position is None:
+            self._action_menu_items=[]
+            return
+        target=self.coordinator.registry.get(self.action_menu_target_id)
+        if target is None or target.kind is not EntityKind.NPC:
+            self.action_menu_target_id=None
+            self.action_menu_position=None
+            self._action_menu_items=[]
+            return
+        font=pygame.font.Font(None,22)
+        title_font=pygame.font.Font(None,20)
+        items=self._action_items()
+        width=max(190,max((font.size(label)[0] for label,_ in items),default=0)+24)
+        row_height=30
+        height=30+len(items)*row_height+8
+        x,y=self.action_menu_position
+        x=max(8,min(x,surface.get_width()-width-8))
+        y=max(8,min(y,surface.get_height()-height-8))
+        panel=pygame.Rect(x,y,width,height)
+        pygame.draw.rect(surface,(17,23,33),panel,border_radius=6)
+        pygame.draw.rect(surface,(112,133,158),panel,1,border_radius=6)
+        surface.blit(title_font.render("NPC Eylemleri",True,(225,233,244)),(x+12,y+8))
+        self._action_menu_items=[]
+        for index,(label,action) in enumerate(items):
+            rect=pygame.Rect(x+5,y+32+index*row_height,width-10,row_height)
+            pygame.draw.rect(surface,(49,66,86),rect,border_radius=4)
+            surface.blit(font.render(label,True,(235,240,247)),(rect.x+8,rect.y+6))
+            self._action_menu_items.append((rect,label,action))
