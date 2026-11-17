@@ -32,7 +32,7 @@ class VisibleRegion:
 
 
 
-MIN_CULLING_CELL_COUNT = 257
+MIN_CULLING_CELL_COUNT = 1_000
 
 
 def should_use_culling(cell_count: int) -> bool:

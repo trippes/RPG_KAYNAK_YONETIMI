@@ -54,9 +54,9 @@ def test_visible_region_aabb_intersection_is_inclusive_at_edges():
 
 def test_small_maps_skip_culling_until_measured_break_even_threshold():
     from hex_world_lab.rendering.visibility import MIN_CULLING_CELL_COUNT, should_use_culling
-    assert MIN_CULLING_CELL_COUNT == 257
-    assert should_use_culling(256) is False
-    assert should_use_culling(257) is True
+    assert MIN_CULLING_CELL_COUNT == 1_000
+    assert should_use_culling(999) is False
+    assert should_use_culling(1_000) is True
 
 
 @pytest.mark.parametrize("value", [-1, True, 1.5])
