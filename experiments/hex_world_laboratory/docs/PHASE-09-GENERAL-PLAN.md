@@ -80,7 +80,15 @@ Varlık ve etkileşim katmanları mevcut alt katmanların kurallarını yeniden 
 - İndeksin yalnızca aday bulduğunu; kesin etkileşim menzili ve hedef geçerliliği kararının Interaction katmanında verildiğini doğrulamak.
 - Hareketli varlıklar için indeks güncelleme sırasını ve güncellik garantisini tanımlamak.
 
-### 3.6 Harita değişimi ve sahiplik
+### 3.6 Yoldaş ilişkisi ve komut altyapısı
+
+- NPC'nin bağımsız dünya varlığı olma durumunu koruyarak oyuncuyla yoldaş ilişkisine katılabilmesini sağlayacak ilişki/sahiplik modelini tanımlamak.
+- Yoldaşlık durumunu NPC kimliğinden ve dünya konumundan ayrı, açık bir ilişki olarak temsil etmek.
+- Yoldaşın komut durumlarını ve ileride genişletilebilir komut sözleşmesini belirlemek: **FOLLOW** (oyuncuyu takip et), **WAIT** (bulunduğu yerde bekle) ve **RETURN** (oyuncunun yanına dön).
+- Yoldaş ilişkisinin kurulması, sona ermesi, harita değişimi ve NPC yaşam döngüsüyle etkileşimini tanımlamak.
+- Bu aşamada yalnızca veri modeli, ilişki yaşam döngüsü ve komut altyapısı/arayüz sınırlarını kurmak; gerçek otonom hareketi uygulamamak.
+
+### 3.7 Harita değişimi ve sahiplik
 
 - Varlığın hangi dünya ve haritaya ait olduğunu açıkça belirlemek.
 - Harita geçişinde varlığın taşınması, yeni haritaya yeniden bağlanması veya eski haritadan kaldırılması politikalarını tanımlamak.
@@ -126,13 +134,19 @@ Teknik mimari plan hazırlanırken aşağıdaki iş paketleri dosya ve API düze
 - Harita sınırı ve harita değişimi senaryolarını ele almak.
 - Yanlış harita veya kaldırılmış varlık döndürülmesini engellemek.
 
-### 9.7 — Oyuncu, NPC ve kaynak prototip sahnesi
+### 9.7 — Yoldaş ilişki ve komut altyapısı
+- NPC'nin oyuncuya yoldaş olarak katılma/ayrılma ilişki modelini kurmak.
+- Yoldaş komut durumlarını (FOLLOW, WAIT, RETURN) veri düzeyinde temsil etmek.
+- Komutların henüz hareket üretmediğini; yalnızca doğrulanabilir durum/komut geçişleri sağladığını garanti etmek.
+- Yoldaş ilişkisinin NPC kimliği, harita sahipliği ve yaşam döngüsüyle tutarlılığını test etmek.
+
+### 9.8 — Oyuncu, NPC ve kaynak prototip sahnesi
 - Aynı haritada oyuncu, en az bir NPC ve farklı konumlarda kaynak nesneleri oluşturmak.
 - Hareketli ve hücreye sabit varlıkları birlikte göstermek.
 - Hedef seçimi, menzil içi/dışı ve yakın hedef sorgularını görünür biçimde sınamak.
 - Test sahnesini tekrarlanabilir ve otomatik testlere uygun hale getirmek.
 
-### 9.8 — Doğrulama, raporlama ve aşama kabul hazırlığı
+### 9.9 — Doğrulama, raporlama ve aşama kabul hazırlığı
 - Unit, integration, regression ve property tabanlı testleri tamamlamak.
 - Entity konumu, anchor, collider ve Spatial sorgu sonuçlarını karşılaştırmak.
 - Kamera zoom/viewport değişiminden bağımsız etkileşim menzilini doğrulamak.
@@ -149,7 +163,8 @@ Teknik mimari plan hazırlanırken aşağıdaki iş paketleri dosya ve API düze
 - Dünya/hex mesafesi kurallarına dayalı etkileşim menzili sistemi.
 - Fareyle hedef seçimi ve yakın hedef sorgusu.
 - Aşama 8 Spatial indeksine bağlı NPC/kaynak aday sorguları.
-- Oyuncu, NPC ve kaynak içeren test sahnesi.
+- Oyuncu-NPC yoldaş ilişkisi ve FOLLOW/WAIT/RETURN komut durumlarını temsil eden temel veri/yaşam döngüsü altyapısı.
+- Oyuncu, NPC ve kaynak içeren; yoldaş ilişki/komut durumlarını da sınayan test sahnesi.
 - Otomatik testler, benchmarklar ve regresyon raporu.
 - Kullanıcı manuel görsel kabul kontrol listesi.
 - Mimari karar ve uygulama/doğrulama belgeleri.
@@ -169,9 +184,11 @@ Aşama 9 ancak aşağıdaki koşulların tamamı sağlandığında teknik kabul 
 9. Spatial indeks hareket, ekleme, kaldırma ve harita değişimi sonrasında güncel kalır.
 10. Kaldırılmış veya başka haritaya ait varlıklar yanlış sorgu sonucu olarak dönmez.
 11. Oyuncu, NPC ve kaynak aynı test sahnesinde birlikte çalışır.
-12. Otomatik testler, regresyon kontrolleri ve performans ölçümleri raporlanır.
-13. Kullanıcı manuel görsel/işlevsel kabulünü tamamlar.
-14. Aşama kapanış raporu hazırlanır ve kullanıcı kabulüyle aşama kapatılır.
+12. NPC oyuncuya yoldaş olarak bağlanabilir; ilişki kurulma/sonlanma ve FOLLOW/WAIT/RETURN komut durumları tutarlı biçimde saklanıp sorgulanabilir.
+13. Yoldaş komutları bu aşamada NPC'yi hareket ettirmez; gerçek takip/navigasyon davranışı kapsam dışıdır.
+14. Otomatik testler, regresyon kontrolleri ve performans ölçümleri raporlanır.
+15. Kullanıcı manuel görsel/işlevsel kabulünü tamamlar.
+16. Aşama kapanış raporu hazırlanır ve kullanıcı kabulüyle aşama kapatılır.
 
 ## 7. Test ve doğrulama yaklaşımı
 
@@ -211,6 +228,8 @@ Aşağıdakiler Aşama 9 kapsamında uygulanmayacaktır:
 - A* / Dijkstra pathfinding ve engelleri dolaşarak hedefe yürüme.
 - Click-to-move veya otomatik navigasyon.
 - Tam NPC yapay zekâsı, günlük rutin, algı ve karar verme. Bunlar Aşama 10 ve/veya sonraki ayrı planlarda ele alınacaktır.
+- Yoldaşların gerçek zamanlı takibi, durup beklemesi, oyuncuya yetişmesi, engelleri aşması, pathfinding ve formasyon hareketi. Aşama 9 yalnızca yoldaş ilişki/veri modeli ve komut durum altyapısını hazırlar.
+- Yoldaşların savaş, savunma, saldırı, görev, envanter veya diyalog davranışlarının uygulanması.
 - Kaynak toplama, üretim, envantere aktarma veya ekonomi kuralları.
 - Savaş, hasar, diyalog veya görev sistemlerinin entegrasyonu.
 - Nihai karakter/NPC animasyonları, ses ve sanat paketi.
@@ -231,7 +250,9 @@ Aşama 9 yalnızca etkileşim için hedef seçimi ve uygunluk/menzil sorgusu sa�
 | Spatial indeksin güncel olmaması | Eksik veya eski hedef sonuçları | Güncelleme sırasını ve yaşam döngüsü testlerini tanımlamak |
 | Harita kimliğinin sorguda unutulması | Başka haritadaki hedefin seçilmesi | Map identity'yi her sorgunun zorunlu filtresi yapmak |
 | Eşit mesafeli hedeflerde belirsizlik | Kararsız hedef seçimi | Deterministik tie-break kuralı |
-| Kapsamın NPC AI veya kaynak oynanışına kayması | Aşamanın kontrolsüz büyümesi | Davranış/oyun kuralı kapsamını Aşama 10+ için ayırmak |
+| Kapsamın NPC AI veya kaynak oynanışına kayması | Aşamanın kontrolsüz büyümesi | Otonom davranış ve navigasyonu sonraki aşamalara ayırmak |
+| Yoldaş ilişkisinin NPC kimliği/harita yaşam döngüsünden kopması | Yetim veya yanlış haritaya bağlı yoldaş kayıtları | İlişki yaşam döngüsünü entity ve map lifecycle ile birlikte doğrulamak |
+| Komut durumlarının gerçek hareket gibi yorumlanması | Aşama 9 kapsamının belirsizleşmesi | FOLLOW/WAIT/RETURN değerlerini yalnızca komut/durum altyapısı olarak tanımlamak |
 
 ## 11. Uygulama yöntemi ve onay kapıları
 
@@ -240,7 +261,7 @@ Aşama 9, önceki aşamalardaki kabul edilmiş çalışma yöntemiyle yürütül
 1. Bu genel plan kullanıcı tarafından incelenir ve onaylanır.
 2. Onaydan sonra mevcut kodun ayrıntılı denetimi ve dosya bazlı teknik mimari plan hazırlanır.
 3. Teknik mimari plan kullanıcı tarafından ayrıca onaylanır.
-4. 9.1–9.8 uygulaması tek bir kontrollü çalışma akışında tamamlanır; alt işler kodlanır, test edilir ve doğrulanır.
+4. 9.1–9.9 uygulaması tek bir kontrollü çalışma akışında tamamlanır; alt işler kodlanır, test edilir ve doğrulanır.
 5. Otomatik testler, Linux/Windows CI, regresyon ve benchmark sonuçları raporlanır.
 6. Kullanıcıya manuel görsel kabul kontrol listesi sunulur.
 7. Kullanıcı görsel/işlevsel kabulünü bildirdikten sonra kapanış raporu ve Master Plan güncellemesi yapılır.
@@ -255,4 +276,4 @@ Onay verilirse sıradaki çalışma, Aşama 9'un ayrıntılı teknik mimari plan
 
 ---
 
-**Özet karar:** Aşama 9, oyuncu/NPC/kaynak varlıklarının ortak dünya-konum modelini ve hedef seçimi/etkileşim menzili sorgularını kuracaktır. Pathfinding, NPC AI, kaynak toplama oynanışı ve nihai çevre sanatı bu aşamanın kapsamı dışındadır.
+**Özet karar:** Aşama 9, oyuncu/NPC/kaynak varlıklarının ortak dünya-konum modelini, hedef seçimi/etkileşim menzili sorgularını ve oyuncu-NPC yoldaş ilişkisinin temel veri/komut altyapısını kuracaktır. FOLLOW, WAIT ve RETURN komutları bu aşamada yalnızca durum/ilişki sözleşmesi olarak temsil edilir; gerçek takip hareketi, pathfinding, NPC AI, kaynak toplama oynanışı ve nihai çevre sanatı bu aşamanın kapsamı dışındadır.
