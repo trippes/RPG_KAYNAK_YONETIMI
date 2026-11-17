@@ -2,6 +2,7 @@
 from __future__ import annotations
 import pygame
 from hex_world_lab.application.movement_demo import MovementDemo
+from hex_world_lab.camera import ScreenPoint
 from hex_world_lab.application.entity_world_coordinator import EntityWorldCoordinator
 from hex_world_lab.entities import EntityId, EntityKind, EntityLocation, EntityRecord, EntityTransform
 from hex_world_lab.entities.spatial_index import EntitySpatialIndex
@@ -48,6 +49,7 @@ class EntityDemo:
                 EntityTransform(EntityLocation(self.world.world_id,self.map_id,point)),
                 None,profile))
         self.target_query=TargetQuery(self.coordinator.registry,self.coordinator.spatial_index)
+        self.selected_target_id:EntityId|None=None
         self._register_placeholder_assets()
     def _register_placeholder_assets(self)->None:
         colors={"npc-guard":(92,145,196),"npc-trader":(191,151,83),
@@ -80,6 +82,18 @@ class EntityDemo:
         return self.coordinator.companions.recruit(self.player_id,self.npc_ids[0])
     def issue_guard_command(self,command:CompanionCommand):
         return self.coordinator.companions.issue_command(self.npc_ids[0],command)
+    def select_world_point(self,point:WorldPoint)->EntityId|None:
+        self.selected_target_id=self.target_query.select_target(point,self.map_id)
+        return self.selected_target_id
+    def select_screen_point(self,point:ScreenPoint)->EntityId|None:
+        if not isinstance(point,ScreenPoint): raise TypeError("point must be a ScreenPoint")
+        world_point=self.movement.camera.transform.screen_to_world(point)
+        return self.select_world_point(world_point)
+    def handle_event(self,event:pygame.event.Event)->EntityId|None:
+        self.movement.handle_event(event)
+        if event.type==pygame.MOUSEBUTTONDOWN and getattr(event,"button",None)==1:
+            return self.select_screen_point(ScreenPoint(*event.pos))
+        return None
     def build_render_snapshot(self,debug_options:RenderDebugOptions|None=None)->WorldRenderSnapshot:
         self.sync_player()
         base=self.movement.build_render_snapshot(debug_options=debug_options)
