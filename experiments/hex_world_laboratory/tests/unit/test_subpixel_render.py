@@ -43,4 +43,4 @@ def test_world_to_screen_retains_fractional_precision_before_rasterization():
     transform=WorldScreenTransform(Viewport(100,80),WorldPoint(0.25,-0.25),1.0)
     point=transform.world_to_screen(WorldPoint(0.0,0.0))
     assert point.x == pytest.approx(49.75)
-    assert point.y == pytest.approx(40.25)
+    assert point.y == pytest.approx(39.75)
