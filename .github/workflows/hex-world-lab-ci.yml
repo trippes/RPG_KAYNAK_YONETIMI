@@ -90,3 +90,17 @@ jobs:
           path: experiments/hex_world_laboratory/artifacts/phase-07/*.png
           if-no-files-found: error
           retention-days: 14
+
+      - name: Generate Phase 9 entity visual evidence
+        run: python scripts/render_phase_09_scenes.py --output artifacts/phase-09
+
+      - name: Upload Phase 9 entity visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase-09-entity-scenes
+          path: |
+            experiments/hex_world_laboratory/artifacts/phase-09/*.png
+            experiments/hex_world_laboratory/artifacts/phase-09/*.json
+          if-no-files-found: error
+          retention-days: 14
