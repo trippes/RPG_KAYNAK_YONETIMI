@@ -1,10 +1,10 @@
 # Aşama 6 — Kamera ve Dünya-Ekran Dönüşümü Kapanış Raporu
 
-> **Rapor durumu:** TEKNİK UYGULAMA VE OTOMATİK DOĞRULAMA TAMAM — KULLANICI GÖRSEL KABULÜ BEKLENİYOR  
+> **Rapor durumu:** TAMAMLANDI VE KULLANICI TARAFINDAN KABUL EDİLDİ  
 > **Tarih:** 17 Kasım 2026  
 > **Çalışma dalı:** experiment/hex-world-laboratory  
 > **Son doğrulanan kod ve belge commit'i:** bcfdb5573880e58cf53112edd32ab2df6d4e2097  
-> **Aşama kararı:** Henüz nihai olarak kapatılmadı.
+> **Aşama kararı:** AŞAMA 6 KAPATILDI — 17 Kasım 2026
 
 ---
 
@@ -88,9 +88,9 @@ Bu sonuçlar otomatik doğrulamadır. Kullanıcının bilgisayarındaki görsel 
 - demo_eldoria dalı doğrulanan HEAD: 7d53d431d5c3639fd95d273de9043b64483a5125.
 - Korunan dallara yazılmadı; ana oyuna entegrasyon yapılmadı.
 
-## 7. Açık kalan tek kabul kapısı
+## 7. Kullanıcı masaüstü/görsel kabulü
 
-**Kullanıcı masaüstü/görsel kabulü.**
+**<PRIVATE_PERSON> tarafından 17 Kasım 2026 tarihinde kabul edildi.** Kullanıcı, kontrol listesindeki kamera takibi, zoom, dünya/ekran hizalaması, fareyle hex seçimi, pencere boyutu, açık dünya davranışı, hareket/çarpışma regresyonu ve tanı paneli kontrollerinin tamamını kendi bilgisayarında gerçekleştirdiğini ve hepsinin başarılı olduğunu bildirdi.
 
 Bu aşamada kullanıcıdan kod düzenlemesi veya otomatik test komutu çalıştırması istenmiyor. Kullanıcının rolü, laboratuvarı kendi bilgisayarında açıp aşağıdaki görsel davranışları kontrol etmek:
 
@@ -106,10 +106,10 @@ Bu aşamada kullanıcıdan kod düzenlemesi veya otomatik test komutu çalışt�
 Adım adım kontrol için:
 [PHASE-06-MANUAL-ACCEPTANCE-CHECKLIST.md](../docs/PHASE-06-MANUAL-ACCEPTANCE-CHECKLIST.md)
 
-Kullanıcı sonucu Kabul olarak bildirirse bu rapor güncellenerek Aşama 6 tamamen kapatılabilir. Bir veya daha fazla madde başarısızsa ilgili teknik düzeltme yapılır, CI yeniden çalıştırılır ve görsel kabul tekrarlanır.
+Kullanıcı görsel kabulü verilmiştir. Açık kabul maddesi veya bilinen engelleyici sorun kalmamıştır.
 
 ## 8. Nihai karar
 
-**GÖRSEL KABUL BEKLİYOR**
+**AŞAMA 6 TAMAMLANDI VE KABUL EDİLDİ.**
 
-Aşama 6'nın teknik uygulaması ve otomatik doğrulaması tamamlanmıştır. Kullanıcı görsel kabulü gelmeden Aşama 6 “tamamlandı ve kabul edildi” olarak işaretlenmeyecek; Aşama 7 uygulamasına başlanmayacaktır.
+Teknik uygulama, otomatik doğrulama ve kullanıcı masaüstü/görsel kabulü tamamlanmıştır. Aşama 6 resmen kapatılmıştır. Aşama 7 otomatik olarak başlamaz; kendi genel planı ve teknik kapsamı hazırlanıp kullanıcı onayı alındıktan sonra başlatılabilir.
