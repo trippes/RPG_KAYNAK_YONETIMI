@@ -131,3 +131,19 @@ class EntityDemo:
             self.movement._font=pygame.font.Font(None,23)
             self.movement._small_font=pygame.font.Font(None,19)
         self.movement._draw_diagnostics(surface,render_fps)
+        relationships=self.coordinator.companions.all_relationships()
+        companion_text="none" if not relationships else ", ".join(
+            f"{r.companion_id.value}:{r.command.value}#{r.command_revision}" for r in relationships)
+        selected="none" if self.selected_target_id is None else self.selected_target_id.value
+        entities=self.coordinator.registry.all_entities()
+        counts={kind:sum(e.kind.value==kind for e in entities) for kind in ("player","npc","resource")}
+        lines=(f"Entities: P{counts['player']} / NPC{counts['npc']} / R{counts['resource']}",
+               f"Selected target: {selected}",f"Companions: {companion_text}")
+        font=pygame.font.Font(None,19)
+        width=max(font.size(line)[0] for line in lines)+20
+        panel=pygame.Surface((width,68),pygame.SRCALPHA)
+        panel.fill((9,13,20,218))
+        x=max(12,surface.get_width()-width-12); y=max(12,surface.get_height()-80)
+        surface.blit(panel,(x,y))
+        for index,line in enumerate(lines):
+            surface.blit(font.render(line,True,(210,220,233)),(x+10,y+8+index*19))
