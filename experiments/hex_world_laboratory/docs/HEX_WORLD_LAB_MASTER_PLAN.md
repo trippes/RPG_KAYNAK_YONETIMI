@@ -5,8 +5,8 @@
 > **Depo:** `trippes/RPG_KAYNAK_YONETIMI`  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Hedef entegrasyon dalı:** `demo_eldoria`  
-> **Durum:** AŞAMA 0–8 TAMAMLANDI VE KABUL EDİLDİ — AŞAMA 9 9.1–9.9 UYGULANDI; MANUEL KABUL BEKLENİYOR  
-> **Belge sürümü:** 2.2
+> **Durum:** AŞAMA 0–9 TAMAMLANDI VE KABUL EDİLDİ — AŞAMA 10 SIRADAKİ PLANLI AŞAMA  
+> **Belge sürümü:** 2.3
 
 ---
 
@@ -746,7 +746,7 @@ Bu liste tamamlanmadan laboratuvarın ana oyuna aktarılmaya hazır olduğu söy
 
 ## 14. Şu anki durum ve bir sonraki izinli adım
 
-### Mevcut durum — 17 Kasım 2026
+### Mevcut durum — 18 Kasım 2026
 
 | Aşama | Kapsam | Durum |
 |---|---|---|
@@ -763,7 +763,7 @@ Bu liste tamamlanmadan laboratuvarın ana oyuna aktarılmaya hazır olduğu söy
 | 6.5 | Bütünleşik doğrulama ve kabul | 681/681 test, benchmark, Linux/Windows CI ve kullanıcı görsel kabulü başarılı; Aşama 6 kapatıldı |
 | 7 | Render ve görsel doğrulama | 7.1–7.8 tamamlandı; 703/703 test, Linux/Windows CI, benchmark ve kullanıcı görsel kabulü başarılı; 17 Kasım 2026 tarihinde kapatıldı |
 | 8 | Mekânsal indeksleme ve performans karşılaştırması | 8.1–8.8 uygulandı; 729/729 test, Linux/Windows Core Quality, benchmarklar ve kullanıcı görsel kabulü başarılı; 17 Kasım 2026 tarihinde kapatıldı |
-| 9 | Varlıklar, etkileşimler ve yoldaş altyapısı | 9.1–9.9 uygulandı; 741 laboratuvar testi, Linux/Windows Core Quality (2.204'er test), benchmark ve görsel artifact başarılı; kullanıcı manuel kabulini bekliyor |\n| 10–13 | Simülasyon, sağlamlık, nihai mimari ve kontrollü entegrasyon | Aşama 9 tamamlandıktan sonra kendi planlarıyla sırayla ele alınacak |
+| 9 | Varlıklar, etkileşimler ve yoldaş altyapısı | 9.1–9.9 uygulandı; 741 laboratuvar testi, Linux/Windows Core Quality (2.204'er test), benchmark ve kullanıcı görsel/işlevsel kabulü başarılı; 18 Kasım 2026 tarihinde kapatıldı |\n| 10–13 | Simülasyon, sağlamlık, nihai mimari ve kontrollü entegrasyon | Her aşama kendi planı ve kullanıcı onayıyla sırayla ele alınacak |
 
 - Çalışma dalı: `experiment/hex-world-laboratory`.
 - Aşama 6 son otomatik test kapısında Laboratuvar CI 681/681 testle başarılıdır.
@@ -775,7 +775,9 @@ Bu liste tamamlanmadan laboratuvarın ana oyuna aktarılmaya hazır olduğu söy
 
 ### Bir sonraki izinli adım
 
-Aşama 7 ve Aşama 8 kapatılmıştır. Aşama 9 genel ve teknik planları kullanıcı tarafından onaylanmış; 9.1–9.9 uygulaması tamamlanmıştır. Laboratuvar CI 741/741 testle, Core Quality Linux ve Windows job'ları 2.204'er testle başarılı olmuştur. Entity spatial benchmark ve Phase 9 görsel artifact üretimi de başarılıdır. Kullanıcı yerel bilgisayarındaki manuel görsel/işlevsel kabul adımı beklenmektedir; bu nedenle Aşama 9 henüz resmen kapatılmamıştır.
+Aşama 9'un 9.1–9.9 teknik uygulaması, 741/741 laboratuvar testi, Core Quality Linux ve Windows job'ları (2.204'er test), benchmarklar, görsel artifact üretimi ve kullanıcının manuel görsel/işlevsel kabulü tamamlanmıştır. Aşama 9, 18 Kasım 2026 tarihinde resmen kapatılmıştır.
+
+Sıradaki planlı çalışma Aşama 10 — Simülasyon orkestrasyonu ve dünya bütünlüğüdür. Aşama 10 için önce genel plan ve kapsam hazırlanacak, ardından ayrıntılı teknik mimari ve kabul ölçütleri kullanıcı onayına sunulacaktır. Açık kullanıcı onayı alınmadan Aşama 10 kodlamasına başlanmayacaktır.
 
 Dünya görsel zenginleştirmesi (arazi dokuları, bitki örtüsü, ağaç/kaya/çevre varlıkları, ışık ve atmosfer) Aşama 7'nin geriye dönük eksik işi değildir. Kullanıcı kararı doğrultusunda ihtiyaç duyulan ileriki aşamalarda ayrı kapsam olarak ele alınacaktır.
 
@@ -797,4 +799,4 @@ Dünya görsel zenginleştirmesi (arazi dokuları, bitki örtüsü, ağaç/kaya/
 | 1.8 | Güncellendi — 17 Kasım 2026 | Kullanıcı manuel görsel/regresyon kontrollerini kabul etti; Aşama 8 resmen kapatıldı, Aşama 9 sıradaki aşama oldu |\n| 1.9 | Güncellendi — 17 Kasım 2026 | Aşama 8'in bekleyen durumu düzeltildi; Aşama 9 genel planı hazırlandı ve kullanıcı onayına sunuldu; uygulama başlamadı |
 | 2.0 | Güncellendi — 17 Kasım 2026 | Aşama 9 genel planına yoldaş ilişki yaşam döngüsü ve FOLLOW/WAIT/RETURN komut altyapısı eklendi; gerçek takip hareketi ve navigasyon sonraki aşamalara bırakıldı |
 | 2.1 | Güncellendi — 17 Kasım 2026 | Aşama 9 genel planı kullanıcı tarafından onaylandı; ayrıntılı teknik mimari plan hazırlandı ve kullanıcı onayına sunuldu; kodlama başlamadı |
-| 2.2 | Güncellendi — 17 Kasım 2026 | Aşama 9 teknik planı onaylandı; 9.1–9.9 uygulandı, 741 laboratuvar testi, Linux/Windows Core Quality, benchmark ve görsel artifact başarılı; kullanıcı manuel kabul kapısı bekleniyor |
+| 2.2 | Güncellendi — 17 Kasım 2026 | Aşama 9 teknik planı onaylandı; 9.1–9.9 uygulandı, otomatik doğrulamalar ve görsel artifact başarılı; kullanıcı manuel kabul kapısı bekleniyor |\n| 2.3 | Güncellendi — 18 Kasım 2026 | Kullanıcı görsel/işlevsel kabulü verdi; Aşama 9 kapatıldı, kapanış raporu eklendi ve Aşama 10 planlama için sıradaki aşama oldu |
