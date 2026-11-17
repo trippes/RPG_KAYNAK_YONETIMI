@@ -9,6 +9,8 @@ from __future__ import annotations
 import pygame
 
 from .application.entity_demo import EntityDemo
+from .application.movement_demo import MovementDemo
+from .camera import Viewport
 from .config import AppConfig
 from .rendering import RenderDebugOptions
 
@@ -49,7 +51,11 @@ class LabApplication:
             )
             pygame.display.set_caption(self.config.window_title)
             clock = pygame.time.Clock()
-            self._demo = EntityDemo()
+            movement_demo = MovementDemo(
+                movement_speed=self.config.movement_speed,
+                viewport=Viewport(*screen.get_size()),
+            )
+            self._demo = EntityDemo(movement_demo)
             self._demo.movement.start()
             self._show_colliders = True
 
