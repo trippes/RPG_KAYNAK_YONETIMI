@@ -13,7 +13,7 @@ Laboratuvar kök dizininde PowerShell veya terminal aç:
 ```powershell
 cd experiments/hex_world_laboratory
 python -m pip install -e ".[test]"
-python scripts/run_phase_09_demo.py
+python -m hex_world_lab
 ```
 
 ## 2. Kontroller
