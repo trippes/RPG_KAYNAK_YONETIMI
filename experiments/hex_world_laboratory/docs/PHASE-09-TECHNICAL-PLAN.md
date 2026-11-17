@@ -4,11 +4,11 @@
 > **Proje:** Eldoria — Hex World Laboratory  
 > **Depo:** trippes/RPG_KAYNAK_YONETIMI  
 > **Çalışma dalı:** experiment/hex-world-laboratory  
-> **Durum:** TEKNİK PLAN HAZIRLANDI — KULLANICI ONAYI BEKLENİYOR  
+> **Durum:** ONAYLANDI — 9.1–9.9 UYGULANDI VE OTOMATİK DOĞRULANDI; MANUEL KABUL BEKLENİYOR  
 > **Hazırlanma tarihi:** 17 Kasım 2026  
 > **Genel plan:** [PHASE-09-GENERAL-PLAN.md](PHASE-09-GENERAL-PLAN.md)  
 > **Planın hazırlandığı HEAD:** 3f64a7030064fd40e25926e28066b45bb95af048  
-> **Uygulama durumu:** Başlatılmadı
+> **Uygulama durumu:** 9.1–9.9 tamamlandı; Linux/Windows CI ve laboratuvar testleri başarılı; kullanıcı manuel kabulini bekliyor
 
 ---
 
@@ -575,14 +575,14 @@ Teknik plan onaylandığında kodlamaya geçmeden önce şu noktalar yeniden do�
 
 Bu kapılarda genel planla çelişen bir bulgu çıkarsa uygulama durdurulur; önce teknik plan revize edilip yeniden onaya sunulur.
 
-## 12. Onay ve uygulama sırası
+## 12. Onay ve uygulama durumu
 
-1. Kullanıcı bu ayrıntılı teknik mimari planı inceler.
-2. Kullanıcı onay verirse 9.1–9.9 uygulaması başlatılır.
-3. Uygulama yalnızca experiment/hex-world-laboratory dalında yapılır.
-4. Her write öncesi branch HEAD ve hedef dosya SHA doğrulanır; her write sonrası commit/HEAD kontrol edilir.
-5. Otomatik test, CI, benchmark ve görsel test kanıtları raporlanır.
-6. Kullanıcı manuel kabulini tamamlar.
-7. Kullanıcı kabulinden sonra Aşama 9 kapanış raporu ve Master Plan güncellemesi yapılır.
+1. Kullanıcı teknik mimari planı 17 Kasım 2026 tarihinde onayladı.
+2. 9.1–9.9 uygulaması yalnızca `experiment/hex-world-laboratory` dalında tamamlandı.
+3. Her dosya yazımından önce branch HEAD ve hedef dosya SHA doğrulandı; her yazım sonrasında commit/HEAD kontrol edildi.
+4. Laboratuvar pytest, Linux/Windows Core Quality, benchmark ve Phase 9 görsel artifact üretimi başarılı tamamlandı.
+5. Uygulama ve kanıtlar [PHASE-09-IMPLEMENTATION-VALIDATION-REPORT.md](../reports/PHASE-09-IMPLEMENTATION-VALIDATION-REPORT.md) içinde kayıtlıdır.
+6. Kullanıcı manuel görsel/işlevsel kabulini [PHASE-09-MANUAL-ACCEPTANCE-CHECKLIST.md](PHASE-09-MANUAL-ACCEPTANCE-CHECKLIST.md) üzerinden tamamlayacaktır.
+7. Kapanış raporu ve Master Plan'da resmî kapatma, yalnızca kullanıcı manuel kabulinden sonra yapılacaktır.
 
-**Sonuç:** Bu plan onaylanmadan Aşama 9 kodlaması başlamaz. Genel plandaki yoldaş kararı korunur: Aşama 9 yoldaş ilişkisini ve FOLLOW/WAIT/RETURN komut altyapısını kurar; gerçek takip ve hareket davranışını sonraki AI/navigasyon aşamaları uygular.
+**Sonuç:** Teknik planın 9.1–9.9 uygulaması tamamlanmıştır; Aşama 9 henüz resmen kapatılmamıştır. Yoldaş ilişki ve FOLLOW/WAIT/RETURN komut altyapısı mevcuttur; gerçek takip ve hareket davranışı sonraki AI/navigasyon aşamalarına bırakılmıştır.
