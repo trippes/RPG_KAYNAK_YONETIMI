@@ -91,6 +91,9 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+      - name: Benchmark Phase 9 entity spatial index (100 / 1,000 / 10,000 entities)
+        run: python benchmarks/benchmark_entity_spatial.py
+
       - name: Generate Phase 9 entity visual evidence
         run: python scripts/render_phase_09_scenes.py --output artifacts/phase-09
 
