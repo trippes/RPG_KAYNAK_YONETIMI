@@ -64,6 +64,9 @@ jobs:
       - name: Benchmark Phase 8 spatial indexes
         run: python benchmarks/benchmark_spatial_index.py
 
+      - name: Benchmark Phase 8 spatial tuning parameters
+        run: python benchmarks/benchmark_spatial_tuning.py
+
       - name: Benchmark Phase 8 hex neighborhood queries
         run: python benchmarks/benchmark_hex_neighborhood.py
 
