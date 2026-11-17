@@ -1,34 +1,46 @@
-"""Pygame application shell for the Hex World movement acceptance demo."""
+"""Unified Pygame entry point for the Hex World laboratory.
 
+The original `python -m hex_world_lab` launcher now opens the current
+multi-entity acceptance scene. MovementDemo remains the movement authority
+inside EntityDemo, so the earlier movement laboratory is preserved.
+"""
 from __future__ import annotations
 
 import pygame
 
-from .application.movement_demo import MovementDemo
+from .application.entity_demo import EntityDemo
 from .config import AppConfig
-from .simulation import CollisionAwareMovementSystem
+from .rendering import RenderDebugOptions
 
 
 class LabApplication:
-    """Own the Pygame window and delegate simulation to MovementDemo."""
+    """Own the Pygame window and run the current laboratory scene."""
 
     def __init__(self, config: AppConfig | None = None) -> None:
         self.config = config or AppConfig()
         self._running = False
-        self._demo: MovementDemo | None = None
+        self._demo: EntityDemo | None = None
+        self._show_colliders = True
 
     @property
-    def movement_system(self) -> CollisionAwareMovementSystem | None:
-        """Preserve the original movement-system inspection API."""
-        return None if self._demo is None else self._demo.movement_system
+    def movement_system(self):
+        """Keep the legacy movement-system inspection API available."""
+        if self._demo is None:
+            return None
+        return self._demo.movement.movement_system
 
     @property
-    def movement_demo(self) -> MovementDemo | None:
-        """Expose the active demo for diagnostics and integration tests."""
+    def movement_demo(self):
+        """Expose the underlying movement demo for existing diagnostics."""
+        return None if self._demo is None else self._demo.movement
+
+    @property
+    def entity_demo(self) -> EntityDemo | None:
+        """Expose the active multi-entity scene for diagnostics and tests."""
         return self._demo
 
     def run(self, *, max_frames: int | None = None) -> None:
-        """Run the window loop; max_frames is provided for automated tests."""
+        """Run the unified laboratory loop; max_frames supports headless tests."""
         pygame.init()
         try:
             screen = pygame.display.set_mode(
@@ -37,28 +49,43 @@ class LabApplication:
             )
             pygame.display.set_caption(self.config.window_title)
             clock = pygame.time.Clock()
-            self._demo = MovementDemo(movement_speed=self.config.movement_speed)
-            self._demo.start()
+            self._demo = EntityDemo()
+            self._demo.movement.start()
+            self._show_colliders = True
 
             self._running = True
             frame_count = 0
             while self._running:
+                delta = min(clock.tick(self.config.target_fps) / 1000.0, 0.1)
                 for event in pygame.event.get():
                     if event.type == pygame.VIDEORESIZE:
                         screen = pygame.display.set_mode(event.size, pygame.RESIZABLE)
-                    self._demo.handle_event(event)
                     if event.type == pygame.QUIT:
                         self._running = False
+                        continue
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_ESCAPE:
+                            self._running = False
+                            continue
+                        if event.key == pygame.K_F3:
+                            self._show_colliders = not self._show_colliders
+                            continue
+                    self._demo.handle_event(event)
 
                 if not self._running:
                     break
 
-                self._demo.pump()
-                self._demo.update_camera(clock.get_time() / 1000.0)
-                render_fps = clock.get_fps()
-                self._demo.render(screen, render_fps)
+                self._demo.movement.pump()
+                self._demo.movement.update_camera(delta)
+                self._demo.render(
+                    screen,
+                    clock.get_fps(),
+                    RenderDebugOptions(
+                        show_hex_edges=True,
+                        show_collider_debug=self._show_colliders,
+                    ),
+                )
                 pygame.display.flip()
-                clock.tick(self.config.target_fps)
                 frame_count += 1
 
                 if max_frames is not None and frame_count >= max_frames:
@@ -70,5 +97,5 @@ class LabApplication:
 
 
 def main() -> None:
-    """Launch the standalone laboratory application."""
+    """Launch the unified standalone laboratory application."""
     LabApplication().run()
