@@ -245,7 +245,7 @@ Aşama 8 aşağıdaki sırayla yürütülecektir:
 5. Yalnızca onaylanan kapsamda uygulama ve testler yapılır.
 6. Benchmark ve doğruluk kanıtları toplanır.
 7. Sonuç raporu ve kapanış raporu hazırlanır.
-8. Kullanıcı kabulüyle aşama kapatılır.
+8. Kullanıcı kabulüyle aşama kapatılır. **Tamamlandı: 17 Kasım 2026.**
 
 **Bu belge tek başına uygulama izni değildir.** Genel planın onaylanması, ayrıntılı teknik planın hazırlanmasına geçiş iznidir; kod değişiklikleri teknik plan ve kapsam onayından sonra başlar.
 
@@ -256,4 +256,4 @@ Master Plan sırasına göre Aşama 8'den sonra Aşama 9 — Varlıklar ve etkil
 ---
 
 **Plan durumu:** Kullanıcı tarafından 17 Kasım 2026 tarihinde onaylandı.  
-**Uygulama durumu:** 8.1–8.8 tamamlandı; 729/729 test, Linux/Windows Core Quality ve benchmarklar başarılı; kullanıcı görsel kabulini bekliyor.
+**Uygulama durumu:** 8.1–8.8 tamamlandı; 729/729 test, Linux/Windows Core Quality, benchmarklar ve kullanıcı görsel/regresyon kabulü başarılı. Aşama 8 resmen kapatıldı.

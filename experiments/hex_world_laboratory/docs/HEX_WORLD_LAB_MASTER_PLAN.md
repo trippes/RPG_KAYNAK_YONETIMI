@@ -5,8 +5,8 @@
 > **Depo:** `trippes/RPG_KAYNAK_YONETIMI`  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Hedef entegrasyon dalı:** `demo_eldoria`  
-> **Durum:** AŞAMA 0–7 TAMAMLANDI VE KABUL EDİLDİ — AŞAMA 8 TEKNİK UYGULAMA/OTOMATİK DOĞRULAMA TAMAM, KULLANICI GÖRSEL KABULÜ BEKLENİYOR  
-> **Belge sürümü:** 1.7
+> **Durum:** AŞAMA 0–8 TAMAMLANDI VE KABUL EDİLDİ — AŞAMA 9 SIRADAKİ PLANLI AŞAMA  
+> **Belge sürümü:** 1.8
 
 ---
 
@@ -775,7 +775,7 @@ Bu liste tamamlanmadan laboratuvarın ana oyuna aktarılmaya hazır olduğu söy
 
 ### Bir sonraki izinli adım
 
-Aşama 7 kapatılmıştır. Aşama 8'in 8.1–8.8 teknik uygulaması ve otomatik doğrulaması tamamlanmıştır: 729/729 laboratuvar testi, Linux/Windows Core Quality ve tüm benchmark adımları başarılıdır. Şu an yalnızca kullanıcı masaüstü/görsel kabulü beklenmektedir. Kullanıcı kabulinden sonra Aşama 8 kapatılacak ve sıradaki Aşama 9 için genel plan hazırlanacaktır.
+Aşama 7 ve Aşama 8 kapatılmıştır. Aşama 8'in 8.1–8.8 uygulaması, 729/729 laboratuvar testi, Linux/Windows Core Quality, tüm benchmarklar ve kullanıcı masaüstü/görsel kabulü 17 Kasım 2026 tarihinde tamamlanmıştır. Sıradaki izinli adım, Aşama 9 — Varlıklar ve etkileşimler için genel plan hazırlamaktır; uygulamaya geçiş ayrıca kullanıcı onayı gerektirir.
 
 Dünya görsel zenginleştirmesi (arazi dokuları, bitki örtüsü, ağaç/kaya/çevre varlıkları, ışık ve atmosfer) Aşama 7'nin geriye dönük eksik işi değildir. Kullanıcı kararı doğrultusunda ihtiyaç duyulan ileriki aşamalarda ayrı kapsam olarak ele alınacaktır.
 
@@ -794,3 +794,4 @@ Dünya görsel zenginleştirmesi (arazi dokuları, bitki örtüsü, ağaç/kaya/
 | 1.4 | Güncellendi — 17 Kasım 2026 | Kullanıcı tüm masaüstü/görsel kontrolleri başarılı bildirdi; Aşama 6 resmen kapatıldı |
 | 1.6 | Güncellendi — 17 Kasım 2026 | Aşama 7.1–7.8 otomatik ve manuel kabulü tamamlandı; Aşama 7 kapatıldı, Aşama 8 sıradaki aşama olarak işaretlendi |
 | 1.7 | Güncellendi — 17 Kasım 2026 | Aşama 8.1–8.8 uygulama, 729 test, Linux/Windows CI ve benchmarklar tamamlandı; kullanıcı görsel kabul kapısı bekleniyor |
+| 1.8 | Güncellendi — 17 Kasım 2026 | Kullanıcı manuel görsel/regresyon kontrollerini kabul etti; Aşama 8 resmen kapatıldı, Aşama 9 sıradaki aşama oldu |

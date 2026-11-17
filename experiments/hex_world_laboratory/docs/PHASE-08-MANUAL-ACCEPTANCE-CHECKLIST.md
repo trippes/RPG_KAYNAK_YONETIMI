@@ -1,6 +1,6 @@
 # Aşama 8 — Manuel Görsel ve Regresyon Kabul Kontrol Listesi
 
-> **Durum:** Kullanıcı kontrolü bekleniyor.  
+> **Durum:** KULLANICI TARAFINDAN KABUL EDİLDİ — 17 Kasım 2026.  
 > **Amaç:** Aşama 8'in veri yapıları ve fizik sorgu değişikliklerinin mevcut Pygame dünya ekranında görsel/işlevsel gerilemeye yol açmadığını doğrulamak.
 
 ## Önemli kapsam notu
@@ -22,7 +22,7 @@ Aşama 8 yeni görsel içerik veya render özelliği eklemez. UniformGrid/Quadtr
 
 ## Görsel ve işlevsel kontroller
 
-- [ ] Pygame penceresi hatasız açılıyor ve başlangıç haritası yükleniyor.
+- [x] Pygame penceresi hatasız açılıyor ve başlangıç haritası yükleniyor.
 - [ ] Oyuncu karakteri harita üzerinde normal hareket ediyor.
 - [ ] Engel/duvar temasında karakter engelin içinden geçmiyor.
 - [ ] Duvar boyunca çapraz hareket denendiğinde mevcut kayma davranışı korunuyor.
@@ -41,4 +41,4 @@ Kontrol sonunda aşağıdakilerden biriyle geri bildirim ver:
 - **Koşullu kabul:** Belirtilen maddeler dışında sorun yok; sorunlar açıklanır.
 - **Ret:** Görsel/işlevsel regresyon var; hangi adımda ve nasıl oluştuğu belirtilir.
 
-Sorun görülürse mümkünse ekran görüntüsü ve tekrar adımları ekle. Kullanıcı kabulinden sonra Aşama 8 kapanış raporu hazırlanacaktır.
+Kullanıcı 17 Kasım 2026 tarihinde manuel kontrollerin tamamlandığını ve kabul edildiğini bildirdi. Kontrol listesi kabul edilmiş sayılır; Aşama 8 kapanış raporu hazırlanmıştır.

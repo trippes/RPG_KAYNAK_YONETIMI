@@ -591,7 +591,7 @@ Her commit öncesi/sonrası:
 
 Bu belge kullanıcı tarafından 17 Kasım 2026 tarihinde onaylanan Aşama 8 uygulama sözleşmesidir. Alt aşamalar 8.1–8.8 uygulanmış ve otomatik doğrulamadan geçmiştir.
 
-**Kullanıcı onayı beklenen kararlar:**
+**Onaylanan kararlar (17 Kasım 2026):**
 1. Linear AABB taramasının referans olarak korunması.
 2. Uniform spatial hash/grid ve quadtree'nin karşılaştırılacak iki indeks prototipi olması.
 3. Hex topoloji sorgusunun fiziksel AABB indeksinden ayrı ele alınması.
@@ -599,5 +599,5 @@ Bu belge kullanıcı tarafından 17 Kasım 2026 tarihinde onaylanan Aşama 8 uyg
 5. İndeksli physics yolunun opsiyonel olması ve mevcut API'nin geriye dönük korunması.
 6. Performans faydası kanıtlanmazsa linear yöntemin korunabilmesi.
 
-**Uygulama durumu:** 8.1–8.8 tamamlandı. 729/729 test, Linux/Windows Core Quality ve benchmarklar başarılıdır.  
-**Sonraki adım:** Kullanıcı PHASE-08-MANUAL-ACCEPTANCE-CHECKLIST.md listesini tamamlar; kabul sonrası kapanış raporu hazırlanır.
+**Uygulama durumu:** 8.1–8.8 tamamlandı. 729/729 test, Linux/Windows Core Quality, benchmarklar ve kullanıcı manuel görsel/regresyon kabulü başarılıdır. Aşama 8 resmen kapatılmıştır.  
+**Sonraki adım:** Aşama 9 için genel plan hazırlanması.

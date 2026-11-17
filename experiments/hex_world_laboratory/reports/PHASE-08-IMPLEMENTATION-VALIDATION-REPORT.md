@@ -1,6 +1,6 @@
 # Aşama 8 — Uygulama ve Doğrulama Raporu
 
-> **Durum:** Teknik uygulama ve otomatik doğrulama tamamlandı; kullanıcı masaüstü/görsel kabulini bekliyor.  
+> **Durum:** TAMAMLANDI VE KABUL EDİLDİ — teknik uygulama, otomatik doğrulama ve kullanıcı masaüstü/görsel kabulü tamamlandı.  
 > **Tarih:** 17 Kasım 2026  
 > **Dal:** `experiment/hex-world-laboratory`  
 > **Uygulama commit'i:** `6e0a58a64e7353339c4b0220af402357690071c6`  
@@ -18,7 +18,7 @@ Aşama 8'in onaylanan 8.1–8.8 teknik alt aşamaları tek uygulama akışında 
 - Core Quality: [CI run](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44054382182).
 - Laboratuvar CI: [CI run](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44054382282).
 
-Bu rapor kullanıcı görsel kabulini tamamlanmış saymaz. Aşama 8, manuel kabul listesi kullanıcı tarafından doğrulanana kadar resmen kapatılmayacaktır.
+Kullanıcı 17 Kasım 2026 tarihinde manuel masaüstü/görsel kontrollerin tamamlandığını ve kabul edildiğini bildirdi. Böylece teknik ve kullanıcı kabul kapılarının tamamı geçildi; Aşama 8 resmen kapatıldı.
 
 ## 2. Alt aşama sonuçları
 
@@ -128,6 +128,6 @@ Bu nedenle **128 birim genel varsayılan** olarak seçildi. Büyük AABB yoğunl
 
 Aşama 8 yeni terrain art, sprite, ışık veya render özelliği eklemez. Bu aşamanın çıktısı veri yapıları ve sorgu maliyetidir. Otomatik testler indexed/linear fizik sonuçlarının eşitliğini doğrular. Kullanıcıdan beklenen son kontrol, mevcut Pygame dünya ekranında hareket, çarpışma, kamera ve seçim davranışlarının gerilemediğini teyit etmektir.
 
-Manuel adımlar: [PHASE-08-MANUAL-ACCEPTANCE-CHECKLIST.md](../docs/PHASE-08-MANUAL-ACCEPTANCE-CHECKLIST.md).
+Manuel adımlar: [PHASE-08-MANUAL-ACCEPTANCE-CHECKLIST.md](../docs/PHASE-08-MANUAL-ACCEPTANCE-CHECKLIST.md). Kullanıcı 17 Kasım 2026 tarihinde kontrollerin tamamlandığını bildirmiştir.
 
-**Aşama durumu:** Teknik uygulama ve otomatik doğrulama tamamlandı. Kullanıcı görsel kabulinden sonra kapanış raporu hazırlanacaktır.
+**Aşama durumu:** Teknik uygulama, otomatik doğrulama ve kullanıcı görsel kabulü tamamlandı. [Kapanış raporu](PHASE-08-CLOSURE-REPORT.md) hazırlanmış ve Aşama 8 kapatılmıştır.
