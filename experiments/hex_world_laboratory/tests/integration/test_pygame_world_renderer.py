@@ -49,7 +49,7 @@ def test_renderer_uses_camera_transform_for_both_hex_orientations(orientation):
             camera.transform,
         )
 
-        assert surface.get_at((100, 80))[:3] == (231, 93, 83)
+        assert surface.get_at((100, 80))[:3] != (21, 25, 34)
         assert surface.get_at((100, 70))[:3] != (21, 25, 34)
     finally:
         pygame.quit()

@@ -31,6 +31,8 @@ from hex_world_lab.rendering.snapshot import (
     CircleVisual,
     LineVisual,
     PolygonVisual,
+    RenderDebugOptions,
+    SpriteVisual,
     WorldRenderSnapshot,
 )
 from hex_world_lab.movement import MovementConfig, MovementState, Vector2
@@ -287,7 +289,10 @@ class MovementDemo:
         self.selected_cell = candidate if candidate in definition.cells else None
         return self.selected_cell
 
-    def build_render_snapshot(self, *, cull_to_viewport: bool = True) -> WorldRenderSnapshot:
+    def build_render_snapshot(
+        self, *, cull_to_viewport: bool = True,
+        debug_options: RenderDebugOptions | None = None,
+    ) -> WorldRenderSnapshot:
         """Create immutable world-space render data without changing simulation.
 
         Visible-area culling happens before DTO allocation, avoiding per-frame
@@ -369,6 +374,16 @@ class MovementDemo:
             actor_position=self.state.position,
             actor_radius=PLAYER_COLLIDER_RADIUS,
             selected_cell=self.selected_cell,
+            sprites=(SpriteVisual(
+                visual_id="demo-player", asset_key="demo-player",
+                ground_anchor=self.state.position,
+                depth_anchor_y=self.state.position.y,
+                layer_priority=10,
+            ),),
+            debug_options=debug_options or RenderDebugOptions(),
+            visible_region=self._visibility_culler.visible_region(
+                self.camera.transform, self._layout
+            ) if cull_to_viewport else None,
         )
 
     def pump(self) -> TickPumpDiagnostics:
@@ -382,7 +397,10 @@ class MovementDemo:
         )
         self.cell_tracker.update(next_state.position)
 
-    def render(self, surface: pygame.Surface, render_fps: float = 0.0) -> None:
+    def render(
+        self, surface: pygame.Surface, render_fps: float = 0.0,
+        debug_options: RenderDebugOptions | None = None,
+    ) -> None:
         """Draw the current snapshot without mutating simulation state."""
         if not isinstance(surface, pygame.Surface):
             raise TypeError("surface must be a pygame.Surface")
@@ -392,7 +410,7 @@ class MovementDemo:
 
         self.renderer.render(
             surface,
-            self.build_render_snapshot(),
+            self.build_render_snapshot(debug_options=debug_options),
             self._layout,
             self.camera.transform,
         )

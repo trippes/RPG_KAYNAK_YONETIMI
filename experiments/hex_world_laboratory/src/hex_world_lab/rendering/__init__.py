@@ -7,6 +7,9 @@ from .snapshot import (
     CircleVisual,
     LineVisual,
     PolygonVisual,
+    SpriteVisual,
+    ColliderVisual,
+    RenderDebugOptions,
     WorldRenderSnapshot,
 )
 
@@ -17,6 +20,9 @@ __all__ = [
     "PolygonVisual",
     "PygameWorldRenderer",
     "WorldRenderSnapshot",
+    "SpriteVisual",
+    "ColliderVisual",
+    "RenderDebugOptions",
     "VisibleAreaCuller",
     "VisibleRegion",
 ]
