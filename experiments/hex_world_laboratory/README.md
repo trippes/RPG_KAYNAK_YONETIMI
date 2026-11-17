@@ -111,6 +111,6 @@ ADR-003 sınır davranışı: eşit mesafede karakterin önceki hücresi korunur
 - [Aşama 7 Teknik Mimari Planı](docs/PHASE-07-TECHNICAL-PLAN.md)
 - [Manuel Görsel Kabul Kontrol Listesi](docs/PHASE-07-MANUAL-ACCEPTANCE-CHECKLIST.md)
 - [Uygulama ve Doğrulama Raporu](reports/PHASE-07-IMPLEMENTATION-VALIDATION-REPORT.md)
-- [Görsel test sahneleri — GitHub Actions artifact](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44044589035/artifacts/14311256731)
+- [Görsel test sahneleri — GitHub Actions artifact](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44045118838/artifacts/14311276474)
 
 Aşama 7'nin kullanıcı tarafından yapılacak son masaüstü görsel kontrolleri tamamlanmadan Aşama 7 kapatılmış sayılmaz.

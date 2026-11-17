@@ -433,6 +433,8 @@ Tekrarlanabilir harita profilleri:
 | Profil | Hücre sayısı hedefi | Amaç |
 |---|---:|---|
 | Küçük referans | 61 | Mevcut demo davranışını ve küçük harita ek maliyetini kontrol etmek |
+| Küçük-orta | 128 | Culling sorgusunun küçük harita overhead'ini karşılaştırmak |
+| Orta-küçük | 256 | Culling'in hâlâ gereksiz olduğu harita boyutunu doğrulamak |
 | Orta | 1.000 | Görünür alanın harita toplamından ayrışmasını ölçmek |
 | Büyük | 10.000 | Snapshot tarama ve çizim maliyetindeki farkı ölçmek |
 | Stres | 50.000 | Culling yaklaşımının ölçeklenmesini incelemek |

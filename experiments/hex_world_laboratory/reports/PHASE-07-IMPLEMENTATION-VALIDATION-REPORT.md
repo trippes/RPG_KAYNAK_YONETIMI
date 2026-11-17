@@ -21,16 +21,16 @@ A* pathfinding, click-to-move veya hareket/çarpışma sistemi değişikliği ek
 
 ## 2. Otomatik test ve CI
 
-- Hex World Laboratory CI: **703 test başarılı** (Python 3.12, 3.40 saniye).
+- Hex World Laboratory CI: **703 test başarılı** (Python 3.12, 3.51 saniye).
 - Laboratuvar benchmark adımları: başarılı.
 - Görsel test sahnelerinin otomatik üretimi: başarılı.
 - Görsel kanıt artifact yüklemesi: başarılı.
 - Core Quality Linux: başarılı.
 - Core Quality Windows: başarılı.
 
-Laboratuvar CI: [GitHub Actions run](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44044589035)
+Laboratuvar CI: [GitHub Actions run](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44045118838)
 
-Core Quality: [GitHub Actions run](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44044016657)
+Core Quality: [GitHub Actions run](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44045118836)
 
 ## 3. Culling performans ölçümü
 
@@ -64,7 +64,7 @@ Yedi PNG sahnesi otomatik olarak üretildi ve GitHub Actions artifact'ına yükl
 - Subpixel kamera örneği.
 - Y-sort/depth sıralaması.
 
-[Phase 7 görsel sahnelerini indir — GitHub Actions artifact](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44044589035/artifacts/14311256731)
+[Phase 7 görsel sahnelerini indir — GitHub Actions artifact](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44045118838/artifacts/14311276474)
 
 Yerel üretim komutu:
 
