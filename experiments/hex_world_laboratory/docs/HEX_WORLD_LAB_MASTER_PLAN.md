@@ -6,7 +6,7 @@
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Hedef entegrasyon dalı:** `demo_eldoria`  
 > **Durum:** AŞAMA 0–8 TAMAMLANDI VE KABUL EDİLDİ — AŞAMA 9 SIRADAKİ PLANLI AŞAMA  
-> **Belge sürümü:** 1.8
+> **Belge sürümü:** 1.9
 
 ---
 
@@ -762,8 +762,8 @@ Bu liste tamamlanmadan laboratuvarın ana oyuna aktarılmaya hazır olduğu söy
 | 6.4 | Render ve fare girdisi entegrasyonu | Teknik olarak tamamlandı; CI başarılı |
 | 6.5 | Bütünleşik doğrulama ve kabul | 681/681 test, benchmark, Linux/Windows CI ve kullanıcı görsel kabulü başarılı; Aşama 6 kapatıldı |
 | 7 | Render ve görsel doğrulama | 7.1–7.8 tamamlandı; 703/703 test, Linux/Windows CI, benchmark ve kullanıcı görsel kabulü başarılı; 17 Kasım 2026 tarihinde kapatıldı |
-| 8 | Mekânsal indeksleme ve performans karşılaştırması | 8.1–8.8 uygulandı; 729/729 test, Linux/Windows Core Quality ve tüm benchmarklar başarılı; kullanıcı görsel kabulü bekleniyor |
-| 9–13 | Entities, interaction, simulation, robustness ve entegrasyon hazırlığı | Aşama 8 kullanıcı kabulinden sonra kendi planlarıyla sırayla ele alınacak |
+| 8 | Mekânsal indeksleme ve performans karşılaştırması | 8.1–8.8 uygulandı; 729/729 test, Linux/Windows Core Quality, benchmarklar ve kullanıcı görsel kabulü başarılı; 17 Kasım 2026 tarihinde kapatıldı |
+| 9 | Varlıklar ve etkileşimler | Genel plan hazırlandı; kullanıcı incelemesi ve onayı bekleniyor. Uygulama başlamadı |\n| 10–13 | Simülasyon, sağlamlık, nihai mimari ve kontrollü entegrasyon | Aşama 9 tamamlandıktan sonra kendi planlarıyla sırayla ele alınacak |
 
 - Çalışma dalı: `experiment/hex-world-laboratory`.
 - Aşama 6 son otomatik test kapısında Laboratuvar CI 681/681 testle başarılıdır.
@@ -775,7 +775,7 @@ Bu liste tamamlanmadan laboratuvarın ana oyuna aktarılmaya hazır olduğu söy
 
 ### Bir sonraki izinli adım
 
-Aşama 7 ve Aşama 8 kapatılmıştır. Aşama 8'in 8.1–8.8 uygulaması, 729/729 laboratuvar testi, Linux/Windows Core Quality, tüm benchmarklar ve kullanıcı masaüstü/görsel kabulü 17 Kasım 2026 tarihinde tamamlanmıştır. Sıradaki izinli adım, Aşama 9 — Varlıklar ve etkileşimler için genel plan hazırlamaktır; uygulamaya geçiş ayrıca kullanıcı onayı gerektirir.
+Aşama 7 ve Aşama 8 kapatılmıştır. Aşama 8'in 8.1–8.8 uygulaması, 729/729 laboratuvar testi, Linux/Windows Core Quality, tüm benchmarklar ve kullanıcı masaüstü/görsel kabulü 17 Kasım 2026 tarihinde tamamlanmıştır. Aşama 9 — Varlıklar ve etkileşimler genel planı hazırlanmış ve kullanıcı incelemesine sunulmuştur. Kullanıcı onayı sonrasında ayrıntılı teknik mimari plan hazırlanacaktır; uygulama henüz başlatılmamıştır.
 
 Dünya görsel zenginleştirmesi (arazi dokuları, bitki örtüsü, ağaç/kaya/çevre varlıkları, ışık ve atmosfer) Aşama 7'nin geriye dönük eksik işi değildir. Kullanıcı kararı doğrultusunda ihtiyaç duyulan ileriki aşamalarda ayrı kapsam olarak ele alınacaktır.
 
@@ -794,4 +794,4 @@ Dünya görsel zenginleştirmesi (arazi dokuları, bitki örtüsü, ağaç/kaya/
 | 1.4 | Güncellendi — 17 Kasım 2026 | Kullanıcı tüm masaüstü/görsel kontrolleri başarılı bildirdi; Aşama 6 resmen kapatıldı |
 | 1.6 | Güncellendi — 17 Kasım 2026 | Aşama 7.1–7.8 otomatik ve manuel kabulü tamamlandı; Aşama 7 kapatıldı, Aşama 8 sıradaki aşama olarak işaretlendi |
 | 1.7 | Güncellendi — 17 Kasım 2026 | Aşama 8.1–8.8 uygulama, 729 test, Linux/Windows CI ve benchmarklar tamamlandı; kullanıcı görsel kabul kapısı bekleniyor |
-| 1.8 | Güncellendi — 17 Kasım 2026 | Kullanıcı manuel görsel/regresyon kontrollerini kabul etti; Aşama 8 resmen kapatıldı, Aşama 9 sıradaki aşama oldu |
+| 1.8 | Güncellendi — 17 Kasım 2026 | Kullanıcı manuel görsel/regresyon kontrollerini kabul etti; Aşama 8 resmen kapatıldı, Aşama 9 sıradaki aşama oldu |\n| 1.9 | Güncellendi — 17 Kasım 2026 | Aşama 8'in bekleyen durumu düzeltildi; Aşama 9 genel planı hazırlandı ve kullanıcı onayına sunuldu; uygulama başlamadı |

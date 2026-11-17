@@ -95,7 +95,7 @@ Varsayılan `create` modu mevcut dosyayı ezmez. Değiştirme için açıkça `m
 
 **Aşama 0–5:** Tamamlandı ve kabul edildi. Aşama 3 dünya/runtime ve persistence; Aşama 4 sürekli hareket; Aşama 5 gövde, hex/nesne çarpışmaları, kayma, CCD ve 60 TPS entegrasyonunu kapsar. Aşama 5 son kullanıcı bildirimiyle 588/588 yerel test ve başarılı masaüstü kabulüyle kapatılmıştır.
 
-**Aşama 6 — TAMAMLANDI VE KABUL EDİLDİ:** Kamera ve dünya-ekran dönüşümünün 6.1–6.5 teknik uygulaması tamamlandı. Son otomatik doğrulama 681/681 test, Linux/Windows Core Quality ve benchmark adımlarında başarılıdır. Kamera, zoom, yumuşak takip, harita bounds politikası, Pygame renderer, pencere resize ve fareyle hex seçimi entegre edildi. Kullanıcı 17 Kasım 2026 tarihinde tüm masaüstü/görsel kontrollerin başarılı olduğunu bildirdi; Aşama 6 resmen kapatıldı. Kontrol adımları docs/PHASE-06-MANUAL-ACCEPTANCE-CHECKLIST.md içindedir. Aşama 7'nin 7.1–7.8 uygulaması, 703/703 otomatik testi, Linux/Windows CI, benchmark ve kullanıcı görsel kabulü tamamlanmış; aşama 17 Kasım 2026 tarihinde kapatılmıştır. Aşama 8'in 8.1–8.8 teknik uygulaması, 729/729 test, Linux/Windows Core Quality, tüm benchmarklar ve kullanıcı görsel/regresyon kabulü tamamlanmıştır. Aşama 8 resmen kapatılmıştır; Aşama 9–13 henüz başlatılmamıştır.
+**Aşama 6 — TAMAMLANDI VE KABUL EDİLDİ:** Kamera ve dünya-ekran dönüşümünün 6.1–6.5 teknik uygulaması tamamlandı. Son otomatik doğrulama 681/681 test, Linux/Windows Core Quality ve benchmark adımlarında başarılıdır. Kamera, zoom, yumuşak takip, harita bounds politikası, Pygame renderer, pencere resize ve fareyle hex seçimi entegre edildi. Kullanıcı 17 Kasım 2026 tarihinde tüm masaüstü/görsel kontrollerin başarılı olduğunu bildirdi; Aşama 6 resmen kapatıldı. Kontrol adımları docs/PHASE-06-MANUAL-ACCEPTANCE-CHECKLIST.md içindedir. Aşama 7'nin 7.1–7.8 uygulaması, 703/703 otomatik testi, Linux/Windows CI, benchmark ve kullanıcı görsel kabulü tamamlanmış; aşama 17 Kasım 2026 tarihinde kapatılmıştır. Aşama 8'in 8.1–8.8 teknik uygulaması, 729/729 test, Linux/Windows Core Quality, tüm benchmarklar ve kullanıcı görsel/regresyon kabulü tamamlanmıştır. Aşama 8 resmen kapatılmıştır. Aşama 9 genel planı hazırlanmış ve kullanıcı incelemesine sunulmuştur; teknik plan ve uygulama henüz başlamamıştır.
 
 ### Mimari sınırlar
 
@@ -134,3 +134,12 @@ Aşama 7 kapanış raporu: [PHASE-07-CLOSURE-REPORT.md](reports/PHASE-07-CLOSURE
 - [Benchmark raporları — GitHub Actions artifact](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44054382282)
 
 Aşama 8, kullanıcının manuel kontrolleri kabul etmesi üzerine 17 Kasım 2026 tarihinde resmen kapatılmıştır. Sıradaki planlı aşama Aşama 9 — Varlıklar ve etkileşimlerdir.
+
+
+## Aşama 9 — Varlıklar ve etkileşimler
+
+**Durum:** GENEL PLAN HAZIRLANDI — KULLANICI İNCELEMESİ VE ONAYI BEKLENİYOR. Kodlama başlamadı.
+
+- [Aşama 9 Genel Planı](docs/PHASE-09-GENERAL-PLAN.md)
+
+Aşama 9; ortak entity kimliği/konumu, foot-anchor ve collider ilişkisi, etkileşim menzili, fareyle hedef seçimi ve Spatial indeks entegrasyonunu kapsar. Pathfinding, NPC AI, kaynak toplama oynanışı ve çevre sanat zenginleştirmesi bu aşamanın kapsamında değildir.
