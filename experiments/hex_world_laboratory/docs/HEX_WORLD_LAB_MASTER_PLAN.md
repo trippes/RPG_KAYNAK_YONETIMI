@@ -5,8 +5,8 @@
 > **Depo:** `trippes/RPG_KAYNAK_YONETIMI`  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Hedef entegrasyon dalı:** `demo_eldoria`  
-> **Durum:** AŞAMA 0–6 KABUL EDİLDİ — AŞAMA 7 UYGULAMA VE OTOMATİK DOĞRULAMA TAMAM — MANUEL GÖRSEL KABUL BEKLENİYOR  
-> **Belge sürümü:** 1.5
+> **Durum:** AŞAMA 0–7 TAMAMLANDI VE KABUL EDİLDİ — AŞAMA 8 SIRADAKİ PLANLI AŞAMA  
+> **Belge sürümü:** 1.6
 
 ---
 
@@ -759,7 +759,8 @@ Bu liste tamamlanmadan laboratuvarın ana oyuna aktarılmaya hazır olduğu söy
 | 6.3 | Takip ve kamera sınırları | Teknik olarak tamamlandı; CI başarılı |
 | 6.4 | Render ve fare girdisi entegrasyonu | Teknik olarak tamamlandı; CI başarılı |
 | 6.5 | Bütünleşik doğrulama ve kabul | 681/681 test, benchmark, Linux/Windows CI ve kullanıcı görsel kabulü başarılı; Aşama 6 kapatıldı |
-| 7–13 | Spatial, entities, interaction, simulation, robustness ve entegrasyon hazırlığı | Aşama 6 kullanıcı kabulünden sonra ayrıca planlanacak |
+| 7 | Render ve görsel doğrulama | 7.1–7.8 tamamlandı; 703/703 test, Linux/Windows CI, benchmark ve kullanıcı görsel kabulü başarılı; 17 Kasım 2026 tarihinde kapatıldı |
+| 8–13 | Spatial, entities, interaction, simulation, robustness ve entegrasyon hazırlığı | Aşama 7 kapanışından sonra kendi teknik planlarıyla sırayla ele alınacak |
 
 - Çalışma dalı: `experiment/hex-world-laboratory`.
 - Aşama 6 son otomatik test kapısında Laboratuvar CI 681/681 testle başarılıdır.
@@ -771,7 +772,9 @@ Bu liste tamamlanmadan laboratuvarın ana oyuna aktarılmaya hazır olduğu söy
 
 ### Bir sonraki izinli adım
 
-Aşama 6 kapanmıştır. Bir sonraki izinli çalışma Aşama 7'nin genel planı ve teknik kapsamının hazırlanmasıdır. Kullanıcı onayı alınmadan Aşama 7 kodlamasına başlanmaz.
+Aşama 7, 17 Kasım 2026 tarihinde teknik, otomatik ve kullanıcı görsel kabul kapılarının tamamı geçilerek kapatılmıştır. Bir sonraki sıradaki aşama Aşama 8 — Mekânsal indeksleme ve performans karşılaştırmasıdır. Aşama 8 için önce genel plan ve ayrıntılı teknik plan hazırlanır; uygulama, onaylı kapsam doğrultusunda başlatılır.
+
+Dünya görsel zenginleştirmesi (arazi dokuları, bitki örtüsü, ağaç/kaya/çevre varlıkları, ışık ve atmosfer) Aşama 7'nin geriye dönük eksik işi değildir. Kullanıcı kararı doğrultusunda ihtiyaç duyulan ileriki aşamalarda ayrı kapsam olarak ele alınacaktır.
 
 **Her aşama ve kapsam değişikliği ayrıca onaylanır. Korunan `main` ve `demo_eldoria` dallarına bu laboratuvar çalışması kapsamında yazılmaz.**
 
@@ -784,3 +787,4 @@ Aşama 6 kapanmıştır. Bir sonraki izinli çalışma Aşama 7'nin genel planı
 | 1.0 | İlk taslak | Hex World Laboratory için kapsamlı aşamalı yol haritası ve çalışma sözleşmesi |
 | 1.1 | Önceki sürüm | Aşamalı laboratuvar planı |
 | 1.2 | Önceki sürüm | Aşama 0–5 kapanış durumu ve Aşama 6 izinli aşama |\n| 1.3 | Önceki sürüm | Aşama 6.1–6.5 teknik uygulama, 681 test ve Linux/Windows CI; görsel kabul bekleniyordu |\n| 1.4 | Güncellendi — 17 Kasım 2026 | Kullanıcı tüm masaüstü/görsel kontrolleri başarılı bildirdi; Aşama 6 resmen kapatıldı |
+| 1.6 | Güncellendi — 17 Kasım 2026 | Aşama 7.1–7.8 otomatik ve manuel kabulü tamamlandı; Aşama 7 kapatıldı, Aşama 8 sıradaki aşama olarak işaretlendi |
