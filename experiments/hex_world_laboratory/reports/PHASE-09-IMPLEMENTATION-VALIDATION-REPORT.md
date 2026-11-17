@@ -1,7 +1,7 @@
 # Aşama 9 — Uygulama ve Doğrulama Raporu
 
-> **Durum:** 9.1–9.9 uygulandı; otomatik doğrulama başarılı; kullanıcı manuel kabulini bekliyor  
-> **Tarih:** 17 Kasım 2026  
+> **Durum:** 9.1–9.9 uygulandı; otomatik doğrulama ve kullanıcı manuel kabulü başarılı  
+> **Tarih:** 18 Kasım 2026 — kapanış sonrası belge güncellemesi  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Teknik plan:** [PHASE-09-TECHNICAL-PLAN.md](../docs/PHASE-09-TECHNICAL-PLAN.md)  
 > **Manuel kabul:** [PHASE-09-MANUAL-ACCEPTANCE-CHECKLIST.md](../docs/PHASE-09-MANUAL-ACCEPTANCE-CHECKLIST.md)
@@ -88,7 +88,7 @@ Kurallar:
 - Zoom-independent world-space selection.
 - Foot-anchor ve collider snapshot'ları.
 - Entity sayısı, seçili hedef ve companion komut durumunu gösteren diagnostics.
-- `scripts/run_phase_09_demo.py`: etkileşimli manuel kabul sahnesi.
+- İnteraktif manuel kabul sahnesi, laboratuvarın tek giriş noktası olan `python -m hex_world_lab` üzerinden çalıştırılır. Eski aşama-özel başlatıcı kaldırılmıştır.
 - `scripts/render_phase_09_scenes.py`: CI için PNG ve JSON görsel/state kanıtı.
 
 ### 9.9 — Test, CI, benchmark ve kabul hazırlığı
@@ -148,12 +148,12 @@ GitHub Actions run 44150826442 içinde `phase-09-entity-scenes` artifact'i üret
 
 ## 7. Manuel kabul ve kapanış durumu
 
-Otomatik test, Linux/Windows CI, benchmark ve görsel artifact üretimi tamamlandı. Kullanıcının yerel bilgisayarında interaktif demo üzerinden yapacağı görsel/işlevsel kontroller henüz bekleniyor.
+Otomatik test, Linux/Windows CI, benchmark ve görsel artifact üretimi tamamlandı. Kullanıcı 18 Kasım 2026 tarihinde yerel interaktif demo üzerinden görsel/işlevsel kontrollerin tamamını başarılı bildirdi.
 
-Manuel test:
-`python scripts/run_phase_09_demo.py`
+Manuel kabul demosunun tek başlatma komutu (laboratuvar kök dizininden):
+`python -m hex_world_lab`
 
 Kontrol listesi:
 [PHASE-09-MANUAL-ACCEPTANCE-CHECKLIST.md](../docs/PHASE-09-MANUAL-ACCEPTANCE-CHECKLIST.md)
 
-**Aşama 9 henüz resmen kapatılmamıştır.** Kullanıcı manuel kabulini bildirdikten sonra kapanış raporu hazırlanacak ve Master Plan aşama durumu kapatılacaktır.
+**Aşama 9 resmen kapatılmıştır.** Kullanıcı kabulü ve kapanış kararı [PHASE-09-CLOSURE-REPORT.md](PHASE-09-CLOSURE-REPORT.md) içinde kayıtlıdır.
