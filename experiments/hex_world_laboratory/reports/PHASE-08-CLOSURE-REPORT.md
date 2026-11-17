@@ -6,7 +6,7 @@
 > **Aşama:** 8 — Mekânsal indeksleme ve performans karşılaştırması  
 > **Genel plan:** [PHASE-08-GENERAL-PLAN.md](../docs/PHASE-08-GENERAL-PLAN.md)  
 > **Teknik plan:** [PHASE-08-TECHNICAL-PLAN.md](../docs/PHASE-08-TECHNICAL-PLAN.md)  
-> **Uygulama/doğrulama:** [PHASE-08-IMPLEMENTATION-VALIDATION-REPORT.md](PHASE-08-IMPLEMENTATION-VALIDATION-REPORT.md)  
+> **Uygulama, test ve benchmark ayrıntıları:** Bu raporun 8. bölümü.  
 > **Manuel kabul:** [PHASE-08-MANUAL-ACCEPTANCE-CHECKLIST.md](../docs/PHASE-08-MANUAL-ACCEPTANCE-CHECKLIST.md)
 
 ## 1. Kapanış özeti
