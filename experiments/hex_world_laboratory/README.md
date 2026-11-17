@@ -118,7 +118,7 @@ ADR-003 sınır davranışı: eşit mesafede karakterin önceki hücresi korunur
 - [Uygulama ve Doğrulama Raporu](reports/PHASE-07-IMPLEMENTATION-VALIDATION-REPORT.md)
 - [Görsel test sahneleri — GitHub Actions artifact](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44045118838/artifacts/14311276474)
 
-Aşama 7 kapanış raporu: [PHASE-07-CLOSURE-REPORT.md](reports/PHASE-07-CLOSURE-REPORT.md). Aşama 8'in teknik uygulaması tamamlandı; kullanıcı görsel kabulini bekliyor. Dünya görsel zenginleştirmesi Aşama 7'nin geriye dönük eksik işi değildir.
+Aşama 7 kapanış raporu: [PHASE-07-CLOSURE-REPORT.md](reports/PHASE-07-CLOSURE-REPORT.md). Aşama 8, teknik uygulama, otomatik doğrulama ve kullanıcı görsel/regresyon kabulüyle 17 Kasım 2026 tarihinde resmen kapatılmıştır. Dünya görsel zenginleştirmesi Aşama 7'nin geriye dönük eksik işi değildir.
 
 
 ## Aşama 8 — Mekânsal indeksleme ve performans karşılaştırması
