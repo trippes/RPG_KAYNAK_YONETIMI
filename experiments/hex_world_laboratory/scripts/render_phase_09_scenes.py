@@ -21,6 +21,7 @@ def main()->int:
     try:
         demo=EntityDemo()
         demo.recruit_guard()
+        selected=demo.select_world_point(demo.coordinator.registry.require(demo.npc_ids[0]).transform.location.position)
         demo.issue_guard_command(CompanionCommand.WAIT)
         demo.issue_guard_command(CompanionCommand.RETURN)
         surface=pygame.Surface((960,640))
@@ -37,7 +38,8 @@ def main()->int:
                 {"x":r.wait_position.x,"y":r.wait_position.y}}
             for r in demo.coordinator.companions.all_relationships()]
         (output/"entity-scene.json").write_text(json.dumps(
-            {"entities":entities,"companions":relationships},indent=2),encoding="utf-8")
+            {"entities":entities,"companions":relationships,
+             "selected_target_id":None if selected is None else selected.value},indent=2),encoding="utf-8")
     finally:
         pygame.quit()
     return 0
