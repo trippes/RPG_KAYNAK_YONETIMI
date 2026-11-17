@@ -304,6 +304,10 @@ class MovementDemo:
         assert definition is not None
         active = self.current_resolution
         active_coord = None if active is None else active.coord
+        visible_region = (
+            self._visibility_culler.visible_region(self.camera.transform, self._layout)
+            if cull_to_viewport else None
+        )
         visible_coords = (
             self._visibility_culler.visible_cells(
                 definition.cells, self._layout, self.camera.transform
@@ -321,12 +325,24 @@ class MovementDemo:
         for obstacle in self.collision_geometry.obstacles:
             shape = obstacle.world_shape()
             if isinstance(shape, CircleShape):
+                if visible_region is not None and not visible_region.intersects_aabb(
+                    shape.center.x - shape.radius, shape.center.y - shape.radius,
+                    shape.center.x + shape.radius, shape.center.y + shape.radius,
+                ):
+                    continue
                 circle_visual = CircleVisual(
                     WorldPoint(shape.center.x, shape.center.y), shape.radius
                 )
                 circles.append(circle_visual)
                 colliders.append(ColliderVisual(obstacle.obstacle_id, circle_visual, "obstacle"))
             else:
+                if visible_region is not None:
+                    min_x = min(vertex.x for vertex in shape.vertices)
+                    min_y = min(vertex.y for vertex in shape.vertices)
+                    max_x = max(vertex.x for vertex in shape.vertices)
+                    max_y = max(vertex.y for vertex in shape.vertices)
+                    if not visible_region.intersects_aabb(min_x, min_y, max_x, max_y):
+                        continue
                 polygon_visual = PolygonVisual(
                     tuple(WorldPoint(vertex.x, vertex.y) for vertex in shape.vertices),
                     obstacle.obstacle_id.startswith("cell:"),
@@ -395,9 +411,7 @@ class MovementDemo:
                 layer_priority=10,
             ),),
             debug_options=debug_options or RenderDebugOptions(),
-            visible_region=self._visibility_culler.visible_region(
-                self.camera.transform, self._layout
-            ) if cull_to_viewport else None,
+            visible_region=visible_region,
         )
 
     def pump(self) -> TickPumpDiagnostics:

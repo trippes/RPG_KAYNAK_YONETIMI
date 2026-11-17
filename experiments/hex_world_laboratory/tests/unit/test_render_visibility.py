@@ -41,3 +41,12 @@ def test_culler_tracks_camera_zoom_and_pan(zoom):
 
     assert result
     assert len(result) < len(cells)
+
+
+def test_visible_region_aabb_intersection_is_inclusive_at_edges():
+    layout = HexLayout(HexOrientation.FLAT_TOP, radius=10.0)
+    transform = WorldScreenTransform(Viewport(100, 80), WorldPoint(0.0, 0.0), 1.0)
+    region = VisibleAreaCuller().visible_region(transform, layout)
+    assert region.intersects_aabb(region.max_x, region.min_y, region.max_x + 1, region.max_y)
+    assert not region.intersects_aabb(region.max_x + 1, region.max_y + 1,
+                                      region.max_x + 2, region.max_y + 2)
