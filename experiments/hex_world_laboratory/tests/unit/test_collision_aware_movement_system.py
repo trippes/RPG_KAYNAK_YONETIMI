@@ -10,7 +10,7 @@ from hex_world_lab.movement import (
     MovementState,
     Vector2,
 )
-from hex_world_lab.physics import (BodyDefinition, CircleShape, ConvexPolygonShape, ObstacleDefinition)
+from hex_world_lab.physics import (BodyDefinition, CircleShape, ConvexPolygonShape, ObstacleDefinition, ObstacleSpatialIndex)
 from hex_world_lab.simulation import CollisionAwareMovementSystem
 from hex_world_lab.simulation.movement_system import TICK_DELTA_SECONDS
 from hex_world_lab.world.identity import MapId
@@ -33,12 +33,13 @@ def wall(*, x=2.0, half_width=0.25, half_height=3.0, obstacle_id="wall"):
     )
 
 
-def make_system(*, obstacles=(), body_offset=Vector2(0, 0)):
+def make_system(*, obstacles=(), body_offset=Vector2(0, 0), candidate_provider=None):
     return CollisionAwareMovementSystem(
         MovementState(WorldPoint(0.0, 0.0)),
         MovementConfig(max_speed=60.0),
         BodyDefinition("player", CircleShape(0.25), local_offset=body_offset),
         obstacles,
+        candidate_provider=candidate_provider,
     )
 
 
@@ -315,3 +316,24 @@ def test_geometry_map_id_cannot_be_overridden_by_constructor():
             geometry,
             map_id=MapId("wrong_map"),
         )
+
+
+def test_collision_aware_system_uses_map_scoped_index_provider():
+    obstacles = (wall(),)
+    provider = ObstacleSpatialIndex(obstacles, cell_size=4)
+    system = make_system(candidate_provider=provider)
+    assert system.map_id == MAP
+    for tick in range(5):
+        system.step(tick, MovementIntent(Vector2(1.0, 0.0)))
+    assert system.state.position.x == pytest.approx(1.5, abs=1e-5)
+    assert system.last_resolution is not None
+    assert system.last_resolution.impacts
+
+
+def test_collision_aware_system_rejects_provider_from_another_map():
+    other = ObstacleDefinition(
+        "other", MapId("other-map"), CircleShape(0.5), WorldPoint(2.0, 0.0)
+    )
+    provider = ObstacleSpatialIndex((other,))
+    with pytest.raises(ValueError, match="different map"):
+        make_system(obstacles=(wall(),), candidate_provider=provider)

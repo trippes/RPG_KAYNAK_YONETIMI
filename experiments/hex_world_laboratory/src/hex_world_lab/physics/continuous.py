@@ -7,7 +7,7 @@ from typing import Iterable
 from hex_world_lab.geometry import WorldPoint
 from hex_world_lab.movement.vector import Vector2
 
-from .broadphase import AABB, ObstacleCandidateProvider, gather_candidates
+from .broadphase import AABB, ObstacleCandidateProvider, gather_candidates, query_indexed_candidates
 from .contacts import Contact, ContactManifold
 from .narrowphase import collide_shapes
 from .obstacle import ObstacleDefinition
@@ -248,7 +248,7 @@ def resolve_continuous_motion(
         )
         candidates = (
             gather_candidates(bounds, obstacle_values)
-            if candidate_provider is None else candidate_provider.query(bounds)
+            if candidate_provider is None else query_indexed_candidates(bounds, candidate_provider)
         )
         hits: list[SweepHit] = []
         for obstacle in candidates:

@@ -56,3 +56,12 @@ def test_index_rejects_duplicate_and_cross_map_obstacles():
     other = ObstacleDefinition("other", MapId("other-map"), item.shape, WorldPoint(0, 0))
     with pytest.raises(ValueError):
         index.insert(other)
+
+
+def test_index_rejects_duplicate_insert_without_corrupting_existing_entry():
+    item = make_obstacle("same", 0)
+    index = ObstacleSpatialIndex((item,))
+    with pytest.raises(ValueError, match="already exists"):
+        index.insert(item)
+    assert len(index) == 1
+    assert index.query(AABB(-2, -2, 2, 2)) == (item,)

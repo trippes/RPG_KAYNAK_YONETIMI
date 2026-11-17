@@ -102,13 +102,16 @@ class CollisionAwareMovementSystem:
         self._state = initial_state
         self._body = body
         self._obstacles = obstacle_values
-        self._map_id = resolved_map_id
         self._next_tick_number = first_tick_number
         self._max_impacts = max_impacts
         if candidate_provider is not None and not callable(getattr(candidate_provider, "query", None)):
             raise TypeError("candidate_provider must provide query(bounds)")
-        if candidate_provider is not None and getattr(candidate_provider, "map_id", resolved_map_id) != resolved_map_id:
-            raise ValueError("candidate provider belongs to a different map")
+        provider_map_id = getattr(candidate_provider, "map_id", None) if candidate_provider is not None else None
+        if provider_map_id is not None:
+            if resolved_map_id is not None and provider_map_id != resolved_map_id:
+                raise ValueError("candidate provider belongs to a different map")
+            resolved_map_id = provider_map_id
+        self._map_id = resolved_map_id
         self._candidate_provider = candidate_provider
         self._last_resolution: ContinuousCollisionResolution | None = None
 

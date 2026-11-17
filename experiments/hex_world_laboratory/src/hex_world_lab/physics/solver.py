@@ -6,7 +6,7 @@ from typing import Iterable
 
 from hex_world_lab.movement.vector import Vector2
 
-from .broadphase import AABB, ObstacleCandidateProvider, gather_candidates
+from .broadphase import AABB, ObstacleCandidateProvider, gather_candidates, query_indexed_candidates
 from .contacts import Contact, ContactManifold
 from .narrowphase import collide_shapes
 from .obstacle import ObstacleDefinition
@@ -175,16 +175,9 @@ def resolve_kinematic_motion(
     query_bounds = _swept_bounds(moving_shape, desired_displacement)
     candidates = (
         gather_candidates(query_bounds, obstacle_values)
-        if candidate_provider is None else candidate_provider.query(query_bounds)
+        if candidate_provider is None
+        else query_indexed_candidates(query_bounds, candidate_provider)
     )
-    if any(not isinstance(item, ObstacleDefinition) for item in candidates):
-        raise TypeError("candidate provider must return ObstacleDefinition values")
-    candidate_ids = tuple(item.obstacle_id for item in candidates)
-    if len(candidate_ids) != len(set(candidate_ids)):
-        raise ValueError("candidate provider returned duplicate obstacle IDs")
-    known_ids = {item.obstacle_id for item in obstacle_values}
-    if any(item_id not in known_ids for item_id in candidate_ids):
-        raise ValueError("candidate provider returned an obstacle outside the supplied snapshot")
     original_reference = _reference_point(moving_shape)
     current, initial_contacts, used, unresolved = _depenetrate(
         moving_shape,

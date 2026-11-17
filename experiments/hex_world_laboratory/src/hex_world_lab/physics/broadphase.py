@@ -86,3 +86,24 @@ def gather_candidates(
 class ObstacleCandidateProvider(Protocol):
     """Map-scoped source of conservative obstacle candidates."""
     def query(self, query_bounds: AABB) -> tuple[ObstacleDefinition, ...]: ...
+
+
+def query_indexed_candidates(
+    query_bounds: AABB,
+    candidate_provider: ObstacleCandidateProvider,
+) -> tuple[ObstacleDefinition, ...]:
+    """Query an index and validate its deterministic, map-scoped result."""
+    if not isinstance(query_bounds, AABB):
+        raise TypeError("query_bounds must be an AABB")
+    if not callable(getattr(candidate_provider, "query", None)):
+        raise TypeError("candidate_provider must provide query(bounds)")
+    candidates = tuple(candidate_provider.query(query_bounds))
+    if any(not isinstance(item, ObstacleDefinition) for item in candidates):
+        raise TypeError("candidate provider must return ObstacleDefinition values")
+    ids = tuple(item.obstacle_id for item in candidates)
+    if len(ids) != len(set(ids)):
+        raise ValueError("candidate provider returned duplicate obstacle IDs")
+    provider_map_id = getattr(candidate_provider, "map_id", None)
+    if provider_map_id is not None and any(item.map_id != provider_map_id for item in candidates):
+        raise ValueError("candidate provider returned an obstacle from another map")
+    return tuple(sorted(candidates, key=lambda item: item.obstacle_id))
