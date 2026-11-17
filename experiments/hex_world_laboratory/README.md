@@ -63,7 +63,11 @@ Python 3.12 önerilir. Paket Python 3.11 ve üzerini destekleyecek şekilde tan�
 python -m hex_world_lab
 ```
 
-960×640 Pygame laboratuvar penceresini açar. Bu tek giriş noktası güncel Entity kabul sahnesini (oyuncu, NPC, kaynak ve NPC sağ-tık eylem menüsü) çalıştırır; hareket sistemi aynı sahnenin içinde korunur. Dünya veri modeli ve geometri çekirdeği çizim katmanından bağımsızdır.\n\n- `F3`: çarpışma/etkileşim tanılamasını açıp kapatır.\n- `Esc`: laboratuvar penceresini kapatır.\n- NPC üzerinde sağ tık: yoldaş eylem menüsünü açar.\n- `scripts/run_phase_09_demo.py` eski komutlarla uyumluluk için ince bir yönlendirme dosyası olarak tutulur; ayrı bir uygulama başlatmaz.
+Varsayılan 960×640 Pygame laboratuvar penceresini açar. Başlangıç çözünürlüğü ve hareket hızı `AppConfig` üzerinden ayarlanır. Bu tek giriş noktası güncel Entity kabul sahnesini (oyuncu, NPC, kaynak ve NPC sağ-tık eylem menüsü) çalıştırır; önceki hareket laboratuvarı aynı sahnenin içinde korunur. Dünya veri modeli ve geometri çekirdeği çizim katmanından bağımsızdır.
+
+- `F3`: çarpışma/etkileşim tanılamasını açıp kapatır.
+- `Esc`: laboratuvar penceresini kapatır.
+- NPC üzerinde sağ tık: yoldaş eylem menüsünü açar.
 
 ## Test
 
@@ -71,7 +75,7 @@ python -m hex_world_lab
 python -m pytest -q
 ```
 
-Son kullanıcı tarafından bildirilen yerel tam test sonucu **588/588 başarılıdır**. Bu sayı, son Pygame demo entegrasyonunu da kapsayan yerel çalıştırma sonucudur; GitHub Actions CI sonucu olarak sunulmaz.
+Son doğrulanan Aşama 9 laboratuvar CI sonucu **741/741 başarılıdır**. Core Quality Linux ve Windows doğrulamaları da 2.204'er testle başarılı tamamlanmıştır. Yeni kod değişikliklerinin ardından güncel CI sonuçları ilgili GitHub Actions çalıştırmalarından izlenmelidir.
 
 Aşama 6 son otomatik doğrulamasında GitHub Actions Laboratuvar CI 681/681 testle başarılıdır; tüm benchmark adımları tamamlanmıştır. Aynı commit için Core Quality Linux ve Windows job'ları başarılıdır. Run bağlantıları ve alt aşama kanıtları reports/PHASE-06-VALIDATION-LOG.md içinde kayıtlıdır.
 
@@ -148,4 +152,4 @@ Aşama 8, kullanıcının manuel kontrolleri kabul etmesi üzerine 17 Kasım 202
 - [Phase 9 CI ve görsel artifact](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44155955733)
 - [Core Quality Linux/Windows doğrulaması](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44155955739)
 
-İnteraktif kabul sahnesi laboratuvar kök dizininden mevcut ve birleştirilmiş giriş noktası olan `python -m hex_world_lab` komutuyla başlatılır. Eski `python scripts/run_phase_09_demo.py` komutu da aynı giriş noktasına yönlendirilir. Aşama 9; ortak entity kimliği/konumu, foot-anchor ve collider ilişkisi, etkileşim menzili, fareyle hedef seçimi, Spatial indeks entegrasyonu ve oyuncu-NPC yoldaş ilişkisinin temel veri/komut altyapısını kurar. FOLLOW, WAIT ve RETURN komutları bu aşamada yalnızca durum modeli olarak saklanır; gerçek takip hareketi, pathfinding, NPC AI, kaynak toplama oynanışı ve çevre sanat zenginleştirmesi kapsam dışıdır.
+İnteraktif kabul sahnesi laboratuvar kök dizininden tek giriş noktası olan `python -m hex_world_lab` komutuyla başlatılır. Aşama 9; ortak entity kimliği/konumu, foot-anchor ve collider ilişkisi, etkileşim menzili, fareyle hedef seçimi, Spatial indeks entegrasyonu ve oyuncu-NPC yoldaş ilişkisinin temel veri/komut altyapısını kurar. FOLLOW, WAIT ve RETURN komutları bu aşamada yalnızca durum modeli olarak saklanır; gerçek takip hareketi, pathfinding, NPC AI, kaynak toplama oynanışı ve çevre sanat zenginleştirmesi kapsam dışıdır.
