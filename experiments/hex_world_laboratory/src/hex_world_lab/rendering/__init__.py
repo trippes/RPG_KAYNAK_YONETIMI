@@ -1,7 +1,7 @@
 """Pygame rendering adapters and immutable world render snapshots."""
 
-from .pygame_world_renderer import PygameWorldRenderer
-from .visibility import VisibleAreaCuller, VisibleRegion
+from .pygame_world_renderer import PygameWorldRenderer, SpriteAsset
+from .visibility import MIN_CULLING_CELL_COUNT, VisibleAreaCuller, VisibleRegion, should_use_culling
 from .snapshot import (
     CellVisual,
     CircleVisual,
@@ -25,4 +25,7 @@ __all__ = [
     "RenderDebugOptions",
     "VisibleAreaCuller",
     "VisibleRegion",
+    "SpriteAsset",
+    "MIN_CULLING_CELL_COUNT",
+    "should_use_culling",
 ]

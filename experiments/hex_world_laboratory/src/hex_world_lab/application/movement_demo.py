@@ -25,7 +25,7 @@ from hex_world_lab.geometry import (
 )
 from hex_world_lab.input import PygameKeyboardAdapter
 from hex_world_lab.rendering.pygame_world_renderer import PygameWorldRenderer
-from hex_world_lab.rendering.visibility import VisibleAreaCuller
+from hex_world_lab.rendering.visibility import VisibleAreaCuller, should_use_culling
 from hex_world_lab.rendering.snapshot import (
     CellVisual,
     CircleVisual,
@@ -304,15 +304,16 @@ class MovementDemo:
         assert definition is not None
         active = self.current_resolution
         active_coord = None if active is None else active.coord
+        culling_active = cull_to_viewport and should_use_culling(len(definition.cells))
         visible_region = (
             self._visibility_culler.visible_region(self.camera.transform, self._layout)
-            if cull_to_viewport else None
+            if culling_active else None
         )
         visible_coords = (
             self._visibility_culler.visible_cells(
                 definition.cells, self._layout, self.camera.transform
             )
-            if cull_to_viewport
+            if culling_active
             else tuple(sorted(definition.cells, key=lambda item: (item.q, item.r)))
         )
         cells = tuple(

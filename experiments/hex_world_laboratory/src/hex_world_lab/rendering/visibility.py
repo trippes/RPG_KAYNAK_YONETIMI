@@ -31,6 +31,19 @@ class VisibleRegion:
         )
 
 
+
+MIN_CULLING_CELL_COUNT = 257
+
+
+def should_use_culling(cell_count: int) -> bool:
+    """Return whether measurements justify viewport culling for this map size."""
+    if isinstance(cell_count, bool) or not isinstance(cell_count, int):
+        raise TypeError("cell_count must be an integer")
+    if cell_count < 0:
+        raise ValueError("cell_count must not be negative")
+    return cell_count >= MIN_CULLING_CELL_COUNT
+
+
 class VisibleAreaCuller:
     """Return a conservative superset of existing cells touching the viewport.
 
