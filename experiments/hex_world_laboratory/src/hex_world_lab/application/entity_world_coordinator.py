@@ -20,10 +20,17 @@ class EntityWorldCoordinator:
         if self.companions.registry is not self.registry: raise ValueError("companion roster must use coordinator registry")
     def register_entity(self,entity:EntityRecord)->None:
         self.registry.register(entity)
-        if self.world.is_loaded(entity.map_id): self.spatial_index.update_entity(entity)
+        try:
+            if self.world.is_loaded(entity.map_id): self.spatial_index.update_entity(entity)
+        except Exception:
+            self.registry.remove(entity.entity_id)
+            raise
     def load_map(self,definition:HexMapDefinition)->None:
         self.world.load_map(definition)
-        self.spatial_index.activate_map(definition.map_id)
+        try: self.spatial_index.activate_map(definition.map_id)
+        except Exception:
+            self.world.unload_map(definition.map_id)
+            raise
     def unload_map(self,map_id:MapId)->None:
         self.world.unload_map(map_id)
         self.spatial_index.deactivate_map(map_id)
@@ -46,9 +53,15 @@ class EntityWorldCoordinator:
             raise
         return updated
     def set_active(self,entity_id:EntityId,active:bool)->EntityRecord:
+        previous=self.registry.require(entity_id)
         updated=self.registry.set_active(entity_id,active)
-        self.spatial_index.update_entity(updated)
+        try: self.spatial_index.update_entity(updated)
+        except Exception:
+            restored=self.registry.set_active(entity_id,previous.is_active)
+            self.spatial_index.update_entity(restored)
+            raise
         return updated
     def remove_entity(self,entity_id:EntityId)->EntityRecord:
+        self.registry.require(entity_id)
         self.spatial_index.remove_entity(entity_id); self.companions.remove_entity(entity_id)
         return self.registry.remove(entity_id)
