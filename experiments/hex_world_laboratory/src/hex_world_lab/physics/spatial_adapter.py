@@ -32,6 +32,8 @@ class ObstacleSpatialIndex:
             self._add(item)
 
     def _add(self, obstacle: ObstacleDefinition) -> None:
+        if obstacle.obstacle_id in self._obstacles:
+            raise ValueError(f"obstacle already exists: {obstacle.obstacle_id}")
         self._obstacles[obstacle.obstacle_id] = obstacle
         self._index.insert(obstacle.obstacle_id, AABB.from_shape(obstacle.world_shape()))
 

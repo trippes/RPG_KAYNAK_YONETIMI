@@ -2,6 +2,7 @@
 
 from .body import ActorBodyTransform, BodyDefinition
 from .broadphase import AABB, ObstacleCandidateProvider, gather_candidates
+from .spatial_adapter import ObstacleSpatialIndex
 from .contacts import Contact, ContactManifold
 from .continuous import (
     ContinuousCollisionResolution,
@@ -36,6 +37,7 @@ __all__ = [
     "HexMapCollisionGeometry",
     "ObstacleDefinition",
     "ObstacleCandidateProvider",
+    "ObstacleSpatialIndex",
     "SweepHit",
     "build_hex_map_collision_geometry",
     "collide_shapes",

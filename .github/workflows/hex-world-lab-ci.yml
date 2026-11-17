@@ -61,6 +61,12 @@ jobs:
       - name: Benchmark viewport-aware rendering (61 / 128 / 256 / 1,000 / 10,000 / 50,000 cells)
         run: python benchmarks/benchmark_render_visibility.py
 
+      - name: Benchmark Phase 8 spatial indexes
+        run: python benchmarks/benchmark_spatial_index.py
+
+      - name: Benchmark Phase 8 hex neighborhood queries
+        run: python benchmarks/benchmark_hex_neighborhood.py
+
       - name: Generate Phase 7 visual test scenes
         run: python scripts/render_phase_07_scenes.py --output artifacts/phase-07
 

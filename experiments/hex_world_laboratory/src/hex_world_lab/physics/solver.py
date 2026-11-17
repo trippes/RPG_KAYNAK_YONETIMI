@@ -6,7 +6,7 @@ from typing import Iterable
 
 from hex_world_lab.movement.vector import Vector2
 
-from .broadphase import AABB, ObstacleCandidateProvider, gather_candidates
+from .broadphase import AABB, gather_candidates
 from .contacts import Contact, ContactManifold
 from .narrowphase import collide_shapes
 from .obstacle import ObstacleDefinition
@@ -143,7 +143,6 @@ def resolve_kinematic_motion(
     *,
     max_iterations: int = 6,
     penetration_slop: float = 1e-7,
-    candidate_provider: ObstacleCandidateProvider | None = None,
 ) -> CollisionResolution:
     """Resolve a kinematic move, removing inward motion and preserving sliding.
 
@@ -172,19 +171,10 @@ def resolve_kinematic_motion(
     if len(ids) != len(set(ids)):
         raise ValueError("obstacle IDs must be unique")
 
-    query_bounds = _swept_bounds(moving_shape, desired_displacement)
-    candidates = (
-        gather_candidates(query_bounds, obstacle_values)
-        if candidate_provider is None else candidate_provider.query(query_bounds)
+    candidates = gather_candidates(
+        _swept_bounds(moving_shape, desired_displacement),
+        obstacle_values,
     )
-    if any(not isinstance(item, ObstacleDefinition) for item in candidates):
-        raise TypeError("candidate provider must return ObstacleDefinition values")
-    candidate_ids = tuple(item.obstacle_id for item in candidates)
-    if len(candidate_ids) != len(set(candidate_ids)):
-        raise ValueError("candidate provider returned duplicate obstacle IDs")
-    known_ids = {item.obstacle_id for item in obstacle_values}
-    if any(item_id not in known_ids for item_id in candidate_ids):
-        raise ValueError("candidate provider returned an obstacle outside the supplied snapshot")
     original_reference = _reference_point(moving_shape)
     current, initial_contacts, used, unresolved = _depenetrate(
         moving_shape,
