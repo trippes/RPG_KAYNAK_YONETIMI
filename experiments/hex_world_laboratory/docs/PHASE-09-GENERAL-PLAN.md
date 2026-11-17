@@ -4,10 +4,10 @@
 > **Proje:** Eldoria — Hex World Laboratory  
 > **Depo:** `trippes/RPG_KAYNAK_YONETIMI`  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
-> **Durum:** GENEL PLAN HAZIRLANDI — KULLANICI İNCELEMESİ VE ONAYI BEKLENİYOR  
+> **Durum:** KULLANICI TARAFINDAN ONAYLANDI — 9.1–9.9 UYGULANDI; MANUEL KABUL BEKLENİYOR  
 > **Hazırlanma tarihi:** 17 Kasım 2026  
 > **Ön koşul:** Aşama 0–8 tamamlandı ve kabul edildi  
-> **Uygulama durumu:** Başlatılmadı
+> **Uygulama durumu:** 9.1–9.9 tamamlandı; otomatik test ve Linux/Windows CI başarılı; manuel kabul bekleniyor
 
 ---
 
@@ -266,13 +266,17 @@ Aşama 9, önceki aşamalardaki kabul edilmiş çalışma yöntemiyle yürütül
 6. Kullanıcıya manuel görsel kabul kontrol listesi sunulur.
 7. Kullanıcı görsel/işlevsel kabulünü bildirdikten sonra kapanış raporu ve Master Plan güncellemesi yapılır.
 
-Bu belge yalnızca genel plan onayıdır. Teknik mimari plan onayı olmadan kod değişikliği yapılmayacaktır.
+Genel ve teknik plan onay kapıları tamamlanmıştır. Uygulama yalnızca onaylanmış teknik plan kapsamında yürütülmüştür; resmî kapanış kullanıcı manuel kabulinden sonra yapılacaktır.
 
-## 12. Sonraki adım
+## 12. Uygulama ve sonraki adım
 
-**Beklenen kullanıcı kararı:** Aşama 9 Genel Planı'nı onaylamak veya kapsam/öncelik düzeltmesi istemek.
+Aşama 9 Genel Planı kullanıcı tarafından onaylanmış, ayrıntılı teknik mimari plan ayrıca onaylandıktan sonra 9.1–9.9 uygulaması tamamlanmıştır.
 
-Onay verilirse sıradaki çalışma, Aşama 9'un ayrıntılı teknik mimari planıdır. Kodlama bu onayın ardından da teknik plan ayrıca onaylanana kadar başlamaz.
+- Uygulama/doğrulama raporu: [PHASE-09-IMPLEMENTATION-VALIDATION-REPORT.md](../reports/PHASE-09-IMPLEMENTATION-VALIDATION-REPORT.md)
+- Manuel kabul listesi: [PHASE-09-MANUAL-ACCEPTANCE-CHECKLIST.md](PHASE-09-MANUAL-ACCEPTANCE-CHECKLIST.md)
+- İnteraktif demo: `python scripts/run_phase_09_demo.py`
+
+**Sonraki adım:** Kullanıcının yerel bilgisayarında manuel görsel/işlevsel kabul. Bu kabul bildirildikten sonra Aşama 9 kapanış raporu ve Master Plan kapatma güncellemesi hazırlanacaktır.
 
 ---
 
