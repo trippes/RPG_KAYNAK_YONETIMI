@@ -102,3 +102,20 @@ Kullanıcı görsel kabulü verilmiştir. Açık kabul maddesi veya bilinen enge
 **AŞAMA 6 TAMAMLANDI VE KABUL EDİLDİ.**
 
 Teknik uygulama, otomatik doğrulama ve kullanıcı masaüstü/görsel kabulü tamamlanmıştır. Aşama 6 resmen kapatılmıştır. Aşama 7 otomatik olarak başlamaz; kendi genel planı ve teknik kapsamı hazırlanıp kullanıcı onayı alındıktan sonra başlatılabilir.
+
+
+## 9. Alt aşama otomatik doğrulama geçmişi
+
+Bu bölüm, daha önce ayrı tutulan `PHASE-06-VALIDATION-LOG.md` içindeki alt aşama commit ve CI kanıtlarını kapanış kaydına taşır. Eski günlük, kullanıcı masaüstü kabulü henüz yapılmamışken yazılmıştı; aşağıdaki nihai kabul bölümü ve bu raporun 7. bölümü daha sonraki 17 Kasım 2026 kabul kararını esas alır.
+
+| Alt aşama | Laboratuvar test sayısı | Laboratory CI | Core Quality |
+|---|---:|---|---|
+| 6.1 — ScreenPoint, Viewport, world/screen transform | 617 | [43966935853](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43966935853) | [43966935546](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43966935546) |
+| 6.2 — CameraState, zoom, viewport | 647 | [43968033831](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43968033831) | [43968035172](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43968035172) |
+| 6.3 — WorldBounds, follow, clamp/unbounded | 671 | [43968846130](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43968846130) | [43968846261](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43968846261) |
+| 6.4 — Pygame renderer ve fare girdisi | 678 | [43969834955](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43969834955) | [43969835252](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43969835252) |
+| 6.5 — Bütünleşik doğrulama | 681 | [43970474913](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43970474913) | [43970474803](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43970474803) |
+
+Alt aşama commit'leri: `6557f7a58e30b7057634d94cdf7f48f589112006`, `77e867d7e906bc7bc060c8854ef62f6e32d5dfc2`, `d83ce64bd683d0a25b79a3d75b16b33dfc94c502`, `4534259be8304ae5890e6ecaf212ca1f444bb80d` (render entegrasyonu), `54baf011cac1151e58fc91908c5ead1865091bd2` (4.4 test kapısı) ve `aa2c5e7d18e82d82f22fba088ae6073f6c6b4fee` (6.5 son test kapısı).
+
+Son aşamada benchmark ve Linux/Windows Core Quality başarılıdır. Tarihsel log'da yazan “görsel kabul bekleniyor” durumu, 17 Kasım 2026 tarihinde kullanıcı tarafından tamamlanan ve bu kapanış raporunun 7. bölümünde kayıtlı kabul ile kapanmıştır.

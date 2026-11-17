@@ -4,7 +4,6 @@
 **Hedef dal:** `experiment/hex-world-laboratory`  
 **Laboratuvar kökü:** `experiments/hex_world_laboratory/`  
 **Teknik plan:** [PHASE-03.6-TECHNICAL-PLAN.md](../docs/PHASE-03.6-TECHNICAL-PLAN.md)  
-**Uygulama raporu:** [PHASE-03.6-REPORT.md](PHASE-03.6-REPORT.md)  
 **JSON şeması:** [MAP_JSON_SCHEMA_V1.md](../docs/MAP_JSON_SCHEMA_V1.md)
 
 ## 1. Kapanış özeti
@@ -75,14 +74,38 @@ Ayrıca depo kökündeki ayrı `Core quality` iş akışında laboratuvar paketi
 
 - Bütün Aşama 3.6 uygulama ve raporlama çalışmaları `experiment/hex-world-laboratory` dalında tutulmuştur.
 - `main` ve `demo_eldoria` dallarına bu aşama kapsamında yazma veya birleştirme yapılmamıştır.
-- Aşama 3.7 ve Aşama 4 uygulaması başlatılmamıştır.
+- Aşama 3.7 daha sonra ayrı teknik plan ve onayla tamamlanmıştır; Aşama 3'ün bütünleşik nihai durumu [PHASE-03-WORLD-REPORT.md](PHASE-03-WORLD-REPORT.md) içinde kayıtlıdır.
 
 ## 7. Kapanış kararı
 
 **Aşama 3.6 tamamlanmış ve teknik olarak kapatılmıştır.**
 
-Bir sonraki çalışma Aşama 3.7'nin ayrı teknik planıdır: runtime alan değişikliklerinin kalıcılaştırılması ve yeniden yüklenmesi. Aşama 3.7 için plan hazırlanıp ayrıca onaylanmadan kod uygulamasına başlanmayacaktır. Aşama 4, Aşama 3 bütünüyle tamamlanıp doğrulanana ve kullanıcı tarafından kabul edilene kadar beklemede kalacaktır.
+Aşama 3.6'nın ardından runtime değişikliklerinin kalıcılaştırılması Aşama 3.7 kapsamında ayrıca uygulanmış; Aşama 3'ün bütünleşik kapanışı [PHASE-03-WORLD-REPORT.md](PHASE-03-WORLD-REPORT.md) içinde belgelenmiştir.
 
 ---
 
 **Rapor sonu**
+
+
+## 8. Birleştirilen uygulama kayıtları
+
+Bu kapanış raporu, önceki `PHASE-03.6-REPORT.md` uygulama raporundaki ayrı ve tekrar eden özeti tek kayıtta toplar. Uygulama raporundan korunan ek ayrıntılar:
+
+### 8.1 Değişen dosya ve modül grupları
+
+- `.github/workflows/hex-world-lab-ci.yml`: persistence benchmark adımı.
+- `README.md`: persistence API ve aşama durumu.
+- `docs/MAP_JSON_SCHEMA_V1.md`: JSON şema ve API sözleşmesi.
+- `scenarios/maps/starting_valley.json`: örnek başlangıç haritası.
+- `scripts/benchmark_map_persistence.py`: 100, 1.000 ve 10.000 hücre benchmark aracı.
+- `src/hex_world_lab/world/persistence/`: hata sınıfları, validator, serializer, deserializer ve file storage.
+- `tests/unit/test_persistence/` ve `tests/integration/test_map_persistence.py`: doğrulama, round-trip ve dosya sistemi testleri.
+- Mevcut geometry, world, map registry, runtime ve view modüllerinde değişiklik yapılmadı.
+
+### 8.2 Uygulama sırasında yakalanan hata
+
+İlk test turunda serializer'ın yanlış model türünü beklenmeyen hata sınıfına çevirdiği bir API testi başarısız oldu. Hata düzeltildi; son laboratuvar CI sonucu 249/249 başarılıdır.
+
+### 8.3 Tarihsel kapsam notu
+
+Aşama 3.6 sırasında depo kökündeki ayrı Core Quality iş akışında laboratuvar paketinin depo kökünden kurulmadan test toplanmasına ilişkin `ModuleNotFoundError: No module named 'hex_world_lab'` sorunu not edilmişti. O dönemde laboratuvarın kendi CI iş akışı başarılıydı. Bu not yalnızca Aşama 3.6 tarihsel durumunu açıklar; sonraki aşamaların veya güncel CI durumunun yerine geçmez.

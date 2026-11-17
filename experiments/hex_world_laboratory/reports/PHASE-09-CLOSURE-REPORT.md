@@ -84,3 +84,35 @@ Bu dallara Aşama 9 kapsamında yazılmadı.
 Aşama 9'un 9.1–9.9 teknik işleri, otomatik kalite kapıları ve kullanıcı manuel kabulü tamamlanmıştır. **Aşama 9 TAMAMLANDI VE KABUL EDİLDİ.**
 
 Sonraki aşama, Master Plan'da tanımlı Aşama 10 — Simülasyon orkestrasyonu ve dünya bütünlüğüdür. Aşama 10 için genel plan, teknik mimari, kapsam ve kabul ölçütleri ayrıca hazırlanıp kullanıcı onayına sunulmadan uygulamaya başlanmayacaktır.
+
+
+## 8. Uygulama ve doğrulama ayrıntıları
+
+Bu bölüm, önceki ayrı uygulama/doğrulama raporunun kapanış özetiyle tekrar eden kısımlarını değil, iş paketi düzeyindeki teknik envanteri ve ölçüm kanıtlarını korur.
+
+### 8.1 İş paketi uygulama kayıtları
+
+- **9.1 — Mevcut sözleşmeler:** Geometry `WorldPoint/AxialCoord/HexLayout`; World `WorldId/MapId/CellAddress/HexWorld/MapRegistry`; Physics body/ground-anchor; Rendering snapshot/sprite DTO; Spatial `SpatialIndex/UniformGrid` API'leri denetlendi. Entity ve Interaction paketleri başlangıçta yer tutucuydu.
+- **9.2–9.3 — Kimlik, lifecycle ve konum:** `EntityId`, `EntityKind`, immutable `EntityRecord`, `EntityRegistry`, `EntityLocation`, `EntityTransform`, `CellPlacement` kuruldu. WorldPoint authoritative kaldı; axial koordinat türetildi.
+- **9.4 — Foot-anchor/Physics:** `entities/presentation.py` ile aynı WorldPoint, `ActorBodyTransform.ground_anchor` ve `SpriteVisual.ground_anchor` için kullanıldı. Collider boyutları sprite boyutundan türetilmedi; body olmayan kaynak/etkileşim varlıkları desteklendi.
+- **9.5 — Interaction:** InteractionProfile, world/hex distance yardımcıları, TargetQuery ve deterministik `select_target` eklendi. Spatial broadphase sonrası kesin menzil/tag/targetable denetimi yapıldı; seçim eylem başlatmadı.
+- **9.6 — Spatial/lifecycle:** Map başına UniformGrid, body AABB veya interaction radius bounds, coordinator kontrollü güncelleme, unload/reload/remove yaşam döngüsü ve brute-force differential doğrulama eklendi.
+- **9.7 — Yoldaş:** FOLLOW/WAIT/RETURN komutları, CompanionRelationship ve CompanionRoster API'leri eklendi. Recruit/dismiss/komut niyeti kaydedilir; gerçek hareket/pathfinding başlatılmaz.
+- **9.8 — Kabul sahnesi:** Bir oyuncu, iki sabit NPC ve iki kaynak; fare hedef seçimi, sağ tık NPC menüsü, foot-anchor/collider snapshot ve diagnostics görünümü. Tek giriş noktası `python -m hex_world_lab` olarak kaldı.
+- **9.9 — Kalite:** Entity lifecycle, architecture, spatial benchmark ve PNG/JSON sahne kanıtı test/CI kapsamına alındı.
+
+### 8.2 Ayrıntılı benchmark
+
+GitHub Actions Linux runner üzerinde aynı sorgu kümeleriyle ölçülen medyan süreler:
+
+| Entity sayısı | Index build (ms) | Indexed query (ms) | Linear query (ms) | Yaklaşık hızlanma |
+|---:|---:|---:|---:|---:|
+| 100 | 0.479 | 0.00262 | 0.01871 | 7.1× |
+| 1.000 | 4.190 | 0.00262 | 0.17258 | 65.9× |
+| 10.000 | 46.916 | 0.03703 | 1.78961 | 48.3× |
+
+Bu ölçümler CI runner ortamına aittir; yerel FPS veya gecikme garantisi değildir.
+
+### 8.3 CI ve görsel kanıt
+
+Kapanıştaki son doğrulama: Laboratuvar CI [44155955733](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44155955733), Core Quality Linux/Windows [44155955739](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44155955739). Laboratuvar 741/741; Core Quality Linux ve Windows 2.204'er test başarılıdır. PNG ve JSON sahne kanıtları CI artifact'ı olarak üretildi. Önceki uygulama doğrulama raporunda kayıtlı daha erken CI run'ları (44150826442 / 44150826609) geliştirme geçmişidir; kapanıştaki son run'lar yukarıdaki bağlantılardır.

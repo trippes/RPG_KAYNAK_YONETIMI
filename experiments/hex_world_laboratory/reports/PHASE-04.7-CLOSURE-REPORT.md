@@ -62,3 +62,47 @@ Bu nedenle masaüstü kabulü artık açık değildir. Kullanıcı kabulinin kap
 ## 6. Sonuç
 
 **Aşama 4.7 teknik uygulama ve otomatik doğrulama bakımından tamamlanmıştır.** Aşama 4 genel masaüstü kabulü kullanıcı tarafından 11/11 başarılı olarak bildirilmiş ve Aşama 4, `reports/PHASE-04-CLOSURE-REPORT.md` ile kapatılmıştır. Bu rapor, sonraki aşamaya otomatik uygulama izni vermez.
+
+
+## 7. Alt aşama teknik doğrulama kayıtları
+
+Aşağıdaki alt aşama kapanış belgeleri bu rapora birleştirilmiştir. Her alt aşamanın teknik planı `docs/` altında korunur; burada uygulama ve kabul kanıtlarının tek kronolojik özeti tutulur.
+
+### 7.1 — Uçtan uca entegrasyon testleri (4.7.4)
+
+Üretim kodu değiştirilmeden `tests/integration/test_movement_demo_flow.py` genişletildi. Normal/koşma/gizlilik modları arasında hex sınırı geçişinde WorldPoint sürekliliği, Shift + Alt önceliği ve focus lost/gained yaşam döngüsü doğrulandı. İlk CI denemesinde hatalı seçilmiş flat-top sınır beklentisi düzeltildi; üretim kodunda kusur bulunmadı.
+
+- Uygulama commit'i: `04eb0d36af004c3b77e58e8b6dc340bfb3d38dd2`.
+- Test düzeltme commit'i: `3a4d5944b3b5861637a4948acd18f913df3f755c`.
+- Laboratory CI: [43879093003](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43879093003), 504 test başarılı.
+- Core Quality: [43879093008](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43879093008), Linux ve Windows başarılı.
+- Yerel masaüstü kontrolü alt aşamadan çıkarılarak Aşama 4 genel kabulüne taşındı.
+
+### 7.2 — Teşhis paneli (4.7.5)
+
+Teşhis panelinde NORMAL/RUNNING/STEALTH modu, `MovementConfig.speed_multiplier_for(mode)`, teorik hız (`max_speed × multiplier`) ve gerçek Velocity ayrı gösterildi. Aynı `MovementConfig` örneği MovementSystem ve panel tarafından kullanıldı; render/diagnostics simülasyon tick'ini veya hareket state'ini değiştirmedi. Üretim kodunda yeni değişiklik gerekmemiş, mevcut entegrasyon testleri kullanılmıştır.
+
+- 504 test başarılı; Laboratory CI [43879093003](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43879093003).
+- Core Quality [43879093008](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43879093008), Linux/Windows başarılı.
+- Sonraki branch doğrulaması: Laboratory CI [43880187020](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43880187020), Core Quality [43880186960](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43880186960); 504 test ve iki platform başarılı.
+- Gerçek Pygame penceresi kabulü Aşama 4 genel kabulüne ertelendi ve 16 Kasım 2026'da 11/11 maddeyle tamamlandı.
+
+### 7.3 — Son teknik doğrulama (4.7.6)
+
+Hareket modları, klavye odak yaşam döngüsü, tick/FPS eşdeğerliği, WorldPoint–hex takibi, render'ın salt okunurluğu ve mimari bağımlılık sınırları tek kapıda doğrulandı. `tests/unit/test_architecture_boundaries.py` Geometry, Movement, Simulation ve World paketlerinde Pygame import'unu AST üzerinden denetledi.
+
+- Son doğrulama commit'i: `dafb5ce674c2356b1e07c4fde1965c7ee67ec611`.
+- Laboratory CI: [43882088050](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43882088050), **505 passed**.
+- Core Quality: [43882087966](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/43882087966), Linux **1.968 passed, 1 warning**, Windows **1.968 passed**.
+- Map persistence, runtime persistence, movement + hex tracking benchmarkları başarılı.
+
+Hareket benchmark'ı yalnızca MovementSystem adımı ve MovementCellTracker çözümlemesini kapsar; render ve diğer oyun sistemleri dahil değildir:
+
+| Aktör | Ortalama 10-tick parti (ms) | P95 parti (ms) | Ortalama aktör-tick (µs) |
+|---:|---:|---:|---:|
+| 1 | 0.1548 | 0.1756 | 15.4797 |
+| 10 | 1.5196 | 1.5367 | 15.1961 |
+| 100 | 15.1547 | 15.3680 | 15.1547 |
+| 1.000 | 153.4378 | 156.1921 | 15.3438 |
+
+Ölçümler Linux CI koşucusuna aittir; hedef donanım veya toplam oyun performansı garantisi değildir.

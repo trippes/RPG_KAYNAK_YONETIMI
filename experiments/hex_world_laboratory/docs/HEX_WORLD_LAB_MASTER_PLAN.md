@@ -346,7 +346,7 @@ Kabul koşulları:
 
 **Durum:** TAMAMLANDI VE KABUL EDİLDİ — 7.1–7.8 uygulaması, 703/703 otomatik test, Linux/Windows CI, benchmark ve kullanıcı masaüstü görsel kabulü 17 Kasım 2026 tarihinde tamamlandı.
 
-**Belgeler:** [Genel Plan](PHASE-07-GENERAL-PLAN.md) · [Teknik Plan](PHASE-07-TECHNICAL-PLAN.md) · [Manuel Görsel Kabul](PHASE-07-MANUAL-ACCEPTANCE-CHECKLIST.md) · [Uygulama ve Doğrulama Raporu](../reports/PHASE-07-IMPLEMENTATION-VALIDATION-REPORT.md)
+**Belgeler:** [Genel Plan](PHASE-07-GENERAL-PLAN.md) · [Teknik Plan](PHASE-07-TECHNICAL-PLAN.md) · [Manuel Görsel Kabul](PHASE-07-MANUAL-ACCEPTANCE-CHECKLIST.md) · [Uygulama ve Doğrulama Raporu](../reports/PHASE-07-CLOSURE-REPORT.md)
 
 **Kapanış raporu:** [PHASE-07-CLOSURE-REPORT.md](../reports/PHASE-07-CLOSURE-REPORT.md)
 
@@ -769,7 +769,7 @@ Bu liste tamamlanmadan laboratuvarın ana oyuna aktarılmaya hazır olduğu söy
 - Çalışma dalı: `experiment/hex-world-laboratory`.
 - Aşama 6 son otomatik test kapısında Laboratuvar CI 681/681 testle başarılıdır.
 - Aynı commit için Core Quality Linux ve Windows job'ları başarılıdır; laboratuvar benchmark adımları da başarılı tamamlanmıştır.
-- Aşama 6 alt aşama commit'leri, CI run kimlikleri ve teknik kanıtlar `experiments/hex_world_laboratory/reports/PHASE-06-VALIDATION-LOG.md` içindedir.
+- Aşama 6 alt aşama commit'leri, CI run kimlikleri ve teknik kanıtlar `experiments/hex_world_laboratory/reports/PHASE-06-CLOSURE-REPORT.md` içindedir.
 - Kullanıcının son masaüstü/görsel kabul adımları `experiments/hex_world_laboratory/docs/PHASE-06-MANUAL-ACCEPTANCE-CHECKLIST.md` içindedir.
 - Kullanıcı 17 Kasım 2026 tarihinde masaüstü kontrol listesindeki tüm maddeleri kendi bilgisayarında doğruladığını ve hepsinin başarılı olduğunu bildirmiştir. Aşama 6 teknik, otomatik ve görsel kabul kapılarının tamamı geçilerek kapatılmıştır.
 - Korunan `main` ve `demo_eldoria` dallarına bu çalışma kapsamında yazılmamıştır.
