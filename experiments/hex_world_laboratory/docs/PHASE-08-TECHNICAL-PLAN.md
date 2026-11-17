@@ -3,7 +3,7 @@
 > **Proje:** Eldoria — Hex World Laboratory  
 > **Depo:** `trippes/RPG_KAYNAK_YONETIMI`  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
-> **Durum:** TEKNİK PLAN TASLAĞI — kullanıcı onayı bekliyor  
+> **Durum:** KULLANICI TARAFINDAN ONAYLANDI — TEKNİK PLAN UYGULANDI; OTOMATİK DOĞRULAMA TAMAM, GÖRSEL KABUL BEKLENİYOR  
 > **Hazırlanma tarihi:** 17 Kasım 2026  
 > **Genel plan:** [PHASE-08-GENERAL-PLAN.md](PHASE-08-GENERAL-PLAN.md)  
 > **Planın hazırlandığı HEAD:** `81ea0ceb75bf773e32cea48a9da141fdc554a834`
@@ -589,7 +589,7 @@ Her commit öncesi/sonrası:
 
 ## 15. Onay kapısı
 
-Bu belge Aşama 8'in uygulama sözleşmesi için teknik öneridir.
+Bu belge kullanıcı tarafından 17 Kasım 2026 tarihinde onaylanan Aşama 8 uygulama sözleşmesidir. Alt aşamalar 8.1–8.8 uygulanmış ve otomatik doğrulamadan geçmiştir.
 
 **Kullanıcı onayı beklenen kararlar:**
 1. Linear AABB taramasının referans olarak korunması.

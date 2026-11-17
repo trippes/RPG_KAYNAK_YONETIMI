@@ -3,7 +3,7 @@
 > **Proje:** Eldoria — Hex World Laboratory  
 > **Depo:** `trippes/RPG_KAYNAK_YONETIMI`  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
-> **Durum:** PLAN TASLAĞI — kullanıcı onayı bekliyor  
+> **Durum:** KULLANICI TARAFINDAN ONAYLANDI — 8.1–8.8 UYGULAMA VE OTOMATİK DOĞRULAMA TAMAM, GÖRSEL KABUL BEKLENİYOR  
 > **Hazırlanma tarihi:** 17 Kasım 2026  
 > **Ön koşul:** Aşama 0–7 tamamlandı ve kabul edildi
 
