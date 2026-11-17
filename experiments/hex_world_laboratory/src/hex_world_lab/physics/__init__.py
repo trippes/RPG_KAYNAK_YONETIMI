@@ -1,7 +1,7 @@
 """Pygame-independent physics and collision primitives."""
 
 from .body import ActorBodyTransform, BodyDefinition
-from .broadphase import AABB, gather_candidates
+from .broadphase import AABB, ObstacleCandidateProvider, gather_candidates
 from .contacts import Contact, ContactManifold
 from .continuous import (
     ContinuousCollisionResolution,
@@ -35,6 +35,7 @@ __all__ = [
     "HexBoundaryEdge",
     "HexMapCollisionGeometry",
     "ObstacleDefinition",
+    "ObstacleCandidateProvider",
     "SweepHit",
     "build_hex_map_collision_geometry",
     "collide_shapes",

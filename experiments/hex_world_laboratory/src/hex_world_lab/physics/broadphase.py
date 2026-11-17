@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 import math
-from typing import Iterable
+from typing import Iterable, Protocol
 
 from .obstacle import ObstacleDefinition
 from .shapes import CircleShape, ConvexPolygonShape
@@ -81,3 +81,8 @@ def gather_candidates(
         if query_bounds.intersects(AABB.from_shape(item.world_shape()))
     ]
     return tuple(sorted(matches, key=lambda item: item.obstacle_id))
+
+
+class ObstacleCandidateProvider(Protocol):
+    """Map-scoped source of conservative obstacle candidates."""
+    def query(self, query_bounds: AABB) -> tuple[ObstacleDefinition, ...]: ...

@@ -17,6 +17,7 @@ from hex_world_lab.physics import (
     ContinuousCollisionResolution,
     HexMapCollisionGeometry,
     ObstacleDefinition,
+    ObstacleCandidateProvider,
     resolve_continuous_motion,
 )
 from hex_world_lab.world.identity import MapId
@@ -40,6 +41,7 @@ class CollisionAwareMovementSystem:
         "_next_tick_number",
         "_max_impacts",
         "_last_resolution",
+        "_candidate_provider",
     )
 
     def __init__(
@@ -52,6 +54,7 @@ class CollisionAwareMovementSystem:
         map_id: MapId | None = None,
         first_tick_number: int = 0,
         max_impacts: int = 6,
+        candidate_provider: ObstacleCandidateProvider | None = None,
     ) -> None:
         if not isinstance(initial_state, MovementState):
             raise TypeError("initial_state must be a MovementState")
@@ -102,6 +105,9 @@ class CollisionAwareMovementSystem:
         self._map_id = resolved_map_id
         self._next_tick_number = first_tick_number
         self._max_impacts = max_impacts
+        if candidate_provider is not None and not callable(getattr(candidate_provider, "query", None)):
+            raise TypeError("candidate_provider must provide query(bounds)")
+        self._candidate_provider = candidate_provider
         self._last_resolution: ContinuousCollisionResolution | None = None
 
     @property
@@ -159,6 +165,7 @@ class CollisionAwareMovementSystem:
                 displacement,
                 self._obstacles,
                 max_impacts=self._max_impacts,
+                candidate_provider=self._candidate_provider,
             )
             if resolution.unresolved_penetration > 1e-7:
                 raise RuntimeError(
