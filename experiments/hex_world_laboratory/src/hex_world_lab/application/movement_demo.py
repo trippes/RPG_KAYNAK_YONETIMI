@@ -29,6 +29,7 @@ from hex_world_lab.rendering.visibility import VisibleAreaCuller
 from hex_world_lab.rendering.snapshot import (
     CellVisual,
     CircleVisual,
+    ColliderVisual,
     LineVisual,
     PolygonVisual,
     RenderDebugOptions,
@@ -38,6 +39,7 @@ from hex_world_lab.rendering.snapshot import (
 from hex_world_lab.movement import MovementConfig, MovementState, Vector2
 from hex_world_lab.physics import (
     BoundaryPolicy,
+    ActorBodyTransform,
     BodyDefinition,
     CircleShape,
     ContinuousCollisionResolution,
@@ -315,22 +317,33 @@ class MovementDemo:
         )
         circles = []
         polygons = []
+        colliders = []
         for obstacle in self.collision_geometry.obstacles:
             shape = obstacle.world_shape()
             if isinstance(shape, CircleShape):
-                circles.append(
-                    CircleVisual(
-                        WorldPoint(shape.center.x, shape.center.y),
-                        shape.radius,
-                    )
+                circle_visual = CircleVisual(
+                    WorldPoint(shape.center.x, shape.center.y), shape.radius
                 )
+                circles.append(circle_visual)
+                colliders.append(ColliderVisual(obstacle.obstacle_id, circle_visual, "obstacle"))
             else:
-                polygons.append(
-                    PolygonVisual(
-                        tuple(WorldPoint(vertex.x, vertex.y) for vertex in shape.vertices),
-                        obstacle.obstacle_id.startswith("cell:"),
-                    )
+                polygon_visual = PolygonVisual(
+                    tuple(WorldPoint(vertex.x, vertex.y) for vertex in shape.vertices),
+                    obstacle.obstacle_id.startswith("cell:"),
                 )
+                polygons.append(polygon_visual)
+                colliders.append(ColliderVisual(obstacle.obstacle_id, polygon_visual, "obstacle"))
+
+        actor_shape = ActorBodyTransform(self.state.position).transform_shape(self.body_definition)
+        if isinstance(actor_shape, CircleShape):
+            actor_visual = CircleVisual(
+                WorldPoint(actor_shape.center.x, actor_shape.center.y), actor_shape.radius
+            )
+        else:
+            actor_visual = PolygonVisual(
+                tuple(WorldPoint(vertex.x, vertex.y) for vertex in actor_shape.vertices)
+            )
+        colliders.append(ColliderVisual(self.body_definition.body_id, actor_visual, "actor"))
 
         boundaries = tuple(
             LineVisual(edge.start, edge.end, "boundary", 2)
@@ -374,6 +387,7 @@ class MovementDemo:
             actor_position=self.state.position,
             actor_radius=PLAYER_COLLIDER_RADIUS,
             selected_cell=self.selected_cell,
+            colliders=tuple(colliders),
             sprites=(SpriteVisual(
                 visual_id="demo-player", asset_key="demo-player",
                 ground_anchor=self.state.position,

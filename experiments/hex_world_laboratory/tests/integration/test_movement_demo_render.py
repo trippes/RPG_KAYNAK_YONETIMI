@@ -10,6 +10,7 @@ import pytest
 
 from hex_world_lab.application.movement_demo import MovementDemo
 from hex_world_lab.movement import MovementIntent, MovementMode, Vector2
+from hex_world_lab.rendering import RenderDebugOptions
 
 
 class RecordingFont:
@@ -94,5 +95,39 @@ def test_diagnostics_keep_actual_velocity_separate_from_mode_speed():
         mode_line = next(line for line in recorder.rendered if line.startswith("Multiplier:"))
         assert "speed=60.00" in velocity_line
         assert "Mode speed: 60.0" in mode_line
+    finally:
+        pygame.quit()
+
+
+def test_culling_and_full_snapshot_render_identically_inside_viewport() -> None:
+    pygame.init()
+    try:
+        demo = MovementDemo()
+        culled = demo.build_render_snapshot(cull_to_viewport=True)
+        complete = demo.build_render_snapshot(cull_to_viewport=False)
+        first = pygame.Surface((960, 640))
+        second = pygame.Surface((960, 640))
+        demo.renderer.render(first, culled, demo._layout, demo.camera.transform)
+        demo.renderer.render(second, complete, demo._layout, demo.camera.transform)
+        assert pygame.image.tostring(first, "RGB") == pygame.image.tostring(second, "RGB")
+        assert len(culled.cells) <= len(complete.cells)
+    finally:
+        pygame.quit()
+
+
+def test_snapshot_contains_physics_derived_actor_and_obstacle_colliders() -> None:
+    pygame.init()
+    try:
+        demo = MovementDemo()
+        state_before = demo.state
+        snapshot = demo.build_render_snapshot(
+            debug_options=RenderDebugOptions(show_collider_debug=True)
+        )
+        actor = next(item for item in snapshot.colliders if item.owner_id == "demo-player")
+        assert actor.category == "actor"
+        assert actor.shape.center == demo.state.position
+        assert actor.shape.radius == 8.0
+        assert any(item.category == "obstacle" for item in snapshot.colliders)
+        assert demo.state == state_before
     finally:
         pygame.quit()
