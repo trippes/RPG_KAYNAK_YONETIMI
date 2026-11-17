@@ -142,4 +142,4 @@ Aşama 8, kullanıcının manuel kontrolleri kabul etmesi üzerine 17 Kasım 202
 
 - [Aşama 9 Genel Planı](docs/PHASE-09-GENERAL-PLAN.md)
 
-Aşama 9; ortak entity kimliği/konumu, foot-anchor ve collider ilişkisi, etkileşim menzili, fareyle hedef seçimi ve Spatial indeks entegrasyonunu kapsar. Pathfinding, NPC AI, kaynak toplama oynanışı ve çevre sanat zenginleştirmesi bu aşamanın kapsamında değildir.
+Aşama 9; ortak entity kimliği/konumu, foot-anchor ve collider ilişkisi, etkileşim menzili, fareyle hedef seçimi, Spatial indeks entegrasyonu ve oyuncu-NPC yoldaş ilişkisinin temel veri/komut altyapısını kapsar. FOLLOW, WAIT ve RETURN komutları bu aşamada yalnızca durum modeli olarak hazırlanır; gerçek takip hareketi, pathfinding, NPC AI, kaynak toplama oynanışı ve çevre sanat zenginleştirmesi bu aşamanın kapsamında değildir.
