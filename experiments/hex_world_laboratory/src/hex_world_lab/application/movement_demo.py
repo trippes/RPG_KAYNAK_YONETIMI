@@ -133,6 +133,7 @@ class MovementDemo:
         self,
         *,
         movement_speed: float = 60.0,
+        viewport: Viewport | None = None,
         key_state_provider: Callable[[], object] | None = None,
         clock: Callable[[], float] | None = None,
     ) -> None:
@@ -143,7 +144,7 @@ class MovementDemo:
         start_position = axial_to_world(AxialCoord(0, 0), self._layout)
         map_bounds = bounds_from_hex_cells(definition.cells, self._layout)
         self.camera = CameraController(
-            Viewport(960, 640),
+            viewport or Viewport(960, 640),
             start_position,
             bounds=map_bounds,
             bounds_policy=CameraBoundsPolicy.UNBOUNDED,
