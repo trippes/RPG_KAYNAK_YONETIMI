@@ -1,4 +1,5 @@
 """Deterministic procedural environmental object profiles."""
+
 from __future__ import annotations
 
 import math
@@ -29,26 +30,34 @@ class ProceduralProfile:
         if (
             not isinstance(self.logical_size, tuple)
             or len(self.logical_size) != 2
-            or any(isinstance(value, bool) or not isinstance(value, int) or value <= 0
-                   for value in self.logical_size)
+            or any(
+                isinstance(value, bool) or not isinstance(value, int) or value <= 0
+                for value in self.logical_size
+            )
         ):
             raise ValueError("logical_size must contain two positive integers")
         if (
             not isinstance(self.anchor, tuple)
             or len(self.anchor) != 2
-            or any(isinstance(value, bool) or not isinstance(value, (int, float))
-                   or not 0.0 <= value <= 1.0 for value in self.anchor)
+            or any(
+                isinstance(value, bool)
+                or not isinstance(value, (int, float))
+                or not 0.0 <= value <= 1.0
+                for value in self.anchor
+            )
         ):
             raise ValueError("anchor values must be between 0 and 1")
 
 
-PROFILE_DEFINITIONS: Mapping[str, ProceduralProfile] = MappingProxyType({
-    "tree": ProceduralProfile("tree", (132, 168), (0.50, 0.94)),
-    "rock": ProceduralProfile("rock", (66, 48), (0.50, 0.92)),
-    "bush": ProceduralProfile("bush", (88, 58), (0.50, 0.92)),
-    "grass": ProceduralProfile("grass", (64, 36), (0.50, 0.94)),
-    "flower": ProceduralProfile("flower", (56, 48), (0.50, 0.94)),
-})
+PROFILE_DEFINITIONS: Mapping[str, ProceduralProfile] = MappingProxyType(
+    {
+        "tree": ProceduralProfile("tree", (132, 168), (0.50, 0.94)),
+        "rock": ProceduralProfile("rock", (66, 48), (0.50, 0.92)),
+        "bush": ProceduralProfile("bush", (88, 58), (0.50, 0.92)),
+        "grass": ProceduralProfile("grass", (64, 36), (0.50, 0.94)),
+        "flower": ProceduralProfile("flower", (56, 48), (0.50, 0.94)),
+    }
+)
 
 
 def _build_grass(seed: int, supersampling: int, palette) -> pygame.Surface:
@@ -87,7 +96,8 @@ def _build_flower(seed: int, supersampling: int, palette) -> pygame.Surface:
         draw_polyline(canvas, stem_color, (root, bend, top), width=1)
         leaf_y = rng.uniform(29, 34)
         draw_ellipse(
-            canvas, leaf_color,
+            canvas,
+            leaf_color,
             (x - 7 if index % 2 == 0 else x + 1, leaf_y, 7, 3),
         )
         color = flower_colors[index]
