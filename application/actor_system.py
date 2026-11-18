@@ -65,6 +65,66 @@ class ActorView:
 
 
 @dataclass(frozen=True)
+class LegacyActorSpatialState:
+    """Square-map location retained only for legacy gameplay compatibility."""
+
+    location_id: str
+    position: Position
+
+    def __post_init__(self) -> None:
+        _text(self.location_id, "location_id")
+        if not isinstance(self.position, Position):
+            raise TypeError("position must be Position.")
+
+
+class LegacyActorSpatialStore:
+    """Own square-map actor locations outside the actor identity aggregate."""
+
+    def __init__(self) -> None:
+        self._states: dict[str, LegacyActorSpatialState] = {}
+        self._suspended: set[str] = set()
+
+    def get(self, actor_id: str, *, include_suspended: bool = False) -> LegacyActorSpatialState | None:
+        if actor_id in self._suspended and not include_suspended:
+            return None
+        return self._states.get(actor_id)
+
+    def set_position(
+        self,
+        actor_id: str,
+        location_id: str,
+        position: Position | None = None,
+    ) -> LegacyActorSpatialState:
+        _text(actor_id, "actor_id")
+        if actor_id in self._suspended:
+            raise ActorError("Legacy square position is unavailable while the actor is in the hex world.")
+        _text(location_id, "location_id")
+        if position is not None and not isinstance(position, Position):
+            raise TypeError("position must be Position.")
+        current = self._states.get(actor_id)
+        state = LegacyActorSpatialState(
+            location_id,
+            position if position is not None else (
+                current.position if current is not None else Position()
+            ),
+        )
+        self._states[actor_id] = state
+        return state
+
+    def suspend(self, actor_id: str) -> None:
+        _text(actor_id, "actor_id")
+        self._suspended.add(actor_id)
+
+    def resume(self, actor_id: str) -> None:
+        _text(actor_id, "actor_id")
+        self._suspended.discard(actor_id)
+
+    def remove(self, actor_id: str) -> None:
+        self._states.pop(actor_id, None)
+        self._suspended.discard(actor_id)
+
+
+@dataclass(frozen=True)
 class ActivityView:
     activity_id: str
     actor_id: str
@@ -81,9 +141,17 @@ class ActivityView:
 
 
 class WorldActor:
-    """Mutable actor record kept outside Core canonical state."""
+    """Mutable actor identity and gameplay links, independent from map position."""
 
-    def __init__(self, actor_id: str, world_id: str, role: str, active: bool = True, character_id: str | None = None, location_id: str | None = None, position: Position | None = None, inventory_id: str | None = None):
+    def __init__(
+        self,
+        actor_id: str,
+        world_id: str,
+        role: str,
+        active: bool = True,
+        character_id: str | None = None,
+        inventory_id: str | None = None,
+    ):
         identity = ActorIdentity(actor_id, world_id, role)
         if not isinstance(active, bool):
             raise TypeError("active must be boolean.")
@@ -95,8 +163,6 @@ class WorldActor:
         self._active = active
         self._activity_id: str | None = None
         self._character_id = character_id
-        self._location_id = location_id
-        self._position = position if position is not None else Position()
         self._inventory_id = inventory_id
 
     @property
@@ -128,24 +194,8 @@ class WorldActor:
         return self._character_id
 
     @property
-    def location_id(self) -> str | None:
-        return self._location_id
-
-    @property
-    def position(self) -> Position | None:
-        return self._position
-
-    @property
     def inventory_id(self) -> str | None:
         return self._inventory_id
-
-    def set_position(self, location_id: str, position: Position | None = None) -> None:
-        _text(location_id, "location_id")
-        if position is not None and not isinstance(position, Position):
-            raise TypeError("position must be Position.")
-        self._location_id = location_id
-        if position is not None:
-            self._position = position
 
     def bind_character(self, character_id: str) -> None:
         _text(character_id, "character_id")
@@ -179,11 +229,11 @@ class WorldActor:
             self._activity_id = None
 
     def view(self) -> ActorView:
+        """Return identity/gameplay data without any spatial fields."""
         return ActorView(
             self.actor_id, self.world_id, self.role,
             self._active, self._activity_id,
-            self._character_id,
-            self._location_id, self._position, self._inventory_id,
+            self._character_id, None, None, self._inventory_id,
         )
 
 
@@ -192,9 +242,57 @@ class WorldActorRegistry:
 
     def __init__(self, world_registry=None) -> None:
         self._actors: dict[str, WorldActor] = {}
+        self._legacy_spatial = LegacyActorSpatialStore()
         self._world_registry = None
         if world_registry is not None:
             self.bind_world_registry(world_registry)
+
+    @property
+    def legacy_spatial(self) -> LegacyActorSpatialStore:
+        return self._legacy_spatial
+
+    def set_legacy_position(
+        self,
+        actor_id: str,
+        location_id: str,
+        position: Position | None = None,
+    ) -> LegacyActorSpatialState:
+        self._require(actor_id)
+        return self._legacy_spatial.set_position(actor_id, location_id, position)
+
+    def legacy_spatial_state(
+        self,
+        actor_id: str,
+        *,
+        include_suspended: bool = False,
+    ) -> LegacyActorSpatialState | None:
+        self._require(actor_id)
+        return self._legacy_spatial.get(
+            actor_id, include_suspended=include_suspended
+        )
+
+    def suspend_legacy_spatial(self, actor_id: str) -> None:
+        self._require(actor_id)
+        self._legacy_spatial.suspend(actor_id)
+
+    def resume_legacy_spatial(self, actor_id: str) -> None:
+        self._require(actor_id)
+        self._legacy_spatial.resume(actor_id)
+
+    def _view(self, actor: WorldActor) -> ActorView:
+        view = actor.view()
+        spatial = self._legacy_spatial.get(actor.actor_id)
+        return ActorView(
+            view.actor_id,
+            view.world_id,
+            view.role,
+            view.active,
+            view.activity_id,
+            view.character_id,
+            spatial.location_id if spatial is not None else None,
+            spatial.position if spatial is not None else None,
+            view.inventory_id,
+        )
 
     @property
     def world_registry(self):
@@ -231,18 +329,22 @@ class WorldActorRegistry:
         self._actors[actor.actor_id] = actor
 
     def get(self, actor_id: str) -> ActorView | None:
-        return self._actors.get(actor_id).view() if actor_id in self._actors else None
+        actor = self._actors.get(actor_id)
+        return self._view(actor) if actor is not None else None
 
     def for_world(self, world_id: str) -> tuple[ActorView, ...]:
         _text(world_id, "world_id")
         return tuple(
-            self._actors[actor_id].view()
+            self._view(self._actors[actor_id])
             for actor_id in sorted(self._actors)
             if self._actors[actor_id].world_id == world_id
         )
 
     def actors(self) -> tuple[ActorView, ...]:
-        return tuple(self._actors[actor_id].view() for actor_id in sorted(self._actors))
+        return tuple(
+            self._view(self._actors[actor_id])
+            for actor_id in sorted(self._actors)
+        )
 
     def count(self) -> int:
         return len(self._actors)
@@ -251,7 +353,9 @@ class WorldActorRegistry:
         actor = self._actors.pop(actor_id, None)
         if actor is None:
             raise KeyError(f"Actor not found: {actor_id}")
-        return actor.view()
+        view = self._view(actor)
+        self._legacy_spatial.remove(actor_id)
+        return view
 
     def set_active(self, actor_id: str, active: bool) -> None:
         self._require(actor_id).set_active(active)
