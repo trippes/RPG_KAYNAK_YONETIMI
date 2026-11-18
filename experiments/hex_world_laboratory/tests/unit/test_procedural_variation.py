@@ -12,7 +12,8 @@ def test_integer_and_string_seeds_are_stable():
 
 
 def test_rng_repeats_sequence_for_same_seed_and_differs_for_other_seed():
-    first = [create_rng("fern").random() for _ in range(3)]
+    first_rng = create_rng("fern")
+    first = [first_rng.random() for _ in range(3)]
     second_rng = create_rng("fern")
     second = [second_rng.random() for _ in range(3)]
     third = [create_rng("moss").random() for _ in range(3)]
