@@ -484,7 +484,19 @@ Kabul koşulları:
 - Kritik konum, çarpışma veya kamera hatası açık kalmıyor.
 - Bilinen sınırlamalar yazılı ve entegrasyon kararına dahil.
 
-### Aşama 12 — Nihai mimari, dokümantasyon ve entegrasyon hazırlığı
+### Aşama 13 — Genel prosedürel grafik ve çizim altyapısı
+
+**Amaç:** Aşama 12'de doğrulanan ağaç/kaya/çalı çizim deneyimini daha fazla çevresel içerik türüne genişleyebilen ortak bir çizim altyapısına dönüştürmek.
+
+Kapsam; ortak geometri/katman yardımcıları, parametre şemaları, palet yönetimi, deterministik varyasyon ve birden fazla nesne ailesi için yeniden kullanılabilir çizim bileşenleri olarak ayrıca planlanacaktır. Genel editör arayüzü bu aşamanın kapsamında değildir.
+
+### Aşama 14 — Content Editor ve görsel düzenleme araçları
+
+**Amaç:** Prosedürel çizim altyapısını kullanıcı dostu içerik üretim aracına dönüştürmek.
+
+Kapsam; görsel önizleme, nesne profili seçimi, parametre düzenleme, dallar/yaprak kümeleri gibi bileşenlerin etkileşimli düzenlenmesi, palet ve geometri ayarları, içerik kaydetme/yükleme ve doğrulama iş akışlarını kapsayabilir. Kesin kapsam ayrı genel/teknik plan ve kullanıcı onayıyla belirlenecektir.
+
+### Aşama 15 — Nihai mimari, dokümantasyon ve entegrasyon hazırlığı
 
 **Amaç:** Laboratuvarda kanıtlanmış sistemi ana oyuna taşınabilir bir teknik pakete dönüştürmek.
 
@@ -511,7 +523,7 @@ Kabul koşulları:
 - Ana oyun için geriye dönük uyumluluk ve veri etkileri değerlendirilmiş.
 - Kullanıcı entegrasyon planını ayrıca onaylamış.
 
-### Aşama 13 — Kontrollü demo entegrasyonu
+### Aşama 16 — Kontrollü demo entegrasyonu
 
 **Amaç:** Onaylanmış laboratuvar mimarisini kontrollü ve geri alınabilir şekilde `demo_eldoria` dalına taşımak.
 
