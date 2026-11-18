@@ -1,4 +1,5 @@
 """Register procedural environmental profiles with the world renderer."""
+
 from __future__ import annotations
 
 from hex_world_lab.rendering.procedural import (
@@ -21,8 +22,6 @@ def register_environment_assets(
     surfaces = build_environment_profiles(seed=seed, cache=cache)
     sizes = {}
     for key, surface in surfaces.items():
-        renderer.register_sprite_asset(
-            key, SpriteAsset(surface, *PROFILE_DEFINITIONS[key].anchor)
-        )
+        renderer.register_sprite_asset(key, SpriteAsset(surface, *PROFILE_DEFINITIONS[key].anchor))
         sizes[key] = surface.get_size()
     return sizes
