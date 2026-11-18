@@ -122,6 +122,23 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
+      - name: Benchmark Phase 13 procedural profiles and cache
+        run: python benchmarks/benchmark_phase_13_procedural_art.py
+
+      - name: Generate Phase 13 procedural profile visual evidence
+        run: python scripts/render_phase_13_scenes.py --output artifacts/phase-13
+
+      - name: Upload Phase 13 procedural validation and visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase-13-procedural-validation
+          path: |
+            experiments/hex_world_laboratory/artifacts/phase-13/*.json
+            experiments/hex_world_laboratory/artifacts/phase-13/*.png
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Upload Phase 11 validation evidence
         if: always()
         uses: actions/upload-artifact@v4
