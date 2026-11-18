@@ -14,5 +14,9 @@ jobs:
           python-version: "3.11"
       - name: Install project and development dependencies
         run: python -m pip install -r requirements-dev.txt
+      - name: Ruff lint
+        run: python -m ruff check .
+      - name: Ruff format check
+        run: python -m ruff format --check .
       - name: Run release-candidate verification
         run: python scripts/verify_release.py
