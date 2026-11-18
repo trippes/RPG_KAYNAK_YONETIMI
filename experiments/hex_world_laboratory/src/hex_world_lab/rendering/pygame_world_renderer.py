@@ -95,6 +95,7 @@ class PygameWorldRenderer:
             pygame.draw.line(surface, BOUNDARY_COLOR, self._point(line.start, transform),
                              self._point(line.end, transform), max(1, round(line.width * transform.zoom)))
 
+        viewport_bounds = self._world_viewport_bounds(transform)
         draw_items = []
         for index, circle in enumerate(snapshot.circles):
             draw_items.append(((-circle.center.y, 20, f"circle:{index:08d}"), "circle", circle))
@@ -111,7 +112,7 @@ class PygameWorldRenderer:
             elif kind == "polygon":
                 self._draw_polygon(surface, item, transform)
             elif kind == "sprite":
-                self._draw_sprite(surface, item, transform)
+                self._draw_sprite(surface, item, transform, viewport_bounds)
             else:
                 marker = self._point(snapshot.actor_position, transform)
                 radius = max(2, round(min(snapshot.actor_radius, 4.0) * transform.zoom))
@@ -138,8 +139,9 @@ class PygameWorldRenderer:
             sprite.ground_anchor.y + anchor_y * height,
         )
 
-    def _sprite_intersects_viewport(self, sprite: SpriteVisual, asset: SpriteAsset,
-                                    transform: WorldScreenTransform) -> bool:
+    @staticmethod
+    def _world_viewport_bounds(transform: WorldScreenTransform) -> tuple[float, float, float, float]:
+        """Resolve the world-space viewport AABB once per render pass."""
         viewport = transform.viewport
         corners = (
             transform.screen_to_world(ScreenPoint(0.0, 0.0)),
@@ -147,8 +149,20 @@ class PygameWorldRenderer:
             transform.screen_to_world(ScreenPoint(0.0, float(viewport.height))),
             transform.screen_to_world(ScreenPoint(float(viewport.width), float(viewport.height))),
         )
-        min_x, max_x = min(p.x for p in corners), max(p.x for p in corners)
-        min_y, max_y = min(p.y for p in corners), max(p.y for p in corners)
+        return (
+            min(point.x for point in corners),
+            min(point.y for point in corners),
+            max(point.x for point in corners),
+            max(point.y for point in corners),
+        )
+
+    def _sprite_intersects_viewport(
+        self,
+        sprite: SpriteVisual,
+        asset: SpriteAsset,
+        viewport_bounds: tuple[float, float, float, float],
+    ) -> bool:
+        min_x, min_y, max_x, max_y = viewport_bounds
         left, bottom, right, top = self._sprite_world_bounds(sprite, asset)
         return not (right < min_x or left > max_x or top < min_y or bottom > max_y)
 
@@ -166,12 +180,15 @@ class PygameWorldRenderer:
         pygame.draw.polygon(surface, (205, 211, 222), points,
                             width=max(1, round(2 * transform.zoom)))
 
-    def _draw_sprite(self, surface, sprite: SpriteVisual, transform: WorldScreenTransform) -> None:
+    def _draw_sprite(
+        self, surface, sprite: SpriteVisual, transform: WorldScreenTransform,
+        viewport_bounds: tuple[float, float, float, float],
+    ) -> None:
         asset = self._sprite_assets.get(sprite.asset_key)
         if asset is None and sprite.asset_key == "demo-player":
             asset = self._make_demo_actor_asset()
             self._sprite_assets[sprite.asset_key] = asset
-        if asset is None or not self._sprite_intersects_viewport(sprite, asset, transform):
+        if asset is None or not self._sprite_intersects_viewport(sprite, asset, viewport_bounds):
             return
         source = asset.surface
         width = max(1, round(source.get_width() * transform.zoom))
