@@ -105,6 +105,23 @@ jobs:
       - name: Benchmark Phase 11 simulation and render in three sessions
         run: python benchmarks/benchmark_phase_11_simulation.py
 
+      - name: Benchmark Phase 12 environmental object adapters (10 / 100 / 1,000 objects, three sessions)
+        run: python benchmarks/benchmark_phase_12_environment.py
+
+      - name: Generate Phase 12 environmental-object visual evidence
+        run: python scripts/render_phase_12_scenes.py --output artifacts/phase-12
+
+      - name: Upload Phase 12 validation and visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase-12-environment-validation
+          path: |
+            experiments/hex_world_laboratory/artifacts/phase-12/*.json
+            experiments/hex_world_laboratory/artifacts/phase-12/*.png
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Upload Phase 11 validation evidence
         if: always()
         uses: actions/upload-artifact@v4

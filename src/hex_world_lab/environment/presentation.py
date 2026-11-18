@@ -9,11 +9,16 @@ from hex_world_lab.rendering.snapshot import EnvironmentDebugVisual, SpriteVisua
 from .scene import EnvironmentalObjectScene
 
 
+def _definitions(scene: EnvironmentalObjectScene):
+    return {item.definition_id: item for item in scene.definitions}
+
+
 def environment_obstacles(scene: EnvironmentalObjectScene) -> tuple[ObstacleDefinition, ...]:
     """Adapt only explicit colliders; visual bounds never become obstacles."""
+    definitions = _definitions(scene)
     result = []
     for placement in scene.placements:
-        definition = scene.definition_for(placement)
+        definition = definitions[placement.definition_id]
         if definition.collider is None:
             continue
         result.append(ObstacleDefinition(
@@ -30,13 +35,14 @@ def environment_sprite_visuals(
     asset_sizes: Mapping[str, tuple[int, int]],
 ) -> tuple[SpriteVisual, ...]:
     """Build sprite DTOs with depth Y derived from normalized metadata and asset size."""
+    definitions = _definitions(scene)
     result = []
     for placement in scene.placements:
-        definition = scene.definition_for(placement)
+        definition = definitions[placement.definition_id]
         if definition.asset_key not in asset_sizes:
             raise KeyError(f"missing dimensions for environment asset: {definition.asset_key}")
         width, height = asset_sizes[definition.asset_key]
-        if isinstance(width, bool) or isinstance(height, bool) or width <= 0 or height <= 0:
+        if any(isinstance(value, bool) or not isinstance(value, int) or value <= 0 for value in (width, height)):
             raise ValueError("environment asset dimensions must be positive integers")
         gx, gy = definition.ground_anchor
         dx, dy = definition.depth_anchor
@@ -57,9 +63,10 @@ def environment_debug_visuals(
     asset_sizes: Mapping[str, tuple[int, int]],
 ) -> tuple[EnvironmentDebugVisual, ...]:
     """Expose full sprite and canopy bounds in world coordinates for F4."""
+    definitions = _definitions(scene)
     result = []
     for placement in scene.placements:
-        definition = scene.definition_for(placement)
+        definition = definitions[placement.definition_id]
         width, height = asset_sizes[definition.asset_key]
         gx, gy = definition.ground_anchor
         left = placement.ground_position.x - gx * width
@@ -77,7 +84,10 @@ def environment_debug_visuals(
         result.append(EnvironmentDebugVisual(
             instance_id=placement.instance_id,
             ground_anchor=placement.ground_position,
-            depth_anchor=WorldPoint(placement.ground_position.x, placement.ground_position.y + (gy - definition.depth_anchor[1]) * height),
+            depth_anchor=WorldPoint(
+                placement.ground_position.x,
+                placement.ground_position.y + (gy - definition.depth_anchor[1]) * height,
+            ),
             visual_bounds=(WorldPoint(left, bottom), WorldPoint(right, top)),
             canopy_bounds=canopy,
         ))

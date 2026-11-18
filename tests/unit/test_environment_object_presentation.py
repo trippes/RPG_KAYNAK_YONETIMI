@@ -27,5 +27,6 @@ def test_adapters_keep_visual_metadata_and_collider_separate():
     assert tree.depth_anchor_y == 38.0
     assert tree.normalized_anchor == (0.5, 0.95)
     debug = environment_debug_visuals(scene, {"tree": (100, 120), "bush": (40, 30)})
-    assert debug[0].visual_bounds == (WorldPoint(-40, 14), WorldPoint(60, 134))
-    assert debug[0].canopy_bounds is not None
+    tree_debug = next(item for item in debug if item.instance_id == "tree-1")
+    assert tree_debug.visual_bounds == (WorldPoint(-40, 14), WorldPoint(60, 134))
+    assert tree_debug.canopy_bounds is not None
