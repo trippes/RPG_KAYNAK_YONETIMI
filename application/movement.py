@@ -57,7 +57,7 @@ class MovementManager:
         world_map = self._require_map(actor.world_id)
         if world_map.get(location_id) is None:
             raise KeyError(f"Location not found: {location_id}")
-        actor.set_position(location_id)
+        self._actors.set_legacy_position(actor_id, location_id)
 
     def bind_world_objects(self, registry) -> None:
         if not callable(getattr(registry, "local_map_for", None)):
@@ -68,21 +68,24 @@ class MovementManager:
         if type(x) is not int or type(y) is not int:
             raise TypeError("Tile coordinates must be integers.")
         actor = self._actors._require(actor_id)
-        if actor.location_id is None:
-            raise ValueError("Actor has no current location.")
+        spatial = self._actors.legacy_spatial_state(actor_id)
+        if spatial is None:
+            raise ValueError("Actor has no current legacy square location.")
         if self._world_objects is None:
             raise ValueError("Local map dimensions are not bound to movement.")
-        local_map = self._world_objects.local_map_for(actor.world_id, actor.location_id)
+        local_map = self._world_objects.local_map_for(actor.world_id, spatial.location_id)
         if local_map is None:
             raise ValueError(
-                f"Local map dimensions are not registered: {actor.world_id}/{actor.location_id}"
+                f"Local map dimensions are not registered: {actor.world_id}/{spatial.location_id}"
             )
         if not (0 <= x < local_map.width and 0 <= y < local_map.height):
             raise ValueError(
                 f"Tile coordinates ({x}, {y}) are outside "
-                f"{actor.location_id} bounds ({local_map.width}x{local_map.height})."
+                f"{spatial.location_id} bounds ({local_map.width}x{local_map.height})."
             )
-        actor.set_position(actor.location_id, Position(x, y))
+        self._actors.set_legacy_position(
+            actor_id, spatial.location_id, Position(x, y)
+        )
 
     def move(self, actor_id: str, destination_id: str, action_id: str | None = None) -> MovementActionView:
         if not self._bound:
@@ -93,10 +96,11 @@ class MovementManager:
             raise ValueError(f"Actor is inactive: {actor_id}")
         if actor.activity_id is not None:
             raise ValueError(f"Actor is busy: {actor_id}")
-        if actor.location_id is None:
-            raise ValueError("Actor has no starting location.")
+        spatial = self._actors.legacy_spatial_state(actor_id)
+        if spatial is None:
+            raise ValueError("Actor has no starting legacy square location.")
         world_map = self._require_map(actor.world_id)
-        path = world_map.find_path(actor.location_id, destination_id)
+        path = world_map.find_path(spatial.location_id, destination_id)
         if action_id is None:
             action_id = f"move_{len(self._movements) + 1:06d}"
         if action_id in self._movements:
@@ -129,7 +133,8 @@ class MovementManager:
         actor = self._actors._require(movement.actor_id)
         destination = self._maps[movement.world_id].get(movement.path[-1])
         position = destination.position if destination is not None else None
-        actor.set_position(
+        self._actors.set_legacy_position(
+            movement.actor_id,
             movement.path[-1],
             position if isinstance(position, Position) else None,
         )
