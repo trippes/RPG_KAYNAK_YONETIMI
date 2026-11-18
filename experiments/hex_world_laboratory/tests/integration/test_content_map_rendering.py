@@ -1,7 +1,7 @@
 """Integration of content library, map placements, scene and sprite presentation."""
 
 from hex_world_lab.content import ContentPlacement
-from hex_world_lab.content.adapters import to_environment_scene
+from hex_world_lab.rendering.content_adapters import to_environment_scene
 from hex_world_lab.content.map_document import MapContentDocument
 from hex_world_lab.environment.presentation import environment_obstacles, environment_sprite_visuals
 from hex_world_lab.geometry import HexLayout, HexOrientation, WorldPoint
