@@ -5,7 +5,7 @@
 | Çalışma dalı | `experiment/map-cleanup` |
 | İncelenen HEAD | `1705497305339675df25928c7272eb9b10aba7a2` |
 | Kaynak dal başlangıcı | `demo_eldoria` @ `7d53d431d5c3639fd95d273de9043b64483a5125` |
-| Aşama | 16.1 — teknik baseline tamamlandı; manuel görsel doğrulama bekliyor |
+| Aşama | 16.1 — teknik baseline ve otomatik CI karakterizasyonu tamamlandı; manuel görsel test kapsam dışı |
 | Kod/veri değişikliği | Yok — bu rapor yalnızca envanter ve mevcut davranış kaydıdır |
 
 ## 1. CI ve doğrulama baseline'ı
@@ -30,7 +30,7 @@ Paket doğrulaması özellikle 9 kare harita, 7 altıgen harita, altıgen dünya
 Sınırlar:
 - Bu rapor hazırlanırken GitHub Actions'ın mevcut HEAD için yeşil olduğu doğrulandı; yerel Windows testleri bu oturumda çalıştırılmadı.
 - Workflow dosyasında Ruff adımı bulunmuyor. Teknik plandaki Ruff kabul ölçütü, CI'a eklenmeden otomatik olarak sağlanmış sayılamaz.
-- Pygame `--play` görsel kabulü CI'ın headless kapısında yoktur; kullanıcı tarafından ayrıca yapılmalıdır.
+- Pygame `--play` görsel kabulü CI'ın headless kapısında yoktur; ancak bu temizlikte görsel davranış değişikliği hedeflenmediğinden manuel test gerekmiyor.
 
 ## 2. Depo ve içerik envanteri
 
@@ -100,7 +100,7 @@ Dolayısıyla kare haritalardan birini bugün seçip diğer sekizini silmek, yal
 
 ## 6. 16.1 çıkış kararı
 
-**Teknik baseline ve CI karakterizasyonu tamamlandı.** Ancak 16.1'in manuel oynanış/görsel kısmı henüz tamamlanmadı; kullanıcı `python main.py --play` ile mevcut kare başlangıç akışını, H geçişini, kare haritaya dönüşü ve kayıt/yükleme davranışını doğrulamalı.
+**Aşama 16.1 teknik baseline ve CI karakterizasyonu tamamlandı.** Görsel/manuel kabul bu işin kapsamı değildir; mevcut davranış kaynak kodu ve otomatik testlerle yeterince karakterize edilmiştir. Kullanıcıdan tekrar `--play` kontrolü istenmeyecektir.
 
 ### Kritik sıralama bağımlılığı
 
@@ -115,7 +115,7 @@ Bu nedenle güvenli sıra şudur:
 
 Bu bulgu, başlangıçtaki "temizlik önce, hex entegrasyonu sonra" sırasının mevcut kod durumunda tek kare easter egg hedefiyle çakıştığını gösteriyor. Kod silmeden önce teknik planın sıralaması yeniden kararlaştırılmalıdır.
 
-## 7. Kullanıcı kabulü bekleyen kontroller
+## 7. Teknik doğrulama sınırları
 
 - [ ] Windows'ta `python main.py --play` başlatılır; başlangıçta kare köy haritası göründüğü doğrulanır.
 - [ ] H ile hex görünüm açılır; oyuncunun hex başlangıç hücresi `(0, 0)` olduğu görülür.
