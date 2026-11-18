@@ -4,7 +4,7 @@
 > **Proje:** Eldoria — Hex World Laboratory  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Dayanak:** Kullanıcı tarafından onaylanan `PHASE-12-GENERAL-PLAN.md`  
-> **Durum:** TASLAK — KULLANICI TEKNİK ONAYI BEKLİYOR  
+> **Durum:** KULLANICI TARAFINDAN TEKNİK OLARAK ONAYLANDI  
 > **Uygulama durumu:** Başlamadı  
 > **Tek laboratuvar başlatıcısı:** `python -m hex_world_lab`
 
@@ -365,9 +365,9 @@ Aşama 12 ancak aşağıdaki koşulların tamamı sağlandığında kapatılabil
 
 ## 12. Onay kapısı
 
-Bu belge **teknik plan taslağıdır**. Kullanıcı teknik mimariyi ve dosya değişikliklerini onaylamadan kod, test, asset veya uygulama dosyası değiştirilmeyecektir.
+Bu belge kullanıcı tarafından teknik olarak onaylanmıştır. Teknik mimari ve dosya değişiklikleri planı onay kapısını geçmiştir.
 
-Teknik plan onaylandıktan sonra 12.1–12.8 uygulaması, kullanıcının ayrıca verdiği kapsam ve devam talimatına göre yürütülür. Herhangi bir kapsam değişikliği veya ana mimari sözleşmeden sapma önce raporlanır ve onaylanır.
+**Uygulama durumu:** Henüz başlamadı. Teknik planın onaylanması tek başına uygulama başlatma talimatı değildir. 12.1–12.8 uygulaması, kullanıcının ayrıca vereceği açık devam talimatıyla başlatılır. Herhangi bir kapsam değişikliği veya ana mimari sözleşmeden sapma önce raporlanır ve onaylanır.
 
 ---
 
