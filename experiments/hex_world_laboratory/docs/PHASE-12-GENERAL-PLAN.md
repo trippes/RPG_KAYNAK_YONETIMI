@@ -5,9 +5,21 @@
 > **Depo:** `trippes/RPG_KAYNAK_YONETIMI`  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Hedef:** Görselden bağımsız, genişletilebilir çevresel nesne altyapısı oluşturmak  
-> **Durum:** 12.1–12.8 OTOMATİK UYGULAMA VE DOĞRULAMA TAMAMLANDI — MANUEL KABUL BEKLENİYOR  
+> **Durum:** KAPSAM REVİZYONU KABUL EDİLDİ — PROSEDÜREL GÖRSEL UYGULAMA VE YENİDEN KABUL BEKLENİYOR  
 > **Ön koşul:** Aşama 11 tamamlandı ve kullanıcı tarafından kabul edildi  
 > **Uygulama durumu:** Uygulama, otomatik testler, benchmarklar, görsel kanıt üretimi ve Linux/Windows CI tamamlandı; kullanıcı manuel görsel kabulü bekleniyor
+
+## 18 Kasım 2026 kapsam revizyonu — bağlayıcı karar
+
+Aşama 12, çevresel nesne mimarisini ve bu mimariyi doğrulayan yalnızca üç kod çizimi prototipini (ağaç, kaya, çalı) kapsar. Hazır PNG/JPG/WebP dosyaları bu prototiplerin görsel kaynağı olarak kullanılmayacaktır; yüzeyler Pygame çizim primitifleri ve deterministik geometriyle koddan üretilecektir.
+
+Aşama 12 içinde çizim fonksiyonları, paletler, geometri ve nesne profilleri ayrık/parametrelenebilir tutulur. Ağaçta kök-gövde, dallar, farklı tonlarda yaprak kümeleri, hacim, ışık ve gölge; kayada çok yüzeyli hacim ve ışık-gölge; çalıda kümelenmiş yapraklar ve alt gölge bulunur. Üç nesne aynı sanat yönü ve harita ölçeği kalitesini hedefler. Ground Anchor, Depth Anchor, Visual Bounds, Canopy Bounds ve Collision Geometry çizimden bağımsız kalır. Çizim collider üretmez. Aynı parametreler deterministik sonuç verir.
+
+Aşama 12 dışında: genel amaçlı grafik motoru, serbest biçimli çizim arayüzü, fareyle dal/yaprak düzenleme, içerik kütüphanesi, dosya içe/dışa aktarma aracı, bina/karakter/NPC çizim paketi, animasyon/rig/wind sistemi ve ana oyun entegrasyonu.
+
+Aşama 13, farklı içerik türlerini destekleyen genel prosedürel grafik/çizim altyapısıdır. Aşama 14, bu altyapıyı kullanan Content Editor ve görsel düzenleme araçlarıdır. İki aşama da ayrıca planlanıp onaylanacaktır.
+
+Önceki doğrulama raporundaki tree_test.png kopyası yeni karar kapsamında kabul edilmez; PNG tabanlı sunum geçici/ret edilmiş prototiptir. Önceki test/CI sonuçları yalnızca o commit'teki teknik kod için geçerlidir; prosedürel görsel kabul kanıtı değildir. Aşama 12'nin görsel uygulaması, testleri, benchmarkı, CI ve manuel kabulü yeniden tamamlanmalıdır.
 
 ---
 
