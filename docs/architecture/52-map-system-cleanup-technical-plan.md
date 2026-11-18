@@ -164,7 +164,7 @@ Test hedefleri:
 
 ## 5. Uygulama fazları ve değişiklik kapıları
 
-### 16.1 — Baseline ve characterization (teknik inceleme tamamlandı; manuel kabul bekliyor)
+### 16.1 — Baseline ve characterization (teknik inceleme tamamlandı)
 
 - Başlangıç HEAD'i, 16 harita JSON'unun gerçek schema sürümleri, map ID'leri, hex world ve placement içerikleri kaydedildi.
 - CI run `44411974271` Linux ve Windows işlerinde başarılı; test/derleme/paketleme/smoke kapsamı raporda kayıtlıdır.
@@ -212,7 +212,7 @@ Test hedefleri:
 - Veri migration gerekiyorsa idempotent, yedekli ve dry-run destekli tasarlanır; migration bu planın otomatik varsayımı değildir.
 **Kapı:** Her kaldırma için çağrı/import/save kanıtı, test kanıtı ve rollback yolu bulunmalı; tek kare easter egg çalışır durumda kalmalı.
 
-### 16.6 — Tam regresyon ve kullanıcı kabulü
+### 16.6 — Tam otomatik regresyon ve teknik kabul
 
 - Temiz kurulum ve paketleme doğrulanır.
 - Tüm Pytest suite, Ruff ve GitHub Actions kalite akışları çalışır.
@@ -221,7 +221,7 @@ Test hedefleri:
 - Harita geçişi, oyuncu konumu, çarpışma, etkileşim, yerleşim, kamera, save/load ve mevcut gameplay loop kontrol edilir.
 - Eski save referansları ve kare harita uyumluluğu ayrıca değerlendirilir.
 - Görsel kabul testi istenmez; yalnızca değişen kodun otomatik testleri, statik analizi ve CI sonuçları değerlendirilir.
-**Kapı:** CI ve manuel kabul birlikte başarılı olmalı.
+**Kapı:** Pytest, Ruff, paketleme/release doğrulaması ve Linux/Windows CI başarılı olmalı.
 
 ### 16.7 — Kapanış ve entegrasyon sözleşmesi
 
@@ -281,7 +281,7 @@ Kullanılmayan kare harita dosyalarının kaldırılması ancak tek harita karar
 4. **Legacy world manager:** `core/world` ile `application` world/runtime sorumluluklarının tam sınırı import ve call graph ile kanıtlanmalı.
 5. **Asset/placement paralelliği:** Combined `presentation_assets.json` ile ayrılmış `asset_catalog.json` + `placements/` backward compatibility yolu birlikte mevcut.
 6. **Save uyumluluğu:** Eski save'lerde artık korunmayacak kare map ID'leri varsa açık migration/compatibility kararı gerekir.
-7. **Test kapsama boşluğu:** UI'da manuel olarak görülen bazı davranışlar için otomatik characterization test gerekebilir.
+7. **Test kapsama boşluğu:** UI/render davranışında değişiklik yapılırsa manuel kontrol yerine otomatik characterization/render testleri eklenmelidir.
 8. **Easter egg erişimi:** Nerede/nasıl bulunacağı ve sahneye giriş/çıkış biçimi ürün tasarımıdır; teknik temizlik bunu varsaymamalıdır.
 
 ## 10. Uygulama durumu ve sıralama kapısı
