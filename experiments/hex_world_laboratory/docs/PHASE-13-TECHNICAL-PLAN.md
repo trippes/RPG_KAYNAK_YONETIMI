@@ -4,7 +4,7 @@
 > **Proje:** Eldoria — Hex World Laboratory  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Genel plan:** [PHASE-13-GENERAL-PLAN.md](PHASE-13-GENERAL-PLAN.md)  
-> **Durum:** TEKNİK PLAN HAZIR — KULLANICI ONAYI BEKLİYOR  
+> **Durum:** KULLANICI TARAFINDAN ONAYLANDI — 18 KASIM 2026  
 > **Uygulama durumu:** Başlamadı; bu belge kod değişikliği izni değildir.
 
 ## 1. Teknik hedef
@@ -361,9 +361,9 @@ Teknik plan onaylandıktan sonra uygulama başlayabilir. Aşama ancak:
 - kapanış raporu ve Master Plan güncellemesi tamamlandı
 şartlarıyla kapatılır.
 
-## 15. Onay sınırı
+## 15. Onay ve uygulama durumu
 
-Bu belge, Aşama 13'ün teknik mimarisini ve önerilen dosya değişikliklerini tanımlar. **Teknik planın depoya yazılmış olması uygulama izni değildir.** Kullanıcı bu teknik planı ayrıca onaylamadan kaynak kod, test, workflow veya yapılandırma dosyalarında değişiklik yapılmayacaktır.
+Kullanıcı teknik planı 18 Kasım 2026 tarihinde onayladı. Aşama 13 uygulaması bu onay sınırları içinde başlatılmıştır. 13.1 mevcut altyapı denetimi tamamlandı; ayrıntılar [PHASE-13.1-AUDIT-REPORT.md](../reports/PHASE-13.1-AUDIT-REPORT.md) belgesindedir. Sıradaki iş paketi 13.2 — saf geometri ve Pygame canvas sözleşmesidir. Teknik kapsamı değiştiren yeni kararlar ayrıca kullanıcı onayı gerektirir.
 
 ## 16. Dal güvenliği
 
