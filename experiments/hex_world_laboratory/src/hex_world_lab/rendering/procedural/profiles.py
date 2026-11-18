@@ -1,8 +1,8 @@
 """Deterministic procedural environmental object profiles."""
 from __future__ import annotations
 
-from dataclasses import dataclass
 import math
+from dataclasses import dataclass
 from types import MappingProxyType
 from typing import Mapping
 
