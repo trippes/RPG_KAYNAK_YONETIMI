@@ -47,9 +47,9 @@ Tick sırası:
 | Core Quality Windows (Python 3.12) | **2.222 passed** |
 | Hex World Laboratory CI | **Success** — run `44260997907` |
 | Core Quality | **Success** — run `44260997901` |
-| Phase 7 visual evidence | Başarılı artifact |
-| Phase 9 entity visual evidence | Başarılı artifact |
-| Phase 10 simulation benchmark | Başarılı artifact |
+| Phase 7 visual evidence | Başarılı artifact — ID `14408037603` |
+| Phase 9 entity visual evidence | Başarılı artifact — ID `14408440897` |
+| Phase 10 simulation benchmark | Başarılı artifact — ID `14408620494` |
 
 Linux uyarısı pygame bağımlılığındaki `pkg_resources` API deprecation uyarısıdır; test başarısızlığı değildir. Windows koşusunda test uyarısı yoktur. GitHub Actions runner tarafında Node.js 20 deprecation uyarıları ayrıca görülmüştür; bunlar uygulama testlerinin başarısını etkilememiştir.
 

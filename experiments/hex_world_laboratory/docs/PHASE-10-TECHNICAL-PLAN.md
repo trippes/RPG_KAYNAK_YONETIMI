@@ -323,7 +323,7 @@ Her iş paketi küçük commitlerle çalışma dalına yazılacaktır. Her GitHu
 
 ## 10. Teknik kabul kapısı
 
-Aşama 10 kodlaması ancak bu teknik plan kullanıcı tarafından ayrıca onaylandıktan sonra başlayabilir.
+Bu teknik plan kullanıcı tarafından onaylanmış; 10.1–10.8 uygulaması tamamlanmıştır. Bu bölüm, uygulama öncesi onay kapısının tarihsel kaydıdır.
 
 Aşama teknik olarak kabul edilebilmek için:
 1. SimulationTickCoordinator sabit ve belgeli sırayı uygular.
@@ -341,7 +341,7 @@ Aşama teknik olarak kabul edilebilmek için:
 
 ## 11. İlgili mimari belge güncellemesi
 
-Uygulama onaylanıp tamamlandığında `docs/ARCHITECTURE_SPECIFICATION.md` içindeki Simulation ve Movement/Physics veri akışı bölümleri, gerçek tick sırasını ve render sınırını yansıtacak şekilde güncellenecektir. Bu belge, uygulama öncesi taslak hedef ile uygulama sonrası doğrulanmış sözleşmeyi birbirinden ayıracaktır.
+`docs/ARCHITECTURE_SPECIFICATION.md` içindeki Simulation ve Movement/Physics veri akışı bölümleri uygulanan tick sırasını ve render sınırını yansıtacak şekilde güncellenmiştir. Belge, hedef mimari ile Aşama 10'da doğrulanmış sözleşmeyi birbirinden ayırır.
 
 ---
 
