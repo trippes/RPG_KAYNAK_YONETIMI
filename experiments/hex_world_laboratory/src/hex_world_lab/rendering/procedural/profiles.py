@@ -121,7 +121,7 @@ def build_environment_profile(
     if cache is not None and not isinstance(cache, ProceduralSurfaceCache):
         raise TypeError("cache must be a ProceduralSurfaceCache or None")
 
-    from ..procedural_environment import (
+    from .._procedural_environment_legacy import (
         DEFAULT_PALETTE,
         EnvironmentArtPalette,
         _bush,
