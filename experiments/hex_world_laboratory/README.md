@@ -37,6 +37,8 @@ Aşama planlarının ve tarihsel kararların tam dizini Master Plan'dadır. Gene
 - [Aşama 8 — Mekânsal indeksleme](reports/PHASE-08-CLOSURE-REPORT.md)
 - [Aşama 9 — Varlıklar ve etkileşimler](reports/PHASE-09-CLOSURE-REPORT.md)
 - [Aşama 10 — Simülasyon orkestrasyonu](reports/PHASE-10-CLOSURE-REPORT.md)
+- [Aşama 11 — Başlangıç ölçüm raporu](reports/PHASE-11-BASELINE-REPORT.md)
+- [Aşama 11 — Stres ve regresyon doğrulama raporu](reports/PHASE-11-STRESS-VALIDATION-REPORT.md)
 
 Aşama 3.6/3.7 ve Aşama 6–9 alt aşamalarının uygulama, test, CI ve benchmark kanıtları ilgili birleşik kapanış raporlarına taşınmıştır. Silinen eski rapor adları artık kullanılmamalıdır.
 
@@ -87,4 +89,4 @@ Laboratuvarın tam test paketi ve benchmarkları GitHub Actions laboratuvar iş 
 
 ## Güncel durum
 
-**Aşamalar 0–10 tamamlandı ve kullanıcı tarafından kabul edildi.** Aşama 10 kapanış kaydı [PHASE-10-CLOSURE-REPORT.md](reports/PHASE-10-CLOSURE-REPORT.md) dosyasındadır. Sıradaki aşama Aşama 11 — Sağlamlık, regresyon ve performans doğrulamasıdır. [Aşama 11 Genel Planı](docs/PHASE-11-GENERAL-PLAN.md) hazırlanmış ve kullanıcı onayına sunulmuştur. Onay gelmeden teknik plan veya kod uygulaması başlatılmaz.
+**Aşamalar 0–10 tamamlandı ve kullanıcı tarafından kabul edildi.** Aşama 11'in 11.1–11.8 otomatik teknik doğrulaması tamamlandı: 774 laboratuvar testi geçti, Core Quality Linux/Windows başarılı, 36.000 tick ve üç oturumlu performans/bellek benchmarkları raporlandı. [Başlangıç ölçüm raporu](reports/PHASE-11-BASELINE-REPORT.md) ve [stres doğrulama raporu](reports/PHASE-11-STRESS-VALIDATION-REPORT.md) eklendi. Aşama 11'in resmen kapanması için [manuel kabul kontrol listesindeki](docs/PHASE-11-MANUAL-ACCEPTANCE-CHECKLIST.md) masaüstü görsel/işlevsel kontroller kullanıcı tarafından tamamlanmalıdır.

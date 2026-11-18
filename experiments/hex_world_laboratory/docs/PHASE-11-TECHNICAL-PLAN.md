@@ -4,8 +4,8 @@
 > **Proje:** Eldoria — Hex World Laboratory  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Plan dayanağı:** Onaylanmış `PHASE-11-GENERAL-PLAN.md`  
-> **Durum:** KULLANICI TARAFINDAN UYGULAMA İZNİ VERİLDİ — AŞAMA 11.1–11.8 YÜRÜTÜLÜYOR  
-> **Kod uygulaması:** Başlamadı  
+> **Durum:** 11.1–11.8 OTOMATİK DOĞRULAMA TAMAMLANDI — MASAÜSTÜ MANUEL KABUL BEKLENİYOR  
+> **Kod/test/benchmark uygulaması:** Tamamlandı  
 > **Tek laboratuvar başlatıcısı:** `python -m hex_world_lab`
 
 ---
@@ -324,3 +324,14 @@ Aşama 11 teknik kapanış için:
 ---
 
 **Nihai karar:** Aşama 11; mevcut Hex World Laboratory altyapısının kontrollü, deterministik ve ölçülebilir sağlamlık doğrulamasıdır. NPC/yoldaş/kaynak hareketi, AI, pathfinding ve ana oyuna entegrasyon bu aşamanın dışında kalır.
+
+
+## 8. Uygulama ve doğrulama kaydı
+
+- Doğrulanan kod commit'i: `7874ba566f34eed7f91bd6fa638ec8f8f9135196`.
+- Laboratuvar: 774 test geçti; 0 failure, 0 error, 0 skipped.
+- Hex World Laboratory CI: [44274231933](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44274231933) başarılı.
+- Core Quality Linux/Windows: [44274231885](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44274231885) başarılı.
+- Baseline: [PHASE-11-BASELINE-REPORT.md](../reports/PHASE-11-BASELINE-REPORT.md).
+- Stres doğrulaması: [PHASE-11-STRESS-VALIDATION-REPORT.md](../reports/PHASE-11-STRESS-VALIDATION-REPORT.md).
+- Manuel masaüstü kabulü [PHASE-11-MANUAL-ACCEPTANCE-CHECKLIST.md](PHASE-11-MANUAL-ACCEPTANCE-CHECKLIST.md) üzerinden kullanıcı tarafından tamamlanmayı bekliyor. Bu kabul gelmeden aşama kapatılmış sayılmaz.

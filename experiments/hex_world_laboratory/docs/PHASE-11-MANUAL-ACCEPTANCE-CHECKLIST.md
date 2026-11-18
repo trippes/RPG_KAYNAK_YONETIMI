@@ -1,6 +1,6 @@
 # Aşama 11 — Manuel Kabul Kontrol Listesi
 
-> **Durum:** TASLAK — TEKNİK PLAN ONAYI VE UYGULAMA SONRASI KULLANILACAK  
+> **Durum:** OTOMATİK DOĞRULAMA TAMAMLANDI — KULLANICI MASAÜSTÜ KABULÜ BEKLENİYOR  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Başlatıcı:** `python -m hex_world_lab`
 
@@ -46,12 +46,12 @@ Bu kontrol listesi, otomatik testlerin yerine geçmez. Kullanıcı tarafından m
 
 ## F. Kabul kaydı
 
-- [ ] Laboratuvar testleri başarılı.
-- [ ] Core Quality Linux başarılı.
-- [ ] Core Quality Windows başarılı.
-- [ ] Deterministik stress smoke ve tam stress profilleri raporlandı.
-- [ ] Benchmark ve bellek raporları incelendi.
-- [ ] Açık kritik/yüksek önem dereceli hata bulunmuyor veya açık istisna kararı alındı.
+- [x] Laboratuvar testleri başarılı (774/774; 0 failure/error/skip).
+- [x] Core Quality Linux başarılı.
+- [x] Core Quality Windows başarılı.
+- [x] Deterministik stress smoke ve tam stress profilleri raporlandı.
+- [x] Benchmark ve bellek raporları incelendi; üç bağımsız oturum kaydedildi.
+- [x] Otomatik CI'da kritik/yüksek önem dereceli test failure'ı bulunmadı.
 - [ ] Kullanıcı masaüstü görsel/işlevsel kabulünü verdi.
 
 **Kullanıcı kabul tarihi:** ____________________
@@ -63,3 +63,8 @@ ________________________________________________________________
 ________________________________________________________________
 
 **Kabul kararı:** BEKLİYOR / KABUL / DÜZELTME GEREKLİ
+
+
+**Otomatik kanıtlar:** [Laboratuvar CI 44274231933](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44274231933) · [Core Quality 44274231885](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44274231885)
+
+**Manuel kabul durumu:** Bekliyor. A–E bölümlerindeki görsel/işlevsel maddeler ve F bölümündeki son kullanıcı kabul kutusu masaüstü kontrolü olmadan işaretlenmeyecektir.
