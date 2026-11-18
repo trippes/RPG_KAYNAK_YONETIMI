@@ -5,8 +5,8 @@
 > **Depo:** `trippes/RPG_KAYNAK_YONETIMI`  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Hedef entegrasyon dalı:** `demo_eldoria`  
-> **Durum:** AŞAMA 0–13 KAPALI; AŞAMA 14 TEKNİK OLARAK TAMAMLANDI, MANUEL KABUL BEKLENİYOR
-> **Belge sürümü:** 4.2
+> **Durum:** AŞAMA 0–14 KAPALI
+> **Belge sürümü:** 4.3
 
 ## Aşama 12–14 kapsam ayrımı — 18 Kasım 2026
 
@@ -794,7 +794,7 @@ Bu liste tamamlanmadan laboratuvarın ana oyuna aktarılmaya hazır olduğu söy
 | 11 | Sağlamlık, regresyon ve performans doğrulaması | 11.1–11.8 teknik, otomatik ve manuel kabul tamamlandı; 774 laboratuvar testi, Linux/Windows Core Quality, stres/benchmark raporları ve kullanıcı masaüstü kabulü başarılı; 18 Kasım 2026 tarihinde kapatıldı |
 | 12 | Çevresel nesne mimarisi ve kodla çizilmiş ağaç/kaya/çalı prototipleri | 12.1–12.8 tamamlandı; 800 test, Linux/Windows CI, benchmark, görsel kanıt ve kullanıcı manuel kabulü başarılı; 18 Kasım 2026 tarihinde resmen kapatıldı |
 | 13 | Genel prosedürel grafik/çizim altyapısı | 13.1–13.8, 859/859 Pytest, Ruff, Linux/Windows CI, benchmark/görsel kanıt ve kullanıcı masaüstü kabulü tamamlandı; 18 Kasım 2026 tarihinde resmen kapatıldı |
-| 14 | İçerik veri altyapısı ve ELDORIA CONTENT EDITOR hazırlığı | Genel ve teknik plan kullanıcı tarafından onaylandı; 14.1 denetim, 14.2–14.7 model/codec/renderer/profil/map adapter/API altyapısı tamamlandı; 14.8 otomatik doğrulaması tamamlandı: 881/881 Lab Pytest, Ruff lint/format, Linux/Windows Core Quality (Linux 2,344 passed), benchmarklar ve [Phase 14 görsel artifact](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44396008498/artifacts/14470961143) başarılı; [uygulama raporu](../reports/PHASE-14-IMPLEMENTATION-REPORT.md); [manuel kabul listesi](PHASE-14-MANUAL-ACCEPTANCE-CHECKLIST.md) bekleniyor; editör GUI kapsam dışı |
+| 14 | İçerik veri altyapısı ve ELDORIA CONTENT EDITOR hazırlığı | 14.1–14.8 tamamlandı; 881/881 Lab Pytest, Ruff, Linux/Windows Core Quality (Linux 2.344 test), benchmark, görsel artifact ve 19 Kasım 2026 kullanıcı görsel kabulü başarılı; [kapanış raporu](../reports/PHASE-14-CLOSURE-REPORT.md); editör GUI kapsam dışı |
 | 15 | Nihai mimari, dokümantasyon ve entegrasyon hazırlığı | Önceki aşamalar sonrası ayrıca planlanıp onaylanacak |
 | 16 | Kontrollü demo entegrasyonu | Ayrı açık kullanıcı onayı gerektirir |
 
@@ -849,4 +849,4 @@ Dünya görsel zenginleştirmesi (arazi dokuları, bitki örtüsü, ağaç/kaya/
 | 3.7 | Güncellendi — 18 Kasım 2026 | Kullanıcı tüm masaüstü görsel/işlevsel testleri geçti olarak bildirdi; Aşama 13 resmen kapatıldı ve kapanış raporu eklendi |
 | 3.8 | Güncellendi — 18 Kasım 2026 | Aşama 13 kapanışı Master Plan tablosuna işlendi; Aşama 14 Content Editor Genel Planı hazırlandı ve kullanıcı onayına sunuldu; teknik plan ve uygulama başlamadı |
 | 3.9 | Güncellendi — 18 Kasım 2026 | Kullanıcı yönlendirmesiyle Aşama 14, editör arayüzü geliştirmek yerine gelecekteki ELDORIA CONTENT EDITOR için içerik veri altyapısı ve harita/yerleşim sözleşmelerinin hazırlanmasına odaklandı; masaüstü editör ayrı gelecek aşamaya bırakıldı |
-| 4.0 | Önceki sürüm | Aşama 14 Genel Planı kullanıcı tarafından onaylandı; 14.1 denetimi ve teknik plan hazırlandı; teknik plan onayı bekleniyordu |\n| 4.1 | Önceki sürüm | Aşama 14 teknik planı kullanıcı tarafından onaylandı; 14.2–14.7 content model, strict persistence, vektör profil geçişi, map placement ve runtime adapter uygulandı; 14.8 otomatik doğrulama bekleniyordu |\n| 4.2 | Güncellendi — 18 Kasım 2026 | Aşama 14 otomatik doğrulaması tamamlandı: 881/881 Lab testi, Linux 2,344 test, Windows Core Quality, Ruff, benchmark ve Phase 14 görsel artifact başarılı; kullanıcı manuel kabulü bekleniyor |
+| 4.0 | Önceki sürüm | Aşama 14 Genel Planı kullanıcı tarafından onaylandı; 14.1 denetimi ve teknik plan hazırlandı; teknik plan onayı bekleniyordu |\n| 4.1 | Önceki sürüm | Aşama 14 teknik planı kullanıcı tarafından onaylandı; 14.2–14.7 content model, strict persistence, vektör profil geçişi, map placement ve runtime adapter uygulandı; 14.8 otomatik doğrulama bekleniyordu |\n| 4.2 | Önceki sürüm | Aşama 14 otomatik doğrulaması tamamlandı: 881/881 Lab testi, Linux 2,344 test, Windows Core Quality, Ruff, benchmark ve Phase 14 görsel artifact başarılı; kullanıcı manuel kabulü bekleniyordu |\n| 4.3 | Güncellendi — 19 Kasım 2026 | Kullanıcı görsel kabulini verdi; Aşama 14 teknik, otomatik ve manuel kabul kapıları tamamlandı ve resmen kapatıldı; kapanış raporu eklendi |
