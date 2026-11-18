@@ -55,9 +55,18 @@ def test_all_profiles_are_alpha_surfaces_with_positive_coverage():
         assert pygame.mask.from_surface(surface).count() > 0
 
 
+def test_profile_builder_accepts_stable_string_seeds():
+    first = build_environment_profiles(seed="oak-grove")
+    second = build_environment_profiles(seed="oak-grove")
+    assert _pixels(first["grass"]) == _pixels(second["grass"])
+    assert _pixels(first["flower"]) == _pixels(second["flower"])
+
+
 def test_profile_builder_rejects_invalid_seed_and_supersampling():
     with pytest.raises(TypeError):
-        build_environment_profiles(seed="not-an-integer")
+        build_environment_profiles(seed=True)
+    with pytest.raises(TypeError):
+        build_environment_profiles(seed=1.5)
     with pytest.raises(ValueError):
         build_environment_profiles(supersampling=0)
 
