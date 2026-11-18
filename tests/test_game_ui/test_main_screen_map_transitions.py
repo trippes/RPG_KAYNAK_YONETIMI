@@ -32,6 +32,14 @@ class _TransitionService:
     def state(self):
         return SimpleNamespace(actors=(self.actor,))
 
+    def legacy_actor_spatial_state(self, actor_id):
+        if actor_id != self.actor.actor_id or self.actor.location_id is None:
+            return None
+        return SimpleNamespace(
+            location_id=self.actor.location_id,
+            position=self.actor.position,
+        )
+
     def place_actor(self, actor_id, location_id):
         self.placed = (actor_id, location_id)
         self.actor.location_id = location_id
