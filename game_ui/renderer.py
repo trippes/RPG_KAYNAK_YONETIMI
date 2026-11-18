@@ -562,7 +562,10 @@ class Renderer:
         location = "Bilinmeyen konum"
         if stats is not None:
             actor = service.actor(actor_id)
-            spatial = service.legacy_actor_spatial_state(actor_id)
+            spatial = (
+                service.legacy_actor_spatial_state(actor_id)
+                if actor is not None else None
+            )
             if actor is not None and spatial is not None:
                 world_map = service.application.holder.current.movement.map_for(actor.world_id)
                 if world_map is not None and world_map.get(spatial.location_id) is not None:
