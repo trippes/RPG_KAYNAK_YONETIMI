@@ -1,6 +1,4 @@
 """Small reusable drawing primitives built on the procedural canvas."""
-from __future__ import annotations
-
 import math
 from collections.abc import Sequence
 
