@@ -14,6 +14,7 @@ from .document_profiles import build_profile_document
 from .document_renderer import render_visual_document
 from .variation import normalize_seed
 
+
 @dataclass(frozen=True, slots=True)
 class ProceduralProfile:
     """Visual metadata for one generated environmental profile."""
@@ -83,9 +84,7 @@ def build_environment_profile(
     profile_seed = normalized_seed if profile_key in ("grass", "flower") else 0
 
     def factory() -> pygame.Surface:
-        document = build_profile_document(
-            profile_key, seed=profile_seed, palette=selected_palette
-        )
+        document = build_profile_document(profile_key, seed=profile_seed, palette=selected_palette)
         scale = 3 if profile_key in ("tree", "rock", "bush") else supersampling
         return render_visual_document(document, supersampling=scale)
 
