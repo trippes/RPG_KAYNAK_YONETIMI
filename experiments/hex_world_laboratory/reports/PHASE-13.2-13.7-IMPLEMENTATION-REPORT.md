@@ -58,19 +58,37 @@ Ek entegrasyon kontrolleri:
 - Legacy tree/rock/bush piksel çıktılarının korunması.
 - Seed tekrarlanabilirliği ve cache anahtar ayrımı.
 
-İlk tam test koşusu üç uyumsuzluğu ortaya çıkardı: iki eski sahne beklentisi yeni dekoratif profillerle güncellenmeliydi; seed testi her örnekte yanlışlıkla yeni RNG oluşturuyordu. Üçü de düzeltildi. Bu rapor oluşturulurken düzeltilmiş son commit için laboratuvar CI yeniden çalıştırma kuyruğundadır; bu nedenle tam test sonucu, benchmark sonucu veya görsel artifact başarısı henüz ilan edilmemektedir.
+İlk tam test koşusu üç uyumsuzluğu ortaya çıkardı: iki eski sahne beklentisi yeni dekoratif profillerle güncellenmeliydi; seed testi her örnekte yanlışlıkla yeni RNG oluşturuyordu. Üçü de düzeltildi. Son doğrulanan kod HEAD'i `e051183d4a1bd1dcab63accaeb17d2876d24bc61` üzerinde laboratuvar CI başarıyla tamamlandı: **859/859 Pytest testi geçti** (97.95 saniye); tüm mevcut benchmarklar, Phase 12 benchmark/görsel kanıtı ve Phase 13 benchmark/görsel kanıtı başarılı oldu. Core Quality Linux ve Windows işlerinin ikisi de başarılı tamamlandı; her ikisinde Ruff lint ve format kontrolleri de geçti.
 
-## 4. 13.8 tamamlanma kapıları
+## 4. Performans ve görsel kanıt sonuçları
 
-1. Düzeltilmiş HEAD üzerinde tam Pytest paketi başarılı.
-2. Ruff lint ve format kontrolleri başarılı.
-3. Linux ve Windows Core Quality başarılı.
-4. Mevcut benchmarklar ve Phase 13 profil/cache benchmarkı başarılı; cache yalnızca ölçümle gerekçelendirildiği takdirde tutulur.
-5. Beş profil PNG'leri, entegre sahne, F3 ve F4 görsel kanıtları üretilip artifact olarak yüklenir.
-6. Kullanıcı masaüstü görsel kabulünü verir.
-7. Resmî kapanış raporu ve Master Plan güncellemesi hazırlanır.
+Phase 13 cache benchmarkı 3 oturum ve profil başına 20 tekrar üzerinden çalıştı. Ölçümde uncached üretim ile sıcak cache hit karşılaştırıldı:
 
-**Bu rapor Aşama 13'ü kapatmaz.** 13.8 ve kullanıcı görsel kabulü tamamlanana kadar aşama açık kalır.
+| Profil | Üretim medyanı | Cache hit medyanı | Hızlanma | Surface belleği |
+|---|---:|---:|---:|---:|
+| Tree | 518.506 µs | 0.572 µs | 905.92× | 88,704 B |
+| Rock | 103.565 µs | 0.485 µs | 213.67× | 12,672 B |
+| Bush | 117.109 µs | 0.471 µs | 248.53× | 20,416 B |
+| Grass | 252.494 µs | 0.490 µs | 515.03× | 9,216 B |
+| Flower | 171.967 µs | 0.473 µs | 363.41× | 10,752 B |
+
+Beş profilin toplam yaklaşık Surface belleği **141,760 B (138.4 KiB)**; benchmarkta cache eviction görülmedi. Ölçülen tekrar kullanım kazancı nedeniyle bounded cache korunmuştur. Bu değerler sıcak cache hit ve profil üretim maliyetlerini karşılaştırır; tüm oyun sürecinin RAM tüketimi değildir.
+
+Görsel artifact paketi: [Phase 13 procedural validation](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44351527604/artifacts/14448852131). Paket beş profil PNG'si, entegre sahne, F3 collider overlay, F4 anchor/bounds overlay ve benchmark JSON içerir.
+
+## 5. 13.8 tamamlanma kapıları
+
+<badge color="success">Otomatik doğrulama tamamlandı</badge>
+
+1. Tam Pytest paketi: 859/859 başarılı.
+2. Ruff lint ve format: laboratuvar, Linux Core Quality ve Windows Core Quality başarılı.
+3. Linux ve Windows Core Quality: başarılı.
+4. Önceki aşamaların benchmarkları ve Phase 13 profil/cache benchmarkı: başarılı.
+5. Beş profil PNG'si, entegre sahne, F3/F4 görsel kanıtları üretildi ve artifact olarak yüklendi.
+6. Kullanıcı masaüstü görsel kabulü: **bekleniyor**.
+7. Resmî kapanış raporu ve Master Plan nihai kapanışı, kullanıcı görsel kabulinden sonra hazırlanacak.
+
+**Bu rapor Aşama 13'ü kapatmaz.** Otomatik 13.8 doğrulaması tamamlandı; kullanıcı masaüstü kabulü beklenmektedir.
 
 ## 5. Dal güvenliği
 
