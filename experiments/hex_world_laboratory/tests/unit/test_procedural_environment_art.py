@@ -17,8 +17,14 @@ def test_environment_profiles_are_drawn_without_loading_any_raster_file(monkeypa
     renderer = PygameWorldRenderer()
     sizes = register_environment_assets(renderer)
 
-    assert sizes == {"tree": (132, 168), "rock": (66, 48), "bush": (88, 58)}
-    assert set(renderer._sprite_assets) == {"tree", "rock", "bush"}
+    assert sizes == {
+        "tree": (132, 168),
+        "rock": (66, 48),
+        "bush": (88, 58),
+        "grass": (64, 36),
+        "flower": (56, 48),
+    }
+    assert set(renderer._sprite_assets) == {"tree", "rock", "bush", "grass", "flower"}
     assert all(isinstance(asset.surface, pygame.Surface) for asset in renderer._sprite_assets.values())
 
 
