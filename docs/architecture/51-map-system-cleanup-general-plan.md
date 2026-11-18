@@ -6,7 +6,7 @@
 | Çalışma dalı | `experiment/map-cleanup` |
 | Kaynak dal | `demo_eldoria` |
 | Başlangıç commit'i | `7d53d431d5c3639fd95d273de9043b64483a5125` |
-| Durum | Genel plan onaylandı; teknik plan easter egg kararıyla revize edildi |
+| Durum | Uygulama onaylandı; 16.1 teknik baseline raporlandı, manuel kabul ve sıralama kararı bekliyor |
 | Kapsam | Ana altıgen dünya sisteminin sadeleştirilmesi ve tek kare harita easter egg'inin korunması |
 
 ## 1. Amaç ve ürün kararı
@@ -52,7 +52,7 @@ Bu envanter başlangıç keşfidir; kare harita adaylarından hangisinin korunac
 Harita modülleri, import/call ilişkileri, giriş noktaları, testler, içerik dosyaları ve kayıt referansları çıkarılır. Ana altıgen dünya için gerekli parçalar, tek kare easter egg için gereken asgari parçalar, uyumluluk amaçlı bileşenler ve sahipsiz olduğu düşünülen parçalar ayrı sınıflandırılır.
 
 ### 16.2 — Harita veri paketinin denetimi
-Tüm harita JSON dosyaları, schema sürümleri, benzersiz map ID'leri, geçiş hedefleri, dünya yerleşimleri, başlangıç konumları, hücre koordinatları ve asset/placement referansları doğrulanır. Ana altıgen dünya içerikleri korunur. Kare harita adaylarından tek bir easter egg haritası seçilir; diğer kare içerikler ancak manifest/kod/test/save bağımlılıkları incelendikten sonra deprecate/remove adayı olabilir.
+Tüm harita JSON dosyaları, schema sürümleri, benzersiz map ID'leri, geçiş hedefleri, dünya yerleşimleri, başlangıç konumları, hücre koordinatları ve asset/placement referansları doğrulanır. Ana altıgen dünya içerikleri korunur. Kare harita adaylarından tek bir easter egg haritası seçilmesi, hex gameplay runtime'ının authoritative konum sahibi olması ve NPC/kaynak/market/quest/save referanslarının yeni sahipliğinin belirlenmesi sonrasına bağlıdır. Bu migration tamamlanmadan mevcut dokuz kare harita içeriğinden sekizi kaldırılamaz.
 
 ### 16.3 — Runtime ve koordinat sahipliği
 Ana altıgen dünya için authoritative konum/runtime zinciri belgelenir. Kare easter egg'in yükleme ve sunum için ihtiyaç duyduğu minimum runtime belirlenir. Kare harita `(x, y)`, altıgen axial `(q, r)`, `LocalHexPosition`, `EntityPosition`, dünya yerleşimi ve piksel/screen koordinatları ayrı sözleşmeler olarak ele alınır. Kare/hex koordinat dönüşümü veya örtük state paylaşımı yapılmaz.
@@ -61,7 +61,7 @@ Ana altıgen dünya için authoritative konum/runtime zinciri belgelenir. Kare e
 Normal gameplay'in altıgen dünya görünümü ve geçişleri incelenir. Kare harita ekranının tek easter egg sahnesi için gereken minimum sunum yolu ayrıştırılır. Olası easter egg erişim/çıkış biçimi bu aşamada ürün tasarımı olarak varsayılmaz. Görsel sunumun authoritative gameplay state'i değiştirmemesi ilkesi korunur.
 
 ### 16.5 — Kontrollü sadeleştirme
-Tek kare harita için gerekli veri, loader, render/UI ve gerekiyorsa sınırlı etkileşim yüzeyi korunur. Çoklu kare harita katalogları, gereksiz dünya grafı/runtime bileşenleri ve kullanılmayan kare içerikler yalnızca bağımlılık, save ve test kanıtıyla deprecate/remove edilir. Önce test/çağrı kanıtı, sonra küçük refactor veya deprecation, en son kaldırma uygulanır.
+Hex gameplay state ownership ve içerik/save migration tamamlandıktan sonra tek kare harita için gerekli veri, loader, render/UI ve gerekiyorsa sınırlı etkileşim yüzeyi korunur. Çoklu kare harita katalogları, gereksiz dünya grafı/runtime bileşenleri ve kullanılmayan kare içerikler yalnızca bağımlılık, save ve test kanıtıyla deprecate/remove edilir. Önce test/çağrı kanıtı, sonra küçük refactor veya deprecation, en son kaldırma uygulanır.
 
 ### 16.6 — Regresyon ve kullanıcı kabulü
 Temiz kurulum, otomatik testler, içerik paketi yükleme, ana altıgen dünya dolaşımı, geçişler, hareket, çarpışma, yerleşimler, kamera, kayıt/yükleme ve mevcut oynanabilir akış doğrulanır. Seçilmiş tek kare easter egg haritasının yüklenmesi/gösterilmesi de doğrulanır. Kullanıcı görsel ve işlevsel kabulü tamamlamadan aşama kapanmaz.
