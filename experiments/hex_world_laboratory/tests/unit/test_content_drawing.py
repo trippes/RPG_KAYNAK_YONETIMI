@@ -6,7 +6,6 @@ from hex_world_lab.content import (
     ContentCategory,
     ContentDefinition,
     ContentLibrary,
-    ContentPlacement,
     DrawingStyle,
     Layer,
     Point,
