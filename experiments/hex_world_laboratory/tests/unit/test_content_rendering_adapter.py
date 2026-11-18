@@ -14,10 +14,10 @@ from hex_world_lab.content import (
     PolygonElement,
     VisualDocument,
 )
-from hex_world_lab.rendering.content_adapters import definition_to_environment, to_environment_scene
 from hex_world_lab.content.collision import CircleCollider
 from hex_world_lab.content.map_document import MapContentDocument
 from hex_world_lab.geometry import HexLayout, HexOrientation, WorldPoint
+from hex_world_lab.rendering.content_adapters import definition_to_environment, to_environment_scene
 from hex_world_lab.rendering.environment_assets import register_content_library_assets
 from hex_world_lab.rendering.procedural import (
     ProceduralSurfaceCache,
