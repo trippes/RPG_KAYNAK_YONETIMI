@@ -1,6 +1,3 @@
-import os
-os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
-os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 import pygame
 
 from hex_world_lab.application.movement_demo import MovementDemo
