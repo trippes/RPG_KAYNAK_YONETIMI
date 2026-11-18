@@ -1,6 +1,4 @@
 """Stable seed normalization and isolated random generators."""
-from __future__ import annotations
-
 import hashlib
 import random
 
