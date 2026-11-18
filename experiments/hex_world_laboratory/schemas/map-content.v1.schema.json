@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://eldoria.invalid/schemas/map-content.v1.schema.json",
+  "title": "Eldoria Map Content Document v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "kind", "map", "placements"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "kind": { "const": "eldoria_map_document" },
+    "map": { "$ref": "#/$defs/mapV1" },
+    "placements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["instance_id", "content_id", "position"],
+        "properties": {
+          "instance_id": { "type": "string", "minLength": 1 },
+          "content_id": { "type": "string", "minLength": 1 },
+          "position": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["x", "y"],
+            "properties": {
+              "x": { "type": "number" },
+              "y": { "type": "number" }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "mapV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "world_id", "map_id", "name", "layout", "cells"],
+      "properties": {
+        "schema_version": { "const": 1 },
+        "world_id": { "type": "string", "minLength": 1 },
+        "map_id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "layout": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["orientation", "radius", "origin"],
+          "properties": {
+            "orientation": { "enum": ["pointy_top", "flat_top"] },
+            "radius": { "type": "number", "exclusiveMinimum": 0 },
+            "origin": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["x", "y"],
+              "properties": {
+                "x": { "type": "number" },
+                "y": { "type": "number" }
+              }
+            }
+          }
+        },
+        "cells": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["q", "r", "terrain_id", "is_walkable", "has_obstacle", "metadata"],
+            "properties": {
+              "q": { "type": "integer" },
+              "r": { "type": "integer" },
+              "terrain_id": { "type": "string", "minLength": 1 },
+              "is_walkable": { "type": "boolean" },
+              "has_obstacle": { "type": "boolean" },
+              "metadata": { "type": ["object", "null"] }
+            }
+          }
+        }
+      }
+    }
+  }
+}
