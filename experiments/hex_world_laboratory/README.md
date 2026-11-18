@@ -77,7 +77,7 @@ Bu tek giriş noktası güncel Entity kabul sahnesini (oyuncu, NPC, kaynak ve NP
 - [Aşama 12 genel planı](docs/PHASE-12-GENERAL-PLAN.md)
 - [Aşama 12 teknik planı](docs/PHASE-12-TECHNICAL-PLAN.md)
 - [Aşama 12 manuel kabul kontrol listesi](docs/PHASE-12-MANUAL-ACCEPTANCE-CHECKLIST.md)
-- [Aşama 12 uygulama ve doğrulama raporu](reports/PHASE-12-IMPLEMENTATION-VALIDATION-REPORT.md)
+- [Aşama 12 uygulama, doğrulama ve kapanış raporu](reports/PHASE-12-IMPLEMENTATION-VALIDATION-REPORT.md)
 - Ağaç, kaya ve çalı görselleri `rendering/procedural_environment.py` içindeki deterministik Pygame çizicileriyle runtime sırasında üretilir. Hazır PNG/JPG/WebP dosyası yüklenmez.
 
 ## Test
@@ -99,4 +99,4 @@ Laboratuvarın tam test paketi ve benchmarkları GitHub Actions laboratuvar iş 
 
 ## Güncel durum
 
-**Aşamalar 0–11 tamamlandı ve kullanıcı tarafından kabul edildi.** Aşama 11'in 774 laboratuvar testi, 36.000 tick stres doğrulaması, üç oturumlu performans/bellek ölçümleri ve Linux/Windows CI kontrolleri başarıyla tamamlandı. Aşama 12 prosedürel çizim revizyonu uygulandı ve otomatik doğrulandı: 800 laboratuvar testi, Linux/Windows Core Quality (2.263'er test), üç oturumlu 10/100/1.000 nesne benchmarkı ve beş görsel kanıt başarılı. [Doğrulama raporu](reports/PHASE-12-IMPLEMENTATION-VALIDATION-REPORT.md) ve [CI artifact'i](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44323325450/artifacts/14436541384). Aşamanın resmen kapanması için [manuel kabul kontrol listesindeki](docs/PHASE-12-MANUAL-ACCEPTANCE-CHECKLIST.md) kullanıcı görsel/işlevsel kontrolleri bekleniyor.
+**Aşamalar 0–12 tamamlandı ve kullanıcı tarafından kabul edildi.** Aşama 11'in 774 laboratuvar testi, 36.000 tick stres doğrulaması, üç oturumlu performans/bellek ölçümleri ve Linux/Windows CI kontrolleri başarıyla tamamlandı. Aşama 12 prosedürel çizim revizyonu uygulandı ve otomatik doğrulandı: 800 laboratuvar testi, Linux/Windows Core Quality (2.263'er test), üç oturumlu 10/100/1.000 nesne benchmarkı ve beş görsel kanıt başarılı. [Doğrulama raporu](reports/PHASE-12-IMPLEMENTATION-VALIDATION-REPORT.md) ve [CI artifact'i](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44323325450/artifacts/14436541384). Kullanıcı 18 Kasım 2026 tarihinde manuel görsel/işlevsel kabulü verdi. Son ağaç gövdesi ve kaya collider hizalaması F3 görünümünde doğrulanarak kabul edildi; Aşama 12 resmen kapatıldı. [Manuel kabul kontrol listesi](docs/PHASE-12-MANUAL-ACCEPTANCE-CHECKLIST.md).
