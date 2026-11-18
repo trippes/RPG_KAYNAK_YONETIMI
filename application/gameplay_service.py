@@ -942,6 +942,10 @@ class GameplayService:
     def actor(self, actor_id: str) -> ActorView | None:
         return self._current_bundle().actors.get(actor_id)
 
+    def legacy_actor_spatial_state(self, actor_id: str):
+        """Return square-map position only when the legacy spatial adapter is active."""
+        return self._current_bundle().actors.legacy_spatial_state(actor_id)
+
     @staticmethod
     def _require_legacy_actor_location(bundle, actor_id: str) -> str:
         """Resolve an actor's square location only through the legacy boundary."""
