@@ -15,6 +15,16 @@ from .hex_pathfinding import HexPathfinder
 
 
 @dataclass(frozen=True, slots=True)
+class _HexEntityState:
+    """Non-spatial identity and movement data stored by the runtime."""
+
+    entity_id: str
+    kind: str
+    profile: MovementProfile
+    active: bool
+
+
+@dataclass(frozen=True, slots=True)
 class HexMovableEntity:
     entity_id: str
     kind: str
@@ -74,7 +84,7 @@ class HexWorldRuntime:
         self._maps = maps
         self._world_map = world_map_definition
         self._occupancy = occupancy or HexOccupancyRegistry()
-        self._entities: dict[str, HexMovableEntity] = {}
+        self._entities: dict[str, _HexEntityState] = {}
         self._patrol_indices: dict[str, int] = {}
 
     @property
@@ -105,28 +115,49 @@ class HexWorldRuntime:
             raise TypeError("profile must be a MovementProfile.")
         if map_definition.is_blocked(position.cell) and not profile.can_traverse_blocked_cells:
             raise ValueError("Entity cannot be placed on a blocked cell.")
-        entity = HexMovableEntity(entity_id, kind, position, profile, active)
-        self._occupancy.add(HexOccupant(
+        occupant = HexOccupant(
             entity_id, position, blocks_movement, blocks_occupancy, kind,
-        ), ignore_blockers=profile.ignores_occupancy)
-        self._entities[entity_id] = entity
-        return entity
+        )
+        self._occupancy.add(
+            occupant, ignore_blockers=profile.ignores_occupancy
+        )
+        self._entities[entity_id] = _HexEntityState(
+            entity_id, kind, profile, active
+        )
+        return self.entity(entity_id)
 
-    def entity(self, entity_id: str) -> HexMovableEntity:
+    def _entity_state(self, entity_id: str) -> _HexEntityState:
         try:
             return self._entities[entity_id]
         except KeyError as error:
             raise KeyError(f"Unknown hex entity: {entity_id}") from error
 
+    def entity(self, entity_id: str) -> HexMovableEntity:
+        """Return a read-only entity view with position derived from occupancy."""
+        state = self._entity_state(entity_id)
+        occupant = self._occupancy.get(entity_id)
+        if occupant is None:
+            raise RuntimeError(
+                f"Hex entity has no authoritative occupancy record: {entity_id}"
+            )
+        if occupant.kind != state.kind:
+            raise RuntimeError(
+                f"Hex entity and occupancy kind mismatch: {entity_id}"
+            )
+        return HexMovableEntity(
+            state.entity_id, state.kind, occupant.position,
+            state.profile, state.active,
+        )
+
     def entities(self) -> tuple[HexMovableEntity, ...]:
-        return tuple(self._entities[key] for key in sorted(self._entities))
+        return tuple(self.entity(key) for key in sorted(self._entities))
 
     def set_active(self, entity_id: str, active: bool) -> HexMovableEntity:
         if not isinstance(active, bool):
             raise TypeError("active must be boolean.")
-        updated = replace(self.entity(entity_id), active=active)
-        self._entities[entity_id] = updated
-        return updated
+        state = self._entity_state(entity_id)
+        self._entities[entity_id] = replace(state, active=active)
+        return self.entity(entity_id)
 
     def move(self, entity_id: str, direction: HexDirection) -> MovementResult:
         entity = self.entity(entity_id)
@@ -150,8 +181,10 @@ class HexWorldRuntime:
             return result
         if not entity.profile.ignores_occupancy and not self._occupancy.can_enter(destination, excluding=entity_id):
             return MovementResult(False, entity.position, MovementFailureReason.OCCUPIED_CELL, "Target cell is occupied or movement-blocked.")
-        self._occupancy.move(entity_id, destination, ignore_blockers=entity.profile.ignores_occupancy)
-        self._entities[entity_id] = replace(entity, position=destination)
+        self._occupancy.move(
+            entity_id, destination,
+            ignore_blockers=entity.profile.ignores_occupancy,
+        )
         return MovementResult(True, destination)
 
     def path_to(self, entity_id: str, goal: LocalHexPosition):
@@ -228,8 +261,10 @@ class HexWorldRuntime:
             return MovementResult(False, entity.position, MovementFailureReason.BLOCKED_CELL, "Destination cell is blocked.")
         if not entity.profile.ignores_occupancy and not self._occupancy.can_enter(target, excluding=entity_id):
             return MovementResult(False, entity.position, MovementFailureReason.OCCUPIED_CELL, "Destination cell is occupied or movement-blocked.")
-        self._occupancy.move(entity_id, target, ignore_blockers=entity.profile.ignores_occupancy)
-        self._entities[entity_id] = replace(entity, position=target)
+        self._occupancy.move(
+            entity_id, target,
+            ignore_blockers=entity.profile.ignores_occupancy,
+        )
         return MovementResult(True, target)
 
     def transition(self, entity_id: str, transition_id: str) -> MovementResult:
