@@ -5,15 +5,15 @@
 > **Depo:** `trippes/RPG_KAYNAK_YONETIMI`  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Hedef entegrasyon dalı:** `demo_eldoria`  
-> **Durum:** AŞAMA 0–12 KAPALI — AŞAMA 13 GENEL PLANI HAZIR, KULLANICI ONAYI BEKLİYOR
-> **Belge sürümü:** 3.2
+> **Durum:** AŞAMA 0–12 KAPALI — AŞAMA 13 GENEL VE TEKNİK PLANI HAZIR, TEKNİK PLAN KULLANICI ONAYI BEKLİYOR
+> **Belge sürümü:** 3.3
 
 ## Aşama 12–14 kapsam ayrımı — 18 Kasım 2026
 
 Aşama 12 yalnızca çevresel nesne mimarisi ve kodla çizilmiş ağaç, kaya, çalı prototiplerini kapsar. Hazır PNG/JPG/WebP kullanılmaz; Pygame çizim primitifleri ve deterministik geometri kullanılır. Genel amaçlı çizim motoru ve Content Editor bu aşamanın dışındadır. Aşama 13 genel prosedürel grafik/çizim altyapısı; Aşama 14 Content Editor ve görsel düzenleme araçlarıdır. Her aşama ayrıca planlanıp onaylanır. Önceki PNG tabanlı Aşama 12 görseli kabul edilmemiştir. Prosedürel revizyonun 800 laboratuvar testi, Linux/Windows Core Quality, benchmark ve görsel artifact kontrolleri başarılıdır. Kullanıcı 18 Kasım 2026 tarihinde ağaç gövdesi/yaprak ayrımı ile kaya görseli/çarpışma hizalamasını masaüstünde kabul etmiş; Aşama 12 resmen kapatılmıştır.
 
 
-**Aşama 13 genel planı:** [PHASE-13-GENERAL-PLAN.md](PHASE-13-GENERAL-PLAN.md) hazırlandı. Kullanıcı onayı bekleniyor; teknik plan ve uygulama henüz başlamadı.
+**Aşama 13 planları:** [PHASE-13-GENERAL-PLAN.md](PHASE-13-GENERAL-PLAN.md) kullanıcı tarafından onaylandı. [PHASE-13-TECHNICAL-PLAN.md](PHASE-13-TECHNICAL-PLAN.md) hazırlandı ve teknik plan onayı bekleniyor; uygulama başlamadı.
 ---
 
 ## 1. Belgenin amacı ve bağlayıcılığı
@@ -793,7 +793,7 @@ Bu liste tamamlanmadan laboratuvarın ana oyuna aktarılmaya hazır olduğu söy
 | 10 | Simülasyon orkestrasyonu ve dünya bütünlüğü | 10.1–10.8 teknik uygulama, 759 laboratuvar testi, Linux/Windows Core Quality (2.222'şer test), benchmark/artifact ve kullanıcı görsel kabulü başarılı; 18 Kasım 2026 tarihinde kapatıldı |
 | 11 | Sağlamlık, regresyon ve performans doğrulaması | 11.1–11.8 teknik, otomatik ve manuel kabul tamamlandı; 774 laboratuvar testi, Linux/Windows Core Quality, stres/benchmark raporları ve kullanıcı masaüstü kabulü başarılı; 18 Kasım 2026 tarihinde kapatıldı |
 | 12 | Çevresel nesne mimarisi ve kodla çizilmiş ağaç/kaya/çalı prototipleri | 12.1–12.8 tamamlandı; 800 test, Linux/Windows CI, benchmark, görsel kanıt ve kullanıcı manuel kabulü başarılı; 18 Kasım 2026 tarihinde resmen kapatıldı |
-| 13 | Genel prosedürel grafik/çizim altyapısı | Genel plan hazır; kullanıcı onayı bekleniyor; teknik plan ve uygulama başlamadı |
+| 13 | Genel prosedürel grafik/çizim altyapısı | Genel plan onaylandı; teknik plan hazır ve kullanıcı onayı bekleniyor; uygulama başlamadı |
 | 14 | Content Editor ve görsel düzenleme araçları | Gelecek aşama; ayrıca planlanıp onaylanacak |
 | 15 | Nihai mimari, dokümantasyon ve entegrasyon hazırlığı | Önceki aşamalar sonrası ayrıca planlanıp onaylanacak |
 | 16 | Kontrollü demo entegrasyonu | Ayrı açık kullanıcı onayı gerektirir |
@@ -842,3 +842,4 @@ Dünya görsel zenginleştirmesi (arazi dokuları, bitki örtüsü, ağaç/kaya/
 | 3.0 | Güncellendi — 18 Kasım 2026 | Aşama 11.1–11.8 otomatik teknik doğrulaması, 774 laboratuvar testi, Linux/Windows Core Quality ve üç oturumlu benchmarklar tamamlandı; kullanıcı masaüstü kabulü bekleniyor |
 | 3.1 | Güncellendi — 18 Kasım 2026 | Kullanıcı masaüstü görsel/işlevsel kabulünü verdi; Aşama 11 resmen kapatıldı ve kapanış raporu eklendi |
 | 3.2 | Güncellendi — 18 Kasım 2026 | Aşama 12 resmî kapanışı ve Aşama 13 genel planı bağlantısı/durumu işlendi; Aşama 13 kullanıcı onayı bekliyor |
+| 3.3 | Güncellendi — 18 Kasım 2026 | Aşama 13 genel planı kullanıcı tarafından onaylandı; depo/CI/Context7 denetimi sonrası teknik plan hazırlandı; teknik plan onayı bekleniyor, uygulama başlamadı |
