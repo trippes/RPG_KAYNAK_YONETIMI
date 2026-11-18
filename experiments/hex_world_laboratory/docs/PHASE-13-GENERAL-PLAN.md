@@ -5,7 +5,7 @@
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Ön koşul:** Aşama 12 resmen kapatıldı (18 Kasım 2026)  
 > **Durum:** KULLANICI TARAFINDAN ONAYLANDI — 18 KASIM 2026  
-> **Uygulama durumu:** Başlamadı
+> **Uygulama durumu:** 13.1–13.8 otomatik doğrulama tamamlandı; kullanıcı masaüstü görsel kabulü bekleniyor
 
 ## 1. Amaç ve gerekçe
 
@@ -285,6 +285,8 @@ Aşama 13 ancak aşağıdaki koşulların tamamı sağlandığında kapanışa h
 - Her GitHub yazma işleminden önce branch HEAD ve hedef dosya SHA/varlık durumu doğrulanır.
 - Yazma işleminde branch açıkça belirtilir; işlem sonrası commit SHA ve korunan dalların HEAD'leri yeniden kontrol edilir.
 
-## 13. Sonraki adım
+## 13. Uygulama durumu ve sonraki adım
 
-Kullanıcı bu genel planı onaylarsa sıradaki adım, Aşama 13 teknik mimari planını hazırlamaktır. Teknik plan öncesinde kodlama yapılmayacaktır.
+Genel plan ve teknik plan kullanıcı tarafından onaylandı. 13.1 denetimi, 13.2–13.7 uygulaması ve 13.8 otomatik doğrulama tamamlandı. Son doğrulanan kod HEAD'inde 859/859 Pytest testi, Ruff lint/format, Linux ve Windows Core Quality, benchmarklar ve Phase 13 görsel artifact üretimi başarılıdır. Uygulama ayrıntıları [PHASE-13.2-13.7-IMPLEMENTATION-REPORT.md](../reports/PHASE-13.2-13.7-IMPLEMENTATION-REPORT.md) raporundadır.
+
+Sıradaki ve bu aşamadaki son kullanıcı adımı, masaüstünde beş profili, sahne bütünleşmesini, F3 collider overlay'ini ve F4 anchor/bounds overlay'ini görsel olarak kabul etmektir. Bu kabulden sonra resmî kapanış raporu hazırlanır.
