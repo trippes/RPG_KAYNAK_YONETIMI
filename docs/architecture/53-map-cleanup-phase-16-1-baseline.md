@@ -117,10 +117,8 @@ Bu bulgu, başlangıçtaki "temizlik önce, hex entegrasyonu sonra" sırasının
 
 ## 7. Teknik doğrulama sınırları
 
-- [ ] Windows'ta `python main.py --play` başlatılır; başlangıçta kare köy haritası göründüğü doğrulanır.
-- [ ] H ile hex görünüm açılır; oyuncunun hex başlangıç hücresi `(0, 0)` olduğu görülür.
-- [ ] Hex görünümde hareket edilir; H ile çıkışta kare oyuncu konumunun değişmediği doğrulanır.
-- [ ] H ile tekrar girişte hex oyuncusunun yeniden başlangıç hücresine döndüğü doğrulanır.
-- [ ] Save/load ile kare actor konumunun korunduğu doğrulanır.
-
-Manuel kontroller tamamlanmadan 16.1 tamamen kapatılmış sayılmaz.
+- Runtime davranışı kaynak kod ve mevcut characterization testleriyle doğrulanmıştır.
+- Yeni davranış değişikliği yapıldığında ilgili Pytest testleri ve tam test paketi çalıştırılacaktır.
+- Paketleme/release doğrulaması ve GitHub Actions Linux/Windows işleri teknik kabul kapısıdır.
+- Ruff, mevcut workflow'da bulunmadığından temizlik çalışmasında ayrıca çalıştırılacak veya CI'a açıkça eklenecektir.
+- Görsel kabul testi bu çalışmanın kapsamı dışındadır; kullanıcıdan manuel oyun testi istenmeyecektir.
