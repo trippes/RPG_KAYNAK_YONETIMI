@@ -238,6 +238,8 @@ def _decode_visual(raw, path):
             eid = element["element_id"]
             if kind == "polygon":
                 _keys(shape, {"type", "points"}, {"type", "points"}, ep + ".shape")
+                if not isinstance(shape["points"], list):
+                    raise ContentValidationError("must be an array", ep + ".shape.points")
                 points = tuple(Point(*_pair(p, ep + ".shape.points")) for p in shape["points"])
                 item = PolygonElement(eid, points, style)
             elif kind == "ellipse":
@@ -264,6 +266,8 @@ def _decode_visual(raw, path):
                 _keys(
                     shape, {"type", "points", "closed"}, {"type", "points", "closed"}, ep + ".shape"
                 )
+                if not isinstance(shape["points"], list):
+                    raise ContentValidationError("must be an array", ep + ".shape.points")
                 points = tuple(Point(*_pair(p, ep + ".shape.points")) for p in shape["points"])
                 item = PolylineElement(eid, points, style, shape["closed"])
             else:
@@ -297,6 +301,8 @@ def _decode_collider(raw, path):
         return CircleCollider(center[0], center[1], raw["radius"])
     if raw["type"] == "convex_polygon":
         _keys(raw, {"type", "vertices"}, {"type", "vertices"}, path)
+        if not isinstance(raw["vertices"], list):
+            raise ContentValidationError("must be an array", path + ".vertices")
         return ConvexPolygonCollider(tuple(_pair(v, path + ".vertices") for v in raw["vertices"]))
     raise ContentValidationError("unknown collider type", path + ".type")
 
