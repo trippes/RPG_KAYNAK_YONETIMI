@@ -35,6 +35,28 @@ class HexMovableEntity:
             raise TypeError("active must be boolean.")
 
 
+class HexWorldRuntimeOwner:
+    """Own one lazily initialized hex runtime for a single gameplay session."""
+
+    def __init__(self, runtime: HexWorldRuntime | None = None) -> None:
+        if runtime is not None and not isinstance(runtime, HexWorldRuntime):
+            raise TypeError("runtime must be HexWorldRuntime or None.")
+        self._runtime = runtime
+
+    @property
+    def runtime(self) -> HexWorldRuntime | None:
+        return self._runtime
+
+    def get_or_create(self, factory) -> HexWorldRuntime:
+        """Create the session runtime once; subsequent views reuse the same state."""
+        if self._runtime is None:
+            candidate = factory()
+            if not isinstance(candidate, HexWorldRuntime):
+                raise TypeError("runtime factory must return HexWorldRuntime.")
+            self._runtime = candidate
+        return self._runtime
+
+
 class HexWorldRuntime:
     """Owns live hex positions without changing legacy square-map actors."""
 
@@ -215,4 +237,4 @@ class HexWorldRuntime:
         return HexMapTransitionService(self, self._world_map).transition(entity_id, transition_id)
 
 
-__all__ = ["HexMovableEntity", "HexWorldRuntime"]
+__all__ = ["HexMovableEntity", "HexWorldRuntime", "HexWorldRuntimeOwner"]
