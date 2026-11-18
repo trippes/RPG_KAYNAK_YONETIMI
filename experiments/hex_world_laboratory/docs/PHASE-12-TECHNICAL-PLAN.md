@@ -5,7 +5,7 @@
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Dayanak:** Kullanıcı tarafından onaylanan `PHASE-12-GENERAL-PLAN.md`  
 > **Durum:** KULLANICI TARAFINDAN TEKNİK OLARAK ONAYLANDI  
-> **Uygulama durumu:** Başlamadı  
+> **Uygulama durumu:** Kullanıcı izniyle başladı; 12.1–12.7 uygulandı, 12.8 doğrulaması sürüyor  
 > **Tek laboratuvar başlatıcısı:** `python -m hex_world_lab`
 
 ---
@@ -365,9 +365,7 @@ Aşama 12 ancak aşağıdaki koşulların tamamı sağlandığında kapatılabil
 
 ## 12. Onay kapısı
 
-Bu belge kullanıcı tarafından teknik olarak onaylanmıştır. Teknik mimari ve dosya değişiklikleri planı onay kapısını geçmiştir.
-
-**Uygulama durumu:** Henüz başlamadı. Teknik planın onaylanması tek başına uygulama başlatma talimatı değildir. 12.1–12.8 uygulaması, kullanıcının ayrıca vereceği açık devam talimatıyla başlatılır. Herhangi bir kapsam değişikliği veya ana mimari sözleşmeden sapma önce raporlanır ve onaylanır.
+Bu belge kullanıcı tarafından teknik olarak onaylanmış ve uygulama için ayrıca açık talimat verilmiştir. 12.1–12.7 kapsamındaki ilk uygulama tamamlanmış; 12.8 otomatik doğrulama, performans raporu, platform CI ve kullanıcı manuel kabul kapısı devam etmektedir. Herhangi bir kapsam değişikliği veya ana mimari sözleşmeden sapma önce raporlanır ve onaylanır.
 
 ---
 

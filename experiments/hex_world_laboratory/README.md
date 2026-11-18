@@ -67,9 +67,17 @@ python -m hex_world_lab
 
 Bu tek giriş noktası güncel Entity kabul sahnesini (oyuncu, NPC, kaynak ve NPC sağ-tık eylem menüsü) başlatır.
 
-- `F3`: çarpışma/etkileşim tanılamasını açıp kapatır.
+- `F3`: collider debug görünümünü açıp kapatır.
+- `F4`: çevresel nesne ground/depth anchor, visual/canopy bounds, kimlik ve konum tanılamasını açıp kapatır.
 - `Esc`: laboratuvar penceresini kapatır.
 - NPC üzerinde sağ tık: yoldaş eylem menüsünü açar.
+
+## Aşama 12 — Çevresel nesneler
+
+- [Aşama 12 genel planı](docs/PHASE-12-GENERAL-PLAN.md)
+- [Aşama 12 teknik planı](docs/PHASE-12-TECHNICAL-PLAN.md)
+- [Aşama 12 manuel kabul kontrol listesi](docs/PHASE-12-MANUAL-ACCEPTANCE-CHECKLIST.md)
+- Ağaç görseli laboratuvarın `assets/tree_test.png` dosyasından yüklenir; kaya ve çalı için deterministik prototip görselleri laboratuvar içinde üretilir.
 
 ## Test
 
@@ -90,4 +98,4 @@ Laboratuvarın tam test paketi ve benchmarkları GitHub Actions laboratuvar iş 
 
 ## Güncel durum
 
-**Aşamalar 0–10 tamamlandı ve kullanıcı tarafından kabul edildi.** Aşama 11'in 11.1–11.8 otomatik teknik doğrulaması tamamlandı: 774 laboratuvar testi geçti, Core Quality Linux/Windows başarılı, 36.000 tick ve üç oturumlu performans/bellek benchmarkları raporlandı. [Başlangıç ölçüm raporu](reports/PHASE-11-BASELINE-REPORT.md) ve [stres doğrulama raporu](reports/PHASE-11-STRESS-VALIDATION-REPORT.md) eklendi. Aşama 11'in resmen kapanması için [manuel kabul kontrol listesindeki](docs/PHASE-11-MANUAL-ACCEPTANCE-CHECKLIST.md) masaüstü görsel/işlevsel kontroller kullanıcı tarafından tamamlanmalıdır.
+**Aşamalar 0–11 tamamlandı ve kullanıcı tarafından kabul edildi.** Aşama 11'in 774 laboratuvar testi, 36.000 tick stres doğrulaması, üç oturumlu performans/bellek ölçümleri ve Linux/Windows CI kontrolleri başarıyla tamamlandı. Aşama 12 teknik planı kullanıcı tarafından onaylandı; 12.1–12.7 uygulandı ve 12.8 otomatik doğrulama/performance/CI aşamasında. Son manuel görsel kabul için kullanıcı kontrolü beklenecek.

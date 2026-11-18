@@ -5,7 +5,7 @@
 > **Depo:** `trippes/RPG_KAYNAK_YONETIMI`  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Hedef entegrasyon dalı:** `demo_eldoria`  
-> **Durum:** AŞAMA 0–10 KAPALI — AŞAMA 11 OTOMATİK DOĞRULAMA TAMAM; MANUEL KABUL BEKLENİYOR
+> **Durum:** AŞAMA 0–11 KAPALI — AŞAMA 12 UYGULAMADA (12.1–12.7 UYGULANDI; 12.8 DOĞRULAMASI SÜRÜYOR)
 > **Belge sürümü:** 3.0
 
 ---
