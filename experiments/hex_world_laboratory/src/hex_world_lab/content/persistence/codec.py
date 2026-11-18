@@ -20,11 +20,11 @@ from ..drawing import (
     PolylineElement,
     VisualDocument,
 )
-from .errors import ContentValidationError, UnsupportedContentVersionError
 from ..library import ContentLibrary
 from ..map_document import MapContentDocument
 from ..placement import ContentPlacement
 from ..values import thaw_json
+from .errors import ContentValidationError, UnsupportedContentVersionError
 
 
 def _keys(value, allowed, required, path):

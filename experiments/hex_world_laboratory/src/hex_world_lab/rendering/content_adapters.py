@@ -1,5 +1,10 @@
 """Explicit adapters between content documents and existing environment/physics models."""
 
+from hex_world_lab.content.collision import CircleCollider, ConvexPolygonCollider
+from hex_world_lab.content.definition import ContentDefinition
+from hex_world_lab.content.library import ContentLibrary
+from hex_world_lab.content.map_document import MapContentDocument
+from hex_world_lab.content.placement import ContentPlacement
 from hex_world_lab.environment import (
     EnvironmentalObjectDefinition,
     EnvironmentalObjectPlacement,
@@ -9,13 +14,6 @@ from hex_world_lab.geometry import WorldPoint
 from hex_world_lab.movement.vector import Vector2
 from hex_world_lab.physics.shapes import CircleShape, ConvexPolygonShape
 from hex_world_lab.world.map_definition import HexMapDefinition
-
-from hex_world_lab.content.placement import ContentPlacement
-
-from hex_world_lab.content.collision import CircleCollider, ConvexPolygonCollider
-from hex_world_lab.content.definition import ContentDefinition
-from hex_world_lab.content.library import ContentLibrary
-from hex_world_lab.content.map_document import MapContentDocument
 
 
 def definition_to_environment(value: ContentDefinition) -> EnvironmentalObjectDefinition:
