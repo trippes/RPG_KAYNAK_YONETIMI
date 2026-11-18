@@ -12,7 +12,7 @@ from .profiles import (
     build_environment_profiles,
 )
 from .variation import create_rng, normalize_seed
-from .document_profiles import build_profile_document
+from .document_profiles import build_builtin_content_library, build_profile_document
 from .document_renderer import render_content_definition, render_visual_document
 
 __all__ = [
@@ -28,6 +28,7 @@ __all__ = [
     "build_environment_profile",
     "build_environment_profiles",
     "build_profile_document",
+    "build_builtin_content_library",
     "render_content_definition",
     "render_visual_document",
     "create_rng",
