@@ -5,12 +5,12 @@
 > **Depo:** `trippes/RPG_KAYNAK_YONETIMI`  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Hedef entegrasyon dalı:** `demo_eldoria`  
-> **Durum:** AŞAMA 0–11 KAPALI — AŞAMA 12 KAPSAM REVİZYONU KABUL EDİLDİ; PROSEDÜREL GÖRSEL UYGULAMA BEKLENİYOR
+> **Durum:** AŞAMA 0–11 KAPALI — AŞAMA 12 PROSEDÜREL UYGULAMA VE OTOMATİK DOĞRULAMA TAMAM; KULLANICI MANUEL KABULÜ BEKLENİYOR
 > **Belge sürümü:** 3.0
 
 ## Aşama 12–14 kapsam ayrımı — 18 Kasım 2026
 
-Aşama 12 yalnızca çevresel nesne mimarisi ve kodla çizilmiş ağaç, kaya, çalı prototiplerini kapsar. Hazır PNG/JPG/WebP kullanılmaz; Pygame çizim primitifleri ve deterministik geometri kullanılır. Genel amaçlı çizim motoru ve Content Editor bu aşamanın dışındadır. Aşama 13 genel prosedürel grafik/çizim altyapısı; Aşama 14 Content Editor ve görsel düzenleme araçlarıdır. Her aşama ayrıca planlanıp onaylanır. Önceki PNG tabanlı Aşama 12 görseli kabul edilmemiştir; prosedürel revizyonun testleri ve manuel kabulü beklenir.
+Aşama 12 yalnızca çevresel nesne mimarisi ve kodla çizilmiş ağaç, kaya, çalı prototiplerini kapsar. Hazır PNG/JPG/WebP kullanılmaz; Pygame çizim primitifleri ve deterministik geometri kullanılır. Genel amaçlı çizim motoru ve Content Editor bu aşamanın dışındadır. Aşama 13 genel prosedürel grafik/çizim altyapısı; Aşama 14 Content Editor ve görsel düzenleme araçlarıdır. Her aşama ayrıca planlanıp onaylanır. Önceki PNG tabanlı Aşama 12 görseli kabul edilmemiştir. Prosedürel revizyonun 800 laboratuvar testi, Linux/Windows Core Quality, benchmark ve görsel artifact kontrolleri başarılıdır; kullanıcı manuel kabulü beklenmektedir.
 
 ---
 
