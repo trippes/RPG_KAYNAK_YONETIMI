@@ -8,11 +8,11 @@ from pathlib import Path
 
 import pygame
 
-from hex_world_lab.rendering.content_adapters import to_environment_scene
 from hex_world_lab.content.map_document import MapContentDocument
 from hex_world_lab.content.placement import ContentPlacement
 from hex_world_lab.environment.presentation import environment_sprite_visuals
 from hex_world_lab.geometry import HexLayout, HexOrientation, WorldPoint
+from hex_world_lab.rendering.content_adapters import to_environment_scene
 from hex_world_lab.rendering.environment_assets import register_content_library_assets
 from hex_world_lab.rendering.procedural import (
     build_builtin_content_library,
