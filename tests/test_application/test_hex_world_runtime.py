@@ -111,6 +111,19 @@ class TestHexWorldRuntime(unittest.TestCase):
         self.assertEqual(current.position, occupant.position)
         self.assertEqual(current.position, result.position)
 
+    def test_invalid_entity_registration_does_not_leave_occupancy(self):
+        position = EntityPosition("forest", LocalHexPosition(2, 0))
+
+        with self.assertRaises(ValueError):
+            self.runtime.register_entity("invalid-kind", "merchant", position)
+        self.assertIsNone(self.runtime.occupancy.get("invalid-kind"))
+
+        with self.assertRaises(TypeError):
+            self.runtime.register_entity(
+                "invalid-active", "npc", position, active=1
+            )
+        self.assertIsNone(self.runtime.occupancy.get("invalid-active"))
+
     def test_entity_view_detects_missing_authoritative_occupancy(self):
         self.runtime.occupancy.remove("player")
         with self.assertRaisesRegex(
