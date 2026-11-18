@@ -44,7 +44,6 @@ Bu veriler spatial konum değildir. Hex geçişinde yeniden yaratılmaz, sıfır
 
 ### Katman 1 uygulama sonucu
 
-<text></text>
 - `ActorIdentity` değişmez kimlik nesnesidir; `WorldActor` yalnızca kimlik ve oynanış bağlantılarını tutar.
 - `LegacyActorSpatialStore` kare `location_id + Position` bilgisini ayrı saklar.
 - `WorldActorRegistry` eski `ActorView` alanlarını store'dan birleştirerek üretir; eski kare ekranlarının geçişi kontrollü sürer.
