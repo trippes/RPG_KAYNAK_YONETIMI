@@ -1,12 +1,11 @@
 """Pygame renderer for immutable world-space visual snapshots."""
-
 from __future__ import annotations
 from dataclasses import dataclass
 import math
 from collections.abc import Mapping
 import pygame
 
-from hex_world_lab.camera import WorldScreenTransform
+from hex_world_lab.camera import WorldScreenTransform, ScreenPoint
 from hex_world_lab.geometry import HexLayout, axial_to_world, hex_polygon, WorldPoint
 from .snapshot import CircleVisual, ColliderVisual, PolygonVisual, SpriteVisual, WorldRenderSnapshot
 
@@ -22,11 +21,14 @@ OBJECT_POLYGON_COLOR = (112, 119, 132)
 BOUNDARY_COLOR = (201, 160, 91)
 DEBUG_CENTER = (255, 224, 120)
 DEBUG_COLLIDER = (235, 91, 204)
+DEBUG_ENVIRONMENT = (80, 220, 230)
+DEBUG_CANOPY = (100, 220, 130)
+DEBUG_DEPTH = (255, 205, 75)
 
 
 @dataclass(frozen=True, slots=True)
 class SpriteAsset:
-    """Pygame image and normalized foot-anchor coordinates."""
+    """Pygame image and normalized default foot-anchor coordinates."""
     surface: pygame.Surface
     foot_anchor_x: float = 0.5
     foot_anchor_y: float = 1.0
@@ -93,7 +95,6 @@ class PygameWorldRenderer:
             pygame.draw.line(surface, BOUNDARY_COLOR, self._point(line.start, transform),
                              self._point(line.end, transform), max(1, round(line.width * transform.zoom)))
 
-        # Ground props, sprites and actor share one stable depth queue.
         draw_items = []
         for index, circle in enumerate(snapshot.circles):
             draw_items.append(((-circle.center.y, 20, f"circle:{index:08d}"), "circle", circle))
@@ -119,13 +120,37 @@ class PygameWorldRenderer:
         if options.show_collider_debug:
             for collider in snapshot.colliders:
                 self._draw_collider(surface, collider, transform)
+        if options.show_environment_debug:
+            self._draw_environment_debug(surface, snapshot.environment_debug, transform)
         if options.show_culling_debug:
-            # The conservative culling AABB includes a hex-radius safety margin
-            # and lies just outside the viewport; highlight visible cells and
-            # the actual viewport boundary so the active draw region is clear.
-            pygame.draw.rect(
-                surface, (88, 215, 225), surface.get_rect().inflate(-2, -2), 1
-            )
+            pygame.draw.rect(surface, (88, 215, 225), surface.get_rect().inflate(-2, -2), 1)
+
+    def _sprite_anchor(self, sprite: SpriteVisual, asset: SpriteAsset) -> tuple[float, float]:
+        return sprite.normalized_anchor or (asset.foot_anchor_x, asset.foot_anchor_y)
+
+    def _sprite_world_bounds(self, sprite: SpriteVisual, asset: SpriteAsset) -> tuple[float, float, float, float]:
+        anchor_x, anchor_y = self._sprite_anchor(sprite, asset)
+        width, height = asset.surface.get_size()
+        return (
+            sprite.ground_anchor.x - anchor_x * width,
+            sprite.ground_anchor.y - (1.0 - anchor_y) * height,
+            sprite.ground_anchor.x + (1.0 - anchor_x) * width,
+            sprite.ground_anchor.y + anchor_y * height,
+        )
+
+    def _sprite_intersects_viewport(self, sprite: SpriteVisual, asset: SpriteAsset,
+                                    transform: WorldScreenTransform) -> bool:
+        viewport = transform.viewport
+        corners = (
+            transform.screen_to_world(ScreenPoint(0.0, 0.0)),
+            transform.screen_to_world(ScreenPoint(float(viewport.width), 0.0)),
+            transform.screen_to_world(ScreenPoint(0.0, float(viewport.height))),
+            transform.screen_to_world(ScreenPoint(float(viewport.width), float(viewport.height))),
+        )
+        min_x, max_x = min(p.x for p in corners), max(p.x for p in corners)
+        min_y, max_y = min(p.y for p in corners), max(p.y for p in corners)
+        left, bottom, right, top = self._sprite_world_bounds(sprite, asset)
+        return not (right < min_x or left > max_x or top < min_y or bottom > max_y)
 
     def _draw_circle(self, surface, circle: CircleVisual, transform: WorldScreenTransform) -> None:
         center = self._point(circle.center, transform)
@@ -146,16 +171,15 @@ class PygameWorldRenderer:
         if asset is None and sprite.asset_key == "demo-player":
             asset = self._make_demo_actor_asset()
             self._sprite_assets[sprite.asset_key] = asset
-        if asset is None:
+        if asset is None or not self._sprite_intersects_viewport(sprite, asset, transform):
             return
         source = asset.surface
         width = max(1, round(source.get_width() * transform.zoom))
         height = max(1, round(source.get_height() * transform.zoom))
         scaled = source if (width, height) == source.get_size() else pygame.transform.smoothscale(source, (width, height))
+        anchor_x, anchor_y = self._sprite_anchor(sprite, asset)
         anchor = transform.world_to_screen(sprite.ground_anchor)
-        # Keep anchor/pivot arithmetic in float; quantize only the final blit origin.
-        destination = (round(anchor.x - asset.foot_anchor_x * width),
-                       round(anchor.y - asset.foot_anchor_y * height))
+        destination = (round(anchor.x - anchor_x * width), round(anchor.y - anchor_y * height))
         surface.blit(scaled, destination)
 
     @staticmethod
@@ -177,6 +201,25 @@ class PygameWorldRenderer:
         elif isinstance(shape, PolygonVisual):
             pygame.draw.polygon(surface, DEBUG_COLLIDER, self._points(shape.vertices, transform),
                                 width=max(1, round(transform.zoom)))
+
+    def _draw_environment_debug(self, surface, visuals, transform: WorldScreenTransform) -> None:
+        for visual in visuals:
+            left_bottom, right_top = visual.visual_bounds
+            top_left = self._point(WorldPoint(left_bottom.x, right_top.y), transform)
+            bottom_right = self._point(WorldPoint(right_top.x, left_bottom.y), transform)
+            rect = pygame.Rect(top_left, (bottom_right[0] - top_left[0], bottom_right[1] - top_left[1]))
+            pygame.draw.rect(surface, DEBUG_ENVIRONMENT, rect, max(1, round(transform.zoom)))
+            if visual.canopy_bounds is not None:
+                canopy_bottom_left, canopy_top_right = visual.canopy_bounds
+                canopy_top = self._point(WorldPoint(canopy_bottom_left.x, canopy_top_right.y), transform)
+                canopy_bottom = self._point(WorldPoint(canopy_top_right.x, canopy_bottom_left.y), transform)
+                canopy_rect = pygame.Rect(canopy_top, (canopy_bottom[0] - canopy_top[0], canopy_bottom[1] - canopy_top[1]))
+                pygame.draw.rect(surface, DEBUG_CANOPY, canopy_rect, max(1, round(transform.zoom)))
+            ground = self._point(visual.ground_anchor, transform)
+            depth = self._point(visual.depth_anchor, transform)
+            pygame.draw.line(surface, DEBUG_DEPTH, ground, depth, max(1, round(transform.zoom)))
+            pygame.draw.circle(surface, DEBUG_ENVIRONMENT, ground, max(3, round(3 * transform.zoom)))
+            pygame.draw.circle(surface, DEBUG_DEPTH, depth, max(3, round(3 * transform.zoom)))
 
     def _draw_cell_label(self, surface, q: int, r: int, center: WorldPoint,
                          transform: WorldScreenTransform) -> None:

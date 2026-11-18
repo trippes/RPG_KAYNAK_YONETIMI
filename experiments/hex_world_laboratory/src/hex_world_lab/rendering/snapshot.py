@@ -1,5 +1,4 @@
 """Immutable render-only snapshots with no simulation or Pygame dependencies."""
-
 from __future__ import annotations
 from dataclasses import dataclass
 from hex_world_lab.geometry import AxialCoord, WorldPoint
@@ -41,6 +40,17 @@ class SpriteVisual:
     ground_anchor: WorldPoint
     depth_anchor_y: float
     layer_priority: int = 0
+    normalized_anchor: tuple[float, float] | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class EnvironmentDebugVisual:
+    """World-space anchor and bounds metadata for an environment instance."""
+    instance_id: str
+    ground_anchor: WorldPoint
+    depth_anchor: WorldPoint
+    visual_bounds: tuple[WorldPoint, WorldPoint]
+    canopy_bounds: tuple[WorldPoint, WorldPoint] | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -58,6 +68,7 @@ class RenderDebugOptions:
     show_coordinate_labels: bool = False
     show_collider_debug: bool = False
     show_culling_debug: bool = False
+    show_environment_debug: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -75,3 +86,4 @@ class WorldRenderSnapshot:
     colliders: tuple[ColliderVisual, ...] = ()
     debug_options: RenderDebugOptions = RenderDebugOptions()
     visible_region: VisibleRegion | None = None
+    environment_debug: tuple[EnvironmentDebugVisual, ...] = ()
