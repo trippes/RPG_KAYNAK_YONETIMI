@@ -1,3 +1,5 @@
+"""Regression checks for tree-canopy and full-rock collision boundaries."""
+
 from __future__ import annotations
 
 from hex_world_lab.application.movement_demo import MovementDemo, PLAYER_COLLIDER_RADIUS
