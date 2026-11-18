@@ -1,0 +1,65 @@
+# Aşama 11 — Manuel Kabul Kontrol Listesi
+
+> **Durum:** TASLAK — TEKNİK PLAN ONAYI VE UYGULAMA SONRASI KULLANILACAK  
+> **Çalışma dalı:** `experiment/hex-world-laboratory`  
+> **Başlatıcı:** `python -m hex_world_lab`
+
+Bu kontrol listesi, otomatik testlerin yerine geçmez. Kullanıcı tarafından masaüstünde gerçekleştirilecek görsel ve işlevsel kabul adımlarını tanımlar. Uygulama tamamlanmadan maddeler kabul edilmiş sayılmaz.
+
+## A. Başlatma ve temel sahne
+
+- [ ] Laboratuvar, tek resmi komut olan `python -m hex_world_lab` ile açılıyor.
+- [ ] Başlangıç sahnesi hatasız yükleniyor.
+- [ ] Pencere boyutu değiştirildiğinde dünya ve arayüz çizimi bozulmuyor.
+- [ ] Kamera takip/zoom davranışı önceki kabul edilen davranışını koruyor.
+
+## B. Oyuncu hareketi ve simülasyon
+
+- [ ] Oyuncu normal, hızlı ve gizlilik hareket modlarında doğru hareket ediyor.
+- [ ] Uzun süreli hareketten sonra oyuncu konumunda görünür sıçrama veya birikimli kayma oluşmuyor.
+- [ ] Duvar, engel, köşe ve dar geçit temaslarında oyuncu engelin içine girmiyor.
+- [ ] Engel boyunca kayma davranışı korunuyor.
+- [ ] Render FPS değişse de aynı süre/tick girdisinde simülasyon sonucu değişmiyor.
+
+## C. Entity ve etkileşim
+
+- [ ] Oyuncu, NPC ve kaynak görselleri doğru yerde çiziliyor.
+- [ ] NPC ve kaynaklar test boyunca sabit konumlarında kalıyor.
+- [ ] NPC hedef seçimi/etkileşim menzili doğru çalışıyor.
+- [ ] FOLLOW, WAIT ve RETURN komutları mevcut ilişki bilgisini güncelliyor; NPC'yi hareket ettirmiyor.
+- [ ] Harita yükleme/boşaltma testinden sonra entity görselleri ve etkileşim kayıtları tutarlı kalıyor.
+
+## D. Yoğun harita ve render
+
+- [ ] Büyük haritada kamera hareketi sırasında görünür hücreler doğru çiziliyor.
+- [ ] Kamera dışındaki hücrelerin culling davranışı görsel bozulma oluşturmuyor.
+- [ ] Entity çizim sırası, foot-anchor ve Y-sort davranışı korunuyor.
+- [ ] Zoom ve pencere boyutu değişiminde seçim/hedef işaretlemesi doğru konumda kalıyor.
+- [ ] Yoğun engel ve entity sahnelerinde belirgin çizim titremesi, kaybolma veya yanlış katmanlama oluşmuyor.
+
+## E. Stabilite ve gözlem
+
+- [ ] Stres senaryosu çalıştırıldıktan sonra uygulama kontrollü biçimde kapanıyor.
+- [ ] Tekrar açılışta önceki testten kalmış bozuk dünya/entity durumu görülmüyor.
+- [ ] Görsel hata veya performans düşüşü gözlenirse senaryo adı ve tekrar adımı kaydedildi.
+- [ ] Otomatik test raporu ve görsel artifact'ler manuel gözlemle çelişmiyor.
+
+## F. Kabul kaydı
+
+- [ ] Laboratuvar testleri başarılı.
+- [ ] Core Quality Linux başarılı.
+- [ ] Core Quality Windows başarılı.
+- [ ] Deterministik stress smoke ve tam stress profilleri raporlandı.
+- [ ] Benchmark ve bellek raporları incelendi.
+- [ ] Açık kritik/yüksek önem dereceli hata bulunmuyor veya açık istisna kararı alındı.
+- [ ] Kullanıcı masaüstü görsel/işlevsel kabulünü verdi.
+
+**Kullanıcı kabul tarihi:** ____________________
+
+**Kullanıcı notları / gözlemler:**
+
+________________________________________________________________
+
+________________________________________________________________
+
+**Kabul kararı:** BEKLİYOR / KABUL / DÜZELTME GEREKLİ
