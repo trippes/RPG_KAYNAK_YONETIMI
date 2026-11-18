@@ -78,6 +78,7 @@ Bu tek giriş noktası güncel Entity kabul sahnesini (oyuncu, NPC, kaynak ve NP
 - [Aşama 12 teknik planı](docs/PHASE-12-TECHNICAL-PLAN.md)
 - [Aşama 12 manuel kabul kontrol listesi](docs/PHASE-12-MANUAL-ACCEPTANCE-CHECKLIST.md)
 - [Aşama 12 uygulama, doğrulama ve kapanış raporu](reports/PHASE-12-IMPLEMENTATION-VALIDATION-REPORT.md)
+- [Aşama 12 resmî kapanış raporu](reports/PHASE-12-CLOSURE-REPORT.md)
 - Ağaç, kaya ve çalı görselleri `rendering/procedural_environment.py` içindeki deterministik Pygame çizicileriyle runtime sırasında üretilir. Hazır PNG/JPG/WebP dosyası yüklenmez.
 
 ## Test
