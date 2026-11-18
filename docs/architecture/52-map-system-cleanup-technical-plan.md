@@ -26,7 +26,7 @@ Bu aşama, legacy harita kodunu körlemesine silme veya altıgen sistemi hemen v
 
 ## 2. Başlangıç deposu ve kanıt sınırı
 
-Dal `demo_eldoria` HEAD `7d53d431d5c3639fd95d273de9043b64483a5125` commit'inden çıkarılmıştır. İlk ağaç taramasında 605 repository path kaydı görüldü; bunun içinde 16 map JSON dosyası (14 schema-v1 kare harita ve 8? no: schema ayrımı dosya içeriği doğrulanarak sayılacak; ilk listede toplam 16 dosya), iki hex placement JSON ve harita sistemiyle ilişkili çok sayıda test/modül vardır.
+Dal `demo_eldoria` HEAD `7d53d431d5c3639fd95d273de9043b64483a5125` commit'inden çıkarılmıştır. İlk ağaç taramasında 605 repository path kaydı görüldü; bunun içinde 16 map JSON dosyası, iki hex placement JSON ve harita sistemiyle ilişkili çok sayıda test/modül vardır. Dosyaların schema v1/v2 dağılımı, JSON içerikleri okunarak envanter aşamasında kesinleştirilecektir.
 
 > Not: Dosya adlarından schema türü çıkarılmayacak. Her JSON dosyasının gerçek `schema_version` alanı ve içeriği envanter aşamasında okunup tabloya kaydedilecek. Dosya sayısı da her envanter güncellemesinde yeniden hesaplanacak.
 
