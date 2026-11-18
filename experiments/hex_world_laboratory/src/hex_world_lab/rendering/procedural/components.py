@@ -7,7 +7,6 @@ import pygame
 from .canvas import ProceduralCanvas
 from .geometry import Point2D
 
-
 Color = tuple[int, int, int] | tuple[int, int, int, int]
 
 
