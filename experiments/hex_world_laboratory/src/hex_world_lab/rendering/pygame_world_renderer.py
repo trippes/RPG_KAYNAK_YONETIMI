@@ -220,6 +220,13 @@ class PygameWorldRenderer:
             pygame.draw.line(surface, DEBUG_DEPTH, ground, depth, max(1, round(transform.zoom)))
             pygame.draw.circle(surface, DEBUG_ENVIRONMENT, ground, max(3, round(3 * transform.zoom)))
             pygame.draw.circle(surface, DEBUG_DEPTH, depth, max(3, round(3 * transform.zoom)))
+            if self._font is None:
+                self._font = pygame.font.Font(None, 16)
+            label = self._font.render(
+                f"{visual.instance_id} ({visual.ground_anchor.x:.0f}, {visual.ground_anchor.y:.0f})",
+                True, DEBUG_ENVIRONMENT,
+            )
+            surface.blit(label, (ground[0] + 6, ground[1] - label.get_height() - 4))
 
     def _draw_cell_label(self, surface, q: int, r: int, center: WorldPoint,
                          transform: WorldScreenTransform) -> None:
