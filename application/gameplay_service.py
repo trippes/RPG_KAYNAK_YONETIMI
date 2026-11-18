@@ -942,6 +942,16 @@ class GameplayService:
     def actor(self, actor_id: str) -> ActorView | None:
         return self._current_bundle().actors.get(actor_id)
 
+    @staticmethod
+    def _require_legacy_actor_location(bundle, actor_id: str) -> str:
+        """Resolve an actor's square location only through the legacy boundary."""
+        spatial = bundle.actors.legacy_spatial_state(actor_id)
+        if spatial is None:
+            raise GameplayServiceError(
+                f"Actor {actor_id} has no active legacy square location."
+            )
+        return spatial.location_id
+
     def actor_character(self, actor_id: str):
         """Return the character aggregate linked to an actor."""
         bundle = self._current_bundle()
@@ -1082,7 +1092,8 @@ class GameplayService:
         location = world_map.get(location_id)
         if location is None:
             raise KeyError(f"Location not found: {location_id}")
-        if actor.location_id != location_id:
+        actor_location_id = self._require_legacy_actor_location(bundle, actor_id)
+        if actor_location_id != location_id:
             raise GameplayServiceError(
                 f"Actor {actor_id} is not at location: {location_id}"
             )
@@ -1093,7 +1104,11 @@ class GameplayService:
         actor_ids = tuple(
             other.actor_id
             for other in bundle.actors.for_world(actor.world_id)
-            if other.location_id == location_id
+            if (
+                (spatial := bundle.actors.legacy_spatial_state(other.actor_id))
+                is not None
+                and spatial.location_id == location_id
+            )
         )
         return self._complete_timed_action(
             ActionType.INTERACT,
@@ -1233,7 +1248,7 @@ class GameplayService:
         if profile is not None:
             self._require_actor_in_active_world(bundle, buyer_id)
             buyer_actor = bundle.actors.get(buyer_id)
-            if buyer_actor.location_id != profile.location_id:
+            if self._require_legacy_actor_location(bundle, buyer_id) != profile.location_id:
                 raise GameplayServiceError(
                     "Buyer must be at the market's registered location."
                 )
@@ -1414,7 +1429,7 @@ class GameplayService:
         npc = bundle.social.npcs.get(npc_id)
         self._require_actor_in_active_world(bundle, actor_id)
         actor = bundle.actors.get(actor_id)
-        if actor.location_id != npc.location_id:
+        if self._require_legacy_actor_location(bundle, actor_id) != npc.location_id:
             raise GameplayServiceError("Player must be at the NPC's location to trade.")
         if resource_type not in merchant.accepted_resources:
             raise GameplayServiceError("This NPC does not buy that resource.")
@@ -1442,7 +1457,7 @@ class GameplayService:
                 raise KeyError(f"Market not found: {market_id}")
             self._require_actor_in_active_world(bundle, self.player_actor_id)
             actor = bundle.actors.get(self.player_actor_id)
-            if actor.location_id != profile.location_id:
+            if self._require_legacy_actor_location(bundle, self.player_actor_id) != profile.location_id:
                 raise GameplayServiceError(
                     "Player must be at the market's registered location."
                 )
@@ -1496,7 +1511,8 @@ class GameplayService:
         npc = bundle.social.npcs.get(npc_id)
         if npc is None:
             raise KeyError(f"NPC not found: {npc_id}")
-        if npc.location_id is not None and npc.location_id != actor.location_id:
+        actor_location_id = self._require_legacy_actor_location(bundle, actor_id)
+        if npc.location_id is not None and npc.location_id != actor_location_id:
             raise GameplayServiceError("Actor and NPC must be at the same location.")
         dialogue = bundle.social.dialogues.get(dialogue_id)
         if dialogue is None:
@@ -1758,7 +1774,8 @@ class GameplayService:
             npc = bundle.social.npcs.get(npc_id)
             if npc is None:
                 raise KeyError(f"NPC not found: {npc_id}")
-            if npc.location_id is not None and npc.location_id != actor.location_id:
+            actor_location_id = self._require_legacy_actor_location(bundle, actor_id)
+            if npc.location_id is not None and npc.location_id != actor_location_id:
                 raise GameplayServiceError("Actor and quest giver must be at the same location.")
 
         quest = bundle.quest_log.get(quest_id)
