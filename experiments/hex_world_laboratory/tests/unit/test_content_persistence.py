@@ -1,7 +1,9 @@
 """Round-trip, schema rejection, and safe storage tests."""
 
 import json
+
 import pytest
+
 from hex_world_lab.content import (
     CircleElement,
     ContentCategory,

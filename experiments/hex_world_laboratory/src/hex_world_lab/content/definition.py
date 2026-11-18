@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 from enum import Enum
+
 from .drawing import VisualDocument
 from .values import freeze_json, non_empty_id
 

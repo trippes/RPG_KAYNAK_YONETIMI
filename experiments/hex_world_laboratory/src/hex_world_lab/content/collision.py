@@ -1,6 +1,7 @@
 """Explicit collider definitions; visual geometry never creates collision."""
 
 from dataclasses import dataclass
+
 from .values import finite_number
 
 

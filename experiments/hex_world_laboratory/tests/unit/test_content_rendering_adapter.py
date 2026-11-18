@@ -1,18 +1,7 @@
 """Pygame rendering and explicit environment adapter tests."""
 
 import pygame
-from hex_world_lab.content.adapters import definition_to_environment, to_environment_scene
-from hex_world_lab.content.map_document import MapContentDocument
-from hex_world_lab.rendering.procedural import (
-    ProceduralSurfaceCache,
-    build_profile_document,
-    render_content_definition,
-    render_visual_document,
-)
-from hex_world_lab.rendering.environment_assets import register_content_library_assets
-from hex_world_lab.rendering.pygame_world_renderer import PygameWorldRenderer
-from hex_world_lab.geometry import HexLayout, HexOrientation, WorldPoint
-from hex_world_lab.world import HexMapDefinition, MapId, WorldId
+
 from hex_world_lab.content import (
     CircleElement,
     ContentCategory,
@@ -25,7 +14,19 @@ from hex_world_lab.content import (
     PolygonElement,
     VisualDocument,
 )
+from hex_world_lab.content.adapters import definition_to_environment, to_environment_scene
 from hex_world_lab.content.collision import CircleCollider
+from hex_world_lab.content.map_document import MapContentDocument
+from hex_world_lab.geometry import HexLayout, HexOrientation, WorldPoint
+from hex_world_lab.rendering.environment_assets import register_content_library_assets
+from hex_world_lab.rendering.procedural import (
+    ProceduralSurfaceCache,
+    build_profile_document,
+    render_content_definition,
+    render_visual_document,
+)
+from hex_world_lab.rendering.pygame_world_renderer import PygameWorldRenderer
+from hex_world_lab.world import HexMapDefinition, MapId, WorldId
 
 
 def make_visual():

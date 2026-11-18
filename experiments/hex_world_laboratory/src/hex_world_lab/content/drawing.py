@@ -1,9 +1,11 @@
 """Versioned, immutable vector drawing documents; deliberately Pygame-free."""
 
 from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import TypeAlias
-from .values import finite_number, non_empty_id, freeze_json
+
+from .values import finite_number, freeze_json, non_empty_id
 
 
 @dataclass(frozen=True, slots=True)

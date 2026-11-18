@@ -1,6 +1,7 @@
 """Immutable map-local content placement records."""
 
 from dataclasses import dataclass
+
 from .values import finite_number, non_empty_id
 
 

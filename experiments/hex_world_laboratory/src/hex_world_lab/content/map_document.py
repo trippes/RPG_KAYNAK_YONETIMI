@@ -1,9 +1,11 @@
 """Map plus placed content; updates return new immutable documents."""
 
 from dataclasses import dataclass, replace
+
 from hex_world_lab.world.map_definition import HexMapDefinition
-from .placement import ContentPlacement
+
 from .library import ContentLibrary
+from .placement import ContentPlacement
 from .values import non_empty_id
 
 

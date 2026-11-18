@@ -1,10 +1,13 @@
 """Strict JSON codecs for content libraries and map-content documents."""
 
 from __future__ import annotations
+
 import json
 from typing import Any
-from hex_world_lab.world.persistence.map_serializer import map_to_payload
+
 from hex_world_lab.world.persistence.map_deserializer import deserialize_map_payload
+from hex_world_lab.world.persistence.map_serializer import map_to_payload
+
 from .collision import CircleCollider, ConvexPolygonCollider
 from .definition import ContentCategory, ContentDefinition
 from .drawing import (
@@ -17,10 +20,10 @@ from .drawing import (
     PolylineElement,
     VisualDocument,
 )
+from .errors import ContentValidationError, UnsupportedContentVersionError
 from .library import ContentLibrary
 from .map_document import MapContentDocument
 from .placement import ContentPlacement
-from .errors import ContentValidationError, UnsupportedContentVersionError
 from .values import thaw_json
 
 

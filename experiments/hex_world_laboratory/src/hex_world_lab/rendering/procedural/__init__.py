@@ -3,6 +3,8 @@
 from .cache import CacheStats, ProceduralSurfaceCache
 from .canvas import ProceduralCanvas
 from .components import draw_circle, draw_ellipse, draw_polygon, draw_polyline
+from .document_profiles import build_builtin_content_library, build_profile_document
+from .document_renderer import render_content_definition, render_visual_document
 from .geometry import Bounds2D, Point2D, Transform2D
 from .palette import ColorRamp, interpolate_rgb, validate_rgb
 from .profiles import (
@@ -12,8 +14,6 @@ from .profiles import (
     build_environment_profiles,
 )
 from .variation import create_rng, normalize_seed
-from .document_profiles import build_builtin_content_library, build_profile_document
-from .document_renderer import render_content_definition, render_visual_document
 
 __all__ = [
     "Bounds2D",

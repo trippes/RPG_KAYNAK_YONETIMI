@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from hex_world_lab.content.library import ContentLibrary
 from hex_world_lab.rendering.procedural import (
-    render_content_definition,
     PROFILE_DEFINITIONS,
     ProceduralSurfaceCache,
     build_environment_profiles,
+    render_content_definition,
 )
 
 from .pygame_world_renderer import PygameWorldRenderer, SpriteAsset

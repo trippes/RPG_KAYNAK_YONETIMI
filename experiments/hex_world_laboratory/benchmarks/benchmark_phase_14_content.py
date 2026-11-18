@@ -1,10 +1,12 @@
 """Measure cold vector rendering and bounded-cache hits for Phase 14 profiles."""
 
 from __future__ import annotations
+
 import json
 import statistics
 import time
 from pathlib import Path
+
 from hex_world_lab.rendering.procedural import (
     ProceduralSurfaceCache,
     build_profile_document,

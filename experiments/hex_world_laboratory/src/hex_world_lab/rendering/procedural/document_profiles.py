@@ -1,7 +1,9 @@
 """Built-in vector documents for the five established environmental profiles."""
 
 from __future__ import annotations
+
 import math
+
 from hex_world_lab.content.definition import ContentCategory, ContentDefinition
 from hex_world_lab.content.drawing import (
     CircleElement,
@@ -14,6 +16,7 @@ from hex_world_lab.content.drawing import (
     VisualDocument,
 )
 from hex_world_lab.content.library import ContentLibrary
+
 from .variation import normalize_seed
 
 
@@ -207,6 +210,7 @@ def build_profile_document(profile_key: str, *, seed: int | str = 0) -> VisualDo
         (Layer("flowers", 0, tuple(elements)),),
         normalized,
     )
+
 
 def build_builtin_content_library(*, seed: int | str = 0) -> ContentLibrary:
     """Create the stable five-profile library used by Phase 14 examples and tests."""

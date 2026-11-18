@@ -1,10 +1,12 @@
 """Safe UTF-8 file storage for content libraries and map-content documents."""
 
 from __future__ import annotations
+
 import json
 import os
 import tempfile
 from pathlib import Path
+
 from .codec import (
     deserialize_library,
     deserialize_map_content,

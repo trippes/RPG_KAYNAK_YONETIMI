@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 from types import MappingProxyType
+
 from .definition import ContentDefinition
 from .values import non_empty_id
 

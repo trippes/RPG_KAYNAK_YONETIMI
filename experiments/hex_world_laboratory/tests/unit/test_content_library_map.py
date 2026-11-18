@@ -1,6 +1,7 @@
 """Content library, reference integrity, and immutable placement operations."""
 
 import pytest
+
 from hex_world_lab.content import (
     CircleElement,
     ContentCategory,
@@ -71,8 +72,11 @@ def make_map():
 def test_builtin_content_library_exposes_all_five_stable_profile_ids():
     library = build_builtin_content_library(seed=42)
     assert {item.content_id for item in library.definitions} == {
-        "environment.tree", "environment.rock", "environment.bush",
-        "environment.grass", "environment.flower",
+        "environment.tree",
+        "environment.rock",
+        "environment.bush",
+        "environment.grass",
+        "environment.flower",
     }
     assert all(item.collider is None for item in library.definitions)
 

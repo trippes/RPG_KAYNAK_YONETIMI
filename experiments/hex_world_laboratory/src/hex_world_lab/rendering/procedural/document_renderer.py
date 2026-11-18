@@ -1,10 +1,12 @@
 """Pygame adapter that renders immutable VisualDocument values to alpha Surfaces."""
 
 from __future__ import annotations
+
 import hashlib
+
 import pygame
+
 from hex_world_lab.content.definition import ContentDefinition
-from .cache import ProceduralSurfaceCache
 from hex_world_lab.content.drawing import (
     CircleElement,
     EllipseElement,
@@ -12,6 +14,8 @@ from hex_world_lab.content.drawing import (
     PolylineElement,
     VisualDocument,
 )
+
+from .cache import ProceduralSurfaceCache
 from .canvas import ProceduralCanvas
 from .components import draw_circle, draw_ellipse, draw_polygon, draw_polyline
 from .geometry import Point2D

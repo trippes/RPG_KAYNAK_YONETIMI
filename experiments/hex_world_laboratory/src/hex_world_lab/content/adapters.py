@@ -9,10 +9,11 @@ from hex_world_lab.geometry import WorldPoint
 from hex_world_lab.movement.vector import Vector2
 from hex_world_lab.physics.shapes import CircleShape, ConvexPolygonShape
 from hex_world_lab.world.map_definition import HexMapDefinition
+
 from .collision import CircleCollider, ConvexPolygonCollider
 from .definition import ContentDefinition
-from .map_document import MapContentDocument
 from .library import ContentLibrary
+from .map_document import MapContentDocument
 
 
 def definition_to_environment(value: ContentDefinition) -> EnvironmentalObjectDefinition:

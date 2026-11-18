@@ -1,6 +1,7 @@
 """Immutable visual document contract tests."""
 
 import pytest
+
 from hex_world_lab.content import (
     CircleElement,
     ContentCategory,
