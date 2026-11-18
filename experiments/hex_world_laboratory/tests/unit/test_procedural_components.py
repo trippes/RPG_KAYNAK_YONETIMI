@@ -15,12 +15,15 @@ def test_drawing_components_render_into_canvas_surface():
     canvas = ProceduralCanvas((24, 20), supersampling=2)
     draw_ellipse(canvas, (20, 80, 40, 255), (1, 1, 8, 5))
     draw_polygon(
-        canvas, (180, 90, 30, 255),
+        canvas,
+        (180, 90, 30, 255),
         (Point2D(10, 2), Point2D(18, 2), Point2D(14, 9)),
     )
     draw_polyline(
-        canvas, (255, 255, 255, 255),
-        (Point2D(2, 12), Point2D(8, 16), Point2D(14, 12)), width=1,
+        canvas,
+        (255, 255, 255, 255),
+        (Point2D(2, 12), Point2D(8, 16), Point2D(14, 12)),
+        width=1,
     )
     draw_circle(canvas, (40, 80, 200, 255), Point2D(19, 15), 3)
     assert pygame.mask.from_surface(canvas.surface).count() > 0
