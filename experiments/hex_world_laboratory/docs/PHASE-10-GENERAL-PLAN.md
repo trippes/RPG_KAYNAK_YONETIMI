@@ -4,7 +4,7 @@
 > **Proje:** Eldoria — Kaynak Yönetimi RPG  
 > **Depo:** `trippes/RPG_KAYNAK_YONETIMI`  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
-> **Durum:** ONAYLANDI — 10.1–10.8 TEKNİK UYGULAMA VE OTOMATİK DOĞRULAMA TAMAMLANDI — MANUEL KULLANICI KABULÜ BEKLENİYOR  
+> **Durum:** TAMAMLANDI VE KULLANICI TARAFINDAN KABUL EDİLDİ — 18 KASIM 2026  
 > **Ön koşul:** Aşama 0–9 tamamlandı ve kabul edildi  
 > **Temel kullanıcı kararı:** Bu aşamada NPC hareketi yoktur.
 
@@ -218,7 +218,7 @@ Bu kapsam değişikliklerinden biri gerekli görülürse uygulamaya başlamadan 
 6. Kullanıcıya manuel görsel/işlevsel kabul listesi sunulur.
 7. Kullanıcı kabulünden sonra kapanış raporu hazırlanır ve Master Plan güncellenir.
 
-Genel plan ve teknik plan kullanıcı tarafından onaylanmıştır. Aşama 10.1–10.8 teknik uygulaması tamamlanmış; otomatik testler, Linux/Windows Core Quality ve laboratuvar CI başarılı olmuştur. Son kullanıcı manuel görsel/işlevsel kabulü henüz beklenmektedir.
+Genel plan ve teknik plan kullanıcı tarafından onaylanmıştır. Aşama 10.1–10.8 teknik uygulaması, otomatik testler, Linux/Windows Core Quality, laboratuvar CI ve kullanıcı manuel görsel/işlevsel kabulü tamamlanmıştır. Kullanıcı 18 Kasım 2026 tarihinde görsel testlerin başarılı olduğunu bildirmiş ve aşamayı tamamlanmış olarak kabul etmiştir. Kapanış kaydı `../reports/PHASE-10-CLOSURE-REPORT.md` dosyasındadır.
 
 ---
 
