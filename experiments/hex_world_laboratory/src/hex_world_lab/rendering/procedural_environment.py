@@ -26,7 +26,8 @@ class EnvironmentArtPalette:
     ground_shadow: tuple[int, int, int] = (13, 20, 29)
 
     def __post_init__(self) -> None:
-        for name, color in self.__dict__.items():
+        for name in self.__dataclass_fields__:
+            color = getattr(self, name)
             if not isinstance(color, tuple) or len(color) != 3:
                 raise TypeError(f"{name} must be an RGB tuple")
             if any(isinstance(channel, bool) or not isinstance(channel, int) or not 0 <= channel <= 255 for channel in color):
