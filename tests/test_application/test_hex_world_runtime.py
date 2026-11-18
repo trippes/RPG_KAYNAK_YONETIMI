@@ -94,6 +94,30 @@ class TestHexWorldRuntime(unittest.TestCase):
         self.runtime.register_entity("player", "player", EntityPosition("forest", LocalHexPosition(0, 0)))
         self.runtime.register_entity("npc", "npc", EntityPosition("forest", LocalHexPosition(0, 1)))
 
+    def test_entity_position_is_derived_only_from_occupancy(self):
+        stored_state = self.runtime._entities["player"]
+        self.assertFalse(hasattr(stored_state, "position"))
+
+        before = self.runtime.entity("player")
+        self.assertEqual(
+            before.position,
+            self.runtime.occupancy.get("player").position,
+        )
+
+        result = self.runtime.move("player", HexDirection.EAST)
+        self.assertTrue(result.success)
+        current = self.runtime.entity("player")
+        occupant = self.runtime.occupancy.get("player")
+        self.assertEqual(current.position, occupant.position)
+        self.assertEqual(current.position, result.position)
+
+    def test_entity_view_detects_missing_authoritative_occupancy(self):
+        self.runtime.occupancy.remove("player")
+        with self.assertRaisesRegex(
+            RuntimeError, "authoritative occupancy record"
+        ):
+            self.runtime.entity("player")
+
     def test_player_moves_in_all_six_axial_directions(self):
         for direction in HexDirection:
             runtime = HexWorldRuntime({"forest": self.map})
@@ -169,9 +193,11 @@ class TestHexWorldRuntime(unittest.TestCase):
         outbound = runtime.transition("hero", "forest_to_clearing")
         self.assertTrue(outbound.success)
         self.assertEqual(outbound.position, EntityPosition("hex_clearing_demo", LocalHexPosition(-8, 0)))
+        self.assertEqual(runtime.occupancy.get("hero").position, outbound.position)
         inbound = runtime.transition("hero", "clearing_to_forest")
         self.assertTrue(inbound.success)
         self.assertEqual(inbound.position, EntityPosition("hex_forest_demo", LocalHexPosition(8, 0)))
+        self.assertEqual(runtime.occupancy.get("hero").position, inbound.position)
 
     def test_transition_preserves_position_when_inactive_or_unavailable(self):
         map_a = make_map("a", transitions=[{
