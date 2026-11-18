@@ -1,6 +1,9 @@
 """Pygame adapter that renders immutable VisualDocument values to alpha Surfaces."""
 from __future__ import annotations
+import hashlib
 import pygame
+from hex_world_lab.content.definition import ContentDefinition
+from .cache import ProceduralSurfaceCache
 from hex_world_lab.content.drawing import (
     CircleElement, EllipseElement, PolygonElement, PolylineElement, VisualDocument,
 )
@@ -45,3 +48,14 @@ def render_visual_document(document: VisualDocument, *, supersampling: int = 3) 
             else:
                 raise TypeError(f"unsupported drawing element: {type(element).__name__}")
     return canvas.finish()
+
+def render_content_definition(definition: ContentDefinition, *, cache: ProceduralSurfaceCache | None = None, supersampling: int = 3) -> pygame.Surface:
+    """Render one reusable content definition, caching by canonical document identity."""
+    if not isinstance(definition, ContentDefinition):
+        raise TypeError("definition must be a ContentDefinition")
+    if cache is not None and not isinstance(cache, ProceduralSurfaceCache):
+        raise TypeError("cache must be a ProceduralSurfaceCache or None")
+    digest = hashlib.sha256(repr(definition.visual_document).encode("utf-8")).hexdigest()
+    factory = lambda: render_visual_document(definition.visual_document, supersampling=supersampling)
+    key = ("visual-document-v1", digest, supersampling)
+    return factory() if cache is None else cache.get_or_create(key, factory)
