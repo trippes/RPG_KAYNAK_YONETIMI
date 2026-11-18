@@ -6,11 +6,11 @@
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Hedef entegrasyon dalı:** `demo_eldoria`  
 > **Durum:** AŞAMA 0–13 KAPALI
-> **Belge sürümü:** 3.8
+> **Belge sürümü:** 3.9
 
 ## Aşama 12–14 kapsam ayrımı — 18 Kasım 2026
 
-Aşama 12 yalnızca çevresel nesne mimarisi ve kodla çizilmiş ağaç, kaya, çalı prototiplerini kapsar. Hazır PNG/JPG/WebP kullanılmaz; Pygame çizim primitifleri ve deterministik geometri kullanılır. Genel amaçlı çizim motoru ve Content Editor bu aşamanın dışındadır. Aşama 13 genel prosedürel grafik/çizim altyapısı; Aşama 14 Content Editor ve görsel düzenleme araçlarıdır. Her aşama ayrıca planlanıp onaylanır. Önceki PNG tabanlı Aşama 12 görseli kabul edilmemiştir. Prosedürel revizyonun 800 laboratuvar testi, Linux/Windows Core Quality, benchmark ve görsel artifact kontrolleri başarılıdır. Kullanıcı 18 Kasım 2026 tarihinde ağaç gövdesi/yaprak ayrımı ile kaya görseli/çarpışma hizalamasını masaüstünde kabul etmiş; Aşama 12 resmen kapatılmıştır.
+Aşama 12 yalnızca çevresel nesne mimarisi ve kodla çizilmiş ağaç, kaya, çalı prototiplerini kapsar. Hazır PNG/JPG/WebP kullanılmaz; Pygame çizim primitifleri ve deterministik geometri kullanılır. Genel amaçlı çizim motoru ve Content Editor bu aşamanın dışındadır. Aşama 13 genel prosedürel grafik/çizim altyapısını tamamlamıştır. Aşama 14, gelecekte ayrı bir masaüstü uygulaması olarak geliştirilecek **ELDORIA CONTENT EDITOR** için içerik veri modelleri, serileştirme, sürümleme, doğrulama, registry ve harita yerleşim altyapısının temelini hazırlar; editör arayüzü bu aşamada yapılmaz. Harita düzenleme, yapı/nesne çizme, yerleştirme, değiştirme ve kaldırma iş akışları ilerideki editör aşamasına bırakılır. Her aşama ayrıca planlanıp onaylanır. Önceki PNG tabanlı Aşama 12 görseli kabul edilmemiştir. Prosedürel revizyonun 800 laboratuvar testi, Linux/Windows Core Quality, benchmark ve görsel artifact kontrolleri başarılıdır. Kullanıcı 18 Kasım 2026 tarihinde ağaç gövdesi/yaprak ayrımı ile kaya görseli/çarpışma hizalamasını masaüstünde kabul etmiş; Aşama 12 resmen kapatılmıştır.
 
 
 **Aşama 13 resmen kapatıldı (18 Kasım 2026):** 13.1 denetimi, 13.2–13.7 uygulamaları, 13.8 otomatik doğrulama ve kullanıcı masaüstü görsel/işlevsel kabulü tamamlandı. Tam test çalışması 859/859 Pytest; Ruff lint/format, Linux/Windows Core Quality, benchmarklar ve görsel artifact başarılıdır. Kapanış öncesi son HEAD `631a8b9ec4ad78a497167394add533ef59c95cf4` üzerinde laboratuvar CI ve Core Quality yeniden başarılı tamamlandı. Belgeler: [genel plan](PHASE-13-GENERAL-PLAN.md), [teknik plan](PHASE-13-TECHNICAL-PLAN.md), [denetim raporu](../reports/PHASE-13.1-AUDIT-REPORT.md), [uygulama raporu](../reports/PHASE-13.2-13.7-IMPLEMENTATION-REPORT.md), [resmî kapanış raporu](../reports/PHASE-13-CLOSURE-REPORT.md).
@@ -492,11 +492,11 @@ Kabul koşulları:
 
 Kapsam; ortak geometri/katman yardımcıları, parametre şemaları, palet yönetimi, deterministik varyasyon ve birden fazla nesne ailesi için yeniden kullanılabilir çizim bileşenleri olarak ayrıca planlanacaktır. Genel editör arayüzü bu aşamanın kapsamında değildir.
 
-### Aşama 14 — Content Editor ve görsel düzenleme araçları
+### Aşama 14 — İçerik veri altyapısı ve ELDORIA CONTENT EDITOR hazırlığı
 
-**Amaç:** Prosedürel çizim altyapısını kullanıcı dostu içerik üretim aracına dönüştürmek.
+**Amaç:** Gelecekte ayrı masaüstü uygulaması olarak geliştirilecek ELDORIA CONTENT EDITOR'ün ve oyun runtime'ının ortak kullanacağı içerik veri çekirdeğini hazırlamak.
 
-Kapsam; görsel önizleme, nesne profili seçimi, parametre düzenleme, dallar/yaprak kümeleri gibi bileşenlerin etkileşimli düzenlenmesi, palet ve geometri ayarları, içerik kaydetme/yükleme ve doğrulama iş akışlarını kapsayabilir. Kesin kapsam ayrı genel/teknik plan ve kullanıcı onayıyla belirlenecektir.
+Kapsam; içerik tanımı ile harita üzerindeki yerleşim örneğinin ayrılması, kararlı kimlikler, sürümlü veri şemaları, serileştirme, doğrulama, içerik registry/kütüphanesi, procedural renderer adaptörü ve harita/yerleşim veri sözleşmelerinin temelini kapsar. Bu aşamada editör GUI'si, harita düzenleme ekranı, nesne/yapı çizme veya fareyle yerleştirme araçları geliştirilmez. Bunlar ileride ELDORIA CONTENT EDITOR aşamasında ayrıca planlanacaktır.
 
 ### Aşama 15 — Nihai mimari, dokümantasyon ve entegrasyon hazırlığı
 
@@ -794,7 +794,7 @@ Bu liste tamamlanmadan laboratuvarın ana oyuna aktarılmaya hazır olduğu söy
 | 11 | Sağlamlık, regresyon ve performans doğrulaması | 11.1–11.8 teknik, otomatik ve manuel kabul tamamlandı; 774 laboratuvar testi, Linux/Windows Core Quality, stres/benchmark raporları ve kullanıcı masaüstü kabulü başarılı; 18 Kasım 2026 tarihinde kapatıldı |
 | 12 | Çevresel nesne mimarisi ve kodla çizilmiş ağaç/kaya/çalı prototipleri | 12.1–12.8 tamamlandı; 800 test, Linux/Windows CI, benchmark, görsel kanıt ve kullanıcı manuel kabulü başarılı; 18 Kasım 2026 tarihinde resmen kapatıldı |
 | 13 | Genel prosedürel grafik/çizim altyapısı | 13.1–13.8, 859/859 Pytest, Ruff, Linux/Windows CI, benchmark/görsel kanıt ve kullanıcı masaüstü kabulü tamamlandı; 18 Kasım 2026 tarihinde resmen kapatıldı |
-| 14 | Content Editor ve görsel düzenleme araçları | [Genel Plan hazırlandı](PHASE-14-GENERAL-PLAN.md); kullanıcı genel plan onayı bekleniyor; teknik plan ve uygulama başlamadı |
+| 14 | İçerik veri altyapısı ve ELDORIA CONTENT EDITOR hazırlığı | [Güncellenmiş Genel Plan hazırlandı](PHASE-14-GENERAL-PLAN.md); kullanıcı genel plan onayı bekleniyor; editör arayüzü kapsam dışı; teknik plan ve uygulama başlamadı |
 | 15 | Nihai mimari, dokümantasyon ve entegrasyon hazırlığı | Önceki aşamalar sonrası ayrıca planlanıp onaylanacak |
 | 16 | Kontrollü demo entegrasyonu | Ayrı açık kullanıcı onayı gerektirir |
 
@@ -848,3 +848,4 @@ Dünya görsel zenginleştirmesi (arazi dokuları, bitki örtüsü, ağaç/kaya/
 | 3.6 | Güncellendi — 18 Kasım 2026 | Aşama 13.8 otomatik doğrulaması tamamlandı: 859/859 Pytest, Ruff lint/format, Linux/Windows Core Quality, benchmarklar ve görsel artifact başarılı; kullanıcı masaüstü görsel kabulü bekleniyor |
 | 3.7 | Güncellendi — 18 Kasım 2026 | Kullanıcı tüm masaüstü görsel/işlevsel testleri geçti olarak bildirdi; Aşama 13 resmen kapatıldı ve kapanış raporu eklendi |
 | 3.8 | Güncellendi — 18 Kasım 2026 | Aşama 13 kapanışı Master Plan tablosuna işlendi; Aşama 14 Content Editor Genel Planı hazırlandı ve kullanıcı onayına sunuldu; teknik plan ve uygulama başlamadı |
+| 3.9 | Güncellendi — 18 Kasım 2026 | Kullanıcı yönlendirmesiyle Aşama 14, editör arayüzü geliştirmek yerine gelecekteki ELDORIA CONTENT EDITOR için içerik veri altyapısı ve harita/yerleşim sözleşmelerinin hazırlanmasına odaklandı; masaüstü editör ayrı gelecek aşamaya bırakıldı |
