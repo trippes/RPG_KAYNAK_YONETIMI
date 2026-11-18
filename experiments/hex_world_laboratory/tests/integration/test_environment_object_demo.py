@@ -11,13 +11,21 @@ def test_demo_environment_profiles_share_scene_and_existing_collision_pipeline()
     pygame.init()
     try:
         demo = MovementDemo()
-        assert {item.instance_id for item in demo.environment_scene.placements} == {"tree", "rock", "bush"}
+        assert {item.instance_id for item in demo.environment_scene.placements} == {
+            "tree", "rock", "bush", "grass", "flower"
+        }
         obstacle_ids = {item.obstacle_id for item in demo.collision_geometry.obstacles}
         assert {"object:tree", "object:rock"}.issubset(obstacle_ids)
         assert "object:bush" not in obstacle_ids
+        assert "object:grass" not in obstacle_ids
+        assert "object:flower" not in obstacle_ids
         snapshot = demo.build_render_snapshot(debug_options=RenderDebugOptions(show_environment_debug=True))
-        assert {item.visual_id for item in snapshot.sprites} >= {"tree", "rock", "bush"}
-        assert {item.instance_id for item in snapshot.environment_debug} == {"tree", "rock", "bush"}
+        assert {item.visual_id for item in snapshot.sprites} >= {
+            "tree", "rock", "bush", "grass", "flower"
+        }
+        assert {item.instance_id for item in snapshot.environment_debug} == {
+            "tree", "rock", "bush", "grass", "flower"
+        }
         assert "object:tree" in {item.owner_id for item in snapshot.colliders}
         assert "object:rock" in {item.owner_id for item in snapshot.colliders}
         # Environment collision geometry is hidden in normal rendering; F3 owns it.
@@ -50,5 +58,7 @@ def test_tree_trunk_and_rock_collide_but_canopy_and_bush_do_not():
         at_rock = CircleShape(player_radius, Vector2(rock_position.x, rock_position.y))
         assert collide_shapes(at_rock, rock.world_shape(), rock.obstacle_id) is not None
         assert "object:bush" not in obstacles
+        assert "object:grass" not in obstacles
+        assert "object:flower" not in obstacles
     finally:
         pygame.quit()
