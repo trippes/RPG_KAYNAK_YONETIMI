@@ -1,48 +1,39 @@
 # Aşama 12 — Manuel Görsel ve İşlevsel Kabul Kontrol Listesi
 
-> **Durum:** Otomatik doğrulama tamamlandıktan sonra kullanıcı tarafından uygulanacak.
-> **Başlatıcı:** Laboratuvar kök dizininde `python -m hex_world_lab`
-> **Debug:** F3 collider görünümü; F4 çevresel nesne anchor/bounds görünümü.
+> Durum: Prosedürel çizim revizyonu tamamlandıktan sonra kullanıcı tarafından uygulanacak.
+> Başlatıcı: python -m hex_world_lab
+> Debug: F3 collider; F4 anchor/bounds.
 
-## Sahne ve görsel varlıklar
+## Prosedürel çizim kalitesi
+- [ ] Ağaç, kaya ve çalı hazır PNG/JPG/WebP yüklenmeden kod çizicileriyle üretiliyor.
+- [ ] Ağaç; gövde, kök, dallar ve farklı tonlarda yaprak kümeleriyle hacimli.
+- [ ] Ağaçta ışık ve gölge yüzeyleri ayırt ediliyor; tekdüze primitif görünümünde değil.
+- [ ] Kaya çok yüzeyli, hacimli ve ışık/gölge ayrımı belirgin.
+- [ ] Çalı ayrı yaprak kümeleri ve alt gölgeyle hacimli.
+- [ ] Üç nesne aynı sanat yönüne ve harita ölçeğine uyuyor.
+- [ ] Aynı profil/parametreler deterministik görünüm üretiyor.
+- [ ] Oyuncu, NPC ve kaynaklar görünür ve mevcut davranışlarını koruyor.
 
-- [ ] Laboratuvar tek başlatıcıyla hatasız açılır.
-- [ ] Ağaç, kaya ve çalı sprite'ları sahnede görünür.
-- [ ] Ağaç görseli zemin tabanına doğru oturur; havada veya zeminin altında görünmez.
-- [ ] Kaya ve çalı görselleri ağaçla aynı genel render sisteminden çizilir.
-- [ ] Oyuncu, NPC'ler ve kaynaklar görünür ve mevcut davranışlarını korur.
-
-## Derinlik sıralaması
-
-- [ ] Oyuncu ağacın arkasından geçtiğinde ağaç oyuncunun önünde çizilir.
-- [ ] Oyuncu ağacın önünden geçtiğinde oyuncu ağacın önünde çizilir.
-- [ ] Kamera pan/zoom sırasında bu sıralama bozulmaz.
-- [ ] Ağaç sprite'ının üst kısmı ekrandan kısmen taşarken görünür bölüm aniden kaybolmaz.
+## Zemin, anchor ve derinlik
+- [ ] Ağaç zemine doğru oturuyor.
+- [ ] Oyuncu ağacın arkasındayken ağaç önde çiziliyor.
+- [ ] Oyuncu ağacın önündeyken oyuncu önde çiziliyor.
+- [ ] Kaya ve çalı doğru ground/depth anchor ile sıralanıyor.
+- [ ] Kamera pan/zoom hizalama ve sıralamayı bozmuyor.
+- [ ] Viewport içinde kalan görsel bölüm aniden kaybolmuyor.
 
 ## Çarpışma ayrımı
+- [ ] Ağaç gövdesi engelliyor; taç/yaprak alanı tek başına engel oluşturmuyor.
+- [ ] Kaya engelliyor; çalı içinden geçilebiliyor.
+- [ ] Görsel parametre/çizim çözünürlüğü collider geometrisini değiştirmiyor.
+- [ ] Kamera zoom çarpışmayı değiştirmiyor.
 
-- [ ] Oyuncu ağacın gövdesine çarpar.
-- [ ] Ağacın taç/yaprak alanı tek başına fiziksel engel oluşturmaz.
-- [ ] Oyuncu kaya collider'ına çarpar.
-- [ ] Oyuncu çalının içinden geçebilir.
-- [ ] Kamera zoom seviyesi çarpışma sonucunu değiştirmez.
+## Debug ve regresyon
+- [ ] F3 collider geometrilerini açıp kapatıyor.
+- [ ] F4 ground/depth anchor, visual/canopy bounds, ID ve dünya konumunu gösteriyor.
+- [ ] F3 ve F4 bağımsız çalışıyor.
+- [ ] Oyuncu hareketi ve hex sınır davranışı korunuyor.
+- [ ] NPC/kaynak hareket etmiyor; FOLLOW/WAIT/RETURN yalnızca komut niyeti.
+- [ ] Sağ tık NPC menüsü ve Esc davranışı korunuyor.
 
-## Debug görünümü
-
-- [ ] F3 collider geometrilerini açıp kapatır.
-- [ ] F3 kapalıyken çevresel nesnelerin daire/çokgen collider'ları normal sahnede görünmez.
-- [ ] F4 ground anchor ve depth anchor noktalarını/bağlantısını gösterir.
-- [ ] F4 visual bounds ve canopy bounds alanlarını gösterir.
-- [ ] F4 nesne kimliğini ve dünya koordinatını gösterir.
-- [ ] F4 kapatıldığında yardımcı çizgiler ve etiketler kaybolur.
-- [ ] F3 ve F4 birbirinden bağımsız çalışır.
-
-## Regresyon
-
-- [ ] Oyuncu hareketi ve mevcut hex sınır davranışı korunur.
-- [ ] NPC ve kaynaklar hareket etmez.
-- [ ] Yoldaş FOLLOW/WAIT/RETURN yalnızca komut niyeti olarak kalır.
-- [ ] Sağ tık NPC menüsü ve mevcut entity seçimi çalışır.
-- [ ] Esc laboratuvarı mevcut davranışıyla kapatır.
-
-**Kabul sonucu:** Bu listenin tüm maddeleri kullanıcı tarafından kontrol edilip geçtiğinde Aşama 12 kapatılabilir.
+Aşama 12, tüm maddeler kullanıcı tarafından geçildiğinde ve revize kodun otomatik test/CI kontrolleri başarılı olduğunda kapatılabilir.
