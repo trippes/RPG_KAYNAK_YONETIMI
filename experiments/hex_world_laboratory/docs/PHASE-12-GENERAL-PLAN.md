@@ -76,9 +76,11 @@ Bu ayrımın kesin sınıf ve veri yapıları teknik plan sırasında mevcut mim
 ### 4.1 Kapsama dahil işler
 
 - Mevcut render, Y-sort, foot-anchor ve collider altyapısının incelenmesi.
-- Mevcut çevresel nesne/asset prototiplerinin ve görsel dosyaların envanterinin çıkarılması.
+- Mevcut çevresel nesne prototiplerinin ve çizim/render altyapısının denetlenmesi; hazır raster görsellerin runtime kaynağı olarak kullanılmaması.
 - Görselden bağımsız çevresel nesne geometrisi için ortak sözleşme tasarlanması.
-- Ağaç nesnesinin ilk referans prototip olarak oluşturulması.
+- Ağaç nesnesinin ilk referans prototip olarak Pygame çizim primitifleriyle koddan üretilmesi.
+- Kaya ve çalı görsellerinin aynı deterministik prosedürel çizim yaklaşımıyla oluşturulması.
+- Çizim fonksiyonlarının renk paleti ve nesne profili parametreleriyle UI'dan bağımsız tutulması.
 - Ground Anchor ve Depth Anchor kavramlarının uygulanması.
 - Görsel sınırlar ile fiziksel çarpışma geometrisinin ayrılması.
 - Ağaç gövdesi ve taç görsel alanı gibi farklı geometrik bölgelerin ele alınması.
@@ -113,15 +115,15 @@ Aşağıdaki bileşenler hedeflenen sorumlulukları açıklar. Bunların mevcut 
 
 ### 5.1 Görsel katman
 
-Görsel katman, nesnenin ekranda nasıl görüneceğini tanımlar.
+Görsel katman, nesnenin ekranda nasıl görüneceğini tanımlar. Aşama 12'de ağaç, kaya ve çalı hazır raster dosyası yüklenerek değil, Pygame Surface üzerine kodla çizilerek üretilecektir.
 
 Ele alınacak kavramlar:
 
-- Sprite veya uygun görsel varlık referansı.
+- Prosedürel çizim profili ve parametrelenebilir renk paleti.
 - Görsel genişlik/yükseklik ve çizim alanı.
 - Görsel ofseti ve ölçekleme politikası.
 - Şeffaf alanların görsel sınır hesabına etkisi.
-- Görsel varlığın değiştirilmesi halinde geometrik tanımın korunması.
+- Çizim paleti veya profilinin değiştirilmesi halinde geometrik tanımın korunması.
 
 Görsel katman, kendi başına çarpışma kararı vermemeli ve dünya simülasyonunun authoritative konumunu değiştirmemelidir.
 
@@ -252,18 +254,19 @@ Dünya yerleşimi, nesnenin hangi dünyada/haritada ve hangi dünya koordinatın
 
 İşler:
 
-- Denetimde bulunan uygun ağaç görselini veya mevcut prototipi değerlendirmek.
-- Görsel varlığı ortak nesne iskeletine bağlamak.
+- Ağaç çizim profilini ve palet parametrelerini belirlemek.
+- Gövde, kök, dal ve yaprak kümelerini yüksek çözünürlüklü şeffaf Surface üzerine kodla çizmek.
+- Prosedürel yüzeyi ortak nesne iskeletine bağlamak.
 - Ground Anchor konumunu belirlemek.
 - Depth Anchor konumunu belirlemek.
 - Gövde için uygun Collision Geometry tanımlamak.
 - Visual Bounds ve Canopy Bounds kullanımını değerlendirmek.
 - Ağaç dünya konumunu mevcut hex/world/entity sözleşmesiyle ilişkilendirmek.
-- Görsel dosyanın değiştirilmesi durumunda geometrik referansların korunmasını test etmek.
+- Palet/çizim parametreleri değiştiğinde geometrik referansların ve collider'ın korunmasını test etmek.
 
 **Çıktılar:**
 
-- Çalışan ağaç prototipi.
+- Gövde, kök, dal, yaprak kütleleri, ışık ve gölge katmanları kodla çizilmiş çalışan ağaç prototipi.
 - Ağaç için geometrik referans tanımı.
 - Görsel/çarpışma ayrımını gösteren örnek sahne.
 - Otomatik prototip testleri.
@@ -410,7 +413,7 @@ Gösterilmesi değerlendirilecek bilgiler:
 
 - Ortak nesne sözleşmesi için unit testleri çalıştırmak.
 - Render/Y-sort, entity/spatial ve physics entegrasyon testlerini çalıştırmak.
-- Farklı ağaç görselleri ve nesne geometrileriyle regresyon testleri yapmak.
+- Farklı çizim paletleri ve nesne geometrileriyle regresyon testleri yapmak.
 - Birden fazla çevresel nesnenin bulunduğu sahneleri sınamak.
 - Kamera pan/zoom ve pencere boyutu değişimlerini kontrol etmek.
 - Anchor, görsel sınır ve collider hizasını görsel olarak doğrulamak.
