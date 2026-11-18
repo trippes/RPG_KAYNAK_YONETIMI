@@ -187,4 +187,4 @@ Gerekli otomatik test katmanları:
 - Önceki silme denemesi CI'da `world.map_catalog` import hatası verdiği için dosya geri yüklendi. Bu olay, dolaylı import bağımlılıklarının da temizleme öncesi taranması gerektiğini gösterdi.
 - Geri yükleme commit'i: `0fb94ee4a2a0eaaa594681f29b435e0c63a8dfbe`.
 - Bu commit'in GitHub Actions doğrulaması başlatıldı; sonuç henüz bekleniyor.
-- Henüz runtime/content/save entegrasyon kodu değiştirilmedi. Bu belge mimari geçiş sözleşmesidir.
+- İlk runtime sahipliği temeli eklendi: SessionBundle artık isteğe bağlı HexWorldRuntime örneğini doğrulayıp sahiplenebiliyor; SessionHolder iki bundle'ın aynı mutable hex runtime örneğini paylaşmasını reddediyor; GameplayService aktif bundle runtime'ına salt erişim sağlıyor. Bu henüz runtime'ın açılış içeriğinde oluşturulduğu, NPC/resource konumlarının taşındığı, save edildiği veya HexWorldView tarafından kullanıldığı anlamına gelmiyor. HexWorldView hâlâ kendi geçici runtime'ını enter() sırasında oluşturuyor; bu sonraki 16.2.1 uygulama adımında değiştirilecek.\n- İlgili SessionBundle testleri eklendi. CI doğrulaması yeni commit üzerinde bekliyor.
