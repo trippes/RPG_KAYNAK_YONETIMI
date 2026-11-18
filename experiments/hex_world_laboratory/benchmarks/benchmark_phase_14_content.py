@@ -29,7 +29,7 @@ def main():
         }
     stats = cache.stats()
     report["cache"] = {"hits": stats.hits, "misses": stats.misses, "entries": stats.entries,
-                       "bytes": stats.bytes}
+                       "estimated_bytes": stats.estimated_bytes}
     output = Path("artifacts/phase-14")
     output.mkdir(parents=True, exist_ok=True)
     (output / "benchmark.json").write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
