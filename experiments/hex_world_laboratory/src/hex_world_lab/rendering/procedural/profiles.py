@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import math
 from types import MappingProxyType
 from typing import Mapping
 
@@ -93,8 +94,8 @@ def _build_flower(seed: int, supersampling: int, palette) -> pygame.Surface:
         for petal in range(petal_count):
             angle = petal * 6.283185307179586 / petal_count
             center = Point2D(
-                top.x + 3.2 * __import__("math").cos(angle),
-                top.y + 3.2 * __import__("math").sin(angle),
+                top.x + 3.2 * math.cos(angle),
+                top.y + 3.2 * math.sin(angle),
             )
             draw_circle(canvas, color, center, 2.2)
         draw_circle(canvas, (245, 215, 105), top, 1.5)
