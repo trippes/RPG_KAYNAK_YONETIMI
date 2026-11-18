@@ -2,6 +2,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from core.domain.spatial import Position
+
 from application import (
     ActivityState,
     ActorError,
@@ -42,8 +44,7 @@ class TestActorSystem(unittest.TestCase):
         )
         registry.set_legacy_position("player", "legacy_village")
         registry.set_legacy_position(
-            "player", "legacy_forest",
-            __import__("core.domain.spatial", fromlist=["Position"]).Position(8, 9),
+            "player", "legacy_forest", Position(8, 9)
         )
         self.assertEqual(actor.identity, ActorIdentity("player", "world_eldoria", "player"))
         self.assertEqual(registry.get("player").location_id, "legacy_forest")
