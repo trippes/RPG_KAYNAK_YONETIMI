@@ -7,7 +7,7 @@
 > **Hedef:** Görselden bağımsız, genişletilebilir çevresel nesne altyapısı oluşturmak  
 > **Durum:** KAPSAM REVİZYONU KABUL EDİLDİ — PROSEDÜREL GÖRSEL UYGULAMA VE YENİDEN KABUL BEKLENİYOR  
 > **Ön koşul:** Aşama 11 tamamlandı ve kullanıcı tarafından kabul edildi  
- > **Uygulama durumu:** Önceki PNG tabanlı prototipin mimari doğrulaması tarihsel kayıttır; prosedürel çizim revizyonu, yeni test/benchmark/CI ve manuel kabul henüz tamamlanmamıştır.
+  > **Uygulama durumu:** Prosedürel çizim uygulandı; 800 laboratuvar testi, Linux/Windows Core Quality, benchmark ve görsel artifact başarılı. Kullanıcı masaüstü görsel/işlevsel kabulü bekleniyor.
 
 ## 18 Kasım 2026 kapsam revizyonu — bağlayıcı karar
 
