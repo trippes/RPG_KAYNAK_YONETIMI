@@ -146,14 +146,21 @@ Yeni hex kayıtları axial konumu açık biçimde saklar ve restore sırasında 
 
 **Doğrulama:** Commit `733c23f31258d92e9d4bb260618ef9c9a633eaf4`; GitHub Actions run [#44421720503](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44421720503) — Linux ve Windows başarılı; her iki platformda 1.477 test + 237 subtest. Linux Ruff, compileall, wheel ve izole kurulum doğrulaması başarılı.
 
+### UI uyumluluk geçişi
+
+- `GameplayService.legacy_actor_spatial_state` kare konum için açık okuma API'si olarak sunuldu.
+- Ana oyun ekranı, dünya haritası ekranı ve HUD; aktörün `ActorView.location_id/position` alanlarını okumayı bıraktı.
+- UI test servisleri yeni spatial API'ye geçirildi; kare harita hareketi, geçiş ve konum gösterimi için mevcut testler korundu.
+- Güncel doğrulama: commit `35e16fbb06861b71999821f3cbc0ac1f1c034850`; GitHub Actions run [#44422517321](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44422517321) — Linux ve Windows başarılı; her iki platformda 1.477 test + 237 subtest. Linux Ruff, compileall, wheel ve izole kurulum doğrulaması başarılı.
+
 ## Güncel durum
 
 - Katman 1 tamamlandı; actor kimliği/oynanış verisi ile kare konum sahipliği ayrıldı.
 - Katman 2 tamamlandı; hex konumu occupancy kaydı tek başına yönetiyor ve entity görünümü bu kayıttan türetiliyor.
-- Katman 3 başladı; servis ve save restore katmanındaki ilk legacy konum bağımlılıkları açık sınıra taşındı.
-- UI ekranları hâlâ geçiş dönemi `ActorView` konum projeksiyonunu kullanıyor; bu uyumluluk alanı henüz kaldırılmadı.
+- Katman 3 kısmen tamamlandı: servis konum kontrolleri, save restore ve ana UI konum okumaları açık legacy spatial API'sine taşındı.
+- `ActorView` içindeki kare konum alanları geçiş dönemi uyumluluğu için hâlâ mevcut; henüz kaldırılmadı.
 - NPC, kaynak, pazar ve konteyner içerikleri hâlâ kare tabanlı konum modelleriyle tanımlı. Hex tarafında NPC/kaynak/market yerleşimleri ve hex başlangıç alanı henüz eksik.
 - Hex runtime konumu oturum belleğinde tutuluyor; ana save/load belgesine entegrasyonu henüz yapılmadı.
 - Eski kare kayıtlar otomatik dönüştürülmeyecek; migration/recovery politikası ayrıca belirlenecek.
 
-**Bir sonraki uygulama işi:** Kalan UI ve domain tüketicilerini dosya/fonksiyon bazında envanterleyip kare uyumluluk projeksiyonunu servis API'sine taşımak. NPC/kaynak/market için axial yerleşim gerektiren noktalarda koordinat uydurulmayacak; açık içerik verisi ve tasarım kararı beklenecek.
+**Bir sonraki uygulama işi:** Kalan domain ve içerik bağımlılıklarını envanterleyip hex axial yerleşim şemasını tanımlamak. NPC, kaynak, pazar ve konteyner koordinatları uydurulmayacak; mevcut içerik sahipliği ve oyun tasarımıyla uyumlu açık yerleşim verisi gerekecek.
