@@ -30,8 +30,8 @@ class DrawingStyle:
             if value is not None:
                 non_empty_id(value, f"style.{name}")
         width = finite_number(self.stroke_width, "style.stroke_width")
-        if width < 0:
-            raise ValueError("stroke_width must not be negative")
+        if width < 0 or (self.stroke is not None and width <= 0):
+            raise ValueError("stroke_width must be positive when stroke is set")
         object.__setattr__(self, "stroke_width", width)
 
 
@@ -107,6 +107,8 @@ class PolylineElement:
         object.__setattr__(self, "points", points)
         if not isinstance(self.style, DrawingStyle):
             raise TypeError("style must be DrawingStyle")
+        if self.style.stroke is None:
+            raise ValueError("polyline style requires a stroke token")
 
 
 DrawingElement: TypeAlias = PolygonElement | EllipseElement | CircleElement | PolylineElement
@@ -145,7 +147,9 @@ class VisualDocument:
     generator: object | None = None
 
     def __post_init__(self):
-        if isinstance(self.document_version, bool) or self.document_version != 1:
+        if isinstance(self.document_version, bool) or not isinstance(self.document_version, int):
+            raise TypeError("document_version must be an integer")
+        if self.document_version != 1:
             raise ValueError("only VisualDocument version 1 is supported")
         if len(self.logical_size) != 2:
             raise ValueError("logical_size requires width and height")
