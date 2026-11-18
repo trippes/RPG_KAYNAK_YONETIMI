@@ -5,8 +5,8 @@
 > **Depo:** `trippes/RPG_KAYNAK_YONETIMI`  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Hedef entegrasyon dalı:** `demo_eldoria`  
-> **Durum:** AŞAMA 0–9 TAMAMLANDI VE KABUL EDİLDİ — AŞAMA 10 SIRADAKİ PLANLI AŞAMA  
-> **Belge sürümü:** 2.3
+> **Durum:** AŞAMA 0–9 TAMAMLANDI VE KABUL EDİLDİ — AŞAMA 10 GENEL PLANI HAZIR, KULLANICI ONAYI BEKLİYOR  
+> **Belge sürümü:** 2.4
 
 ---
 
@@ -424,27 +424,36 @@ Kabul koşulları:
 
 ### Aşama 10 — Simülasyon orkestrasyonu ve dünya bütünlüğü
 
-**Amaç:** Ayrı sistemleri tutarlı bir güncelleme sırasıyla birlikte çalıştırmak.
+**Amaç:** Hareket, fizik, entity, spatial index ve etkileşim bileşenlerini merkezi ve deterministik bir simülasyon tick düzeninde birleştirmek; simülasyon güncellemesi ile salt-okunur render akışını kesin biçimde ayırmak.
+
+**Bağlayıcı kullanıcı kararı:** Bu aşamada NPC hareketi yoktur. NPC'ler, kaynaklar ve yoldaşlar konum değiştirmez. FOLLOW/WAIT/RETURN yalnızca Aşama 9 komut verisi olarak kalır.
 
 İşler:
-- Simülasyon tick sırasını tanımlamak.
-- Input, hareket, fizik, mekânsal indeks, etkileşim ve render sınırlarını netleştirmek.
-- NPC basit hareket prototipini eklemek.
-- Kaynak nesnelerinin konum ve etkileşim davranışını doğrulamak.
-- Harita geçişi, dünya yeniden yükleme ve konum eşleme senaryolarını test etmek.
-- Simülasyon state'i ile görsel state arasındaki ilişkiyi belgelemek.
-- Hata/diagnostic kayıtlarını standartlaştırmak.
+- Mevcut tick, movement, physics, entity ve render sözleşmelerini denetlemek.
+- Merkezi simülasyon/tick koordinasyon bileşenini kurmak.
+- Sistem güncelleme sırasını ve zaman adımı davranışını belirlemek.
+- Oyuncu hareketi sonrasında entity transform ve spatial index eşitlemesini simülasyon tick'ine taşımak.
+- Render snapshot/render çağrılarının authoritative state'i değiştirmediğini güvence altına almak.
+- NPC ve kaynakların hareketsiz simülasyon katılımcıları olarak mevcut etkileşim sözleşmelerini korumak.
+- Yoldaş komut verisinin hareket üretmediğini doğrulamak.
+- Harita/entity yaşam döngüsü, uzun süreli çalışma ve performans testlerini tamamlamak.
 
 Çıktılar:
-- Birleşik simülasyon döngüsü.
-- Oyuncu + NPC + kaynak test sahnesi.
-- Dünya bütünlüğü ve uzun süreli çalışma raporu.
+- Merkezi simülasyon/tick koordinatörü ve belgelenmiş güncelleme sırası.
+- Simülasyon ile render arasında doğrulanmış salt-okunur sınır.
+- Oyuncu/entity/spatial konum eşitlemesi.
+- Hareketsiz NPC/kaynak/yoldaş durumlarını doğrulayan testler.
+- Dünya bütünlüğü, regresyon ve performans raporları.
 
 Kabul koşulları:
-- Güncelleme sırası deterministik ve belgeli.
-- Sistemler birbirlerinin sorumluluğunu üstlenmiyor.
-- Uzun süreli çalışmada konum/indeks tutarsızlığı birikmiyor.
-- Harita geçişinde eski dünya referansları sızmıyor.
+- Aynı başlangıç state'i ve input/tick dizisi deterministik sonuç üretir.
+- Entity ve spatial state güncellemeleri render sırasında gerçekleşmez.
+- Render authoritative simülasyon state'ini değiştirmez.
+- NPC, kaynak ve yoldaş komutları konum değişikliği üretmez.
+- Harita geçişi ve uzun süreli çalışmada entity/spatial tutarsızlığı birikmez.
+- Mevcut hareket, fizik, kamera ve etkileşim davranışlarında regresyon oluşmaz.
+
+Ayrıntılar: [PHASE-10-GENERAL-PLAN.md](PHASE-10-GENERAL-PLAN.md).
 - Testler tekrar çalıştırıldığında aynı girdiler aynı beklenen sonucu üretiyor.
 
 ### Aşama 11 — Sağlamlık, regresyon ve performans doğrulaması
@@ -778,7 +787,7 @@ Bu liste tamamlanmadan laboratuvarın ana oyuna aktarılmaya hazır olduğu söy
 
 Aşama 9'un 9.1–9.9 teknik uygulaması, 741/741 laboratuvar testi, Core Quality Linux ve Windows job'ları (2.204'er test), benchmarklar, görsel artifact üretimi ve kullanıcının manuel görsel/işlevsel kabulü tamamlanmıştır. Aşama 9, 18 Kasım 2026 tarihinde resmen kapatılmıştır.
 
-Sıradaki planlı çalışma Aşama 10 — Simülasyon orkestrasyonu ve dünya bütünlüğüdür. Aşama 10 için önce genel plan ve kapsam hazırlanacak, ardından ayrıntılı teknik mimari ve kabul ölçütleri kullanıcı onayına sunulacaktır. Açık kullanıcı onayı alınmadan Aşama 10 kodlamasına başlanmayacaktır.
+Aşama 10 Genel Planı [PHASE-10-GENERAL-PLAN.md](PHASE-10-GENERAL-PLAN.md) hazırlanmıştır. Kullanıcının bağlayıcı kararı doğrultusunda bu aşamada NPC hareketi, yoldaş takibi veya kaynak hareketi uygulanmayacaktır. Genel plan kullanıcı onayından sonra ayrıntılı teknik mimari ve kabul ölçütleri hazırlanacak; teknik plan ayrıca onaylanmadan Aşama 10 kodlamasına başlanmayacaktır.
 
 Dünya görsel zenginleştirmesi (arazi dokuları, bitki örtüsü, ağaç/kaya/çevre varlıkları, ışık ve atmosfer) Aşama 7'nin geriye dönük eksik işi değildir. Kullanıcı kararı doğrultusunda ihtiyaç duyulan ileriki aşamalarda ayrı kapsam olarak ele alınacaktır.
 
@@ -803,3 +812,4 @@ Dünya görsel zenginleştirmesi (arazi dokuları, bitki örtüsü, ağaç/kaya/
 | 2.1 | Güncellendi — 17 Kasım 2026 | Aşama 9 genel planı kullanıcı tarafından onaylandı; ayrıntılı teknik mimari plan hazırlandı ve kullanıcı onayına sunuldu; kodlama başlamadı |
 | 2.2 | Güncellendi — 17 Kasım 2026 | Aşama 9 teknik planı onaylandı; 9.1–9.9 uygulandı, otomatik doğrulamalar ve görsel artifact başarılı; kullanıcı manuel kabul kapısı bekleniyor |
 | 2.3 | Güncellendi — 18 Kasım 2026 | Kullanıcı görsel/işlevsel kabulü verdi; Aşama 9 kapatıldı, kapanış raporu eklendi ve Aşama 10 planlama için sıradaki aşama oldu |
+| 2.4 | Güncellendi — 18 Kasım 2026 | Aşama 10 Genel Planı eklendi; NPC/yoldaş/kaynak hareketi bu aşama dışında bırakıldı; merkezi simülasyon orkestrasyonu ve render saflığı odak olarak belirlendi |
