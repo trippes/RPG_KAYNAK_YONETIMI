@@ -167,6 +167,27 @@ class TestActorSystem(unittest.TestCase):
         self.service = GameplayService(self.application)
         self.inventory = inventory
 
+    def test_square_location_interaction_rejects_hex_mode_actor(self):
+        from world import Location, WorldMap
+
+        self.service.register_actor("hero", "player")
+        world_map = WorldMap("world_actors")
+        world_map.add_location(Location("village", "Village", Position(0, 0)))
+        self.service.register_world_map(world_map)
+        self.service.place_actor("hero", "village")
+
+        self.application.holder.current.actors.suspend_legacy_spatial("hero")
+        with self.assertRaisesRegex(
+            GameplayServiceError, "no active legacy square location"
+        ):
+            self.service.interact_with_location("hero", "village")
+
+        self.application.holder.current.actors.resume_legacy_spatial("hero")
+        self.assertEqual(
+            self.service.actor("hero").location_id,
+            "village",
+        )
+
     def test_registers_world_bound_actor_and_sorted_snapshot(self):
         self.service.register_actor("b", "miner")
         self.service.register_actor("a", "worker")
