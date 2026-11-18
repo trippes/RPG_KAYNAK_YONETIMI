@@ -39,6 +39,7 @@ Aşama planlarının ve tarihsel kararların tam dizini Master Plan'dadır. Gene
 - [Aşama 10 — Simülasyon orkestrasyonu](reports/PHASE-10-CLOSURE-REPORT.md)
 - [Aşama 11 — Başlangıç ölçüm raporu](reports/PHASE-11-BASELINE-REPORT.md)
 - [Aşama 11 — Stres ve regresyon doğrulama raporu](reports/PHASE-11-STRESS-VALIDATION-REPORT.md)
+- [Aşama 11 — Kapanış raporu](reports/PHASE-11-CLOSURE-REPORT.md)
 
 Aşama 3.6/3.7 ve Aşama 6–9 alt aşamalarının uygulama, test, CI ve benchmark kanıtları ilgili birleşik kapanış raporlarına taşınmıştır. Silinen eski rapor adları artık kullanılmamalıdır.
 
