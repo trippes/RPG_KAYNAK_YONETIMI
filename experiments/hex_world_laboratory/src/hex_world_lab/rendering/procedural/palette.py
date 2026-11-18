@@ -1,4 +1,5 @@
 """Immutable RGB values and deterministic color ramps."""
+
 from __future__ import annotations
 
 import math
@@ -29,8 +30,7 @@ def interpolate_rgb(start: RGB, end: RGB, amount: float) -> RGB:
     if not math.isfinite(amount) or not 0.0 <= amount <= 1.0:
         raise ValueError("amount must be finite and between 0 and 1")
     return tuple(
-        round(left + (right - left) * amount)
-        for left, right in zip(start, end, strict=True)
+        round(left + (right - left) * amount) for left, right in zip(start, end, strict=True)
     )
 
 
