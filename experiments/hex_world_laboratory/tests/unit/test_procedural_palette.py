@@ -1,4 +1,5 @@
 import pytest
+
 from hex_world_lab.rendering.procedural.palette import (
     ColorRamp,
     interpolate_rgb,
