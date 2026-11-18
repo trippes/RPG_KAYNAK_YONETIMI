@@ -2,6 +2,7 @@
 
 This module deliberately has no Pygame or world-domain dependency.
 """
+
 from __future__ import annotations
 
 import math
@@ -56,10 +57,7 @@ class Bounds2D:
     def contains(self, point: Point2D) -> bool:
         if not isinstance(point, Point2D):
             raise TypeError("point must be a Point2D")
-        return (
-            self.min_x <= point.x <= self.max_x
-            and self.min_y <= point.y <= self.max_y
-        )
+        return self.min_x <= point.x <= self.max_x and self.min_y <= point.y <= self.max_y
 
     def union(self, other: Bounds2D) -> Bounds2D:
         if not isinstance(other, Bounds2D):
@@ -97,9 +95,7 @@ class Transform2D:
     rotation_radians: float = 0.0
 
     def __post_init__(self) -> None:
-        for name in (
-            "translate_x", "translate_y", "scale_x", "scale_y", "rotation_radians"
-        ):
+        for name in ("translate_x", "translate_y", "scale_x", "scale_y", "rotation_radians"):
             object.__setattr__(self, name, _finite_number(getattr(self, name), name))
         if self.scale_x == 0 or self.scale_y == 0:
             raise ValueError("transform scale must not be zero")
