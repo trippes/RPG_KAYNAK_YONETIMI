@@ -5,8 +5,8 @@
 > **Denetim:** [PHASE-14.1-AUDIT-REPORT.md](../reports/PHASE-14.1-AUDIT-REPORT.md)  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Denetlenen başlangıç HEAD:** `9de839ca2bbd3405060b207c8465b5051224b836`  
-> **Durum:** KULLANICI ONAYLADI — TEKNİK UYGULAMA TAMAMLANDI, MANUEL KABUL BEKLENİYOR  
-> **Uygulama:** 14.2–14.8 otomatik teknik kapsamı uygulandı; kullanıcı masaüstü kabul kapısı bekleniyor.
+> **Durum:** KULLANICI ONAYLADI — TEKNİK UYGULAMA VE OTOMATİK DOĞRULAMA BAŞARILI, MANUEL KABUL BEKLENİYOR  
+> **Uygulama:** 14.2–14.8 otomatik teknik kapsamı uygulandı; 881/881 Lab testi, Ruff, Linux/Windows Core Quality, benchmark ve görsel artifact başarılı; kullanıcı masaüstü kabul kapısı bekleniyor.
 
 ## 1. Teknik hedef
 
@@ -374,6 +374,6 @@ Bu teknik plan kullanıcı tarafından 18 Kasım 2026 tarihinde onaylanmıştır
 - 14.5: Beş profilin vektör belge üretimi eklendi. Eski Surface API'leri aynı kalırken artık VisualDocument + Pygame renderer üzerinden üretim yapar; ağaç/kaya/çalı pixel parity ve grass/flower seed determinism testleri korunur. Bounded cache, content ID asset registration ve açık collider adaptörleri eklendi.
 - 14.6: MapContentDocument placement add/update/remove ve mevcut map v1 wrapper persistence tamamlandı.
 - 14.7: Built-in beş profil ContentLibrary, map preview entegrasyonu, environment scene/render/physics adapter bağlantıları ve ELDORIA CONTENT EDITOR API hazırlık belgesi tamamlandı.
-- 14.8: Tam pytest, Ruff, Linux/Windows CI, benchmark ve PNG artifact doğrulaması yürütülüyor. Kullanıcı manuel kabul kontrol listesi eklendi.
+- 14.8: 881/881 Pytest, Ruff lint/format, Linux/Windows Core Quality, tüm aşama benchmarkları ve Phase 14 PNG/JSON artifact başarılı. [Uygulama/doğrulama raporu](../reports/PHASE-14-IMPLEMENTATION-REPORT.md) eklendi; kullanıcı manuel kabul kontrol listesi son kapı olarak bekliyor.
 - Bilinçli sınır: Beş built-in profilin collider alanı varsayılan olarak null; görselden collider türetilmez. Oyun/Content Editor ihtiyacına göre collider ayrı açık veri olarak yazılır.
 - GUI, masaüstü editör, fareyle harita düzenleme, rotation/scale ve ana oyuna entegrasyon yapılmadı.
