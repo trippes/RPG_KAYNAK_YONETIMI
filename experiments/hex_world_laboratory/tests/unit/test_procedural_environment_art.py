@@ -1,5 +1,6 @@
 import pygame
 import pytest
+
 from hex_world_lab.rendering.environment_assets import register_environment_assets
 from hex_world_lab.rendering.procedural_environment import (
     EnvironmentArtPalette,
