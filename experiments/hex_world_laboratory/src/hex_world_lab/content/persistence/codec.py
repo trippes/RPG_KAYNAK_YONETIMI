@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 import json
-from collections.abc import Mapping
 from typing import Any
 from hex_world_lab.world.persistence.map_serializer import map_to_payload
 from hex_world_lab.world.persistence.map_deserializer import deserialize_map_payload
@@ -210,7 +209,9 @@ def _decode_visual(raw, path):
         path,
     )
     version = raw["document_version"]
-    if isinstance(version, bool) or version != 1:
+    if isinstance(version, bool) or not isinstance(version, int):
+        raise ContentValidationError("must be an integer", path + ".document_version")
+    if version != 1:
         raise UnsupportedContentVersionError(
             "unsupported visual document version", path + ".document_version"
         )
@@ -304,7 +305,10 @@ def deserialize_library(payload: Any):
         {"schema_version", "kind", "library_id", "definitions"},
         "$",
     )
-    if isinstance(payload["schema_version"], bool) or payload["schema_version"] != 1:
+    version = payload["schema_version"]
+    if isinstance(version, bool) or not isinstance(version, int):
+        raise ContentValidationError("must be an integer", "$.schema_version")
+    if version != 1:
         raise UnsupportedContentVersionError(
             "unsupported content library schema version", "$.schema_version"
         )
