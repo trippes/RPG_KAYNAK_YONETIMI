@@ -1,4 +1,4 @@
-"""Deterministic procedural environmental object profiles."""
+"""Deterministic builders and visual metadata for environmental object profiles."""
 
 from __future__ import annotations
 
