@@ -208,7 +208,10 @@ class MainScreen:
         actors = self._actors()
         if not actors or placement is None:
             return False
-        actor_x, actor_y = self._position(actors[0].position)
+        spatial = self._actor_spatial(actors[0])
+        if spatial is None:
+            return False
+        actor_x, actor_y = self._position(spatial.position)
         dx = max(placement.x - actor_x, 0, actor_x - (placement.x + placement.width - 1))
         dy = max(placement.y - actor_y, 0, actor_y - (placement.y + placement.height - 1))
         return max(dx, dy) <= 1
@@ -938,13 +941,15 @@ class MainScreen:
 
         actors = self._actors()
         if actors:
-            x, y = self._position(actors[0].position)
-            renderer.pg.draw.rect(
-                renderer.surface,
-                (100, 210, 150),
-                renderer.pg.Rect(origin_x + x * self.TILE_SIZE + 1, origin_y + y * self.TILE_SIZE + 1, 8, 8),
-            )
-            self.selected = (x, y)
+            spatial = self._actor_spatial(actors[0])
+            if spatial is not None:
+                x, y = self._position(spatial.position)
+                renderer.pg.draw.rect(
+                    renderer.surface,
+                    (100, 210, 150),
+                    renderer.pg.Rect(origin_x + x * self.TILE_SIZE + 1, origin_y + y * self.TILE_SIZE + 1, 8, 8),
+                )
+                self.selected = (x, y)
 
         renderer.text(f"Tile: {self.selected[0]}, {self.selected[1]}", 28, 108, TEXT_SOFT)
         npc = self._npc_at(self.selected)
