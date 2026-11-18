@@ -47,6 +47,11 @@ jobs:
         run: |
           python -m ruff check src/hex_world_lab/rendering/procedural src/hex_world_lab/rendering/procedural_environment.py src/hex_world_lab/rendering/environment_assets.py tests/unit/test_procedural_canvas.py tests/unit/test_procedural_geometry.py tests/unit/test_procedural_palette.py tests/unit/test_procedural_variation.py tests/unit/test_procedural_components.py tests/unit/test_procedural_profiles.py tests/unit/test_procedural_cache.py tests/unit/test_procedural_environment_art.py tests/integration/test_environment_object_demo.py scripts/render_phase_13_scenes.py benchmarks/benchmark_phase_13_procedural_art.py
 
+      - name: Ruff format diagnostic diff
+        continue-on-error: true
+        run: |
+          python -m ruff format --diff src/hex_world_lab/rendering/procedural src/hex_world_lab/rendering/procedural_environment.py src/hex_world_lab/rendering/environment_assets.py tests/unit/test_procedural_canvas.py tests/unit/test_procedural_geometry.py tests/unit/test_procedural_palette.py tests/unit/test_procedural_variation.py tests/unit/test_procedural_components.py tests/unit/test_procedural_profiles.py tests/unit/test_procedural_cache.py tests/unit/test_procedural_environment_art.py tests/integration/test_environment_object_demo.py scripts/render_phase_13_scenes.py benchmarks/benchmark_phase_13_procedural_art.py
+
       - name: Ruff format check (procedural graphics scope)
         run: |
           python -m ruff format --check src/hex_world_lab/rendering/procedural src/hex_world_lab/rendering/procedural_environment.py src/hex_world_lab/rendering/environment_assets.py tests/unit/test_procedural_canvas.py tests/unit/test_procedural_geometry.py tests/unit/test_procedural_palette.py tests/unit/test_procedural_variation.py tests/unit/test_procedural_components.py tests/unit/test_procedural_profiles.py tests/unit/test_procedural_cache.py tests/unit/test_procedural_environment_art.py tests/integration/test_environment_object_demo.py scripts/render_phase_13_scenes.py benchmarks/benchmark_phase_13_procedural_art.py
