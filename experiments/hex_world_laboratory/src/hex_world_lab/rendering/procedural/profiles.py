@@ -12,7 +12,7 @@ from .cache import ProceduralSurfaceCache
 from .canvas import ProceduralCanvas
 from .components import draw_circle, draw_ellipse, draw_polygon, draw_polyline
 from .geometry import Point2D
-from .variation import create_rng
+from .variation import create_rng, normalize_seed
 
 
 @dataclass(frozen=True, slots=True)
@@ -106,15 +106,14 @@ def _build_flower(seed: int, supersampling: int, palette) -> pygame.Surface:
 def build_environment_profile(
     profile_key: str,
     palette=None,
-    seed: int = 0,
+    seed: int | str = 0,
     supersampling: int = 3,
     cache: ProceduralSurfaceCache | None = None,
 ) -> pygame.Surface:
     """Build one profile, optionally reusing a bounded cached Surface."""
     if profile_key not in PROFILE_DEFINITIONS:
         raise KeyError(f"unknown procedural profile: {profile_key}")
-    if isinstance(seed, bool) or not isinstance(seed, int):
-        raise TypeError("seed must be an integer")
+    normalized_seed = normalize_seed(seed)
     if isinstance(supersampling, bool) or not isinstance(supersampling, int):
         raise TypeError("supersampling must be an integer")
     if supersampling <= 0:
@@ -142,28 +141,27 @@ def build_environment_profile(
         if profile_key == "bush":
             return _bush(selected_palette)
         if profile_key == "grass":
-            return _build_grass(seed, supersampling, selected_palette)
-        return _build_flower(seed, supersampling, selected_palette)
+            return _build_grass(normalized_seed, supersampling, selected_palette)
+        return _build_flower(normalized_seed, supersampling, selected_palette)
 
-    profile_seed = seed if profile_key in ("grass", "flower") else 0
+    profile_seed = normalized_seed if profile_key in ("grass", "flower") else 0
     key = (profile_key, "profile-v1", selected_palette, profile_seed, supersampling)
     return factory() if cache is None else cache.get_or_create(key, factory)
 
 
 def build_environment_profiles(
     palette=None,
-    seed: int = 0,
+    seed: int | str = 0,
     supersampling: int = 3,
     cache: ProceduralSurfaceCache | None = None,
 ) -> dict[str, pygame.Surface]:
     """Build all five profiles, preserving Phase 12 legacy pixels."""
-    if isinstance(seed, bool) or not isinstance(seed, int):
-        raise TypeError("seed must be an integer")
+    normalized_seed = normalize_seed(seed)
     if isinstance(supersampling, bool) or not isinstance(supersampling, int):
         raise TypeError("supersampling must be an integer")
     if supersampling <= 0:
         raise ValueError("supersampling must be positive")
     return {
-        key: build_environment_profile(key, palette, seed, supersampling, cache)
+        key: build_environment_profile(key, palette, normalized_seed, supersampling, cache)
         for key in PROFILE_DEFINITIONS
     }
