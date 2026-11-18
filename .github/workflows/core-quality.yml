@@ -24,6 +24,7 @@ jobs:
           application/gameplay_service.py
           application/actor_system.py
           application/actor_persistence.py
+          application/game_application.py
           application/movement.py
           game_ui/hex_world_view.py
           tests/test_application/test_session_bundle.py
