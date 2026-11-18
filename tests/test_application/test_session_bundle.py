@@ -1,6 +1,9 @@
 import unittest
+from pathlib import Path
 
 from application import SessionBundle, SessionHolder
+from application.content_loader import load_content_package
+from application.hex_world_runtime import HexWorldRuntime
 from core.application import GameSession
 from core.simulation import SimulationRuntime
 from locks import KeyDefinition, LockDefinition, LockManager
@@ -15,7 +18,55 @@ from resources import (
 )
 
 
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+
+def make_hex_runtime():
+    package = load_content_package(PROJECT_ROOT / "content" / "demo_eldoria")
+    return HexWorldRuntime(
+        package.hex_map_definitions,
+        world_map_definition=package.world_map_definition,
+    )
+
+
+def make_bundle(hex_world_runtime=None):
+    session = GameSession()
+    return SessionBundle(
+        session=session,
+        simulation=session.simulation,
+        production_jobs=ProductionJobManager(session.simulation),
+        resource_nodes=WorldResourceNodeManager(session.worlds),
+        inventories={},
+        recipes={},
+        hex_world_runtime=hex_world_runtime,
+    )
+
+
 class TestSessionBundle(unittest.TestCase):
+    def test_default_bundle_has_no_hex_runtime_until_content_is_loaded(self):
+        bundle = SessionBundle.create_default()
+        self.assertIsNone(bundle.hex_world_runtime)
+
+    def test_hex_runtime_is_owned_by_session_bundle(self):
+        runtime = make_hex_runtime()
+        bundle = make_bundle(runtime)
+        self.assertIs(bundle.hex_world_runtime, runtime)
+
+    def test_invalid_hex_runtime_type_is_rejected(self):
+        with self.assertRaisesRegex(TypeError, "hex_world_runtime"):
+            make_bundle(object())
+
+    def test_candidate_cannot_share_hex_runtime_with_current_bundle(self):
+        runtime = make_hex_runtime()
+        current = make_bundle(runtime)
+        candidate = make_bundle(runtime)
+        holder = SessionHolder(current)
+
+        with self.assertRaisesRegex(ValueError, "mutable runtime state"):
+            holder.publish(candidate)
+
+        self.assertIs(holder.current, current)
+
     def test_default_bundle_owns_one_shared_runtime(self):
         bundle = SessionBundle.create_default()
 
