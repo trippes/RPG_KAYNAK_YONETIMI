@@ -1,7 +1,7 @@
 # Map Content JSON Schema v1
 
 **Kind:** `eldoria_map_document`  
-**Version:** `schema_version: 1`
+**Version:** `schema_version: 1`  \n**Machine-readable schema:** [map-content.v1.schema.json](../../schemas/map-content.v1.schema.json)
 
 This wrapper preserves the existing MAP JSON v1 document unchanged inside its `map` field. It adds a `placements` array for reusable content instances.
 
