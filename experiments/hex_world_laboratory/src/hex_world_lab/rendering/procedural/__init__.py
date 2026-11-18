@@ -12,6 +12,8 @@ from .profiles import (
     build_environment_profiles,
 )
 from .variation import create_rng, normalize_seed
+from .document_profiles import build_profile_document
+from .document_renderer import render_visual_document
 
 __all__ = [
     "Bounds2D",
@@ -25,6 +27,8 @@ __all__ = [
     "Transform2D",
     "build_environment_profile",
     "build_environment_profiles",
+    "build_profile_document",
+    "render_visual_document",
     "create_rng",
     "draw_circle",
     "draw_ellipse",
