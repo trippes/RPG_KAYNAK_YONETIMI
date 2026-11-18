@@ -25,7 +25,7 @@ from hex_world_lab.content import (
     PolygonElement,
     VisualDocument,
 )
-from hex_world_lab.content.collision import CircleCollider, ConvexPolygonCollider
+from hex_world_lab.content.collision import CircleCollider
 
 
 def make_visual():
