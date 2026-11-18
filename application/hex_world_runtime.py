@@ -40,7 +40,7 @@ class HexWorldRuntimeOwner:
 
     def __init__(self, runtime: HexWorldRuntime | None = None) -> None:
         if runtime is not None and not isinstance(runtime, HexWorldRuntime):
-            raise TypeError("runtime must be HexWorldRuntime or None.")
+            raise TypeError("hex_world_runtime must be HexWorldRuntime or None.")
         self._runtime = runtime
 
     @property
