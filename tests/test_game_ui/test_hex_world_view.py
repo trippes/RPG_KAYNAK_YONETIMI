@@ -9,13 +9,46 @@ from application.hex_world_runtime import HexWorldRuntimeOwner
 from core.domain.spatial import EntityPosition, HexDirection, LocalHexPosition
 
 
+class _FakeActor:
+    def __init__(self):
+        self.actor_id = "hero"
+        self.world_id = "legacy_world"
+        self._location_id = "village"
+        self._position = SimpleNamespace(x=7, y=9)
+        self._legacy_spatial_visible = True
+
+    @property
+    def location_id(self):
+        return self._location_id if self._legacy_spatial_visible else None
+
+    @property
+    def position(self):
+        return self._position if self._legacy_spatial_visible else None
+
+
+class _FakeActorRegistry:
+    def __init__(self, actor):
+        self.actor = actor
+
+    def suspend_legacy_spatial(self, actor_id):
+        if actor_id != self.actor.actor_id:
+            raise KeyError(actor_id)
+        self.actor._legacy_spatial_visible = False
+
+    def resume_legacy_spatial(self, actor_id):
+        if actor_id != self.actor.actor_id:
+            raise KeyError(actor_id)
+        self.actor._legacy_spatial_visible = True
+
+
 class _FakeService:
     def __init__(self):
-        self.actor = SimpleNamespace(
-            actor_id="hero",
-            world_id="legacy_world",
-            location_id="village",
-            position=SimpleNamespace(x=7, y=9),
+        self.actor = _FakeActor()
+        self.actors = _FakeActorRegistry(self.actor)
+        self.application = SimpleNamespace(
+            holder=SimpleNamespace(
+                current=SimpleNamespace(actors=self.actors)
+            )
         )
         self._content_package_path = (
             Path(__file__).resolve().parents[2] / "content" / "demo_eldoria"
@@ -44,11 +77,8 @@ class TestHexWorldView(unittest.TestCase):
         entity = self.view.runtime.entity("hero")
         self.assertEqual(entity.position.map_id, "hex_forest_demo")
         self.assertEqual(entity.position.cell, LocalHexPosition(0, 0))
-        self.assertEqual(self.service.actor.location_id, "village")
-        self.assertEqual(
-            (self.service.actor.position.x, self.service.actor.position.y),
-            (7, 9),
-        )
+        self.assertIsNone(self.service.actor.location_id)
+        self.assertIsNone(self.service.actor.position)
 
     def test_keyboard_movement_uses_hex_runtime(self):
         self.assertTrue(self.view.enter())
