@@ -6,6 +6,7 @@ os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 import argparse
+from dataclasses import replace
 from pathlib import Path
 
 import pygame
@@ -40,10 +41,9 @@ def render_scenes(output_dir: str | Path) -> tuple[Path, ...]:
         ):
             renderer.render(
                 surface,
-                snapshot,
+                replace(snapshot, debug_options=options),
                 layout,
                 transform,
-                debug_options=options,
             )
             path = output / name
             pygame.image.save(surface, path)
