@@ -5,7 +5,7 @@
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Genel plan:** [PHASE-13-GENERAL-PLAN.md](PHASE-13-GENERAL-PLAN.md)  
 > **Durum:** KULLANICI TARAFINDAN ONAYLANDI — 18 KASIM 2026  
-> **Uygulama durumu:** Başlamadı; bu belge kod değişikliği izni değildir.
+> **Uygulama durumu:** 13.1–13.8 tamamlandı; otomatik doğrulama ve kullanıcı masaüstü kabulü başarılı; Aşama 13 resmen kapatıldı.
 
 ## 1. Teknik hedef
 
@@ -363,7 +363,7 @@ Teknik plan onaylandıktan sonra uygulama başlayabilir. Aşama ancak:
 
 ## 15. Onay ve uygulama durumu
 
-Kullanıcı teknik planı 18 Kasım 2026 tarihinde onayladı. 13.1 denetimi ve 13.2–13.7 uygulamaları tamamlandı. 13.8 otomatik doğrulaması son doğrulanan HEAD `8d87f2201b15d980c5c90821ec72132213394295` üzerinde tamamlandı: 859/859 Pytest, Ruff lint/format, Linux ve Windows Core Quality, mevcut benchmarklar, Phase 13 cache benchmarkı ve görsel artifact üretimi başarılı. Sonuçlar [PHASE-13.2-13.7-IMPLEMENTATION-REPORT.md](../reports/PHASE-13.2-13.7-IMPLEMENTATION-REPORT.md) içinde kayıtlıdır. Yalnızca kullanıcı masaüstü görsel kabulü beklenmektedir; aşama henüz resmen kapatılmamıştır. Teknik kapsamı değiştiren yeni kararlar ayrıca kullanıcı onayı gerektirir.
+Kullanıcı teknik planı 18 Kasım 2026 tarihinde onayladı. 13.1 denetimi, 13.2–13.7 uygulamaları ve 13.8 otomatik doğrulaması tamamlandı. Tam test çalışmasında 859/859 Pytest; Ruff lint/format, Linux ve Windows Core Quality, benchmarklar ve görsel artifact üretimi başarılı oldu. Sonraki dokümantasyon/iş akışı temizlik HEAD'i `631a8b9ec4ad78a497167394add533ef59c95cf4` üzerinde laboratuvar CI ve Core Quality tekrar başarılı tamamlandı. Kullanıcı 18 Kasım 2026 tarihinde masaüstü görsel/işlevsel testlerin tamamının geçtiğini bildirdi. Aşama 13 resmen kapatılmıştır. Ayrıntılar [PHASE-13.2-13.7-IMPLEMENTATION-REPORT.md](../reports/PHASE-13.2-13.7-IMPLEMENTATION-REPORT.md) ve [PHASE-13-CLOSURE-REPORT.md](../reports/PHASE-13-CLOSURE-REPORT.md) raporlarındadır. Yeni teknik kapsam ayrıca onaylanmalıdır.
 
 ## 16. Dal güvenliği
 
