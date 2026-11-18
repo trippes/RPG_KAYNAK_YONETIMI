@@ -8,6 +8,7 @@ from typing import Mapping
 
 import pygame
 
+from .cache import ProceduralSurfaceCache
 from .canvas import ProceduralCanvas
 from .components import draw_circle, draw_ellipse, draw_polygon, draw_polyline
 from .geometry import Point2D
@@ -102,27 +103,67 @@ def _build_flower(seed: int, supersampling: int, palette) -> pygame.Surface:
     return canvas.finish()
 
 
-def build_environment_profiles(
+def build_environment_profile(
+    profile_key: str,
     palette=None,
     seed: int = 0,
     supersampling: int = 3,
-) -> dict[str, pygame.Surface]:
-    """Build the five environment profiles; legacy visuals remain pixel-stable."""
+    cache: ProceduralSurfaceCache | None = None,
+) -> pygame.Surface:
+    """Build one profile, optionally reusing a bounded cached Surface."""
+    if profile_key not in PROFILE_DEFINITIONS:
+        raise KeyError(f"unknown procedural profile: {profile_key}")
     if isinstance(seed, bool) or not isinstance(seed, int):
         raise TypeError("seed must be an integer")
     if isinstance(supersampling, bool) or not isinstance(supersampling, int):
         raise TypeError("supersampling must be an integer")
     if supersampling <= 0:
         raise ValueError("supersampling must be positive")
+    if cache is not None and not isinstance(cache, ProceduralSurfaceCache):
+        raise TypeError("cache must be a ProceduralSurfaceCache or None")
 
-    # Import lazily to keep this module usable while the compatibility facade
-    # remains the owner of the Phase 12 implementation.
-    from ..procedural_environment import DEFAULT_PALETTE, build_environment_surfaces
+    from ..procedural_environment import (
+        DEFAULT_PALETTE,
+        EnvironmentArtPalette,
+        _bush,
+        _rock,
+        _tree,
+    )
 
     selected_palette = DEFAULT_PALETTE if palette is None else palette
-    legacy = build_environment_surfaces(selected_palette)
+    if not isinstance(selected_palette, EnvironmentArtPalette):
+        raise TypeError("palette must be an EnvironmentArtPalette")
+
+    def factory() -> pygame.Surface:
+        if profile_key == "tree":
+            return _tree(selected_palette)
+        if profile_key == "rock":
+            return _rock(selected_palette)
+        if profile_key == "bush":
+            return _bush(selected_palette)
+        if profile_key == "grass":
+            return _build_grass(seed, supersampling, selected_palette)
+        return _build_flower(seed, supersampling, selected_palette)
+
+    profile_seed = seed if profile_key in ("grass", "flower") else 0
+    key = (profile_key, "profile-v1", selected_palette, profile_seed, supersampling)
+    return factory() if cache is None else cache.get_or_create(key, factory)
+
+
+def build_environment_profiles(
+    palette=None,
+    seed: int = 0,
+    supersampling: int = 3,
+    cache: ProceduralSurfaceCache | None = None,
+) -> dict[str, pygame.Surface]:
+    """Build all five profiles, preserving Phase 12 legacy pixels."""
+    if isinstance(seed, bool) or not isinstance(seed, int):
+        raise TypeError("seed must be an integer")
+    if isinstance(supersampling, bool) or not isinstance(supersampling, int):
+        raise TypeError("supersampling must be an integer")
+    if supersampling <= 0:
+        raise ValueError("supersampling must be positive")
     return {
-        **legacy,
-        "grass": _build_grass(seed, supersampling, selected_palette),
-        "flower": _build_flower(seed, supersampling, selected_palette),
+        key: build_environment_profile(key, palette, seed, supersampling, cache)
+        for key in PROFILE_DEFINITIONS
     }
