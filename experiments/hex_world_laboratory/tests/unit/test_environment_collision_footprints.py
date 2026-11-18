@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from hex_world_lab.application.movement_demo import MovementDemo, PLAYER_COLLIDER_RADIUS
-from hex_world_lab.geometry import WorldPoint
 from hex_world_lab.movement import Vector2
 from hex_world_lab.physics import CircleShape, ConvexPolygonShape, collide_shapes
 
@@ -18,7 +17,7 @@ def _player_circle(x: float, y: float) -> CircleShape:
 
 
 def test_tree_blocks_trunk_and_roots_but_not_the_canopy() -> None:
-    demo = MovementDemo(key_state_provider=lambda: [])
+    demo = MovementDemo()
     tree = _environment_obstacle(demo, "tree")
     assert isinstance(tree.shape, ConvexPolygonShape)
 
