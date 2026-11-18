@@ -5,8 +5,8 @@
 > **Depo:** `trippes/RPG_KAYNAK_YONETIMI`  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Hedef entegrasyon dalı:** `demo_eldoria`  
-> **Durum:** AŞAMA 0–14 KAPALI; AŞAMA 15 TEKNİK PLANI HAZIR — KULLANICI ONAYI BEKLİYOR
-> **Belge sürümü:** 4.5
+> **Durum:** AŞAMA 0–14 KAPALI; AŞAMA 15.1–15.8 DOKÜMANTASYON HAZIR — KULLANICI KABULÜ VE SON CI BEKLİYOR
+> **Belge sürümü:** 4.6
 
 ## Aşama 12–14 kapsam ayrımı — 18 Kasım 2026
 
@@ -22,7 +22,7 @@ Aşama 12 yalnızca çevresel nesne mimarisi ve kodla çizilmiş ağaç, kaya, �
 - [15.1 gerçekleşen mimari denetim raporu](../reports/PHASE-15.1-AUDIT-REPORT.md)
 - [Ayrıntılı teknik mimari planı](PHASE-15-TECHNICAL-PLAN.md)
 
-Aşama 15 genel planı doğrultusunda gerçek kaynak ağacı ve demo_eldoria salt okunur karşılaştırması denetlendi. 15.1 denetim raporu ve ayrıntılı teknik plan hazırlandı. Teknik plan kullanıcı onayı beklemektedir; 15.2–15.8 uygulaması, kod aktarımı ve Aşama 16 başlamamıştır. main ve demo_eldoria dalları değiştirilmeyecektir.
+Aşama 15 teknik planı kullanıcı tarafından onaylandı. 15.2–15.8 kapsamında ADR envanteri, API kataloğu, veri akışı/uyumluluk, Lab–demo dosya eşleştirmesi, bağımlılık/lisans denetimi, A16 dilim/rollback taslağı, test matrisi ve koşullu hazırlık kararı hazırlandı. Son A15 HEAD CI doğrulaması ve kullanıcı manuel kabulü beklenmektedir. Ana oyun kodu aktarılmadı; main ve demo_eldoria salt okunur kaldı.
 
 ---
 
@@ -807,7 +807,7 @@ Bu liste tamamlanmadan laboratuvarın ana oyuna aktarılmaya hazır olduğu söy
 | 12 | Çevresel nesne mimarisi ve kodla çizilmiş ağaç/kaya/çalı prototipleri | 12.1–12.8 tamamlandı; 800 test, Linux/Windows CI, benchmark, görsel kanıt ve kullanıcı manuel kabulü başarılı; 18 Kasım 2026 tarihinde resmen kapatıldı |
 | 13 | Genel prosedürel grafik/çizim altyapısı | 13.1–13.8, 859/859 Pytest, Ruff, Linux/Windows CI, benchmark/görsel kanıt ve kullanıcı masaüstü kabulü tamamlandı; 18 Kasım 2026 tarihinde resmen kapatıldı |
 | 14 | İçerik veri altyapısı ve ELDORIA CONTENT EDITOR hazırlığı | 14.1–14.8 tamamlandı; 881/881 Lab Pytest, Ruff, Linux/Windows Core Quality (Linux 2.344 test), benchmark, görsel artifact ve 19 Kasım 2026 kullanıcı görsel kabulü başarılı; [kapanış raporu](../reports/PHASE-14-CLOSURE-REPORT.md); editör GUI kapsam dışı |
-| 15 | Nihai mimari, dokümantasyon ve entegrasyon hazırlığı | [Genel plan hazır](PHASE-15-GENERAL-PLAN.md); kullanıcı onayı bekleniyor; teknik plan/uygulama başlamadı |
+| 15 | Nihai mimari, dokümantasyon ve entegrasyon hazırlığı | 15.1–15.8 dokümantasyon ve denetim çıktıları hazır; [koşullu hazırlık kararı](../reports/PHASE-15-READINESS-DECISION.md); son CI ve kullanıcı kabulü bekleniyor |
 | 16 | Kontrollü demo entegrasyonu | Ayrı açık kullanıcı onayı gerektirir |
 
 - Çalışma dalı: `experiment/hex-world-laboratory`.
@@ -826,7 +826,7 @@ Aşama 10 Genel Planı ve Teknik Mimari Planı kullanıcı tarafından onaylanm�
 
 Dünya görsel zenginleştirmesi (arazi dokuları, bitki örtüsü, ağaç/kaya/çevre varlıkları, ışık ve atmosfer) Aşama 7'nin geriye dönük eksik işi değildir. Kullanıcı kararı doğrultusunda ihtiyaç duyulan ileriki aşamalarda ayrı kapsam olarak ele alınacaktır.
 
-Aşama 15 Genel Planı `PHASE-15-GENERAL-PLAN.md` dosyasına eklenmiştir. Plan; laboratuvarın nihai mimari denetimini, ADR/API/veri sözleşmelerini, `demo_eldoria` ile salt okunur dosya eşleştirmesini, bağımlılık/lisans uyumluluğunu ve Aşama 16 için entegrasyon/test/geri dönüş hazırlığını kapsar. Kullanıcı onayı beklenmektedir; teknik plan ve uygulama başlamamıştır.
+Aşama 15 genel ve ayrıntılı teknik planları kullanıcı tarafından onaylanmıştır. 15.1–15.8 çalışmaları tamamlanarak [ADR durum envanteri](PHASE-15-ADR-STATUS.md), [API kataloğu](PHASE-15-API-CATALOG.md), [veri akışı](PHASE-15-DATA-FLOW.md), [veri uyumluluğu](PHASE-15-DATA-COMPATIBILITY.md), [Lab/Main eşleştirmesi](../reports/PHASE-15-INTEGRATION-MAPPING.md), [bağımlılık/lisans denetimi](../reports/PHASE-15-DEPENDENCY-AND-LICENSE-AUDIT.md), [A16 entegrasyon taslağı](PHASE-16-INTEGRATION-SEQUENCE-DRAFT.md), [test matrisi](PHASE-15-TEST-AND-ACCEPTANCE-MATRIX.md) ve [koşullu hazırlık kararı](../reports/PHASE-15-READINESS-DECISION.md) oluşturulmuştur. Son HEAD CI ve kullanıcı manuel kabulü beklenmektedir. A16 kod entegrasyonu başlamamıştır.
 
 **Her aşama ve kapsam değişikliği ayrıca onaylanır. Korunan `main` ve `demo_eldoria` dallarına bu laboratuvar çalışması kapsamında yazılmaz.**
 
