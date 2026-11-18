@@ -58,7 +58,7 @@ Ek entegrasyon kontrolleri:
 - Legacy tree/rock/bush piksel çıktılarının korunması.
 - Seed tekrarlanabilirliği ve cache anahtar ayrımı.
 
-İlk tam test koşusu üç uyumsuzluğu ortaya çıkardı: iki eski sahne beklentisi yeni dekoratif profillerle güncellenmeliydi; seed testi her örnekte yanlışlıkla yeni RNG oluşturuyordu. Üçü de düzeltildi. Son doğrulanan kod HEAD'i `e051183d4a1bd1dcab63accaeb17d2876d24bc61` üzerinde laboratuvar CI başarıyla tamamlandı: **859/859 Pytest testi geçti** (97.95 saniye); tüm mevcut benchmarklar, Phase 12 benchmark/görsel kanıtı ve Phase 13 benchmark/görsel kanıtı başarılı oldu. Core Quality Linux ve Windows işlerinin ikisi de başarılı tamamlandı; her ikisinde Ruff lint ve format kontrolleri de geçti.
+İlk tam test koşusu üç uyumsuzluğu ortaya çıkardı: iki eski sahne beklentisi yeni dekoratif profillerle güncellenmeliydi; seed testi her örnekte yanlışlıkla yeni RNG oluşturuyordu. Üçü de düzeltildi. Son doğrulanan HEAD `8d87f2201b15d980c5c90821ec72132213394295` üzerinde laboratuvar CI başarıyla tamamlandı: **859/859 Pytest testi geçti** (97.95 saniye); tüm mevcut benchmarklar, Phase 12 benchmark/görsel kanıtı ve Phase 13 benchmark/görsel kanıtı başarılı oldu. Core Quality Linux ve Windows işlerinin ikisi de başarılı tamamlandı; her ikisinde Ruff lint ve format kontrolleri de geçti.
 
 ## 4. Performans ve görsel kanıt sonuçları
 
@@ -66,15 +66,15 @@ Phase 13 cache benchmarkı 3 oturum ve profil başına 20 tekrar üzerinden çal
 
 | Profil | Üretim medyanı | Cache hit medyanı | Hızlanma | Surface belleği |
 |---|---:|---:|---:|---:|
-| Tree | 518.506 µs | 0.572 µs | 905.92× | 88,704 B |
-| Rock | 103.565 µs | 0.485 µs | 213.67× | 12,672 B |
-| Bush | 117.109 µs | 0.471 µs | 248.53× | 20,416 B |
-| Grass | 252.494 µs | 0.490 µs | 515.03× | 9,216 B |
-| Flower | 171.967 µs | 0.473 µs | 363.41× | 10,752 B |
+| Tree | 399.780 µs | 0.383 µs | 1,043.13× | 88,704 B |
+| Rock | 77.930 µs | 0.327 µs | 238.03× | 12,672 B |
+| Bush | 85.452 µs | 0.327 µs | 261.16× | 20,416 B |
+| Grass | 180.830 µs | 0.336 µs | 537.94× | 9,216 B |
+| Flower | 119.893 µs | 0.349 µs | 343.63× | 10,752 B |
 
 Beş profilin toplam yaklaşık Surface belleği **141,760 B (138.4 KiB)**; benchmarkta cache eviction görülmedi. Ölçülen tekrar kullanım kazancı nedeniyle bounded cache korunmuştur. Bu değerler sıcak cache hit ve profil üretim maliyetlerini karşılaştırır; tüm oyun sürecinin RAM tüketimi değildir.
 
-Görsel artifact paketi: [Phase 13 procedural validation](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44351527604/artifacts/14448852131). Paket beş profil PNG'si, entegre sahne, F3 collider overlay, F4 anchor/bounds overlay ve benchmark JSON içerir.
+Görsel artifact paketi: [Phase 13 procedural validation](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44353220766/artifacts/14450635180). Paket beş profil PNG'si, entegre sahne, F3 collider overlay, F4 anchor/bounds overlay ve benchmark JSON içerir.
 
 ## 5. 13.8 tamamlanma kapıları
 
