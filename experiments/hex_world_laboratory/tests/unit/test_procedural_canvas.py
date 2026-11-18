@@ -6,8 +6,9 @@ from hex_world_lab.rendering.procedural.geometry import Point2D
 
 
 def test_canvas_creates_supersampled_alpha_surface_without_display():
+    display_was_initialized = pygame.display.get_init()
     canvas = ProceduralCanvas((20, 12))
-    assert pygame.display.get_init() is False
+    assert pygame.display.get_init() is display_was_initialized
     assert canvas.pixel_size == (60, 36)
     assert canvas.surface.get_flags() & pygame.SRCALPHA
     assert canvas.surface.get_bitsize() == 32
