@@ -1,4 +1,5 @@
 """Benchmark procedural profile generation against warm bounded-cache hits."""
+
 from __future__ import annotations
 
 import json
@@ -40,9 +41,7 @@ def run_benchmark(repetitions: int = 20, sessions: int = 3) -> dict:
                 )
             )
             cache = ProceduralSurfaceCache(max_entries=8, max_bytes=8 * 1024 * 1024)
-            cache.get_or_create(
-                (key, session), lambda: build_environment_profile(key, seed=17)
-            )
+            cache.get_or_create((key, session), lambda: build_environment_profile(key, seed=17))
             cached_samples.append(
                 _measure(
                     lambda: cache.get_or_create(
