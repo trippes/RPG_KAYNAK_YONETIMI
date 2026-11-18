@@ -4,7 +4,7 @@
 > **Proje:** Eldoria — Hex World Laboratory  
 > **Depo:** `trippes/RPG_KAYNAK_YONETIMI`  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
-> **Durum:** GENEL PLAN HAZIR — KULLANICI ONAYI BEKLENİYOR  
+> **Durum:** GENEL PLAN KULLANICI TARAFINDAN ONAYLANDI — TEKNİK PLAN ONAYI BEKLENİYOR  
 > **Ön koşul:** Aşama 0–10 tamamlandı ve kabul edildi  
 > **Tek laboratuvar başlatıcısı:** `python -m hex_world_lab`
 
