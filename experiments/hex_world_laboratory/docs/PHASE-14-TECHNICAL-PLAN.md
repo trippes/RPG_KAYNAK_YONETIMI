@@ -5,8 +5,8 @@
 > **Denetim:** [PHASE-14.1-AUDIT-REPORT.md](../reports/PHASE-14.1-AUDIT-REPORT.md)  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Denetlenen başlangıç HEAD:** `9de839ca2bbd3405060b207c8465b5051224b836`  
-> **Durum:** TEKNİK PLAN HAZIR — KULLANICI ONAYI BEKLENİYOR  
-> **Uygulama:** Başlamadı.
+> **Durum:** KULLANICI ONAYLADI — TEKNİK UYGULAMA TAMAMLANDI, MANUEL KABUL BEKLENİYOR  
+> **Uygulama:** 14.2–14.8 otomatik teknik kapsamı uygulandı; kullanıcı masaüstü kabul kapısı bekleniyor.
 
 ## 1. Teknik hedef
 
@@ -363,4 +363,17 @@ Kullanıcıdan masaüstü editör testi istenmeyecektir. Kabul adımları:
 
 ## 12. Onay kapısı
 
-Bu teknik plan kullanıcı onayına sunulmuştur. Onay verilmeden 14.2 veya başka bir uygulama iş paketi başlatılmayacaktır. Onaydan sonra uygulama yalnızca `experiment/hex-world-laboratory` dalında yürütülecek; `main` ve `demo_eldoria` dallarına commit/merge yapılmayacaktır.
+Bu teknik plan kullanıcı tarafından 18 Kasım 2026 tarihinde onaylanmıştır. 14.2–14.8 uygulaması yalnızca `experiment/hex-world-laboratory` dalında yürütülmüştür; `main` ve `demo_eldoria` dallarına commit/merge yapılmamıştır. Resmî kapanış, otomatik doğrulama ve kullanıcı masaüstü kabulü tamamlandığında yapılacaktır.
+
+
+## 13. Uygulama durumu — 18 Kasım 2026
+
+- 14.2: Immutable VisualDocument, primitive/layer/style/palette sözleşmeleri; ContentDefinition, ContentLibrary, ContentPlacement ve MapContentDocument tamamlandı.
+- 14.3: Content Library JSON v1 ve Map Content JSON v1 strict codec/file storage tamamlandı. Duplicate key, NaN/Infinity, unknown/missing field ve unsupported version reddedilir.
+- 14.4: Stable ID, duplicate identity, palette token ve content reference çözümlemesi tamamlandı.
+- 14.5: Beş profilin vektör belge üretimi eklendi. Eski Surface API'leri aynı kalırken artık VisualDocument + Pygame renderer üzerinden üretim yapar; ağaç/kaya/çalı pixel parity ve grass/flower seed determinism testleri korunur. Bounded cache, content ID asset registration ve açık collider adaptörleri eklendi.
+- 14.6: MapContentDocument placement add/update/remove ve mevcut map v1 wrapper persistence tamamlandı.
+- 14.7: Built-in beş profil ContentLibrary, map preview entegrasyonu, environment scene/render/physics adapter bağlantıları ve ELDORIA CONTENT EDITOR API hazırlık belgesi tamamlandı.
+- 14.8: Tam pytest, Ruff, Linux/Windows CI, benchmark ve PNG artifact doğrulaması yürütülüyor. Kullanıcı manuel kabul kontrol listesi eklendi.
+- Bilinçli sınır: Beş built-in profilin collider alanı varsayılan olarak null; görselden collider türetilmez. Oyun/Content Editor ihtiyacına göre collider ayrı açık veri olarak yazılır.
+- GUI, masaüstü editör, fareyle harita düzenleme, rotation/scale ve ana oyuna entegrasyon yapılmadı.
