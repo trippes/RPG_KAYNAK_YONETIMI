@@ -5,6 +5,7 @@ from pathlib import Path
 from application import (
     ActivityState,
     ActorError,
+    ActorIdentity,
     GameApplication,
     GameplayService,
     GameplayServiceError,
@@ -12,6 +13,7 @@ from application import (
     ProductionFacilityRegistry,
     SessionBundle,
     SessionHolder,
+    WorldActor,
 )
 from core.application import GameSession
 from resources import (
@@ -29,7 +31,6 @@ from resources import (
 
 class TestActorSystem(unittest.TestCase):
     def test_actor_identity_is_immutable_and_independent_of_legacy_location(self):
-        from application.actor_system import ActorIdentity, WorldActor
         from core.domain.spatial import Position
 
         actor = WorldActor(
@@ -47,8 +48,30 @@ class TestActorSystem(unittest.TestCase):
             actor.identity,
             ActorIdentity("player", "world_eldoria", "player"),
         )
+        self.assertEqual(actor.view().identity, actor.identity)
         with self.assertRaises((AttributeError, TypeError)):
             actor.identity.role = "merchant"
+
+    def test_gameplay_links_and_activity_survive_legacy_spatial_changes(self):
+        from core.domain.spatial import Position
+
+        actor = WorldActor(
+            "hero", "world_eldoria", "player",
+            character_id="character_hero",
+            location_id="legacy_village",
+            position=Position(3, 5),
+            inventory_id="inventory_hero",
+        )
+        actor.begin_activity("activity_gather_01")
+        original_identity = actor.identity
+
+        actor.set_position("legacy_forest", Position(8, 13))
+
+        self.assertEqual(actor.identity, original_identity)
+        self.assertEqual(actor.character_id, "character_hero")
+        self.assertEqual(actor.inventory_id, "inventory_hero")
+        self.assertEqual(actor.activity_id, "activity_gather_01")
+        self.assertEqual(actor.view().identity, original_identity)
 
     def setUp(self):
         session = GameSession()
