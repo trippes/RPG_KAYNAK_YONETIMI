@@ -45,3 +45,6 @@ include = [
     "world*",
 ]
 exclude = ["tests*", "docs*", "scripts*"]
+
+[tool.ruff]
+target-version = "py311"
