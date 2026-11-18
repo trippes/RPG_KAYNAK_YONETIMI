@@ -1,6 +1,6 @@
 # Aşama 11 — Manuel Kabul Kontrol Listesi
 
-> **Durum:** OTOMATİK DOĞRULAMA TAMAMLANDI — KULLANICI MASAÜSTÜ KABULÜ BEKLENİYOR  
+> **Durum:** TÜM OTOMATİK VE MANUEL KABUL KONTROLLERİ TAMAMLANDI — AŞAMA 11 KAPATILDI  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Başlatıcı:** `python -m hex_world_lab`
 
@@ -52,9 +52,9 @@ Bu kontrol listesi, otomatik testlerin yerine geçmez. Kullanıcı tarafından m
 - [x] Deterministik stress smoke ve tam stress profilleri raporlandı.
 - [x] Benchmark ve bellek raporları incelendi; üç bağımsız oturum kaydedildi.
 - [x] Otomatik CI'da kritik/yüksek önem dereceli test failure'ı bulunmadı.
-- [ ] Kullanıcı masaüstü görsel/işlevsel kabulünü verdi.
+- [x] Kullanıcı masaüstü görsel/işlevsel kabulünü verdi.
 
-**Kullanıcı kabul tarihi:** ____________________
+**Kullanıcı kabul tarihi:** 18 Kasım 2026
 
 **Kullanıcı notları / gözlemler:**
 
@@ -62,9 +62,9 @@ ________________________________________________________________
 
 ________________________________________________________________
 
-**Kabul kararı:** BEKLİYOR / KABUL / DÜZELTME GEREKLİ
+**Kabul kararı:** KABUL — Aşama 11 kapatıldı
 
 
-**Otomatik kanıtlar:** [Laboratuvar CI 44274231933](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44274231933) · [Core Quality 44274231885](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44274231885)
+**Otomatik kanıtlar:** [Laboratuvar CI 44275529494](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44274231933) · [Core Quality 44275529498](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44274231885)
 
-**Manuel kabul durumu:** Bekliyor. A–E bölümlerindeki görsel/işlevsel maddeler ve F bölümündeki son kullanıcı kabul kutusu masaüstü kontrolü olmadan işaretlenmeyecektir.
+**Manuel kabul durumu:** Kullanıcı 18 Kasım 2026 tarihinde A–E bölümlerindeki masaüstü görsel/işlevsel kontrollerin tamamının geçtiğini bildirdi. F bölümündeki kullanıcı kabulü kaydedildi; manuel kabul tamamlandı.
