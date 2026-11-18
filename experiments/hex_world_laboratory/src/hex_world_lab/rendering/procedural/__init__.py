@@ -13,7 +13,7 @@ from .profiles import (
 )
 from .variation import create_rng, normalize_seed
 from .document_profiles import build_profile_document
-from .document_renderer import render_visual_document
+from .document_renderer import render_content_definition, render_visual_document
 
 __all__ = [
     "Bounds2D",
@@ -28,6 +28,7 @@ __all__ = [
     "build_environment_profile",
     "build_environment_profiles",
     "build_profile_document",
+    "render_content_definition",
     "render_visual_document",
     "create_rng",
     "draw_circle",
