@@ -30,7 +30,7 @@ from hex_world_lab.world import MapId, WorldId
 class _UnculledRenderer(PygameWorldRenderer):
     """Same renderer path with only viewport sprite rejection disabled."""
 
-    def _sprite_intersects_viewport(self, sprite, asset, transform) -> bool:
+    def _sprite_intersects_viewport(self, sprite, asset, viewport_bounds) -> bool:
         return True
 
 
@@ -134,9 +134,10 @@ def main() -> None:
                 session["render_without_culling"] = measure(
                     lambda: unculled_renderer.render(surface, snapshot, layout, transform), repeats=8
                 )
+                viewport_bounds = renderer._world_viewport_bounds(transform)
                 visible_count = sum(
                     renderer._sprite_intersects_viewport(
-                        sprite, renderer._sprite_assets[sprite.asset_key], transform
+                        sprite, renderer._sprite_assets[sprite.asset_key], viewport_bounds
                     )
                     for sprite in sprites
                 )
