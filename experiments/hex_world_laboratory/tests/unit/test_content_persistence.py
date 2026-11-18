@@ -14,7 +14,23 @@ from hex_world_lab.content import (
     PolygonElement,
     VisualDocument,
 )
-from hex_world_lab.content.collision import CircleCollider, ConvexPolygonCollider
+from hex_world_lab.content.collision import CircleCollider
+from hex_world_lab.content.map_document import MapContentDocument
+from hex_world_lab.content.persistence import (
+    ContentPersistenceError,
+    ContentValidationError,
+    UnsupportedContentVersionError,
+    deserialize_library,
+    deserialize_map_content,
+    load_library_file,
+    load_map_content_file,
+    save_library_file,
+    save_map_content_file,
+    serialize_library,
+    serialize_map_content,
+)
+from hex_world_lab.geometry import HexLayout, HexOrientation, WorldPoint
+from hex_world_lab.world import HexMapDefinition, MapId, WorldId
 
 
 def make_visual():
@@ -55,23 +71,6 @@ def make_library():
     return ContentLibrary("default", (make_definition(collider=CircleCollider(0, 0, 4)),))
 
 
-from hex_world_lab.content.map_document import MapContentDocument
-from hex_world_lab.content.persistence import (
-    ContentValidationError,
-    UnsupportedContentVersionError,
-    deserialize_library,
-    deserialize_map_content,
-    load_library_file,
-    load_map_content_file,
-    save_library_file,
-    save_map_content_file,
-    serialize_library,
-    serialize_map_content,
-)
-from hex_world_lab.geometry import HexLayout, HexOrientation, WorldPoint
-from hex_world_lab.world import HexMapDefinition, MapId, WorldId
-
-
 def make_map():
     return HexMapDefinition(
         WorldId("eldoria"),
@@ -109,6 +108,14 @@ def test_strict_schemas_reject_unknown_fields_versions_and_duplicate_ids():
     with pytest.raises(UnsupportedContentVersionError):
         deserialize_library(payload)
     payload = json.loads(serialize_library(make_library()))
+    payload["schema_version"] = 1.0
+    with pytest.raises(ContentValidationError):
+        deserialize_library(payload)
+    payload = json.loads(serialize_library(make_library()))
+    payload["definitions"][0]["visual_document"]["document_version"] = 1.0
+    with pytest.raises(ContentValidationError):
+        deserialize_library(payload)
+    payload = json.loads(serialize_library(make_library()))
     payload["definitions"].append(payload["definitions"][0])
     with pytest.raises(ContentValidationError):
         deserialize_library(payload)
@@ -123,7 +130,10 @@ def test_file_storage_create_replace_and_duplicate_json_key_rejection(tmp_path):
         save_library_file(library, path)
     save_library_file(library, path, mode="replace")
     path.write_text('{"schema_version":1,"schema_version":1}', encoding="utf-8")
-    with pytest.raises(Exception):
+    with pytest.raises(ContentPersistenceError):
+        load_library_file(path)
+    path.write_text('{"value": NaN}', encoding="utf-8")
+    with pytest.raises(ContentPersistenceError):
         load_library_file(path)
 
 
