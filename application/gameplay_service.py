@@ -197,6 +197,11 @@ class GameplayService:
     def application(self) -> GameApplication:
         return self._application
 
+    @property
+    def hex_world_runtime(self):
+        """Return the active session's authoritative hex runtime, when configured."""
+        return self._current_bundle().hex_world_runtime
+
     def register_character_factory(self, factory) -> None:
         self._character_factory = factory
 
