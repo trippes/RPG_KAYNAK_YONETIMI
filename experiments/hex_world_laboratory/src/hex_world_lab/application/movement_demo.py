@@ -172,7 +172,7 @@ class MovementDemo:
         rock_center = axial_to_world(AxialCoord(-2, 2), self._layout)
         bush_center = axial_to_world(AxialCoord(3, -2), self._layout)
         grass_center = axial_to_world(AxialCoord(-4, 0), self._layout)
-        flower_center = axial_to_world(AxialCoord(2, 3), self._layout)
+        flower_center = axial_to_world(AxialCoord(3, 1), self._layout)
         wall_center = axial_to_world(AxialCoord(0, -2), self._layout)
         self.house_center = axial_to_world(AxialCoord(-3, 0), self._layout)
         environment_definitions = (
