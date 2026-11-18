@@ -4,7 +4,7 @@
 > **Proje:** Eldoria — Hex World Laboratory  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Plan dayanağı:** Onaylanmış `PHASE-11-GENERAL-PLAN.md`  
-> **Durum:** TEKNİK PLAN HAZIR — KULLANICI ONAYI BEKLENİYOR  
+> **Durum:** KULLANICI TARAFINDAN UYGULAMA İZNİ VERİLDİ — AŞAMA 11.1–11.8 YÜRÜTÜLÜYOR  
 > **Kod uygulaması:** Başlamadı  
 > **Tek laboratuvar başlatıcısı:** `python -m hex_world_lab`
 
@@ -25,7 +25,7 @@ Bağlayıcı kararlar:
 - Render ve kamera authoritative state değiştiremez.
 - `python -m hex_world_lab` tek başlatıcıdır.
 - A*, Dijkstra, click-to-move, pathfinding, AI, toplama/ekonomi, savaş/görev/diyalog, çevre sanatı, harita editörü ve Godot geçişi kapsam dışıdır.
-- Teknik planın onayı gelmeden uygulama başlamaz.
+- Kullanıcı 18 Kasım 2026 tarihinde 11.1–11.8 arası kesintisiz uygulama, test ve doğrulama için açık izin vermiştir.
 
 ## 2. Depo denetimi ve mevcut başlangıç noktası
 
@@ -311,15 +311,15 @@ Aşama 11 teknik kapanış için:
 
 ## 7. Aşama yürütme sırası ve onay kapıları
 
-1. Kullanıcı bu teknik planı inceler ve ayrıca onaylar.
-2. Onaydan sonra 11.1 baseline denetimi yapılır.
+1. Kullanıcı 18 Kasım 2026 tarihinde bu teknik plan kapsamındaki 11.1–11.8 işlerinin yürütülmesine açık izin vermiştir.
+2. 11.1 baseline denetimiyle başlanır.
 3. Her alt aşama tamamlandığında test/benchmark kanıtı raporlanır.
 4. Bulgu kapsamı değiştirecekse uygulama durdurulur ve onay istenir.
 5. 11.8 sonunda CI ve görsel kabul hazırlığı tamamlanır.
 6. Kullanıcı masaüstünde manuel kabulü gerçekleştirir.
 7. Kapanış raporu ve Master Plan güncellenir.
 
-**Bu belge teknik tasarım onayı içindir; tek başına kod uygulama izni değildir.**
+**Uygulama izni:** Kullanıcının 18 Kasım 2026 tarihli açık talimatıyla 11.1–11.8 kapsamı onaylanmıştır. Kapsam dışına çıkılması gerekirse ayrıca izin alınır.
 
 ---
 
