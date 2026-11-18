@@ -8,9 +8,9 @@ from typing import Any
 from hex_world_lab.world.persistence.map_deserializer import deserialize_map_payload
 from hex_world_lab.world.persistence.map_serializer import map_to_payload
 
-from .collision import CircleCollider, ConvexPolygonCollider
-from .definition import ContentCategory, ContentDefinition
-from .drawing import (
+from ..collision import CircleCollider, ConvexPolygonCollider
+from ..definition import ContentCategory, ContentDefinition
+from ..drawing import (
     CircleElement,
     DrawingStyle,
     EllipseElement,
@@ -21,10 +21,10 @@ from .drawing import (
     VisualDocument,
 )
 from .errors import ContentValidationError, UnsupportedContentVersionError
-from .library import ContentLibrary
-from .map_document import MapContentDocument
-from .placement import ContentPlacement
-from .values import thaw_json
+from ..library import ContentLibrary
+from ..map_document import MapContentDocument
+from ..placement import ContentPlacement
+from ..values import thaw_json
 
 
 def _keys(value, allowed, required, path):
