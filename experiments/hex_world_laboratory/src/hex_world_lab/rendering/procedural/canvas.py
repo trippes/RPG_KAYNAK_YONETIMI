@@ -1,4 +1,5 @@
 """Pygame-backed canvas adapter for procedural Surface generation."""
+
 from __future__ import annotations
 
 import math
@@ -79,7 +80,9 @@ class ProceduralCanvas:
 
     def finish(self, output_size: tuple[int, int] | None = None) -> pygame.Surface:
         """Return a final-size SRCALPHA surface without requiring a display."""
-        target_size = self.logical_size if output_size is None else _size(output_size, "output_size")
+        target_size = (
+            self.logical_size if output_size is None else _size(output_size, "output_size")
+        )
         if target_size == self.pixel_size:
             return self.surface.copy()
         return pygame.transform.smoothscale(self.surface, target_size)
