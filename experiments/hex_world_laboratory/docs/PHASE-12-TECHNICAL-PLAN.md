@@ -4,8 +4,8 @@
 > **Proje:** Eldoria — Hex World Laboratory  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Dayanak:** Kullanıcı tarafından onaylanan `PHASE-12-GENERAL-PLAN.md`  
-> **Durum:** KULLANICI TARAFINDAN ONAYLANDI — PROCEDURAL ÇİZİM YÖNÜNDE REVİZE EDİLDİ  
-> **Uygulama durumu:** Prosedürel çizim uygulandı; 800 laboratuvar testi, Linux/Windows Core Quality, benchmark ve görsel artifact başarılı; kullanıcı manuel kabulü bekleniyor  
+> **Durum:** RESMEN KAPATILDI — TEKNİK UYGULAMA, OTOMATİK VE MANUEL KABUL TAMAMLANDI  
+> **Uygulama durumu:** Prosedürel çizim ve collider hizalama düzeltmeleri tamamlandı; 800 laboratuvar testi, Linux/Windows Core Quality, benchmark, görsel artifact ve kullanıcı manuel kabulü başarılı  
 > **Tek laboratuvar başlatıcısı:** `python -m hex_world_lab`
 
 ## 18 Kasım 2026 kapsam revizyonu — bağlayıcı karar
@@ -411,7 +411,7 @@ Aşama 12 ancak aşağıdaki koşulların tamamı sağlandığında kapatılabil
 
 ## 12. Onay kapısı
 
-Bu belge kullanıcı tarafından teknik olarak onaylanmış ve uygulama için ayrıca açık talimat verilmiştir. 12.1–12.8 uygulaması, otomatik testler, üç oturumlu performans ölçümleri, görsel kanıt üretimi ve Linux/Windows CI tamamlanmıştır. Aşama 12'nin resmen kapatılması için kullanıcı manuel görsel kabul kontrol listesini tamamlamalıdır. Herhangi bir kapsam değişikliği veya ana mimari sözleşmeden sapma önce raporlanır ve onaylanır.
+Bu belge kullanıcı tarafından teknik olarak onaylanmış ve uygulama için ayrıca açık talimat verilmiştir. 12.1–12.8 uygulaması, otomatik testler, üç oturumlu performans ölçümleri, görsel kanıt üretimi ve Linux/Windows CI tamamlanmıştır. Kullanıcı 18 Kasım 2026 tarihinde manuel görsel/işlevsel kabulü verdi. Son ağaç gövdesi ve kaya collider hizalaması da F3 görünümünde kabul edildi. Aşama 12 resmen kapatılmıştır. Herhangi bir kapsam değişikliği veya ana mimari sözleşmeden sapma önce raporlanır ve onaylanır.
 
 ---
 
