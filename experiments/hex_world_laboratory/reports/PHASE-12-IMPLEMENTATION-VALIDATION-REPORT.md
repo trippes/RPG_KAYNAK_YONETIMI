@@ -1,124 +1,99 @@
-# Aşama 12 — Uygulama ve Doğrulama Raporu
+# Aşama 12 — Prosedürel Çevresel Nesneler Uygulama ve Doğrulama Raporu
 
-> **Durum:** ÖNCEKİ MİMARİ DOĞRULAMA TARİHSEL KAYIT — PROSEDÜREL GÖRSEL REVİZYON AÇIK
+> **Durum:** OTOMATİK UYGULAMA VE DOĞRULAMA TAMAMLANDI — KULLANICI MANUEL GÖRSEL/İŞLEVSEL KABULÜ BEKLENİYOR
 > **Çalışma dalı:** `experiment/hex-world-laboratory`
-> **Kod doğrulama commit'i:** `386ca0353e22269f91a3fbff5281d1e9604013f8`
-> **Laboratuvar CI:** [Run #44293278865](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44293278865)
-> **Core Quality:** [Run #44293278840](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44293278840)
+> **Doğrulanan commit:** `1af8abe1fce7467b25b6423a5737819e1d0260fa`
+> **Hex World Laboratory CI:** [Run #44323325450](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44323325450)
+> **Core Quality:** [Run #44323325329](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44323325329)
+> **Görsel ve benchmark artifact:** [phase-12-environment-validation — Artifact 14436541384](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44323325450/artifacts/14436541384)
 
-## 1. İş paketi durumu
+## 1. Uygulanan prosedürel çizim
 
-| Paket | Sonuç |
-|---|---|
-| 12.1 — Mevcut altyapı denetimi | Tamamlandı |
-| 12.2 — Ortak çevresel nesne sözleşmesi | Tamamlandı |
-| 12.3 — Ağaç prototipi | Tamamlandı |
-| 12.4 — Depth sorting ve görsel sınır culling | Tamamlandı |
-| 12.5 — Collider/render ayrımı | Tamamlandı |
-| 12.6 — Kaya ve çalı profilleri | Tamamlandı |
-| 12.7 — F4 çevresel nesne debug görünümü | Tamamlandı |
-| 12.8 — Test, performans, platform CI ve kanıt | Otomatik doğrulama tamamlandı; manuel kabul bekleniyor |
+Ağaç, kaya ve çalı hazır PNG/JPG/WebP dosyası yüklenmeden laboratuvarın kendi Pygame çizim koduyla üretilir.
 
-## 2. Uygulanan mimari
+- `rendering/procedural_environment.py`: Üç nesneye ait ayrı çizim fonksiyonları; şeffaf Surface üzerinde 3x supersampling ve son boyuta yumuşak ölçekleme.
+- `EnvironmentArtPalette`: Ağaç yaprak/gövde, kaya, çalı ve zemin gölgesi renklerini parametre olarak ayırır; RGB değerleri doğrulanır.
+- `rendering/environment_assets.py`: Prosedürel yüzeyleri oluşturur ve mevcut renderer'a SpriteAsset olarak kaydeder; dosya sistemi veya raster görsel yüklemez.
+- Reddedilen `assets/tree_test.png` laboratuvar dalından silinmiştir.
+- Aynı palet aynı piksel çıktısını üretir. Palet değişikliği çizim yüzeyini değiştirir; çevresel nesnenin world placement veya collider verisini değiştirmez.
 
-- Pygame bağımsız `environment` paketi: immutable `EnvironmentalObjectDefinition`, `EnvironmentalObjectPlacement`, `EnvironmentalObjectScene`.
-- Tanımlar; asset key, normalize ground/depth anchor, opsiyonel canopy bounds ve opsiyonel mevcut fizik collider türünü taşır.
-- Yerleşimler authoritative `WorldPoint`, world ID ve map ID ile sabit konumda tutulur.
-- Fizik adaptörü yalnızca açıkça tanımlanmış collider'ları mevcut `ObstacleDefinition` hattına aktarır.
-- Render adaptörü ağaç/kaya/çalıyı mevcut ortak Y-sort kuyruğuna ekler.
-- Sprite anchor override ve tam görsel dikdörtgen culling'i eklendi.
-- Viewport world AABB'si render başına bir kez hesaplanır; her sprite için tekrarlanan ekran/dünya dönüşümü kaldırıldı.
-- Normal görünümde çevresel collider şekilleri ikinci bir prop gibi çizilmez; F3 debug katmanında gösterilir.
-- F4; ground anchor, depth anchor, visual bounds, canopy bounds, instance ID ve dünya konumunu gösterir.
-- Ağaç görseli `game_ui/assets/tree_test.png` kaynak blob'undan laboratuvar `assets/tree_test.png` dosyasına aynen kopyalandı. Laboratuvar ana oyun Python modüllerini import etmez.
-- Kaya deterministik polygon collider'a, çalı ise collider'sız profile sahiptir.
-- Tek başlatıcı `python -m hex_world_lab` olarak korunmuştur.
+Görsel yaklaşım stilize, katmanlı bir prototiptir; nihai sanat yönü ve masaüstü görsel kabul kararı kullanıcıya aittir.
 
-## 3. Otomatik test ve platform doğrulaması
+## 2. Korunan mimari sınırlar
 
-| Doğrulama | Sonuç |
+- `EnvironmentalObjectDefinition`, `EnvironmentalObjectPlacement` ve `EnvironmentalObjectScene` immutable domain sözleşmeleri olarak kalır.
+- Ground Anchor, Depth Anchor, Visual Bounds, Canopy Bounds ve Collision Geometry ayrı sorumluluklardır.
+- Ağaç gövdesi collider'ı ve kaya polygon collider'ı mevcut fizik hattına aktarılır; çalı collider'sızdır.
+- Çizim boyutu, palet ve canopy görsel alanı collider üretmez.
+- Ortak Y-sort kuyruğu, tam sprite bounds culling ve F4 debug görünümü korunur.
+- F3 collider görünümü mevcut davranışını sürdürür.
+- Tek başlatıcı `python -m hex_world_lab`; ana oyun modüllerine import veya entegrasyon yoktur.
+
+## 3. Otomatik test ve platform CI
+
+| Kontrol | Sonuç |
 |---|---:|
-| Hex World Laboratory CI test paketi | **796 passed** |
-| Core Quality — Linux | **2.259 passed**, 1 uyarı |
-| Core Quality — Windows | **2.259 passed** |
+| Hex World Laboratory tam test paketi | **800 passed** |
+| Test failures / errors | **0 / 0** |
+| Core Quality — Linux | **2.263 passed**, 1 uyarı |
+| Core Quality — Windows | **2.263 passed** |
 | Linux release-candidate verification | Başarılı |
 | Windows release-candidate verification | Başarılı |
-| Phase 12 görsel kanıt üretimi | 5/5 sahne başarılı |
-| Phase 12 benchmark | 10 / 100 / 1.000 profil, 3 oturum başarılı |
+| Aşama 12 benchmark | 10 / 100 / 1.000 nesne, üç oturum başarılı |
+| Aşama 12 görsel kanıt | 5/5 PNG sahnesi üretildi |
+| Artifact upload | Başarılı |
 
-Linux uyarısı pygame bağımlılık ağacındaki `pkg_resources` deprecation uyarısıdır; test başarısızlığı değildir.
+Linux uyarısı test başarısızlığı değildir. Her iki Core Quality işi de başarıyla tamamlanmıştır.
 
-## 4. Üç oturumlu performans sonuçları
+## 4. Aşama 12 üç oturumlu performans sonuçları
 
-Aşağıdaki değerler üç bağımsız oturumun oturum-medyanlarının medyanıdır. Süreler milisaniyedir. Render karşılaştırması aynı snapshot ve aynı viewport ile culling açık/kapalı ölçülmüştür.
+Değerler üç bağımsız oturumun ölçüm medyanlarının medyanıdır. Süreler milisaniyedir.
 
-| Nesne | Obstacle adapter | Sprite snapshot adapter | Debug bounds adapter | Render culling açık | Render culling kapalı | Görünür | Culling ile elenen |
+| Nesne sayısı | Scene oluşturma | Collider adaptörü | Sprite DTO adaptörü | Debug bounds | Render culling açık | Render culling kapalı | Görünür / elenen |
 |---:|---:|---:|---:|---:|---:|---:|---:|
-| 10 | 0,0295 | 0,0790 | 0,2159 | 0,5349 | 0,5064 | 10 | 0 |
-| 100 | 0,2731 | 0,8140 | 2,8045 | 1,1236 | 2,3762 | 11 | 89 |
-| 1.000 | 2,6953 | 9,8229 | 32,6163 | 10,7335 | 25,4991 | 91 | 909 |
+| 10 | 0,1447 | 0,0208 | 0,0511 | 0,1278 | 0,4885 | 0,4787 | 10 / 0 |
+| 100 | 0,8207 | 0,1864 | 0,5174 | 1,7432 | 0,8310 | 1,6019 | 11 / 89 |
+| 1.000 | 8,6466 | 1,8533 | 6,1542 | 19,7489 | 6,5259 | 15,6021 | 91 / 909 |
 
-### Culling optimizasyonu
+- 100 nesnede culling açık render, culling kapalı duruma göre yaklaşık **%48,1** daha kısa sürdü.
+- 1.000 nesnede yaklaşık **%58,2** daha kısa sürdü.
+- 1.000 nesneli profilde 909 sprite viewport dışında elendi.
+- Python traced-heap tepe ölçümü 1.000 nesne profilinde yaklaşık **1,345 MiB** idi. Bu değer toplam süreç RAM'i değildir.
+- 10 nesnede culling elenecek nesne bulmadığından küçük sabit kontrol maliyeti gözlendi.
 
-İlk ölçüm, viewport world dönüşümünün her sprite için yeniden hesaplanmasının culling maliyetini artırdığını gösterdi. Bu hesap render başına bir kez yapılacak şekilde optimize edildi.
-
-Son ölçümde:
-- 100 nesnede culling açık render yaklaşık **%52,7 daha kısa** sürdü.
-- 1.000 nesnede culling açık render yaklaşık **%57,9 daha kısa** sürdü.
-- 1.000 nesneli sahnede 909 sprite viewport dışında elendi.
-- 10 nesneli sahnede hiçbir sprite elenmediği için culling kontrolünün küçük sabit maliyeti ölçüldü.
-
-Bu değerler GitHub Actions runner'ında gözlenen karşılaştırmalı ölçümlerdir; mutlak donanım performans eşiği değildir.
+Bunlar GitHub Actions runner'ında gözlenen karşılaştırmalı değerlerdir; mutlak donanım performans eşiği değildir.
 
 ## 5. Görsel kanıtlar
 
-CI artifact paketi beş PNG sahnesi içerir:
+Artifact beş sahne içerir:
+
 1. Normal çevresel nesne sahnesi.
 2. F3 collider overlay.
 3. F4 anchor/bounds overlay.
-4. Oyuncu ağacın arkasındayken Y-sort.
-5. Oyuncu ağacın önündeyken Y-sort.
+4. Oyuncunun ağacın arkasında olduğu Y-sort sahnesi.
+5. Oyuncunun ağacın önünde olduğu Y-sort sahnesi.
 
-[Phase 12 benchmark ve görsel kanıt ZIP dosyası](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44293278865/artifacts/14421903600)
+[Beş görseli ve benchmark JSON dosyasını içeren artifact](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44323325450/artifacts/14436541384)
 
-Artifact GitHub Actions saklama süresine tabidir.
+Bu görseller otomatik üretilmiştir; kullanıcı masaüstü kabulünün yerine geçmez.
 
-## 6. Kalan tek kabul kapısı
+## 6. Açık kabul kapısı
 
-Otomatik doğrulama tamamlanmıştır. Aşama 12 henüz resmen kapatılmamıştır; kullanıcı aşağıdaki kontrol listesini masaüstünde uygulayıp sonucunu bildirmelidir:
+Aşama 12 otomatik uygulama ve doğrulama bakımından tamamlandı. Ancak **Aşama 12 henüz resmen kapatılmadı**.
 
-[`PHASE-12-MANUAL-ACCEPTANCE-CHECKLIST.md`](../docs/PHASE-12-MANUAL-ACCEPTANCE-CHECKLIST.md)
+Kullanıcının masaüstünde şu kontrolleri yapması gerekiyor:
 
-Kullanıcı manuel kontrolleri geçtiğini onayladıktan sonra kapanış raporu hazırlanacak ve Master Plan durumu Aşama 12 kapalı olarak güncellenecektir.
+- Ağaç, kaya ve çalının çizim kalitesi ve ortak sanat yönü.
+- Ağaç gövdesi/taç ayrımı ve ağacın zemine oturması.
+- Oyuncunun ağacın önünden ve arkasından geçişi.
+- Kaya çarpışması, ağaç gövdesi çarpışması ve çalının çarpışmasız olması.
+- F3 ve F4 debug görünümleri.
+- Kamera pan/zoom ve mevcut oyuncu/NPC/kaynak davranışlarında regresyon bulunmaması.
+
+Kontrol adımları: [PHASE-12-MANUAL-ACCEPTANCE-CHECKLIST.md](../docs/PHASE-12-MANUAL-ACCEPTANCE-CHECKLIST.md)
 
 ## 7. Dal güvenliği
 
-- Çalışma yalnızca `experiment/hex-world-laboratory` dalında yürütüldü.
-- `main` ve `demo_eldoria` dallarına yazılmadı.
+- Bütün uygulama ve dokümantasyon değişiklikleri yalnızca `experiment/hex-world-laboratory` dalında yapıldı.
+- `main` ve `demo_eldoria` dalları değiştirilmedi.
 - Merge yapılmadı.
-
-## 18 Kasım 2026 kapsam revizyonu — bağlayıcı karar
-
-Aşama 12, çevresel nesne mimarisini ve bu mimariyi doğrulayan yalnızca üç kod çizimi prototipini (ağaç, kaya, çalı) kapsar. Hazır PNG/JPG/WebP dosyaları bu prototiplerin görsel kaynağı olarak kullanılmayacaktır; yüzeyler Pygame çizim primitifleri ve deterministik geometriyle koddan üretilecektir.
-
-Aşama 12 içinde çizim fonksiyonları, paletler, geometri ve nesne profilleri ayrık/parametrelenebilir tutulur. Ağaçta kök-gövde, dallar, farklı tonlarda yaprak kümeleri, hacim, ışık ve gölge; kayada çok yüzeyli hacim ve ışık-gölge; çalıda kümelenmiş yapraklar ve alt gölge bulunur. Üç nesne aynı sanat yönü ve harita ölçeği kalitesini hedefler. Ground Anchor, Depth Anchor, Visual Bounds, Canopy Bounds ve Collision Geometry çizimden bağımsız kalır. Çizim collider üretmez. Aynı parametreler deterministik sonuç verir.
-
-Aşama 12 dışında: genel amaçlı grafik motoru, serbest biçimli çizim arayüzü, fareyle dal/yaprak düzenleme, içerik kütüphanesi, dosya içe/dışa aktarma aracı, bina/karakter/NPC çizim paketi, animasyon/rig/wind sistemi ve ana oyun entegrasyonu.
-
-Aşama 13, farklı içerik türlerini destekleyen genel prosedürel grafik/çizim altyapısıdır. Aşama 14, bu altyapıyı kullanan Content Editor ve görsel düzenleme araçlarıdır. İki aşama da ayrıca planlanıp onaylanacaktır.
-
-Önceki doğrulama raporundaki tree_test.png kopyası yeni karar kapsamında kabul edilmez; PNG tabanlı sunum geçici/ret edilmiş prototiptir. Önceki test/CI sonuçları yalnızca o commit'teki teknik kod için geçerlidir; prosedürel görsel kabul kanıtı değildir. Aşama 12'nin görsel uygulaması, testleri, benchmarkı, CI ve manuel kabulü yeniden tamamlanmalıdır.
-
-
-## Prosedürel çizim revizyonu — 18 Kasım 2026
-
-Bu raporun yukarıdaki otomatik test sayıları, benchmark ölçümleri, CI kimlikleri ve beş PNG görsel kanıtı, raporda belirtilen eski kod commit'i 386ca0353e22269f91a3fbff5281d1e9604013f8 için tarihsel kayıttır. O sürümde ağaç assets/tree_test.png dosyasından yükleniyordu. Kullanıcı bu görsel yaklaşımını reddetmiş ve Aşama 12 kapsamını kodla çizilmiş çevresel nesneler olarak revize etmiştir.
-
-Revizyon kapsamında:
-- rendering/procedural_environment.py eklendi. Ağaç, kaya ve çalı şeffaf Pygame Surface üzerine çizim primitifleriyle, 3x supersampling ve deterministik katmanlarla oluşturulur.
-- rendering/environment_assets.py raster yükleme yerine prosedürel yüzey üretip renderer'a kaydedecek şekilde değiştirildi.
-- Laboratuvar assets/tree_test.png dosyası silindi; bu dosyaya runtime bağımlılığı kaldırıldı.
-- Prosedürel üretim, deterministik çıktı, alpha alanı ve raster dosya yüklememe davranışları için test eklendi.
-- Aşama 12 benchmarkı artık gerçek prosedürel yüzeyleri kullanacak şekilde güncellendi.
-
-**Bu revizyon henüz otomatik doğrulama veya görsel kabul edilmiş değildir.** Yeni kodun testleri, benchmarkı, Linux/Windows CI ve görsel artifact'leri yeni commit'ler üzerinden yeniden çalıştırılacaktır. Bu rapordaki eski sayılar revize kodun sonucu gibi sunulmayacaktır. Manuel görsel kabul de kullanıcı tarafından ayrıca yapılacaktır.
