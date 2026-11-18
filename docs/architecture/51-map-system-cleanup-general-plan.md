@@ -6,7 +6,7 @@
 | Çalışma dalı | `experiment/map-cleanup` |
 | Kaynak dal | `demo_eldoria` |
 | Başlangıç commit'i | `7d53d431d5c3639fd95d273de9043b64483a5125` |
-| Durum | Uygulama onaylandı; 16.1 teknik baseline raporlandı, manuel kabul ve sıralama kararı bekliyor |
+| Durum | Uygulama onaylandı; 16.1 teknik baseline tamamlandı, teknik migration sıralaması uygulanacak |
 | Kapsam | Ana altıgen dünya sisteminin sadeleştirilmesi ve tek kare harita easter egg'inin korunması |
 
 ## 1. Amaç ve ürün kararı
@@ -28,7 +28,7 @@ Temizlik çalışması kendi başına bir entegrasyon değildir. Bu aşamada Hex
 2. Tüm inceleme, düzenleme, test ve dokümantasyon bu dalda yürütülür.
 3. `demo_eldoria` ve `main` doğrudan değiştirilmez.
 4. `experiment/hex-world-laboratory` dalına commit, merge veya rebase yapılmaz.
-5. Temizlik tamamlandıktan ve kullanıcı kabulünden sonra, bu dalda hazırlanmış temiz altyapı ile laboratuvar sistemleri ayrı entegrasyon çalışmasında birleştirilir.
+5. Teknik temizlik ve otomatik doğrulamalar tamamlandıktan sonra, bu dalda hazırlanan altyapı ile laboratuvar sistemleri ayrı entegrasyon çalışmasında birleştirilir.
 6. Birleşik sürüm test ve görsel kabulden geçerse kullanıcı onayıyla `demo_eldoria` dalına aktarılır. Laboratuvar dalı arşiv olarak tutulur.
 
 ## 3. Mevcut sistemin ilk envanteri
@@ -63,8 +63,8 @@ Normal gameplay'in altıgen dünya görünümü ve geçişleri incelenir. Kare h
 ### 16.5 — Kontrollü sadeleştirme
 Hex gameplay state ownership ve içerik/save migration tamamlandıktan sonra tek kare harita için gerekli veri, loader, render/UI ve gerekiyorsa sınırlı etkileşim yüzeyi korunur. Çoklu kare harita katalogları, gereksiz dünya grafı/runtime bileşenleri ve kullanılmayan kare içerikler yalnızca bağımlılık, save ve test kanıtıyla deprecate/remove edilir. Önce test/çağrı kanıtı, sonra küçük refactor veya deprecation, en son kaldırma uygulanır.
 
-### 16.6 — Regresyon ve kullanıcı kabulü
-Temiz kurulum, otomatik testler, içerik paketi yükleme, ana altıgen dünya dolaşımı, geçişler, hareket, çarpışma, yerleşimler, kamera, kayıt/yükleme ve mevcut oynanabilir akış doğrulanır. Seçilmiş tek kare easter egg haritasının yüklenmesi/gösterilmesi de doğrulanır. Kullanıcı görsel ve işlevsel kabulü tamamlamadan aşama kapanmaz.
+### 16.6 — Otomatik regresyon ve teknik doğrulama
+Temiz kurulum, otomatik testler, içerik paketi yükleme, ana altıgen dünya dolaşımı, geçişler, hareket, çarpışma, yerleşimler, kamera, kayıt/yükleme ve mevcut oynanabilir akış doğrulanır. Seçilmiş tek kare easter egg haritasının yüklenmesi/gösterilmesi de doğrulanır. Görsel kabul testi bu temizlik kapsamının parçası değildir; renderer/UI kodunda değişiklik yapılmadıkça manuel oyun testi istenmez. Teknik kabul Pytest, Ruff, paketleme, migration ve CI kanıtıyla verilir.
 
 ### 16.7 — Entegrasyona hazır olma kararı
 Ana altıgen dünya mimarisi, korunacak tek kare easter egg yüzeyi, kalan legacy adaptörleri, kaldırılan parçalar ve laboratuvarla entegrasyon sınırları raporlanır. Sonuç "hazır", "koşullu hazır" veya "hazır değil" olarak gerekçelendirilir.
@@ -104,7 +104,7 @@ Aşama ancak aşağıdakiler sağlandığında tamamlanabilir:
 5. Tek kare easter egg haritası hedeflenen minimum yolla yüklenebilmeli/gösterilebilmeli.
 6. Mevcut save ve içerik paketleri için uyumluluk sonucu kanıtlanmalı.
 7. İlgili testler ve tam regresyon başarılı olmalı.
-8. Kullanıcı manuel/görsel kabulü vermeli.
+8. Otomatik test, statik analiz, paketleme ve CI doğrulamaları başarılı olmalı.
 9. Laboratuvar entegrasyonuna ilişkin açık arayüzler ve kalan riskler raporlanmalı.
 
-Bu genel plan, ayrıntılı teknik plan ve kullanıcı onayı olmadan temizlik kodu uygulamasına izin vermez.
+Bu genel plan ve ayrıntılı teknik plan, kullanıcının teknik temizlik onayıyla uygulama için geçerlidir; kapsam dışı gameplay/ürün kararları ayrıca onay gerektirir.
