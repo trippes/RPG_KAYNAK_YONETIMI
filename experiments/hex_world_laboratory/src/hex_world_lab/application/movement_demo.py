@@ -177,20 +177,25 @@ class MovementDemo:
             EnvironmentalObjectDefinition(
                 "tree", "tree", (0.5, 0.94), (0.5, 0.82),
                 (0.04, 0.02, 0.92, 0.68),
-                # Block only the trunk/root footprint; the canopy remains passable.
+                # Coordinates are relative to the sprite's ground anchor.
+                # The visible trunk/root base occupies roughly x=-35..28, y=-1..13.
+                # Keep the canopy passable; block only the trunk/root contact footprint.
                 ConvexPolygonShape((
-                    Vector2(-20.0, -2.0), Vector2(-8.0, -46.0),
-                    Vector2(8.0, -46.0), Vector2(20.0, -2.0),
+                    Vector2(-31.0, 0.0), Vector2(-16.0, 13.0),
+                    Vector2(14.0, 13.0), Vector2(29.0, 0.0),
                 )),
             ),
             EnvironmentalObjectDefinition(
                 "rock", "rock", (0.5, 0.92), (0.5, 0.84), None,
-                # Follow the complete visible rock silhouette, not a tiny center polygon.
+                # The 66x48 surface uses a (0.5, 0.92) anchor: convert its
+                # visible silhouette pixels into ground-anchor-relative world units.
+                # This keeps collision on the rock instead of displaced below it.
                 ConvexPolygonShape((
-                    Vector2(-28.0, -12.0), Vector2(-18.0, -32.0),
-                    Vector2(-4.0, -40.0), Vector2(14.0, -34.0),
-                    Vector2(28.0, -18.0), Vector2(25.0, -5.0),
-                    Vector2(8.0, 0.0), Vector2(-18.0, -2.0),
+                    Vector2(-28.0, 13.2), Vector2(-24.0, 26.2),
+                    Vector2(-13.0, 36.2), Vector2(1.0, 39.2),
+                    Vector2(14.0, 32.2), Vector2(28.0, 19.2),
+                    Vector2(24.0, 7.2), Vector2(10.0, 2.2),
+                    Vector2(-16.0, 4.2),
                 )),
             ),
             EnvironmentalObjectDefinition(
