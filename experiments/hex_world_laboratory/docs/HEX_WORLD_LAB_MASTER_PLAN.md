@@ -5,8 +5,8 @@
 > **Depo:** `trippes/RPG_KAYNAK_YONETIMI`  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Hedef entegrasyon dalı:** `demo_eldoria`  
-> **Durum:** AŞAMA 0–14 KAPALI; AŞAMA 15 GENEL PLANI HAZIR
-> **Belge sürümü:** 4.4
+> **Durum:** AŞAMA 0–14 KAPALI; AŞAMA 15 TEKNİK PLANI HAZIR — KULLANICI ONAYI BEKLİYOR
+> **Belge sürümü:** 4.5
 
 ## Aşama 12–14 kapsam ayrımı — 18 Kasım 2026
 
@@ -14,6 +14,16 @@ Aşama 12 yalnızca çevresel nesne mimarisi ve kodla çizilmiş ağaç, kaya, �
 
 
 **Aşama 13 resmen kapatıldı (18 Kasım 2026):** 13.1 denetimi, 13.2–13.7 uygulamaları, 13.8 otomatik doğrulama ve kullanıcı masaüstü görsel/işlevsel kabulü tamamlandı. Tam test çalışması 859/859 Pytest; Ruff lint/format, Linux/Windows Core Quality, benchmarklar ve görsel artifact başarılıdır. Kapanış öncesi son HEAD `631a8b9ec4ad78a497167394add533ef59c95cf4` üzerinde laboratuvar CI ve Core Quality yeniden başarılı tamamlandı. Belgeler: [genel plan](PHASE-13-GENERAL-PLAN.md), [teknik plan](PHASE-13-TECHNICAL-PLAN.md), [denetim raporu](../reports/PHASE-13.1-AUDIT-REPORT.md), [uygulama raporu](../reports/PHASE-13.2-13.7-IMPLEMENTATION-REPORT.md), [resmî kapanış raporu](../reports/PHASE-13-CLOSURE-REPORT.md).
+---
+
+## Aşama 15 — Nihai mimari ve entegrasyon hazırlığı
+
+- [Genel plan](PHASE-15-GENERAL-PLAN.md)
+- [15.1 gerçekleşen mimari denetim raporu](../reports/PHASE-15.1-AUDIT-REPORT.md)
+- [Ayrıntılı teknik mimari planı](PHASE-15-TECHNICAL-PLAN.md)
+
+Aşama 15 genel planı doğrultusunda gerçek kaynak ağacı ve demo_eldoria salt okunur karşılaştırması denetlendi. 15.1 denetim raporu ve ayrıntılı teknik plan hazırlandı. Teknik plan kullanıcı onayı beklemektedir; 15.2–15.8 uygulaması, kod aktarımı ve Aşama 16 başlamamıştır. main ve demo_eldoria dalları değiştirilmeyecektir.
+
 ---
 
 ## 1. Belgenin amacı ve bağlayıcılığı
