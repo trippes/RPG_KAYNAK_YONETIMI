@@ -1,6 +1,6 @@
 # Aşama 13.2–13.7 Uygulama Raporu
 
-**Durum:** Uygulama tamamlandı; 13.8 otomatik doğrulama ve performans kapısı sürüyor  
+**Durum:** 13.8 otomatik doğrulama tamamlandı; kullanıcı masaüstü görsel kabulü bekleniyor  
 **Dal:** `experiment/hex-world-laboratory`  
 **Tarih:** 18 Kasım 2026
 
@@ -78,7 +78,7 @@ Görsel artifact paketi: [Phase 13 procedural validation](https://github.com/tri
 
 ## 5. 13.8 tamamlanma kapıları
 
-<badge color="success">Otomatik doğrulama tamamlandı</badge>
+**Otomatik doğrulama tamamlandı.**
 
 1. Tam Pytest paketi: 859/859 başarılı.
 2. Ruff lint ve format: laboratuvar, Linux Core Quality ve Windows Core Quality başarılı.
