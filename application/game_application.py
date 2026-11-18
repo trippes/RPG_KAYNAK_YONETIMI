@@ -174,10 +174,12 @@ class GameApplication:
             )
 
             saved_location_ids = {
-                actor.location_id
+                spatial.location_id
                 for actor in candidate.actors.actors()
                 if actor.world_id == world.world_id
-                and actor.location_id is not None
+                and (
+                    spatial := candidate.actors.legacy_spatial_state(actor.actor_id)
+                ) is not None
             } if candidate.actors is not None else set()
 
             available_location_ids = {
@@ -216,43 +218,43 @@ class GameApplication:
         for placement in container_placements:
             candidate.world_objects.place(placement)
 
-        # Restore actor positions only when their locations exist in the map.
+        # Restore square positions only through the legacy spatial boundary.
         if candidate.actors is not None:
             for actor_view in candidate.actors.actors():
-                if actor_view.location_id is None or actor_view.world_id not in managed_world_ids:
+                spatial = candidate.actors.legacy_spatial_state(actor_view.actor_id)
+                if spatial is None or actor_view.world_id not in managed_world_ids:
                     continue
 
+                location_id = spatial.location_id
                 world_map = candidate.movement.map_for(actor_view.world_id)
-                if world_map is None or world_map.get(actor_view.location_id) is None:
+                if world_map is None or world_map.get(location_id) is None:
                     raise ValueError(
                         f"Saved actor '{actor_view.actor_id}' references unavailable "
-                        f"map '{actor_view.location_id}' in world '{actor_view.world_id}'."
+                        f"map '{location_id}' in world '{actor_view.world_id}'."
                     )
 
                 local_map = local_map_catalog.get(
-                    (actor_view.world_id, actor_view.location_id)
+                    (actor_view.world_id, location_id)
                 )
                 if local_map is None:
                     raise ValueError(
                         f"Local map dimensions are missing for saved location "
-                        f"'{actor_view.location_id}'."
+                        f"'{location_id}'."
                     )
 
                 candidate.movement.set_position(
-                    actor_view.actor_id,
-                    actor_view.location_id,
+                    actor_view.actor_id, location_id,
                 )
-                if actor_view.position is not None:
-                    x, y = int(actor_view.position.x), int(actor_view.position.y)
-                    if not (0 <= x < local_map.width and 0 <= y < local_map.height):
-                        raise ValueError(
-                            f"Saved actor '{actor_view.actor_id}' position ({x}, {y}) "
-                            f"is outside map '{actor_view.location_id}' bounds "
-                            f"({local_map.width}x{local_map.height}). No relocation was applied."
-                        )
-                    candidate.movement.set_tile_position(
-                        actor_view.actor_id, x, y,
+                x, y = int(spatial.position.x), int(spatial.position.y)
+                if not (0 <= x < local_map.width and 0 <= y < local_map.height):
+                    raise ValueError(
+                        f"Saved actor '{actor_view.actor_id}' position ({x}, {y}) "
+                        f"is outside map '{location_id}' bounds "
+                        f"({local_map.width}x{local_map.height}). No relocation was applied."
                     )
+                candidate.movement.set_tile_position(
+                    actor_view.actor_id, x, y,
+                )
 
         self.holder.publish(candidate)
         return self.holder.current
