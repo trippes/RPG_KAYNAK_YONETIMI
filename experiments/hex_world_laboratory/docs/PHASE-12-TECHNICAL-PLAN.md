@@ -4,7 +4,7 @@
 > **Proje:** Eldoria — Hex World Laboratory  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Dayanak:** Kullanıcı tarafından onaylanan `PHASE-12-GENERAL-PLAN.md`  
-> **Durum:** KULLANICI TARAFINDAN TEKNİK OLARAK ONAYLANDI  
+> **Durum:** KULLANICI TARAFINDAN ONAYLANDI — PROCEDURAL ÇİZİM YÖNÜNDE REVİZE EDİLDİ  
 > **Uygulama durumu:** 12.1–12.8 otomatik uygulama/doğrulama tamamlandı; manuel görsel kabul bekleniyor  
 > **Tek laboratuvar başlatıcısı:** `python -m hex_world_lab`
 
@@ -12,7 +12,7 @@
 
 ## 1. Teknik hedef
 
-Aşama 12, laboratuvarın mevcut hex dünya, render, sprite anchor, fizik/çarpışma ve spatial altyapısını kullanarak görsel dosyadan bağımsız çevresel nesne sözleşmesi kuracaktır.
+Aşama 12, laboratuvarın mevcut hex dünya, render, anchor, fizik/çarpışma ve spatial altyapısını kullanarak görsel dosyasına bağımlı olmayan çevresel nesne sözleşmesi ve Pygame tabanlı prosedürel çizim altyapısı kuracaktır. Ağaç, kaya ve çalı görselleri hazır PNG/JPG dosyaları olarak sahneye yerleştirilmeyecek; Pygame çizim primitifleri ve deterministik geometri kullanılarak kodla üretilecektir.
 
 İlk örnek ağaç olacaktır. Aynı sözleşmenin en az iki farklı çevresel nesne profiliyle (kaya ve çalı) doğrulanması hedeflenir. Nesneler bu aşamada sabit dünya yerleşimleridir; hareketli entity veya oynanış sistemi değildir.
 
@@ -95,7 +95,7 @@ src/hex_world_lab/
 **EnvironmentalObjectDefinition** — yeniden kullanılabilir nesne türü tanımı:
 
 - `definition_id`: benzersiz, boş olmayan tür kimliği.
-- `asset_key`: renderer asset kaydına referans.
+- `asset_key`: prosedürel çizim profilinin kararlı anahtarı; ör. `tree_oak`, `rock_gray`, `bush_green`. Bu anahtar bir PNG dosyasını zorunlu kılmaz.
 - `ground_anchor`: sprite alanı içinde normalize edilmiş (x, y) nokta.
 - `depth_anchor`: sprite alanı içinde normalize edilmiş (x, y) nokta.
 - `canopy_bounds`: isteğe bağlı normalize dikdörtgen; görsel taç/üst alanını tanımlar.
@@ -168,6 +168,36 @@ Anchor metadata'sının tanım katmanında kalması için gerekirse `SpriteVisua
 Çevresel nesnenin collider'ı normal çizimde temel daire/çokgen olarak görünmeyecek; nesnenin sprite'ı normal görünüm olacaktır. Collider, mevcut collider debug katmanında gösterilmeye devam eder.
 
 Bunun için çevresel nesne obstacle kimlikleri ile environment sprite örnekleri arasında deterministik eşleme yapılır. Aynı obstacle hem sprite hem de debug collider olarak gösterilebilir; normal sahnede collider geometrisi ikinci bir görünür nesne gibi çizilmez.
+
+
+
+### 3.8 Prosedürel çizim altyapısı — revize görsel karar
+
+**Temel karar:** Ağaç, kaya, çalı ve ileride oyuncu/NPC gibi görsel öğeler için hazır raster görseli doğrudan sahneye koymak yerine, çizim kodu ile üretilen görsel yüzeyler kullanılacaktır. İlk uygulama Pygame `Surface` üzerine çizim yapan, oyun runtime'ından bağımsız bir renderer paketidir.
+
+Önerilen ayrım:
+
+```text
+rendering/
+  procedural/
+    primitives.py       # yumuşatılmış çizgi, çokgen, elips, gölge yardımcıları
+    palette.py          # nesne profillerine ait renk paletleri
+    tree_renderer.py    # gövde, kök, dal, yaprak kümeleri
+    rock_renderer.py    # çok yüzeyli kaya geometrisi
+    bush_renderer.py    # yaprak kümeleri ve hacim
+    registry.py         # profil anahtarı -> çizim fonksiyonu
+```
+
+- Çizim fonksiyonları deterministik olmalıdır: aynı profil ve parametreler aynı görünümü üretir.
+- Çizim, yüksek çözünürlüklü şeffaf ara yüzeyde yapılıp hedef boyuta yumuşak ölçeklenebilir; böylece temel Pygame primitiflerinin sert/pikselli görünümü azaltılır.
+- Ağaç; gövde/kök silueti, kalınlığı değişen dallar, farklı tonlarda üst üste binen yaprak kümeleri, ışık ve gölge katmanlarından oluşturulur. Dal eğrileri örneklenmiş Bézier benzeri eğrilerle çizilebilir.
+- Kaya; tek düz çokgen yerine ana siluet, ışık alan yüzeyler, gölgeli yüzeyler ve ince kenar vurgularıyla hacim kazanır.
+- Çalı; ayrı yaprak kümeleri, renk varyasyonu ve alt gölgeyle oluşturulur.
+- Görsel geometri yalnızca sunumdur. Ground anchor, depth anchor, visual/canopy bounds ve collider hâlâ ayrı domain verileridir; çizim sonucu collider üretmez.
+- Rastgelelik gerekiyorsa sabit seed veya tanım parametresi kullanılır; render çağrısı sırasında rastgele görünüm değişmez.
+- İlk aşamada editör arayüzü yapılmaz. Bununla birlikte çizim fonksiyonları, paletler, geometri ve profil parametreleri ayrık tutulur; ileride Content Editor'ın aynı çizim API'sini parametrelerle çağırabilmesine uygun bir sözleşme korunur.
+- Ana oyundaki `game_ui` modülleri import edilmez. Laboratuvar kendi prosedürel çizim sistemine sahip olur.
+- Aşama 12'nin görsel kabulü; ağacın harita ölçeğine uygun, katmanlı ve stil bütünlüğü taşıyan bir çevresel nesne gibi görünmesini gerektirir. PNG'nin basitçe küçültülmesi kabul kriteri değildir.
 
 ## 4. Dosya bazlı değişiklik planı
 
