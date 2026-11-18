@@ -5,7 +5,7 @@
 > **Depo:** `trippes/RPG_KAYNAK_YONETIMI`  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Hedef:** Görselden bağımsız, genişletilebilir çevresel nesne altyapısı oluşturmak  
-> **Durum:** TASLAK — KULLANICI ONAYI BEKLİYOR  
+> **Durum:** KULLANICI TARAFINDAN ONAYLANDI — TEKNİK PLAN HAZIRLANIYOR  
 > **Ön koşul:** Aşama 11 tamamlandı ve kullanıcı tarafından kabul edildi  
 > **Uygulama durumu:** Henüz başlamadı
 
