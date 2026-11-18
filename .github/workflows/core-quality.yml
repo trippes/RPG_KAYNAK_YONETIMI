@@ -15,7 +15,15 @@ jobs:
       - name: Install project dependencies
         run: python -m pip install -r requirements-test.txt
       - name: Install Hex World Laboratory test package
-        run: python -m pip install -e "experiments/hex_world_laboratory[test]"
+        run: python -m pip install -e "experiments/hex_world_laboratory[test,quality]"
+      - name: Ruff lint (procedural graphics scope)
+        run: |
+          python -m ruff check --config experiments/hex_world_laboratory/pyproject.toml experiments/hex_world_laboratory/src/hex_world_lab/rendering/procedural experiments/hex_world_laboratory/src/hex_world_lab/rendering/procedural_environment.py experiments/hex_world_laboratory/src/hex_world_lab/rendering/environment_assets.py experiments/hex_world_laboratory/tests/unit/test_procedural_*.py experiments/hex_world_laboratory/tests/integration/test_environment_object_demo.py experiments/hex_world_laboratory/scripts/render_phase_13_scenes.py experiments/hex_world_laboratory/benchmarks/benchmark_phase_13_procedural_art.py
+
+      - name: Ruff format check (procedural graphics scope)
+        run: |
+          python -m ruff format --check --config experiments/hex_world_laboratory/pyproject.toml experiments/hex_world_laboratory/src/hex_world_lab/rendering/procedural experiments/hex_world_laboratory/src/hex_world_lab/rendering/procedural_environment.py experiments/hex_world_laboratory/src/hex_world_lab/rendering/environment_assets.py experiments/hex_world_laboratory/tests/unit/test_procedural_*.py experiments/hex_world_laboratory/tests/integration/test_environment_object_demo.py experiments/hex_world_laboratory/scripts/render_phase_13_scenes.py experiments/hex_world_laboratory/benchmarks/benchmark_phase_13_procedural_art.py
+
       - name: Report legacy API usage
         run: python -m core.compatibility.usage . | tee legacy-api-usage.json
       - name: Upload legacy API usage report
@@ -43,7 +51,15 @@ jobs:
       - name: Install project dependencies
         run: python -m pip install -r requirements-test.txt
       - name: Install Hex World Laboratory test package
-        run: python -m pip install -e "experiments/hex_world_laboratory[test]"
+        run: python -m pip install -e "experiments/hex_world_laboratory[test,quality]"
+      - name: Ruff lint (procedural graphics scope)
+        run: |
+          python -m ruff check --config experiments/hex_world_laboratory/pyproject.toml experiments/hex_world_laboratory/src/hex_world_lab/rendering/procedural experiments/hex_world_laboratory/src/hex_world_lab/rendering/procedural_environment.py experiments/hex_world_laboratory/src/hex_world_lab/rendering/environment_assets.py experiments/hex_world_laboratory/tests/unit/test_procedural_*.py experiments/hex_world_laboratory/tests/integration/test_environment_object_demo.py experiments/hex_world_laboratory/scripts/render_phase_13_scenes.py experiments/hex_world_laboratory/benchmarks/benchmark_phase_13_procedural_art.py
+
+      - name: Ruff format check (procedural graphics scope)
+        run: |
+          python -m ruff format --check --config experiments/hex_world_laboratory/pyproject.toml experiments/hex_world_laboratory/src/hex_world_lab/rendering/procedural experiments/hex_world_laboratory/src/hex_world_lab/rendering/procedural_environment.py experiments/hex_world_laboratory/src/hex_world_lab/rendering/environment_assets.py experiments/hex_world_laboratory/tests/unit/test_procedural_*.py experiments/hex_world_laboratory/tests/integration/test_environment_object_demo.py experiments/hex_world_laboratory/scripts/render_phase_13_scenes.py experiments/hex_world_laboratory/benchmarks/benchmark_phase_13_procedural_art.py
+
       - name: Report legacy API usage
         shell: bash
         run: python -m core.compatibility.usage . | tee legacy-api-usage.json
