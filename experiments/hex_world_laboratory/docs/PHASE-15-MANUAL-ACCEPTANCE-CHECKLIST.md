@@ -1,33 +1,35 @@
 # Aşama 15 — Kullanıcı İnceleme ve Kabul Kontrol Listesi
 
-Aşama 15 görsel oyun değişikliği yapmaz. Bu kontrol listesi mimari belgelerin doğruluğunu ve A16 hazırlık kararını kullanıcıyla birlikte kabul etmek içindir.
+Durum: **KABUL EDİLDİ — AŞAMA 15 KAPATILDI**  
+Tarih: 19 Kasım 2026.
 
 ## 1. Doküman incelemesi
 
-- [ ] ADR durum tablosundaki kararların önceki aşamalardaki kararlarımızla uyumlu olduğunu kontrol et.
-- [ ] API kataloğunda ana oyun ve laboratuvar sorumluluklarının doğru ayrıldığını kontrol et.
-- [ ] Veri akışında sürekli WorldPoint ile hücre tabanlı EntityPosition farkının açık anlatıldığını kontrol et.
-- [ ] Veri uyumluluk raporunda MAP v1 / Main Hex Map v2 ve Content JSON v1 ayrımlarını kontrol et.
-- [ ] Entegrasyon eşleştirmesinde mevcut ana oyun sistemlerinin korunmasını kontrol et.
-- [ ] Pygame / Pygame-CE ve lisans/asset provenance risklerini incele.
-- [ ] A16 dilim ve rollback sırasını incele.
-- [ ] Test/kabul matrisini incele.
-- [ ] Nihai kararın A16 kod entegrasyonunu otomatik başlatmadığını teyit et.
+- [x] ADR durum tablosu önceki aşamalardaki kararlarla uyumlu.
+- [x] API kataloğunda ana oyun ve laboratuvar sorumlulukları ayrılmış.
+- [x] Sürekli WorldPoint ile hücre tabanlı EntityPosition farkı açıklanmış.
+- [x] MAP v1 / Main Hex Map v2 ve Content JSON v1 ayrımları belgelenmiş.
+- [x] Mevcut ana oyun sistemlerinin korunması entegrasyon eşleştirmesine işlenmiş.
+- [x] Pygame / Pygame-CE ve lisans/asset provenance riskleri kaydedilmiş.
+- [x] A16 entegrasyon dilimleri ve rollback sırası incelenmiş.
+- [x] Test ve kabul matrisi incelenmiş.
+- [x] A16 kod entegrasyonunun otomatik başlamadığı teyit edilmiş.
 
 ## 2. Kullanıcı kararları
 
-- [ ] Pygame mevcut motor olarak korunuyor; Godot geçişi bu planın dışında.
-- [ ] İzometrik 2.5D görsel hedef ayrı gelecek aşama olarak kalıyor.
-- [ ] Main'in mevcut hex runtime, renderer ve content safe store sistemleri korunuyor.
-- [ ] A16 öncesi Pygame dağıtımı, movement authority, coordinate mapping ve content ownership kararları ayrıca ele alınacak.
-- [ ] A16 için ayrı plan ve açık onay gerekecek.
+- [x] Pygame mevcut motor olarak korunuyor; Godot geçişi bu planın dışında.
+- [x] İzometrik 2.5D görsel hedef ayrı gelecek aşama olarak kalıyor.
+- [x] Main'in mevcut hex runtime, renderer ve content safe store sistemleri korunuyor.
+- [x] A16 öncesi Pygame dağıtımı, movement authority, coordinate mapping ve content ownership ayrıca karara bağlanacak.
+- [x] A16 için ayrı plan ve açık onay gerekecek.
 
 ## 3. Kabul sonucu
 
-Kullanıcı notları:
+Kullanıcı 19 Kasım 2026 tarihinde belgeleri kontrol ettiğini ve kabul ettiğini bildirdi.
 
-- [ ] Belgeler kabul edildi.
-- [ ] Düzeltme gerekiyor.
-- [ ] Aşama 15 kapanışı onaylandı.
+- [x] Belgeler kabul edildi.
+- [x] Son Aşama 15 HEAD üzerindeki Hex World Laboratory CI başarılı.
+- [x] Son Aşama 15 HEAD üzerindeki Core Quality başarılı.
+- [x] Aşama 15 kapanışı onaylandı.
 
-Not: Bu liste kullanıcı tarafından tamamlanmadan ve son A15 HEAD CI sonuçları doğrulanmadan Aşama 15 resmen kapatılmış sayılmaz.
+Kapanış raporu: [PHASE-15-CLOSURE-REPORT.md](../reports/PHASE-15-CLOSURE-REPORT.md).
