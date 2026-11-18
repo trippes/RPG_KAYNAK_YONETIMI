@@ -58,59 +58,6 @@ PROFILE_DEFINITIONS: Mapping[str, ProceduralProfile] = MappingProxyType(
 )
 
 
-def _build_grass(seed: int, supersampling: int, palette) -> pygame.Surface:
-    rng = create_rng(f"grass:{seed}")
-    canvas = ProceduralCanvas((64, 36), supersampling)
-    draw_ellipse(canvas, palette.ground_shadow, (7, 27, 50, 8))
-    base = palette.tree_leaf_shadow
-    mid = palette.tree_leaf_mid
-    light = palette.tree_leaf_light
-    for _ in range(17):
-        x = rng.uniform(5, 59)
-        height = rng.uniform(9, 24)
-        lean = rng.uniform(-5, 5)
-        blade_width = rng.uniform(1.0, 2.8)
-        root = Point2D(x, 31)
-        tip = Point2D(x + lean, 31 - height)
-        left = Point2D(x - blade_width, 31 - height * 0.42)
-        right = Point2D(x + blade_width, 31 - height * 0.42)
-        color = rng.choice((base, mid, light))
-        draw_polygon(canvas, color, (root, left, tip, right))
-    return canvas.finish()
-
-
-def _build_flower(seed: int, supersampling: int, palette) -> pygame.Surface:
-    rng = create_rng(f"flower:{seed}")
-    canvas = ProceduralCanvas((56, 48), supersampling)
-    draw_ellipse(canvas, palette.ground_shadow, (5, 38, 46, 8))
-    stem_color = (55, 112, 59)
-    leaf_color = palette.tree_leaf_mid
-    flower_colors = ((225, 125, 115), (238, 190, 90), (178, 145, 218))
-    for index, x in enumerate((14.0, 28.0, 42.0)):
-        height = rng.uniform(20, 29)
-        top = Point2D(x + rng.uniform(-2, 2), 39 - height)
-        root = Point2D(x, 41)
-        bend = Point2D((x + top.x) / 2 + rng.uniform(-2, 2), 28)
-        draw_polyline(canvas, stem_color, (root, bend, top), width=1)
-        leaf_y = rng.uniform(29, 34)
-        draw_ellipse(
-            canvas,
-            leaf_color,
-            (x - 7 if index % 2 == 0 else x + 1, leaf_y, 7, 3),
-        )
-        color = flower_colors[index]
-        petal_count = 5
-        for petal in range(petal_count):
-            angle = petal * 6.283185307179586 / petal_count
-            center = Point2D(
-                top.x + 3.2 * math.cos(angle),
-                top.y + 3.2 * math.sin(angle),
-            )
-            draw_circle(canvas, color, center, 2.2)
-        draw_circle(canvas, (245, 215, 105), top, 1.5)
-    return canvas.finish()
-
-
 def build_environment_profile(
     profile_key: str,
     palette=None,
