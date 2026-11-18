@@ -91,8 +91,10 @@ Bu tek giriş noktası güncel Entity kabul sahnesini (oyuncu, NPC, kaynak ve NP
 ## Aşama 15 — Nihai mimari ve entegrasyon hazırlığı
 
 - [Aşama 15 genel planı](docs/PHASE-15-GENERAL-PLAN.md)
+- [15.1 gerçekleşen mimari denetim raporu](reports/PHASE-15.1-AUDIT-REPORT.md)
+- [Ayrıntılı teknik mimari planı](docs/PHASE-15-TECHNICAL-PLAN.md)
 
-Aşama 15'in amacı laboratuvar mimarisini, ADR/API/veri sözleşmelerini, ana oyunla dosya eşleştirmesini, bağımlılık/lisans uyumluluğunu ve sonraki kontrollü entegrasyonun test/geri dönüş hazırlığını tamamlamaktır. Genel plan hazırdır ve kullanıcı onayı beklemektedir; teknik plan ve uygulama başlamamıştır. Bu aşamada `main` veya `demo_eldoria` dallarına yazılmaz.
+15.1 mimari denetimi tamamlandı ve ayrıntılı teknik plan hazırlandı. Teknik plan kullanıcı onayı beklemektedir; 15.2–15.8 uygulaması ve ana oyuna entegrasyon başlamamıştır. main ve demo_eldoria salt okunur korunur.
 
 ## Aşama 14 — Content data foundation
 
