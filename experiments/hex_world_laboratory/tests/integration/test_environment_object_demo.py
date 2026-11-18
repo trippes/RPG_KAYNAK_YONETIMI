@@ -45,7 +45,6 @@ def test_demo_environment_profiles_share_scene_and_existing_collision_pipeline()
         pygame.quit()
 
 
-
 def test_tree_trunk_and_rock_collide_but_canopy_and_bush_do_not():
     from hex_world_lab.movement import Vector2
     from hex_world_lab.physics import CircleShape, collide_shapes
