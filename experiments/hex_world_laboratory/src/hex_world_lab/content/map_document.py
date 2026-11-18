@@ -28,6 +28,8 @@ class MapContentDocument:
         )
 
     def add_placement(self, placement: ContentPlacement, library: ContentLibrary):
+        if not isinstance(placement, ContentPlacement):
+            raise TypeError("placement must be ContentPlacement")
         if not isinstance(library, ContentLibrary):
             raise TypeError("library must be ContentLibrary")
         library.resolve(placement.content_id)
@@ -52,6 +54,8 @@ class MapContentDocument:
         if content_id is not None:
             if library is None:
                 raise ValueError("library is required when changing content_id")
+            if not isinstance(library, ContentLibrary):
+                raise TypeError("library must be ContentLibrary")
             library.resolve(selected_content)
         updated = ContentPlacement(
             instance_id,
@@ -76,6 +80,8 @@ class MapContentDocument:
         )
 
     def validate_references(self, library: ContentLibrary):
+        if not isinstance(library, ContentLibrary):
+            raise TypeError("library must be ContentLibrary")
         for item in self.placements:
             library.resolve(item.content_id)
         return self
