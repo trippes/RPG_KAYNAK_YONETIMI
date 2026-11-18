@@ -3,7 +3,7 @@ from hex_world_lab.environment import EnvironmentalObjectDefinition, Environment
 from hex_world_lab.geometry import WorldPoint
 from hex_world_lab.movement.vector import Vector2
 from hex_world_lab.physics.shapes import CircleShape, ConvexPolygonShape
-from hex_world_lab.world.identity import MapId, WorldId
+from hex_world_lab.world.map_definition import HexMapDefinition
 from .collision import CircleCollider, ConvexPolygonCollider
 from .definition import ContentDefinition
 from .map_document import MapContentDocument
@@ -22,7 +22,7 @@ def definition_to_environment(value: ContentDefinition) -> EnvironmentalObjectDe
         collider=collider)
 
 def placement_to_environment(value, map_definition):
-    if not isinstance(map_definition, __import__("hex_world_lab.world.map_definition", fromlist=["HexMapDefinition"]).HexMapDefinition):
+    if not isinstance(map_definition, HexMapDefinition):
         raise TypeError("map_definition must be HexMapDefinition")
     return EnvironmentalObjectPlacement(value.instance_id, value.content_id,
         map_definition.world_id, map_definition.map_id, WorldPoint(value.x, value.y))
