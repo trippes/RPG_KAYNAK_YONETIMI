@@ -16,6 +16,12 @@ jobs:
         run: python -m pip install -r requirements-test.txt
       - name: Install Hex World Laboratory test package
         run: python -m pip install -e "experiments/hex_world_laboratory[test]"
+      - name: Ruff lint (baseline audit)
+        run: python -m ruff check .
+        continue-on-error: true
+      - name: Ruff format check (baseline audit)
+        run: python -m ruff format --check .
+        continue-on-error: true
       - name: Report legacy API usage
         run: python -m core.compatibility.usage . | tee legacy-api-usage.json
       - name: Upload legacy API usage report
