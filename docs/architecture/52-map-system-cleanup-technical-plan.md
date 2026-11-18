@@ -6,6 +6,7 @@
 | Kaynak dal | `demo_eldoria` |
 | Başlangıç commit'i | `7d53d431d5c3639fd95d273de9043b64483a5125` |
 | Genel plan | [51-map-system-cleanup-general-plan.md](51-map-system-cleanup-general-plan.md) |
+| Hex runtime migration | [54-hex-runtime-authoritative-gameplay-migration.md](54-hex-runtime-authoritative-gameplay-migration.md) |
 | Durum | Kullanıcı onayı alındı; 16.1 teknik baseline tamamlandı; görsel test gerekmiyor |
 
 ## 1. Teknik karar özeti
@@ -167,70 +168,75 @@ Test hedefleri:
 ### 16.1 — Baseline ve characterization (teknik inceleme tamamlandı)
 
 - Başlangıç HEAD'i, 16 harita JSON'unun gerçek schema sürümleri, map ID'leri, hex world ve placement içerikleri kaydedildi.
-- CI run `44411974271` Linux ve Windows işlerinde başarılı; test/derleme/paketleme/smoke kapsamı raporda kayıtlıdır.
+- CI run 44411974271 Linux ve Windows işlerinde başarılı; test/derleme/paketleme/smoke kapsamı raporda kayıtlıdır.
 - Normal oynanabilir akışın bugün kare dünya üzerinde olduğu; H tuşunun bağımsız ve geçici hex runtime açtığı kod/test üzerinden doğrulandı.
-- `HexWorldView.enter()` oyuncuyu hex başlangıç hücresine yeniden kaydediyor; `leave()` runtime'ı atıyor. Hex konumu ana actor state'ine yazılmıyor ve tekrar girişte korunmuyor.
+- HexWorldView.enter() oyuncuyu hex başlangıç hücresine yeniden kaydediyor; leave() runtime'ı atıyor. Hex konumu ana actor state'ine yazılmıyor ve tekrar girişte korunmuyor.
 - NPC, kaynak, market, kare map transition, save/restore, paketleme ve release verification bağımlılıkları raporlandı.
 - Ayrıntı: [Aşama 16.1 Baseline Raporu](53-map-cleanup-phase-16-1-baseline.md).
-- Görsel kabul bu teknik temizlik aşamasında istenmez. Mevcut davranış kaynak kodu ve characterization testleriyle belgelenmiştir.
+- Görsel kabul bu teknik temizlik aşamasında istenmez.
+
 **Kapı:** Teknik baseline raporu ve CI kanıtı mevcuttur. Hex runtime sahipliği çözülmeden kare harita dosyaları kaldırılmaz.
 
-### 16.2 — Harita verisi sınıflandırması ve tek kare haritanın seçimi
+### 16.2 — Altıgen runtime'ın authoritative ana oyun sistemi olması
 
-- Map JSON dosyalarının gerçek schema sürümleri, ID'leri ve içerikleri listelenir.
-- Altıgen ana dünya haritaları ile kare harita adayları ayrılır.
-- Kare harita adaylarından tek korunacak easter egg haritası, bağımlılık ve içerik kanıtıyla seçilir.
-- Kalan kare harita dosyalarının manifest, kod, test, asset, placement ve save referansları raporlanır.
-- Kırık/boşta kalan referanslar raporlanır; otomatik düzeltme yapılmaz.
-**Kapı:** Tek kare easter egg haritası, hex gameplay authoritative state'e geçişin kapsamı ve NPC/kaynak/market/quest/save referanslarının yeni sahipliği kararlaştırılmadan kesin seçilemez. Bugünkü dokuz kare harita aktif starter gameplay'in bağımlılığıdır; hex entegrasyonu öncesi sekiz haritayı kaldırmak mevcut oynanışı ve save uyumluluğunu bozar. Bu nedenle bu aşamada yalnızca aday ve migration envanteri hazırlanır; silme/deprecation yapılmaz.
+- [54 numaralı migration planındaki](54-hex-runtime-authoritative-gameplay-migration.md) tek konum yazarı, runtime lifecycle, occupancy ve render/input sınırı uygulanır.
+- HexWorldRuntime aktif oyun oturumunun parçası olur; HexWorldView yalnızca sunum/input adaptörü olarak kalır.
+- Aynı entity için paralel kare ve hex konum kaynakları kaldırılır.
+- H portal/temporary enter-leave akışı normal oyun akışından çıkarılır.
 
-### 16.3 — Runtime sahipliği ve sahne sınırları
+**Kapı:** Ana oynanış hex runtime'dan konum/hareket okumalı; tek authoritative konum ve occupancy testlerle kanıtlanmalıdır.
 
-- Ana altıgen dünya için authoritative konum/runtime zinciri belgelenir.
-- Kare easter egg haritası için gereken minimum runtime/UI bağımlılıkları belirlenir.
-- Kare ve hex sistemler arasında koordinat/state paylaşımının gerekip gerekmediği değerlendirilir; varsayılan karar paylaşmamak ve koordinat dönüştürmemektir.
-- İleride tek bir giriş/çıkış gerekirse sahne sınırı adaptörünün sözleşmesi belgelenir; bu aşamada ürün erişim yöntemi uygulanmaz.
-- Belirsiz ownership varsa önce küçük bir mimari ADR yazılır; uygulama ayrı onaya bırakılabilir.
-**Kapı:** Ana dünya state'i ile tek kare sahnenin sorumlulukları çakışmasız olmalı.
+### 16.3 — Hex içerik ve gameplay referanslarının entegrasyonu
 
-### 16.4 — Render/UI sorumluluk sadeleştirmesi
+- Başlangıç konumu, NPC'ler, resource landmark'ları, market/trade partner ve dünya nesnesi referansları axial içerik sözleşmesine geçirilir.
+- Quest'lerin NPC/resource ID referansları korunur.
+- Kare harita katalogları ana gameplay içerik doğrulamasından ayrılır; tek easter egg sınırında tutulur.
 
-- Ekran/viewport/camera ve world transform çağrı zinciri çıkarılır.
-- Normal gameplay'in altıgen dünya görünümüne ait yolu ile kare easter egg'in minimum sunum yolu ayrıştırılır.
-- Geçici H-key bridge davranışı ürün gereksinimiyle karşılaştırılır; bu aşamada varsayılan olarak silinmez.
-- Render-side cache ile gameplay state ayrımı test edilir.
-**Kapı:** Ana oyun giriş/kamera/harita görüntüsü ve korunacak kare harita sunumu için regresyon kanıtı olmalı.
+**Kapı:** Starter package kare map catalog olmadan ana hex dünyayı yükleyebilmeli; içerik referans testleri geçmelidir.
 
-### 16.5 — Güvenli refactor ve deprecation
+### 16.4 — Persistence ve legacy kayıt uyumluluğu
 
-- Önce tek kare harita için gereken minimum kare sistem yüzeyi belirlenir.
-- Çoklu kare harita katalogları, gereksiz dünya grafı/runtime bileşenleri ve kullanılmayan kare içerikler ancak bağımlılıkları kanıtlanırsa deprecation/remove adayı olur.
-- Bir seferde tek bir sorumluluk veya küçük modül grubu değiştirilir.
-- Önce public API ve import kullanım haritası çıkarılır; gerekiyorsa compatibility facade/adaptör eklenir.
-- Kullanılmayan olduğu kanıtlanan kod önce deprecation/uyarı veya test dışı bırakma adımına alınır; silme ayrı commit olur.
-- Her commit sonrası hedef test kümesi ve sonra tam test paketi çalıştırılır.
-- Veri migration gerekiyorsa idempotent, yedekli ve dry-run destekli tasarlanır; migration bu planın otomatik varsayımı değildir.
-**Kapı:** Her kaldırma için çağrı/import/save kanıtı, test kanıtı ve rollback yolu bulunmalı; tek kare easter egg çalışır durumda kalmalı.
+- Axial entity konumları ve occupancy save/restore sözleşmesine alınır.
+- Yeni save round-trip ve bozuk referans doğrulamaları eklenir.
+- Eski kare save'ler için açık migration/recovery politikası test edilmeden map dosyaları kaldırılmaz.
 
-### 16.6 — Tam otomatik regresyon ve teknik kabul
+**Kapı:** Yeni hex save/load ve legacy kayıt güvenliği otomatik testlerle kanıtlanmalıdır.
 
-- Temiz kurulum ve paketleme doğrulanır.
-- Tüm Pytest suite, Ruff ve GitHub Actions kalite akışları çalışır.
-- Ana altıgen dünya ve içerik paketinin beklenen şekilde yüklendiği doğrulanır.
-- Kare easter egg için yalnızca seçilmiş tek haritanın yüklenmesi ve hedeflenen sunumunun çalışması doğrulanır.
-- Harita geçişi, oyuncu konumu, çarpışma, etkileşim, yerleşim, kamera, save/load ve mevcut gameplay loop kontrol edilir.
-- Eski save referansları ve kare harita uyumluluğu ayrıca değerlendirilir.
-- Görsel kabul testi istenmez; yalnızca değişen kodun otomatik testleri, statik analizi ve CI sonuçları değerlendirilir.
-**Kapı:** Pytest, Ruff, paketleme/release doğrulaması ve Linux/Windows CI başarılı olmalı.
+### 16.5 — Ana oyun UI/render akışını hex runtime'a bağlama
 
-### 16.7 — Kapanış ve entegrasyon sözleşmesi
+- MainScreen normal oyun akışında hex runtime'ı kullanır; portal akışı kaldırılır.
+- GameWindow pencere sistemi korunur; renderer runtime state'ini değiştirmez.
+- Kare sistem ana gameplay çağrı zincirinden ayrılır; easter egg geçici olarak korunur.
+
+**Kapı:** Otomatik input/render/transition testleri geçmelidir.
+
+### 16.6 — Kare sistemi tek easter egg'e indirme
+
+- Tek korunacak kare easter egg haritası bağımlılık ve içerik kanıtıyla seçilir.
+- Diğer sekiz kare harita ve kullanılmayan kare world graph/runtime modülleri, kod/import/content/save/test referansları sıfırlandıktan sonra kaldırılır.
+- Kare (x,y) koordinat modeli kendi sınırında kalır; hex koordinatlarına dönüştürülmez.
+
+**Kapı:** Hex ana oyun kare map catalog olmadan çalışır; tek easter egg ayrı yüklenir; eski save politikası güvenlidir.
+
+### 16.7 — Tam otomatik regresyon ve teknik kabul
+
+- Temiz kurulum, Pytest, Ruff, compileall, wheel ve release verification çalıştırılır.
+- Ana hex dünya, içerik, geçiş, hareket, NPC/resource/market/quest/container etkileşimleri ve save/load doğrulanır.
+- Tek kare easter egg'in yükleme ve sunum testleri çalıştırılır.
+- Linux/Python 3.11 ve Windows/Python 3.12 CI işleri başarılı olmalıdır.
+- Görsel kabul testi istenmez.
+
+**Kapı:** Otomatik kalite ve paketleme kapılarının tamamı başarılı olmalıdır.
+
+### 16.8 — Kapanış ve entegrasyon sözleşmesi
 
 - Ana altıgen dünya mimarisi ve korunacak tek kare harita easter egg yüzeyi belgelenir.
 - Temizlenen/kalan legacy bileşenler listelenir.
 - Harita veri şeması, runtime authority, koordinat sınırı, render adapter ve asset ownership kararları kaydedilir.
 - Laboratuvar A15 raporundaki altı entegrasyon blocker'ının hangilerinin çözüldüğü ve hangilerinin entegrasyon aşamasına kaldığı eşleştirilir.
-- "Hazır / koşullu hazır / hazır değil" kararı verilir.
-**Kapı:** Teknik kapanış raporu, otomatik doğrulama kanıtı ve branch koruma denetimi olmadan sonraki entegrasyon aşaması açılmaz; `demo_eldoria`'ya merge için kullanıcı onayı korunur.
+- Hazır / koşullu hazır / hazır değil kararı verilir.
+
+**Kapı:** Teknik kapanış raporu, otomatik doğrulama kanıtı ve branch koruma denetimi olmadan sonraki entegrasyon aşaması açılmaz; demo_eldoria'ya merge için kullanıcı onayı korunur.
 
 ## 6. Korumalı sözleşmeler
 
@@ -284,10 +290,8 @@ Kullanılmayan kare harita dosyalarının kaldırılması ancak tek harita karar
 7. **Test kapsama boşluğu:** UI/render davranışında değişiklik yapılırsa manuel kontrol yerine otomatik characterization/render testleri eklenmelidir.
 8. **Easter egg erişimi:** Nerede/nasıl bulunacağı ve sahneye giriş/çıkış biçimi ürün tasarımıdır; teknik temizlik bunu varsaymamalıdır.
 
-## 10. Uygulama durumu ve sıralama kapısı
+## 10. Uygulama durumu ve sıralama kararı
 
-Kullanıcı teknik planın uygulanmasını onayladı. Aşama 16.1 teknik baseline incelemesi yapıldı ve [53 numaralı rapora](53-map-cleanup-phase-16-1-baseline.md) kaydedildi. Henüz hiçbir harita kodu, JSON içeriği, asset, save schema veya UI akışı değiştirilmedi.
+Kullanıcı, altıgen runtime'ın ana oyun entegrasyonunun kare haritaların son temizliğinden önce yapılmasını onayladı. Bu karar [54 numaralı migration planında](54-hex-runtime-authoritative-gameplay-migration.md) ayrıntılandırılmıştır. Uygulama sırası 16.2 runtime sahipliği, 16.3 içerik/gameplay referansları, 16.4 persistence, 16.5 UI entegrasyonu, 16.6 tek kare easter egg temizliği ve 16.7 otomatik teknik doğrulamadır.
 
-**Kritik sıralama çakışması:** Ürün hedefi ana oyunda hex, tek kare easter egg iken mevcut uygulamanın ana gameplay'i kare sistem üzerinde çalışıyor; hex görünümü ise actor konumunu sahiplenmeyen geçici bir runtime. Bu nedenle "önce kare sistemi tek haritaya indir, sonra hex entegrasyonu yap" sırası güvenli değildir. Hex gameplay entegrasyonu ve içerik/save sahipliği çözülmeden kare haritaları tek dosyaya indirmek mevcut oyunu kırar. Bu bağımlılık kullanıcıyla netleştirilmeden 16.2'de tek harita seçimi ve 16.5'te kare runtime kaldırma adımlarına geçilmeyecektir.
-
-Kullanıcı görsel test istemediğini açıkça belirtti. Bundan sonra `--play` manuel kontrolü istenmeyecek; teknik kararlar kod, bağımlılık grafı, Pytest, Ruff, paketleme ve GitHub Actions ile doğrulanacaktır. Sıralama kapısı, mevcut runtime sahipliği ve içerik/save bağımlılıkları esas alınarak teknik plan içinde çözülecektir. Korunan dallar değiştirilmeyecektir.
+Kullanıcı görsel test istemediğini açıkça belirtti. --play manuel kontrolü istenmeyecek; teknik kararlar kod, bağımlılık grafı, Pytest, Ruff, paketleme ve GitHub Actions ile doğrulanacaktır. Kare save konumları için örtük kare→hex dönüşümü yapılmayacak. Korunan dallar değiştirilmeyecektir.
