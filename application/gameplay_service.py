@@ -1247,7 +1247,6 @@ class GameplayService:
         profile = bundle.economy.market.profile(offer.market_id)
         if profile is not None:
             self._require_actor_in_active_world(bundle, buyer_id)
-            buyer_actor = bundle.actors.get(buyer_id)
             if self._require_legacy_actor_location(bundle, buyer_id) != profile.location_id:
                 raise GameplayServiceError(
                     "Buyer must be at the market's registered location."
@@ -1428,7 +1427,6 @@ class GameplayService:
             raise KeyError(f"NPC has no trade profile: {npc_id}")
         npc = bundle.social.npcs.get(npc_id)
         self._require_actor_in_active_world(bundle, actor_id)
-        actor = bundle.actors.get(actor_id)
         if self._require_legacy_actor_location(bundle, actor_id) != npc.location_id:
             raise GameplayServiceError("Player must be at the NPC's location to trade.")
         if resource_type not in merchant.accepted_resources:
@@ -1456,7 +1454,6 @@ class GameplayService:
             if profile is None:
                 raise KeyError(f"Market not found: {market_id}")
             self._require_actor_in_active_world(bundle, self.player_actor_id)
-            actor = bundle.actors.get(self.player_actor_id)
             if self._require_legacy_actor_location(bundle, self.player_actor_id) != profile.location_id:
                 raise GameplayServiceError(
                     "Player must be at the market's registered location."
@@ -1507,7 +1504,6 @@ class GameplayService:
     def talk_to_npc(self, actor_id: str, npc_id: str, dialogue_id: str, node_id: str | None = None):
         bundle = self._current_bundle()
         self._require_actor_in_active_world(bundle, actor_id)
-        actor = bundle.actors.get(actor_id)
         npc = bundle.social.npcs.get(npc_id)
         if npc is None:
             raise KeyError(f"NPC not found: {npc_id}")
@@ -1769,7 +1765,6 @@ class GameplayService:
         resource = ResourceType(resource_type)
         bundle = self._current_bundle()
         self._require_actor_in_active_world(bundle, actor_id)
-        actor = bundle.actors.get(actor_id)
         if npc_id is not None:
             npc = bundle.social.npcs.get(npc_id)
             if npc is None:
