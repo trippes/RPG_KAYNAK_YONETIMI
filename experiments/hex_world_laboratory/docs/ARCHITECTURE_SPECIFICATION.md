@@ -1,12 +1,12 @@
 # Hex World Laboratory — Mimari Sözleşme
 
-> **Durum:** Taslak sözleşme — aşama bazında kesinleştirilecek  
+> **Durum:** Aşama 10.1–10.8 uygulamasıyla doğrulanmış mimari sözleşme — manuel kullanıcı kabulü bekleniyor  
 > **Üst belge:** [HEX_WORLD_LAB_MASTER_PLAN.md](HEX_WORLD_LAB_MASTER_PLAN.md)  
 > **Kapsam:** Laboratuvarın hedef mimari sınırları ve veri sözleşmeleri
 
 ## 1. Amaç
 
-Bu belge, Hex World Laboratory içinde geliştirilecek sistemlerin sorumluluklarını, veri akışını ve birbirleriyle kuracağı ilişkileri tanımlar. Henüz uygulanmış kodun açıklaması değildir. Gerçek uygulama, ilgili aşama planı ve kullanıcı onayı sonrasında bu sözleşmeye göre geliştirilir.
+Bu belge, Hex World Laboratory sistemlerinin sorumluluklarını, veri akışını ve birbirleriyle kurduğu ilişkileri tanımlar. Aşama 10.1–10.8 kapsamında simülasyon tick sırası ve render sınırı gerçek uygulama ve otomatik testlerle doğrulanmıştır. Manuel kullanıcı kabulü tamamlanınca aşama kapatılacaktır.
 
 Bu belgede kesinleşmemiş teknik seçimler açıkça **AÇIK KARAR** olarak işaretlenir. Bunlar varsayılan değer gibi ele alınamaz.
 
@@ -83,16 +83,16 @@ Hex kenarı/köşesi üzerindeki noktaların hücre ataması için deterministik
 
 ## 6. Hareket ve fizik veri akışı
 
-Hedef veri akışı:
+Doğrulanmış tick akışı:
 
-1. Input adaptörü kullanıcı girdisini hareket niyetine dönüştürür.
-2. Movement sistemi niyeti hız/yön/ivme kurallarına göre işler.
-3. Physics sistemi hareket önerisini engel ve sınırlarla çözümler.
-4. Sonuç fiziksel WorldPosition state'ine uygulanır.
-5. World/Spatial katmanları gerekli hücre ve indeks bilgilerini günceller.
-6. Camera ve Rendering güncel state'i okuyarak görüntüler.
+1. `DemoTickPump`, monotonic clock üzerinden 60 TPS sabit tick üretir; tek pump çağrısında en fazla 8 tick işler ve zaman borcunu kaybetmez.
+2. `SimulationTickCoordinator` tick numarasını doğrular ve input niyetini o tick için bir kez örnekler.
+3. `CollisionAwareMovementSystem.step()`, oyuncu hareket entegrasyonunu ve sürekli çarpışma çözümünü tek adımda tamamlar.
+4. `MovementCellTracker.update()`, kesinleşmiş WorldPosition için hex hücre çözümünü günceller.
+5. EntityDemo callback'i `EntityWorldCoordinator.update_transform()` üzerinden player EntityTransform ve EntitySpatialIndex'i eşitler.
+6. Tüm aşamalar başarılı olduktan sonra tick tamamlandı sayılır. Başarısız alt aşamadan yeniden deneme, daha önce tamamlanan aşamaları tekrarlamaz.
 
-Bu akışın kesin tick sırası, sabit zaman adımı kararı ve interpolasyon yöntemi simülasyon aşamasında kararlaştırılır.
+Kamera frame delta ile ayrı güncellenir. Rendering ve interaction, en son tamamlanmış tick'in state'ini okur. Koordinatör Pygame veya wall-clock bağımlılığı taşımaz.
 
 ## 7. Çarpışma sözleşmesi
 
@@ -114,6 +114,8 @@ Rendering:
 - Sprite foot-anchor'ını entity transformuyla eşler.
 - Gerekli depth/y-sort kuralını uygular.
 - Görsel interpolasyon yapabilir; ancak interpolasyon fiziksel state'e yazılmaz.
+- EntityRegistry, CompanionRoster veya EntitySpatialIndex üzerinde authoritative değişiklik yapmaz.
+- Player entity eşitlemesini çağırmaz; bu işlem simülasyon tick callback'inin sorumluluğudur.
 
 ## 9. Spatial indexing sözleşmesi
 
@@ -137,7 +139,7 @@ Aşağıdakiler ilgili aşamalarda ADR ile kesinleştirilecektir:
 - Hücre sınırındaki tie-break kuralı.
 - Harita sınırı ve boş hücre davranışı.
 - WorldPosition veri tipi ve hassasiyet yaklaşımı.
-- Fixed timestep / değişken timestep politikası.
+- Sabit zaman adımı: 60 TPS; pump başına en fazla 8 tick ve kayıpsız zaman borcu.
 - Collider şekli ve temas çözümü.
 - Foot-anchor sözleşmesi.
 - Kamera zoom ve viewport modeli.

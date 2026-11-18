@@ -5,7 +5,7 @@
 > **Genel plan:** [PHASE-10-GENERAL-PLAN.md](PHASE-10-GENERAL-PLAN.md)  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **İncelenen temel commit:** `48d5d94033b6b71409b8c3afc35751face250fcd`  
-> **Durum:** TEKNİK PLAN HAZIRLANDI — KULLANICI ONAYI BEKLİYOR  
+> **Durum:** KULLANICI TARAFINDAN ONAYLANDI — 10.1–10.8 UYGULANDI — OTOMATİK TEST/CI BAŞARILI — MANUEL KABUL BEKLENİYOR  
 > **Kapsam kararı:** NPC, kaynak ve yoldaş hareketi bu aşamada yoktur.
 
 ---
@@ -201,6 +201,16 @@ Bu mekanizma genel amaçlı event bus veya plugin sistemi değildir; yalnızca b
 - Uzun süreli tick ve spatial differential testleri.
 - Simülasyon tick maliyeti ve render snapshot maliyetinin ayrı benchmarkları.
 
+### 10.8 — Regresyon, performans ve kabul doğrulaması
+
+- 3.600 tick'lik uzun süreli entity/spatial tutarlılık testi eklendi.
+- 30/60/120 render FPS eşdeğerliği ve 60 TPS sabit zaman adımı regresyonları korundu.
+- NPC, kaynak ve FOLLOW/WAIT/RETURN komutlarının hareketsizlik garantileri doğrulandı.
+- Simülasyon tick maliyeti ile render snapshot maliyeti ayrı ölçüldü.
+- Laboratuvar CI, Linux Core Quality ve Windows Core Quality başarılı tamamlandı.
+- Görsel test sahneleri ve Phase 10 benchmark raporu artifact olarak yüklendi.
+- Manuel kabul kontrol listesi kullanıcı testi için hazırlandı; kullanıcı onayı bekleniyor.
+
 ## 5. Test mimarisi ve beklenen testler
 
 ### 5.1 Unit testler
@@ -336,3 +346,32 @@ Uygulama onaylanıp tamamlandığında `docs/ARCHITECTURE_SPECIFICATION.md` içi
 ---
 
 **Teknik karar özeti:** Mevcut DemoTickPump korunur. Yeni Pygame-bağımsız SimulationTickCoordinator, tick içindeki movement/physics → cell tracking → entity transform/spatial sync sırasını yönetir. Entity sync render snapshot içinden çıkarılır ve simülasyon tick'ine bağlanır. Render son tamamlanmış state'i salt-okunur biçimde görüntüler. NPC, kaynak ve yoldaş hareketi uygulanmaz.
+
+
+## 12. Uygulama ve doğrulama kaydı
+
+Uygulanan ana dosyalar:
+- `src/hex_world_lab/simulation/tick_coordinator.py`
+- `src/hex_world_lab/simulation/__init__.py`
+- `src/hex_world_lab/application/movement_demo.py`
+- `src/hex_world_lab/application/entity_demo.py`
+- `tests/unit/test_simulation_tick_coordinator.py`
+- `tests/integration/test_simulation_tick_flow.py`
+- `tests/integration/test_entity_demo_render_purity.py`
+- `tests/integration/test_entity_world_lifecycle.py`
+- `benchmarks/benchmark_simulation_tick.py`
+- `.github/workflows/hex-world-lab-ci.yml`
+
+Gerçek tick sırası: Input → CollisionAwareMovementSystem (movement + collision) → MovementCellTracker → EntityWorldCoordinator callback (registry + spatial index) → tick completion. DemoTickPump 60 TPS, pump başına en fazla 8 tick ve zaman borcu koruma davranışını sürdürür.
+
+Kod doğrulama commit'i: `d4ce6d8704aa46e0b327f539c72b9a9b0d350c2d`.
+
+- Laboratuvar: 759 test başarılı.
+- Core Quality Linux: 2.222 test başarılı; 1 adet `pkg_resources` deprecation uyarısı.
+- Core Quality Windows: 2.222 test başarılı.
+- Laboratuvar CI: run `44260997907`, başarılı.
+- Core Quality: run `44260997901`, başarılı.
+- Simülasyon tick ortalaması: 177.5944 µs/tick (120 tick'lik batch ortalaması 21.3113 ms; p95 22.7414 ms).
+- Render snapshot ortalaması: 219.3906 µs/snapshot (120 snapshot'lık batch ortalaması 26.3269 ms; p95 26.5093 ms).
+- Ölçüm ortamı: GitHub Actions Ubuntu, Python 3.12.16; üç ısınma ve yirmi ölçüm batch'i.
+- Kullanıcı manuel görsel/işlevsel kabulü bekleniyor; bu nedenle aşama henüz resmen kapatılmış sayılmaz.

@@ -5,8 +5,8 @@
 > **Depo:** `trippes/RPG_KAYNAK_YONETIMI`  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Hedef entegrasyon dalı:** `demo_eldoria`  
-> **Durum:** AŞAMA 0–9 TAMAMLANDI VE KABUL EDİLDİ — AŞAMA 10 GENEL PLANI ONAYLANDI — TEKNİK PLAN HAZIR, KULLANICI ONAYI BEKLİYOR  
-> **Belge sürümü:** 2.5
+> **Durum:** AŞAMA 0–9 TAMAMLANDI VE KABUL EDİLDİ — AŞAMA 10.1–10.8 TEKNİK UYGULAMA VE CI TAMAMLANDI — MANUEL KULLANICI KABULÜ BEKLENİYOR  
+> **Belge sürümü:** 2.6
 
 ---
 
@@ -773,7 +773,7 @@ Bu liste tamamlanmadan laboratuvarın ana oyuna aktarılmaya hazır olduğu söy
 | 7 | Render ve görsel doğrulama | 7.1–7.8 tamamlandı; 703/703 test, Linux/Windows CI, benchmark ve kullanıcı görsel kabulü başarılı; 17 Kasım 2026 tarihinde kapatıldı |
 | 8 | Mekânsal indeksleme ve performans karşılaştırması | 8.1–8.8 uygulandı; 729/729 test, Linux/Windows Core Quality, benchmarklar ve kullanıcı görsel kabulü başarılı; 17 Kasım 2026 tarihinde kapatıldı |
 | 9 | Varlıklar, etkileşimler ve yoldaş altyapısı | 9.1–9.9 uygulandı; 741 laboratuvar testi, Linux/Windows Core Quality (2.204'er test), benchmark ve kullanıcı görsel/işlevsel kabulü başarılı; 18 Kasım 2026 tarihinde kapatıldı |
-| 10–13 | Simülasyon, sağlamlık, nihai mimari ve kontrollü entegrasyon | Her aşama kendi planı ve kullanıcı onayıyla sırayla ele alınacak |
+| 10 | Simülasyon orkestrasyonu ve dünya bütünlüğü | 10.1–10.8 teknik uygulama, 759 laboratuvar testi, Linux/Windows Core Quality (2.222'şer test), benchmark ve artifact üretimi başarılı; manuel kullanıcı kabulü bekleniyor |\n| 11–13 | Sağlamlık, nihai mimari ve kontrollü entegrasyon | Aşama 10 manuel kabulünden sonra ayrı plan ve onayla ele alınacak |
 
 - Çalışma dalı: `experiment/hex-world-laboratory`.
 - Aşama 6 son otomatik test kapısında Laboratuvar CI 681/681 testle başarılıdır.
@@ -787,7 +787,7 @@ Bu liste tamamlanmadan laboratuvarın ana oyuna aktarılmaya hazır olduğu söy
 
 Aşama 9'un 9.1–9.9 teknik uygulaması, 741/741 laboratuvar testi, Core Quality Linux ve Windows job'ları (2.204'er test), benchmarklar, görsel artifact üretimi ve kullanıcının manuel görsel/işlevsel kabulü tamamlanmıştır. Aşama 9, 18 Kasım 2026 tarihinde resmen kapatılmıştır.
 
-Aşama 10 Genel Planı [PHASE-10-GENERAL-PLAN.md](PHASE-10-GENERAL-PLAN.md) kullanıcı tarafından onaylanmıştır. Bağlayıcı karar doğrultusunda NPC hareketi, yoldaş takibi veya kaynak hareketi bu aşamada uygulanmayacaktır. Teknik Mimari Planı [PHASE-10-TECHNICAL-PLAN.md](PHASE-10-TECHNICAL-PLAN.md) ve [PHASE-10-MANUAL-ACCEPTANCE-CHECKLIST.md](PHASE-10-MANUAL-ACCEPTANCE-CHECKLIST.md) hazırlanmıştır; kullanıcı onayı beklenmektedir. Teknik plan açıkça onaylanmadan kodlamaya başlanmayacaktır.
+Aşama 10 Genel Planı ve Teknik Mimari Planı kullanıcı tarafından onaylanmış; 10.1–10.8 teknik uygulaması tamamlanmıştır. Laboratuvar CI (759 test), Core Quality Linux/Windows (2.222'şer test), benchmarklar ve görsel artifact üretimi başarılıdır. Performans ve doğrulama ayrıntıları [PHASE-10-IMPLEMENTATION-VALIDATION-REPORT.md](../reports/PHASE-10-IMPLEMENTATION-VALIDATION-REPORT.md) içinde kayıtlıdır. Bağlayıcı karar doğrultusunda NPC hareketi, yoldaş takibi veya kaynak hareketi uygulanmamıştır. Sonraki izinli adım, [PHASE-10-MANUAL-ACCEPTANCE-CHECKLIST.md](PHASE-10-MANUAL-ACCEPTANCE-CHECKLIST.md) üzerinden kullanıcının masaüstü görsel/işlevsel kabulüdür.
 
 Dünya görsel zenginleştirmesi (arazi dokuları, bitki örtüsü, ağaç/kaya/çevre varlıkları, ışık ve atmosfer) Aşama 7'nin geriye dönük eksik işi değildir. Kullanıcı kararı doğrultusunda ihtiyaç duyulan ileriki aşamalarda ayrı kapsam olarak ele alınacaktır.
 
@@ -813,4 +813,4 @@ Dünya görsel zenginleştirmesi (arazi dokuları, bitki örtüsü, ağaç/kaya/
 | 2.2 | Güncellendi — 17 Kasım 2026 | Aşama 9 teknik planı onaylandı; 9.1–9.9 uygulandı, otomatik doğrulamalar ve görsel artifact başarılı; kullanıcı manuel kabul kapısı bekleniyor |
 | 2.3 | Güncellendi — 18 Kasım 2026 | Kullanıcı görsel/işlevsel kabulü verdi; Aşama 9 kapatıldı, kapanış raporu eklendi ve Aşama 10 planlama için sıradaki aşama oldu |
 | 2.4 | Güncellendi — 18 Kasım 2026 | Aşama 10 Genel Planı eklendi; NPC/yoldaş/kaynak hareketi bu aşama dışında bırakıldı; merkezi simülasyon orkestrasyonu ve render saflığı odak olarak belirlendi |
-| 2.5 | Güncellendi — 18 Kasım 2026 | Aşama 10 Genel Planı kullanıcı tarafından onaylandı; Teknik Mimari Planı ve manuel kabul kontrol listesi hazırlandı; kodlama için teknik plan onayı bekleniyor |
+| 2.5 | Güncellendi — 18 Kasım 2026 | Aşama 10 Genel Planı ve teknik planı onaylandı; uygulama başlatıldı |\n| 2.6 | Güncellendi — 18 Kasım 2026 | Aşama 10.1–10.8 uygulandı; 759 laboratuvar testi, Linux/Windows Core Quality (2.222'şer test), benchmark ve artifact üretimi başarılı; manuel kullanıcı kabulü bekleniyor |

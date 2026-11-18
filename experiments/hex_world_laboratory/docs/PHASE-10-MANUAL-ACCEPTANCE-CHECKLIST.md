@@ -1,10 +1,17 @@
 # Aşama 10 — Manuel Kabul Kontrol Listesi
 
 > **İlgili belgeler:** [Genel Plan](PHASE-10-GENERAL-PLAN.md) · [Teknik Mimari Planı](PHASE-10-TECHNICAL-PLAN.md)  
-> **Durum:** UYGULAMA SONRASI KULLANICI TESTİ İÇİN TASLAK  
+> **Durum:** OTOMATİK DOĞRULAMA TAMAMLANDI — MANUEL KULLANICI KABULÜ BEKLENİYOR  
 > **Launcher:** `python -m hex_world_lab`
 
-Bu kontrol listesi kodlama tamamlanmadan kabul edilmiş sayılmaz. Her madde kullanıcı tarafından gerçek laboratuvar çalıştırmasında doğrulanacaktır.
+Otomatik doğrulama kaydı:
+- [x] Laboratuvar CI: 759 test başarılı.
+- [x] Core Quality Linux: 2.222 test başarılı (1 deprecation uyarısı).
+- [x] Core Quality Windows: 2.222 test başarılı.
+- [x] Laboratuvar benchmarkları ve Phase 10 tick/render snapshot benchmarkı başarılı.
+- [x] Phase 7/9 görsel kanıtları ve Phase 10 benchmark artifact'i yüklendi.
+
+Bu otomatik sonuçlar masaüstü kabulünün yerine geçmez. Aşağıdaki manuel maddeler kullanıcı tarafından `python -m hex_world_lab` ile gerçek laboratuvar çalıştırmasında doğrulanacaktır.
 
 ## 1. Başlatma ve genel sahne
 - [ ] Laboratuvar yalnızca `python -m hex_world_lab` komutuyla açılıyor.
