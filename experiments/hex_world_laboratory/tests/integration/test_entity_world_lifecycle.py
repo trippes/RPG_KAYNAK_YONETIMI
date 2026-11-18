@@ -38,8 +38,10 @@ def test_map_unload_retains_entities_and_companion_relationship_then_reload_rein
     dormant_area = EntityAABB(-20, -20, 30, 20)
     assert coordinator.spatial_index.query(map_id, dormant_area) == ()
     coordinator.load_map(definition)
+    # The fixture player has no body or interaction bounds, so only the
+    # NPC is expected in the spatial broadphase after map reload.
     assert {e.entity_id for e in coordinator.spatial_index.query(map_id, dormant_area)} == {
-        player.entity_id, npc.entity_id
+        npc.entity_id
     }
     assert coordinator.spatial_index.query(map_id,
         __import__("hex_world_lab.entities.spatial_index",fromlist=["EntityAABB"]).EntityAABB(-20,-20,30,20))
