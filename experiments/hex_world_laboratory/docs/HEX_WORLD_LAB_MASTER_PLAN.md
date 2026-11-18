@@ -5,8 +5,8 @@
 > **Depo:** `trippes/RPG_KAYNAK_YONETIMI`  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Hedef entegrasyon dalı:** `demo_eldoria`  
-> **Durum:** AŞAMA 0–9 TAMAMLANDI VE KABUL EDİLDİ — AŞAMA 10 GENEL PLANI HAZIR, KULLANICI ONAYI BEKLİYOR  
-> **Belge sürümü:** 2.4
+> **Durum:** AŞAMA 0–9 TAMAMLANDI VE KABUL EDİLDİ — AŞAMA 10 GENEL PLANI ONAYLANDI — TEKNİK PLAN HAZIR, KULLANICI ONAYI BEKLİYOR  
+> **Belge sürümü:** 2.5
 
 ---
 
@@ -453,7 +453,7 @@ Kabul koşulları:
 - Harita geçişi ve uzun süreli çalışmada entity/spatial tutarsızlığı birikmez.
 - Mevcut hareket, fizik, kamera ve etkileşim davranışlarında regresyon oluşmaz.
 
-Ayrıntılar: [PHASE-10-GENERAL-PLAN.md](PHASE-10-GENERAL-PLAN.md).
+Ayrıntılar: [PHASE-10-GENERAL-PLAN.md](PHASE-10-GENERAL-PLAN.md) · [PHASE-10-TECHNICAL-PLAN.md](PHASE-10-TECHNICAL-PLAN.md) · [PHASE-10-MANUAL-ACCEPTANCE-CHECKLIST.md](PHASE-10-MANUAL-ACCEPTANCE-CHECKLIST.md).
 - Testler tekrar çalıştırıldığında aynı girdiler aynı beklenen sonucu üretiyor.
 
 ### Aşama 11 — Sağlamlık, regresyon ve performans doğrulaması
@@ -787,7 +787,7 @@ Bu liste tamamlanmadan laboratuvarın ana oyuna aktarılmaya hazır olduğu söy
 
 Aşama 9'un 9.1–9.9 teknik uygulaması, 741/741 laboratuvar testi, Core Quality Linux ve Windows job'ları (2.204'er test), benchmarklar, görsel artifact üretimi ve kullanıcının manuel görsel/işlevsel kabulü tamamlanmıştır. Aşama 9, 18 Kasım 2026 tarihinde resmen kapatılmıştır.
 
-Aşama 10 Genel Planı [PHASE-10-GENERAL-PLAN.md](PHASE-10-GENERAL-PLAN.md) hazırlanmıştır. Kullanıcının bağlayıcı kararı doğrultusunda bu aşamada NPC hareketi, yoldaş takibi veya kaynak hareketi uygulanmayacaktır. Genel plan kullanıcı onayından sonra ayrıntılı teknik mimari ve kabul ölçütleri hazırlanacak; teknik plan ayrıca onaylanmadan Aşama 10 kodlamasına başlanmayacaktır.
+Aşama 10 Genel Planı [PHASE-10-GENERAL-PLAN.md](PHASE-10-GENERAL-PLAN.md) kullanıcı tarafından onaylanmıştır. Bağlayıcı karar doğrultusunda NPC hareketi, yoldaş takibi veya kaynak hareketi bu aşamada uygulanmayacaktır. Teknik Mimari Planı [PHASE-10-TECHNICAL-PLAN.md](PHASE-10-TECHNICAL-PLAN.md) ve [PHASE-10-MANUAL-ACCEPTANCE-CHECKLIST.md](PHASE-10-MANUAL-ACCEPTANCE-CHECKLIST.md) hazırlanmıştır; kullanıcı onayı beklenmektedir. Teknik plan açıkça onaylanmadan kodlamaya başlanmayacaktır.
 
 Dünya görsel zenginleştirmesi (arazi dokuları, bitki örtüsü, ağaç/kaya/çevre varlıkları, ışık ve atmosfer) Aşama 7'nin geriye dönük eksik işi değildir. Kullanıcı kararı doğrultusunda ihtiyaç duyulan ileriki aşamalarda ayrı kapsam olarak ele alınacaktır.
 
@@ -813,3 +813,4 @@ Dünya görsel zenginleştirmesi (arazi dokuları, bitki örtüsü, ağaç/kaya/
 | 2.2 | Güncellendi — 17 Kasım 2026 | Aşama 9 teknik planı onaylandı; 9.1–9.9 uygulandı, otomatik doğrulamalar ve görsel artifact başarılı; kullanıcı manuel kabul kapısı bekleniyor |
 | 2.3 | Güncellendi — 18 Kasım 2026 | Kullanıcı görsel/işlevsel kabulü verdi; Aşama 9 kapatıldı, kapanış raporu eklendi ve Aşama 10 planlama için sıradaki aşama oldu |
 | 2.4 | Güncellendi — 18 Kasım 2026 | Aşama 10 Genel Planı eklendi; NPC/yoldaş/kaynak hareketi bu aşama dışında bırakıldı; merkezi simülasyon orkestrasyonu ve render saflığı odak olarak belirlendi |
+| 2.5 | Güncellendi — 18 Kasım 2026 | Aşama 10 Genel Planı kullanıcı tarafından onaylandı; Teknik Mimari Planı ve manuel kabul kontrol listesi hazırlandı; kodlama için teknik plan onayı bekleniyor |
