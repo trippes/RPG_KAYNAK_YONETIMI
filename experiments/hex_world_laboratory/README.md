@@ -36,6 +36,7 @@ Aşama planlarının ve tarihsel kararların tam dizini Master Plan'dadır. Gene
 - [Aşama 7 — Render ve görsel doğrulama](reports/PHASE-07-CLOSURE-REPORT.md)
 - [Aşama 8 — Mekânsal indeksleme](reports/PHASE-08-CLOSURE-REPORT.md)
 - [Aşama 9 — Varlıklar ve etkileşimler](reports/PHASE-09-CLOSURE-REPORT.md)
+- [Aşama 10 — Simülasyon orkestrasyonu](reports/PHASE-10-CLOSURE-REPORT.md)
 
 Aşama 3.6/3.7 ve Aşama 6–9 alt aşamalarının uygulama, test, CI ve benchmark kanıtları ilgili birleşik kapanış raporlarına taşınmıştır. Silinen eski rapor adları artık kullanılmamalıdır.
 
@@ -86,4 +87,4 @@ Laboratuvarın tam test paketi ve benchmarkları GitHub Actions laboratuvar iş 
 
 ## Güncel durum
 
-**Aşamalar 0–9 tamamlandı ve kullanıcı tarafından kabul edildi.** Sıradaki planlı çalışma Aşama 10 — Simülasyon orkestrasyonu ve dünya bütünlüğüdür. Aşama 10 kodlaması, genel plan, teknik mimari ve kabul ölçütleri hazırlanıp kullanıcı tarafından ayrıca onaylanmadan başlamaz.
+**Aşamalar 0–10 tamamlandı ve kullanıcı tarafından kabul edildi.** Aşama 10 kapanış kaydı [PHASE-10-CLOSURE-REPORT.md](reports/PHASE-10-CLOSURE-REPORT.md) dosyasındadır. Sıradaki aşama Aşama 11 — Sağlamlık, regresyon ve performans doğrulamasıdır. [Aşama 11 Genel Planı](docs/PHASE-11-GENERAL-PLAN.md) hazırlanmış ve kullanıcı onayına sunulmuştur. Onay gelmeden teknik plan veya kod uygulaması başlatılmaz.
