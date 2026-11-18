@@ -31,10 +31,10 @@ def test_procedural_environment_art_is_deterministic_and_transparent():
         assert first[key].get_size() == second[key].get_size()
         assert _pixels(first[key]) == _pixels(second[key])
         assert first[key].get_flags() & pygame.SRCALPHA
-        alpha = pygame.surfarray.array_alpha(first[key])
-        assert alpha.max() == 255
-        assert (alpha == 0).any()
-        assert (alpha > 0).sum() > first[key].get_width() * first[key].get_height() // 5
+        mask = pygame.mask.from_surface(first[key])
+        opaque_pixels = mask.count()
+        assert opaque_pixels > first[key].get_width() * first[key].get_height() // 5
+        assert opaque_pixels < first[key].get_width() * first[key].get_height()
 
     assert len({_pixels(surface) for surface in first.values()}) == 3
 
