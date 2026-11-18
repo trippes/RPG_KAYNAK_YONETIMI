@@ -5,9 +5,9 @@
 > **Depo:** `trippes/RPG_KAYNAK_YONETIMI`  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Hedef:** Görselden bağımsız, genişletilebilir çevresel nesne altyapısı oluşturmak  
-> **Durum:** KAPSAM REVİZYONU KABUL EDİLDİ — PROSEDÜREL GÖRSEL UYGULAMA VE YENİDEN KABUL BEKLENİYOR  
+> **Durum:** RESMEN KAPATILDI — PROSEDÜREL UYGULAMA VE KULLANICI KABULÜ BAŞARILI  
 > **Ön koşul:** Aşama 11 tamamlandı ve kullanıcı tarafından kabul edildi  
-  > **Uygulama durumu:** Prosedürel çizim uygulandı; 800 laboratuvar testi, Linux/Windows Core Quality, benchmark ve görsel artifact başarılı. Kullanıcı masaüstü görsel/işlevsel kabulü bekleniyor.
+  > **Uygulama durumu:** Prosedürel çizim ve son collider hizalama düzeltmeleri tamamlandı; 800 laboratuvar testi, Linux/Windows Core Quality, benchmark, görsel artifact ve kullanıcı masaüstü kabulü başarılı.
 
 ## 18 Kasım 2026 kapsam revizyonu — bağlayıcı karar
 
@@ -586,4 +586,4 @@ Teknik plan en az şu başlıkları içerecektir:
 - Kullanıcının masaüstünde uygulayacağı görsel kabul senaryoları.
 - Riskler, geri dönüş yaklaşımı ve alt aşama bağımlılıkları.
 
-**Mevcut karar:** Aşama 12 genel planı taslak olarak hazırlanmıştır. Kullanıcı onayı ve ardından teknik plan onayı alınmadan uygulama başlatılmayacaktır.
+**Kapanış kararı — 18 Kasım 2026:** Aşama 12'nin 12.1–12.8 kapsamı tamamlandı. Kullanıcı, prosedürel ağaç/kaya/çalı görsellerini ve özellikle ağaç gövdesi ile kaya collider hizalamasını masaüstünde kabul etti. Otomatik testler ve Linux/Windows CI başarılıdır. Aşama 12 resmen kapatılmıştır. Sonraki aşama ayrıca planlanıp kullanıcı onayına sunulacaktır.
