@@ -41,7 +41,15 @@ jobs:
       - name: Install laboratory and test dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e ".[test]"
+          python -m pip install -e ".[test,quality]"
+
+      - name: Ruff lint (procedural graphics scope)
+        run: |
+          python -m ruff check src/hex_world_lab/rendering/procedural src/hex_world_lab/rendering/procedural_environment.py src/hex_world_lab/rendering/environment_assets.py tests/unit/test_procedural_*.py tests/integration/test_environment_object_demo.py scripts/render_phase_13_scenes.py benchmarks/benchmark_phase_13_procedural_art.py
+
+      - name: Ruff format check (procedural graphics scope)
+        run: |
+          python -m ruff format --check src/hex_world_lab/rendering/procedural src/hex_world_lab/rendering/procedural_environment.py src/hex_world_lab/rendering/environment_assets.py tests/unit/test_procedural_*.py tests/integration/test_environment_object_demo.py scripts/render_phase_13_scenes.py benchmarks/benchmark_phase_13_procedural_art.py
 
       - name: Run complete laboratory test suite
         run: |
