@@ -108,7 +108,7 @@ def test_visual_document_rejects_unknown_palette_tokens_and_nonfinite_geometry()
 
 
 def test_explicit_collider_types_validate_independently_of_visual_shapes():
-    definition = make_definition(CircleCollider(1, 2, 3))
+    definition = make_definition(collider=CircleCollider(1, 2, 3))
     assert definition.collider.radius == 3
     assert make_definition().collider is None
     with pytest.raises(ValueError):
