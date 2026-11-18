@@ -130,7 +130,7 @@ class MovementManager:
         movement = self._movements.get(str(event.action_id))
         if movement is None or movement.state != MovementState.SCHEDULED:
             return
-        actor = self._actors._require(movement.actor_id)
+        self._actors._require(movement.actor_id)
         destination = self._maps[movement.world_id].get(movement.path[-1])
         position = destination.position if destination is not None else None
         self._actors.set_legacy_position(
