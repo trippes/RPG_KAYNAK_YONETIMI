@@ -1,0 +1,171 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://eldoria.invalid/schemas/content-library.v1.schema.json",
+  "title": "Eldoria Content Library v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "kind", "library_id", "definitions"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "kind": { "const": "eldoria_content_library" },
+    "library_id": { "type": "string", "minLength": 1 },
+    "definitions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/contentDefinition" }
+    }
+  },
+  "$defs": {
+    "point": {
+      "type": "array",
+      "prefixItems": [{ "type": "number" }, { "type": "number" }],
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "style": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fill", "stroke", "stroke_width"],
+      "properties": {
+        "fill": { "type": ["string", "null"] },
+        "stroke": { "type": ["string", "null"] },
+        "stroke_width": { "type": "number", "minimum": 0 }
+      },
+      "anyOf": [
+        { "properties": { "fill": { "type": "string" } } },
+        { "properties": { "stroke": { "type": "string" } } }
+      ]
+    },
+    "element": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["element_id", "style", "shape"],
+      "properties": {
+        "element_id": { "type": "string", "minLength": 1 },
+        "style": { "$ref": "#/$defs/style" },
+        "shape": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["type", "points"],
+              "properties": {
+                "type": { "const": "polygon" },
+                "points": { "type": "array", "minItems": 3, "items": { "$ref": "#/$defs/point" } }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["type", "x", "y", "width", "height"],
+              "properties": {
+                "type": { "const": "ellipse" },
+                "x": { "type": "number" },
+                "y": { "type": "number" },
+                "width": { "type": "number", "exclusiveMinimum": 0 },
+                "height": { "type": "number", "exclusiveMinimum": 0 }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["type", "center", "radius"],
+              "properties": {
+                "type": { "const": "circle" },
+                "center": { "$ref": "#/$defs/point" },
+                "radius": { "type": "number", "exclusiveMinimum": 0 }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["type", "points", "closed"],
+              "properties": {
+                "type": { "const": "polyline" },
+                "points": { "type": "array", "minItems": 2, "items": { "$ref": "#/$defs/point" } },
+                "closed": { "type": "boolean" }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "layer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["layer_id", "order", "elements"],
+      "properties": {
+        "layer_id": { "type": "string", "minLength": 1 },
+        "order": { "type": "integer" },
+        "elements": { "type": "array", "items": { "$ref": "#/$defs/element" } }
+      }
+    },
+    "visualDocument": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["document_version", "logical_size", "ground_anchor", "depth_anchor", "palette", "layers", "generator"],
+      "properties": {
+        "document_version": { "const": 1 },
+        "logical_size": {
+          "type": "array",
+          "prefixItems": [
+            { "type": "number", "exclusiveMinimum": 0 },
+            { "type": "number", "exclusiveMinimum": 0 }
+          ],
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "ground_anchor": { "$ref": "#/$defs/point" },
+        "depth_anchor": { "$ref": "#/$defs/point" },
+        "palette": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "oneOf": [
+              { "type": "array", "minItems": 3, "maxItems": 3, "items": { "type": "integer", "minimum": 0, "maximum": 255 } },
+              { "type": "array", "minItems": 4, "maxItems": 4, "items": { "type": "integer", "minimum": 0, "maximum": 255 } }
+            ]
+          }
+        },
+        "layers": { "type": "array", "items": { "$ref": "#/$defs/layer" } },
+        "generator": { "type": ["object", "array", "string", "number", "boolean", "null"] }
+      }
+    },
+    "collider": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "center", "radius"],
+          "properties": {
+            "type": { "const": "circle" },
+            "center": { "$ref": "#/$defs/point" },
+            "radius": { "type": "number", "exclusiveMinimum": 0 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "vertices"],
+          "properties": {
+            "type": { "const": "convex_polygon" },
+            "vertices": { "type": "array", "minItems": 3, "items": { "$ref": "#/$defs/point" } }
+          }
+        }
+      ]
+    },
+    "contentDefinition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["content_id", "name", "category", "visual_document", "collider", "metadata"],
+      "properties": {
+        "content_id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "category": { "enum": ["environmental_object", "structure"] },
+        "visual_document": { "$ref": "#/$defs/visualDocument" },
+        "collider": { "$ref": "#/$defs/collider" },
+        "metadata": { "type": ["object", "array", "string", "number", "boolean", "null"] }
+      }
+    }
+  }
+}
