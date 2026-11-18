@@ -5,15 +5,15 @@
 > **Depo:** `trippes/RPG_KAYNAK_YONETIMI`  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Hedef entegrasyon dalı:** `demo_eldoria`  
-> **Durum:** AŞAMA 0–12 KAPALI — AŞAMA 13 UYGULAMADA (13.1 DENETİM TAMAMLANDI)
-> **Belge sürümü:** 3.3
+> **Durum:** AŞAMA 0–12 KAPALI — AŞAMA 13 OTOMATİK DOĞRULAMA TAMAMLANDI; MASAÜSTÜ GÖRSEL KABULÜ BEKLENİYOR
+> **Belge sürümü:** 3.6
 
 ## Aşama 12–14 kapsam ayrımı — 18 Kasım 2026
 
 Aşama 12 yalnızca çevresel nesne mimarisi ve kodla çizilmiş ağaç, kaya, çalı prototiplerini kapsar. Hazır PNG/JPG/WebP kullanılmaz; Pygame çizim primitifleri ve deterministik geometri kullanılır. Genel amaçlı çizim motoru ve Content Editor bu aşamanın dışındadır. Aşama 13 genel prosedürel grafik/çizim altyapısı; Aşama 14 Content Editor ve görsel düzenleme araçlarıdır. Her aşama ayrıca planlanıp onaylanır. Önceki PNG tabanlı Aşama 12 görseli kabul edilmemiştir. Prosedürel revizyonun 800 laboratuvar testi, Linux/Windows Core Quality, benchmark ve görsel artifact kontrolleri başarılıdır. Kullanıcı 18 Kasım 2026 tarihinde ağaç gövdesi/yaprak ayrımı ile kaya görseli/çarpışma hizalamasını masaüstünde kabul etmiş; Aşama 12 resmen kapatılmıştır.
 
 
-**Aşama 13 planları:** [PHASE-13-GENERAL-PLAN.md](PHASE-13-GENERAL-PLAN.md) ve [PHASE-13-TECHNICAL-PLAN.md](PHASE-13-TECHNICAL-PLAN.md) kullanıcı tarafından onaylandı. 13.1 denetimi ve 13.2–13.7 uygulamaları tamamlandı: [PHASE-13.1-AUDIT-REPORT.md](../reports/PHASE-13.1-AUDIT-REPORT.md), [PHASE-13.2-13.7-IMPLEMENTATION-REPORT.md](../reports/PHASE-13.2-13.7-IMPLEMENTATION-REPORT.md). 13.8 tam otomatik doğrulama, performans ve görsel kanıt üretimi sürüyor; masaüstü kabulü henüz bekleniyor.
+**Aşama 13 planları:** [PHASE-13-GENERAL-PLAN.md](PHASE-13-GENERAL-PLAN.md) ve [PHASE-13-TECHNICAL-PLAN.md](PHASE-13-TECHNICAL-PLAN.md) kullanıcı tarafından onaylandı. 13.1 denetimi ve 13.2–13.7 uygulamaları tamamlandı: [PHASE-13.1-AUDIT-REPORT.md](../reports/PHASE-13.1-AUDIT-REPORT.md), [PHASE-13.2-13.7-IMPLEMENTATION-REPORT.md](../reports/PHASE-13.2-13.7-IMPLEMENTATION-REPORT.md). 13.8 otomatik doğrulama tamamlandı: 859/859 Pytest, Ruff lint/format, Linux/Windows Core Quality, benchmarklar ve Phase 13 görsel artifact başarılı. Yalnızca masaüstü görsel kabulü bekleniyor.
 ---
 
 ## 1. Belgenin amacı ve bağlayıcılığı
@@ -845,3 +845,4 @@ Dünya görsel zenginleştirmesi (arazi dokuları, bitki örtüsü, ağaç/kaya/
 | 3.3 | Güncellendi — 18 Kasım 2026 | Aşama 13 genel planı kullanıcı tarafından onaylandı; depo/CI/Context7 denetimi sonrası teknik plan hazırlandı; teknik plan onayı bekleniyor, uygulama başlamadı |
 | 3.4 | Güncellendi — 18 Kasım 2026 | Aşama 13 teknik planı kullanıcı tarafından onaylandı; 13.1 denetim raporu eklendi; 13.2 geometri/canvas sözleşmesi sıradaki iş paketi olarak kaydedildi |
 | 3.5 | Güncellendi — 18 Kasım 2026 | Aşama 13.2–13.7 uygulamaları tamamlandı ve raporlandı; beş procedural profil, bounded cache, renderer adaptasyonu ve Ruff kalite kapıları eklendi; 13.8 otomatik doğrulama/benchmark/görsel kanıt ve kullanıcı masaüstü kabulü bekleniyor |
+| 3.6 | Güncellendi — 18 Kasım 2026 | Aşama 13.8 otomatik doğrulaması tamamlandı: 859/859 Pytest, Ruff lint/format, Linux/Windows Core Quality, benchmarklar ve görsel artifact başarılı; kullanıcı masaüstü görsel kabulü bekleniyor |
