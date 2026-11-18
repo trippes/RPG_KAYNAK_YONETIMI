@@ -1,11 +1,11 @@
 # Aşama 12 — Manuel Görsel ve İşlevsel Kabul Kontrol Listesi
 
-> Durum: Prosedürel çizim revizyonu tamamlandıktan sonra kullanıcı tarafından uygulanacak.
+> Durum: 18 Kasım 2026 — kullanıcı tarafından tamamlandı ve kabul edildi.
 > Başlatıcı: python -m hex_world_lab
 > Debug: F3 collider; F4 anchor/bounds.
 
 ## Prosedürel çizim kalitesi
-- [ ] Ağaç, kaya ve çalı hazır PNG/JPG/WebP yüklenmeden kod çizicileriyle üretiliyor.
+- [x] Ağaç, kaya ve çalı hazır PNG/JPG/WebP yüklenmeden kod çizicileriyle üretiliyor.
 - [ ] Ağaç; gövde, kök, dallar ve farklı tonlarda yaprak kümeleriyle hacimli.
 - [ ] Ağaçta ışık ve gölge yüzeyleri ayırt ediliyor; tekdüze primitif görünümünde değil.
 - [ ] Kaya çok yüzeyli, hacimli ve ışık/gölge ayrımı belirgin.
@@ -36,4 +36,4 @@
 - [ ] NPC/kaynak hareket etmiyor; FOLLOW/WAIT/RETURN yalnızca komut niyeti.
 - [ ] Sağ tık NPC menüsü ve Esc davranışı korunuyor.
 
-Aşama 12, tüm maddeler kullanıcı tarafından geçildiğinde ve revize kodun otomatik test/CI kontrolleri başarılı olduğunda kapatılabilir.
+Aşama 12 manuel kabulü kullanıcı tarafından başarılı olarak bildirildi. Son ağaç/kaya collider hizalaması F3 görünümünde ayrıca kontrol edildi; görsel ve çarpışma alanlarının bütünleşik olduğu onaylandı. Otomatik testler ve Linux/Windows CI da başarılıdır. Aşama 12 resmen kapatılmıştır.
