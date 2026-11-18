@@ -384,7 +384,8 @@ class Renderer:
         )
 
         def draw_emblem(target, draw_api, scale, color, dx=0, dy=0):
-            px = lambda value: int(round(value * scale))
+            def px(value):
+                return int(round(value * scale))
             ox, oy = px(dx), px(dy)
             tx, ty = px(cx - x), px(cy - y)
 
