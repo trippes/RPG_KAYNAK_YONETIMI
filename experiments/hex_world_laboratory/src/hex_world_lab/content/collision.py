@@ -28,6 +28,18 @@ class ConvexPolygonCollider:
         )
         if len(vertices) < 3 or len(set(vertices)) != len(vertices):
             raise ValueError("convex polygon requires at least three unique vertices")
+        crosses = []
+        for index, point in enumerate(vertices):
+            following = vertices[(index + 1) % len(vertices)]
+            after = vertices[(index + 2) % len(vertices)]
+            ab_x, ab_y = following[0] - point[0], following[1] - point[1]
+            bc_x, bc_y = after[0] - following[0], after[1] - following[1]
+            cross = ab_x * bc_y - ab_y * bc_x
+            if abs(cross) <= 1e-12:
+                raise ValueError("convex polygon must not contain collinear consecutive edges")
+            crosses.append(cross)
+        if not (all(value > 0 for value in crosses) or all(value < 0 for value in crosses)):
+            raise ValueError("vertices must describe a strictly convex ordered polygon")
         object.__setattr__(self, "vertices", vertices)
 
 
