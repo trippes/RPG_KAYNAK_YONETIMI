@@ -58,6 +58,11 @@ class ActorView:
     position: Position | None = None
     inventory_id: str | None = None
 
+    @property
+    def identity(self) -> ActorIdentity:
+        """Return the immutable identity without exposing spatial state."""
+        return ActorIdentity(self.actor_id, self.world_id, self.role)
+
 
 @dataclass(frozen=True)
 class ActivityView:
