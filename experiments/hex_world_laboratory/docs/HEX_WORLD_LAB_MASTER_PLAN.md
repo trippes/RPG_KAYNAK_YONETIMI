@@ -343,7 +343,7 @@ Kabul koşulları:
 
 ### Aşama 7 — Render ve görsel doğrulama
 
-> **Durum:** AŞAMA 0–10 TAMAMLANDI VE KABUL EDİLDİ — AŞAMA 11 TEKNİK PLAN ONAYI BEKLİYOR
+> **Durum:** AŞAMA 0–11 TAMAMLANDI VE KABUL EDİLDİ
 
 **Plan belgeleri:** [Genel Plan](PHASE-07-GENERAL-PLAN.md) · [Teknik Plan](PHASE-07-TECHNICAL-PLAN.md) · [Manuel Görsel Kabul](PHASE-07-MANUAL-ACCEPTANCE-CHECKLIST.md)
 
@@ -773,7 +773,7 @@ Bu liste tamamlanmadan laboratuvarın ana oyuna aktarılmaya hazır olduğu söy
 | 8 | Mekânsal indeksleme ve performans karşılaştırması | 8.1–8.8 uygulandı; 729/729 test, Linux/Windows Core Quality, benchmarklar ve kullanıcı görsel kabulü başarılı; 17 Kasım 2026 tarihinde kapatıldı |
 | 9 | Varlıklar, etkileşimler ve yoldaş altyapısı | 9.1–9.9 uygulandı; 741 laboratuvar testi, Linux/Windows Core Quality (2.204'er test), benchmark ve kullanıcı görsel/işlevsel kabulü başarılı; 18 Kasım 2026 tarihinde kapatıldı |
 | 10 | Simülasyon orkestrasyonu ve dünya bütünlüğü | 10.1–10.8 teknik uygulama, 759 laboratuvar testi, Linux/Windows Core Quality (2.222'şer test), benchmark/artifact ve kullanıcı görsel kabulü başarılı; 18 Kasım 2026 tarihinde kapatıldı |
-| 11 | Sağlamlık, regresyon ve performans doğrulaması | 11.1–11.8 otomatik doğrulama tamamlandı; 774 laboratuvar testi, Linux/Windows Core Quality ve üç oturumlu benchmarklar başarılı; kullanıcı masaüstü kabulü bekleniyor |
+| 11 | Sağlamlık, regresyon ve performans doğrulaması | 11.1–11.8 teknik, otomatik ve manuel kabul tamamlandı; 774 laboratuvar testi, Linux/Windows Core Quality, stres/benchmark raporları ve kullanıcı masaüstü kabulü başarılı; 18 Kasım 2026 tarihinde kapatıldı |
 | 12–13 | Nihai mimari ve kontrollü demo entegrasyonu | Aşama 11 tamamlandıktan sonra ayrı plan ve onayla ele alınacak |
 
 - Çalışma dalı: `experiment/hex-world-laboratory`.
@@ -788,7 +788,7 @@ Bu liste tamamlanmadan laboratuvarın ana oyuna aktarılmaya hazır olduğu söy
 
 Aşama 9'un 9.1–9.9 teknik uygulaması, 741/741 laboratuvar testi, Core Quality Linux ve Windows job'ları (2.204'er test), benchmarklar, görsel artifact üretimi ve kullanıcının manuel görsel/işlevsel kabulü tamamlanmıştır. Aşama 9, 18 Kasım 2026 tarihinde resmen kapatılmıştır.
 
-Aşama 10 Genel Planı ve Teknik Mimari Planı kullanıcı tarafından onaylanmış; 10.1–10.8 teknik uygulaması, otomatik testler, Laboratuvar CI (759 test), Core Quality Linux/Windows (2.222'şer test), benchmarklar, artifact üretimi ve kullanıcı görsel/işlevsel kabulü tamamlanmıştır. Kullanıcı 18 Kasım 2026 tarihinde görsel testlerin başarılı olduğunu bildirmiş; Aşama 10 resmen kapatılmıştır. Ayrıntılar [PHASE-10-CLOSURE-REPORT.md](../reports/PHASE-10-CLOSURE-REPORT.md) ve [PHASE-10-IMPLEMENTATION-VALIDATION-REPORT.md](../reports/PHASE-10-IMPLEMENTATION-VALIDATION-REPORT.md) dosyalarındadır. NPC hareketi, gerçek yoldaş takibi veya kaynak hareketi bu aşamada uygulanmamıştır. Aşama 11 Genel Planı ve Teknik Planı kullanıcı tarafından onaylanmıştır. 11.1–11.8 otomatik teknik doğrulaması tamamlanmış; 774 laboratuvar testi, Core Quality Linux/Windows, 36.000 tick stres testi ve üç oturumlu performans/bellek benchmarkları başarılı olmuştur. Ayrıntılar [PHASE-11-BASELINE-REPORT.md](../reports/PHASE-11-BASELINE-REPORT.md) ve [PHASE-11-STRESS-VALIDATION-REPORT.md](../reports/PHASE-11-STRESS-VALIDATION-REPORT.md) dosyalarındadır. Aşama 11'in resmen kapanması için kullanıcı [manuel kabul kontrol listesini](PHASE-11-MANUAL-ACCEPTANCE-CHECKLIST.md) masaüstünde tamamlamalıdır.
+Aşama 10 Genel Planı ve Teknik Mimari Planı kullanıcı tarafından onaylanmış; 10.1–10.8 teknik uygulaması, otomatik testler, Laboratuvar CI (759 test), Core Quality Linux/Windows (2.222'şer test), benchmarklar, artifact üretimi ve kullanıcı görsel/işlevsel kabulü tamamlanmıştır. Kullanıcı 18 Kasım 2026 tarihinde görsel testlerin başarılı olduğunu bildirmiş; Aşama 10 resmen kapatılmıştır. Ayrıntılar [PHASE-10-CLOSURE-REPORT.md](../reports/PHASE-10-CLOSURE-REPORT.md) ve [PHASE-10-IMPLEMENTATION-VALIDATION-REPORT.md](../reports/PHASE-10-IMPLEMENTATION-VALIDATION-REPORT.md) dosyalarındadır. NPC hareketi, gerçek yoldaş takibi veya kaynak hareketi bu aşamada uygulanmamıştır. Aşama 11 Genel Planı ve Teknik Planı kullanıcı tarafından onaylanmıştır. 11.1–11.8 otomatik teknik doğrulaması tamamlanmış; 774 laboratuvar testi, Core Quality Linux/Windows, 36.000 tick stres testi ve üç oturumlu performans/bellek benchmarkları başarılı olmuştur. Ayrıntılar [PHASE-11-BASELINE-REPORT.md](../reports/PHASE-11-BASELINE-REPORT.md) ve [PHASE-11-STRESS-VALIDATION-REPORT.md](../reports/PHASE-11-STRESS-VALIDATION-REPORT.md) dosyalarındadır. Kullanıcı 18 Kasım 2026 tarihinde [manuel kabul kontrol listesini](PHASE-11-MANUAL-ACCEPTANCE-CHECKLIST.md) başarıyla tamamladığını bildirdi. Aşama 11 resmen kapatılmıştır. Ayrıntılar [PHASE-11-CLOSURE-REPORT.md](../reports/PHASE-11-CLOSURE-REPORT.md) içindedir.
 
 Dünya görsel zenginleştirmesi (arazi dokuları, bitki örtüsü, ağaç/kaya/çevre varlıkları, ışık ve atmosfer) Aşama 7'nin geriye dönük eksik işi değildir. Kullanıcı kararı doğrultusunda ihtiyaç duyulan ileriki aşamalarda ayrı kapsam olarak ele alınacaktır.
 
@@ -818,3 +818,4 @@ Dünya görsel zenginleştirmesi (arazi dokuları, bitki örtüsü, ağaç/kaya/
 | 2.8 | Güncellendi — 18 Kasım 2026 | Aşama 11 sağlamlık/regresyon/performans genel planı hazırlandı; kapsam ve kabul kapıları tanımlandı; kullanıcı onayı bekleniyor |
 | 2.9 | Güncellendi — 18 Kasım 2026 | Kullanıcı Aşama 11 genel planını onayladı; depo denetimi yapıldı; ayrıntılı teknik plan ve manuel kabul kontrol listesi hazırlandı; teknik plan onayı bekleniyor |
 | 3.0 | Güncellendi — 18 Kasım 2026 | Aşama 11.1–11.8 otomatik teknik doğrulaması, 774 laboratuvar testi, Linux/Windows Core Quality ve üç oturumlu benchmarklar tamamlandı; kullanıcı masaüstü kabulü bekleniyor |
+| 3.1 | Güncellendi — 18 Kasım 2026 | Kullanıcı masaüstü görsel/işlevsel kabulünü verdi; Aşama 11 resmen kapatıldı ve kapanış raporu eklendi |
