@@ -29,7 +29,7 @@ Temizlik çalışması kendi başına bir entegrasyon değildir. Bu aşamada Hex
 3. `demo_eldoria` ve `main` doğrudan değiştirilmez.
 4. `experiment/hex-world-laboratory` dalına commit, merge veya rebase yapılmaz.
 5. Teknik temizlik ve otomatik doğrulamalar tamamlandıktan sonra, bu dalda hazırlanan altyapı ile laboratuvar sistemleri ayrı entegrasyon çalışmasında birleştirilir.
-6. Birleşik sürüm test ve görsel kabulden geçerse kullanıcı onayıyla `demo_eldoria` dalına aktarılır. Laboratuvar dalı arşiv olarak tutulur.
+6. Birleşik sürüm otomatik test, statik analiz, paketleme ve CI kapılarından geçerse kullanıcı onayıyla `demo_eldoria` dalına aktarılır. Görsel kabul bu teknik temizlik çalışmasının parçası değildir. Laboratuvar dalı arşiv olarak tutulur.
 
 ## 3. Mevcut sistemin ilk envanteri
 
