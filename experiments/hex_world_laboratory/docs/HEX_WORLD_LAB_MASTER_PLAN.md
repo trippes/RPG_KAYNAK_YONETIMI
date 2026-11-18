@@ -5,8 +5,8 @@
 > **Depo:** `trippes/RPG_KAYNAK_YONETIMI`  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Hedef entegrasyon dalı:** `demo_eldoria`  
-> **Durum:** AŞAMA 0–14 KAPALI
-> **Belge sürümü:** 4.3
+> **Durum:** AŞAMA 0–14 KAPALI; AŞAMA 15 GENEL PLANI HAZIR
+> **Belge sürümü:** 4.4
 
 ## Aşama 12–14 kapsam ayrımı — 18 Kasım 2026
 
@@ -502,6 +502,8 @@ Kapsam; içerik tanımı ile harita üzerindeki yerleşim örneğinin ayrılmas�
 
 **Amaç:** Laboratuvarda kanıtlanmış sistemi ana oyuna taşınabilir bir teknik pakete dönüştürmek.
 
+**Aşama genel planı:** [PHASE-15-GENERAL-PLAN.md](PHASE-15-GENERAL-PLAN.md) — hazırlandı, kullanıcı onayı bekliyor; teknik plan ve uygulama başlamadı.
+
 İşler:
 - Gerçekleşen mimariyi hedef mimariyle karşılaştırmak.
 - Tüm ADR kararlarını sonuçlarıyla güncellemek.
@@ -795,7 +797,7 @@ Bu liste tamamlanmadan laboratuvarın ana oyuna aktarılmaya hazır olduğu söy
 | 12 | Çevresel nesne mimarisi ve kodla çizilmiş ağaç/kaya/çalı prototipleri | 12.1–12.8 tamamlandı; 800 test, Linux/Windows CI, benchmark, görsel kanıt ve kullanıcı manuel kabulü başarılı; 18 Kasım 2026 tarihinde resmen kapatıldı |
 | 13 | Genel prosedürel grafik/çizim altyapısı | 13.1–13.8, 859/859 Pytest, Ruff, Linux/Windows CI, benchmark/görsel kanıt ve kullanıcı masaüstü kabulü tamamlandı; 18 Kasım 2026 tarihinde resmen kapatıldı |
 | 14 | İçerik veri altyapısı ve ELDORIA CONTENT EDITOR hazırlığı | 14.1–14.8 tamamlandı; 881/881 Lab Pytest, Ruff, Linux/Windows Core Quality (Linux 2.344 test), benchmark, görsel artifact ve 19 Kasım 2026 kullanıcı görsel kabulü başarılı; [kapanış raporu](../reports/PHASE-14-CLOSURE-REPORT.md); editör GUI kapsam dışı |
-| 15 | Nihai mimari, dokümantasyon ve entegrasyon hazırlığı | Önceki aşamalar sonrası ayrıca planlanıp onaylanacak |
+| 15 | Nihai mimari, dokümantasyon ve entegrasyon hazırlığı | [Genel plan hazır](PHASE-15-GENERAL-PLAN.md); kullanıcı onayı bekleniyor; teknik plan/uygulama başlamadı |
 | 16 | Kontrollü demo entegrasyonu | Ayrı açık kullanıcı onayı gerektirir |
 
 - Çalışma dalı: `experiment/hex-world-laboratory`.
@@ -813,6 +815,8 @@ Aşama 9'un 9.1–9.9 teknik uygulaması, 741/741 laboratuvar testi, Core Qualit
 Aşama 10 Genel Planı ve Teknik Mimari Planı kullanıcı tarafından onaylanmış; 10.1–10.8 teknik uygulaması, otomatik testler, Laboratuvar CI (759 test), Core Quality Linux/Windows (2.222'şer test), benchmarklar, artifact üretimi ve kullanıcı görsel/işlevsel kabulü tamamlanmıştır. Kullanıcı 18 Kasım 2026 tarihinde görsel testlerin başarılı olduğunu bildirmiş; Aşama 10 resmen kapatılmıştır. Ayrıntılar [PHASE-10-CLOSURE-REPORT.md](../reports/PHASE-10-CLOSURE-REPORT.md) ve [PHASE-10-IMPLEMENTATION-VALIDATION-REPORT.md](../reports/PHASE-10-IMPLEMENTATION-VALIDATION-REPORT.md) dosyalarındadır. NPC hareketi, gerçek yoldaş takibi veya kaynak hareketi bu aşamada uygulanmamıştır. Aşama 11 Genel Planı ve Teknik Planı kullanıcı tarafından onaylanmıştır. 11.1–11.8 otomatik teknik doğrulaması tamamlanmış; 774 laboratuvar testi, Core Quality Linux/Windows, 36.000 tick stres testi ve üç oturumlu performans/bellek benchmarkları başarılı olmuştur. Ayrıntılar [PHASE-11-BASELINE-REPORT.md](../reports/PHASE-11-BASELINE-REPORT.md) ve [PHASE-11-STRESS-VALIDATION-REPORT.md](../reports/PHASE-11-STRESS-VALIDATION-REPORT.md) dosyalarındadır. Kullanıcı 18 Kasım 2026 tarihinde [manuel kabul kontrol listesini](PHASE-11-MANUAL-ACCEPTANCE-CHECKLIST.md) başarıyla tamamladığını bildirdi. Aşama 11 resmen kapatılmıştır. Ayrıntılar [PHASE-11-CLOSURE-REPORT.md](../reports/PHASE-11-CLOSURE-REPORT.md) içindedir. Aşama 12'nin prosedürel ağaç/kaya/çalı mimarisi, 800 laboratuvar testi, Linux/Windows CI, benchmarklar, görsel artifact ve kullanıcı manuel kabulü tamamlanmış; 18 Kasım 2026 tarihinde resmen kapatılmıştır. Son ağaç gövdesi ve kaya collider hizalama düzeltmesi kullanıcı tarafından görsel olarak kabul edilmiştir. Ayrıntılar [PHASE-12-IMPLEMENTATION-VALIDATION-REPORT.md](../reports/PHASE-12-IMPLEMENTATION-VALIDATION-REPORT.md) içindedir.
 
 Dünya görsel zenginleştirmesi (arazi dokuları, bitki örtüsü, ağaç/kaya/çevre varlıkları, ışık ve atmosfer) Aşama 7'nin geriye dönük eksik işi değildir. Kullanıcı kararı doğrultusunda ihtiyaç duyulan ileriki aşamalarda ayrı kapsam olarak ele alınacaktır.
+
+Aşama 15 Genel Planı `PHASE-15-GENERAL-PLAN.md` dosyasına eklenmiştir. Plan; laboratuvarın nihai mimari denetimini, ADR/API/veri sözleşmelerini, `demo_eldoria` ile salt okunur dosya eşleştirmesini, bağımlılık/lisans uyumluluğunu ve Aşama 16 için entegrasyon/test/geri dönüş hazırlığını kapsar. Kullanıcı onayı beklenmektedir; teknik plan ve uygulama başlamamıştır.
 
 **Her aşama ve kapsam değişikliği ayrıca onaylanır. Korunan `main` ve `demo_eldoria` dallarına bu laboratuvar çalışması kapsamında yazılmaz.**
 
@@ -850,3 +854,4 @@ Dünya görsel zenginleştirmesi (arazi dokuları, bitki örtüsü, ağaç/kaya/
 | 3.8 | Güncellendi — 18 Kasım 2026 | Aşama 13 kapanışı Master Plan tablosuna işlendi; Aşama 14 Content Editor Genel Planı hazırlandı ve kullanıcı onayına sunuldu; teknik plan ve uygulama başlamadı |
 | 3.9 | Güncellendi — 18 Kasım 2026 | Kullanıcı yönlendirmesiyle Aşama 14, editör arayüzü geliştirmek yerine gelecekteki ELDORIA CONTENT EDITOR için içerik veri altyapısı ve harita/yerleşim sözleşmelerinin hazırlanmasına odaklandı; masaüstü editör ayrı gelecek aşamaya bırakıldı |
 | 4.0 | Önceki sürüm | Aşama 14 Genel Planı kullanıcı tarafından onaylandı; 14.1 denetimi ve teknik plan hazırlandı; teknik plan onayı bekleniyordu |\n| 4.1 | Önceki sürüm | Aşama 14 teknik planı kullanıcı tarafından onaylandı; 14.2–14.7 content model, strict persistence, vektör profil geçişi, map placement ve runtime adapter uygulandı; 14.8 otomatik doğrulama bekleniyordu |\n| 4.2 | Önceki sürüm | Aşama 14 otomatik doğrulaması tamamlandı: 881/881 Lab testi, Linux 2,344 test, Windows Core Quality, Ruff, benchmark ve Phase 14 görsel artifact başarılı; kullanıcı manuel kabulü bekleniyordu |\n| 4.3 | Güncellendi — 19 Kasım 2026 | Kullanıcı görsel kabulini verdi; Aşama 14 teknik, otomatik ve manuel kabul kapıları tamamlandı ve resmen kapatıldı; kapanış raporu eklendi |
+| 4.4 | Güncellendi — 19 Kasım 2026 | Aşama 15 Nihai Mimari, Dokümantasyon ve Entegrasyon Hazırlığı Genel Planı eklendi; kullanıcı onayı bekleniyor; teknik plan ve uygulama başlamadı |
