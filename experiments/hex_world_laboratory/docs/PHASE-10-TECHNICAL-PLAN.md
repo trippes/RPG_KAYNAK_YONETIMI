@@ -5,7 +5,7 @@
 > **Genel plan:** [PHASE-10-GENERAL-PLAN.md](PHASE-10-GENERAL-PLAN.md)  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **İncelenen temel commit:** `48d5d94033b6b71409b8c3afc35751face250fcd`  
-> **Durum:** KULLANICI TARAFINDAN ONAYLANDI — 10.1–10.8 UYGULANDI — OTOMATİK TEST/CI BAŞARILI — MANUEL KABUL BEKLENİYOR  
+> **Durum:** 10.1–10.8 UYGULANDI — OTOMATİK VE MANUEL KABUL TAMAMLANDI — AŞAMA KAPATILDI  
 > **Kapsam kararı:** NPC, kaynak ve yoldaş hareketi bu aşamada yoktur.
 
 ---
@@ -375,3 +375,8 @@ Kod doğrulama commit'i: `d4ce6d8704aa46e0b327f539c72b9a9b0d350c2d`.
 - Render snapshot ortalaması: 219.3906 µs/snapshot (120 snapshot'lık batch ortalaması 26.3269 ms; p95 26.5093 ms).
 - Ölçüm ortamı: GitHub Actions Ubuntu, Python 3.12.16; üç ısınma ve yirmi ölçüm batch'i.
 - Kullanıcı manuel görsel/işlevsel kabulü bekleniyor; bu nedenle aşama henüz resmen kapatılmış sayılmaz.
+
+
+## 13. Kullanıcı kabulü ve kapanış
+
+Kullanıcı 18 Kasım 2026 tarihinde laboratuvarın görsel testlerinin başarılı olduğunu bildirmiş ve Aşama 10'u tamamlanmış olarak kabul etmiştir. Böylece teknik kabul kapısındaki manuel görsel/işlevsel kabul koşulu da sağlanmıştır. Aşama 10 resmen kapatılmıştır. Ayrıntılı kapanış kaydı: `../reports/PHASE-10-CLOSURE-REPORT.md`.
