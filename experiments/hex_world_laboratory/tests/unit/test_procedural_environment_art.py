@@ -1,7 +1,7 @@
 import pygame
 
 from hex_world_lab.rendering.environment_assets import register_environment_assets
-from hex_world_lab.rendering.procedural_environment import build_environment_surfaces
+from hex_world_lab.rendering.procedural_environment import EnvironmentArtPalette, build_environment_surfaces
 from hex_world_lab.rendering.pygame_world_renderer import PygameWorldRenderer
 
 
@@ -49,3 +49,23 @@ def test_tree_has_tall_visual_profile_and_rock_and_bush_remain_distinct():
     assert rock.get_width() > rock.get_height()
     assert bush.get_width() > bush.get_height()
     assert tree.get_height() >= 2 * rock.get_height()
+
+
+def test_palette_is_validated_and_can_change_the_generated_art():
+    baseline = build_environment_surfaces()
+    autumn = EnvironmentArtPalette(
+        tree_leaf_shadow=(105, 48, 24),
+        tree_leaf_mid=(178, 83, 31),
+        tree_leaf_light=(225, 151, 54),
+        leaf_glint=(245, 205, 112),
+        bush_base=(105, 48, 24),
+        bush_light=(225, 151, 54),
+    )
+    changed = build_environment_surfaces(autumn)
+    assert _pixels(changed["tree"]) != _pixels(baseline["tree"])
+    assert _pixels(changed["bush"]) != _pixels(baseline["bush"])
+    assert _pixels(changed["rock"]) == _pixels(baseline["rock"])
+
+    import pytest
+    with pytest.raises(ValueError):
+        EnvironmentArtPalette(tree_leaf_mid=(256, 0, 0))
