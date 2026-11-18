@@ -5,7 +5,7 @@
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Dayanak:** Kullanıcı tarafından onaylanan `PHASE-12-GENERAL-PLAN.md`  
 > **Durum:** KULLANICI TARAFINDAN TEKNİK OLARAK ONAYLANDI  
-> **Uygulama durumu:** Kullanıcı izniyle başladı; 12.1–12.7 uygulandı, 12.8 doğrulaması sürüyor  
+> **Uygulama durumu:** 12.1–12.8 otomatik uygulama/doğrulama tamamlandı; manuel görsel kabul bekleniyor  
 > **Tek laboratuvar başlatıcısı:** `python -m hex_world_lab`
 
 ---
@@ -55,7 +55,7 @@ Aynı depo dalında, laboratuvar dışında şu kaynaklar bulunmaktadır:
 - `game_ui/world_rendering/tree_rig_renderer.py`: Katmanlı ağaç sprite çizimi.
 - `game_ui/world_rendering/scene_object.py`: Görsel boyut, anchor, depth ve collision box sorumluluklarını ayıran sahne nesnesi modeli.
 - `docs/architecture/40-tree-skeleton-contract.md` ve `43-articulated-tree-sprite-rig.md`: İlgili mimari sözleşmeler.
-- `content/demo_eldoria/assets/tree_test.png`, `tree_parts_atlas.png` ve `tree_parts_atlas.json`: Ağaç görsel verileri.
+- `game_ui/assets/tree_test.png`, `tree_parts_atlas.png` ve `tree_parts_atlas.json`: Ağaç görsel verileri.
 
 Bu kod ve dokümanlar **tasarım referansıdır**. Laboratuvar, `game_ui` Python modüllerini import etmeyecek; ana oyun runtime'ına bağımlı olmayacak ve bu aşamada ana oyun dosyalarını değiştirmeyecektir. Ağaç dallarının rüzgâr animasyonu ve katmanlı rig sistemi bu aşamanın zorunlu kapsamı değildir. İlk prototipte statik, tek sprite ağaç kullanılması önerilir.
 
@@ -365,7 +365,7 @@ Aşama 12 ancak aşağıdaki koşulların tamamı sağlandığında kapatılabil
 
 ## 12. Onay kapısı
 
-Bu belge kullanıcı tarafından teknik olarak onaylanmış ve uygulama için ayrıca açık talimat verilmiştir. 12.1–12.7 kapsamındaki ilk uygulama tamamlanmış; 12.8 otomatik doğrulama, performans raporu, platform CI ve kullanıcı manuel kabul kapısı devam etmektedir. Herhangi bir kapsam değişikliği veya ana mimari sözleşmeden sapma önce raporlanır ve onaylanır.
+Bu belge kullanıcı tarafından teknik olarak onaylanmış ve uygulama için ayrıca açık talimat verilmiştir. 12.1–12.8 uygulaması, otomatik testler, üç oturumlu performans ölçümleri, görsel kanıt üretimi ve Linux/Windows CI tamamlanmıştır. Aşama 12'nin resmen kapatılması için kullanıcı manuel görsel kabul kontrol listesini tamamlamalıdır. Herhangi bir kapsam değişikliği veya ana mimari sözleşmeden sapma önce raporlanır ve onaylanır.
 
 ---
 

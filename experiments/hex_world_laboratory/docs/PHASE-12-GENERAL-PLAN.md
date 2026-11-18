@@ -5,9 +5,9 @@
 > **Depo:** `trippes/RPG_KAYNAK_YONETIMI`  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Hedef:** Görselden bağımsız, genişletilebilir çevresel nesne altyapısı oluşturmak  
-> **Durum:** UYGULAMADA — 12.1–12.7 UYGULANDI; 12.8 DOĞRULAMASI SÜRÜYOR  
+> **Durum:** 12.1–12.8 OTOMATİK UYGULAMA VE DOĞRULAMA TAMAMLANDI — MANUEL KABUL BEKLENİYOR  
 > **Ön koşul:** Aşama 11 tamamlandı ve kullanıcı tarafından kabul edildi  
-> **Uygulama durumu:** Kullanıcı izniyle başladı; otomatik ve manuel kabul doğrulaması devam ediyor
+> **Uygulama durumu:** Uygulama, otomatik testler, benchmarklar, görsel kanıt üretimi ve Linux/Windows CI tamamlandı; kullanıcı manuel görsel kabulü bekleniyor
 
 ---
 

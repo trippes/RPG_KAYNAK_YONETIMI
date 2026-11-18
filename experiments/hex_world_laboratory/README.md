@@ -77,6 +77,7 @@ Bu tek giriş noktası güncel Entity kabul sahnesini (oyuncu, NPC, kaynak ve NP
 - [Aşama 12 genel planı](docs/PHASE-12-GENERAL-PLAN.md)
 - [Aşama 12 teknik planı](docs/PHASE-12-TECHNICAL-PLAN.md)
 - [Aşama 12 manuel kabul kontrol listesi](docs/PHASE-12-MANUAL-ACCEPTANCE-CHECKLIST.md)
+- [Aşama 12 uygulama ve doğrulama raporu](reports/PHASE-12-IMPLEMENTATION-VALIDATION-REPORT.md)
 - Ağaç görseli laboratuvarın `assets/tree_test.png` dosyasından yüklenir; kaya ve çalı için deterministik prototip görselleri laboratuvar içinde üretilir.
 
 ## Test
@@ -98,4 +99,4 @@ Laboratuvarın tam test paketi ve benchmarkları GitHub Actions laboratuvar iş 
 
 ## Güncel durum
 
-**Aşamalar 0–11 tamamlandı ve kullanıcı tarafından kabul edildi.** Aşama 11'in 774 laboratuvar testi, 36.000 tick stres doğrulaması, üç oturumlu performans/bellek ölçümleri ve Linux/Windows CI kontrolleri başarıyla tamamlandı. Aşama 12 teknik planı kullanıcı tarafından onaylandı; 12.1–12.7 uygulandı ve 12.8 otomatik doğrulama/performance/CI aşamasında. Son manuel görsel kabul için kullanıcı kontrolü beklenecek.
+**Aşamalar 0–11 tamamlandı ve kullanıcı tarafından kabul edildi.** Aşama 11'in 774 laboratuvar testi, 36.000 tick stres doğrulaması, üç oturumlu performans/bellek ölçümleri ve Linux/Windows CI kontrolleri başarıyla tamamlandı. Aşama 12'nin 12.1–12.8 uygulaması ve otomatik doğrulaması tamamlandı: 796 laboratuvar testi geçti; Linux ve Windows Core Quality kontrollerinde 2.259'ar test geçti; üç oturumlu 10/100/1.000 nesne performans ölçümleri ve beş görsel kabul kanıtı üretildi. Aşamanın resmen kapanması için [manuel kabul kontrol listesindeki](docs/PHASE-12-MANUAL-ACCEPTANCE-CHECKLIST.md) kullanıcı görsel/işlevsel kontrolleri bekleniyor.
