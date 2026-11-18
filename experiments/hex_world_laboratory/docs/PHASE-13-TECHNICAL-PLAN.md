@@ -363,7 +363,7 @@ Teknik plan onaylandıktan sonra uygulama başlayabilir. Aşama ancak:
 
 ## 15. Onay ve uygulama durumu
 
-Kullanıcı teknik planı 18 Kasım 2026 tarihinde onayladı. 13.1 denetimi tamamlandı; 13.2–13.7 uygulamaları tamamlandı ve [PHASE-13.2-13.7-IMPLEMENTATION-REPORT.md](../reports/PHASE-13.2-13.7-IMPLEMENTATION-REPORT.md) raporlandı. 13.8 — tam test/CI, performans ve görsel kanıt doğrulaması sürüyor. Kullanıcı masaüstü görsel kabulü henüz yapılmadı. Teknik kapsamı değiştiren yeni kararlar ayrıca kullanıcı onayı gerektirir.
+Kullanıcı teknik planı 18 Kasım 2026 tarihinde onayladı. 13.1 denetimi ve 13.2–13.7 uygulamaları tamamlandı. 13.8 otomatik doğrulaması son doğrulanan HEAD `e051183d4a1bd1dcab63accaeb17d2876d24bc61` üzerinde tamamlandı: 859/859 Pytest, Ruff lint/format, Linux ve Windows Core Quality, mevcut benchmarklar, Phase 13 cache benchmarkı ve görsel artifact üretimi başarılı. Sonuçlar [PHASE-13.2-13.7-IMPLEMENTATION-REPORT.md](../reports/PHASE-13.2-13.7-IMPLEMENTATION-REPORT.md) içinde kayıtlıdır. Yalnızca kullanıcı masaüstü görsel kabulü beklenmektedir; aşama henüz resmen kapatılmamıştır. Teknik kapsamı değiştiren yeni kararlar ayrıca kullanıcı onayı gerektirir.
 
 ## 16. Dal güvenliği
 
