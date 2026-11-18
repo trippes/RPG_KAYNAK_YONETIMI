@@ -58,8 +58,8 @@ class TestMovement(unittest.TestCase):
         )
         bundle.actors.add(WorldActor(
             "dynamic_hero", "dynamic_world", "player", True,
-            location_id="small_map",
         ))
+        bundle.actors.set_legacy_position("dynamic_hero", "small_map")
 
         bundle.movement.set_tile_position("dynamic_hero", 15, 23)
         self.assertEqual(
