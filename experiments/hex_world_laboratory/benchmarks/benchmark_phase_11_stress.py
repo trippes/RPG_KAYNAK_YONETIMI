@@ -1,6 +1,7 @@
 """Phase 11 repeatable entity spatial performance and memory benchmark."""
 from __future__ import annotations
 
+import gc
 import json
 import platform
 import random
@@ -80,6 +81,9 @@ def run_session(size: int, session: int) -> dict[str, object]:
             map_id,
             EntityAABB(center_x - 100.0, center_y - 100.0, center_x + 100.0, center_y + 100.0),
         )
+    # Do not count the disposable warm-up index in measured memory.
+    del warmup_index
+    gc.collect()
 
     spatial = EntitySpatialIndex(registry, cell_size=128.0)
     started = time.perf_counter()
@@ -91,7 +95,6 @@ def run_session(size: int, session: int) -> dict[str, object]:
         moved = _move_entity(entities[number], world.world_id, map_id, 37.0, -19.0)
         registry.update_transform(moved.entity_id, moved.transform)
         spatial.update_entity(moved)
-        warmup_index.update_entity(moved)
         entities[number] = moved
 
     update_durations: list[float] = []
