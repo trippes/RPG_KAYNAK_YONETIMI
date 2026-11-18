@@ -287,18 +287,28 @@ class HexWorldView:
             if not definition.has_cell(start) or definition.is_blocked(start):
                 start = min(definition.valid_cells, key=lambda cell: (cell.q, cell.r))
             actor = actors[0]
-            self.runtime = HexWorldRuntime(
-                package.hex_map_definitions,
-                world_map_definition=package.world_map_definition,
+            self.runtime = self.service.hex_world_runtime_owner.get_or_create(
+                lambda: HexWorldRuntime(
+                    package.hex_map_definitions,
+                    world_map_definition=package.world_map_definition,
+                )
             )
             self.entity_id = actor.actor_id
-            self.runtime.register_entity(
-                self.entity_id,
-                self.PLAYER_KIND,
-                EntityPosition(map_id, start),
-                MovementProfile(),
-            )
-            self._register_scene_object_blockers(start_position=EntityPosition(map_id, start))
+            try:
+                player = self.runtime.entity(self.entity_id)
+            except KeyError:
+                player_position = EntityPosition(map_id, start)
+                self.runtime.register_entity(
+                    self.entity_id,
+                    self.PLAYER_KIND,
+                    player_position,
+                    MovementProfile(),
+                )
+                self._register_scene_object_blockers(start_position=player_position)
+            else:
+                if player.kind != self.PLAYER_KIND:
+                    raise RuntimeError("Session hex runtime player identity is inconsistent.")
+                start = player.position.cell
             self.selected = start
             self._movement_path = ()
             self._movement_elapsed = 0.0
