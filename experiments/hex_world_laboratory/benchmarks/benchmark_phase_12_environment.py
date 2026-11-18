@@ -23,7 +23,8 @@ from hex_world_lab.environment import (
 from hex_world_lab.geometry import HexLayout, HexOrientation, WorldPoint
 from hex_world_lab.movement import Vector2
 from hex_world_lab.physics import CircleShape, ConvexPolygonShape
-from hex_world_lab.rendering import PygameWorldRenderer, SpriteAsset, WorldRenderSnapshot
+from hex_world_lab.rendering import PygameWorldRenderer, WorldRenderSnapshot
+from hex_world_lab.rendering.environment_assets import register_environment_assets
 from hex_world_lab.world import MapId, WorldId
 
 
@@ -72,18 +73,11 @@ def build_scene(count: int) -> EnvironmentalObjectScene:
 
 
 def build_renderers():
-    surfaces = {}
-    for key, size, fill in (
-        ("tree", (100, 128), (56, 125, 67, 255)),
-        ("rock", (48, 36), (115, 125, 140, 255)),
-        ("bush", (62, 44), (70, 145, 82, 255)),
-    ):
-        surface = pygame.Surface(size, pygame.SRCALPHA)
-        surface.fill(fill)
-        surfaces[key] = SpriteAsset(surface, 0.5, 0.94)
-    return PygameWorldRenderer(surfaces), _UnculledRenderer(surfaces), {
-        key: asset.surface.get_size() for key, asset in surfaces.items()
-    }
+    renderer = PygameWorldRenderer()
+    asset_sizes = register_environment_assets(renderer)
+    assets = renderer._sprite_assets
+    unculled = _UnculledRenderer(assets)
+    return renderer, unculled, asset_sizes
 
 
 def main() -> None:
