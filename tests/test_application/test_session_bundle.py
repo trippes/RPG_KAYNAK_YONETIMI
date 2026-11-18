@@ -3,7 +3,7 @@ from pathlib import Path
 
 from application import SessionBundle, SessionHolder
 from application.content_loader import load_content_package
-from application.hex_world_runtime import HexWorldRuntime
+from application.hex_world_runtime import HexWorldRuntime, HexWorldRuntimeOwner
 from core.application import GameSession
 from core.simulation import SimulationRuntime
 from locks import KeyDefinition, LockDefinition, LockManager
@@ -38,7 +38,7 @@ def make_bundle(hex_world_runtime=None):
         resource_nodes=WorldResourceNodeManager(session.worlds),
         inventories={},
         recipes={},
-        hex_world_runtime=hex_world_runtime,
+        hex_world_runtime_owner=HexWorldRuntimeOwner(hex_world_runtime),
     )
 
 
@@ -51,6 +51,13 @@ class TestSessionBundle(unittest.TestCase):
         runtime = make_hex_runtime()
         bundle = make_bundle(runtime)
         self.assertIs(bundle.hex_world_runtime, runtime)
+
+    def test_runtime_owner_reuses_the_same_runtime_for_reopened_views(self):
+        owner = HexWorldRuntimeOwner()
+        runtime = owner.get_or_create(make_hex_runtime)
+
+        self.assertIs(owner.get_or_create(lambda: self.fail("runtime recreated")), runtime)
+        self.assertIs(owner.runtime, runtime)
 
     def test_invalid_hex_runtime_type_is_rejected(self):
         with self.assertRaisesRegex(TypeError, "hex_world_runtime"):
