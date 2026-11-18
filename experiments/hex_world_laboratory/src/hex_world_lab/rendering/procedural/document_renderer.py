@@ -1,18 +1,25 @@
 """Pygame adapter that renders immutable VisualDocument values to alpha Surfaces."""
+
 from __future__ import annotations
 import hashlib
 import pygame
 from hex_world_lab.content.definition import ContentDefinition
 from .cache import ProceduralSurfaceCache
 from hex_world_lab.content.drawing import (
-    CircleElement, EllipseElement, PolygonElement, PolylineElement, VisualDocument,
+    CircleElement,
+    EllipseElement,
+    PolygonElement,
+    PolylineElement,
+    VisualDocument,
 )
 from .canvas import ProceduralCanvas
 from .components import draw_circle, draw_ellipse, draw_polygon, draw_polyline
 from .geometry import Point2D
 
+
 def _color(document, token):
     return None if token is None else tuple(document.palette[token])
+
 
 def render_visual_document(document: VisualDocument, *, supersampling: int = 3) -> pygame.Surface:
     if not isinstance(document, VisualDocument):
@@ -39,23 +46,37 @@ def render_visual_document(document: VisualDocument, *, supersampling: int = 3) 
                 if fill is not None:
                     draw_circle(canvas, fill, center, element.radius)
                 if stroke is not None and style.stroke_width > 0:
-                    draw_circle(canvas, stroke, center, element.radius, max(1, round(style.stroke_width)))
+                    draw_circle(
+                        canvas, stroke, center, element.radius, max(1, round(style.stroke_width))
+                    )
             elif isinstance(element, PolylineElement):
                 if stroke is None:
                     raise ValueError("polyline elements require a stroke palette token")
-                draw_polyline(canvas, stroke, tuple(Point2D(p.x, p.y) for p in element.points),
-                              max(1, round(style.stroke_width)), element.closed)
+                draw_polyline(
+                    canvas,
+                    stroke,
+                    tuple(Point2D(p.x, p.y) for p in element.points),
+                    max(1, round(style.stroke_width)),
+                    element.closed,
+                )
             else:
                 raise TypeError(f"unsupported drawing element: {type(element).__name__}")
     return canvas.finish()
 
-def render_content_definition(definition: ContentDefinition, *, cache: ProceduralSurfaceCache | None = None, supersampling: int = 3) -> pygame.Surface:
+
+def render_content_definition(
+    definition: ContentDefinition,
+    *,
+    cache: ProceduralSurfaceCache | None = None,
+    supersampling: int = 3,
+) -> pygame.Surface:
     """Render one reusable content definition, caching by canonical document identity."""
     if not isinstance(definition, ContentDefinition):
         raise TypeError("definition must be a ContentDefinition")
     if cache is not None and not isinstance(cache, ProceduralSurfaceCache):
         raise TypeError("cache must be a ProceduralSurfaceCache or None")
     digest = hashlib.sha256(repr(definition.visual_document).encode("utf-8")).hexdigest()
+
     def factory() -> pygame.Surface:
         return render_visual_document(definition.visual_document, supersampling=supersampling)
 

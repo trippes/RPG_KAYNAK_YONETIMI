@@ -1,22 +1,27 @@
 """Versioned, immutable vector drawing documents; deliberately Pygame-free."""
+
 from __future__ import annotations
 from dataclasses import dataclass
 from typing import TypeAlias
 from .values import finite_number, non_empty_id, freeze_json
 
+
 @dataclass(frozen=True, slots=True)
 class Point:
     x: float
     y: float
+
     def __post_init__(self):
         object.__setattr__(self, "x", finite_number(self.x, "point.x"))
         object.__setattr__(self, "y", finite_number(self.y, "point.y"))
+
 
 @dataclass(frozen=True, slots=True)
 class DrawingStyle:
     fill: str | None = None
     stroke: str | None = None
     stroke_width: float = 1.0
+
     def __post_init__(self):
         if self.fill is None and self.stroke is None:
             raise ValueError("a drawing style requires fill or stroke")
@@ -29,11 +34,13 @@ class DrawingStyle:
             raise ValueError("stroke_width must not be negative")
         object.__setattr__(self, "stroke_width", width)
 
+
 @dataclass(frozen=True, slots=True)
 class PolygonElement:
     element_id: str
     points: tuple[Point, ...]
     style: DrawingStyle
+
     def __post_init__(self):
         non_empty_id(self.element_id, "element_id")
         points = tuple(self.points)
@@ -43,6 +50,7 @@ class PolygonElement:
         if not isinstance(self.style, DrawingStyle):
             raise TypeError("style must be DrawingStyle")
 
+
 @dataclass(frozen=True, slots=True)
 class EllipseElement:
     element_id: str
@@ -51,6 +59,7 @@ class EllipseElement:
     width: float
     height: float
     style: DrawingStyle
+
     def __post_init__(self):
         non_empty_id(self.element_id, "element_id")
         for name in ("x", "y", "width", "height"):
@@ -61,12 +70,14 @@ class EllipseElement:
         if not isinstance(self.style, DrawingStyle):
             raise TypeError("style must be DrawingStyle")
 
+
 @dataclass(frozen=True, slots=True)
 class CircleElement:
     element_id: str
     center: Point
     radius: float
     style: DrawingStyle
+
     def __post_init__(self):
         non_empty_id(self.element_id, "element_id")
         if not isinstance(self.center, Point):
@@ -78,12 +89,14 @@ class CircleElement:
         if not isinstance(self.style, DrawingStyle):
             raise TypeError("style must be DrawingStyle")
 
+
 @dataclass(frozen=True, slots=True)
 class PolylineElement:
     element_id: str
     points: tuple[Point, ...]
     style: DrawingStyle
     closed: bool = False
+
     def __post_init__(self):
         non_empty_id(self.element_id, "element_id")
         points = tuple(self.points)
@@ -95,24 +108,31 @@ class PolylineElement:
         if not isinstance(self.style, DrawingStyle):
             raise TypeError("style must be DrawingStyle")
 
+
 DrawingElement: TypeAlias = PolygonElement | EllipseElement | CircleElement | PolylineElement
+
 
 @dataclass(frozen=True, slots=True)
 class Layer:
     layer_id: str
     order: int
     elements: tuple[DrawingElement, ...]
+
     def __post_init__(self):
         non_empty_id(self.layer_id, "layer_id")
         if isinstance(self.order, bool) or not isinstance(self.order, int):
             raise TypeError("layer order must be an integer")
         elements = tuple(self.elements)
-        if any(not isinstance(item, (PolygonElement, EllipseElement, CircleElement, PolylineElement)) for item in elements):
+        if any(
+            not isinstance(item, (PolygonElement, EllipseElement, CircleElement, PolylineElement))
+            for item in elements
+        ):
             raise TypeError("layer contains an unsupported drawing element")
         ids = [item.element_id for item in elements]
         if len(ids) != len(set(ids)):
             raise ValueError("element IDs must be unique within a layer")
         object.__setattr__(self, "elements", elements)
+
 
 @dataclass(frozen=True, slots=True)
 class VisualDocument:
@@ -123,6 +143,7 @@ class VisualDocument:
     layers: tuple[Layer, ...]
     document_version: int = 1
     generator: object | None = None
+
     def __post_init__(self):
         if isinstance(self.document_version, bool) or self.document_version != 1:
             raise ValueError("only VisualDocument version 1 is supported")
@@ -144,7 +165,9 @@ class VisualDocument:
             non_empty_id(token, "palette token")
             if not isinstance(color, (tuple, list)) or len(color) not in (3, 4):
                 raise ValueError(f"palette[{token}] must be RGB or RGBA")
-            if any(isinstance(c, bool) or not isinstance(c, int) or not 0 <= c <= 255 for c in color):
+            if any(
+                isinstance(c, bool) or not isinstance(c, int) or not 0 <= c <= 255 for c in color
+            ):
                 raise ValueError(f"palette[{token}] channels must be integers from 0 to 255")
             palette[token] = tuple(color)
         object.__setattr__(self, "palette", freeze_json(palette))

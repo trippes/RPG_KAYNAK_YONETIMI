@@ -1,9 +1,11 @@
 """Immutable JSON-compatible values and strict numeric helpers."""
+
 from __future__ import annotations
 import math
 from collections.abc import Mapping
 from types import MappingProxyType
 from typing import Any
+
 
 def finite_number(value: Any, field: str) -> float:
     if isinstance(value, bool) or not isinstance(value, (int, float)):
@@ -13,10 +15,12 @@ def finite_number(value: Any, field: str) -> float:
         raise ValueError(f"{field} must be finite")
     return result
 
+
 def non_empty_id(value: Any, field: str) -> str:
     if not isinstance(value, str) or not value.strip():
         raise ValueError(f"{field} must be a non-empty string")
     return value
+
 
 def freeze_json(value: Any) -> Any:
     if value is None or isinstance(value, (str, bool, int)):
@@ -30,6 +34,7 @@ def freeze_json(value: Any) -> Any:
     if isinstance(value, (list, tuple)):
         return tuple(freeze_json(item) for item in value)
     raise TypeError(f"value of type {type(value).__name__} is not JSON-compatible")
+
 
 def thaw_json(value: Any) -> Any:
     if isinstance(value, Mapping):

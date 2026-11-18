@@ -1,12 +1,16 @@
 """Measure cold vector rendering and bounded-cache hits for Phase 14 profiles."""
+
 from __future__ import annotations
 import json
 import statistics
 import time
 from pathlib import Path
 from hex_world_lab.rendering.procedural import (
-    ProceduralSurfaceCache, build_profile_document, render_visual_document,
+    ProceduralSurfaceCache,
+    build_profile_document,
+    render_visual_document,
 )
+
 
 def main():
     cache = ProceduralSurfaceCache(max_entries=16, max_bytes=8_000_000)
@@ -28,12 +32,19 @@ def main():
             "cache_lookup_median_us": round(statistics.median(warm), 3),
         }
     stats = cache.stats()
-    report["cache"] = {"hits": stats.hits, "misses": stats.misses, "entries": stats.entries,
-                       "estimated_bytes": stats.estimated_bytes}
+    report["cache"] = {
+        "hits": stats.hits,
+        "misses": stats.misses,
+        "entries": stats.entries,
+        "estimated_bytes": stats.estimated_bytes,
+    }
     output = Path("artifacts/phase-14")
     output.mkdir(parents=True, exist_ok=True)
-    (output / "benchmark.json").write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    (output / "benchmark.json").write_text(
+        json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     print(json.dumps(report, indent=2, sort_keys=True))
+
 
 if __name__ == "__main__":
     main()

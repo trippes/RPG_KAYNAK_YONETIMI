@@ -1,6 +1,8 @@
 """The content domain must remain independent of Pygame and rendering."""
+
 import ast
 from pathlib import Path
+
 
 def test_content_domain_does_not_import_pygame_or_rendering():
     root = Path(__file__).resolve().parents[2] / "src" / "hex_world_lab" / "content"
@@ -14,6 +16,12 @@ def test_content_domain_does_not_import_pygame_or_rendering():
                 names = [node.module or ""]
             else:
                 continue
-            if any(name == "pygame" or name.startswith("pygame.") or name == "hex_world_lab.rendering" or name.startswith("hex_world_lab.rendering.") for name in names):
+            if any(
+                name == "pygame"
+                or name.startswith("pygame.")
+                or name == "hex_world_lab.rendering"
+                or name.startswith("hex_world_lab.rendering.")
+                for name in names
+            ):
                 violations.append(f"{path.name}:{node.lineno}")
     assert not violations, ", ".join(violations)
