@@ -2,7 +2,11 @@
 import pygame
 from hex_world_lab.content.adapters import definition_to_environment, to_environment_scene
 from hex_world_lab.content.map_document import MapContentDocument
-from hex_world_lab.rendering.procedural import build_profile_document, render_visual_document
+from hex_world_lab.rendering.procedural import (
+    ProceduralSurfaceCache, build_profile_document, render_content_definition, render_visual_document,
+)
+from hex_world_lab.rendering.environment_assets import register_content_library_assets
+from hex_world_lab.rendering.pygame_world_renderer import PygameWorldRenderer
 from hex_world_lab.geometry import HexLayout, HexOrientation, WorldPoint
 from hex_world_lab.world import HexMapDefinition, MapId, WorldId
 from hex_world_lab.content import (
@@ -53,3 +57,15 @@ def test_content_scene_adapter_resolves_map_placements_and_explicit_colliders():
     assert scene.world_id == map_definition.world_id
     assert scene.placements[0].ground_position == WorldPoint(12,24)
     assert scene.definitions[0].collider.radius == 4
+
+
+def test_content_definition_surface_cache_and_renderer_registration():
+    library = make_library()
+    cache = ProceduralSurfaceCache(max_entries=4, max_bytes=1_000_000)
+    first = render_content_definition(library.definitions[0], cache=cache)
+    second = render_content_definition(library.definitions[0], cache=cache)
+    assert first is second
+    assert cache.stats().hits == 1
+    renderer = PygameWorldRenderer()
+    sizes = register_content_library_assets(renderer, library, cache=cache)
+    assert sizes["tree"] == first.get_size()
