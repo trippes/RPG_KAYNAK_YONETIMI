@@ -6,35 +6,88 @@
 | Kaynak dal | `demo_eldoria` |
 | Başlangıç commit'i | `7d53d431d5c3639fd95d273de9043b64483a5125` |
 | Genel plan | [51-map-system-cleanup-general-plan.md](51-map-system-cleanup-general-plan.md) |
-| Durum | Teknik plan — uygulama öncesi onay bekliyor |
+| Durum | Easter egg kararıyla revize edildi — uygulama öncesi onay bekliyor |
 
 ## 1. Teknik karar özeti
 
-Bu aşama, legacy harita kodunu körlemesine silme veya altıgen sistemi hemen varsayılan yapma çalışması değildir. Hedef, mevcut ana oyun davranışını koruyarak sorumlulukları, veri sözleşmelerini ve runtime sahipliğini açık hâle getirmektir.
+Bu temizliğin hedefi iki harita sistemini eşit ölçekte yaşatmak veya kare haritayı altıgen sisteme dönüştürmek değildir.
+
+**Ana oyun haritası:** Altıgen (axial) dünya sistemi, ana oyunun tek yetkili dünya/harita sistemi olacaktır. Oyuncunun normal dünya dolaşımı, dünya yerleşimleri, haritalar arası ana oyun geçişleri ve ilgili runtime sorumlulukları bu sistemde toplanacaktır.
+
+**Kare harita easter egg'i:** Kare harita sistemi, gelecekte detaycı oyuncuların keşfedebileceği tek ve sabit bir harita olarak korunacaktır. Bu bir ikinci ana dünya sistemi değildir. Yalnızca o tek haritayı yüklemek, göstermek ve ileride ayrıca kararlaştırılacak sınırlı etkileşimi desteklemek için gereken asgari kod/veri tutulacaktır.
+
+Kare harita easter egg'i için mimari sınırlar:
+
+- Tam olarak bir kare harita içeriği korunacaktır. Hangi mevcut haritanın temel alınacağı, 16.1–16.2 envanterinde gerçek JSON içerikleri ve bağımlılıkları incelendikten sonra belirlenecektir; dosya adına bakılarak seçim yapılmayacaktır.
+- Kare harita için yeni harita kataloğu, çoklu harita ağı, harita editörü, prosedürel üretim veya genel amaçlı genişletilebilir harita platformu geliştirilmeyecektir.
+- Kare haritanın kendi yerel `(x, y)` koordinatları korunabilir; bu koordinatlar axial `(q, r)` dünya koordinatlarına çevrilmeyecek ve ortak bir koordinat modeline zorlanmayacaktır.
+- Kare harita kendi başına ikinci bir dünya simülasyonu, dünya saati, kaynak döngüsü, NPC yaşam simülasyonu veya bağımsız save dünyası hâline getirilmeyecektir.
+- Kare haritaya giriş/çıkış biçimi ürün/tasarım kararıdır. Teknik mimari, ileride tek bir kontrollü erişim noktası veya sahne geçişi eklenmesine izin verebilir; fakat bu temizlik aşamasında erişim yöntemi ve hikâye açıklaması tasarlanmayacaktır.
+- Kare harita ile ana altıgen dünya arasında doğrudan konum/state paylaşımı kurulmayacaktır. Gerekirse yalnızca açıkça tanımlanmış sahne sınırı/erişim adaptörü kullanılacaktır.
+- Tek kare harita için zorunlu olmayan eski kare dünya kodları, harita dosyaları ve testler bağımlılık kanıtı toplandıktan sonra deprecate/remove adayı olacaktır. Silme kararı otomatik değildir.
 
 İlk kaynak incelemesi iki paralel yerel harita modelini doğruluyor:
 
 - Schema v1 kare harita: `world/map_definition.py`, `world/map_loader.py`, `world/map_catalog.py`.
 - Schema v2 axial altıgen harita: `application/hex_map_definition.py`.
-- İki modeli ve dünya haritasını bir araya getiren paket yükleyici: `application/content_loader.py`.
+- İçerik paketi yükleyici: `application/content_loader.py`.
 - Altıgen dünya yerleşimi: `application/world_map_definition.py` ve `content/demo_eldoria/world.json`.
 - Altıgen hareket/runtime: `application/hex_world_runtime.py`, `hex_movement_rules.py`, `hex_occupancy.py`, `hex_pathfinding.py`, `hex_transition_service.py`.
 - Kare dünya/konum grafı ve eski runtime: `world/`, `core/world/`.
 - UI tarafında kare ve altıgen yollar: `game_ui/screens/main_screen.py`, `map_screen.py`, `game_ui/hex_world_view.py`.
 
-İlk karar: v1 kare ve v2 altıgen içerik biçimlerinden hangisinin kalıcı olacağına, mevcut oyun akışları ve save/asset bağımlılıkları ölçülmeden karar verilmeyecek. Bir süre iki formatı destekleyen loader/adaptör gerekebilir.
+Bu envanter, mevcut kare modüllerin tamamının easter egg için gerekli olduğu anlamına gelmez. Nihai koruma kümesi tek haritanın gerçek yükleme/gösterim/etkileşim bağımlılıklarıyla sınırlandırılacaktır.
 
 ## 2. Başlangıç deposu ve kanıt sınırı
 
 Dal `demo_eldoria` HEAD `7d53d431d5c3639fd95d273de9043b64483a5125` commit'inden çıkarılmıştır. İlk ağaç taramasında 605 repository path kaydı görüldü; bunun içinde 16 map JSON dosyası, iki hex placement JSON ve harita sistemiyle ilişkili çok sayıda test/modül vardır. Dosyaların schema v1/v2 dağılımı, JSON içerikleri okunarak envanter aşamasında kesinleştirilecektir.
 
-> Not: Dosya adlarından schema türü çıkarılmayacak. Her JSON dosyasının gerçek `schema_version` alanı ve içeriği envanter aşamasında okunup tabloya kaydedilecek. Dosya sayısı da her envanter güncellemesinde yeniden hesaplanacak.
+> Not: Dosya adlarından schema türü çıkarılmayacak. Her JSON dosyasının gerçek `schema_version` alanı ve içeriği envanter aşamasında okunup tabloya kaydedilecek. Dosya sayısı da her envanter güncellemesinde yeniden hesaplanacaktır.
 
 Ağaç taraması ve sınırlı kaynak dosya okumaları, plan hazırlığı için kullanılmıştır. Henüz test komutu çalıştırılmadı; bu nedenle başlangıç test sonucu veya görsel kabul iddiası yoktur.
 
-## 3. Katman bazlı teknik envanter
+## 3. Hedef mimari ve teknik sınırlar
 
-### 3.1 Veri ve içerik paketi
+### 3.1 Ana altıgen dünya — yetkili sistem
+
+- Ana oyun haritaları ve dünya yerleşimleri axial altıgen sözleşmelerini kullanır.
+- `application/hex_world_runtime.py` ve ilgili servislerin hareket, occupancy, geçiş ve dünya state'i üzerindeki sahipliği envanterle doğrulanır.
+- `WorldMapDefinition` ile legacy `WorldMap` aynı kavrammış gibi ele alınmaz; ana oyun için hangisinin yetkili olduğu ve eski adaptörlerin gerekliliği belgelenir.
+- UI, kamera ve renderer yalnızca authoritative gameplay state'i okur; ikinci bir hareket/konum state'i üretmez.
+- Ana oyun save/restore sözleşmesi ve mevcut içerik paketi yükleme akışı korunur veya değişiklik gerekiyorsa sürümlü migration ile ele alınır.
+
+### 3.2 Tek kare harita — sınırlı easter egg
+
+Envanter sonucunda mevcut kare haritalar arasından tek bir içerik seçilecek veya mevcut içerik güvenle sadeleştirilerek tek bir harita hâline getirilecektir. Seçim gerekçesi; veri bütünlüğü, görsel/oynanış değeri, mevcut referanslar ve save uyumluluğuna dayanacaktır.
+
+Korunabilecek asgari parçalar, gerçek bağımlılık grafiğine göre belirlenecektir:
+
+- Tek harita için gerekli veri tanımı ve doğrulama.
+- Tek harita verisini okuyacak en küçük loader yolu.
+- Haritayı göstermek için gereken çizim/UI yolu.
+- Tasarım daha sonra etkileşim gerektirirse, yalnızca bu harita için gerekli sınırlı etkileşim sözleşmesi.
+- Tek haritanın tanımlayıcı kimliği ve varsa güvenli erişim/çıkış sınırı.
+
+Kapsam dışında:
+
+- Birden fazla kare harita yüklemek veya kare haritalar arasında genel geçiş ağı.
+- Genel amaçlı kare dünya kataloğu/manager'ı; tek harita için zorunlu olduğu kanıtlanmadıkça korunmayacaktır.
+- Kare dünya üzerinde bağımsız simülasyon, kaynak üretimi, NPC AI, zaman döngüsü veya yeni ekonomi.
+- Kare/hex koordinat dönüşüm katmanı.
+- Harita editörü, prosedürel kare harita üretimi, yeni kare harita içerikleri.
+- Kare haritayı ana dünya haritası veya alternatif oyun modu olarak sunmak.
+
+Easter egg'in oyuncuya nasıl sunulacağı, nerede bulunacağı ve hangi hikâye/ödül/etkileşimi içereceği bu teknik temizlik planının dışındadır. Bu ayrıntılar daha sonraki içerik tasarımında kararlaştırılacaktır.
+
+### 3.3 Koordinat ve sahne sınırı
+
+- Kare harita içindeki hücre adresi `(x, y)`; ana altıgen dünya koordinatı axial `(q, r)` olarak kalır.
+- Piksel/screen koordinatları her iki modelin de sunum katmanında kalır; domain koordinatı olarak saklanmaz.
+- Kare harita ile hex dünya arasında otomatik veya örtük koordinat dönüşümü yapılmaz.
+- İleride erişim/çıkış gerekirse, iki sistem arasında yalnızca açık bir sahne geçiş sözleşmesi kurulur. Oyuncu konumunun hangi sistemde authoritative olduğu geçiş sırasında tanımlanır; aynı anda iki runtime konumun sahibi olamaz.
+- Tek kare haritanın kendi içinde gerekli değilse `EntityPosition`, `LocalHexPosition`, `WorldHexPosition` ve `HexCoord` türleri kare sisteme taşınmaz.
+
+### 3.4 İçerik, asset ve save sahipliği
 
 İncelenecek dosyalar:
 - `content/demo_eldoria/manifest.json`
@@ -44,20 +97,22 @@ Ağaç taraması ve sınırlı kaynak dosya okumaları, plan hazırlığı için
 - `content/demo_eldoria/asset_catalog.json`
 - `content/demo_eldoria/presentation_assets.json`
 - `application/content_loader.py`
-- `application/world_map_definition.py`
-- `application/hex_map_definition.py`
+- `application/world_map_definition.py`, `application/hex_map_definition.py`
 - `world/map_definition.py`, `world/map_loader.py`, `world/map_catalog.py`
 
 Kontroller:
-1. Manifestteki her path'in paket kökü içinde kaldığı ve gerçek dosyaya karşılık geldiği doğrulanır.
-2. Tüm map ID'leri paket genelinde benzersiz olmalıdır.
-3. Her transition hedefi var olan haritaya işaret etmelidir; aktif/pasif ve tek yön/çift yön semantiği kaydedilir.
-4. World map yerleşimlerinin referans verdiği map ID'leri ve axial koordinatları doğrulanır.
-5. Kare harita koordinatları `(x, y)`, hex koordinatları `(q, r)` olarak ayrı tutulur; veri dönüşümü açık adaptör/migration olmadan yapılmaz.
-6. Asset ve placement kayıtlarının map ID, asset ID ve anchor referansları doğrulanır.
-7. Mevcut içerik dosyaları değişiklik öncesi baseline olarak saklanır; normalize/format-only JSON yazımı da ayrıca diff ile gözden geçirilir.
 
-### 3.2 Dünya ve domain/runtime
+1. Manifestteki her path'in paket kökü içinde kaldığı ve gerçek dosyaya karşılık geldiği doğrulanır.
+2. Altıgen ana dünya map ID'leri ve transition hedefleri doğrulanır.
+3. Tek kare easter egg haritasının ID'si, içeriği ve asset/placement referansları belirlenir.
+4. Kullanılmayan diğer kare map JSON dosyalarının kod, test, manifest, içerik ve save referansları aranır.
+5. Eski save'lerde birden fazla kare map ID'sine referans bulunup bulunmadığı araştırılır. Gerekli uyumluluk kararı verilmeden dosya veya ID kaldırılmaz.
+6. `AssetCatalog`, `ScenePlacementCatalog`, `PresentationContentService` ve `PresentationContentStore` ana oyun içerik hattının sahipleridir; laboratuvar modeliyle karşılaştırılmadan çoğaltılmaz veya silinmez.
+7. Kaynak içerikler değişiklik öncesi baseline olarak saklanır; JSON normalize/format-only yazımı da ayrıca diff ile gözden geçirilir.
+
+## 4. Katman bazlı teknik envanter
+
+### 4.1 Dünya ve domain/runtime
 
 İncelenecek dosyalar:
 - `world/local_map.py`, `world/location.py`, `world/map.py`, `world/movement.py`
@@ -67,13 +122,13 @@ Kontroller:
 - `core/domain/spatial/` içindeki `EntityPosition`, `LocalHexPosition`, `WorldHexPosition`, `HexCoord` ve geometry sözleşmeleri.
 
 Kontroller:
-- `WorldMap` konum grafı ile `WorldMapDefinition` axial dünya yerleşimi aynı kavram gibi kullanılmamalı.
-- `EntityPosition(map_id, cell)` ile world/location actor konumları arasındaki dönüşüm ve sahiplik açıkça belgelenmeli.
-- Hareketin authoritative kaynağı tek bir runtime olmalı; UI veya renderer ikinci bir konum state'i üretmemeli.
-- Harita unload/load, aktif dünya, dormant actor ve save/restore davranışları ayrı ayrı izlenmeli.
-- Pathfinding veya hareket algoritmaları yalnızca temizlik hedefiyle değiştirilmemeli; yalnızca sorumluluk sınırı ve test kapsamı ele alınmalı.
+- Kare modüllerin hangilerinin yalnızca tek haritayı yüklemek/göstermek için gerekli olduğu import/call graph ile kanıtlanır.
+- Tek kare haritanın ihtiyaç duymadığı çoklu map catalog, world manager, transition graph ve legacy runtime bileşenleri sadeleştirme adayıdır.
+- Ana altıgen dünyanın authoritative hareket/konum kaynağı tek olmalıdır.
+- Harita unload/load, dormant actor ve save/restore davranışları ana oyun açısından izlenir.
+- Pathfinding veya hareket algoritmaları yalnızca temizlik hedefiyle değiştirilmez.
 
-### 3.3 UI, kamera ve render
+### 4.2 UI, kamera ve render
 
 İncelenecek dosyalar:
 - `game_ui/screens/main_screen.py`, `game_ui/screens/map_screen.py`
@@ -83,126 +138,150 @@ Kontroller:
 - `game_ui/renderer.py`, `game_ui/scaled_renderer.py`
 
 Kontroller:
-- Kare harita ekranının halen aktif gameplay yolu olup olmadığı çağrı zinciriyle doğrulanır.
-- `MainScreen` içindeki H tuşuyla altıgen dünyaya giriş/çıkış yolu ve geçici portal/bridge davranışı belgelenir.
-- Altıgen görünümün player/entity konumunu nasıl okuduğu ve hareketi hangi servise ilettiği izlenir.
+- Kare harita ekranının mevcut gameplay yolundaki rolü ve tek harita easter egg'i için gereken minimum UI yolu ayrıştırılır.
+- `MainScreen` içindeki H tuşuyla altıgen dünyaya giriş/çıkış yolu ve geçici bridge davranışı incelenir; ürün akışı netleşmeden körlemesine silinmez.
+- Nihai mimaride normal gameplay'in altıgen dünya yolunu kullanması; kare harita yolunun ise yalnızca tek easter egg sahnesiyle sınırlı olması hedeflenir.
 - Kamera, viewport, world transform ve screen coordinate dönüşümleri ayrı sorumluluklar olarak korunur.
 - Render işlemi authoritative simülasyon state'ini değiştirmemelidir.
-- Görsel varlıklar ve sahne yerleşimleri mevcut catalog/store sözleşmeleri üzerinden okunmalı; ikinci bir writer yaratılmamalıdır.
+- Görsel varlıklar ve sahne yerleşimleri mevcut catalog/store sözleşmeleri üzerinden okunmalıdır.
 
-### 3.4 Test envanteri
+### 4.3 Test envanteri
 
 Asgari test kümeleri:
-- `tests/test_world/`: map definition/loader, transitions, world/map manager, runtime separation, mixed map package.
+- `tests/test_world/`: kare harita tanımı/loader testleri; tek harita koruma kapsamı belirlendikten sonra çoklu harita varsayımları ayrıştırılır.
 - `tests/test_application/`: content loader, hex runtime, movement, world object placement, presentation content service/store, persistence/session.
 - `tests/test_game_ui/`: main screen/map data/transitions, hex view/camera, renderer, placement/asset catalog, world transform.
 - `tests/test_foundation/`: hex coordinate/geometry, local/world hex position, position.
-- `tests/test_architecture/`: core/world boundary and world model boundary.
-- `tests/test_compatibility/`: legacy world clock/scheduler/runtime adapters and migration tooling.
-- `tests/test_persistence/`: save/restore contracts and document bridge.
+- `tests/test_architecture/`: core/world boundary ve world model boundary.
+- `tests/test_compatibility/`: legacy world clock/scheduler/runtime adapters ve migration tooling.
+- `tests/test_persistence/`: save/restore sözleşmeleri ve document bridge.
 
-Her testin hangi sözleşmeyi koruduğu ve hangi refactor sonrası gerekli olduğu test matrisiyle eşleştirilir. Testi olmayan davranış, kaldırma için otomatik izin sayılmaz; önce characterization test yazılır.
+Test hedefleri:
+- Ana altıgen dünya için mevcut çoklu harita/dünya davranışları ve içerik referansları korunur.
+- Kare harita testleri, korunacak tek haritanın yüklenmesi, veri bütünlüğü ve gerekli sunum/etkileşim davranışıyla sınırlandırılır.
+- Silinecek eski kare harita altyapısı için önce characterization test ve bağımlılık kanıtı oluşturulur.
+- Testi olmayan davranış, kaldırma için otomatik izin sayılmaz.
 
-## 4. Uygulama fazları ve değişiklik kapıları
+## 5. Uygulama fazları ve değişiklik kapıları
 
 ### 16.1 — Baseline ve characterization (yalnızca okuma + test)
+
 - Başlangıç commit'i ve içerik dosyalarının envanteri kaydedilir.
 - Windows yerel kurulumda mevcut test komutları kullanıcı tarafından çalıştırılır; CI'da Linux/Windows sonuçları alınır.
-- Oynanabilir giriş, aktif paket seçimi, başlangıç haritası, H tuşu hex geçişi, dünya haritası penceresi ve save/load akışları gözlemlenir.
+- Oynanabilir giriş, aktif paket seçimi, başlangıç altıgen haritası, H tuşu hex geçişi, dünya haritası penceresi ve save/load akışları gözlemlenir.
+- Kare harita modüllerinin çağrı/import grafiği ve mevcut kare harita ekranının kullanım amacı çıkarılır.
 - Kritik davranışlar için eksik characterization/regression testleri eklenir.
 **Kapı:** Baseline test/oynanış durumu belgelenmeden refactor başlamaz.
 
-### 16.2 — İçerik şeması ve harita grafı denetimi
-- Map JSON dosyalarının gerçek schema sürümleri ve ID'leri listelenir.
-- Kare harita geçişleri ile hex map transition/world placement ilişkileri karşılaştırılır.
-- Kırık/boşta kalan referanslar raporlanır; otomatik düzeltme yapılmaz.
-- V1/v2 coexistence loader davranışı test edilir.
-**Kapı:** Her içerik dosyası için keep/migrate/deprecate kararı ve gerekçesi bulunur.
+### 16.2 — Harita verisi sınıflandırması ve tek kare haritanın seçimi
 
-### 16.3 — Runtime sahipliği ve adaptör sınırları
-- Kare actor/world movement ile hex runtime arasındaki geçiş zinciri belgelenir.
-- Konumun her modda hangi nesnede authoritative olduğu saptanır.
-- Dönüşüm fonksiyonları varsa saf ve tek yönlü sözleşmelerle test edilir.
+- Map JSON dosyalarının gerçek schema sürümleri, ID'leri ve içerikleri listelenir.
+- Altıgen ana dünya haritaları ile kare harita adayları ayrılır.
+- Kare harita adaylarından tek korunacak easter egg haritası, bağımlılık ve içerik kanıtıyla seçilir.
+- Kalan kare harita dosyalarının manifest, kod, test, asset, placement ve save referansları raporlanır.
+- Kırık/boşta kalan referanslar raporlanır; otomatik düzeltme yapılmaz.
+**Kapı:** Tek kare harita için keep kararı; diğer kare içerikler için keep/deprecate/remove önerisi ve gerekçesi bulunur. Henüz hiçbir içerik silinmez.
+
+### 16.3 — Runtime sahipliği ve sahne sınırları
+
+- Ana altıgen dünya için authoritative konum/runtime zinciri belgelenir.
+- Kare easter egg haritası için gereken minimum runtime/UI bağımlılıkları belirlenir.
+- Kare ve hex sistemler arasında koordinat/state paylaşımının gerekip gerekmediği değerlendirilir; varsayılan karar paylaşmamak ve koordinat dönüştürmemektir.
+- İleride tek bir giriş/çıkış gerekirse sahne sınırı adaptörünün sözleşmesi belgelenir; bu aşamada ürün erişim yöntemi uygulanmaz.
 - Belirsiz ownership varsa önce küçük bir mimari ADR yazılır; uygulama ayrı onaya bırakılabilir.
-**Kapı:** Player location, map ID ve save/restore sorumlulukları çakışmasız olmalı.
+**Kapı:** Ana dünya state'i ile tek kare sahnenin sorumlulukları çakışmasız olmalı.
 
 ### 16.4 — Render/UI sorumluluk sadeleştirmesi
+
 - Ekran/viewport/camera ve world transform çağrı zinciri çıkarılır.
+- Normal gameplay'in altıgen dünya görünümüne ait yolu ile kare easter egg'in minimum sunum yolu ayrıştırılır.
 - Geçici H-key bridge davranışı ürün gereksinimiyle karşılaştırılır; bu aşamada varsayılan olarak silinmez.
 - Render-side cache ile gameplay state ayrımı test edilir.
-**Kapı:** Mevcut giriş, kamera ve harita görüntüsü davranışı için regresyon kanıtı olmalı.
+**Kapı:** Ana oyun giriş/kamera/harita görüntüsü ve korunacak kare harita sunumu için regresyon kanıtı olmalı.
 
 ### 16.5 — Güvenli refactor ve deprecation
+
+- Önce tek kare harita için gereken minimum kare sistem yüzeyi belirlenir.
+- Çoklu kare harita katalogları, gereksiz dünya grafı/runtime bileşenleri ve kullanılmayan kare içerikler ancak bağımlılıkları kanıtlanırsa deprecation/remove adayı olur.
 - Bir seferde tek bir sorumluluk veya küçük modül grubu değiştirilir.
-- Önce public API ve import kullanım haritası çıkarılır.
-- Gerekli ise compatibility facade/adaptör eklenir.
+- Önce public API ve import kullanım haritası çıkarılır; gerekiyorsa compatibility facade/adaptör eklenir.
 - Kullanılmayan olduğu kanıtlanan kod önce deprecation/uyarı veya test dışı bırakma adımına alınır; silme ayrı commit olur.
 - Her commit sonrası hedef test kümesi ve sonra tam test paketi çalıştırılır.
 - Veri migration gerekiyorsa idempotent, yedekli ve dry-run destekli tasarlanır; migration bu planın otomatik varsayımı değildir.
-**Kapı:** Her kaldırma için çağrı/import kanıtı, test kanıtı ve rollback yolu bulunmalı.
+**Kapı:** Her kaldırma için çağrı/import/save kanıtı, test kanıtı ve rollback yolu bulunmalı; tek kare easter egg çalışır durumda kalmalı.
 
 ### 16.6 — Tam regresyon ve kullanıcı kabulü
+
 - Temiz kurulum ve paketleme doğrulanır.
 - Tüm Pytest suite, Ruff ve GitHub Actions kalite akışları çalışır.
-- Kare harita ve altıgen dünya içeriklerinin beklenen şekilde yüklenmesi doğrulanır.
+- Ana altıgen dünya ve içerik paketinin beklenen şekilde yüklendiği doğrulanır.
+- Kare easter egg için yalnızca seçilmiş tek haritanın yüklenmesi ve hedeflenen sunumunun çalışması doğrulanır.
 - Harita geçişi, oyuncu konumu, çarpışma, etkileşim, yerleşim, kamera, save/load ve mevcut gameplay loop kontrol edilir.
+- Eski save referansları ve kare harita uyumluluğu ayrıca değerlendirilir.
 - Kullanıcı görsel test checklist'ini tamamlar.
 **Kapı:** CI ve manuel kabul birlikte başarılı olmalı.
 
 ### 16.7 — Kapanış ve entegrasyon sözleşmesi
+
+- Ana altıgen dünya mimarisi ve korunacak tek kare harita easter egg yüzeyi belgelenir.
 - Temizlenen/kalan legacy bileşenler listelenir.
-- Harita veri şeması, runtime authority, koordinat dönüşümü, render adapter ve asset ownership kararları kaydedilir.
+- Harita veri şeması, runtime authority, koordinat sınırı, render adapter ve asset ownership kararları kaydedilir.
 - Laboratuvar A15 raporundaki altı entegrasyon blocker'ının hangilerinin çözüldüğü ve hangilerinin entegrasyon aşamasına kaldığı eşleştirilir.
 - "Hazır / koşullu hazır / hazır değil" kararı verilir.
 **Kapı:** Kullanıcı kapanış kabulü olmadan sonraki entegrasyon aşaması açılmaz.
 
-## 5. Korumalı sözleşmeler
+## 6. Korumalı sözleşmeler
 
 Aşağıdakiler açık karar olmadan değiştirilemez:
+
 - `content/demo_eldoria/manifest.json` paket sözleşmesi ve path güvenliği.
-- Kare map schema v1 ve hex map schema v2'nin mevcut okuma davranışı.
-- Map/world/transition/entity kimlikleri.
-- Başlangıç konumu ve harita geçiş semantiği.
+- Ana altıgen harita schema/ID/transition/world placement sözleşmeleri.
+- Seçilecek tek kare easter egg haritasının schema, ID ve gerekli veri alanları.
 - `EntityPosition`, `LocalHexPosition`, `WorldHexPosition` ve axial koordinatların anlamı.
-- Save document sürümü, restore sırası, actor/world bağları.
+- Ana oyun başlangıç konumu ve harita geçiş semantiği.
+- Save document sürümü, restore sırası, actor/world bağları ve eski save uyumluluğu.
 - Asset catalog ve scene placement referansları.
 - Public GameplayService API ve `main.py --play` giriş akışı.
 
-Bu sözleşmelerin değiştirilmesi gerekiyorsa versioned migration, compatibility window ve rollback planı ayrıca hazırlanır.
+Kullanılmayan kare harita dosyalarının kaldırılması ancak tek harita kararı, save referans incelemesi, dependency kanıtı, test ve rollback planı sonrasında yapılabilir. Bu belge, tek kare haritanın kimliğini envanter tamamlanmadan varsaymaz.
 
-## 6. Kabul/test matrisi
+## 7. Kabul/test matrisi
 
 | Alan | Test/kanıt | Kabul ölçütü |
 |---|---|---|
-| Paket yükleme | content loader tests + tüm paket | manifest ve tüm referanslar doğrulanır |
-| Kare harita | world map tests | gerekli v1 haritalar okunur ve geçişler tutarlı |
-| Altıgen harita | hex loader/runtime tests | tüm v2 haritalar ve world placements geçerli |
-| Geçişler | square + hex transition tests | hedef map/cell ve yön kuralları korunur |
-| Konum sahipliği | movement/runtime tests | tek authoritative state; UI kopya state üretmez |
-| Çarpışma/occupancy | movement/occupancy tests | mevcut hareket engelleri ve occupancy korunur |
-| Görsel sunum | game_ui tests + manuel kontrol | kamera, viewport, terrain, actor ve placements doğru |
-| Kayıt/yükleme | persistence/session tests | mevcut save'ler bozulmadan restore edilir |
-| Paketleme | clean install / release verification | paketlenmiş içerik yüklenir |
+| Paket yükleme | content loader tests + tüm paket | manifest ve ana dünya referansları doğrulanır |
+| Ana altıgen dünya | hex loader/runtime tests | ana dünya haritaları ve world placements geçerli |
+| Tek kare easter egg | square loader + UI tests | yalnızca seçilen tek kare harita gerekli asgari yolla yüklenir/gösterilir |
+| Kare harita kapsamı | dependency/import/save audit | ikinci bir kare harita veya genel kare dünya altyapısına gereksiz bağımlılık kalmaz |
+| Geçiş/sahne sınırı | transition + characterization tests | ana dünya akışı korunur; varsa easter egg sınırı açık ve tekil |
+| Konum sahipliği | movement/runtime tests | ana dünyada tek authoritative state; kare sahneyle örtük state paylaşımı yok |
+| Çarpışma/occupancy | movement/occupancy tests | ana dünya hareket engelleri ve occupancy korunur |
+| Görsel sunum | game_ui tests + manuel kontrol | ana hex dünya ve seçilen kare harita doğru çizilir |
+| Kayıt/yükleme | persistence/session tests | eski save'ler bozulmaz; kare map referansları güvenle ele alınır |
+| Paketleme | clean install / release verification | gerekli hex içerikleri ve tek kare easter egg pakete dahil |
 | Mimari sınırlar | architecture tests | domain/application/UI import sınırları korunur |
 | Kalite | Pytest, Ruff, GitHub Actions | ilgili bütün zorunlu işler başarılı |
 
-## 7. Geri alma stratejisi
+## 8. Geri alma stratejisi
 
 - Her mantıksal değişiklik ayrı commit; büyük dosya taşıma ve davranış değişikliği aynı commit'te birleştirilmez.
 - JSON migration öncesi kaynak dosyalar commit ile korunur; migration dry-run çıktısı gözden geçirilir.
+- Kare harita silme/deprecation işlemleri, tek harita seçimi ve save referans denetiminden ayrı commit'lerde yapılır.
 - Bir aşama başarısız olursa son yeşil commit'e dönülür; sonraki aşamaya geçilmez.
 - Temizlik dalı başarısız olsa bile `demo_eldoria`, `main` ve laboratuvar dalı değişmeden kalır.
 - Aşama kapanışında temizleme dalı birleştirilmeden önce kullanıcıya diff özeti ve test kanıtı sunulur.
 
-## 8. Açık riskler
+## 9. Açık riskler
 
-1. **İki harita modelinin eşzamanlı varlığı:** Square v1 ve hex v2 yalnızca dosya formatı farkı değil; farklı runtime/position ownership içeriyor.
-2. **Geçici UI bridge:** H-key hex giriş/çıkışı test/demo kolaylığı için eklenmiş olabilir; ürün akışı netleşmeden kaldırılmamalı.
-3. **Legacy world manager:** `core/world` ile `application` world/runtime sorumluluklarının tam sınırı import ve call graph ile kanıtlanmalı.
-4. **Asset/placement paralelliği:** Combined `presentation_assets.json` ile ayrılmış `asset_catalog.json` + `placements/` backward compatibility yolu birlikte mevcut.
-5. **Save uyumluluğu:** Harita ID veya actor konum biçimi değişirse restore ve eski save'ler etkilenebilir.
-6. **Test kapsama boşluğu:** UI'da manuel olarak görülen bazı davranışlar için otomatik characterization test gerekebilir.
+1. **Tek kare haritanın seçimi:** Mevcut kare map JSON'larından hangisinin korunacağı içerik ve bağımlılık incelemesiyle belirlenmelidir.
+2. **Legacy kare runtime kapsamı:** Tek harita için gereken loader/render kodu ile gereksiz çoklu dünya altyapısı ilk bakışta iç içe olabilir.
+3. **Geçici UI bridge:** H-key hex giriş/çıkışı test/demo kolaylığı için eklenmiş olabilir; ürün akışı netleşmeden kaldırılmamalı.
+4. **Legacy world manager:** `core/world` ile `application` world/runtime sorumluluklarının tam sınırı import ve call graph ile kanıtlanmalı.
+5. **Asset/placement paralelliği:** Combined `presentation_assets.json` ile ayrılmış `asset_catalog.json` + `placements/` backward compatibility yolu birlikte mevcut.
+6. **Save uyumluluğu:** Eski save'lerde artık korunmayacak kare map ID'leri varsa açık migration/compatibility kararı gerekir.
+7. **Test kapsama boşluğu:** UI'da manuel olarak görülen bazı davranışlar için otomatik characterization test gerekebilir.
+8. **Easter egg erişimi:** Nerede/nasıl bulunacağı ve sahneye giriş/çıkış biçimi ürün tasarımıdır; teknik temizlik bunu varsaymamalıdır.
 
-## 9. Uygulama öncesi karar
+## 10. Uygulama öncesi karar
 
-Bu belge teknik planı tanımlar; henüz hiçbir harita kodu, JSON içeriği, asset, save schema veya UI akışı değiştirilmemiştir. Temizlik uygulamasına başlamak için kullanıcının bu ayrıntılı teknik planı ayrıca onaylaması gerekir.
+Bu belge teknik planı tanımlar; henüz hiçbir harita kodu, JSON içeriği, asset, save schema veya UI akışı değiştirilmemiştir. Teknik plan, kare haritanın tek ve sınırlı easter egg olarak korunması kararına göre revize edilmiştir. Temizlik uygulamasına başlamak için kullanıcının bu ayrıntılı teknik planı ayrıca onaylaması gerekir.
