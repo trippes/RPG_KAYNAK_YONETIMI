@@ -1,201 +1,190 @@
-# Aşama 14 — Content Editor ve Görsel Düzenleme Araçları
+# Aşama 14 — İçerik Veri Altyapısı ve ELDORIA CONTENT EDITOR Hazırlığı
 
 > **Belge türü:** Genel aşama planı  
 > **Proje:** Eldoria — Hex World Laboratory  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Ön koşul:** Aşama 13 resmen kapatıldı (18 Kasım 2026)  
-> **Durum:** TASLAK HAZIR — KULLANICI GENEL PLAN ONAYI BEKLENİYOR  
+> **Durum:** GÜNCELLENMİŞ TASLAK — KULLANICI GENEL PLAN ONAYI BEKLENİYOR  
 > **Uygulama durumu:** Başlamadı; bu belge kod değişikliği veya teknik uygulama izni değildir.
 
-## 1. Amaç ve gerekçe
+## 1. Amaç ve uzun vadeli vizyon
 
-Aşama 13 ile ağaç, kaya, çalı, çim ve çiçek/bitki kümelerini üretebilen ortak, deterministik ve yeniden kullanılabilir prosedürel grafik altyapısı tamamlandı. Ancak bu profillerin görünümünü değiştirmek için kullanıcı hâlâ kod ve parametre tanımlarını doğrudan düzenlemek zorunda.
+Aşama 13 ile prosedürel nesne üretimi için ortak geometri, canvas, palet, varyasyon, bileşen, profil ve cache altyapısı tamamlandı. Bir sonraki adım hemen görsel bir editör arayüzü yazmak değildir. Önce bu içeriklerin editörlerden bağımsız, güvenli, sürümlenebilir ve yeniden kullanılabilir veri olarak tanımlanmasını sağlayacağız.
 
-Aşama 14'ün amacı, mevcut prosedürel grafik altyapısını kullanan, görsel odaklı ve kullanıcı tarafından etkileşimli biçimde kullanılabilen bir **Content Editor** oluşturmaktır. Kullanıcı bir nesne profilini seçebilmeli, önizlemesini görebilmeli, desteklenen parametreleri değiştirebilmeli, sonucu karşılaştırabilmeli ve çalışmasını güvenli, doğrulanabilir bir içerik dosyası olarak kaydedip yeniden açabilmelidir.
+Uzun vadeli ürün hedefi, ayrı bir masaüstü uygulaması olan **ELDORIA CONTENT EDITOR**'dür. Bu uygulama ileride en azından şu üretim iş akışlarını destekleyecektir:
 
-Editör, Aşama 13'ün yerine yeni bir çizim motoru yazmayacak; onun sunduğu geometri, bileşen, palet, varyasyon ve profil üretim kabiliyetlerini kullanacaktır.
+- Harita oluşturma, açma ve düzenleme.
+- Harita üzerine çevresel nesneler, yapılar ve diğer içerikleri yerleştirme.
+- Yapı ve nesneleri çizme, şekillendirme ve görsel olarak düzenleme.
+- Yerleştirilmiş içerikleri taşıma, değiştirme, çoğaltma ve kaldırma.
+- Harita ve içerik çalışmalarını kaydetme, yeniden açma ve sürümleme.
 
-## 2. Ürün hedefleri
+**Aşama 14 bu masaüstü uygulamasını geliştirmeyecek.** Yalnızca gelecekteki uygulamanın ve oyun runtime'ının ortak kullanabileceği içerik veri sözleşmelerini ve temel içerik altyapısını hazırlayacaktır. Böylece gelecekteki editör, kendi özel veri biçimini veya ikinci bir çizim motorunu üretmek zorunda kalmayacaktır.
 
-1. Prosedürel nesne profillerini kod düzenlemeden seçip görüntüleyebilmek.
-2. Bir profilin görsel önizlemesini düzenleme sırasında güncel tutmak.
-3. Profilin desteklediği parametreleri anlaşılır kontrollerle düzenleyebilmek.
-4. Ağaç gibi bileşenli nesnelerde desteklenen alt bileşenleri ayrı ayrı düzenleyebilmek.
-5. Renk paletlerini ve renk varyasyonlarını görsel olarak inceleyip değiştirebilmek.
-6. Seed ve varyasyon ayarlarını kontrol ederek tekrarlanabilir sonuçlar alabilmek.
-7. Önceki ve yeni görünümü karşılaştırabilmek; varsayılan değerlere dönebilmek.
-8. İçerik çalışmalarını sürümlenebilir, doğrulanabilir bir dosya biçiminde kaydedip yükleyebilmek.
-9. Hatalı veya desteklenmeyen verilerin runtime çizim sistemine ulaşmasını engellemek.
-10. Editörün ana oyun ve laboratuvar simülasyonundan bağımsız kalmasını sağlamak.
+## 2. Aşama 14'ün hedefleri
+
+1. Aşama 13 prosedürel profillerini koddan bağımsız, veri odaklı tanımlanabilir hale getirmek.
+2. İçerik tanımı ile harita üzerindeki içerik örneğini/yerleşimini kavramsal ve teknik olarak ayırmak.
+3. Ağaç, kaya, çalı, çim ve çiçek/bitki profillerinin mevcut davranışını bozmadan veriyle temsil edilebilen alanlarını belirlemek.
+4. Gelecekteki yapılar ve diğer yerleştirilebilir içerikler için genişletilebilir tanım ve kimlik yaklaşımını hazırlamak.
+5. İçerik dosyaları için kararlı kimlik, şema, sürümleme, serileştirme, yükleme ve doğrulama altyapısı oluşturmak.
+6. Harita belgesi ve harita üzerindeki yerleşim verileri için gelecekteki editörün kullanabileceği veri sınırlarını araştırmak ve gerekli temel sözleşmeleri belirlemek.
+7. İçerik verisini mevcut procedural renderer'a güvenli biçimde bağlayan adaptör/registry yaklaşımını oluşturmak.
+8. Görsel tanımların collider, fizik veya simülasyon state'ini örtük biçimde değiştirmesini engellemek.
+9. Gelecekteki ELDORIA CONTENT EDITOR'ün ayrı masaüstü uygulaması olarak geliştirilebilmesini sağlayacak modüler sınırları korumak.
 
 ## 3. Kapsam
 
 ### 3.1 Dahil olanlar
 
-**A. Editör çalışma alanı**
-- Laboratuvarın tek başlatıcısı korunarak editöre ulaşılabilmesi.
-- Önizleme alanı ile profil/parametre panellerinin birbirinden anlaşılır biçimde ayrılması.
-- Pencere boyutu değiştiğinde kullanılabilir düzenin korunması.
-- Fare ve klavye ile temel gezinme ve düzenleme.
-- Geçerli çalışma, kaydedilmemiş değişiklik ve hata durumlarının açıkça gösterilmesi.
+**A. Mevcut içerik mimarisinin denetimi**
+- Aşama 13 geometri, canvas, palette, variation, components, profiles ve cache API'lerini inceleme.
+- Mevcut çevresel nesne tanımları, yerleşimler, renderer adaptörleri ve collider ayrımını inceleme.
+- Laboratuvardaki dünya/harita temsillerini ve mevcut koordinat sözleşmelerini inceleme.
+- Dosya saklama, test, CI, Ruff ve artifact örüntülerini inceleme.
+- Gelecekteki ayrı masaüstü editör için bağımlılık ve paket sınırlarını değerlendirme.
 
-**B. Profil tarayıcısı**
-- Mevcut beş profilin listelenmesi: ağaç, kaya, çalı, çim kümesi ve çiçek/bitki kümesi.
-- Profilin adı, kısa açıklaması ve küçük önizlemesinin gösterilmesi.
-- Profil seçildiğinde ilgili düzenleme alanlarının açılması.
-- Yeni profil ailelerinin ileride eklenebilmesine uygun bir içerik keşif yaklaşımı.
+**B. İçerik tanım sözleşmesi**
+- İçerik tanımı (ör. ağaç profili veya gelecekteki bina tanımı) ile dünyadaki yerleşmiş örneği birbirinden ayırma.
+- Kararlı içerik kimliği, tür/kategori, şema sürümü ve gerekli metadata alanlarını belirleme.
+- Parametre, bileşen, palet ve deterministik seed alanlarının veri olarak temsil edilebilirliğini belirleme.
+- Desteklenmeyen veya yalnızca kodla tanımlanabilen özellikler için açık sınırlar koyma.
+- İçerik tanımlarının Python kodu veya çalıştırılabilir betik olarak saklanmasını engelleme.
 
-**C. Görsel önizleme**
-- Seçili profilin izole önizlemesi.
-- Gerekli olduğunda profilin farklı arka plan/zemin kontrastlarında incelenmesi.
-- Ölçek ve görünüm kontrolleri.
-- Parametre değişikliklerinin önizlemeye kontrollü biçimde yansıması.
-- Aynı seed ile aynı çıktının korunması; farklı seed ile desteklenen görsel varyasyonun gözlemlenmesi.
+**C. Yerleşim ve harita verisi için temel sözleşmeler**
+- Bir içerik tanımının harita üzerindeki bir veya daha fazla örneğe nasıl referans vereceğini tasarlama.
+- Yerleşim kimliği, içerik referansı, konum, yön/ölçek gibi gerekli dönüşüm alanlarını mevcut dünya koordinat mimarisine göre değerlendirme.
+- Harita belgesi ile içerik kütüphanesi arasındaki ilişkiyi tanımlama.
+- Gelecekte harita üzerine nesne/yapı ekleme, taşıma, düzenleme ve kaldırma işlemlerinin veri düzeyinde desteklenebilmesi için gerekli temel işlemleri belirleme.
+- Bu aşamada tam harita editörü veya harita çizim arayüzü geliştirmeme.
 
-**D. Parametre ve bileşen düzenleme**
-- Profilin izin verdiği boyut, şekil, yoğunluk, dağılım ve benzeri parametrelerin düzenlenmesi.
-- Bileşenli profillerde desteklenen alt bileşenlerin ayrı ayrı seçilip düzenlenmesi. Örneğin ağaçta gövde, dal ve yaprak kümeleri.
-- Parametre sınırlarının ve varsayılan değerlerin kullanıcıya anlaşılır biçimde sunulması.
-- Bir parametre değişikliğinin yalnızca ilgili görsel çıktıyı etkilemesi.
+**D. Serileştirme, sürümleme ve doğrulama**
+- İnsan tarafından okunabilir ve sürüm kontrolüne uygun veri biçimini belirleme.
+- İçerik kimliklerinin kararlılığını ve referans bütünlüğünü koruma.
+- Şema/sürüm doğrulaması, tür ve aralık kontrolleri, eksik alan ve bilinmeyen alan davranışlarını belirleme.
+- Bozuk veya uyumsuz içeriğin güvenli biçimde reddedilmesi.
+- Kaydetme/yükleme işlemlerinin mevcut geçerli veriyi yarım yazım veya bozuk dosya nedeniyle kaybetmemesini sağlama.
+- İleri/geri sürüm geçişi ihtiyacını ve destek sınırlarını belgeleme.
 
-**E. Palet ve renk düzenleme**
-- Profilin renk paletinin görüntülenmesi.
-- Desteklenen renk alanlarının değiştirilmesi.
-- Renk rampalarının ve ton geçişlerinin önizlenmesi.
-- Geçersiz renk değerlerinin kayda veya çizime ulaşmadan reddedilmesi.
+**E. Runtime adaptasyonu**
+- Doğrulanmış içerik verisini mevcut procedural profile üreticilerine bağlayan ince adaptör/registry katmanını oluşturma.
+- Mevcut beş profilin runtime görsellerini ve cache davranışını koruma.
+- İçerik kütüphanesi ile renderer arasında editör bağımlılığı oluşturmama.
+- Görsel profil verisi ile fizik/collider verisini ayrı tutma.
 
-**F. Varyasyon ve karşılaştırma**
-- Seed değerinin görüntülenmesi ve düzenlenmesi.
-- Kontrollü varyasyon üretimi.
-- Önceki görünüm ile güncel önizlemenin karşılaştırılması.
-- Profilin varsayılan parametre ve paletine geri dönme.
-- Düzenleme geçmişi/geri al-yinele davranışının kullanıcı deneyimi açısından değerlendirilmesi ve uygun görülürse kapsama alınması.
+**F. Gelecekteki editör için mimari hazırlık**
+- İçerik çekirdeğinin GUI veya masaüstü uygulama çatısına bağımlı olmamasını sağlama.
+- Gelecekte ayrı bir masaüstü uygulamasının aynı içerik API'lerini kullanabilmesi için paket sınırlarını belirleme.
+- Harita editörü, nesne/yapı çizim araçları, yerleştirme ve düzenleme iş akışları için teknik ön koşulları raporlama.
+- ELDORIA CONTENT EDITOR'ün ayrı bir ürün/aşama olarak planlanması gerektiğini belgelemek.
 
-**G. İçerik kaydetme ve yükleme**
-- Kullanıcı düzenlemelerinin sürüm bilgisi taşıyan, metin tabanlı ve doğrulanabilir bir içerik biçiminde saklanması.
-- Kaydedilmiş içeriğin yeniden açılabilmesi.
-- Dosya adı, içerik kimliği ve profil türü gibi gerekli tanımlayıcıların korunması.
-- Bozuk, eksik, uyumsuz veya desteklenmeyen içerik dosyaları için anlaşılır hata mesajları.
-- Kaydedilmemiş değişiklikler varken çıkış veya başka profile geçişte kullanıcıyı uyarma.
-- Runtime'ın yalnızca doğrulamadan geçmiş içerikleri kullanması.
+### 3.2 Bu aşamanın dışında kalanlar
 
-### 3.2 Aşama 14'ün dışında kalanlar
-
-- Genel amaçlı harita/dünya editörü veya hex hücre düzenleme aracı.
+- ELDORIA CONTENT EDITOR masaüstü uygulamasının kendisi.
+- Görsel profil tarayıcısı, parametre panelleri, renk seçiciler veya interaktif önizleme editörü.
+- Harita oluşturma/düzenleme ekranı veya hex hücre boyama aracı.
+- Harita üzerinde fareyle yapı/nesne yerleştirme, sürükleme, taşıma, çizme veya silme arayüzü.
+- Bina/duvar/kapı gibi bütün yapı ailelerinin görsel tasarımını tamamlamak.
+- Piksel tabanlı raster çizim programı, animasyon editörü veya 3B modelleme.
+- Collider/fizik düzenleme editörü.
 - Oyun içi görev, diyalog, envanter, ekonomi veya savaş editörü.
-- Piksel piksel raster boyama uygulaması veya tam kapsamlı 2B sanat paketi.
-- Animasyon zaman çizelgesi, iskelet animasyonu veya parçacık editörü.
-- 3B modelleme, rigging veya Godot geçişi.
-- NPC AI, yoldaş hareketi, pathfinding veya simülasyon davranış düzenleyicisi.
-- Ana oyunun runtime'ına doğrudan entegrasyon veya `demo_eldoria` dalına aktarım.
-- Kullanıcı tarafından yüklenen harici görsel dosyalarını otomatik olarak prosedürel profile dönüştürme.
+- NPC AI, yoldaş hareketi, pathfinding veya simülasyon davranış editörü.
+- Ana oyun runtime'ına entegrasyon veya `demo_eldoria` dalına aktarım.
 - Eklenti mağazası, çevrimiçi paylaşım veya çok kullanıcılı düzenleme.
 
-Kapsam genişletme ihtiyacı ortaya çıkarsa ayrıca gerekçelendirilip kullanıcı onayına sunulur.
+Bu maddeler gelecekte ELDORIA CONTENT EDITOR ve ilgili dünya üretim aşamalarında ayrıca planlanacaktır.
 
-## 4. Temel tasarım ilkeleri
+## 4. Temel mimari ilkeler
 
-1. **Mevcut üretim altyapısını kullan:** Yeni bir çizim motoru oluşturma; Aşama 13 profil ve bileşen API'lerini temel al.
-2. **Önizleme ile runtime ayrımı:** Editörün geçici düzenleme durumu oyun dünyasının authoritative state'ini değiştirmesin.
-3. **Veri odaklı içerik:** Kullanıcı çalışmaları çalıştırılabilir Python kodu olarak değil, şeması doğrulanabilen veri olarak saklansın.
-4. **Görsel/fiziksel ayrım:** Palet, geometri veya görsel parametre düzenlemesi collider'ı otomatik değiştirmesin. Fizik tanımı ayrı ve açık bir iş akışına sahip olsun; Aşama 14'te collider düzenleme ancak ayrıca onaylanırsa ele alınsın.
-5. **Deterministik sonuç:** Seed ve parametreler kaydedildiğinde aynı profil tekrar üretilebilsin.
-6. **Güvenli dosya işlemleri:** Yükleme sırasında şema, veri türü, aralık ve sürüm doğrulaması yapılsın; hatalı dosya mevcut çalışmanın üzerine yazılmasın.
-7. **Geriye uyum:** Ağaç, kaya, çalı, çim ve çiçek profillerinin mevcut runtime çıktıları, editör geliştirmesi nedeniyle bozulmasın.
-8. **Bağımlılık disiplini:** Yeni GUI kütüphanesi eklemek zorunlu varsayılmasın. Mevcut Pygame yaklaşımı ile olası UI kütüphaneleri; bakım, lisans, paket boyutu, bellek, etkileşim kalitesi ve mevcut event loop uyumu bakımından teknik denetimde karşılaştırılsın.
-9. **Küçük ekran ve düşük donanım:** Editör, laboratuvarın hedeflenen mütevazı donanım koşullarında kullanılabilir ve kararlı olmalı.
-10. **Tek başlatıcı:** `python -m hex_world_lab` korunmalı; aşamaya özel ikinci launcher oluşturulmamalı.
+1. **Önce veri, sonra arayüz:** Editör arayüzü geliştirmeden önce editörün kullanacağı içerik sözleşmeleri kurulmalıdır.
+2. **İçerik tanımı ve yerleşim ayrımı:** Bir ağacın/yapının tanımı ile haritadaki belirli ağaç/yapı örneği aynı veri nesnesi olmamalıdır.
+3. **Editör bağımsız çekirdek:** İçerik modeli, doğrulama ve serileştirme GUI/Pygame penceresine bağımlı olmamalıdır.
+4. **Runtime güvenliği:** Runtime yalnızca doğrulanmış içerik verisini kabul etmelidir.
+5. **Mevcut üretim altyapısını kullan:** Aşama 13'ün geometri, bileşen, palet, varyasyon, profil ve cache sistemleri temel alınmalıdır.
+6. **Görsel/fiziksel ayrım:** Görsel içerik verisi collider veya fizik davranışını örtük biçimde değiştirmemelidir.
+7. **Deterministik sonuç:** Seed ve parametreler aynı kaldığında üretim sonucu tekrarlanabilir olmalıdır.
+8. **Veri güvenliği:** Hatalı dosya yükleme veya kaydetme mevcut geçerli içeriği bozmamalıdır.
+9. **Genişletilebilirlik:** Gelecekte yeni nesne ve yapı türleri, mevcut içerik dosyalarını kırmadan eklenebilmelidir.
+10. **Tek laboratuvar başlatıcısı:** `python -m hex_world_lab` korunmalıdır; Aşama 14 için editör launcher'ı oluşturulmayacaktır.
 
 ## 5. Önerilen iş paketleri
 
-Bu bölüm genel aşama sırasını tanımlar. Kesin sınıflar, dosya listesi, API'ler ve veri şeması teknik planda belirlenecektir.
-
 ### 14.1 — Depo ve mimari denetimi
-- Aşama 13 profil, bileşen, palet, varyasyon ve cache API'lerini inceleme.
-- Mevcut laboratuvar giriş noktası, event loop, renderer ve pencere davranışını inceleme.
-- Mevcut dosya/JSON şema ve persistence örüntülerini inceleme.
-- GUI kütüphanesi seçeneklerini, bağımlılık ve lisans etkilerini karşılaştırma.
-- Mevcut test, CI, Ruff ve artifact üretim düzenini inceleme.
+- Procedural profil API'leri, çevresel içerik tanımları, yerleşim ve collider ayrımını denetleme.
+- Mevcut harita/dünya koordinatları ile map lifecycle sözleşmelerini inceleme.
+- Serileştirme ve dosya yönetimi örüntülerini inceleme.
+- Gelecekteki masaüstü uygulama için bağımlılık ve paket sınırlarını inceleme.
 - Bulguları denetim raporuna kaydetme.
 
-### 14.2 — Editör deneyimi ve içerik sözleşmesi
-- Kullanıcı akışlarını ve ekran/panel sorumluluklarını tanımlama.
-- Profil, düzenleme oturumu, geçici önizleme ve kaydedilmiş içerik kavramlarını ayırma.
-- Parametrelerin kullanıcıya sunulma ve doğrulanma ilkelerini belirleme.
-- İçerik dosyası biçimi ve sürümleme gereksinimlerini belirleme.
-- UI teknolojisi ve bağımlılık kararını teknik plana girdi olacak şekilde netleştirme.
+### 14.2 — İçerik modeli ve veri sözleşmeleri
+- İçerik tanımı, içerik örneği/yerleşimi ve harita belgesi kavramlarını ayırma.
+- Kimlik, tür, metadata, parametre, bileşen, palet ve seed alanlarını tanımlama.
+- Mevcut beş procedural profilin hangi alanlarının veriyle ifade edilebileceğini belirleme.
+- Gelecekteki yapı ve yerleştirilebilir nesne tanımlarının genişletilme yolunu belirleme.
+- Şema ve uyumluluk ilkelerini belgeleme.
 
-### 14.3 — Editör kabuğu ve önizleme alanı
-- Editör çalışma alanı, profil seçimi ve önizleme alanını oluşturma.
-- Fare/klavye etkileşimlerini ve pencere boyutu değişimini ele alma.
-- Önizlemeyi mevcut procedural profile üreticileriyle bağlama.
-- Runtime dünya/simülasyon durumundan izolasyonu doğrulama.
+### 14.3 — İçerik serileştirme ve sürümleme
+- Onaylanan veri biçimini ve şema sürümünü uygulama.
+- İçerik tanımlarını güvenli biçimde kaydetme/yükleme.
+- Kararlı kimlik ve referans bütünlüğü kontrollerini ekleme.
+- Bozuk, eksik, bilinmeyen ve uyumsuz veri senaryolarını test etme.
 
-### 14.4 — Profil ve bileşen düzenleme
-- Profil tarayıcısını ve profil seçimini uygulama.
-- Her profil için desteklenen parametre kontrollerini sunma.
-- Bileşenli profillerde ilgili alt bileşenleri seçilebilir hale getirme.
-- Parametre değişikliklerini önizlemeye yansıtma.
+### 14.4 — Doğrulama ve içerik registry/kütüphanesi
+- İçerik türü ve profil parametreleri için merkezi doğrulama kuralları.
+- İçerik tanımlarını kimlikleriyle bulup çözümleyen registry/kütüphane katmanı.
+- Hatalı verinin renderer'a ulaşmasını engelleyen güvenli sınır.
+- İçerik tanımı ile harita yerleşimi referanslarının doğrulanması.
 
-### 14.5 — Palet, seed ve görsel varyasyon araçları
-- Renk paleti düzenleme ve önizleme.
-- Seed ve deterministik varyasyon kontrolleri.
-- Önceki/güncel görünüm karşılaştırması ve varsayılana dönme.
-- Düzenleme geçmişi/geri al-yinele kapsamını teknik plan kararına göre uygulama.
+### 14.5 — Runtime adaptörü ve mevcut profil uyumluluğu
+- Doğrulanmış veriyi Aşama 13 procedural profile API'lerine bağlama.
+- Beş mevcut profilin veri tabanlı tanımlarını ve varsayılanlarını uyarlama.
+- Mevcut görsel sonuç, deterministik varyasyon ve cache davranışını koruma.
+- Collider/fizik verisinin ayrı kalmasını doğrulama.
 
-### 14.6 — İçerik kaydetme, yükleme ve doğrulama
-- Sürümlü içerik dosyası biçimini uygulama.
-- Kaydetme/yükleme ve dosya doğrulama akışlarını ekleme.
-- Bozuk/uyumsuz dosya ve kaydedilmemiş değişiklik senaryolarını ele alma.
-- Yüklenen içeriğin runtime profil üretimine güvenli adaptasyonunu sağlama.
+### 14.6 — Harita ve yerleşim altyapısı hazırlığı
+- Denetim ve 14.2 sözleşmelerine göre harita belgesi ile yerleşim kayıtlarının temel veri yapısını uygulama.
+- İçerik referansı, yerleşim kimliği ve dünya/harita koordinatı ilişkisini doğrulama.
+- Yerleşim ekleme, güncelleme ve kaldırma işlemlerinin veri/API düzeyindeki kurallarını belirleme.
+- Henüz görsel harita editörü, fareyle yerleştirme veya çizim arayüzü geliştirmeme.
 
-### 14.7 — Bütünleşme, kullanılabilirlik ve regresyon iyileştirmeleri
-- Editörün tek laboratuvar başlatıcısı içindeki akışını tamamlamak.
-- Profil üretimi/cache ve önizleme yenileme davranışını doğrulamak.
-- Klavye/fare etkileşimi, hata mesajları ve pencere düzenini iyileştirmek.
-- Mevcut dünya demosu ve Aşama 12–13 görsel çıktıları üzerinde regresyon kontrolü yapmak.
+### 14.7 — Bütünleşme, regresyon ve editör hazırlık raporu
+- İçerik çekirdeği, registry, doğrulama, serileştirme ve runtime adaptörünü bütünleştirme.
+- Mevcut dünya demosu ve beş procedural profil üzerinde regresyon testleri.
+- Gelecekteki ELDORIA CONTENT EDITOR için tamamlanan ön koşulları ve açık kalan işleri raporlama.
+- Teknik borç ve sonraki aşama önerilerini belgeleme.
 
 ### 14.8 — Bütünleşik doğrulama ve kabul
-- Tam Pytest paketi ve yeni editör testleri.
-- Ruff lint/format ve laboratuvar/Core Quality GitHub Actions.
-- İçerik dosyası doğrulama, bozuk dosya, sürüm uyumsuzluğu ve deterministik tekrar testleri.
-- Profil üretimi, önizleme yenileme ve cache davranışı benchmarkları.
-- Editör ekranları ve düzenleme akışları için görsel kanıt artifact'leri.
-- Kullanıcı masaüstü görsel/işlevsel kabul kontrol listesi.
-- Resmî kapanış raporu ve Master Plan güncellemesi.
+- Tam Pytest paketi ve yeni içerik/harita veri testleri.
+- Ruff lint/format ve Laboratuvar/Core Quality GitHub Actions.
+- Serileştirme round-trip, sürüm, bozuk dosya, referans bütünlüğü ve deterministik üretim testleri.
+- Gerekli performans/bellek benchmarkları.
+- Runtime görsel regresyon kanıtları ve artifact'ler.
+- Kullanıcı masaüstü uygulama testi yerine, laboratuvarın mevcut demo ve içerik çıktılarının kabul kontrolü.
+- Kapanış raporu ve Master Plan güncellemesi.
 
 ## 6. Kalite ve kabul hedefleri
 
 Aşama 14 ancak aşağıdaki koşulların tamamı sağlandığında kapatılabilir:
 
-- Beş mevcut profil editörde seçilip önizlenebilir.
-- Desteklenen parametreler kod değişikliği olmadan düzenlenebilir.
-- Bileşenli profilin desteklenen alt parçaları ayrı düzenlenebilir.
-- Palet ve seed değişiklikleri anlaşılır ve tekrarlanabilir sonuç verir.
-- Aynı içerik verisi aynı görsel sonucu üretir.
-- Kaydedilen içerik kapatılıp yeniden açıldığında kayıpsız geri yüklenir.
-- Geçersiz/bozuk içerik reddedilir ve mevcut geçerli çalışma korunur.
-- Görsel düzenlemeler collider veya dünya simülasyonu state'ini gizlice değiştirmez.
-- Mevcut beş profilin kabul edilmiş runtime görsellerinde regresyon oluşmaz.
-- Pencere yeniden boyutlandırma, temel fare/klavye kullanımı ve kaydedilmemiş değişiklik akışları çalışır.
-- Pytest, Ruff, laboratuvar CI ve Core Quality kontrolleri başarılıdır.
-- Benchmark ve görsel kanıt artifact'leri üretilmiştir.
-- Kullanıcı masaüstü kabulünü tamamlamıştır.
+- Beş mevcut procedural profilin tanımları kararlı ve doğrulanabilir veri olarak temsil edilebilir.
+- İçerik tanımı ile harita üzerindeki yerleşim örneği birbirinden ayrılmıştır.
+- İçerik kimlikleri, referanslar ve şema sürümleri doğrulanır.
+- İçerik verisi kaydedilip yeniden yüklendiğinde kayıpsız round-trip sağlar.
+- Bozuk/uyumsuz içerik güvenli biçimde reddedilir; geçerli veri korunur.
+- Registry yalnızca doğrulanmış içerik sunar.
+- Runtime adaptörü mevcut beş profilin görsel ve deterministik davranışını korur.
+- Görsel içerik verisi collider/fizik state'ini örtük biçimde değiştirmez.
+- Harita/yerleşim veri sözleşmeleri gelecekte içerik ekleme, güncelleme ve kaldırma işlemlerini destekleyecek biçimde belgelenmiş ve test edilmiştir.
+- İçerik çekirdeği GUI veya masaüstü uygulama bağımlılığı taşımaz.
+- Pytest, Ruff, Laboratuvar CI ve Core Quality kontrolleri başarılıdır.
+- Benchmark ve regresyon kanıtları üretilmiştir.
 - Kapanış raporu değişen dosyaları, commit SHA'lerini, test/CI kanıtlarını ve bilinen sınırlamaları kaydeder.
 
 ## 7. Kullanıcı kabul yaklaşımı
 
-Kullanıcıdan teknik kod incelemesi değil, editörün gerçek kullanımını doğrulaması istenir. Kabul kontrol listesi teknik plan sonrasında hazırlanacaktır. Genel olarak kullanıcı:
+Bu aşamada kullanıcıdan bir editör arayüzünü test etmesi istenmeyecektir; çünkü böyle bir arayüz geliştirilmeyecektir. Kullanıcı kabulü mevcut laboratuvar demosunun açılması, beş procedural profilin görsel olarak bozulmadığının kontrolü ve içerik altyapısının mevcut dünya davranışını etkilemediğinin doğrulanması üzerine kurulacaktır.
 
-- Editörü tek laboratuvar başlatıcısından açar.
-- Beş profil arasında geçiş yapar.
-- Birkaç parametreyi ve palet rengini değiştirerek önizlemeyi inceler.
-- Seed değiştirerek varyasyon farkını ve aynı seed ile tekrarlanabilirliği kontrol eder.
-- Çalışmayı kaydeder, editörü kapatıp tekrar açar ve dosyayı yükler.
-- Hatalı dosya/parametre uyarılarını ve kaydedilmemiş değişiklik korumasını dener.
-- Pencere boyutu, fare/klavye etkileşimi ve genel kararlılığı kontrol eder.
-
-Kesin adımlar, ekran görüntüsü beklentileri ve hata raporlama yöntemi teknik plan onayından sonra hazırlanacak manuel kabul kontrol listesinde yer alır.
+Gelecekte ELDORIA CONTENT EDITOR geliştirildiğinde ayrı masaüstü kabul süreci hazırlanacaktır. Bu süreç harita açma/kaydetme, içerik yerleştirme, çizme, düzenleme, taşıma ve kaldırma gibi gerçek editör iş akışlarını kapsayacaktır.
 
 ## 8. Dal, güvenlik ve çalışma yöntemi
 
@@ -209,13 +198,13 @@ Kesin adımlar, ekran görüntüsü beklentileri ve hata raporlama yöntemi tekn
 
 ## 9. Onay kapıları ve sıradaki adım
 
-1. **Genel plan onayı:** Kullanıcı bu belgeyi ve kapsam sınırlarını inceler.
-2. **Ayrıntılı denetim:** Genel plan onayından sonra 14.1 denetimi tamamlanır; gerçek depo, event loop, profil API'leri, veri saklama ve UI bağımlılıkları doğrulanır.
-3. **Teknik plan:** Denetim bulgularına göre modüller, API'ler, veri şeması, dosya değişiklik listesi, test matrisi, benchmark ve manuel kabul adımları hazırlanır.
+1. **Genel plan onayı:** Kullanıcı bu güncellenmiş belgeyi ve kapsam sınırlarını inceler.
+2. **Ayrıntılı denetim:** Genel plan onayından sonra 14.1 denetimi tamamlanır.
+3. **Teknik plan:** Gerçek depo bulgularına göre modüller, API'ler, veri şemaları, dosya değişiklik listesi, test matrisi ve kabul adımları hazırlanır.
 4. **Teknik plan onayı:** Kullanıcı teknik planı ayrıca onaylar.
 5. **Uygulama:** Yalnızca onaylanmış iş paketleri uygulanır.
-6. **Ara ve bütünleşik doğrulama:** Pytest, Ruff, GitHub Actions, benchmark ve görsel artifact kontrolleri tamamlanır.
-7. **Manuel kabul:** Kullanıcı masaüstünde editörün gerçek kullanımını doğrular.
+6. **Otomatik doğrulama:** Pytest, Ruff, GitHub Actions ve benchmarklar tamamlanır.
+7. **Kullanıcı kabulü:** Mevcut demo ve görsel regresyon kontrolleri yapılır.
 8. **Kapanış:** Rapor hazırlanır ve Master Plan güncellenir.
 
 **Bu belge yalnızca Aşama 14 Genel Planı'dır. Onay verilmeden teknik plan veya kod uygulaması başlatılmaz.**
