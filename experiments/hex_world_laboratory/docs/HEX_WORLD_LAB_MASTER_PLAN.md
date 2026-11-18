@@ -5,7 +5,7 @@
 > **Depo:** `trippes/RPG_KAYNAK_YONETIMI`  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Hedef entegrasyon dalı:** `demo_eldoria`  
-> **Durum:** AŞAMA 0–10 TAMAMLANDI VE KABUL EDİLDİ — AŞAMA 11 PLANLAMASI İÇİN ONAY BEKLENİYOR  
+> **Durum:** AŞAMA 0–10 TAMAMLANDI VE KABUL EDİLDİ — AŞAMA 11 TEKNİK PLAN ONAYI BEKLİYOR
 > **Belge sürümü:** 2.8
 
 ---
@@ -344,7 +344,7 @@ Kabul koşulları:
 
 ### Aşama 7 — Render ve görsel doğrulama
 
-**Durum:** TAMAMLANDI VE KABUL EDİLDİ — 7.1–7.8 uygulaması, 703/703 otomatik test, Linux/Windows CI, benchmark ve kullanıcı masaüstü görsel kabulü 17 Kasım 2026 tarihinde tamamlandı.
+> **Durum:** AŞAMA 0–10 TAMAMLANDI VE KABUL EDİLDİ — AŞAMA 11 TEKNİK PLAN ONAYI BEKLİYOR
 
 **Plan belgeleri:** [Genel Plan](PHASE-07-GENERAL-PLAN.md) · [Teknik Plan](PHASE-07-TECHNICAL-PLAN.md) · [Manuel Görsel Kabul](PHASE-07-MANUAL-ACCEPTANCE-CHECKLIST.md)
 
