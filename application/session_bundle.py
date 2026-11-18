@@ -22,6 +22,7 @@ from economy import Economy
 from .social_runtime import SocialRuntime
 from .combat_runtime import CombatRuntime
 from .world_object_placement import WorldObjectPlacementRegistry
+from .hex_world_runtime import HexWorldRuntime
 
 
 @dataclass(frozen=True)
@@ -56,6 +57,7 @@ remain mutable domain objects by design; this is not deep immutability.
     resource_definitions: Mapping[str, ResourceDefinition] | None = None
     containers: ContainerManager | None = None
     locks: LockManager | None = None
+    hex_world_runtime: HexWorldRuntime | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.session, GameSession):
@@ -98,6 +100,8 @@ remain mutable domain objects by design; this is not deep immutability.
         if not isinstance(self.containers, ContainerManager):
             raise TypeError("containers must be ContainerManager.")
         self.containers.bind_catalogs(self.items, self.resource_definitions)
+        if self.hex_world_runtime is not None and not isinstance(self.hex_world_runtime, HexWorldRuntime):
+            raise TypeError("hex_world_runtime must be HexWorldRuntime or None.")
         if self.locks is None:
             object.__setattr__(self, "locks", LockManager())
         if not isinstance(self.locks, LockManager):
@@ -341,6 +345,7 @@ class SessionHolder:
             or first.combat is second.combat
             or first.quest_graph_progress is second.quest_graph_progress
             or first.world_objects is second.world_objects
+            or first.hex_world_runtime is second.hex_world_runtime
             or first.containers is second.containers
         ):
             return True
