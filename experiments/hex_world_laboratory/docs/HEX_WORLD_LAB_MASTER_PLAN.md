@@ -790,7 +790,11 @@ Bu liste tamamlanmadan laboratuvarın ana oyuna aktarılmaya hazır olduğu söy
 | 9 | Varlıklar, etkileşimler ve yoldaş altyapısı | 9.1–9.9 uygulandı; 741 laboratuvar testi, Linux/Windows Core Quality (2.204'er test), benchmark ve kullanıcı görsel/işlevsel kabulü başarılı; 18 Kasım 2026 tarihinde kapatıldı |
 | 10 | Simülasyon orkestrasyonu ve dünya bütünlüğü | 10.1–10.8 teknik uygulama, 759 laboratuvar testi, Linux/Windows Core Quality (2.222'şer test), benchmark/artifact ve kullanıcı görsel kabulü başarılı; 18 Kasım 2026 tarihinde kapatıldı |
 | 11 | Sağlamlık, regresyon ve performans doğrulaması | 11.1–11.8 teknik, otomatik ve manuel kabul tamamlandı; 774 laboratuvar testi, Linux/Windows Core Quality, stres/benchmark raporları ve kullanıcı masaüstü kabulü başarılı; 18 Kasım 2026 tarihinde kapatıldı |
-| 12 | Çevresel nesne mimarisi ve kodla çizilmiş ağaç/kaya/çalı prototipleri | Kapsam revize edildi; prosedürel görsel uygulama ve yeniden manuel kabul bekleniyor |\n| 13 | Genel prosedürel grafik/çizim altyapısı | Gelecek aşama; ayrıca planlanıp onaylanacak |\n| 14 | Content Editor ve görsel düzenleme araçları | Gelecek aşama; ayrıca planlanıp onaylanacak |\n| 15 | Kontrollü demo entegrasyonu | Önceki aşamalar sonrası ayrıca planlanıp onaylanacak |
+| 12 | Çevresel nesne mimarisi ve kodla çizilmiş ağaç/kaya/çalı prototipleri | Otomatik doğrulama tamamlandı; kullanıcı manuel kabulü bekleniyor |
+| 13 | Genel prosedürel grafik/çizim altyapısı | Gelecek aşama; ayrıca planlanıp onaylanacak |
+| 14 | Content Editor ve görsel düzenleme araçları | Gelecek aşama; ayrıca planlanıp onaylanacak |
+| 15 | Nihai mimari, dokümantasyon ve entegrasyon hazırlığı | Önceki aşamalar sonrası ayrıca planlanıp onaylanacak |
+| 16 | Kontrollü demo entegrasyonu | Ayrı açık kullanıcı onayı gerektirir |
 
 - Çalışma dalı: `experiment/hex-world-laboratory`.
 - Aşama 6 son otomatik test kapısında Laboratuvar CI 681/681 testle başarılıdır.
