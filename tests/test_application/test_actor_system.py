@@ -8,6 +8,7 @@ from application import (
     ActivityState,
     ActorError,
     ActorIdentity,
+    ActorSnapshot,
     GameApplication,
     GameplayService,
     GameplayServiceError,
@@ -79,6 +80,37 @@ class TestActorSystem(unittest.TestCase):
         self.assertEqual(actor.inventory_id, "inventory_hero")
         self.assertEqual(actor.activity_id, "activity_gather_01")
         self.assertEqual(registry.get("hero").location_id, "legacy_forest")
+
+    def test_actor_snapshot_preserves_suspended_legacy_spatial_state(self):
+        actor = WorldActor(
+            "hero", "world_actors", "player", inventory_id="main"
+        )
+        registry = self.application.holder.current.actors
+        registry.add(actor)
+        registry.set_legacy_position(
+            "hero", "legacy_village", Position(4, 6)
+        )
+        registry.suspend_legacy_spatial("hero")
+
+        snapshot = ActorSnapshot.from_runtime(
+            registry,
+            self.application.holder.current.actor_activities,
+            self.application.holder.current.characters,
+        )
+        restored_snapshot = ActorSnapshot.from_dict(snapshot.to_dict())
+        restored_registry, _ = restored_snapshot.restore(
+            self.application.holder.current.session.worlds,
+            self.application.holder.current.production_jobs,
+            self.application.holder.current.resource_nodes,
+            self.application.holder.current.facilities,
+            self.application.holder.current.inventories,
+            self.application.holder.current.recipes,
+            self.application.holder.current.characters,
+        )
+
+        restored = restored_registry.get("hero")
+        self.assertEqual(restored.location_id, "legacy_village")
+        self.assertEqual(restored.position, Position(4, 6))
 
     def test_hex_mode_hides_and_locks_legacy_square_spatial_state(self):
         from core.domain.spatial import Position
