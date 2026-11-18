@@ -55,6 +55,7 @@ def make_library():
 
 
 from hex_world_lab.content.map_document import MapContentDocument
+from hex_world_lab.rendering.procedural import build_builtin_content_library
 from hex_world_lab.geometry import HexLayout, HexOrientation, WorldPoint
 from hex_world_lab.world import HexMapDefinition, MapId, WorldId
 
@@ -68,6 +69,14 @@ def make_map():
         {},
     )
 
+
+def test_builtin_content_library_exposes_all_five_stable_profile_ids():
+    library = build_builtin_content_library(seed=42)
+    assert {item.content_id for item in library.definitions} == {
+        "environment.tree", "environment.rock", "environment.bush",
+        "environment.grass", "environment.flower",
+    }
+    assert all(item.collider is None for item in library.definitions)
 
 def test_library_resolves_stable_ids_and_rejects_duplicates():
     library = make_library()
