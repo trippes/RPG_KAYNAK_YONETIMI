@@ -2,7 +2,6 @@
 import hashlib
 import random
 
-
 Seed = int | str
 
 
