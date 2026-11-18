@@ -1,7 +1,7 @@
 # Content Library JSON Schema v1
 
 **Kind:** `eldoria_content_library`  
-**Version:** `schema_version: 1`
+**Version:** `schema_version: 1`  \n**Machine-readable schema:** [content-library.v1.schema.json](../../schemas/content-library.v1.schema.json)
 
 The document is UTF-8 JSON with deterministic key ordering and a final newline. Duplicate object keys, NaN/Infinity, unknown fields, unsupported versions, duplicate content/layer/element IDs, invalid palette references and malformed geometry are rejected.
 
