@@ -69,8 +69,15 @@ class MainScreen:
         actors = self.service.state().actors
         if not actors:
             return None
-        world_map = self.service.application.holder.current.movement.map_for(actors[0].world_id)
-        return world_map.get(actors[0].location_id) if world_map else None
+        actor = actors[0]
+        spatial = self._actor_spatial(actor)
+        if spatial is None:
+            return None
+        world_map = self.service.application.holder.current.movement.map_for(actor.world_id)
+        return world_map.get(spatial.location_id) if world_map else None
+
+    def _actor_spatial(self, actor):
+        return self.service.legacy_actor_spatial_state(actor.actor_id)
 
     def _map_definition(self, location=None):
         location = location or self._location()
@@ -332,7 +339,11 @@ class MainScreen:
         if not actors:
             return
         actor = actors[0]
-        start = self._position(actor.position)
+        spatial = self._actor_spatial(actor)
+        if spatial is None:
+            self.message = "Kare harita konumu şu anda etkin değil."
+            return
+        start = self._position(spatial.position)
         path = self._path_to(start, target)
         if not path:
             self.message = "Bu tile'a güvenli bir yol bulunamadı."
@@ -364,7 +375,11 @@ class MainScreen:
         if not actors:
             return
         actor = actors[0]
-        x, y = self._position(actor.position)
+        spatial = self._actor_spatial(actor)
+        if spatial is None:
+            self.message = "Kare harita konumu şu anda etkin değil."
+            return
+        x, y = self._position(spatial.position)
         next_x, next_y = x + dx, y + dy
         if not (0 <= next_x < self._map_width() and 0 <= next_y < self._map_height()):
             if self._cross_boundary(actor, dx, dy):
@@ -401,7 +416,11 @@ class MainScreen:
         if direction is None:
             return False
 
-        current_gate = self._position(actor.position)
+        spatial = self._actor_spatial(actor)
+        if spatial is None:
+            self.message = "Kare harita konumu şu anda etkin değil."
+            return True
+        current_gate = self._position(spatial.position)
         current_definition = self._map_definition()
         if current_definition is None:
             if not self.message.startswith("Harita paketi yüklenemedi:") and not self.message.startswith("Aktif harita konumu"):
