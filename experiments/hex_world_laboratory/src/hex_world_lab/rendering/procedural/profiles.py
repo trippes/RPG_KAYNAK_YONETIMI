@@ -1,20 +1,18 @@
-"""Deterministic builders and visual metadata for environmental object profiles."""
+"""Deterministic Surface builders backed by editable vector profile documents."""
 
 from __future__ import annotations
 
-import math
 from dataclasses import dataclass
 from types import MappingProxyType
 from typing import Mapping
 
 import pygame
 
+from .._procedural_environment_legacy import DEFAULT_PALETTE, EnvironmentArtPalette
 from .cache import ProceduralSurfaceCache
-from .canvas import ProceduralCanvas
-from .components import draw_circle, draw_ellipse, draw_polygon, draw_polyline
-from .geometry import Point2D
-from .variation import create_rng, normalize_seed
-
+from .document_profiles import build_profile_document
+from .document_renderer import render_visual_document
+from .variation import normalize_seed
 
 @dataclass(frozen=True, slots=True)
 class ProceduralProfile:
@@ -131,30 +129,19 @@ def build_environment_profile(
     if cache is not None and not isinstance(cache, ProceduralSurfaceCache):
         raise TypeError("cache must be a ProceduralSurfaceCache or None")
 
-    from .._procedural_environment_legacy import (
-        DEFAULT_PALETTE,
-        EnvironmentArtPalette,
-        _bush,
-        _rock,
-        _tree,
-    )
-
     selected_palette = DEFAULT_PALETTE if palette is None else palette
     if not isinstance(selected_palette, EnvironmentArtPalette):
         raise TypeError("palette must be an EnvironmentArtPalette")
 
-    def factory() -> pygame.Surface:
-        if profile_key == "tree":
-            return _tree(selected_palette)
-        if profile_key == "rock":
-            return _rock(selected_palette)
-        if profile_key == "bush":
-            return _bush(selected_palette)
-        if profile_key == "grass":
-            return _build_grass(normalized_seed, supersampling, selected_palette)
-        return _build_flower(normalized_seed, supersampling, selected_palette)
-
     profile_seed = normalized_seed if profile_key in ("grass", "flower") else 0
+
+    def factory() -> pygame.Surface:
+        document = build_profile_document(
+            profile_key, seed=profile_seed, palette=selected_palette
+        )
+        scale = 3 if profile_key in ("tree", "rock", "bush") else supersampling
+        return render_visual_document(document, supersampling=scale)
+
     key = (profile_key, "profile-v1", selected_palette, profile_seed, supersampling)
     return factory() if cache is None else cache.get_or_create(key, factory)
 
