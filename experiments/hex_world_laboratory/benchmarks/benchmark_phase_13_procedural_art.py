@@ -2,9 +2,9 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 import statistics
 import time
+from pathlib import Path
 
 from hex_world_lab.rendering.procedural import (
     PROFILE_DEFINITIONS,
