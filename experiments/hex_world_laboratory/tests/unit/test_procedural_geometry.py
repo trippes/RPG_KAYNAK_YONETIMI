@@ -30,8 +30,9 @@ def test_bounds_can_be_built_from_points_and_rejects_empty_input():
 
 
 def test_transform_scales_then_rotates_then_translates():
-    transform = Transform2D(translate_x=10, translate_y=20, scale_x=2, scale_y=3,
-                            rotation_radians=math.pi / 2)
+    transform = Transform2D(
+        translate_x=10, translate_y=20, scale_x=2, scale_y=3, rotation_radians=math.pi / 2
+    )
     result = transform.apply(Point2D(1, 2))
     assert result.x == pytest.approx(4)
     assert result.y == pytest.approx(22)
