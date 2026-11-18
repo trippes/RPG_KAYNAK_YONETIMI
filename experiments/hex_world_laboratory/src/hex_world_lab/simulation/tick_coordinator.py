@@ -51,10 +51,13 @@ class SimulationTickCoordinator:
     ) -> None:
         if not callable(getattr(movement_system, "step", None)):
             raise TypeError("movement_system must provide step(tick_number, intent)")
-        if not callable(getattr(movement_system, "next_tick_number", None)) and not isinstance(
-            getattr(movement_system, "next_tick_number", None), int
+        first_tick_number = getattr(movement_system, "next_tick_number", None)
+        if (
+            isinstance(first_tick_number, bool)
+            or not isinstance(first_tick_number, int)
+            or first_tick_number < 0
         ):
-            raise TypeError("movement_system must expose next_tick_number")
+            raise TypeError("movement_system must expose a non-negative integer next_tick_number")
         if not callable(input_source):
             raise TypeError("input_source must be callable")
         if not callable(getattr(cell_tracker, "update", None)):
@@ -66,7 +69,7 @@ class SimulationTickCoordinator:
         self._input_source = input_source
         self._cell_tracker = cell_tracker
         self._entity_sync_callback = entity_sync_callback
-        self._next_tick_number = movement_system.next_tick_number
+        self._next_tick_number = first_tick_number
         self._pending: _PendingTick | None = None
         self._last_completed_tick_number: int | None = None
 

@@ -6,12 +6,15 @@ from hex_world_lab.simulation.tick_coordinator import SimulationTickCoordinator
 
 
 class FakeMovementSystem:
-    def __init__(self):
+    def __init__(self, events=None):
         self.next_tick_number = 0
         self.calls = []
+        self.events = events
 
     def step(self, tick_number, intent):
         self.calls.append((tick_number, intent))
+        if self.events is not None:
+            self.events.append(("movement", tick_number))
         state = MovementState(WorldPoint(float(tick_number + 1), 0.0))
         self.next_tick_number += 1
         return state
@@ -47,7 +50,7 @@ def make_coordinator(*, sync=None, cell_tracker=None):
 
 def test_tick_runs_input_movement_cell_and_entity_sync_in_order():
     events = []
-    movement = FakeMovementSystem()
+    movement = FakeMovementSystem(events)
     tracker = FakeCellTracker(events)
     def read_intent():
         events.append(("input", None))
@@ -59,7 +62,7 @@ def test_tick_runs_input_movement_cell_and_entity_sync_in_order():
     result = coordinator.advance_tick(0)
 
     assert result.position == WorldPoint(1.0, 0.0)
-    assert [event[0] for event in events] == ["input", "cell", "entity"]
+    assert [event[0] for event in events] == ["input", "movement", "cell", "entity"]
     assert movement.next_tick_number == 1
     assert coordinator.next_tick_number == 1
     assert coordinator.last_completed_tick_number == 0
