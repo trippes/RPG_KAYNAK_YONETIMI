@@ -5,8 +5,20 @@
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Dayanak:** Kullanıcı tarafından onaylanan `PHASE-12-GENERAL-PLAN.md`  
 > **Durum:** KULLANICI TARAFINDAN ONAYLANDI — PROCEDURAL ÇİZİM YÖNÜNDE REVİZE EDİLDİ  
-> **Uygulama durumu:** 12.1–12.8 otomatik uygulama/doğrulama tamamlandı; manuel görsel kabul bekleniyor  
+> **Uygulama durumu:** Önceki raster prototipin mimari doğrulaması tamamlandı; prosedürel çizim revizyonu ve yeniden doğrulama açık  
 > **Tek laboratuvar başlatıcısı:** `python -m hex_world_lab`
+
+## 18 Kasım 2026 kapsam revizyonu — bağlayıcı karar
+
+Aşama 12, çevresel nesne mimarisini ve bu mimariyi doğrulayan yalnızca üç kod çizimi prototipini (ağaç, kaya, çalı) kapsar. Hazır PNG/JPG/WebP dosyaları bu prototiplerin görsel kaynağı olarak kullanılmayacaktır; yüzeyler Pygame çizim primitifleri ve deterministik geometriyle koddan üretilecektir.
+
+Aşama 12 içinde çizim fonksiyonları, paletler, geometri ve nesne profilleri ayrık/parametrelenebilir tutulur. Ağaçta kök-gövde, dallar, farklı tonlarda yaprak kümeleri, hacim, ışık ve gölge; kayada çok yüzeyli hacim ve ışık-gölge; çalıda kümelenmiş yapraklar ve alt gölge bulunur. Üç nesne aynı sanat yönü ve harita ölçeği kalitesini hedefler. Ground Anchor, Depth Anchor, Visual Bounds, Canopy Bounds ve Collision Geometry çizimden bağımsız kalır. Çizim collider üretmez. Aynı parametreler deterministik sonuç verir.
+
+Aşama 12 dışında: genel amaçlı grafik motoru, serbest biçimli çizim arayüzü, fareyle dal/yaprak düzenleme, içerik kütüphanesi, dosya içe/dışa aktarma aracı, bina/karakter/NPC çizim paketi, animasyon/rig/wind sistemi ve ana oyun entegrasyonu.
+
+Aşama 13, farklı içerik türlerini destekleyen genel prosedürel grafik/çizim altyapısıdır. Aşama 14, bu altyapıyı kullanan Content Editor ve görsel düzenleme araçlarıdır. İki aşama da ayrıca planlanıp onaylanacaktır.
+
+Önceki doğrulama raporundaki tree_test.png kopyası yeni karar kapsamında kabul edilmez; PNG tabanlı sunum geçici/ret edilmiş prototiptir. Önceki test/CI sonuçları yalnızca o commit'teki teknik kod için geçerlidir; prosedürel görsel kabul kanıtı değildir. Aşama 12'nin görsel uygulaması, testleri, benchmarkı, CI ve manuel kabulü yeniden tamamlanmalıdır.
 
 ---
 
@@ -57,7 +69,7 @@ Aynı depo dalında, laboratuvar dışında şu kaynaklar bulunmaktadır:
 - `docs/architecture/40-tree-skeleton-contract.md` ve `43-articulated-tree-sprite-rig.md`: İlgili mimari sözleşmeler.
 - `game_ui/assets/tree_test.png`, `tree_parts_atlas.png` ve `tree_parts_atlas.json`: Ağaç görsel verileri.
 
-Bu kod ve dokümanlar **tasarım referansıdır**. Laboratuvar, `game_ui` Python modüllerini import etmeyecek; ana oyun runtime'ına bağımlı olmayacak ve bu aşamada ana oyun dosyalarını değiştirmeyecektir. Ağaç dallarının rüzgâr animasyonu ve katmanlı rig sistemi bu aşamanın zorunlu kapsamı değildir. İlk prototipte statik, tek sprite ağaç kullanılması önerilir.
+Bu kod ve dokümanlar **tasarım referansıdır**. Laboratuvar, `game_ui` Python modüllerini import etmeyecek; ana oyun runtime'ına bağımlı olmayacak ve bu aşamada ana oyun dosyalarını değiştirmeyecektir. Ağaç dallarının rüzgâr animasyonu ve katmanlı rig sistemi bu aşamanın zorunlu kapsamı değildir. Bu öneri kapsam revizyonuyla geçersizdir: ağaç Pygame çizim primitifleriyle kodla üretilecektir; hazır sprite kullanılmayacaktır.
 
 ### 2.3 Mevcut sınırlamalar
 
@@ -227,9 +239,9 @@ Aşağıdaki liste hedeflenen değişiklik alanıdır; uygulama sırasında depo
 
 ### 4.3 Asset kullanımı
 
-İlk ağaç prototipi için depoda mevcut olan `content/demo_eldoria/assets/tree_test.png` statik görseli veri varlığı olarak değerlendirilecektir. Ana oyunun `game_ui` Python modülleri veya renderer sınıfları import edilmeyecektir.
+tree_test.png yalnızca geçmiş uygulama/karşılaştırma kaydıdır; runtime asset'i olarak yüklenmeyecek veya kopyalanmayacaktır. Ağaç, kaya ve çalı yüzeyleri laboratuvarın kendi prosedürel çizim fonksiyonlarıyla üretilecektir. Ana oyunun game_ui Python modülleri veya renderer sınıfları import edilmeyecektir.
 
-Ağaç atlası ve articulated rig, teknik referans olarak kalır; Aşama 12'nin ilk kabul hedefi için katmanlı animasyon zorunlu değildir. Kaya ve çalı için ilk doğrulama görselleri laboratuvar içinde basit, deterministik Pygame yüzeyleriyle üretilebilir; bu placeholder görseller fizik geometrisinin kaynağı olamaz.
+Ağaç atlası ve articulated rig, teknik referans olarak kalır; Aşama 12'nin ilk kabul hedefi için katmanlı animasyon zorunlu değildir. Kaya ve çalı geçici placeholder seviyesinde bırakılmayacak; üç prototip aynı sanat yönü, ışık/gölge ve hacim kalite ölçütlerini karşılayacaktır.
 
 Asset yolu uygulamada çalışma dizinine körlemesine bağlanmayacak; laboratuvarın tek launcher'ı ve CI çalışma diziniyle uyumlu, açıkça test edilen bir asset-root çözümü kullanılacaktır. Eksik/bozuk zorunlu ağaç görseli sessizce farklı bir asset'e dönüştürülmeyecek; anlaşılır hata üretilecektir.
 
