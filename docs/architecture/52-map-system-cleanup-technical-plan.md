@@ -6,7 +6,7 @@
 | Kaynak dal | `demo_eldoria` |
 | Başlangıç commit'i | `7d53d431d5c3639fd95d273de9043b64483a5125` |
 | Genel plan | [51-map-system-cleanup-general-plan.md](51-map-system-cleanup-general-plan.md) |
-| Durum | Easter egg kararıyla revize edildi — uygulama öncesi onay bekliyor |
+| Durum | Kullanıcı onayı alındı; 16.1 teknik baseline tamamlandı, manuel kabul ve mimari sıralama kararı bekliyor |
 
 ## 1. Teknik karar özeti
 
@@ -40,11 +40,11 @@ Bu envanter, mevcut kare modüllerin tamamının easter egg için gerekli olduğ
 
 ## 2. Başlangıç deposu ve kanıt sınırı
 
-Dal `demo_eldoria` HEAD `7d53d431d5c3639fd95d273de9043b64483a5125` commit'inden çıkarılmıştır. İlk ağaç taramasında 605 repository path kaydı görüldü; bunun içinde 16 map JSON dosyası, iki hex placement JSON ve harita sistemiyle ilişkili çok sayıda test/modül vardır. Dosyaların schema v1/v2 dağılımı, JSON içerikleri okunarak envanter aşamasında kesinleştirilecektir.
+Dal `demo_eldoria` HEAD `7d53d431d5c3639fd95d273de9043b64483a5125` commit'inden çıkarılmıştır. Uygulama başlangıç HEAD'i `1705497305339675df25928c7272eb9b10aba7a2` olarak kaydedilmiştir. GitHub recursive tree yanıtı 607 girdi içerir (`truncated=false`). İçerik paketindeki 16 map JSON'un gerçek schema alanları okunmuştur: 9 adet schema v1 kare harita ve 7 adet schema v2 axial hex harita. İki hex placement JSON'u ve bir hex world JSON'u vardır.
 
-> Not: Dosya adlarından schema türü çıkarılmayacak. Her JSON dosyasının gerçek `schema_version` alanı ve içeriği envanter aşamasında okunup tabloya kaydedilecek. Dosya sayısı da her envanter güncellemesinde yeniden hesaplanacaktır.
+Kesin içerik envanteri, çalışma zamanı bulguları ve CI kanıtı [Aşama 16.1 Baseline Raporu](53-map-cleanup-phase-16-1-baseline.md) içinde tutulur.
 
-Ağaç taraması ve sınırlı kaynak dosya okumaları, plan hazırlığı için kullanılmıştır. Henüz test komutu çalıştırılmadı; bu nedenle başlangıç test sonucu veya görsel kabul iddiası yoktur.
+GitHub Actions Core quality run `44411974271`, bu HEAD'de Linux/Python 3.11 ve Windows/Python 3.12 işlerinde başarılıdır. Bu workflow Pytest, compileall, wheel paketleme/izole yükleme ve application smoke çalıştırır. Workflow'da Ruff adımı yoktur. Yerel Windows görsel testleri henüz kullanıcı tarafından yapılmamıştır.
 
 ## 3. Hedef mimari ve teknik sınırlar
 
@@ -164,14 +164,16 @@ Test hedefleri:
 
 ## 5. Uygulama fazları ve değişiklik kapıları
 
-### 16.1 — Baseline ve characterization (yalnızca okuma + test)
+### 16.1 — Baseline ve characterization (teknik inceleme tamamlandı; manuel kabul bekliyor)
 
-- Başlangıç commit'i ve içerik dosyalarının envanteri kaydedilir.
-- Windows yerel kurulumda mevcut test komutları kullanıcı tarafından çalıştırılır; CI'da Linux/Windows sonuçları alınır.
-- Oynanabilir giriş, aktif paket seçimi, başlangıç altıgen haritası, H tuşu hex geçişi, dünya haritası penceresi ve save/load akışları gözlemlenir.
-- Kare harita modüllerinin çağrı/import grafiği ve mevcut kare harita ekranının kullanım amacı çıkarılır.
-- Kritik davranışlar için eksik characterization/regression testleri eklenir.
-**Kapı:** Baseline test/oynanış durumu belgelenmeden refactor başlamaz.
+- Başlangıç HEAD'i, 16 harita JSON'unun gerçek schema sürümleri, map ID'leri, hex world ve placement içerikleri kaydedildi.
+- CI run `44411974271` Linux ve Windows işlerinde başarılı; test/derleme/paketleme/smoke kapsamı raporda kayıtlıdır.
+- Normal oynanabilir akışın bugün kare dünya üzerinde olduğu; H tuşunun bağımsız ve geçici hex runtime açtığı kod/test üzerinden doğrulandı.
+- `HexWorldView.enter()` oyuncuyu hex başlangıç hücresine yeniden kaydediyor; `leave()` runtime'ı atıyor. Hex konumu ana actor state'ine yazılmıyor ve tekrar girişte korunmuyor.
+- NPC, kaynak, market, kare map transition, save/restore, paketleme ve release verification bağımlılıkları raporlandı.
+- Ayrıntı: [Aşama 16.1 Baseline Raporu](53-map-cleanup-phase-16-1-baseline.md).
+- Yerel Windows `--play`, H geçişi ve save/load görsel kabulü kullanıcı tarafından henüz yapılmadı.
+**Kapı:** Manuel kabul tamamlanmadan 16.1 tamamen kapanmaz. Hex runtime sahipliği çözülmeden kare harita dosyaları kaldırılmaz.
 
 ### 16.2 — Harita verisi sınıflandırması ve tek kare haritanın seçimi
 
@@ -180,7 +182,7 @@ Test hedefleri:
 - Kare harita adaylarından tek korunacak easter egg haritası, bağımlılık ve içerik kanıtıyla seçilir.
 - Kalan kare harita dosyalarının manifest, kod, test, asset, placement ve save referansları raporlanır.
 - Kırık/boşta kalan referanslar raporlanır; otomatik düzeltme yapılmaz.
-**Kapı:** Tek kare harita için keep kararı; diğer kare içerikler için keep/deprecate/remove önerisi ve gerekçesi bulunur. Henüz hiçbir içerik silinmez.
+**Kapı:** Tek kare easter egg haritası, hex gameplay authoritative state'e geçişin kapsamı ve NPC/kaynak/market/quest/save referanslarının yeni sahipliği kararlaştırılmadan kesin seçilemez. Bugünkü dokuz kare harita aktif starter gameplay'in bağımlılığıdır; hex entegrasyonu öncesi sekiz haritayı kaldırmak mevcut oynanışı ve save uyumluluğunu bozar. Bu nedenle bu aşamada yalnızca aday ve migration envanteri hazırlanır; silme/deprecation yapılmaz.
 
 ### 16.3 — Runtime sahipliği ve sahne sınırları
 
@@ -282,6 +284,10 @@ Kullanılmayan kare harita dosyalarının kaldırılması ancak tek harita karar
 7. **Test kapsama boşluğu:** UI'da manuel olarak görülen bazı davranışlar için otomatik characterization test gerekebilir.
 8. **Easter egg erişimi:** Nerede/nasıl bulunacağı ve sahneye giriş/çıkış biçimi ürün tasarımıdır; teknik temizlik bunu varsaymamalıdır.
 
-## 10. Uygulama öncesi karar
+## 10. Uygulama durumu ve sıralama kapısı
 
-Bu belge teknik planı tanımlar; henüz hiçbir harita kodu, JSON içeriği, asset, save schema veya UI akışı değiştirilmemiştir. Teknik plan, kare haritanın tek ve sınırlı easter egg olarak korunması kararına göre revize edilmiştir. Temizlik uygulamasına başlamak için kullanıcının bu ayrıntılı teknik planı ayrıca onaylaması gerekir.
+Kullanıcı teknik planın uygulanmasını onayladı. Aşama 16.1 teknik baseline incelemesi yapıldı ve [53 numaralı rapora](53-map-cleanup-phase-16-1-baseline.md) kaydedildi. Henüz hiçbir harita kodu, JSON içeriği, asset, save schema veya UI akışı değiştirilmedi.
+
+**Kritik sıralama çakışması:** Ürün hedefi ana oyunda hex, tek kare easter egg iken mevcut uygulamanın ana gameplay'i kare sistem üzerinde çalışıyor; hex görünümü ise actor konumunu sahiplenmeyen geçici bir runtime. Bu nedenle "önce kare sistemi tek haritaya indir, sonra hex entegrasyonu yap" sırası güvenli değildir. Hex gameplay entegrasyonu ve içerik/save sahipliği çözülmeden kare haritaları tek dosyaya indirmek mevcut oyunu kırar. Bu bağımlılık kullanıcıyla netleştirilmeden 16.2'de tek harita seçimi ve 16.5'te kare runtime kaldırma adımlarına geçilmeyecektir.
+
+Şu anki sonraki işlem, kullanıcının mevcut `--play` akışını görsel olarak doğrulamasıdır. Ardından mimari sıra için karar verilecek; korunan dallar değiştirilmeyecektir.
