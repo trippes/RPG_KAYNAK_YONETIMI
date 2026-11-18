@@ -1,4 +1,5 @@
 """Small reusable drawing primitives built on the procedural canvas."""
+
 import math
 from collections.abc import Sequence
 
@@ -52,9 +53,7 @@ def draw_polygon(
     if len(points) < 3:
         raise ValueError("a polygon requires at least three points")
     mapped = [canvas.point(point) for point in points]
-    return pygame.draw.polygon(
-        canvas.surface, color, mapped, width * canvas.supersampling
-    )
+    return pygame.draw.polygon(canvas.surface, color, mapped, width * canvas.supersampling)
 
 
 def draw_polyline(
