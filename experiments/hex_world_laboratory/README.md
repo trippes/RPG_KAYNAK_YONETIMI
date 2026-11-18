@@ -81,6 +81,27 @@ Bu tek giriş noktası güncel Entity kabul sahnesini (oyuncu, NPC, kaynak ve NP
 - [Aşama 12 resmî kapanış raporu](reports/PHASE-12-CLOSURE-REPORT.md)
 - Ağaç, kaya ve çalı görselleri `rendering/procedural_environment.py` içindeki deterministik Pygame çizicileriyle runtime sırasında üretilir. Hazır PNG/JPG/WebP dosyası yüklenmez.
 
+
+## Aşama 13 — Genel prosedürel çizim altyapısı
+
+- [Aşama 13 genel planı](docs/PHASE-13-GENERAL-PLAN.md)
+- [Aşama 13 teknik planı](docs/PHASE-13-TECHNICAL-PLAN.md)
+- [Aşama 13 resmî kapanış raporu](reports/PHASE-13-CLOSURE-REPORT.md)
+
+## Aşama 14 — Content data foundation
+
+- [Aşama 14 genel planı](docs/PHASE-14-GENERAL-PLAN.md)
+- [Aşama 14 teknik planı](docs/PHASE-14-TECHNICAL-PLAN.md)
+- [Aşama 14 manuel kabul kontrol listesi](docs/PHASE-14-MANUAL-ACCEPTANCE-CHECKLIST.md)
+- [Aşama 14 uygulama ve otomatik doğrulama raporu](reports/PHASE-14-IMPLEMENTATION-REPORT.md)
+- [Content Data API hazırlık rehberi](docs/CONTENT_DATA_API.md)
+- [Content Library JSON v1 sözleşmesi](docs/content/CONTENT_LIBRARY_JSON_SCHEMA_V1.md)
+- [Map Content JSON v1 sözleşmesi](docs/content/MAP_CONTENT_JSON_SCHEMA_V1.md)
+- [Machine-readable JSON schemas](schemas/)
+- [Phase 14 görsel/benchmark artifact'i](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44396008498/artifacts/14470961143)
+
+Aşama 14, gelecekteki ELDORIA CONTENT EDITOR için Pygame'den bağımsız content model, vector VisualDocument, ContentLibrary, MapContentDocument, strict persistence ve runtime adapter altyapısını sağlar. Masaüstü editör ve map editing UI bu aşamanın kapsamı dışındadır.
+
 ## Test
 
 ```powershell
@@ -100,4 +121,4 @@ Laboratuvarın tam test paketi ve benchmarkları GitHub Actions laboratuvar iş 
 
 ## Güncel durum
 
-**Aşamalar 0–12 tamamlandı ve kullanıcı tarafından kabul edildi.** Aşama 11'in 774 laboratuvar testi, 36.000 tick stres doğrulaması, üç oturumlu performans/bellek ölçümleri ve Linux/Windows CI kontrolleri başarıyla tamamlandı. Aşama 12 prosedürel çizim revizyonu uygulandı ve otomatik doğrulandı: 800 laboratuvar testi, Linux/Windows Core Quality (2.263'er test), üç oturumlu 10/100/1.000 nesne benchmarkı ve beş görsel kanıt başarılı. [Doğrulama raporu](reports/PHASE-12-IMPLEMENTATION-VALIDATION-REPORT.md) ve [CI artifact'i](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44323325450/artifacts/14436541384). Kullanıcı 18 Kasım 2026 tarihinde manuel görsel/işlevsel kabulü verdi. Son ağaç gövdesi ve kaya collider hizalaması F3 görünümünde doğrulanarak kabul edildi; Aşama 12 resmen kapatıldı. [Manuel kabul kontrol listesi](docs/PHASE-12-MANUAL-ACCEPTANCE-CHECKLIST.md).
+**Aşamalar 0–13 tamamlandı ve kullanıcı tarafından kabul edildi. Aşama 14'ün teknik uygulaması ve otomatik doğrulaması tamamlandı; kullanıcı manuel görsel kabulü bekleniyor.** Aşama 11'in 774 laboratuvar testi, 36.000 tick stres doğrulaması, üç oturumlu performans/bellek ölçümleri ve Linux/Windows CI kontrolleri başarıyla tamamlandı. Aşama 12 prosedürel çizim revizyonu uygulandı ve otomatik doğrulandı: 800 laboratuvar testi, Linux/Windows Core Quality (2.263'er test), üç oturumlu 10/100/1.000 nesne benchmarkı ve beş görsel kanıt başarılı. [Doğrulama raporu](reports/PHASE-12-IMPLEMENTATION-VALIDATION-REPORT.md) ve [CI artifact'i](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44323325450/artifacts/14436541384). Kullanıcı 18 Kasım 2026 tarihinde manuel görsel/işlevsel kabulü verdi. Son ağaç gövdesi ve kaya collider hizalaması F3 görünümünde doğrulanarak kabul edildi; Aşama 12 resmen kapatıldı. [Manuel kabul kontrol listesi](docs/PHASE-12-MANUAL-ACCEPTANCE-CHECKLIST.md). Aşama 13 de 859/859 test, Ruff, Linux/Windows CI ve kullanıcı görsel kabulinden sonra kapatıldı. Aşama 14'te 881/881 laboratuvar testi, Linux 2.344 test, Windows Core Quality, Ruff, benchmark ve görsel artifact başarılıdır; resmî kapanış kullanıcı manuel kabulinden sonra yapılacaktır. [Aşama 14 raporu](reports/PHASE-14-IMPLEMENTATION-REPORT.md).
