@@ -108,3 +108,17 @@ Aşama 12 dışında: genel amaçlı grafik motoru, serbest biçimli çizim aray
 Aşama 13, farklı içerik türlerini destekleyen genel prosedürel grafik/çizim altyapısıdır. Aşama 14, bu altyapıyı kullanan Content Editor ve görsel düzenleme araçlarıdır. İki aşama da ayrıca planlanıp onaylanacaktır.
 
 Önceki doğrulama raporundaki tree_test.png kopyası yeni karar kapsamında kabul edilmez; PNG tabanlı sunum geçici/ret edilmiş prototiptir. Önceki test/CI sonuçları yalnızca o commit'teki teknik kod için geçerlidir; prosedürel görsel kabul kanıtı değildir. Aşama 12'nin görsel uygulaması, testleri, benchmarkı, CI ve manuel kabulü yeniden tamamlanmalıdır.
+
+
+## Prosedürel çizim revizyonu — 18 Kasım 2026
+
+Bu raporun yukarıdaki otomatik test sayıları, benchmark ölçümleri, CI kimlikleri ve beş PNG görsel kanıtı, raporda belirtilen eski kod commit'i 386ca0353e22269f91a3fbff5281d1e9604013f8 için tarihsel kayıttır. O sürümde ağaç assets/tree_test.png dosyasından yükleniyordu. Kullanıcı bu görsel yaklaşımını reddetmiş ve Aşama 12 kapsamını kodla çizilmiş çevresel nesneler olarak revize etmiştir.
+
+Revizyon kapsamında:
+- rendering/procedural_environment.py eklendi. Ağaç, kaya ve çalı şeffaf Pygame Surface üzerine çizim primitifleriyle, 3x supersampling ve deterministik katmanlarla oluşturulur.
+- rendering/environment_assets.py raster yükleme yerine prosedürel yüzey üretip renderer'a kaydedecek şekilde değiştirildi.
+- Laboratuvar assets/tree_test.png dosyası silindi; bu dosyaya runtime bağımlılığı kaldırıldı.
+- Prosedürel üretim, deterministik çıktı, alpha alanı ve raster dosya yüklememe davranışları için test eklendi.
+- Aşama 12 benchmarkı artık gerçek prosedürel yüzeyleri kullanacak şekilde güncellendi.
+
+**Bu revizyon henüz otomatik doğrulama veya görsel kabul edilmiş değildir.** Yeni kodun testleri, benchmarkı, Linux/Windows CI ve görsel artifact'leri yeni commit'ler üzerinden yeniden çalıştırılacaktır. Bu rapordaki eski sayılar revize kodun sonucu gibi sunulmayacaktır. Manuel görsel kabul de kullanıcı tarafından ayrıca yapılacaktır.
