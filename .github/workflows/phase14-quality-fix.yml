@@ -1,0 +1,87 @@
+name: Phase 14 temporary quality fixer
+
+on:
+  push:
+    branches:
+      - experiment/hex-world-laboratory
+
+permissions:
+  contents: write
+
+jobs:
+  quality-fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Ruff
+        run: python -m pip install "ruff==0.17.5"
+      - name: Apply Ruff import fixes and formatting
+        working-directory: experiments/hex_world_laboratory
+        run: |
+          python -m ruff check --fix \
+            src/hex_world_lab/content \
+            src/hex_world_lab/rendering/procedural \
+            src/hex_world_lab/rendering/environment_assets.py \
+            tests/unit/test_content_drawing.py \
+            tests/unit/test_content_library_map.py \
+            tests/unit/test_content_persistence.py \
+            tests/unit/test_content_rendering_adapter.py \
+            tests/unit/test_content_architecture_boundary.py \
+            tests/integration/test_content_map_rendering.py \
+            tests/acceptance/test_phase_14_content_documents.py \
+            scripts/render_phase_14_content.py \
+            benchmarks/benchmark_phase_14_content.py
+          python -m ruff format \
+            src/hex_world_lab/content \
+            src/hex_world_lab/rendering/procedural \
+            src/hex_world_lab/rendering/environment_assets.py \
+            tests/unit/test_content_drawing.py \
+            tests/unit/test_content_library_map.py \
+            tests/unit/test_content_persistence.py \
+            tests/unit/test_content_rendering_adapter.py \
+            tests/unit/test_content_architecture_boundary.py \
+            tests/integration/test_content_map_rendering.py \
+            tests/acceptance/test_phase_14_content_documents.py \
+            scripts/render_phase_14_content.py \
+            benchmarks/benchmark_phase_14_content.py
+          python -m ruff check \
+            src/hex_world_lab/content \
+            src/hex_world_lab/rendering/procedural \
+            src/hex_world_lab/rendering/environment_assets.py \
+            tests/unit/test_content_drawing.py \
+            tests/unit/test_content_library_map.py \
+            tests/unit/test_content_persistence.py \
+            tests/unit/test_content_rendering_adapter.py \
+            tests/unit/test_content_architecture_boundary.py \
+            tests/integration/test_content_map_rendering.py \
+            tests/acceptance/test_phase_14_content_documents.py \
+            scripts/render_phase_14_content.py \
+            benchmarks/benchmark_phase_14_content.py
+      - name: Commit quality fixes to the laboratory branch
+        run: |
+          if git diff --quiet; then
+            echo "Ruff quality checks are already clean."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            experiments/hex_world_laboratory/src/hex_world_lab/content \
+            experiments/hex_world_laboratory/src/hex_world_lab/rendering/procedural \
+            experiments/hex_world_laboratory/src/hex_world_lab/rendering/environment_assets.py \
+            experiments/hex_world_laboratory/tests/unit/test_content_drawing.py \
+            experiments/hex_world_laboratory/tests/unit/test_content_library_map.py \
+            experiments/hex_world_laboratory/tests/unit/test_content_persistence.py \
+            experiments/hex_world_laboratory/tests/unit/test_content_rendering_adapter.py \
+            experiments/hex_world_laboratory/tests/unit/test_content_architecture_boundary.py \
+            experiments/hex_world_laboratory/tests/integration/test_content_map_rendering.py \
+            experiments/hex_world_laboratory/tests/acceptance/test_phase_14_content_documents.py \
+            experiments/hex_world_laboratory/scripts/render_phase_14_content.py \
+            experiments/hex_world_laboratory/benchmarks/benchmark_phase_14_content.py
+          git commit -m "chore(hex-lab): apply Ruff quality fixes"
+          git push origin HEAD:${GITHUB_REF_NAME}
