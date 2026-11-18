@@ -25,6 +25,13 @@ class EnvironmentArtPalette:
     bush_light: tuple[int, int, int] = (111, 174, 82)
     ground_shadow: tuple[int, int, int] = (13, 20, 29)
 
+    def __post_init__(self) -> None:
+        for name, color in self.__dict__.items():
+            if not isinstance(color, tuple) or len(color) != 3:
+                raise TypeError(f"{name} must be an RGB tuple")
+            if any(isinstance(channel, bool) or not isinstance(channel, int) or not 0 <= channel <= 255 for channel in color):
+                raise ValueError(f"{name} channels must be integers between 0 and 255")
+
 
 DEFAULT_PALETTE = EnvironmentArtPalette()
 
