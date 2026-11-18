@@ -171,6 +171,8 @@ class MovementDemo:
         tree_center = axial_to_world(AxialCoord(0, 2), self._layout)
         rock_center = axial_to_world(AxialCoord(-2, 2), self._layout)
         bush_center = axial_to_world(AxialCoord(3, -2), self._layout)
+        grass_center = axial_to_world(AxialCoord(-4, 0), self._layout)
+        flower_center = axial_to_world(AxialCoord(2, 3), self._layout)
         wall_center = axial_to_world(AxialCoord(0, -2), self._layout)
         self.house_center = axial_to_world(AxialCoord(-3, 0), self._layout)
         environment_definitions = (
@@ -202,11 +204,19 @@ class MovementDemo:
                 "bush", "bush", (0.5, 0.92), (0.5, 0.84),
                 (0.05, 0.08, 0.9, 0.78), None,
             ),
+            EnvironmentalObjectDefinition(
+                "grass", "grass", (0.5, 0.94), (0.5, 0.84), None, None,
+            ),
+            EnvironmentalObjectDefinition(
+                "flower", "flower", (0.5, 0.94), (0.5, 0.84), None, None,
+            ),
         )
         environment_placements = (
             EnvironmentalObjectPlacement("tree", "tree", WORLD_ID, self.map_id, tree_center),
             EnvironmentalObjectPlacement("rock", "rock", WORLD_ID, self.map_id, rock_center),
             EnvironmentalObjectPlacement("bush", "bush", WORLD_ID, self.map_id, bush_center),
+            EnvironmentalObjectPlacement("grass", "grass", WORLD_ID, self.map_id, grass_center),
+            EnvironmentalObjectPlacement("flower", "flower", WORLD_ID, self.map_id, flower_center),
         )
         self.environment_scene = EnvironmentalObjectScene(
             WORLD_ID, self.map_id, environment_definitions, environment_placements
