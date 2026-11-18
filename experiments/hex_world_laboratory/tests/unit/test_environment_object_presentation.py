@@ -24,7 +24,7 @@ def test_adapters_keep_visual_metadata_and_collider_separate():
     assert obstacles[0].shape == CircleShape(8)
     sprites = environment_sprite_visuals(scene, {"tree": (100, 120), "bush": (40, 30)})
     tree = next(item for item in sprites if item.visual_id == "tree-1")
-    assert tree.depth_anchor_y == 38.0
+    assert abs(tree.depth_anchor_y - 38.0) < 1e-9
     assert tree.normalized_anchor == (0.5, 0.95)
     debug = environment_debug_visuals(scene, {"tree": (100, 120), "bush": (40, 30)})
     tree_debug = next(item for item in debug if item.instance_id == "tree-1")
