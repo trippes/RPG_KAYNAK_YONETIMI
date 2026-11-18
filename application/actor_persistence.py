@@ -8,6 +8,7 @@ from typing import Mapping
 
 from resources import ProductionJobManager, ProductionJobState, Quantity, ResourceUnit
 from core.domain.spatial import Position
+from core.errors import RPGError
 
 from .actor_system import (
     ActivityError,
@@ -23,8 +24,6 @@ from .production_facility import ProductionFacilityRegistry
 
 ACTOR_SCHEMA = "rpg-actors"
 ACTOR_SCHEMA_VERSION = 1
-
-from core.errors import RPGError
 
 class ActorPersistenceError(ValueError, RPGError):
     """Invalid actor/activity snapshot."""
