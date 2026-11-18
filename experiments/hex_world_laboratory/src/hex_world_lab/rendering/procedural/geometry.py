@@ -4,9 +4,9 @@ This module deliberately has no Pygame or world-domain dependency.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
 import math
 from collections.abc import Iterable
+from dataclasses import dataclass
 
 
 def _finite_number(value: float, name: str) -> float:
