@@ -1,7 +1,11 @@
 import pygame
+import pytest
 
 from hex_world_lab.rendering.environment_assets import register_environment_assets
-from hex_world_lab.rendering.procedural_environment import EnvironmentArtPalette, build_environment_surfaces
+from hex_world_lab.rendering.procedural_environment import (
+    EnvironmentArtPalette,
+    build_environment_surfaces,
+)
 from hex_world_lab.rendering.pygame_world_renderer import PygameWorldRenderer
 
 
@@ -72,6 +76,5 @@ def test_palette_is_validated_and_can_change_the_generated_art():
     assert _pixels(changed["bush"]) != _pixels(baseline["bush"])
     assert _pixels(changed["rock"]) == _pixels(baseline["rock"])
 
-    import pytest
     with pytest.raises(ValueError):
         EnvironmentArtPalette(tree_leaf_mid=(256, 0, 0))
