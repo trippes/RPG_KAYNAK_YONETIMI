@@ -1,5 +1,6 @@
 import pygame
 import pytest
+
 from hex_world_lab.rendering.procedural.canvas import ProceduralCanvas
 from hex_world_lab.rendering.procedural.components import (
     draw_circle,
