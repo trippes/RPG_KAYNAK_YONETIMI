@@ -5,7 +5,7 @@
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Dayanak:** Kullanıcı tarafından onaylanan `PHASE-12-GENERAL-PLAN.md`  
 > **Durum:** KULLANICI TARAFINDAN ONAYLANDI — PROCEDURAL ÇİZİM YÖNÜNDE REVİZE EDİLDİ  
-> **Uygulama durumu:** Önceki raster prototipin mimari doğrulaması tamamlandı; prosedürel çizim revizyonu ve yeniden doğrulama açık  
+> **Uygulama durumu:** Prosedürel çizim uygulandı; 800 laboratuvar testi, Linux/Windows Core Quality, benchmark ve görsel artifact başarılı; kullanıcı manuel kabulü bekleniyor  
 > **Tek laboratuvar başlatıcısı:** `python -m hex_world_lab`
 
 ## 18 Kasım 2026 kapsam revizyonu — bağlayıcı karar
