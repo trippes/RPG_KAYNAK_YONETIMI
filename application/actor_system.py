@@ -33,6 +33,20 @@ class ActivityState(Enum):
 
 
 @dataclass(frozen=True)
+class ActorIdentity:
+    """Stable actor identity, independent from its spatial location."""
+
+    actor_id: str
+    world_id: str
+    role: str
+
+    def __post_init__(self) -> None:
+        _text(self.actor_id, "actor_id")
+        _text(self.world_id, "world_id")
+        _text(self.role, "role")
+
+
+@dataclass(frozen=True)
 class ActorView:
     actor_id: str
     world_id: str
@@ -65,18 +79,14 @@ class WorldActor:
     """Mutable actor record kept outside Core canonical state."""
 
     def __init__(self, actor_id: str, world_id: str, role: str, active: bool = True, character_id: str | None = None, location_id: str | None = None, position: Position | None = None, inventory_id: str | None = None):
-        _text(actor_id, "actor_id")
-        _text(world_id, "world_id")
-        _text(role, "role")
+        identity = ActorIdentity(actor_id, world_id, role)
         if not isinstance(active, bool):
             raise TypeError("active must be boolean.")
         if character_id is not None:
             _text(character_id, "character_id")
         if inventory_id is not None:
             _text(inventory_id, "inventory_id")
-        self._actor_id = actor_id
-        self._world_id = world_id
-        self._role = role
+        self._identity = identity
         self._active = active
         self._activity_id: str | None = None
         self._character_id = character_id
@@ -85,16 +95,20 @@ class WorldActor:
         self._inventory_id = inventory_id
 
     @property
+    def identity(self) -> ActorIdentity:
+        return self._identity
+
+    @property
     def actor_id(self) -> str:
-        return self._actor_id
+        return self._identity.actor_id
 
     @property
     def world_id(self) -> str:
-        return self._world_id
+        return self._identity.world_id
 
     @property
     def role(self) -> str:
-        return self._role
+        return self._identity.role
 
     @property
     def active(self) -> bool:
