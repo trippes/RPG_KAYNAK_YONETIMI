@@ -145,13 +145,13 @@ class WorldActor:
     def bind_character(self, character_id: str) -> None:
         _text(character_id, "character_id")
         if self._character_id is not None and self._character_id != character_id:
-            raise ActorError(f"Actor already references character: {self._actor_id}")
+            raise ActorError(f"Actor already references character: {self.actor_id}")
         self._character_id = character_id
 
     def bind_inventory(self, inventory_id: str) -> None:
         _text(inventory_id, "inventory_id")
         if self._inventory_id is not None and self._inventory_id != inventory_id:
-            raise ActorError(f"Actor already references another inventory: {self._actor_id}")
+            raise ActorError(f"Actor already references another inventory: {self.actor_id}")
         self._inventory_id = inventory_id
 
     def set_active(self, active: bool) -> None:
@@ -163,9 +163,9 @@ class WorldActor:
 
     def begin_activity(self, activity_id: str) -> None:
         if not self._active:
-            raise ActorError(f"Actor is inactive: {self._actor_id}")
+            raise ActorError(f"Actor is inactive: {self.actor_id}")
         if self._activity_id is not None:
-            raise ActorError(f"Actor already has an active activity: {self._actor_id}")
+            raise ActorError(f"Actor already has an active activity: {self.actor_id}")
         _text(activity_id, "activity_id")
         self._activity_id = activity_id
 
@@ -175,7 +175,7 @@ class WorldActor:
 
     def view(self) -> ActorView:
         return ActorView(
-            self._actor_id, self._world_id, self._role,
+            self.actor_id, self.world_id, self.role,
             self._active, self._activity_id,
             self._character_id,
             self._location_id, self._position, self._inventory_id,
