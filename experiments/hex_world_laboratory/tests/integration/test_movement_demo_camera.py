@@ -138,7 +138,9 @@ def test_render_snapshot_contains_world_space_geometry_only():
         assert len(snapshot.circles) == 0
         assert len(snapshot.polygons) >= 1
         assert {item.owner_id for item in snapshot.colliders} >= {"object:tree", "object:rock"}
-        assert {item.instance_id for item in snapshot.environment_debug} == {"tree", "rock", "bush"}
+        assert {item.instance_id for item in snapshot.environment_debug} == {
+            "tree", "rock", "bush", "grass", "flower"
+        }
         assert len(snapshot.house_lines) > 0
         assert snapshot.actor_position == demo.state.position
     finally:
