@@ -136,13 +136,24 @@ Yeni hex kayıtları axial konumu açık biçimde saklar ve restore sırasında 
 5. Herhangi bir aşamada başarısız CI varsa sonraki katmana geçilmez.
 6. `main`, `demo_eldoria` ve `experiment/hex-world-laboratory` değiştirilmeyecek; entegrasyon dalı açık kullanıcı onayı olmadan birleştirilmeyecek.
 
+## Katman 3 — ilk uyumluluk geçişi
+
+- `GameplayService` içindeki konum gerektiren etkileşim, pazar, NPC ticareti, diyalog ve görev teslimi kontrolleri artık `ActorView.location_id` okumuyor; açık `_require_legacy_actor_location` sınırından geçiyor.
+- Kare modundaki aktör listeleri konum eşleştirmesini registry'nin legacy spatial store kaydı üzerinden yapıyor.
+- `GameApplication` save restore doğrulaması ve kare konum geri yüklemesi `ActorView.location_id/position` alanları yerine registry spatial store kaydını kullanıyor.
+- Hex görünümü aktifken legacy konum bulunmadığından kare konum etkileşimi reddediliyor; görünümden çıkışta kare konum geri açılıyor.
+- NPC'nin konumu tanımlı değilse mevcut konum-bağımsız diyalog/görev davranışı korunuyor.
+
+**Doğrulama:** Commit `733c23f31258d92e9d4bb260618ef9c9a633eaf4`; GitHub Actions run [#44421720503](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44421720503) — Linux ve Windows başarılı; her iki platformda 1.477 test + 237 subtest. Linux Ruff, compileall, wheel ve izole kurulum doğrulaması başarılı.
+
 ## Güncel durum
 
 - Katman 1 tamamlandı; actor kimliği/oynanış verisi ile kare konum sahipliği ayrıldı.
 - Katman 2 tamamlandı; hex konumu occupancy kaydı tek başına yönetiyor ve entity görünümü bu kayıttan türetiliyor.
-- Her iki katmanın Linux/Windows otomatik doğrulaması başarılı.
-- Katman 3 henüz uygulanmadı. Kare tabanlı hareket, NPC, kaynak, pazar, konteyner, görev, UI ve save/load bağımlılıkları kontrollü uyumluluk sınırına taşınacak.
-- Hex içerik tarafında NPC/kaynak/market yerleşimleri ve hex başlangıç alanı henüz eksik. Bunlar axial koordinatlarla açıkça yazılmadan servis entegrasyonu tamamlanmış sayılmayacak.
+- Katman 3 başladı; servis ve save restore katmanındaki ilk legacy konum bağımlılıkları açık sınıra taşındı.
+- UI ekranları hâlâ geçiş dönemi `ActorView` konum projeksiyonunu kullanıyor; bu uyumluluk alanı henüz kaldırılmadı.
+- NPC, kaynak, pazar ve konteyner içerikleri hâlâ kare tabanlı konum modelleriyle tanımlı. Hex tarafında NPC/kaynak/market yerleşimleri ve hex başlangıç alanı henüz eksik.
+- Hex runtime konumu oturum belleğinde tutuluyor; ana save/load belgesine entegrasyonu henüz yapılmadı.
 - Eski kare kayıtlar otomatik dönüştürülmeyecek; migration/recovery politikası ayrıca belirlenecek.
 
-**Bir sonraki uygulama işi:** Katman 3 için legacy kare tüketicilerinin dosya/fonksiyon bazında envanterini çıkarmak; önce hareket ve etkileşim servisleri için kare/hex ayrımını açık bir uyumluluk sözleşmesine bağlamak. İçerik yerleşimi gerektiren noktalar tasarım onayı bekleyecek.
+**Bir sonraki uygulama işi:** Kalan UI ve domain tüketicilerini dosya/fonksiyon bazında envanterleyip kare uyumluluk projeksiyonunu servis API'sine taşımak. NPC/kaynak/market için axial yerleşim gerektiren noktalarda koordinat uydurulmayacak; açık içerik verisi ve tasarım kararı beklenecek.
