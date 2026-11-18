@@ -1,4 +1,5 @@
 """Generate visual evidence for the five Phase 13 procedural profiles."""
+
 from __future__ import annotations
 
 import argparse
