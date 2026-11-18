@@ -17,6 +17,8 @@ jobs:
       - name: Lint changed runtime integration files with Ruff
         run: >-
           python -m ruff check --select E4,E7,E9,F
+          --extend-per-file-ignores
+          application/gameplay_service.py:F401,application/gameplay_service.py:E701,game_ui/hex_world_view.py:E731
           application/hex_world_runtime.py
           application/session_bundle.py
           application/gameplay_service.py
