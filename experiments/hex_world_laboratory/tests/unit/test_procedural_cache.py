@@ -11,7 +11,10 @@ def _surface(size=(8, 8)):
 def test_cache_reuses_surface_and_tracks_hits_and_misses():
     cache = ProceduralSurfaceCache(max_entries=4, max_bytes=4096)
     calls = []
-    factory = lambda: calls.append(True) or _surface()
+    def factory():
+        calls.append(True)
+        return _surface()
+
     first = cache.get_or_create(("tree", 1), factory)
     second = cache.get_or_create(("tree", 1), factory)
     assert first is second
