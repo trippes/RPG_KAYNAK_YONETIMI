@@ -44,6 +44,8 @@ from .actor_system import (
     ActorError,
     ActorIdentity,
     ActorView,
+    LegacyActorSpatialState,
+    LegacyActorSpatialStore,
     WorldActor,
     WorldActorRegistry,
 )
@@ -110,6 +112,8 @@ __all__ = [
     "ChainView",
     "ActorError",
     "ActorIdentity",
+    "LegacyActorSpatialState",
+    "LegacyActorSpatialStore",
     "ActivityError",
     "ActivityState",
     "ActorView",
