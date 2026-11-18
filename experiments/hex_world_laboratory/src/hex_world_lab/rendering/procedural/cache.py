@@ -1,4 +1,5 @@
 """Bounded LRU cache for generated Pygame surfaces."""
+
 from __future__ import annotations
 
 from collections import OrderedDict
@@ -41,9 +42,7 @@ class ProceduralSurfaceCache:
         self._misses = 0
         self._evictions = 0
 
-    def get_or_create(
-        self, key: Hashable, factory: Callable[[], pygame.Surface]
-    ) -> pygame.Surface:
+    def get_or_create(self, key: Hashable, factory: Callable[[], pygame.Surface]) -> pygame.Surface:
         try:
             hash(key)
         except TypeError as error:
