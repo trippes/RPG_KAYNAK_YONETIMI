@@ -34,7 +34,13 @@ def test_map_unload_retains_entities_and_companion_relationship_then_reload_rein
     coordinator.unload_map(map_id)
     assert coordinator.registry.get(npc.entity_id) is not None
     assert coordinator.companions.get_relationship(npc.entity_id) is not None
+    from hex_world_lab.entities.spatial_index import EntityAABB
+    dormant_area = EntityAABB(-20, -20, 30, 20)
+    assert coordinator.spatial_index.query(map_id, dormant_area) == ()
     coordinator.load_map(definition)
+    assert {e.entity_id for e in coordinator.spatial_index.query(map_id, dormant_area)} == {
+        player.entity_id, npc.entity_id
+    }
     assert coordinator.spatial_index.query(map_id,
         __import__("hex_world_lab.entities.spatial_index",fromlist=["EntityAABB"]).EntityAABB(-20,-20,30,20))
     removed=coordinator.remove_map(map_id)

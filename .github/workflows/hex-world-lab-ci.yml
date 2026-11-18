@@ -94,6 +94,18 @@ jobs:
       - name: Benchmark Phase 9 entity spatial index (100 / 1,000 / 10,000 entities)
         run: python benchmarks/benchmark_entity_spatial.py
 
+      - name: Benchmark Phase 10 simulation tick and render snapshot costs
+        run: python benchmarks/benchmark_simulation_tick.py
+
+      - name: Upload Phase 10 simulation benchmark report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase-10-simulation-benchmark
+          path: experiments/hex_world_laboratory/artifacts/phase-10/*.json
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Generate Phase 9 entity visual evidence
         run: python scripts/render_phase_09_scenes.py --output artifacts/phase-09
 
