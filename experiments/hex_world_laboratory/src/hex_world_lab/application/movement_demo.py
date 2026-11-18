@@ -176,13 +176,22 @@ class MovementDemo:
         environment_definitions = (
             EnvironmentalObjectDefinition(
                 "tree", "tree", (0.5, 0.94), (0.5, 0.82),
-                (0.04, 0.02, 0.92, 0.68), CircleShape(8.5),
+                (0.04, 0.02, 0.92, 0.68),
+                # Block only the trunk/root footprint; the canopy remains passable.
+                ConvexPolygonShape((
+                    Vector2(-20.0, -2.0), Vector2(-12.0, -15.0),
+                    Vector2(-8.0, -46.0), Vector2(8.0, -46.0),
+                    Vector2(12.0, -15.0), Vector2(20.0, -2.0),
+                )),
             ),
             EnvironmentalObjectDefinition(
                 "rock", "rock", (0.5, 0.92), (0.5, 0.84), None,
+                # Follow the complete visible rock silhouette, not a tiny center polygon.
                 ConvexPolygonShape((
-                    Vector2(-9.0, -7.0), Vector2(7.0, -9.0),
-                    Vector2(10.0, 3.0), Vector2(-3.0, 10.0),
+                    Vector2(-28.0, -12.0), Vector2(-18.0, -32.0),
+                    Vector2(-4.0, -40.0), Vector2(14.0, -34.0),
+                    Vector2(28.0, -18.0), Vector2(25.0, -5.0),
+                    Vector2(8.0, 0.0), Vector2(-18.0, -2.0),
                 )),
             ),
             EnvironmentalObjectDefinition(
