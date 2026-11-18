@@ -1,5 +1,4 @@
 import pygame
-
 from hex_world_lab.application.movement_demo import MovementDemo
 from hex_world_lab.rendering import RenderDebugOptions
 
