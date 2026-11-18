@@ -67,7 +67,7 @@ Aynı depo dalında, laboratuvar dışında şu kaynaklar bulunmaktadır:
 - `game_ui/world_rendering/tree_rig_renderer.py`: Katmanlı ağaç sprite çizimi.
 - `game_ui/world_rendering/scene_object.py`: Görsel boyut, anchor, depth ve collision box sorumluluklarını ayıran sahne nesnesi modeli.
 - `docs/architecture/40-tree-skeleton-contract.md` ve `43-articulated-tree-sprite-rig.md`: İlgili mimari sözleşmeler.
-- `game_ui/assets/tree_test.png`, `tree_parts_atlas.png` ve `tree_parts_atlas.json`: Ağaç görsel verileri.
+- `game_ui/assets/tree_test.png`, `tree_parts_atlas.png` ve `tree_parts_atlas.json`: Yalnızca tarihsel tasarım referansları; Aşama 12 runtime'ında yüklenmez veya kopyalanmaz.
 
 Bu kod ve dokümanlar **tasarım referansıdır**. Laboratuvar, `game_ui` Python modüllerini import etmeyecek; ana oyun runtime'ına bağımlı olmayacak ve bu aşamada ana oyun dosyalarını değiştirmeyecektir. Ağaç dallarının rüzgâr animasyonu ve katmanlı rig sistemi bu aşamanın zorunlu kapsamı değildir. Bu öneri kapsam revizyonuyla geçersizdir: ağaç Pygame çizim primitifleriyle kodla üretilecektir; hazır sprite kullanılmayacaktır.
 
@@ -243,7 +243,7 @@ tree_test.png yalnızca geçmiş uygulama/karşılaştırma kaydıdır; runtime 
 
 Ağaç atlası ve articulated rig, teknik referans olarak kalır; Aşama 12'nin ilk kabul hedefi için katmanlı animasyon zorunlu değildir. Kaya ve çalı geçici placeholder seviyesinde bırakılmayacak; üç prototip aynı sanat yönü, ışık/gölge ve hacim kalite ölçütlerini karşılayacaktır.
 
-Asset yolu uygulamada çalışma dizinine körlemesine bağlanmayacak; laboratuvarın tek launcher'ı ve CI çalışma diziniyle uyumlu, açıkça test edilen bir asset-root çözümü kullanılacaktır. Eksik/bozuk zorunlu ağaç görseli sessizce farklı bir asset'e dönüştürülmeyecek; anlaşılır hata üretilecektir.
+Ağaç/kaya/çalı görselleri runtime sırasında prosedürel çiziciler tarafından üretileceğinden bu prototipler için zorunlu raster asset yolu veya asset-root yükleme mekanizması bulunmayacaktır. Çizim profili eksikse açık doğrulama hatası üretilecektir.
 
 ## 5. Test ve doğrulama planı
 
