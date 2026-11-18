@@ -4,7 +4,7 @@
 > **Proje:** Eldoria — Hex World Laboratory  
 > **Depo:** `trippes/RPG_KAYNAK_YONETIMI`  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
-> **Durum:** GENEL/TEKNİK PLAN ONAYLANDI — 11.1–11.8 OTOMATİK DOĞRULAMA TAMAMLANDI; MANUEL KABUL BEKLENİYOR  
+> **Durum:** 11.1–11.8 TEKNİK, OTOMATİK VE MANUEL KABUL TAMAMLANDI — AŞAMA 11 KAPATILDI  
 > **Ön koşul:** Aşama 0–10 tamamlandı ve kabul edildi  
 > **Tek laboratuvar başlatıcısı:** `python -m hex_world_lab`
 
@@ -253,3 +253,8 @@ Genel planın hazırlanması uygulama izni anlamına gelmez. Teknik plan ve uygu
 11.1–11.8 otomatik teknik doğrulama tamamlandı. Laboratuvar testleri 774/774 başarılı; Linux ve Windows Core Quality başarılı; 36.000 tick stres testi, spatial lifecycle, fizik/geometri testleri ve üç oturumlu performans/bellek benchmarkları raporlandı. Ayrıntılar [PHASE-11-BASELINE-REPORT.md](../reports/PHASE-11-BASELINE-REPORT.md) ve [PHASE-11-STRESS-VALIDATION-REPORT.md](../reports/PHASE-11-STRESS-VALIDATION-REPORT.md) dosyalarındadır.
 
 Aşama 11'in resmen kapanması için kullanıcı masaüstü görsel/işlevsel kabul kontrol listesini tamamlamalıdır. Manuel kabul gelmeden aşama kapatılmış sayılmaz.
+
+
+## 9. Kapanış kaydı — 18 Kasım 2026
+
+Aşama 11.1–11.8 teknik uygulama ve otomatik doğrulamaları tamamlandı. Laboratuvar CI 774/774 testle başarılı oldu; Core Quality Linux ve Windows iş akışları başarılı tamamlandı. 36.000 tick uzun süreli simülasyon, 100/1.000/10.000 entity stres profilleri, spatial/brute-force karşılaştırmaları ve üç oturumlu performans/bellek ölçümleri raporlandı. Kullanıcı 18 Kasım 2026 tarihinde masaüstü görsel/işlevsel manuel kabul kontrollerinin tamamının geçtiğini bildirdi. Böylece Aşama 11 teknik, otomatik ve manuel kabul kapılarının tamamını geçerek kapatıldı. Ayrıntılar [PHASE-11-CLOSURE-REPORT.md](../reports/PHASE-11-CLOSURE-REPORT.md) içindedir.
