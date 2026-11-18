@@ -39,6 +39,19 @@ Bu nedenle sorun bir çizim/renderer değişikliği değildir. Konum ve hareket 
 - NPC kayıtları `location_id + [x,y]`; kaynak düğümleri `location_id + landmark_id`; pazarlar `location_id` ve isteğe bağlı `[x,y]` kullanıyor.
 - Quest hedefleri NPC ve kaynak kimliklerine bağlı; koordinatları doğrudan taşımıyor. Bu kimlikler korunmalı.
 
+### 2.4 Mevcut hex içerik, ana gameplay'i taşımaya henüz yeterli değil
+
+İçerik dosyalarının sayısal denetimi şu farkı gösteriyor:
+
+- Kare gameplay tarafında 4 NPC tanımı var; tamamı `village_id` üzerinde kare `[x,y]` konumuyla tanımlı.
+- Kare gameplay tarafında 22 kaynak düğümü var; orman ve maden haritalarına, kare landmark ID'lerine bağlanmış.
+- Başlangıç pazarı `village_id` ve `innkeeper_mira` NPC'sine bağlı.
+- Mevcut axial dünya 7 yerel haritadan oluşuyor.
+- Bu 7 hex haritanın yalnızca `hex_forest_demo` dosyasında bir resource landmark bulunuyor. Bu landmark `demo_ore_node` ID'sine bağlı; mevcut 22 kayıtlı kaynak düğümü listesinde bu ID yok. Diğer altı hex haritada landmark bulunmuyor.
+- Mevcut hex haritalarında köy başlangıç alanı, dört mevcut NPC'nin yerleşimi, 22 kaynak düğümünün karşılıkları ve mevcut pazar konumu tanımlı değil.
+
+Bu nedenle mevcut hex harita seti, yalnızca runtime bağlantısı yapılarak eski starter gameplay'in yerine geçirilemez. İçerik tarafında köy/başlangıç bölgesi, NPC yerleşimleri, kaynak landmark'ları ve pazarın yeni axial yerleri tasarlanıp doğrulanmalıdır. Eski kare `[x,y]` konumları hex `[q,r]` koordinatlarına otomatik çevrilmeyecek; her yeni hex yerleşimi açık içerik verisi olarak yazılacaktır.
+
 ### 2.3 Kayıt/yükleme kare harita kataloğunu yeniden kuruyor
 
 - `ActorSnapshot`, actor için `location_id` ve `Position` kaydediyor.
