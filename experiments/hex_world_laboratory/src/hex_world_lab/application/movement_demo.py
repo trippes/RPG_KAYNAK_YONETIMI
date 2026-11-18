@@ -24,7 +24,12 @@ from hex_world_lab.geometry import (
     world_to_axial,
 )
 from hex_world_lab.input import PygameKeyboardAdapter
+from hex_world_lab.environment import (
+    EnvironmentalObjectDefinition, EnvironmentalObjectPlacement, EnvironmentalObjectScene,
+    environment_debug_visuals, environment_obstacles, environment_sprite_visuals,
+)
 from hex_world_lab.rendering.pygame_world_renderer import PygameWorldRenderer
+from hex_world_lab.rendering.environment_assets import register_environment_assets
 from hex_world_lab.rendering.visibility import VisibleAreaCuller, should_use_culling
 from hex_world_lab.rendering.snapshot import (
     CellVisual,
@@ -132,6 +137,9 @@ class MovementDemo:
         "renderer",
         "selected_cell",
         "_visibility_culler",
+        "environment_scene",
+        "environment_asset_sizes",
+        "environment_obstacle_ids",
     )
 
     def __init__(
@@ -156,43 +164,51 @@ class MovementDemo:
         )
         self.camera.set_target(start_position)
         self.renderer = PygameWorldRenderer()
+        self.environment_asset_sizes = register_environment_assets(self.renderer)
         self._visibility_culler = VisibleAreaCuller()
         self.selected_cell: AxialCoord | None = None
         self._movement_config = MovementConfig(max_speed=movement_speed)
         tree_center = axial_to_world(AxialCoord(0, 2), self._layout)
         rock_center = axial_to_world(AxialCoord(-2, 2), self._layout)
+        bush_center = axial_to_world(AxialCoord(3, -2), self._layout)
         wall_center = axial_to_world(AxialCoord(0, -2), self._layout)
         self.house_center = axial_to_world(AxialCoord(-3, 0), self._layout)
-        object_obstacles = (
-            ObstacleDefinition(
-                "object:tree",
-                self.map_id,
-                CircleShape(8.5),
-                tree_center,
+        environment_definitions = (
+            EnvironmentalObjectDefinition(
+                "tree", "tree", (0.5, 0.94), (0.5, 0.82),
+                (0.04, 0.02, 0.92, 0.68), CircleShape(8.5),
             ),
-            ObstacleDefinition(
-                "object:rock",
-                self.map_id,
+            EnvironmentalObjectDefinition(
+                "rock", "rock", (0.5, 0.92), (0.5, 0.84), None,
                 ConvexPolygonShape((
-                    Vector2(-9.0, -7.0),
-                    Vector2(7.0, -9.0),
-                    Vector2(10.0, 3.0),
-                    Vector2(-3.0, 10.0),
+                    Vector2(-9.0, -7.0), Vector2(7.0, -9.0),
+                    Vector2(10.0, 3.0), Vector2(-3.0, 10.0),
                 )),
-                rock_center,
             ),
-            ObstacleDefinition(
-                "object:wall",
-                self.map_id,
-                ConvexPolygonShape((
-                    Vector2(-15.0, -4.0),
-                    Vector2(15.0, -4.0),
-                    Vector2(15.0, 4.0),
-                    Vector2(-15.0, 4.0),
-                )),
-                wall_center,
+            EnvironmentalObjectDefinition(
+                "bush", "bush", (0.5, 0.92), (0.5, 0.84),
+                (0.05, 0.08, 0.9, 0.78), None,
             ),
         )
+        environment_placements = (
+            EnvironmentalObjectPlacement("tree", "tree", WORLD_ID, self.map_id, tree_center),
+            EnvironmentalObjectPlacement("rock", "rock", WORLD_ID, self.map_id, rock_center),
+            EnvironmentalObjectPlacement("bush", "bush", WORLD_ID, self.map_id, bush_center),
+        )
+        self.environment_scene = EnvironmentalObjectScene(
+            WORLD_ID, self.map_id, environment_definitions, environment_placements
+        )
+        object_obstacles = environment_obstacles(self.environment_scene)
+        self.environment_obstacle_ids = frozenset(item.obstacle_id for item in object_obstacles)
+        wall_obstacle = ObstacleDefinition(
+            "object:wall", self.map_id,
+            ConvexPolygonShape((
+                Vector2(-15.0, -4.0), Vector2(15.0, -4.0),
+                Vector2(15.0, 4.0), Vector2(-15.0, 4.0),
+            )),
+            wall_center,
+        )
+        object_obstacles = (*object_obstacles, wall_obstacle)
         # Placeholder structure only: independent convex walls leave a doorway.
         house_wall_specs = (
             ("left", -15.0, 0.0, 2.0, 15.0),
@@ -346,7 +362,8 @@ class MovementDemo:
                 circle_visual = CircleVisual(
                     WorldPoint(shape.center.x, shape.center.y), shape.radius
                 )
-                circles.append(circle_visual)
+                if obstacle.obstacle_id not in self.environment_obstacle_ids:
+                    circles.append(circle_visual)
                 colliders.append(ColliderVisual(obstacle.obstacle_id, circle_visual, "obstacle"))
             else:
                 if visible_region is not None:
@@ -360,7 +377,8 @@ class MovementDemo:
                     tuple(WorldPoint(vertex.x, vertex.y) for vertex in shape.vertices),
                     obstacle.obstacle_id.startswith("cell:"),
                 )
-                polygons.append(polygon_visual)
+                if obstacle.obstacle_id not in self.environment_obstacle_ids:
+                    polygons.append(polygon_visual)
                 colliders.append(ColliderVisual(obstacle.obstacle_id, polygon_visual, "obstacle"))
 
         actor_shape = ActorBodyTransform(self.state.position).transform_shape(self.body_definition)
@@ -422,9 +440,10 @@ class MovementDemo:
                 ground_anchor=self.state.position,
                 depth_anchor_y=self.state.position.y,
                 layer_priority=10,
-            ),),
+            ), *environment_sprite_visuals(self.environment_scene, self.environment_asset_sizes)),
             debug_options=debug_options or RenderDebugOptions(),
             visible_region=visible_region,
+            environment_debug=environment_debug_visuals(self.environment_scene, self.environment_asset_sizes),
         )
 
     def pump(self) -> TickPumpDiagnostics:
