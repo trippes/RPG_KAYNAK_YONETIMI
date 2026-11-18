@@ -28,6 +28,28 @@ from resources import (
 
 
 class TestActorSystem(unittest.TestCase):
+    def test_actor_identity_is_immutable_and_independent_of_legacy_location(self):
+        from application.actor_system import ActorIdentity, WorldActor
+        from core.domain.spatial import Position
+
+        actor = WorldActor(
+            "player", "world_eldoria", "player",
+            location_id="legacy_village",
+            position=Position(4, 7),
+        )
+
+        self.assertEqual(
+            actor.identity,
+            ActorIdentity("player", "world_eldoria", "player"),
+        )
+        actor.set_position("legacy_forest", Position(8, 9))
+        self.assertEqual(
+            actor.identity,
+            ActorIdentity("player", "world_eldoria", "player"),
+        )
+        with self.assertRaises((AttributeError, TypeError)):
+            actor.identity.role = "merchant"
+
     def setUp(self):
         session = GameSession()
         world = session.worlds.create("Actors", world_id="world_actors")
