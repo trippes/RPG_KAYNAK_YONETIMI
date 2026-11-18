@@ -5,8 +5,8 @@
 > **Depo:** `trippes/RPG_KAYNAK_YONETIMI`  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Hedef entegrasyon dalı:** `demo_eldoria`  
-> **Durum:** AŞAMA 0–9 TAMAMLANDI VE KABUL EDİLDİ — AŞAMA 10.1–10.8 TEKNİK UYGULAMA VE CI TAMAMLANDI — MANUEL KULLANICI KABULÜ BEKLENİYOR  
-> **Belge sürümü:** 2.6
+> **Durum:** AŞAMA 0–10 TAMAMLANDI VE KABUL EDİLDİ — AŞAMA 11 PLANLAMASI İÇİN ONAY BEKLENİYOR  
+> **Belge sürümü:** 2.7
 
 ---
 
@@ -813,4 +813,5 @@ Dünya görsel zenginleştirmesi (arazi dokuları, bitki örtüsü, ağaç/kaya/
 | 2.2 | Güncellendi — 17 Kasım 2026 | Aşama 9 teknik planı onaylandı; 9.1–9.9 uygulandı, otomatik doğrulamalar ve görsel artifact başarılı; kullanıcı manuel kabul kapısı bekleniyor |
 | 2.3 | Güncellendi — 18 Kasım 2026 | Kullanıcı görsel/işlevsel kabulü verdi; Aşama 9 kapatıldı, kapanış raporu eklendi ve Aşama 10 planlama için sıradaki aşama oldu |
 | 2.4 | Güncellendi — 18 Kasım 2026 | Aşama 10 Genel Planı eklendi; NPC/yoldaş/kaynak hareketi bu aşama dışında bırakıldı; merkezi simülasyon orkestrasyonu ve render saflığı odak olarak belirlendi |
-| 2.5 | Güncellendi — 18 Kasım 2026 | Aşama 10 Genel Planı ve teknik planı onaylandı; uygulama başlatıldı |\n| 2.6 | Güncellendi — 18 Kasım 2026 | Aşama 10.1–10.8 uygulandı; 759 laboratuvar testi, Linux/Windows Core Quality (2.222'şer test), benchmark ve artifact üretimi başarılı; manuel kullanıcı kabulü bekleniyor |
+| 2.5 | Güncellendi — 18 Kasım 2026 | Aşama 10 Genel Planı ve teknik planı onaylandı; uygulama başlatıldı |\n| 2.6 | Güncellendi — 18 Kasım 2026 | Aşama 10.1–10.8 uygulandı; 759 laboratuvar testi, Linux/Windows Core Quality (2.222'şer test), benchmark ve artifact üretimi başarılı; manuel kullanıcı kabulü bekleniyordu |
+| 2.7 | Güncellendi — 18 Kasım 2026 | Kullanıcı görsel/işlevsel testleri başarılı bildirdi; Aşama 10 resmen kapatıldı ve kabul edildi; Aşama 11 için yeni planlama onayı bekleniyor |
