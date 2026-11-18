@@ -29,7 +29,9 @@ def test_environment_profiles_are_drawn_without_loading_any_raster_file(monkeypa
         "flower": (56, 48),
     }
     assert set(renderer._sprite_assets) == {"tree", "rock", "bush", "grass", "flower"}
-    assert all(isinstance(asset.surface, pygame.Surface) for asset in renderer._sprite_assets.values())
+    assert all(
+        isinstance(asset.surface, pygame.Surface) for asset in renderer._sprite_assets.values()
+    )
 
 
 def test_procedural_environment_art_is_deterministic_and_transparent():
