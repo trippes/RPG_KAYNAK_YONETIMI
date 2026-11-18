@@ -47,7 +47,11 @@ from hex_world_lab.physics import (
     ObstacleDefinition,
     build_hex_map_collision_geometry,
 )
-from hex_world_lab.simulation import CollisionAwareMovementSystem, MovementCellTracker
+from hex_world_lab.simulation import (
+    CollisionAwareMovementSystem,
+    MovementCellTracker,
+    SimulationTickCoordinator,
+)
 from hex_world_lab.world import (
     HexCellData,
     HexMapDefinition,
@@ -117,6 +121,7 @@ class MovementDemo:
         "collision_geometry",
         "cell_tracker",
         "tick_pump",
+        "tick_coordinator",
         "_layout",
         "_movement_config",
         "house_center",
@@ -236,11 +241,17 @@ class MovementDemo:
             if key_state_provider is None
             else PygameKeyboardAdapter(key_state_provider)
         )
+        self.tick_coordinator = SimulationTickCoordinator(
+            self.movement_system,
+            self.keyboard.read_intent,
+            self.cell_tracker,
+        )
         callback = self._advance_tick
+        pump_options = {"first_tick_number": self.tick_coordinator.next_tick_number}
         self.tick_pump = (
-            DemoTickPump(callback)
+            DemoTickPump(callback, **pump_options)
             if clock is None
-            else DemoTickPump(callback, clock=clock)
+            else DemoTickPump(callback, clock=clock, **pump_options)
         )
         self._last_diagnostics: TickPumpDiagnostics | None = None
         self._font: pygame.font.Font | None = None
@@ -420,12 +431,9 @@ class MovementDemo:
         self._last_diagnostics = self.tick_pump.pump()
         return self._last_diagnostics
 
-    def _advance_tick(self, tick_number: int) -> None:
-        next_state = self.movement_system.step(
-            tick_number,
-            self.keyboard.read_intent(),
-        )
-        self.cell_tracker.update(next_state.position)
+    def _advance_tick(self, tick_number: int) -> MovementState:
+        """Delegate one fixed tick to the authoritative simulation coordinator."""
+        return self.tick_coordinator.advance_tick(tick_number)
 
     def render(
         self, surface: pygame.Surface, render_fps: float = 0.0,

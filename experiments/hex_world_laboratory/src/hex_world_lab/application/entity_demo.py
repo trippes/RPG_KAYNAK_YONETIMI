@@ -54,6 +54,9 @@ class EntityDemo:
         self.action_menu_position:tuple[int,int]|None=None
         self._action_menu_items:list[tuple[pygame.Rect,str,str]]=[]
         self._register_placeholder_assets()
+        self.movement.tick_coordinator.bind_entity_sync_callback(
+            self._sync_player_position
+        )
     def _register_placeholder_assets(self)->None:
         colors={"npc-guard":(92,145,196),"npc-trader":(191,151,83),
                 "resource-herb":(83,169,103),"resource-ore":(143,151,165)}
@@ -74,13 +77,18 @@ class EntityDemo:
                 pygame.draw.polygon(surface,color,((12,1),(22,8),(18,21),(6,22),(2,10)))
                 pygame.draw.polygon(surface,(210,216,226),((12,1),(22,8),(18,21),(6,22),(2,10)),2)
             self.movement.renderer.register_sprite_asset(key,SpriteAsset(surface,0.5,1.0))
-    def sync_player(self)->None:
-        entity=self.coordinator.registry.require(self.player_id)
-        position=self.movement.state.position
-        if entity.transform.location.position != position:
-            transform=EntityTransform(EntityLocation(self.world.world_id,self.map_id,position),
-                                      entity.transform.rotation_radians)
-            self.coordinator.update_transform(self.player_id,transform)
+    def _sync_player_position(self, position: WorldPoint) -> None:
+        """Synchronize the committed movement position during its simulation tick."""
+        if not isinstance(position, WorldPoint):
+            raise TypeError("position must be a WorldPoint")
+        entity = self.coordinator.registry.require(self.player_id)
+        if entity.transform.location.position == position:
+            return
+        transform = EntityTransform(
+            EntityLocation(self.world.world_id, self.map_id, position),
+            entity.transform.rotation_radians,
+        )
+        self.coordinator.update_transform(self.player_id, transform)
     def recruit_guard(self):
         return self.coordinator.companions.recruit(self.player_id,self.npc_ids[0])
     def issue_guard_command(self,command:CompanionCommand):
@@ -150,7 +158,7 @@ class EntityDemo:
             return self.select_screen_point(ScreenPoint(*event.pos))
         return None
     def build_render_snapshot(self,debug_options:RenderDebugOptions|None=None)->WorldRenderSnapshot:
-        self.sync_player()
+        """Build presentation data from the last completed simulation tick only."""
         base=self.movement.build_render_snapshot(debug_options=debug_options)
         sprites=list(base.sprites); colliders=list(base.colliders)
         for entity in self.coordinator.registry.entities_for_map(self.world.world_id,self.map_id):
