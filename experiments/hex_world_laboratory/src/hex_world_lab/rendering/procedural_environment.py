@@ -16,8 +16,7 @@ def build_environment_surfaces(
 ) -> dict[str, pygame.Surface]:
     """Build the original tree, rock and bush profiles through the new API."""
     return {
-        key: build_environment_profile(key, palette=palette)
-        for key in ("tree", "rock", "bush")
+        key: build_environment_profile(key, palette=palette) for key in ("tree", "rock", "bush")
     }
 
 
