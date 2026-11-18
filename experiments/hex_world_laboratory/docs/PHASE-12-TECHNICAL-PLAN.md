@@ -229,7 +229,9 @@ Aşağıdaki liste hedeflenen değişiklik alanıdır; uygulama sırasında depo
 
 | Dosya | Planlanan değişiklik |
 |---|---|
-| `rendering/snapshot.py` | Gerekirse anchor override ve environment debug DTO alanları; eski kurucularla geriye uyum |
+| `rendering/procedural_environment.py` | Ağaç/kaya/çalı için deterministik, yüksek çözünürlüklü Pygame çizicileri ve parametrelenebilir renk paleti |
+| `rendering/environment_assets.py` | Prosedürel yüzey üretimini SpriteAsset kayıtlarına bağlama; dosya yükleme yapmama |
+| `rendering/snapshot.py` | Anchor override ve environment debug DTO alanları; eski kurucularla geriye uyum |
 | `rendering/pygame_world_renderer.py` | Sprite anchor override, tam visual-bounds culling ve environment debug çizimi |
 | `rendering/__init__.py` | Yeni DTO/export'ların açık dışa aktarımı |
 | `application/movement_demo.py` | Mevcut ağaç/kaya sabit obstacle tanımlarını environment scene kaynaklı üretime bağlama; ev duvarlarını değiştirmeme |
@@ -237,11 +239,11 @@ Aşağıdaki liste hedeflenen değişiklik alanıdır; uygulama sırasında depo
 | `app.py` | Yalnızca gerekli debug kısayolunu bağlama; tek başlatıcıyı ve mevcut F3 collider davranışını koruma |
 | `tests/...` | Aşağıdaki birim, entegrasyon ve kabul testleri |
 
-### 4.3 Asset kullanımı
+### 4.3 Prosedürel çizim ve raster varlık politikası
 
 tree_test.png yalnızca geçmiş uygulama/karşılaştırma kaydıdır; runtime asset'i olarak yüklenmeyecek veya kopyalanmayacaktır. Ağaç, kaya ve çalı yüzeyleri laboratuvarın kendi prosedürel çizim fonksiyonlarıyla üretilecektir. Ana oyunun game_ui Python modülleri veya renderer sınıfları import edilmeyecektir.
 
-Ağaç atlası ve articulated rig, teknik referans olarak kalır; Aşama 12'nin ilk kabul hedefi için katmanlı animasyon zorunlu değildir. Kaya ve çalı geçici placeholder seviyesinde bırakılmayacak; üç prototip aynı sanat yönü, ışık/gölge ve hacim kalite ölçütlerini karşılayacaktır.
+Ağaç atlası ve articulated rig yalnızca tarihsel tasarım referanslarıdır; runtime'da okunmaz. Aşama 12'nin ilk kabul hedefi için katmanlı animasyon zorunlu değildir. Prosedürel çizim API'si EnvironmentArtPalette ile renk parametrelerini dışarı açar; çizim profilleri ve palet değerleri UI'dan bağımsızdır. Kaya ve çalı geçici placeholder seviyesinde bırakılmayacak; üç prototip aynı sanat yönü, ışık/gölge ve hacim kalite ölçütlerini karşılayacaktır.
 
 Ağaç/kaya/çalı görselleri runtime sırasında prosedürel çiziciler tarafından üretileceğinden bu prototipler için zorunlu raster asset yolu veya asset-root yükleme mekanizması bulunmayacaktır. Çizim profili eksikse açık doğrulama hatası üretilecektir.
 
@@ -255,17 +257,19 @@ Yeni test dosyaları:
 - `tests/unit/test_environment_object_placement.py`
 - `tests/unit/test_environment_object_scene.py`
 - `tests/unit/test_environment_object_presentation.py`
+- `tests/unit/test_procedural_environment_art.py`
 
 Test edilecek invariant'lar:
 
 1. Boş/tekrarlı kimlik, bozuk anchor, NaN/sonsuz değer, normalize alan dışına taşan bounds ve geçersiz collider reddedilir.
-2. Definition ve placement immutable davranır.
-3. Placement yanlış world/map veya olmayan definition'a bağlanamaz.
-4. Scene sıralaması giriş sırasından bağımsız ve deterministiktir.
-5. Görsel anchor ve depth anchor birbirinden bağımsızdır.
-6. Görsel boyut veya asset değişimi collider geometrisini değiştirmez.
-7. Collider'sız nesne geçerli biçimde temsil edilebilir.
-8. Collider dönüşümü mevcut ObstacleDefinition ile birebir uyumludur.
+2. Prosedürel ağaç/kaya/çalı raster dosyası yüklemeden üretilir; aynı palet aynı piksel çıktısını verir; palet değişikliği yalnızca görsel yüzeyi etkiler.
+3. Definition ve placement immutable davranır.
+4. Placement yanlış world/map veya olmayan definition'a bağlanamaz.
+5. Scene sıralaması giriş sırasından bağımsız ve deterministiktir.
+6. Görsel anchor ve depth anchor birbirinden bağımsızdır.
+7. Görsel boyut veya palet değişimi collider geometrisini değiştirmez.
+8. Collider'sız nesne geçerli biçimde temsil edilebilir.
+9. Collider dönüşümü mevcut ObstacleDefinition ile birebir uyumludur.
 
 ### 5.2 Render testleri
 
