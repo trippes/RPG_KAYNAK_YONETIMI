@@ -351,6 +351,10 @@ class SessionHolder:
             or first.quest_graph_progress is second.quest_graph_progress
             or first.world_objects is second.world_objects
             or first.hex_world_runtime_owner is second.hex_world_runtime_owner
+            or (
+                first.hex_world_runtime is not None
+                and first.hex_world_runtime is second.hex_world_runtime
+            )
             or first.containers is second.containers
         ):
             return True
