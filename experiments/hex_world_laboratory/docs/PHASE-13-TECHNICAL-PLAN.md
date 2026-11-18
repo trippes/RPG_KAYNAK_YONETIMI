@@ -363,7 +363,7 @@ Teknik plan onaylandıktan sonra uygulama başlayabilir. Aşama ancak:
 
 ## 15. Onay ve uygulama durumu
 
-Kullanıcı teknik planı 18 Kasım 2026 tarihinde onayladı. Aşama 13 uygulaması bu onay sınırları içinde başlatılmıştır. 13.1 mevcut altyapı denetimi tamamlandı; ayrıntılar [PHASE-13.1-AUDIT-REPORT.md](../reports/PHASE-13.1-AUDIT-REPORT.md) belgesindedir. Sıradaki iş paketi 13.2 — saf geometri ve Pygame canvas sözleşmesidir. Teknik kapsamı değiştiren yeni kararlar ayrıca kullanıcı onayı gerektirir.
+Kullanıcı teknik planı 18 Kasım 2026 tarihinde onayladı. 13.1 denetimi tamamlandı; 13.2–13.7 uygulamaları tamamlandı ve [PHASE-13.2-13.7-IMPLEMENTATION-REPORT.md](../reports/PHASE-13.2-13.7-IMPLEMENTATION-REPORT.md) raporlandı. 13.8 — tam test/CI, performans ve görsel kanıt doğrulaması sürüyor. Kullanıcı masaüstü görsel kabulü henüz yapılmadı. Teknik kapsamı değiştiren yeni kararlar ayrıca kullanıcı onayı gerektirir.
 
 ## 16. Dal güvenliği
 
