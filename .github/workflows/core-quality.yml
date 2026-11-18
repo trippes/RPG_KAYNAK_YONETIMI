@@ -22,8 +22,13 @@ jobs:
           application/hex_world_runtime.py
           application/session_bundle.py
           application/gameplay_service.py
+          application/actor_system.py
+          application/actor_persistence.py
+          application/movement.py
           game_ui/hex_world_view.py
           tests/test_application/test_session_bundle.py
+          tests/test_application/test_actor_system.py
+          tests/test_application/test_movement.py
           tests/test_game_ui/test_hex_world_view.py
       - name: Report legacy API usage
         run: python -m core.compatibility.usage . | tee legacy-api-usage.json
