@@ -44,7 +44,9 @@ jobs:
           python -m pip install -e ".[test]"
 
       - name: Run complete laboratory test suite
-        run: python -m pytest -q
+        run: |
+          mkdir -p artifacts/phase-11
+          python -m pytest -q --junitxml=artifacts/phase-11/laboratory-tests.xml
 
       - name: Benchmark map persistence (100 / 1,000 / 10,000 cells)
         run: python scripts/benchmark_map_persistence.py
@@ -96,6 +98,20 @@ jobs:
 
       - name: Benchmark Phase 10 simulation tick and render snapshot costs
         run: python benchmarks/benchmark_simulation_tick.py
+
+      - name: Benchmark Phase 11 entity spatial performance and memory
+        run: python benchmarks/benchmark_phase_11_stress.py
+
+      - name: Upload Phase 11 validation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase-11-validation
+          path: |
+            experiments/hex_world_laboratory/artifacts/phase-11/*.json
+            experiments/hex_world_laboratory/artifacts/phase-11/*.xml
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: Upload Phase 10 simulation benchmark report
         if: always()
