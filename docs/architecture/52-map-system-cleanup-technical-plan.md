@@ -6,7 +6,7 @@
 | Kaynak dal | `demo_eldoria` |
 | Başlangıç commit'i | `7d53d431d5c3639fd95d273de9043b64483a5125` |
 | Genel plan | [51-map-system-cleanup-general-plan.md](51-map-system-cleanup-general-plan.md) |
-| Durum | Kullanıcı onayı alındı; 16.1 teknik baseline tamamlandı, manuel kabul ve mimari sıralama kararı bekliyor |
+| Durum | Kullanıcı onayı alındı; 16.1 teknik baseline tamamlandı; görsel test gerekmiyor |
 
 ## 1. Teknik karar özeti
 
@@ -44,7 +44,7 @@ Dal `demo_eldoria` HEAD `7d53d431d5c3639fd95d273de9043b64483a5125` commit'inden 
 
 Kesin içerik envanteri, çalışma zamanı bulguları ve CI kanıtı [Aşama 16.1 Baseline Raporu](53-map-cleanup-phase-16-1-baseline.md) içinde tutulur.
 
-GitHub Actions Core quality run `44411974271`, bu HEAD'de Linux/Python 3.11 ve Windows/Python 3.12 işlerinde başarılıdır. Bu workflow Pytest, compileall, wheel paketleme/izole yükleme ve application smoke çalıştırır. Workflow'da Ruff adımı yoktur. Yerel Windows görsel testleri henüz kullanıcı tarafından yapılmamıştır.
+GitHub Actions Core quality run `44411974271`, bu HEAD'de Linux/Python 3.11 ve Windows/Python 3.12 işlerinde başarılıdır. Bu workflow Pytest, compileall, wheel paketleme/izole yükleme ve application smoke çalıştırır. Workflow'da Ruff adımı yoktur. Bu çalışma için yerel Windows görsel testi gerekmiyor; davranış değişikliği olmayan teknik temizlik otomatik test ve CI ile doğrulanacaktır.
 
 ## 3. Hedef mimari ve teknik sınırlar
 
@@ -220,7 +220,7 @@ Test hedefleri:
 - Kare easter egg için yalnızca seçilmiş tek haritanın yüklenmesi ve hedeflenen sunumunun çalışması doğrulanır.
 - Harita geçişi, oyuncu konumu, çarpışma, etkileşim, yerleşim, kamera, save/load ve mevcut gameplay loop kontrol edilir.
 - Eski save referansları ve kare harita uyumluluğu ayrıca değerlendirilir.
-- Kullanıcı görsel test checklist'ini tamamlar.
+- Görsel kabul testi istenmez; yalnızca değişen kodun otomatik testleri, statik analizi ve CI sonuçları değerlendirilir.
 **Kapı:** CI ve manuel kabul birlikte başarılı olmalı.
 
 ### 16.7 — Kapanış ve entegrasyon sözleşmesi
@@ -258,7 +258,7 @@ Kullanılmayan kare harita dosyalarının kaldırılması ancak tek harita karar
 | Geçiş/sahne sınırı | transition + characterization tests | ana dünya akışı korunur; varsa easter egg sınırı açık ve tekil |
 | Konum sahipliği | movement/runtime tests | ana dünyada tek authoritative state; kare sahneyle örtük state paylaşımı yok |
 | Çarpışma/occupancy | movement/occupancy tests | ana dünya hareket engelleri ve occupancy korunur |
-| Görsel sunum | game_ui tests + manuel kontrol | ana hex dünya ve seçilen kare harita doğru çizilir |
+| Görsel sunum kodu | Değişiklik yoksa test gerekmez; renderer değişirse ilgili render/unit testleri | Teknik temizlik görsel davranışı değiştirmez |
 | Kayıt/yükleme | persistence/session tests | eski save'ler bozulmaz; kare map referansları güvenle ele alınır |
 | Paketleme | clean install / release verification | gerekli hex içerikleri ve tek kare easter egg pakete dahil |
 | Mimari sınırlar | architecture tests | domain/application/UI import sınırları korunur |
@@ -290,4 +290,4 @@ Kullanıcı teknik planın uygulanmasını onayladı. Aşama 16.1 teknik baselin
 
 **Kritik sıralama çakışması:** Ürün hedefi ana oyunda hex, tek kare easter egg iken mevcut uygulamanın ana gameplay'i kare sistem üzerinde çalışıyor; hex görünümü ise actor konumunu sahiplenmeyen geçici bir runtime. Bu nedenle "önce kare sistemi tek haritaya indir, sonra hex entegrasyonu yap" sırası güvenli değildir. Hex gameplay entegrasyonu ve içerik/save sahipliği çözülmeden kare haritaları tek dosyaya indirmek mevcut oyunu kırar. Bu bağımlılık kullanıcıyla netleştirilmeden 16.2'de tek harita seçimi ve 16.5'te kare runtime kaldırma adımlarına geçilmeyecektir.
 
-Şu anki sonraki işlem, kullanıcının mevcut `--play` akışını görsel olarak doğrulamasıdır. Ardından mimari sıra için karar verilecek; korunan dallar değiştirilmeyecektir.
+Kullanıcı görsel test istemediğini açıkça belirtti. Bundan sonra `--play` manuel kontrolü istenmeyecek; teknik kararlar kod, bağımlılık grafı, Pytest, Ruff, paketleme ve GitHub Actions ile doğrulanacaktır. Sıralama kapısı, mevcut runtime sahipliği ve içerik/save bağımlılıkları esas alınarak teknik plan içinde çözülecektir. Korunan dallar değiştirilmeyecektir.
