@@ -1,6 +1,7 @@
 import random
 
 import pytest
+
 from hex_world_lab.rendering.procedural.variation import create_rng, normalize_seed
 
 
