@@ -1427,7 +1427,9 @@ class GameplayService:
             raise KeyError(f"NPC has no trade profile: {npc_id}")
         npc = bundle.social.npcs.get(npc_id)
         self._require_actor_in_active_world(bundle, actor_id)
-        if self._require_legacy_actor_location(bundle, actor_id) != npc.location_id:
+        spatial = bundle.actors.legacy_spatial_state(actor_id)
+        actor_location_id = spatial.location_id if spatial is not None else None
+        if actor_location_id != npc.location_id:
             raise GameplayServiceError("Player must be at the NPC's location to trade.")
         if resource_type not in merchant.accepted_resources:
             raise GameplayServiceError("This NPC does not buy that resource.")
@@ -1507,8 +1509,10 @@ class GameplayService:
         npc = bundle.social.npcs.get(npc_id)
         if npc is None:
             raise KeyError(f"NPC not found: {npc_id}")
-        actor_location_id = self._require_legacy_actor_location(bundle, actor_id)
-        if npc.location_id is not None and npc.location_id != actor_location_id:
+        if (
+            npc.location_id is not None
+            and self._require_legacy_actor_location(bundle, actor_id) != npc.location_id
+        ):
             raise GameplayServiceError("Actor and NPC must be at the same location.")
         dialogue = bundle.social.dialogues.get(dialogue_id)
         if dialogue is None:
@@ -1769,8 +1773,10 @@ class GameplayService:
             npc = bundle.social.npcs.get(npc_id)
             if npc is None:
                 raise KeyError(f"NPC not found: {npc_id}")
-            actor_location_id = self._require_legacy_actor_location(bundle, actor_id)
-            if npc.location_id is not None and npc.location_id != actor_location_id:
+            if (
+                npc.location_id is not None
+                and self._require_legacy_actor_location(bundle, actor_id) != npc.location_id
+            ):
                 raise GameplayServiceError("Actor and quest giver must be at the same location.")
 
         quest = bundle.quest_log.get(quest_id)
