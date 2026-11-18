@@ -1,5 +1,6 @@
 import pygame
 import pytest
+
 from hex_world_lab.rendering.procedural.cache import ProceduralSurfaceCache
 
 
