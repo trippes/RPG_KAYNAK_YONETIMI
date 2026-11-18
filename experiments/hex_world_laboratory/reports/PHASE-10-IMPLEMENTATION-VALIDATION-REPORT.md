@@ -1,6 +1,6 @@
 # Aşama 10 — Teknik Uygulama ve Doğrulama Raporu
 
-> **Durum:** 10.1–10.8 teknik uygulama ve otomatik doğrulama tamamlandı; kullanıcı manuel kabulü bekleniyor.  
+> **Durum:** 10.1–10.8 teknik uygulama, otomatik doğrulama ve kullanıcı manuel kabulü tamamlandı; Aşama 10 kapatıldı.  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Kod doğrulama commit'i:** `d4ce6d8704aa46e0b327f539c72b9a9b0d350c2d`  
 > **Tarih:** 18 Kasım 2026
@@ -9,7 +9,7 @@
 
 Aşama 10.1–10.8 teknik kapsamı uygulandı. Merkezi tick koordinasyonu, deterministik sistem sırası, player entity/spatial eşitlemesi, render saflığı, hareketsiz NPC/kaynak/yoldaş doğrulamaları, harita yaşam döngüsü regresyonları, uzun süreli tick testi ve ayrı performans benchmarkları tamamlandı.
 
-Aşama henüz resmen kapatılmadı. Son kullanıcı masaüstü görsel/işlevsel kabulü bekleniyor.
+Aşama 10, kullanıcının 18 Kasım 2026 tarihinde görsel testlerin başarılı olduğunu bildirmesiyle resmen kapatılmış ve kabul edilmiştir. Bu dosya teknik uygulama/doğrulama kaydıdır; kapanış özeti `PHASE-10-CLOSURE-REPORT.md` dosyasındadır.
 
 ## 2. Mimari uygulama
 
@@ -79,16 +79,15 @@ NPC devriyesi/AI/hareketi, gerçek yoldaş takip hareketi, pathfinding, click-to
 
 ## 8. Manuel kabul
 
-Kullanıcının yapacağı son işlem, laboratuvar kök dizininde tek başlatıcıyı çalıştırmaktır:
-
-```powershell
-python -m hex_world_lab
-```
-
-Ardından [PHASE-10-MANUAL-ACCEPTANCE-CHECKLIST.md](../docs/PHASE-10-MANUAL-ACCEPTANCE-CHECKLIST.md) maddeleri gerçek masaüstü çalıştırmasında doğrulanmalıdır. Kullanıcı kabulü gelmeden Aşama 10 resmen kapatılmış sayılmaz.
+Kullanıcı 18 Kasım 2026 tarihinde görsel testlerin başarılı olduğunu bildirmiş ve Aşama 10'u tamamlanmış olarak kabul etmiştir. [Manuel Kabul Kontrol Listesi](../docs/PHASE-10-MANUAL-ACCEPTANCE-CHECKLIST.md) kabul edildi olarak güncellenmiştir.
 
 ## 9. Dal güvenliği
 
 - Çalışma dalı: `experiment/hex-world-laboratory`.
 - `main` SHA: `01dd11e17a345624748b724467a09beb8e309ea0` — değişmedi.
 - `demo_eldoria` SHA: `7d53d431d5c3639fd95d273de9043b64483a5125` — değişmedi.
+
+
+## 10. Nihai durum
+
+Teknik uygulama, otomatik doğrulama, Linux/Windows Core Quality, benchmarklar ve kullanıcı manuel görsel/işlevsel kabulü tamamlanmıştır. Aşama 10 resmen kapatılmıştır. Nihai kapanış: [PHASE-10-CLOSURE-REPORT.md](PHASE-10-CLOSURE-REPORT.md).
