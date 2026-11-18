@@ -112,3 +112,33 @@ def test_completed_tick_state_is_consistent_across_movement_registry_and_spatial
         assert demo.movement.tick_coordinator.last_completed_tick_number == 14
     finally:
         pygame.quit()
+
+def test_three_thousand_six_hundred_ticks_preserve_world_entity_and_spatial_consistency():
+    pygame.init()
+    try:
+        demo, _ = make_demo()
+        stationary_ids = (*demo.npc_ids, *demo.resource_ids)
+        stationary_before = {
+            entity_id: demo.coordinator.registry.require(entity_id).transform.location.position
+            for entity_id in stationary_ids
+        }
+        coordinator = demo.movement.tick_coordinator
+        for tick_number in range(3600):
+            coordinator.advance_tick(tick_number)
+
+        position = demo.movement.state.position
+        player = demo.coordinator.registry.require(demo.player_id)
+        area = EntityAABB(position.x - 1, position.y - 1, position.x + 1, position.y + 1)
+        indexed = demo.coordinator.spatial_index.query(demo.map_id, area)
+        stationary_after = {
+            entity_id: demo.coordinator.registry.require(entity_id).transform.location.position
+            for entity_id in stationary_ids
+        }
+
+        assert coordinator.last_completed_tick_number == 3599
+        assert player.transform.location.position == position
+        assert demo.player_id in {entity.entity_id for entity in indexed}
+        assert stationary_after == stationary_before
+    finally:
+        pygame.quit()
+
