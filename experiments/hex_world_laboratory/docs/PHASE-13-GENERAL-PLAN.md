@@ -4,7 +4,7 @@
 > **Proje:** Eldoria — Hex World Laboratory  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Ön koşul:** Aşama 12 resmen kapatıldı (18 Kasım 2026)  
-> **Durum:** GENEL PLAN HAZIR — KULLANICI ONAYI BEKLİYOR  
+> **Durum:** KULLANICI TARAFINDAN ONAYLANDI — 18 KASIM 2026  
 > **Uygulama durumu:** Başlamadı
 
 ## 1. Amaç ve gerekçe
