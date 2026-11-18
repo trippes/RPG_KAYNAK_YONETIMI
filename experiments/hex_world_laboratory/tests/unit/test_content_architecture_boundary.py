@@ -21,6 +21,10 @@ def test_content_domain_does_not_import_pygame_or_rendering():
                 or name.startswith("pygame.")
                 or name == "hex_world_lab.rendering"
                 or name.startswith("hex_world_lab.rendering.")
+                or name == "hex_world_lab.environment"
+                or name.startswith("hex_world_lab.environment.")
+                or name == "hex_world_lab.physics"
+                or name.startswith("hex_world_lab.physics.")
                 for name in names
             ):
                 violations.append(f"{path.name}:{node.lineno}")
