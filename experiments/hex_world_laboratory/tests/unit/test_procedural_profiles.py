@@ -1,9 +1,11 @@
 import pygame
 import pytest
 
+from hex_world_lab.rendering.procedural.cache import ProceduralSurfaceCache
 from hex_world_lab.rendering.procedural.profiles import (
     PROFILE_DEFINITIONS,
     ProceduralProfile,
+    build_environment_profile,
     build_environment_profiles,
 )
 from hex_world_lab.rendering.procedural_environment import build_environment_surfaces
@@ -58,3 +60,21 @@ def test_profile_builder_rejects_invalid_seed_and_supersampling():
         build_environment_profiles(seed="not-an-integer")
     with pytest.raises(ValueError):
         build_environment_profiles(supersampling=0)
+
+
+def test_profile_builder_reuses_cached_surface_for_identical_inputs():
+    cache = ProceduralSurfaceCache(max_entries=5, max_bytes=2_000_000)
+    first = build_environment_profile("grass", seed=7, cache=cache)
+    second = build_environment_profile("grass", seed=7, cache=cache)
+    assert first is second
+    assert cache.stats().hits == 1
+    assert cache.stats().misses == 1
+
+
+def test_profile_cache_key_separates_seed_variants():
+    cache = ProceduralSurfaceCache(max_entries=5, max_bytes=2_000_000)
+    first = build_environment_profile("flower", seed=7, cache=cache)
+    second = build_environment_profile("flower", seed=8, cache=cache)
+    assert first is not second
+    assert _pixels(first) != _pixels(second)
+    assert cache.stats().entries == 2
