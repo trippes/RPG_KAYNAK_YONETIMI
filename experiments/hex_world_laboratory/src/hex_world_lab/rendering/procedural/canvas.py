@@ -1,7 +1,8 @@
 """Pygame canvas adapter for procedural Surface generation."""
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+import math
 
 import pygame
 
@@ -31,6 +32,7 @@ class ProceduralCanvas:
 
     logical_size: tuple[int, int]
     supersampling: int = 3
+    surface: pygame.Surface = field(init=False)
 
     def __post_init__(self) -> None:
         self.logical_size = _size(self.logical_size, "logical_size")
@@ -43,8 +45,6 @@ class ProceduralCanvas:
             flags=pygame.SRCALPHA,
             depth=32,
         )
-
-    surface: pygame.Surface = None  # type: ignore[assignment]
 
     @property
     def pixel_size(self) -> tuple[int, int]:
@@ -65,7 +65,7 @@ class ProceduralCanvas:
         values = (x, y, width, height)
         if any(isinstance(value, bool) or not isinstance(value, (int, float)) for value in values):
             raise TypeError("rectangle values must be numbers")
-        if any(not pygame.math.Vector2(value, 0).x == value for value in (x, y, width, height)):
+        if any(not math.isfinite(value) for value in values):
             raise ValueError("rectangle values must be finite")
         if width < 0 or height < 0:
             raise ValueError("rectangle dimensions must not be negative")
@@ -82,6 +82,4 @@ class ProceduralCanvas:
         target_size = self.logical_size if output_size is None else _size(output_size, "output_size")
         if target_size == self.pixel_size:
             return self.surface.copy()
-        if target_size == self.logical_size:
-            return pygame.transform.smoothscale(self.surface, target_size)
         return pygame.transform.smoothscale(self.surface, target_size)
