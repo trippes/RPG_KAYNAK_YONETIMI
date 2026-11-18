@@ -316,6 +316,9 @@ class HexWorldView:
             self._movement_path = ()
             self._movement_elapsed = 0.0
             self._camera = HexCamera()
+            self.service.application.holder.current.actors.suspend_legacy_spatial(
+                self.entity_id
+            )
             self.active = True
             self.message = "Altıgen dünyaya geçildi. Bağlı haritalara sınırdan geçebilirsin. H: kare dünyaya dön."
             return True
@@ -364,6 +367,10 @@ class HexWorldView:
 
     def leave(self):
         """Return to the untouched legacy square-world actor state."""
+        if self.entity_id is not None:
+            self.service.application.holder.current.actors.resume_legacy_spatial(
+                self.entity_id
+            )
         self.runtime = None
         self.entity_id = None
         self.selected = None
