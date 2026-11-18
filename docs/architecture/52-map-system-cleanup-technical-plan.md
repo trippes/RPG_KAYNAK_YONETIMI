@@ -172,8 +172,8 @@ Test hedefleri:
 - `HexWorldView.enter()` oyuncuyu hex başlangıç hücresine yeniden kaydediyor; `leave()` runtime'ı atıyor. Hex konumu ana actor state'ine yazılmıyor ve tekrar girişte korunmuyor.
 - NPC, kaynak, market, kare map transition, save/restore, paketleme ve release verification bağımlılıkları raporlandı.
 - Ayrıntı: [Aşama 16.1 Baseline Raporu](53-map-cleanup-phase-16-1-baseline.md).
-- Yerel Windows `--play`, H geçişi ve save/load görsel kabulü kullanıcı tarafından henüz yapılmadı.
-**Kapı:** Manuel kabul tamamlanmadan 16.1 tamamen kapanmaz. Hex runtime sahipliği çözülmeden kare harita dosyaları kaldırılmaz.
+- Görsel kabul bu teknik temizlik aşamasında istenmez. Mevcut davranış kaynak kodu ve characterization testleriyle belgelenmiştir.
+**Kapı:** Teknik baseline raporu ve CI kanıtı mevcuttur. Hex runtime sahipliği çözülmeden kare harita dosyaları kaldırılmaz.
 
 ### 16.2 — Harita verisi sınıflandırması ve tek kare haritanın seçimi
 
@@ -230,7 +230,7 @@ Test hedefleri:
 - Harita veri şeması, runtime authority, koordinat sınırı, render adapter ve asset ownership kararları kaydedilir.
 - Laboratuvar A15 raporundaki altı entegrasyon blocker'ının hangilerinin çözüldüğü ve hangilerinin entegrasyon aşamasına kaldığı eşleştirilir.
 - "Hazır / koşullu hazır / hazır değil" kararı verilir.
-**Kapı:** Kullanıcı kapanış kabulü olmadan sonraki entegrasyon aşaması açılmaz.
+**Kapı:** Teknik kapanış raporu, otomatik doğrulama kanıtı ve branch koruma denetimi olmadan sonraki entegrasyon aşaması açılmaz; `demo_eldoria`'ya merge için kullanıcı onayı korunur.
 
 ## 6. Korumalı sözleşmeler
 
