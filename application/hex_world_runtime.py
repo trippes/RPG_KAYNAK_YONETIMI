@@ -23,6 +23,16 @@ class _HexEntityState:
     profile: MovementProfile
     active: bool
 
+    def __post_init__(self):
+        if not isinstance(self.entity_id, str) or not self.entity_id.strip():
+            raise ValueError("entity_id must be a non-empty string.")
+        if self.kind not in {"player", "npc", "object"}:
+            raise ValueError("kind must be player, npc, or object.")
+        if not isinstance(self.profile, MovementProfile):
+            raise TypeError("profile must be a MovementProfile.")
+        if not isinstance(self.active, bool):
+            raise TypeError("active must be boolean.")
+
 
 @dataclass(frozen=True, slots=True)
 class HexMovableEntity:
@@ -115,15 +125,14 @@ class HexWorldRuntime:
             raise TypeError("profile must be a MovementProfile.")
         if map_definition.is_blocked(position.cell) and not profile.can_traverse_blocked_cells:
             raise ValueError("Entity cannot be placed on a blocked cell.")
+        state = _HexEntityState(entity_id, kind, profile, active)
         occupant = HexOccupant(
             entity_id, position, blocks_movement, blocks_occupancy, kind,
         )
         self._occupancy.add(
             occupant, ignore_blockers=profile.ignores_occupancy
         )
-        self._entities[entity_id] = _HexEntityState(
-            entity_id, kind, profile, active
-        )
+        self._entities[entity_id] = state
         return self.entity(entity_id)
 
     def _entity_state(self, entity_id: str) -> _HexEntityState:
