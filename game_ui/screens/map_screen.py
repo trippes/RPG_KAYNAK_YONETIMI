@@ -13,6 +13,12 @@ class MapScreen:
         self._selection_initialized = False
         self.message = "Bir konum seçerek dünya haritasını incele."
 
+    def _spatial(self, actor):
+        return (
+            self.service.legacy_actor_spatial_state(actor.actor_id)
+            if actor is not None else None
+        )
+
     def _context(self):
         actors = self.service.state().actors
         if not actors:
@@ -22,9 +28,13 @@ class MapScreen:
         if world_map is None:
             return actor, None, ()
         locations = world_map.locations()
+        spatial = self._spatial(actor)
         if not self._selection_initialized and locations:
             self.selected = next(
-                (index for index, location in enumerate(locations) if location.location_id == actor.location_id),
+                (
+                    index for index, location in enumerate(locations)
+                    if spatial is not None and location.location_id == spatial.location_id
+                ),
                 0,
             )
             self._selection_initialized = True
@@ -33,6 +43,7 @@ class MapScreen:
 
     def handle(self, state):
         actor, world_map, locations = self._context()
+        spatial = self._spatial(actor)
 
         if locations and state.mouse_clicked and state.mouse_pos is not None:
             mx, my = state.mouse_pos
@@ -50,7 +61,9 @@ class MapScreen:
                 self.selected = (self.selected + 1) % len(locations)
             if state.pressed("confirm") and actor is not None:
                 destination = locations[self.selected]
-                if destination.location_id == actor.location_id:
+                if spatial is None:
+                    self.message = "Kare harita konumu şu anda etkin değil."
+                elif destination.location_id == spatial.location_id:
                     self.message = "Zaten bu konumdasın."
                 else:
                     self.message = (
@@ -64,10 +77,11 @@ class MapScreen:
         map_rect = renderer.pg.Rect(24, 136, 912, 338)
         renderer.panel(map_rect, (22, 30, 43), (62, 78, 101))
         actor, world_map, locations = self._context()
+        spatial = self._spatial(actor)
         if not locations or world_map is None:
             renderer.text("Bu dünyada harita bulunamadı.", 52, 190)
         else:
-            current_id = actor.location_id if actor else None
+            current_id = spatial.location_id if spatial is not None else None
             selected_id = locations[self.selected].location_id if locations else None
             renderer.world_map(world_map, current_id, selected_id, map_rect)
         renderer.panel(renderer.pg.Rect(24, 484, 912, 34), (22, 30, 43), (62, 78, 101))
