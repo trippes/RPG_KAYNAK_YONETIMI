@@ -116,3 +116,7 @@ python main.py --version
 
 Kapının kapsamı ve Core sınırı `docs/architecture/33-release-candidate-checklist.md`
 belgesinde tanımlıdır.
+
+## Harita Sistemi Temizliği
+
+Eski harita altyapısının denetimi ve kontrollü sadeleştirilmesi `experiment/map-cleanup` dalında yürütülür. Kapsam ve aşama sırası için [genel plan](docs/architecture/51-map-system-cleanup-general-plan.md), uygulama öncesi teknik sözleşmeler için [ayrıntılı teknik plan](docs/architecture/52-map-system-cleanup-technical-plan.md) belgelerine bakın. Bu dal `demo_eldoria` HEAD'inden ayrılmıştır; `main`, `demo_eldoria` ve Hex World Laboratory dalı bu çalışma sırasında korunur. Teknik plan kullanıcı tarafından ayrıca onaylanmadan kod/veri temizliği başlatılmaz.
