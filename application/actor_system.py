@@ -60,7 +60,7 @@ class ActorView:
 
     @property
     def identity(self) -> ActorIdentity:
-        """Return the immutable identity without exposing spatial state."""
+        """Return immutable identity independent from compatibility location."""
         return ActorIdentity(self.actor_id, self.world_id, self.role)
 
 
@@ -84,7 +84,12 @@ class LegacyActorSpatialStore:
         self._states: dict[str, LegacyActorSpatialState] = {}
         self._suspended: set[str] = set()
 
-    def get(self, actor_id: str, *, include_suspended: bool = False) -> LegacyActorSpatialState | None:
+    def get(
+        self,
+        actor_id: str,
+        *,
+        include_suspended: bool = False,
+    ) -> LegacyActorSpatialState | None:
         if actor_id in self._suspended and not include_suspended:
             return None
         return self._states.get(actor_id)
@@ -97,7 +102,9 @@ class LegacyActorSpatialStore:
     ) -> LegacyActorSpatialState:
         _text(actor_id, "actor_id")
         if actor_id in self._suspended:
-            raise ActorError("Legacy square position is unavailable while the actor is in the hex world.")
+            raise ActorError(
+                "Legacy square position is unavailable while the actor is in the hex world."
+            )
         _text(location_id, "location_id")
         if position is not None and not isinstance(position, Position):
             raise TypeError("position must be Position.")
@@ -246,10 +253,6 @@ class WorldActorRegistry:
         self._world_registry = None
         if world_registry is not None:
             self.bind_world_registry(world_registry)
-
-    @property
-    def legacy_spatial(self) -> LegacyActorSpatialStore:
-        return self._legacy_spatial
 
     def set_legacy_position(
         self,
