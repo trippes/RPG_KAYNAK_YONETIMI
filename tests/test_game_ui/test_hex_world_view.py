@@ -5,6 +5,7 @@ from types import SimpleNamespace
 from game_ui.input import InputState
 from game_ui.screens.main_screen import MainScreen
 from game_ui.hex_world_view import HexWorldView
+from application.hex_world_runtime import HexWorldRuntimeOwner
 from core.domain.spatial import EntityPosition, HexDirection, LocalHexPosition
 
 
@@ -19,6 +20,7 @@ class _FakeService:
         self._content_package_path = (
             Path(__file__).resolve().parents[2] / "content" / "demo_eldoria"
         )
+        self.hex_world_runtime_owner = HexWorldRuntimeOwner()
 
     def state(self):
         return SimpleNamespace(actors=(self.actor,))
@@ -143,6 +145,19 @@ class TestHexWorldView(unittest.TestCase):
             (self.service.actor.position.x, self.service.actor.position.y),
             (7, 9),
         )
+
+    def test_leave_and_reenter_reuses_session_runtime_and_hex_position(self):
+        self.assertTrue(self.view.enter())
+        self.view.handle(InputState(actions={"up"}))
+        expected = self.view.runtime.entity("hero").position
+        runtime = self.view.runtime
+
+        self.view.leave()
+        self.assertIs(self.service.hex_world_runtime_owner.runtime, runtime)
+        self.assertTrue(self.view.enter())
+
+        self.assertIs(self.view.runtime, runtime)
+        self.assertEqual(self.view.runtime.entity("hero").position, expected)
 
     def test_mouse_wheel_adjusts_hex_world_zoom_with_limits(self):
         self.assertTrue(self.view.enter())
