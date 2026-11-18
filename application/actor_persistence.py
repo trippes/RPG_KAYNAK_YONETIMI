@@ -81,20 +81,25 @@ class ActorSnapshot:
         if characters is not None:
             _validate_character_links(registry.actors(), characters)
 
-        actors = tuple(
-            ActorRecord(
-                view.actor_id,
-                view.world_id,
-                view.role,
-                view.active,
-                view.activity_id,
-                view.character_id,
-                view.location_id,
-                view.position,
-                view.inventory_id,
+        actor_records = []
+        for view in registry.actors():
+            spatial = registry.legacy_spatial_state(
+                view.actor_id, include_suspended=True
             )
-            for view in registry.actors()
-        )
+            actor_records.append(
+                ActorRecord(
+                    view.actor_id,
+                    view.world_id,
+                    view.role,
+                    view.active,
+                    view.activity_id,
+                    view.character_id,
+                    spatial.location_id if spatial is not None else None,
+                    spatial.position if spatial is not None else None,
+                    view.inventory_id,
+                )
+            )
+        actors = tuple(actor_records)
 
         activities = tuple(
             ActivityRecord(
@@ -293,11 +298,13 @@ class ActorSnapshot:
                         record.role,
                         record.active,
                         record.character_id,
-                        record.location_id,
-                        record.position,
                         record.inventory_id,
                     )
                 )
+                if record.location_id is not None:
+                    registry.set_legacy_position(
+                        record.actor_id, record.location_id, record.position
+                    )
 
             manager = ActorActivityManager(
                 registry,
