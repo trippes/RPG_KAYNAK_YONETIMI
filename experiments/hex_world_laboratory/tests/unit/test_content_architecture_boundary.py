@@ -1,6 +1,8 @@
 """The content domain must remain independent of Pygame and rendering."""
 
 import ast
+import subprocess
+import sys
 from pathlib import Path
 
 
@@ -29,3 +31,19 @@ def test_content_domain_does_not_import_pygame_or_rendering():
             ):
                 violations.append(f"{path.name}:{node.lineno}")
     assert not violations, ", ".join(violations)
+
+
+def test_importing_content_domain_does_not_load_pygame_or_rendering():
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "import sys; import hex_world_lab.content; "
+            "assert 'pygame' not in sys.modules; "
+            "assert 'hex_world_lab.rendering' not in sys.modules",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr
