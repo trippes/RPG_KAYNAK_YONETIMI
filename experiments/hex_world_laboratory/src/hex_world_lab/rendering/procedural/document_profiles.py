@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 import math
+from hex_world_lab.content.definition import ContentCategory, ContentDefinition
 from hex_world_lab.content.drawing import (
     CircleElement,
     DrawingStyle,
@@ -12,7 +13,8 @@ from hex_world_lab.content.drawing import (
     PolylineElement,
     VisualDocument,
 )
-from hex_world_lab.rendering.procedural.variation import normalize_seed
+from hex_world_lab.content.library import ContentLibrary
+from .variation import normalize_seed
 
 
 def _doc(key, size, anchor, palette, layers, seed=0):
@@ -205,3 +207,18 @@ def build_profile_document(profile_key: str, *, seed: int | str = 0) -> VisualDo
         (Layer("flowers", 0, tuple(elements)),),
         normalized,
     )
+
+def build_builtin_content_library(*, seed: int | str = 0) -> ContentLibrary:
+    """Create the stable five-profile library used by Phase 14 examples and tests."""
+    definitions = tuple(
+        ContentDefinition(
+            content_id=f"environment.{key}",
+            name=key.replace("_", " ").title(),
+            category=ContentCategory.ENVIRONMENTAL_OBJECT,
+            visual_document=build_profile_document(key, seed=seed),
+            collider=None,
+            metadata={"source": "procedural_profile", "profile_id": key},
+        )
+        for key in ("tree", "rock", "bush", "grass", "flower")
+    )
+    return ContentLibrary("eldoria.environment.v1", definitions)
