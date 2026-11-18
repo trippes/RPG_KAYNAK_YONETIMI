@@ -1,9 +1,9 @@
 """Immutable RGB values and deterministic color ramps."""
 from __future__ import annotations
 
-from dataclasses import dataclass
 import math
 from collections.abc import Iterable
+from dataclasses import dataclass
 
 RGB = tuple[int, int, int]
 
