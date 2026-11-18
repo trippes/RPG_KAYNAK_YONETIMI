@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://eldoria.invalid/schemas/content-library.v1.schema.json",
+  "$id": "urn:eldoria:content-library:v1",
   "title": "Eldoria Content Library v1",
   "type": "object",
   "additionalProperties": false,
@@ -18,6 +18,15 @@
     "point": {
       "type": "array",
       "prefixItems": [{ "type": "number" }, { "type": "number" }],
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "normalizedPoint": {
+      "type": "array",
+      "prefixItems": [
+        { "type": "number", "minimum": 0, "maximum": 1 },
+        { "type": "number", "minimum": 0, "maximum": 1 }
+      ],
       "minItems": 2,
       "maxItems": 2
     },
@@ -114,8 +123,8 @@
           "minItems": 2,
           "maxItems": 2
         },
-        "ground_anchor": { "$ref": "#/$defs/point" },
-        "depth_anchor": { "$ref": "#/$defs/point" },
+        "ground_anchor": { "$ref": "#/$defs/normalizedPoint" },
+        "depth_anchor": { "$ref": "#/$defs/normalizedPoint" },
         "palette": {
           "type": "object",
           "minProperties": 1,
