@@ -1,6 +1,7 @@
 import math
 
 import pytest
+
 from hex_world_lab.rendering.procedural.geometry import Bounds2D, Point2D, Transform2D
 
 
