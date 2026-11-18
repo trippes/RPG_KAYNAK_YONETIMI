@@ -56,7 +56,8 @@ def test_entity_demo_contains_player_two_npcs_two_resources_and_companion_comman
         demo=EntityDemo()
         snapshot=demo.build_render_snapshot()
         assert len(demo.coordinator.registry.all_entities())==5
-        assert len(snapshot.sprites)==5
+        assert len(snapshot.sprites)==8
+        assert {sprite.visual_id for sprite in snapshot.sprites} >= {"tree", "rock", "bush"}
         assert len(demo.npc_ids)==2 and len(demo.resource_ids)==2
         guard=demo.coordinator.registry.require(demo.npc_ids[0])
         relation=demo.recruit_guard()

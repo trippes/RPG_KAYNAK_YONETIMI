@@ -133,8 +133,12 @@ def test_render_snapshot_contains_world_space_geometry_only():
         demo = MovementDemo()
         snapshot = demo.build_render_snapshot()
         assert len(snapshot.cells) == 61
-        assert len(snapshot.circles) >= 1
+        # Environment colliders are represented in F3 debug DTOs, not as
+        # duplicate visible circles/polygons in the normal scene.
+        assert len(snapshot.circles) == 0
         assert len(snapshot.polygons) >= 1
+        assert {item.owner_id for item in snapshot.colliders} >= {"object:tree", "object:rock"}
+        assert {item.instance_id for item in snapshot.environment_debug} == {"tree", "rock", "bush"}
         assert len(snapshot.house_lines) > 0
         assert snapshot.actor_position == demo.state.position
     finally:

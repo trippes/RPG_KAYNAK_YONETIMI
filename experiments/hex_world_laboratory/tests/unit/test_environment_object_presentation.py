@@ -6,6 +6,8 @@ from hex_world_lab.geometry import WorldPoint
 from hex_world_lab.physics import CircleShape
 from hex_world_lab.world import MapId, WorldId
 
+import pytest
+
 
 def test_adapters_keep_visual_metadata_and_collider_separate():
     world, map_id = WorldId("world"), MapId("map")
@@ -28,5 +30,10 @@ def test_adapters_keep_visual_metadata_and_collider_separate():
     assert tree.normalized_anchor == (0.5, 0.95)
     debug = environment_debug_visuals(scene, {"tree": (100, 120), "bush": (40, 30)})
     tree_debug = next(item for item in debug if item.instance_id == "tree-1")
-    assert tree_debug.visual_bounds == (WorldPoint(-40, 14), WorldPoint(60, 134))
+    left_bottom, right_top = tree_debug.visual_bounds
+    assert (left_bottom.x, left_bottom.y) == pytest.approx((-40, 14))
+    assert (right_top.x, right_top.y) == pytest.approx((60, 134))
+    # Asset dimensions affect presentation bounds, never physical collider data.
+    environment_sprite_visuals(scene, {"tree": (200, 240), "bush": (80, 60)})
+    assert environment_obstacles(scene) == obstacles
     assert tree_debug.canopy_bounds is not None
