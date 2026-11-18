@@ -363,7 +363,7 @@ Kullanıcıdan masaüstü editör testi istenmeyecektir. Kabul adımları:
 
 ## 12. Onay kapısı
 
-Bu teknik plan kullanıcı tarafından 18 Kasım 2026 tarihinde onaylanmıştır. 14.2–14.8 uygulaması yalnızca `experiment/hex-world-laboratory` dalında yürütülmüştür; `main` ve `demo_eldoria` dallarına commit/merge yapılmamıştır. Resmî kapanış, otomatik doğrulama ve kullanıcı masaüstü kabulü tamamlandığında yapılacaktır.
+Bu teknik plan kullanıcı tarafından 18 Kasım 2026 tarihinde onaylanmıştır. 14.2–14.8 uygulaması yalnızca `experiment/hex-world-laboratory` dalında yürütülmüştür; `main` ve `demo_eldoria` dallarına commit/merge yapılmamıştır. Resmî kapanış 19 Kasım 2026 tarihinde otomatik doğrulama ve kullanıcı görsel kabulinin tamamlanmasıyla yapıldı. [Kapanış raporu](../reports/PHASE-14-CLOSURE-REPORT.md).
 
 
 ## 13. Uygulama durumu — 18 Kasım 2026
@@ -374,6 +374,6 @@ Bu teknik plan kullanıcı tarafından 18 Kasım 2026 tarihinde onaylanmıştır
 - 14.5: Beş profilin vektör belge üretimi eklendi. Eski Surface API'leri aynı kalırken artık VisualDocument + Pygame renderer üzerinden üretim yapar; ağaç/kaya/çalı pixel parity ve grass/flower seed determinism testleri korunur. Bounded cache, content ID asset registration ve açık collider adaptörleri eklendi.
 - 14.6: MapContentDocument placement add/update/remove ve mevcut map v1 wrapper persistence tamamlandı.
 - 14.7: Built-in beş profil ContentLibrary, map preview entegrasyonu, environment scene/render/physics adapter bağlantıları ve ELDORIA CONTENT EDITOR API hazırlık belgesi tamamlandı.
-- 14.8: 881/881 Pytest, Ruff lint/format, Linux/Windows Core Quality, tüm aşama benchmarkları ve Phase 14 PNG/JSON artifact başarılı. [Uygulama/doğrulama raporu](../reports/PHASE-14-IMPLEMENTATION-REPORT.md) eklendi; kullanıcı manuel kabul kontrol listesi son kapı olarak bekliyor.
+- 14.8: 881/881 Pytest, Ruff lint/format, Linux/Windows Core Quality, tüm aşama benchmarkları ve Phase 14 PNG/JSON artifact başarılı. Kullanıcı 19 Kasım 2026 tarihinde görsel kabul verdi; Aşama 14 resmen kapatıldı. [Uygulama/doğrulama raporu](../reports/PHASE-14-IMPLEMENTATION-REPORT.md) ve [kapanış raporu](../reports/PHASE-14-CLOSURE-REPORT.md) eklendi.
 - Bilinçli sınır: Beş built-in profilin collider alanı varsayılan olarak null; görselden collider türetilmez. Oyun/Content Editor ihtiyacına göre collider ayrı açık veri olarak yazılır.
 - GUI, masaüstü editör, fareyle harita düzenleme, rotation/scale ve ana oyuna entegrasyon yapılmadı.
