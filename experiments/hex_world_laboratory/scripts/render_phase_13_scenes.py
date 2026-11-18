@@ -6,7 +6,6 @@ from dataclasses import replace
 from pathlib import Path
 
 import pygame
-
 from hex_world_lab.application.movement_demo import MovementDemo
 from hex_world_lab.rendering import RenderDebugOptions
 from hex_world_lab.rendering.procedural import build_environment_profiles
