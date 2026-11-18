@@ -29,7 +29,7 @@ from character import Character, CharacterFactory, CharacterSnapshot, Skills
 from character import Attributes
 from types import MappingProxyType
 from application.production_facility import ProductionFacilityRegistry
-from quests import QuestLog, QuestSnapshot, QuestGraphProgress
+from quests import QuestLog, QuestSnapshot
 from application.actor_system import WorldActor
 from economy import Economy, EconomySnapshot
 from application.extended_persistence import SocialSnapshot, CombatSnapshot
@@ -501,7 +501,6 @@ class GameApplication:
         world = bundle.session.worlds.get_active()
         if world is None:
             raise RuntimeError("Aktif World bulunmamaktadır.")
-        runtime = bundle.simulation
         onceki_tick, current_tick = bundle.session.world_runtime.advance_world(world, ticks)
         onceki_tick = onceki_tick.value
         zaman = world.time
