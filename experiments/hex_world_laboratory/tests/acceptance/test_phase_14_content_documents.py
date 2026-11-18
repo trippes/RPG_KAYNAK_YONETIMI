@@ -41,8 +41,12 @@ def test_machine_readable_v1_schemas_are_present_and_versioned():
     from pathlib import Path
 
     schema_root = Path(__file__).resolve().parents[2] / "schemas"
-    library_schema = json.loads((schema_root / "content-library.v1.schema.json").read_text(encoding="utf-8"))
-    map_schema = json.loads((schema_root / "map-content.v1.schema.json").read_text(encoding="utf-8"))
+    library_schema = json.loads(
+        (schema_root / "content-library.v1.schema.json").read_text(encoding="utf-8")
+    )
+    map_schema = json.loads(
+        (schema_root / "map-content.v1.schema.json").read_text(encoding="utf-8")
+    )
     assert library_schema["properties"]["schema_version"]["const"] == 1
     assert map_schema["properties"]["schema_version"]["const"] == 1
     assert library_schema["properties"]["kind"]["const"] == "eldoria_content_library"
