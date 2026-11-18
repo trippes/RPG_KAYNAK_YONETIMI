@@ -179,9 +179,8 @@ class MovementDemo:
                 (0.04, 0.02, 0.92, 0.68),
                 # Block only the trunk/root footprint; the canopy remains passable.
                 ConvexPolygonShape((
-                    Vector2(-20.0, -2.0), Vector2(-12.0, -15.0),
-                    Vector2(-8.0, -46.0), Vector2(8.0, -46.0),
-                    Vector2(12.0, -15.0), Vector2(20.0, -2.0),
+                    Vector2(-20.0, -2.0), Vector2(-8.0, -46.0),
+                    Vector2(8.0, -46.0), Vector2(20.0, -2.0),
                 )),
             ),
             EnvironmentalObjectDefinition(
