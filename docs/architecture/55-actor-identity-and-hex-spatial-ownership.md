@@ -85,6 +85,20 @@ Otoriter konum:
 - Harita geçişi tek işlem olarak tamamlanır; hata halinde kısmi transfer olmaz.
 - Oturumdan çıkıp aynı oturuma dönme mevcut runtime ve konumu korur.
 
+### Katman 2 uygulama sonucu
+
+- `HexWorldRuntime` içindeki `_HexEntityState` yalnızca entity kimliği, türü, hareket profili ve aktiflik bilgisini tutar; konum alanı içermez.
+- `HexOccupancyRegistry` hareketli entity'nin tek otoriter `EntityPosition` kaynağıdır.
+- `HexWorldRuntime.entity()` ve `entities()`, konumu occupancy kaydından türetilen değişmez `HexMovableEntity` görünümleri üretir.
+- Normal hareket ve harita geçişi artık ikinci bir entity konum kopyası yazmaz; yalnızca occupancy kaydını günceller.
+- Eksik occupancy kaydı veya entity/occupancy tür uyuşmazlığı sessizce kabul edilmez; runtime tutarsızlığı açık hata üretir.
+- Geçersiz entity türü/aktiflik bilgisi, occupancy kaydı eklenmeden önce reddedilir; yarım kayıt bırakılmaz.
+- Hex runtime'ın oturum içinde korunması ve görünümden çıkıp dönünce konumun sürmesi mevcut owner davranışıyla test edilir.
+
+**Doğrulama:** Commit `92e6132ceb0542c14247f7aa92a6c8993845b2a8`; GitHub Actions run [#44420944142](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44420944142) — Linux ve Windows başarılı. Her iki platformda 1.476 test + 237 subtest; Linux Ruff, compileall, wheel ve izole kurulum doğrulaması başarılı.
+
+**Sınır:** Hex runtime konumu hâlâ oturum içi bellekte tutulur; ana oyun save/load belgesine hex konumunun eklenmesi Katman 3 kayıt/yükleme entegrasyonunda ele alınacaktır.
+
 ## Katman 3 — Legacy kare servisleri için uyumluluk sınırı
 
 ### Amaç
@@ -124,9 +138,11 @@ Yeni hex kayıtları axial konumu açık biçimde saklar ve restore sırasında 
 
 ## Güncel durum
 
-- Katman 1 tamamlandı ve Linux/Windows CI kapısından geçti.
-- Kare konum `WorldActor` dışına çıkarıldı; geçiş dönemi kare tüketicileri `LegacyActorSpatialStore` üzerinden besleniyor.
-- Hex modunda kare konum görünürlüğü ve yazımı kapatılıyor; kayıt/yükleme için askıya alınmış durum korunuyor.
-- Katman 2 henüz uygulanmadı: `HexWorldRuntime` hâlâ `HexMovableEntity.position` ile `HexOccupant.position` içinde aynı konumu iki ayrı kayıt olarak tutuyor.
+- Katman 1 tamamlandı; actor kimliği/oynanış verisi ile kare konum sahipliği ayrıldı.
+- Katman 2 tamamlandı; hex konumu occupancy kaydı tek başına yönetiyor ve entity görünümü bu kayıttan türetiliyor.
+- Her iki katmanın Linux/Windows otomatik doğrulaması başarılı.
+- Katman 3 henüz uygulanmadı. Kare tabanlı hareket, NPC, kaynak, pazar, konteyner, görev, UI ve save/load bağımlılıkları kontrollü uyumluluk sınırına taşınacak.
+- Hex içerik tarafında NPC/kaynak/market yerleşimleri ve hex başlangıç alanı henüz eksik. Bunlar axial koordinatlarla açıkça yazılmadan servis entegrasyonu tamamlanmış sayılmayacak.
+- Eski kare kayıtlar otomatik dönüştürülmeyecek; migration/recovery politikası ayrıca belirlenecek.
 
-**Bir sonraki uygulama işi:** Katman 2'de occupancy kaydını tek konum otoritesi yapmak; entity kataloğunu kimlik/tür/hareket profili/aktiflik verisine indirgemek ve `HexMovableEntity` nesnesini runtime'dan türetilen salt okunur görünüm haline getirmek.
+**Bir sonraki uygulama işi:** Katman 3 için legacy kare tüketicilerinin dosya/fonksiyon bazında envanterini çıkarmak; önce hareket ve etkileşim servisleri için kare/hex ayrımını açık bir uyumluluk sözleşmesine bağlamak. İçerik yerleşimi gerektiren noktalar tasarım onayı bekleyecek.
