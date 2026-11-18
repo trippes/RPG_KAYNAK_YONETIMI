@@ -102,6 +102,9 @@ jobs:
       - name: Benchmark Phase 11 entity spatial performance and memory
         run: python benchmarks/benchmark_phase_11_stress.py
 
+      - name: Benchmark Phase 11 simulation and render in three sessions
+        run: python benchmarks/benchmark_phase_11_simulation.py
+
       - name: Upload Phase 11 validation evidence
         if: always()
         uses: actions/upload-artifact@v4
