@@ -5,8 +5,12 @@
 > **Depo:** `trippes/RPG_KAYNAK_YONETIMI`  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Hedef entegrasyon dalı:** `demo_eldoria`  
-> **Durum:** AŞAMA 0–11 KAPALI — AŞAMA 12 OTOMATİK DOĞRULAMA TAMAM; MANUEL KABUL BEKLENİYOR
+> **Durum:** AŞAMA 0–11 KAPALI — AŞAMA 12 KAPSAM REVİZYONU KABUL EDİLDİ; PROSEDÜREL GÖRSEL UYGULAMA BEKLENİYOR
 > **Belge sürümü:** 3.0
+
+## Aşama 12–14 kapsam ayrımı — 18 Kasım 2026
+
+Aşama 12 yalnızca çevresel nesne mimarisi ve kodla çizilmiş ağaç, kaya, çalı prototiplerini kapsar. Hazır PNG/JPG/WebP kullanılmaz; Pygame çizim primitifleri ve deterministik geometri kullanılır. Genel amaçlı çizim motoru ve Content Editor bu aşamanın dışındadır. Aşama 13 genel prosedürel grafik/çizim altyapısı; Aşama 14 Content Editor ve görsel düzenleme araçlarıdır. Her aşama ayrıca planlanıp onaylanır. Önceki PNG tabanlı Aşama 12 görseli kabul edilmemiştir; prosedürel revizyonun testleri ve manuel kabulü beklenir.
 
 ---
 
@@ -774,7 +778,7 @@ Bu liste tamamlanmadan laboratuvarın ana oyuna aktarılmaya hazır olduğu söy
 | 9 | Varlıklar, etkileşimler ve yoldaş altyapısı | 9.1–9.9 uygulandı; 741 laboratuvar testi, Linux/Windows Core Quality (2.204'er test), benchmark ve kullanıcı görsel/işlevsel kabulü başarılı; 18 Kasım 2026 tarihinde kapatıldı |
 | 10 | Simülasyon orkestrasyonu ve dünya bütünlüğü | 10.1–10.8 teknik uygulama, 759 laboratuvar testi, Linux/Windows Core Quality (2.222'şer test), benchmark/artifact ve kullanıcı görsel kabulü başarılı; 18 Kasım 2026 tarihinde kapatıldı |
 | 11 | Sağlamlık, regresyon ve performans doğrulaması | 11.1–11.8 teknik, otomatik ve manuel kabul tamamlandı; 774 laboratuvar testi, Linux/Windows Core Quality, stres/benchmark raporları ve kullanıcı masaüstü kabulü başarılı; 18 Kasım 2026 tarihinde kapatıldı |
-| 12–13 | Nihai mimari ve kontrollü demo entegrasyonu | Aşama 11 tamamlandıktan sonra ayrı plan ve onayla ele alınacak |
+| 12 | Çevresel nesne mimarisi ve kodla çizilmiş ağaç/kaya/çalı prototipleri | Kapsam revize edildi; prosedürel görsel uygulama ve yeniden manuel kabul bekleniyor |\n| 13 | Genel prosedürel grafik/çizim altyapısı | Gelecek aşama; ayrıca planlanıp onaylanacak |\n| 14 | Content Editor ve görsel düzenleme araçları | Gelecek aşama; ayrıca planlanıp onaylanacak |\n| 15 | Kontrollü demo entegrasyonu | Önceki aşamalar sonrası ayrıca planlanıp onaylanacak |
 
 - Çalışma dalı: `experiment/hex-world-laboratory`.
 - Aşama 6 son otomatik test kapısında Laboratuvar CI 681/681 testle başarılıdır.
