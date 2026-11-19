@@ -59,10 +59,28 @@ class HexGameplayView:
 
         for action, direction in self.DIRECTIONS:
             if state.pressed(action):
-                self.service.hex_actor_binding.move(
-                    self.service.player_actor_id,
-                    direction,
+                actor_id = self.service.player_actor_id
+                entity = runtime.entity(actor_id)
+                map_definition = runtime.map_definition(entity.position.map_id)
+                transition = next(
+                    (
+                        candidate
+                        for candidate in map_definition.transitions
+                        if (
+                            candidate.active
+                            and candidate.exit_direction == direction
+                            and entity.position.cell in candidate.source_cells
+                        )
+                    ),
+                    None,
                 )
+                if transition is not None:
+                    self.service.hex_actor_binding.transition(
+                        actor_id,
+                        transition.transition_id,
+                    )
+                else:
+                    self.service.hex_actor_binding.move(actor_id, direction)
 
     def render(self, renderer) -> bool:
         runtime = self.service.hex_world_runtime
