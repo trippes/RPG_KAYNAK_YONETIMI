@@ -30,7 +30,6 @@ from .gameplay_service import (
     GameplayService,
     GameplayServiceError,
     GameplaySnapshotView,
-    LocationInteractionView,
     InventoryView,
     JobView,
     ResourceNodeView,
@@ -57,7 +56,6 @@ from .actor_persistence import (
     ActorRecord,
     ActorSnapshot,
 )
-from .movement import MovementManager
 from .social_runtime import SocialRuntime, SocialRuntimeError
 from .combat_runtime import Combatant, CombatResult, CombatRuntime
 from .extended_persistence import SocialSnapshot, CombatSnapshot
@@ -106,7 +104,6 @@ __all__ = [
     "GameplaySnapshotView",
     "InventoryView",
     "ResourceNodeView",
-    "LocationInteractionView",
     "FacilityView",
     "JobView",
     "ChainView",
@@ -128,7 +125,6 @@ __all__ = [
     "ActorRecord",
     "ActivityRecord",
     "ActorSnapshot",
-    "MovementManager",
     "SocialRuntime", "SocialRuntimeError", "Combatant", "CombatResult", "CombatRuntime",
     "SocialSnapshot", "CombatSnapshot",
     "CURRENT_SAVE_SCHEMA_VERSION", "migrate_save_data",

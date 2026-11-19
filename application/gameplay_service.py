@@ -26,8 +26,6 @@ from .game_application import GameApplication
 from .production_chain import ProductionChain, ProductionChainStage
 from .actor_system import ActivityView, ActorView, WorldActor
 from character import EquipmentSlot, ItemDefinition
-from .movement import MovementManager
-from world import WorldMap, LocalMapDefinition
 from .world_object_placement import WorldObjectPlacement
 from npc import Faction, NPC
 from quests import Dialogue, Quest, QuestGraph, QuestGraphProgress
@@ -122,16 +120,6 @@ class ResourceNodeView:
 
 
 @dataclass(frozen=True)
-class LocationInteractionView:
-    actor_id: str
-    location_id: str
-    location_name: str
-    character_id: str | None
-    resource_node_ids: tuple[str, ...]
-    actor_ids: tuple[str, ...]
-
-
-@dataclass(frozen=True)
 class FacilityView:
     facility_id: str
     facility_type: str
@@ -171,7 +159,6 @@ class GameplaySnapshotView:
     chains: tuple[ChainView, ...]
     actors: tuple[ActorView, ...] = ()
     activities: tuple[ActivityView, ...] = ()
-    movements: tuple = ()
 
 
 class GameplayService:
@@ -423,18 +410,6 @@ class GameplayService:
         bundle.validate()
         return bundle.actors.get(actor_id)
 
-    def register_world_map(self, world_map: WorldMap, *, local_map_width: int = 32, local_map_height: int = 32) -> None:
-        """Register the movement graph and local tile-map dimensions."""
-        bundle = self._current_bundle()
-        if not isinstance(world_map, WorldMap):
-            raise TypeError("world_map must be WorldMap.")
-        for name, value in (("local_map_width", local_map_width), ("local_map_height", local_map_height)):
-            if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
-                raise ValueError(f"{name} must be a positive integer.")
-        bundle.movement.register_map(world_map)
-        for location in world_map.locations():
-            bundle.world_objects.register_local_map(LocalMapDefinition(world_map.world_id, location.location_id, local_map_width, local_map_height))
-
     def place_world_object(self, object_id: str, location_id: str, x: int, y: int, *, width: int = 1, height: int = 1, blocks_movement: bool = True, layer: int = 0, tags: tuple[str, ...] = ()) -> WorldObjectPlacement:
         """Place a registered Core Entity on a local map tile footprint."""
         bundle = self._current_bundle()
@@ -449,9 +424,6 @@ class GameplayService:
             or bundle.containers.inventory_custody(container.container_id) is not None
         ):
             raise GameplayServiceError("A container with existing custody cannot be independently placed in the world.")
-        world_map = bundle.movement.map_for(entity.world_id)
-        if world_map is None or world_map.get(location_id) is None:
-            raise KeyError(f"Location is not registered in the object's world: {location_id}")
         return bundle.world_objects.place(WorldObjectPlacement(object_id, entity.world_id, location_id, x, y, width, height, blocks_movement, layer, tags))
 
     def move_world_object(self, object_id: str, x: int, y: int) -> WorldObjectPlacement:
@@ -462,9 +434,6 @@ class GameplayService:
         current = bundle.world_objects.get(object_id)
         if current is None:
             raise KeyError(f"World object placement not found: {object_id}")
-        world_map = bundle.movement.map_for(current.world_id)
-        if world_map is None or world_map.get(location_id) is None:
-            raise KeyError(f"Location not found in object's world: {location_id}")
         return bundle.world_objects.transfer(object_id, location_id, x, y)
 
     def remove_world_object_placement(self, object_id: str) -> WorldObjectPlacement:
@@ -919,26 +888,6 @@ class GameplayService:
             raise
 
 
-    def place_actor(self, actor_id: str, location_id: str) -> ActorView:
-        self._current_bundle().movement.set_position(actor_id, location_id)
-        return self._current_bundle().actors.get(actor_id)
-
-    def set_actor_tile_position(self, actor_id: str, x: int, y: int) -> ActorView:
-        self._current_bundle().movement.set_tile_position(actor_id, x, y)
-        return self._current_bundle().actors.get(actor_id)
-
-    def move_actor(self, actor_id: str, destination_id: str, action_id: str | None = None):
-        """Schedule neighbor-based movement; completion occurs on a simulation tick."""
-        bundle = self._current_bundle()
-        self._require_actor_in_active_world(bundle, actor_id)
-        return bundle.movement.move(actor_id, destination_id, action_id)
-
-    def movement(self, action_id: str):
-        return self._current_bundle().movement.get(action_id)
-
-    def movements_state(self):
-        return self._current_bundle().movement.movements()
-
     def actor(self, actor_id: str) -> ActorView | None:
         return self._current_bundle().actors.get(actor_id)
 
@@ -1084,57 +1033,6 @@ class GameplayService:
         if node is None:
             raise KeyError(f"Resource node not found: {node_id}")
         return node.gathering_duration_ticks.value
-
-    def interact_with_location(self, actor_id: str, location_id: str) -> LocationInteractionView:
-        """Inspect a location from an actor currently standing there."""
-        bundle = self._current_bundle()
-        self._require_actor_in_active_world(bundle, actor_id)
-        actor = bundle.actors.get(actor_id)
-        world_map = bundle.movement.map_for(actor.world_id)
-        if world_map is None:
-            raise GameplayServiceError(f"No movement map registered for world: {actor.world_id}")
-        location = world_map.get(location_id)
-        if location is None:
-            raise KeyError(f"Location not found: {location_id}")
-        actor_location_id = self._require_legacy_actor_location(bundle, actor_id)
-        if actor_location_id != location_id:
-            raise GameplayServiceError(
-                f"Actor {actor_id} is not at location: {location_id}"
-            )
-        resource_node_ids = tuple(
-            node.node_id for node in bundle.resource_nodes.for_world(actor.world_id)
-            if node.location_id is None or node.location_id == location_id
-        )
-        actor_ids = tuple(
-            other.actor_id
-            for other in bundle.actors.for_world(actor.world_id)
-            if (
-                (spatial := bundle.actors.legacy_spatial_state(other.actor_id))
-                is not None
-                and spatial.location_id == location_id
-            )
-        )
-        return self._complete_timed_action(
-            ActionType.INTERACT,
-            actor_id,
-            lambda: LocationInteractionView(
-                actor_id, location.location_id, location.name, actor.character_id,
-                resource_node_ids, actor_ids,
-            ),
-        )
-
-    def start_gathering_at_location(
-        self, actor_id: str, location_id: str, node_id: str,
-        inventory_id: str, quantity: Quantity, activity_id: str | None = None,
-    ) -> ActivityView:
-        """Gather only after validating the actor's location interaction."""
-        self.interact_with_location(actor_id, location_id)
-        node = self._current_bundle().resource_nodes.get(node_id)
-        if node is None:
-            raise KeyError(f"Resource node not found: {node_id}")
-        if node.location_id is not None and node.location_id != location_id:
-            raise GameplayServiceError(f"Resource node is not at location: {location_id}")
-        return self.start_gathering(actor_id, node_id, inventory_id, quantity, activity_id)
 
     def start_actor_production(
         self,
@@ -1999,7 +1897,6 @@ class GameplayService:
             chains,
             self._current_bundle().actors.actors(),
             self._current_bundle().actor_activities.activities(),
-            self._current_bundle().movement.movements(),
         )
 
     def actors_state(self) -> tuple[ActorView, ...]:
@@ -2072,7 +1969,6 @@ __all__ = [
     "GameplayChainStage",
     "InventoryView",
     "ResourceNodeView",
-    "LocationInteractionView",
     "FacilityView",
     "JobView",
     "ChainView",

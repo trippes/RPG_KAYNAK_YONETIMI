@@ -12,7 +12,6 @@ from resources import Inventory, ProductionJobManager, Recipe, WorldResourceNode
 
 from .production_facility import ProductionFacilityRegistry
 from .actor_system import ActorActivityManager, WorldActorRegistry
-from .movement import MovementManager
 from character import Character, ItemDefinition
 from resources import ResourceDefinition
 from containers import ContainerManager
@@ -44,7 +43,6 @@ remain mutable domain objects by design; this is not deep immutability.
     actors: WorldActorRegistry | None = None
     actor_activities: ActorActivityManager | None = None
     characters: Mapping[str, Character] | None = None
-    movement: MovementManager | None = None
     quest_log: QuestLog | None = None
     quest_graph: QuestGraph | None = None
     quest_graph_progress: QuestGraphProgress | None = None
@@ -178,13 +176,6 @@ remain mutable domain objects by design; this is not deep immutability.
             raise ValueError("actor_activities must use bundle production_jobs.")
         if self.actor_activities.facilities is not self.facilities:
             raise ValueError("actor_activities must use bundle facilities.")
-        if self.movement is None:
-            object.__setattr__(self, "movement", MovementManager(self.actors, self.simulation))
-        if not isinstance(self.movement, MovementManager):
-            raise TypeError("movement must be MovementManager.")
-        if self.movement._actors is not self.actors or self.movement._runtime is not self.simulation:
-            raise ValueError("movement must use bundle actors and simulation.")
-        self.movement.bind_world_objects(self.world_objects)
         if self.quest_log is None:
             object.__setattr__(self, "quest_log", QuestLog())
         if not isinstance(self.quest_log, QuestLog):

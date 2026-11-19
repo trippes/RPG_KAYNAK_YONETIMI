@@ -8,7 +8,7 @@ from character import Attributes, Character, CharacterClass, ItemDefinition, Rac
 from containers import ContainerDefinition, ContainerInstance
 from locks import ForceProfile, KeyDefinition, LockDefinition, LockInstance, LockpickProfile
 from resources import ResourceDefinition
-from world import Location, WorldMap
+from world import LocalMapDefinition
 
 from application import (
     GameApplication,
@@ -282,10 +282,12 @@ class TestGameplayService(unittest.TestCase):
 
     def test_world_object_placement_uses_registered_core_entity_and_map(self):
         world = self.application.aktif_dunya()
-        world_map = WorldMap(world.world_id)
-        world_map.add_location(Location("village", "Village"))
-        world_map.add_location(Location("forest", "Forest"))
-        self.service.register_world_map(world_map)
+        self.application.holder.current.world_objects.register_local_map(
+            LocalMapDefinition(world.world_id, "village", 32, 32)
+        )
+        self.application.holder.current.world_objects.register_local_map(
+            LocalMapDefinition(world.world_id, "forest", 32, 32)
+        )
         entity = Entity(EntityType.ESYA, "Sandık", entity_id="chest_01")
         self.application.varlik_ekle(entity)
         placement = self.service.place_world_object("chest_01", "village", 3, 4, width=2, height=1, tags=("container",))
@@ -369,9 +371,9 @@ class TestGameplayService(unittest.TestCase):
             max_slots=5, max_contents_volume_liters=10,
         ))
         world = self.application.aktif_dunya()
-        world_map = WorldMap(world.world_id)
-        world_map.add_location(Location("village", "Village"))
-        self.service.register_world_map(world_map)
+        self.application.holder.current.world_objects.register_local_map(
+            LocalMapDefinition(world.world_id, "village", 32, 32)
+        )
         entity = Entity(EntityType.ESYA, "Portable chest", entity_id="portable_chest_entity")
         self.application.varlik_ekle(entity)
         self.service.register_container(ContainerInstance(
@@ -400,9 +402,9 @@ class TestGameplayService(unittest.TestCase):
             max_contents_volume_liters=5, max_nesting_depth=1,
         ))
         world = self.application.aktif_dunya()
-        world_map = WorldMap(world.world_id)
-        world_map.add_location(Location("village", "Village"))
-        self.service.register_world_map(world_map)
+        self.application.holder.current.world_objects.register_local_map(
+            LocalMapDefinition(world.world_id, "village", 32, 32)
+        )
         parent_entity = Entity(EntityType.ESYA, "Chest", entity_id="nested_parent_entity")
         child_entity = Entity(EntityType.ESYA, "Bag", entity_id="nested_child_entity")
         self.application.varlik_ekle(parent_entity)
