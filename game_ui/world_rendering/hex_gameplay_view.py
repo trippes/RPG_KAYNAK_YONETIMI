@@ -101,7 +101,7 @@ class HexGameplayView:
         self._move_map_id = None
         self._movement_accumulator = 0.0
 
-    def handle(self, state) -> None:
+    def handle(self, state) -> str | None:
         runtime = self.service.hex_world_runtime
         if runtime is None:
             return
