@@ -4,6 +4,10 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from application.gameplay_placement_catalog import (
+    GameplayPlacement,
+    GameplayPlacementCatalog,
+)
 from application.content_loader import (
     ContentPackageError,
     _load_hex_maps,
@@ -402,6 +406,14 @@ class TestContentPackageLoader(unittest.TestCase):
 
             with self.assertRaisesRegex(ContentPackageError, "require.*hex maps"):
                 load_content_package(root)
+
+    def test_gameplay_placement_catalog_rejects_duplicate_domain_ids(self):
+        placement = GameplayPlacement(
+            "guard_01", "npc", "village", 0, 0, True, True,
+        )
+        with self.assertRaisesRegex(ValueError, "must be unique"):
+            GameplayPlacementCatalog((placement, placement))
+
 
 
 if __name__ == "__main__":
