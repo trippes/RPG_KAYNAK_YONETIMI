@@ -5,6 +5,7 @@ from __future__ import annotations
 from core.domain.spatial import EntityPosition
 from economy import Market, MarketProfile
 
+from .hex_actor_binding import ActorHexBindingError
 from .npc_hex_binding import NPCSpatialBindingService
 from .hex_world_runtime import HexMovableEntity
 
@@ -42,7 +43,7 @@ class MarketHexAnchorService:
         profile = self.profile(market_id)
         try:
             return self._npc_binding.spatial_entity(profile.npc_id)
-        except KeyError as error:
+        except (KeyError, ActorHexBindingError) as error:
             raise MarketHexAnchorError(
                 f"Market '{market_id}' has no spatially registered NPC "
                 f"anchor '{profile.npc_id}'."
