@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "npcs": [
+    {
+      "id": "test_guard",
+      "name": "Etkileşim Görevlisi",
+      "role": "guard",
+      "load_phase": "opening",
+      "dialogue_id": "movement_test_guard_dialogue"
+    },
+    {
+      "id": "test_target",
+      "name": "Çarpışma Hedefi",
+      "role": "test_dummy",
+      "load_phase": "gameplay"
+    }
+  ]
+}
