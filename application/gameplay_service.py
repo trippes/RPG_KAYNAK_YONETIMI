@@ -781,6 +781,7 @@ class GameplayService:
                         placement.domain_id,
                         placement.position,
                         blocks_movement=placement.blocks_movement,
+                        blocks_occupancy=placement.blocks_occupancy,
                     )
                 else:
                     raise GameplayServiceError(
