@@ -127,3 +127,17 @@ A previous attempted deletion of `world/map_catalog.py` demonstrated that branch
 - Do not delete generic world simulation, NPC, resource, quest, economy, inventory, clock or scheduler systems as collateral cleanup.
 - Do not remove reusable Hex runtime/rendering foundations solely because the temporary demo portal is being removed.
 - The eventual single square Easter egg is a later, isolated design task and must not retain the old square gameplay architecture.
+
+## 8. Kullanıcı kararı eki — NPC/resource ve bağlı demo içeriği sıfırlanacak
+
+Kullanıcı, mevcut dört NPC kaydının ve yirmi iki kaynak düğümü kaydının yeni Hex sisteme taşınmamasını; eski içerik olarak silinmesini ve yeni Hex mimarisi entegre edildikten sonra sıfırdan oluşturulmasını kararlaştırdı.
+
+Bu kararın içerik kapsamı:
+- Eski dört NPC tanımı ve kare konumları.
+- Eski yirmi iki kaynak düğümü tanımı ve kare map/landmark referansları.
+- Bu kayıtlara bağlı eski quest örnekleri, NPC diyalog tanımları ve NPC'ye bağlı starter market.
+- Bunları kullanan demo başlangıç içeriği, content validation ve test fixture'ları.
+
+Bu karar genel oyun mekaniklerini silmez. NPC ve resource domain modelleri, kaynak toplama servisleri, diyalog/quest altyapısı, market/economy, inventory, persistence ve bunların genel testleri korunacaktır. Eski demo verileri kaldırılır; yeni içerik yeni Hex dünya tasarımına göre daha sonra sıfırdan hazırlanır.
+
+Bu ek, önceki “NPC/resource kimliklerini koruyarak axial yerleşime taşı” yaklaşımını geçersiz kılar. Ayrıca uygulama sırası kesin olarak: legacy square + legacy Hex demo ve bağlı demo içeriklerini temizle → otomatik teknik kabul → laboratuvar Hex mimarisini entegre et → yeni gameplay içeriklerini sıfırdan yaz. Tek kare easter egg daha sonraki bağımsız tasarım kararıdır; eski kare map altyapısının korunmasını gerektirmez.
