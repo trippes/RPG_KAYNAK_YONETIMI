@@ -132,6 +132,84 @@ class ContainerHexBindingService:
             self._restore_spatial(snapshot)
             raise
 
+    def place_from_inventory(
+        self,
+        container_id: str,
+        inventory_id: str,
+        position: EntityPosition,
+        *,
+        blocks_movement: bool,
+        blocks_occupancy: bool,
+        validate=None,
+    ) -> HexMovableEntity:
+        """Atomically release inventory custody and place the container in the world."""
+        instance = self._require_container(container_id)
+        if self._containers.inventory_custody(container_id) != inventory_id:
+            raise ContainerHexBindingError(
+                "Container is not held by the requested inventory."
+            )
+        self._membership_world_required(instance.entity_id)
+        self._containers.clear_inventory_custody(container_id, inventory_id)
+        try:
+            entity = self.register_spatial(
+                container_id,
+                position,
+                blocks_movement=blocks_movement,
+                blocks_occupancy=blocks_occupancy,
+            )
+            if validate is not None:
+                validate()
+            return entity
+        except Exception:
+            try:
+                self._runtime.remove_entity(instance.entity_id)
+            except KeyError:
+                pass
+            self._containers.set_inventory_custody(container_id, inventory_id)
+            raise
+
+    def release_to_world(
+        self,
+        child_id: str,
+        position: EntityPosition,
+        *,
+        blocks_movement: bool,
+        blocks_occupancy: bool,
+        validate=None,
+    ) -> HexMovableEntity:
+        """Atomically detach a nested container and give it an explicit world placement."""
+        child = self._require_container(child_id)
+        parent = self._containers.parent_of(child_id)
+        if parent is None:
+            raise ContainerHexBindingError("Container is not nested.")
+        self._membership_world_required(child.entity_id)
+        self._containers.release(child_id)
+        try:
+            entity = self.register_spatial(
+                child_id,
+                position,
+                blocks_movement=blocks_movement,
+                blocks_occupancy=blocks_occupancy,
+            )
+            if validate is not None:
+                validate()
+            return entity
+        except Exception:
+            try:
+                self._runtime.remove_entity(child.entity_id)
+            except KeyError:
+                pass
+            self._containers.contain(parent.container_id, child_id)
+            raise
+
+    def _membership_world_required(self, entity_id: str) -> None:
+        membership_world = self._membership.world_id_for(entity_id)
+        if membership_world != self._world_id.value:
+            raise ContainerHexBindingError(
+                f"Container entity '{entity_id}' is not a member of "
+                f"world '{self._world_id.value}'."
+            )
+
     def _detach_spatial(self, entity_id: str):
         occupant = self._runtime.occupancy.get(entity_id)
         if occupant is None:
