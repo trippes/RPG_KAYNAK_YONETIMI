@@ -335,3 +335,15 @@ def test_directional_physics_move_uses_the_same_preflight_and_commit_path():
 
     assert result.success
     assert runtime.entity("hero").position.cell == LocalHexPosition(1, 0)
+
+
+
+def test_physics_snapshot_is_immutable_after_construction():
+    snapshot = build_hex_physics_snapshot(
+        WorldId("eldoria"),
+        make_map(),
+        make_lab_layout(32.0),
+    )
+
+    with pytest.raises(AttributeError, match="immutable"):
+        snapshot._world_id = WorldId("other-world")
