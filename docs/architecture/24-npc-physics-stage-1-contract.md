@@ -83,7 +83,7 @@ Aşama 1'de Aşama 2/3/5 davranışları henüz uygulanmayacağından, kullanıl
 
 ### 4.3 İçerik kaynağı
 
-NPC collider ölçüleri içerik tanımından gelmelidir; sprite ölçüsünden otomatik collider türetilmemelidir. Görsel boyut ile fiziksel temas hacmi ayrı kavramlardır. Kullanılan birim sürekli dünya birimi olmalıdır. Hex boyutu 32 dünya birimi olarak mevcut proje kararıdır; ancak NPC collider ölçüleri henüz onaylanmamıştır.
+NPC collider ölçüleri içerik tanımından gelmelidir; sprite ölçüsünden otomatik collider türetilmemelidir. Görsel boyut ile fiziksel temas hacmi ayrı kavramlardır. Kullanılan birim sürekli dünya birimi olmalıdır. Hex boyutu 32 dünya birimi olarak mevcut proje kararıdır; NPC dairesel collider yarıçapı kullanıcı tarafından 4 dünya birimi olarak onaylanmıştır.
 
 Eksik/bozuk fizik tanımının nasıl ele alınacağı açık ve deterministik olmalıdır: sessizce rastgele değer üretmek veya tüm NPC'lere onaysız tek collider atamak yasaktır. İçerik doğrulaması hata raporlamalıdır. Geriye dönük içerik uyumluluğu gerekiyorsa geçiş stratejisi ayrıca tanımlanmalıdır.
 
@@ -275,3 +275,11 @@ Aşağıdaki konular uygulama sırasında mevcut kod ve içerik şeması incelen
 12. Kullanıcıya aşama raporunu sun; gerçek oyun testi gerekiyorsa açık adımlar ver.
 
 **Aşama 1 uygulaması bu sözleşmeye bağlıdır.** Sözleşme, sonraki aşamaların davranışlarını erkenden uygulama izni vermez. Herhangi bir gereksinim mevcut mimariyle çelişirse kodlamadan önce gerekçe ve alternatif raporlanır.
+
+
+## 16. Kullanıcı kararı — NPC collider ölçüsü
+
+**Tarih:** 2026-11-19  
+**Karar:** NPC'ler için başlangıç collider biçimi daire, yarıçapı **4 dünya birimi** olacaktır. Bu değer oyuncunun onaylı 8 dünya birimi yarıçapından ayrıdır. Her NPC kendi PhysicsBodyDefinition örneğini taşır; ortak fizik profili veya NPC başına simülasyon motoru oluşturulmaz.
+
+Bu karar collider geometrisini ve başlangıç ölçüsünü onaylar. Kütle, itme direnci, collision layer/mask, hareket hızı, NPC aktif yarıçapı ve performans kabul hedefi için değer belirlemez. İleride içerik tanımıyla NPC bazında farklı ölçü verilmesi desteklenebilir; 4 birim başlangıç varsayılanıdır.
