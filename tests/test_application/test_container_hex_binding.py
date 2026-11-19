@@ -133,12 +133,8 @@ def test_container_without_canonical_world_membership_is_rejected():
 
 
 def test_runtime_from_another_world_is_rejected():
-    session, manager, runtime, _binding = make_binding(runtime_world="other_world")
-
     with pytest.raises(ContainerHexBindingError, match="Runtime belongs to world"):
-        ContainerHexBindingService(
-            manager, session.membership, runtime, WorldId("container_world"),
-        )
+        make_binding(runtime_world="other_world")
 
 
 def test_placement_outside_valid_hex_mask_does_not_mutate_runtime():
