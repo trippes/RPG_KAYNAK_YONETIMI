@@ -17,6 +17,7 @@ from core.domain.spatial import (
     LocalHexPosition,
     MovementFailureReason,
     MovementProfile,
+    WorldHexPosition,
 )
 from core.foundation import WorldId
 
@@ -206,3 +207,92 @@ def test_unknown_actor_cannot_be_registered_or_moved():
         )
     with pytest.raises(KeyError, match="Actor not found"):
         binding.move("missing", HexDirection.EAST)
+
+
+def test_actor_binding_transitions_across_world_maps_without_changing_actor_identity():
+    transition = {
+        "id": "forest_to_mountain",
+        "source_cells": [[0, 0]],
+        "exit_direction": "east",
+        "target_map_id": "mountain",
+        "target_entry_direction": "west",
+        "target_cells": [[0, 0]],
+        "active": True,
+        "traversal_mode": "one_way",
+    }
+    forest = make_map(transitions=[transition])
+    mountain = make_map("mountain")
+    world_map = WorldMapDefinition(
+        1,
+        "eldoria",
+        "Eldoria",
+        (
+            WorldMapPlacement("forest", WorldHexPosition(0, 0)),
+            WorldMapPlacement("mountain", WorldHexPosition(1, 0)),
+        ),
+        {},
+    )
+    actors = WorldActorRegistry()
+    actors.add(WorldActor("hero", "eldoria", "player"))
+    runtime = HexWorldRuntime(
+        {"forest": forest, "mountain": mountain},
+        world_map_definition=world_map,
+        world_id=WorldId("eldoria"),
+    )
+    binding = ActorHexBindingService(actors, runtime, WorldId("eldoria"))
+    binding.register_spatial(
+        "hero",
+        "player",
+        EntityPosition("forest", LocalHexPosition(0, 0)),
+    )
+
+    result = binding.transition("hero", "forest_to_mountain")
+
+    assert result.success
+    assert result.position == EntityPosition(
+        "mountain", LocalHexPosition(0, 0),
+    )
+    assert actors.get("hero").actor_id == "hero"
+    assert runtime.entity("hero").entity_id == "hero"
+
+
+def test_inactive_actor_cannot_transition_between_world_maps():
+    transition = {
+        "id": "forest_to_mountain",
+        "source_cells": [[0, 0]],
+        "exit_direction": "east",
+        "target_map_id": "mountain",
+        "target_entry_direction": "west",
+        "target_cells": [[0, 0]],
+        "active": True,
+        "traversal_mode": "one_way",
+    }
+    forest = make_map(transitions=[transition])
+    mountain = make_map("mountain")
+    world_map = WorldMapDefinition(
+        1,
+        "eldoria",
+        "Eldoria",
+        (
+            WorldMapPlacement("forest", WorldHexPosition(0, 0)),
+            WorldMapPlacement("mountain", WorldHexPosition(1, 0)),
+        ),
+        {},
+    )
+    actors = WorldActorRegistry()
+    actors.add(WorldActor("hero", "eldoria", "player", active=False))
+    runtime = HexWorldRuntime(
+        {"forest": forest, "mountain": mountain},
+        world_map_definition=world_map,
+        world_id=WorldId("eldoria"),
+    )
+    binding = ActorHexBindingService(actors, runtime, WorldId("eldoria"))
+    source = EntityPosition("forest", LocalHexPosition(0, 0))
+    binding.register_spatial("hero", "player", source)
+
+    result = binding.transition("hero", "forest_to_mountain")
+
+    assert not result.success
+    assert result.reason is MovementFailureReason.MOVEMENT_NOT_ALLOWED
+    assert runtime.entity("hero").position == source
+
