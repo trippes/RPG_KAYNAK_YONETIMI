@@ -12,7 +12,7 @@ from core.domain.spatial import (
 )
 from core.foundation import WorldId
 from hex_world_lab.physics import BodyDefinition
-from npc import NPCRegistry
+from npc import NPC, NPCRegistry
 
 from .hex_actor_binding import ActorHexBindingService
 from .hex_physics_bridge import HexPhysicsSnapshot
@@ -50,7 +50,7 @@ class NPCSpatialBindingService:
     def world_id(self) -> WorldId:
         return self._actor_binding.world_id
 
-    def npc(self, npc_id: str):
+    def npc(self, npc_id: str) -> NPC:
         return self._require_npc(npc_id)
 
     def spatial_entity(self, npc_id: str) -> HexMovableEntity:
@@ -147,7 +147,7 @@ class NPCSpatialBindingService:
         self._require_npc(npc_id)
         return self._actor_binding.unregister_spatial(npc_id)
 
-    def _require_npc(self, npc_id: str):
+    def _require_npc(self, npc_id: str) -> NPC:
         if not isinstance(npc_id, str) or not npc_id.strip():
             raise ValueError("npc_id must be a non-empty string")
         npc = self._npcs.get(npc_id)
