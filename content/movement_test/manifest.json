@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "package_id": "movement_test",
+  "package_version": "1.0.0-test",
+  "files": {
+    "starter": "starter_content.json",
+    "npcs": "npcs.json",
+    "quests": "quests.json",
+    "resources": "resources.json",
+    "characters": "characters.json",
+    "gameplay_rules": "gameplay_rules.json"
+  },
+  "maps": "hex_maps",
+  "gameplay_placements": "gameplay_placements"
+}
