@@ -44,7 +44,6 @@ class TestContentPack(unittest.TestCase):
         self.assertEqual(bundle.social.npcs.all(), ())
         self.assertEqual(tuple(bundle.social.dialogues), ())
         self.assertEqual(tuple(bundle.quest_log.all()), ())
-        self.assertEqual(bundle.world_objects.placements(), ())
         self.assertIsNone(service.legacy_actor_spatial_state(ids.hero_id))
         self.assertIn("human", service._character_factory.races)
 

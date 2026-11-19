@@ -2,7 +2,6 @@ import unittest
 
 from application import (
     ContainerSnapshot, GameSaveDocument, SaveJsonCodec,
-    WorldObjectPlacement, WorldObjectPlacementRegistry,
 )
 from character import ItemDefinition
 from containers import (
@@ -15,7 +14,6 @@ from resources import (
 )
 from core.application import GameSession
 from core.persistence import CanonicalSessionState, PersistenceDocument
-from world.local_map import LocalMapDefinition
 from core.entity.entity import Entity
 from core.entity import EntityType
 
@@ -52,20 +50,13 @@ class TestContainerPersistence(unittest.TestCase):
         manager.register(ContainerInstance(
             "chest_01", "chest_entity", "small_chest", 75.0, False,
         ), inventory)
-        placements = WorldObjectPlacementRegistry()
-        placements.register_local_map(LocalMapDefinition("world_main", "village", 20, 20))
-        placements.place(WorldObjectPlacement(
-            "chest_entity", "world_main", "village", 4, 6,
-            width=2, height=1, blocks_movement=True, layer=1,
-            tags=("container", "wood"),
-        ))
-        return manager, placements, items, resources
+        return manager, items, resources
 
-    def test_snapshot_round_trip_preserves_definition_contents_damage_and_placement(self):
-        manager, placements, items, resources = self._runtime()
-        snapshot = ContainerSnapshot.from_runtime(manager, placements, items, resources)
+    def test_snapshot_round_trip_preserves_container_contents_and_damage(self):
+        manager, items, resources = self._runtime()
+        snapshot = ContainerSnapshot.from_runtime(manager, items, resources)
         decoded = ContainerSnapshot.from_dict(snapshot.to_dict())
-        restored, restored_items, restored_resources, restored_placements = decoded.restore()
+        restored, restored_items, restored_resources, legacy_placements = decoded.restore()
 
         instance = restored.get("chest_01")
         self.assertEqual(instance.entity_id, "chest_entity")
@@ -82,12 +73,10 @@ class TestContainerPersistence(unittest.TestCase):
         self.assertEqual(restored.definition("small_chest").max_slots, 5)
         self.assertEqual(restored.max_global_nesting_depth, 8)
         self.assertEqual(restored.break_profiles.get("wooden_chest").damage_resistances["fire"], 0.25)
-        self.assertEqual(len(restored_placements), 1)
-        self.assertEqual(restored_placements[0].occupied_tiles, ((4, 6), (5, 6)))
+        self.assertEqual(legacy_placements, ())
 
     def test_snapshot_preserves_nested_and_inventory_custody_relationships(self):
-        manager, placements, items, resources = self._runtime()
-        placements.remove("chest_entity")
+        manager, items, resources = self._runtime()
         manager.register_definition(ContainerDefinition(
             "small_bag", "Small bag", max_contents_weight_kg=5,
             max_slots=3, max_contents_volume_liters=5,
@@ -96,17 +85,17 @@ class TestContainerPersistence(unittest.TestCase):
         manager.contain("chest_01", "bag_01")
         manager.set_inventory_custody("chest_01", "main")
 
-        snapshot = ContainerSnapshot.from_runtime(manager, placements, items, resources)
-        restored, _, _, restored_placements = ContainerSnapshot.from_dict(snapshot.to_dict()).restore()
+        snapshot = ContainerSnapshot.from_runtime(manager, items, resources)
+        restored, _, _, legacy_placements = ContainerSnapshot.from_dict(snapshot.to_dict()).restore()
 
         self.assertEqual(restored.parent_of("bag_01").container_id, "chest_01")
         self.assertEqual(restored.inventory_custody("chest_01"), "main")
         self.assertIsNone(restored.inventory_custody("bag_01"))
-        self.assertEqual(restored_placements, ())
+        self.assertEqual(legacy_placements, ())
 
     def test_outer_save_document_round_trips_container_section(self):
-        manager, placements, items, resources = self._runtime()
-        container_snapshot = ContainerSnapshot.from_runtime(manager, placements, items, resources)
+        manager, items, resources = self._runtime()
+        container_snapshot = ContainerSnapshot.from_runtime(manager, items, resources)
         session = GameSession()
         core = PersistenceDocument.from_state(CanonicalSessionState.from_session(session))
         gameplay = GameplaySnapshot.from_runtime(
@@ -121,9 +110,28 @@ class TestContainerPersistence(unittest.TestCase):
         self.assertEqual(decoded.containers.to_dict(), container_snapshot.to_dict())
         self.assertEqual(SaveJsonCodec.encode(decoded), encoded)
 
+    def test_legacy_square_placements_remain_detectable_in_old_snapshots(self):
+        manager, items, resources = self._runtime()
+        data = ContainerSnapshot.from_runtime(manager, items, resources).to_dict()
+        legacy = {
+            "object_id": "chest_entity",
+            "world_id": "world_main",
+            "location_id": "village",
+            "x": 4,
+            "y": 6,
+            "width": 1,
+            "height": 1,
+            "blocks_movement": True,
+            "layer": 0,
+            "tags": ["container"],
+        }
+        data["placements"] = [legacy]
+        _, _, _, placements = ContainerSnapshot.from_dict(data).restore()
+        self.assertEqual(placements, (legacy,))
+
     def test_snapshot_rejects_duplicate_or_unknown_relationships(self):
-        manager, placements, items, resources = self._runtime()
-        data = ContainerSnapshot.from_runtime(manager, placements, items, resources).to_dict()
+        manager, items, resources = self._runtime()
+        data = ContainerSnapshot.from_runtime(manager, items, resources).to_dict()
         data["custodies"] = [{"container_id": "missing", "inventory_id": "main"}]
         with self.assertRaises(ValueError):
             ContainerSnapshot.from_dict(data)

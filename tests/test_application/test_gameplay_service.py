@@ -8,7 +8,6 @@ from character import Attributes, Character, CharacterClass, ItemDefinition, Rac
 from containers import ContainerDefinition, ContainerInstance
 from locks import ForceProfile, KeyDefinition, LockDefinition, LockInstance, LockpickProfile
 from resources import ResourceDefinition
-from world import LocalMapDefinition
 
 from application import (
     GameApplication,
@@ -280,24 +279,6 @@ class TestGameplayService(unittest.TestCase):
             "saved_chest_01",
         )
 
-    def test_world_object_placement_uses_registered_core_entity_and_map(self):
-        world = self.application.aktif_dunya()
-        self.application.holder.current.world_objects.register_local_map(
-            LocalMapDefinition(world.world_id, "village", 32, 32)
-        )
-        self.application.holder.current.world_objects.register_local_map(
-            LocalMapDefinition(world.world_id, "forest", 32, 32)
-        )
-        entity = Entity(EntityType.ESYA, "Sandık", entity_id="chest_01")
-        self.application.varlik_ekle(entity)
-        placement = self.service.place_world_object("chest_01", "village", 3, 4, width=2, height=1, tags=("container",))
-        self.assertEqual(placement.object_id, entity.entity_id)
-        self.assertEqual(self.service.blocked_world_object_tiles(world.world_id, "village"), frozenset({(3, 4), (4, 4)}))
-        moved = self.service.transfer_world_object("chest_01", "forest", 1, 1)
-        self.assertEqual(moved.location_id, "forest")
-        self.assertEqual(self.service.world_objects_for_location(world.world_id, "forest"), (moved,))
-
-
     def test_container_registration_and_item_transfer_are_application_owned(self):
         self.service.register_container_definition(ContainerDefinition(
             "chest", "Chest", max_contents_weight_kg=2, max_slots=2,
@@ -365,34 +346,7 @@ class TestGameplayService(unittest.TestCase):
         self.assertEqual(self.inventory.get(wood), Quantity(2, ResourceUnit.ITEM))
 
 
-    def test_container_can_be_picked_up_and_dropped_with_single_custody(self):
-        self.service.register_container_definition(ContainerDefinition(
-            "portable_chest", "Portable chest", max_contents_weight_kg=10,
-            max_slots=5, max_contents_volume_liters=10,
-        ))
-        world = self.application.aktif_dunya()
-        self.application.holder.current.world_objects.register_local_map(
-            LocalMapDefinition(world.world_id, "village", 32, 32)
-        )
-        entity = Entity(EntityType.ESYA, "Portable chest", entity_id="portable_chest_entity")
-        self.application.varlik_ekle(entity)
-        self.service.register_container(ContainerInstance(
-            "portable_chest_01", entity.entity_id, "portable_chest"
-        ))
-        self.service.place_container("portable_chest_01", "village", 4, 4)
-
-        self.service.pickup_container("portable_chest_01", "main")
-        self.assertEqual(self.service.container_state("portable_chest_01").custody_inventory_id, "main")
-        self.assertIsNone(self.application.holder.current.world_objects.get(entity.entity_id))
-
-        with self.assertRaises(GameplayServiceError):
-            self.service.place_world_object(entity.entity_id, "village", 5, 5)
-
-        self.service.drop_container("portable_chest_01", "village", 5, 5)
-        self.assertIsNone(self.service.container_state("portable_chest_01").custody_inventory_id)
-        self.assertIsNotNone(self.application.holder.current.world_objects.get(entity.entity_id))
-
-    def test_container_can_be_placed_and_nested_without_duplicate_world_placement(self):
+    def test_container_can_be_nested_without_map_placement(self):
         self.service.register_container_definition(ContainerDefinition(
             "chest", "Chest", max_contents_weight_kg=10, max_slots=10,
             max_contents_volume_liters=10, max_nesting_depth=2,
@@ -401,22 +355,16 @@ class TestGameplayService(unittest.TestCase):
             "bag", "Bag", max_contents_weight_kg=5, max_slots=5,
             max_contents_volume_liters=5, max_nesting_depth=1,
         ))
-        world = self.application.aktif_dunya()
-        self.application.holder.current.world_objects.register_local_map(
-            LocalMapDefinition(world.world_id, "village", 32, 32)
-        )
         parent_entity = Entity(EntityType.ESYA, "Chest", entity_id="nested_parent_entity")
         child_entity = Entity(EntityType.ESYA, "Bag", entity_id="nested_child_entity")
         self.application.varlik_ekle(parent_entity)
         self.application.varlik_ekle(child_entity)
         self.service.register_container(ContainerInstance("parent", parent_entity.entity_id, "chest"))
         self.service.register_container(ContainerInstance("child", child_entity.entity_id, "bag"))
-        self.service.place_container("child", "village", 2, 2)
 
         self.service.contain_container("parent", "child")
 
         self.assertIsNotNone(self.application.holder.current.containers.parent_of("child"))
-        self.assertEqual(self.service.world_objects_for_location(world.world_id, "village"), ())
 
     def test_collects_from_active_world_atomically(self):
         self.service.collect("ore-node", "main", Quantity(4, ResourceUnit.ITEM))
