@@ -323,7 +323,7 @@ class TestCandidateRestore(unittest.TestCase):
             path = self._write(
                 directory, self._document_with_actor("removed_map", (5, 5)),
             )
-            with self.assertRaisesRegex(ValueError, "references maps missing"):
+            with self.assertRaisesRegex(ValueError, "legacy square-map positions or placements"):
                 application.load(path)
         self.assertIs(application.holder.current, old)
 
@@ -334,7 +334,7 @@ class TestCandidateRestore(unittest.TestCase):
             path = self._write(
                 directory, self._document_with_actor("village", (99, 99)),
             )
-            with self.assertRaisesRegex(ValueError, "No relocation was applied"):
+            with self.assertRaisesRegex(ValueError, "legacy square-map positions or placements"):
                 application.load(path)
         self.assertIs(application.holder.current, old)
 
@@ -348,7 +348,7 @@ class TestCandidateRestore(unittest.TestCase):
         )
         with tempfile.TemporaryDirectory() as directory:
             path = self._write(directory, document)
-            with self.assertRaisesRegex(ValueError, "references map"):
+            with self.assertRaisesRegex(ValueError, "legacy square-map positions or placements"):
                 application.load(path)
         self.assertIs(application.holder.current, old)
 
