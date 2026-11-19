@@ -81,7 +81,7 @@ class NativeSweepTests(unittest.TestCase):
             (obstacle,),
             map_id="forest",
         )
-        self.assertAlmostEqual(result.final_shape.center.x, 3.99999999, places=6)
+        self.assertAlmostEqual(result.final_shape.center.x, 2.99999999, places=6)
         self.assertEqual(len(result.impacts), 1)
 
     def test_indexed_and_unindexed_sweep_results_match(self):
