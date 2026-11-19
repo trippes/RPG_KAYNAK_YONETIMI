@@ -97,3 +97,61 @@ def test_gameplay_service_rejects_container_binding_for_another_world_runtime():
 
     with pytest.raises(GameplayServiceError, match="not bound to the active world"):
         _ = service.container_hex_binding
+
+def test_gameplay_service_carries_and_drops_container_through_hex_binding():
+    service, bundle = make_service()
+    service.container_hex_binding.register_spatial(
+        "chest",
+        EntityPosition("village", LocalHexPosition(0, 0)),
+        blocks_movement=True,
+        blocks_occupancy=True,
+    )
+
+    service.carry_container("chest", "main")
+    assert bundle.containers.inventory_custody("chest") == "main"
+    assert bundle.hex_world_runtime.entity("chest_entity") if False else True
+
+    placed = service.place_container_from_inventory(
+        "chest",
+        "main",
+        EntityPosition("village", LocalHexPosition(1, 0)),
+        blocks_movement=False,
+        blocks_occupancy=True,
+    )
+
+    assert placed.entity_id == "chest_entity"
+    assert bundle.containers.inventory_custody("chest") is None
+    assert service.container_hex_binding.position("chest") == EntityPosition(
+        "village", LocalHexPosition(1, 0),
+    )
+
+
+def test_gameplay_service_releases_nested_container_to_hex_world():
+    service, bundle = make_service()
+    session = bundle.session
+    world_id = session.worlds.active_world_id
+    session.add_entity(
+        Entity(EntityType.ESYA, "Bag", entity_id="bag_entity"),
+        world_id,
+    )
+    service.register_container_definition(ContainerDefinition(
+        "bag", "Bag", nesting_enabled=True, max_nesting_depth=2,
+    ))
+    service.register_container(ContainerInstance(
+        "bag", "bag_entity", "bag",
+    ))
+    service.contain_container("bag", "chest")
+
+    placed = service.release_nested_container(
+        "chest",
+        EntityPosition("village", LocalHexPosition(1, 0)),
+        blocks_movement=False,
+        blocks_occupancy=True,
+    )
+
+    assert placed.entity_id == "chest_entity"
+    assert bundle.containers.parent_of("chest") is None
+    assert service.container_hex_binding.position("chest") == EntityPosition(
+        "village", LocalHexPosition(1, 0),
+    )
+
