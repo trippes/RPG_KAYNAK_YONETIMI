@@ -262,7 +262,11 @@ class GameWindow:
         active,
     ):
         """Consume fixed movement steps without advancing canonical world time."""
-        actor_id = self.service.player_actor_id
+        service = getattr(self, "service", None)
+        if service is None:
+            self._movement_clock.advance(elapsed_seconds, active=False)
+            return
+        actor_id = service.player_actor_id
         config = self._movement_configs.get(actor_id)
         active = (
             active
@@ -414,6 +418,7 @@ class GameWindow:
         self._notice_frames = NOTICE_FRAMES
 
     def _start_new_game(self):
+        self._ensure_movement_runtime()
         from application.content_pack import populate_opening_content
         from application.game_application import GameApplication
 
@@ -717,8 +722,10 @@ class GameWindow:
             dialogue_input = False
 
         movement_intent = None
+        service = getattr(self, "service", None)
         movement_configured = (
-            self.service.player_actor_id in self._movement_configs
+            service is not None
+            and service.player_actor_id in self._movement_configs
             and self.movement_input is not None
         )
         movement_input_active = (
