@@ -106,7 +106,7 @@ class TestContainerPersistence(unittest.TestCase):
         encoded = SaveJsonCodec.encode(document)
         decoded = SaveJsonCodec.decode(encoded)
 
-        self.assertEqual(decoded.schema_version, 2)
+        self.assertEqual(decoded.schema_version, 3)
         self.assertEqual(decoded.containers.to_dict(), container_snapshot.to_dict())
         self.assertEqual(SaveJsonCodec.encode(decoded), encoded)
 
