@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from core.domain.physics import PhysicsPhysicsBodyDefinition
 from core.domain.spatial import (
     EntityPosition,
     HexDirection,
@@ -11,7 +12,6 @@ from core.domain.spatial import (
     MovementResult,
 )
 from core.foundation import WorldId
-from hex_world_lab.physics import BodyDefinition
 
 from .actor_system import ActorView, WorldActorRegistry
 from .hex_physics_bridge import HexPhysicsSnapshot
