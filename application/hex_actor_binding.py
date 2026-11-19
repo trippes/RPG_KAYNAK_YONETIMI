@@ -51,6 +51,9 @@ class ActorHexBindingService:
         actors: WorldActorRegistry,
         runtime: HexWorldRuntime,
         world_id: WorldId,
+        *,
+        physics_snapshot: HexPhysicsSnapshot | None = None,
+        player_body: BodyDefinition | None = None,
     ) -> None:
         if not isinstance(actors, WorldActorRegistry):
             raise TypeError("actors must be a WorldActorRegistry")
@@ -65,9 +68,17 @@ class ActorHexBindingService:
                 f"Runtime belongs to world '{runtime.world_id.value}', "
                 f"not '{world_id.value}'."
             )
+        if physics_snapshot is not None and not isinstance(physics_snapshot, HexPhysicsSnapshot):
+            raise TypeError("physics_snapshot must be a HexPhysicsSnapshot or None")
+        if player_body is not None and not isinstance(player_body, BodyDefinition):
+            raise TypeError("player_body must be a BodyDefinition or None")
+        if (physics_snapshot is None) != (player_body is None):
+            raise ValueError("physics_snapshot and player_body must be supplied together")
         self._actors = actors
         self._runtime = runtime
         self._world_id = world_id
+        self._physics_snapshot = physics_snapshot
+        self._player_body = player_body
 
     @property
     def world_id(self) -> WorldId:
@@ -122,6 +133,8 @@ class ActorHexBindingService:
                 MovementFailureReason.MOVEMENT_NOT_ALLOWED,
                 "Actor is inactive.",
             )
+        if self._physics_snapshot is not None and entity.kind == "player":
+            return self.move_with_physics(actor_id, direction, self._physics_snapshot, self._player_body)
         return self._runtime.move(actor_id, direction)
 
     def move_toward(
@@ -136,6 +149,13 @@ class ActorHexBindingService:
                 entity.position,
                 MovementFailureReason.MOVEMENT_NOT_ALLOWED,
                 "Actor is inactive.",
+            )
+        if self._physics_snapshot is not None and entity.kind == "player":
+            snapshot = self._physics_snapshot
+            body = self._player_body
+            return self._runtime.move_toward(
+                actor_id, goal,
+                edge_validator=lambda source, target: snapshot.can_reach_cell(source, target, body),
             )
         return self._runtime.move_toward(actor_id, goal)
 
@@ -166,6 +186,8 @@ class ActorHexBindingService:
                 MovementFailureReason.MOVEMENT_NOT_ALLOWED,
                 "Actor is inactive.",
             )
+        if self._physics_snapshot is not None and entity.kind == "player":
+            return self.move_to_with_physics(actor_id, target, self._physics_snapshot, self._player_body)
         return self._runtime.move_to(actor_id, target)
 
     def move_to_with_physics(
