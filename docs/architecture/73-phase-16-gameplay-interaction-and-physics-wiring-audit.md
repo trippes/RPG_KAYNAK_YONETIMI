@@ -47,9 +47,8 @@ Domain/application API'leri korunmuştur:
 - Market konumu bağlı NPC'nin güncel spatial position değerinden türetilir.
 
 Bununla birlikte ana Hex gameplay view yalnızca hareket, harita geçişi, zoom ve click-to-move hedefi yönetir. Şu anda:
-- MainScreen/HexGameplayView bir `selected_npc_id` sağlamıyor.
-- GameWindow dialogue hedefini mevcut ekrandaki `selected_npc_id` üzerinden alıyor; MainScreen bu alanı üretmiyor.
-- MainScreen, NPC seçimi veya dialogue başlatma aksiyonu döndürmüyor.
+- Sol tıkla NPC'nin bulunduğu axial hücre seçilir; MainScreen seçilen canonical NPC ID'sini GameWindow'a aktararak mevcut DialogueScreen akışını açar.
+- Sağ tıkla aynı NPC ID'sine bağlı, henüz eylem maddesi içermeyen bağlamsal menü kabuğu açılır. Menü içeriği NPC türü/özelliklerine göre daha sonra tanımlanacaktır.
 - `InputMapper` içinde gather action (`G`) bulunmasına rağmen HexGameplayView bu aksiyonu kullanmıyor.
 - Resource node seçimi, gathering quantity ve etkileşim mesafesi için Hex gameplay UI sözleşmesi bulunmuyor.
 
@@ -57,11 +56,10 @@ Bununla birlikte ana Hex gameplay view yalnızca hareket, harita geçişi, zoom 
 
 Yeni NPC etkileşim mesafesi, otomatik yakın NPC seçimi, gather miktarı veya yeni tuş davranışı varsayılmayacaktır. Bunlar kullanıcı tarafından tanımlanması gereken oyun kurallarıdır. Var olan domain servisleri değiştirilmeden kalır; bu rapor yeni demo NPC/resource içeriği veya koordinatı üretmez.
 
-Tamamlama için gereken kararlar:
-1. NPC etkileşimi fareyle hedef seçimi, yakındaki hedef seçimi veya başka bir açık input modeliyle mi başlatılacak?
-2. Dialogue için aynı hücre, komşu hücre veya farklı bir erişim mesafesi mi geçerli olacak?
-3. Resource gathering hedefi nasıl seçilecek ve etkileşim mesafesi ne olacak?
-4. G tuşu varsayılan miktar mı başlatacak, miktar penceresi mi açacak, yoksa yalnızca seçili node için mi çalışacak?
+Açık kalan kararlar:
+1. Dialogue için aynı hücre, komşu hücre veya farklı bir erişim mesafesi mi geçerli olacak?
+2. Resource gathering hedefi nasıl seçilecek ve etkileşim mesafesi ne olacak?
+3. G tuşu varsayılan miktar mı başlatacak, miktar penceresi mi açacak, yoksa yalnızca seçili node için mi çalışacak?
 
 ## 4. Tamamlanmış entegrasyon ile açık kapıların ayrımı
 
