@@ -100,15 +100,17 @@ def make_package(directory, *, include_start=True, start=(0, 0)):
         "cell_overrides": [],
     }), encoding="utf-8")
 
+    starter_path = package_path / "starter_content.json"
+    starter = json.loads(starter_path.read_text(encoding="utf-8"))
     if include_start:
-        starter_path = package_path / "starter_content.json"
-        starter = json.loads(starter_path.read_text(encoding="utf-8"))
         starter["world"]["hex_start"] = {
             "map_id": "village",
             "q": start[0],
             "r": start[1],
         }
-        starter_path.write_text(json.dumps(starter), encoding="utf-8")
+    else:
+        starter["world"].pop("hex_start", None)
+    starter_path.write_text(json.dumps(starter), encoding="utf-8")
     return package_path
 
 
