@@ -134,7 +134,7 @@ class TestContentPackageLoader(unittest.TestCase):
                     json.dumps(definition), encoding="utf-8"
                 )
             with self.assertRaisesRegex(ContentPackageError, "Duplicate transition ID"):
-                _load_hex_maps(root, {})
+                _load_hex_maps(root)
 
     def test_package_rejects_unsupported_manifest_schema(self):
         with tempfile.TemporaryDirectory() as directory:
