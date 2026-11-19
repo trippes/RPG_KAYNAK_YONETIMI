@@ -680,8 +680,7 @@ class GameplayService:
             raise
 
     def contain_container(self, parent_id: str, child_id: str) -> ContainerInstance:
-        """Move a placed child container into another container."""
-        bundle = self._current_bundle()
+        """Nest one container inside another."""
         return self._current_bundle().containers.contain(parent_id, child_id)
 
     def transfer_actor_item_to_container(
