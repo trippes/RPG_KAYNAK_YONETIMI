@@ -37,28 +37,27 @@ class TestScenePlacementCatalog(unittest.TestCase):
 
 
     def test_legacy_combined_presentation_file_remains_readable(self):
-        legacy_path = PACKAGE_ROOT / "presentation_assets.json"
-        legacy = AssetCatalog.load(legacy_path)
-        self.assertEqual(len(legacy.assets), 6)
-        self.assertEqual(legacy.objects, ())
-        self.assertEqual(legacy.objects, ())
-
-        legacy_data = json.loads(legacy_path.read_text(encoding="utf-8"))
-        split_assets = json.loads(
-            (PACKAGE_ROOT / "asset_catalog.json").read_text(encoding="utf-8")
-        )
-        self.assertEqual(legacy_data["assets"], split_assets["assets"])
-        split_placements = []
-        for source in sorted((PACKAGE_ROOT / "placements").glob("*.json")):
-            data = json.loads(source.read_text(encoding="utf-8"))
-            split_placements.extend(
-                {**record, "map_id": data["map_id"]}
-                for record in data["objects"]
+        with tempfile.TemporaryDirectory() as directory:
+            legacy_path = Path(directory) / "presentation_assets.json"
+            split_assets = json.loads(
+                (PACKAGE_ROOT / "asset_catalog.json").read_text(encoding="utf-8")
             )
-        self.assertEqual(
-            sorted(legacy_data["objects"], key=lambda item: item["object_id"]),
-            sorted(split_placements, key=lambda item: item["object_id"]),
-        )
+            split_placements = []
+            for source in sorted((PACKAGE_ROOT / "placements").glob("*.json")):
+                data = json.loads(source.read_text(encoding="utf-8"))
+                split_placements.extend(
+                    {**record, "map_id": data["map_id"]}
+                    for record in data["objects"]
+                )
+            legacy_data = {**split_assets, "objects": split_placements}
+            legacy_path.write_text(json.dumps(legacy_data), encoding="utf-8")
+
+            legacy = AssetCatalog.load(legacy_path)
+
+            self.assertEqual(len(legacy.assets), 6)
+            self.assertEqual(legacy.objects, ())
+            self.assertEqual(legacy_data["assets"], split_assets["assets"])
+            self.assertEqual(legacy_data["objects"], split_placements)
 
     def test_unknown_asset_reference_is_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
