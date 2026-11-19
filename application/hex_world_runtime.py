@@ -125,6 +125,11 @@ class HexWorldRuntime:
         return tuple(sorted(self._maps))
 
     @property
+    def world_map_definition(self) -> WorldMapDefinition | None:
+        """Immutable world topology used to connect the local maps."""
+        return self._world_map
+
+    @property
     def occupancy(self) -> HexOccupancyRegistry:
         return self._occupancy
 
