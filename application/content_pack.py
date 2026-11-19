@@ -15,6 +15,7 @@ from character import Ability, Attribute, CharacterClass, CharacterFactory, Race
 from npc import Faction, NPC
 from economy import Currency, Money, MarketProfile, MarketCatalogEntry
 from quests import Dialogue, DialogueChoice, DialogueNode, Objective, ObjectiveType, Quest, Reward
+from core.domain.movement import MovementConfig
 from resources import (
     Inventory,
     Quantity,
@@ -751,6 +752,36 @@ def load_gameplay_rules(path: str | Path | None = None, *, package_path: str | P
         raise ContentDefinitionError("Gameplay rules contain an invalid starting balance.")
     if not isinstance(consumables, list):
         raise ContentDefinitionError("Gameplay rules consumables must be a list.")
+    movement = definition.get("movement")
+    if movement is not None:
+        if not isinstance(movement, dict) or set(movement) - {"actors"}:
+            raise ContentDefinitionError("Gameplay rules movement must contain only an actors object.")
+        actor_profiles = movement.get("actors")
+        if not isinstance(actor_profiles, dict):
+            raise ContentDefinitionError("Gameplay rules movement.actors must be an object.")
+        for actor_id, profile in actor_profiles.items():
+            if not isinstance(actor_id, str) or not actor_id.strip():
+                raise ContentDefinitionError("Movement actor IDs must be non-empty strings.")
+            if not isinstance(profile, dict) or set(profile) - {
+                "max_speed", "running_speed_multiplier", "stealth_speed_multiplier"
+            }:
+                raise ContentDefinitionError(f"Movement profile for '{actor_id}' has unsupported fields.")
+            if "max_speed" not in profile:
+                raise ContentDefinitionError(f"Movement profile for '{actor_id}' must define max_speed.")
+            try:
+                config = MovementConfig(
+                    max_speed=profile["max_speed"],
+                    running_speed_multiplier=profile.get("running_speed_multiplier", 1.5),
+                    stealth_speed_multiplier=profile.get("stealth_speed_multiplier", 0.5),
+                )
+            except (TypeError, ValueError) as error:
+                raise ContentDefinitionError(
+                    f"Movement profile for '{actor_id}' is invalid: {error}"
+                ) from error
+            if config.max_speed <= 0:
+                raise ContentDefinitionError(
+                    f"Movement profile for '{actor_id}' max_speed must be greater than zero."
+                )
     seen: set[str] = set()
     for item in consumables:
         if not isinstance(item, dict) or not isinstance(item.get("resource_id"), str) or not item["resource_id"].strip():
@@ -763,6 +794,30 @@ def load_gameplay_rules(path: str | Path | None = None, *, package_path: str | P
             raise ContentDefinitionError(f"Consumable '{item['resource_id']}' has invalid healing.")
     return definition
 
+
+def load_movement_configs(
+    path: str | Path | None = None,
+    *,
+    package_path: str | Path | None = None,
+):
+    """Return immutable actor-ID to native movement-config mappings.
+
+    Missing movement profiles are intentional: no production speed is inferred.
+    """
+    rules = load_gameplay_rules(path, package_path=package_path)
+    movement = rules.get("movement")
+    if movement is None:
+        return MappingProxyType({})
+    profiles = movement["actors"]
+    configs = {
+        actor_id: MovementConfig(
+            max_speed=profile["max_speed"],
+            running_speed_multiplier=profile.get("running_speed_multiplier", 1.5),
+            stealth_speed_multiplier=profile.get("stealth_speed_multiplier", 0.5),
+        )
+        for actor_id, profile in profiles.items()
+    }
+    return MappingProxyType(configs)
 
 
 def load_resource_definitions(path: str | Path | None = None, *, package_path: str | Path | None = None) -> tuple[dict, ...]:
@@ -818,6 +873,7 @@ __all__ = [
     "load_quest_definitions",
     "load_resource_definitions",
     "load_gameplay_rules",
+    "load_movement_configs",
     "populate_opening_content",
     "populate_gameplay_resources",
     "populate_gameplay_placements",
