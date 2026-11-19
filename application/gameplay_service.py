@@ -1531,8 +1531,7 @@ class GameplayService:
         bundle = self._current_bundle()
         self._require_actor_in_active_world(bundle, actor_id)
         if npc_id is not None:
-            npc = bundle.social.npcs.get(npc_id)
-            if npc is None:
+            if bundle.social.npcs.get(npc_id) is None:
                 raise KeyError(f"NPC not found: {npc_id}")
 
         quest = bundle.quest_log.get(quest_id)

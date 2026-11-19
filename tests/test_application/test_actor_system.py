@@ -7,7 +7,6 @@ from application import (
     ActivityState,
     ActorError,
     ActorIdentity,
-    ActorSnapshot,
     GameApplication,
     GameplayService,
     GameplayServiceError,

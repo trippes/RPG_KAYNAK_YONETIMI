@@ -119,7 +119,7 @@ class GameApplication:
         actor_activities = None
         if document.actors is not None and document.actors.has_legacy_spatial_state:
             raise ValueError(
-                "This save contains legacy square-map actor positions. "
+                "This save contains legacy square-map positions or placements (actor location data). "
                 "No square-to-hex coordinate conversion is performed."
             )
         if document.actors is not None:
