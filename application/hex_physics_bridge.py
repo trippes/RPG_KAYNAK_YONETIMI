@@ -1,51 +1,34 @@
-"""Stateless physics projection from Eldoria hex maps into Hex World physics."""
-
+"""Stateless native physics projection from Eldoria hex maps."""
 from __future__ import annotations
 
 import math
 from collections.abc import Iterable
 
 from application.hex_map_definition import HexMapDefinition
-from core.domain.spatial import LocalHexPosition
-from core.foundation import WorldId
-from hex_world_lab.geometry import HexLayout, HexOrientation
-from hex_world_lab.movement.vector import Vector2
-from hex_world_lab.physics import (
-    ActorBodyTransform,
-    BodyDefinition,
+from application.hex_map_physics import build_hex_map_collision_geometry
+from core.domain.physics import (
     BoundaryPolicy,
     CircleShape,
     ContinuousCollisionResolution,
-    HexMapCollisionGeometry,
-    ObstacleDefinition,
-    ObstacleSpatialIndex,
-    build_hex_map_collision_geometry,
+    PhysicsBodyDefinition,
+    StaticObstacle,
+    StaticObstacleIndex,
+    Vector2,
+    ActorBodyTransform,
     resolve_continuous_motion,
 )
-from hex_world_lab.world import HexWorld
-from hex_world_lab.world.cell import HexCellData
-from hex_world_lab.world.map_definition import HexMapDefinition as LabHexMapDefinition
-
-from .hex_world_geometry_bridge import (
-    local_position_to_lab_axial,
-    local_position_to_world_point,
-    to_lab_map_id,
-    to_lab_world_id,
-)
+from core.domain.spatial import LocalHexPosition, WorldPoint, axial_to_world_point
+from core.foundation import WorldId
 
 
 class HexPhysicsSnapshot:
-    """Immutable map/geometry snapshot with a private static-obstacle index.
-
-    The snapshot is derived from Eldoria's canonical HexMapDefinition. The
-    temporary HexWorld used to build it is discarded; no second map registry,
-    content owner, actor registry, or movement state survives the build.
-    """
+    """Immutable map/geometry snapshot with a private native static-obstacle index."""
 
     __slots__ = (
         "_world_id",
         "_map_definition",
-        "_layout",
+        "_hex_size",
+        "_origin",
         "_geometry",
         "_obstacle_index",
     )
@@ -57,8 +40,9 @@ class HexPhysicsSnapshot:
         self,
         world_id: WorldId,
         map_definition: HexMapDefinition,
-        layout: HexLayout,
-        geometry: HexMapCollisionGeometry,
+        hex_size: float,
+        origin: WorldPoint,
+        geometry,
         *,
         cell_size: float = 128.0,
     ) -> None:
@@ -66,22 +50,26 @@ class HexPhysicsSnapshot:
             raise TypeError("world_id must be a canonical WorldId")
         if not isinstance(map_definition, HexMapDefinition):
             raise TypeError("map_definition must be an Eldoria HexMapDefinition")
-        _require_pointy_top(layout)
+        if isinstance(hex_size, bool) or not isinstance(hex_size, (int, float)):
+            raise TypeError("hex_size must be a real number")
+        if not math.isfinite(hex_size) or hex_size <= 0:
+            raise ValueError("hex_size must be finite and positive")
+        if not isinstance(origin, WorldPoint):
+            raise TypeError("origin must be a WorldPoint")
+        from core.domain.physics import HexMapCollisionGeometry
         if not isinstance(geometry, HexMapCollisionGeometry):
-            raise TypeError("geometry must be a HexMapCollisionGeometry")
-        if geometry.map_id.value != map_definition.map_id:
+            raise TypeError("geometry must be a native HexMapCollisionGeometry")
+        if geometry.map_id != map_definition.map_id:
             raise ValueError("collision geometry belongs to a different map")
+        obstacles = geometry.collision_obstacles
         object.__setattr__(self, "_world_id", world_id)
         object.__setattr__(self, "_map_definition", map_definition)
-        object.__setattr__(self, "_layout", layout)
+        object.__setattr__(self, "_hex_size", float(hex_size))
+        object.__setattr__(self, "_origin", origin)
         object.__setattr__(self, "_geometry", geometry)
         object.__setattr__(
-            self,
-            "_obstacle_index",
-            ObstacleSpatialIndex(
-                geometry.collision_obstacles,
-                cell_size=cell_size,
-            ),
+            self, "_obstacle_index",
+            StaticObstacleIndex(obstacles, cell_size=cell_size),
         )
 
     @property
@@ -93,26 +81,31 @@ class HexPhysicsSnapshot:
         return self._map_definition.map_id
 
     @property
-    def geometry(self) -> HexMapCollisionGeometry:
+    def geometry(self):
         return self._geometry
 
     @property
-    def collision_obstacles(self) -> tuple[ObstacleDefinition, ...]:
+    def collision_obstacles(self) -> tuple[StaticObstacle, ...]:
         return self._geometry.collision_obstacles
+
+    def cell_center(self, position: LocalHexPosition) -> WorldPoint:
+        if not isinstance(position, LocalHexPosition):
+            raise TypeError("position must be a LocalHexPosition")
+        return axial_to_world_point(position.to_hex_coord(), self._hex_size, self._origin)
 
     def resolve_cell_step(
         self,
         source: LocalHexPosition,
         target: LocalHexPosition,
-        body: BodyDefinition,
+        body: PhysicsBodyDefinition,
     ) -> ContinuousCollisionResolution:
         """Resolve a center-to-center cell step without changing gameplay state."""
         if not isinstance(source, LocalHexPosition):
             raise TypeError("source must be a LocalHexPosition")
         if not isinstance(target, LocalHexPosition):
             raise TypeError("target must be a LocalHexPosition")
-        if not isinstance(body, BodyDefinition):
-            raise TypeError("body must be a BodyDefinition")
+        if not isinstance(body, PhysicsBodyDefinition):
+            raise TypeError("body must be a PhysicsBodyDefinition")
         if not isinstance(body.collider, CircleShape):
             raise TypeError("continuous hex-step validation currently requires a circle body")
         if not self._map_definition.has_cell(source):
@@ -120,8 +113,8 @@ class HexPhysicsSnapshot:
         if not self._map_definition.has_cell(target):
             raise ValueError("target cell is outside the canonical map mask")
 
-        start = local_position_to_world_point(source, self._layout)
-        finish = local_position_to_world_point(target, self._layout)
+        start = self.cell_center(source)
+        finish = self.cell_center(target)
         displacement = Vector2(finish.x - start.x, finish.y - start.y)
         moving_circle = ActorBodyTransform(start).transform_shape(body)
         if not isinstance(moving_circle, CircleShape):
@@ -133,6 +126,7 @@ class HexPhysicsSnapshot:
             moving_circle,
             displacement,
             obstacles,
+            map_id=self.map_id,
             candidate_provider=provider,
         )
 
@@ -140,18 +134,17 @@ class HexPhysicsSnapshot:
         self,
         source: LocalHexPosition,
         target: LocalHexPosition,
-        body: BodyDefinition,
+        body: PhysicsBodyDefinition,
         *,
         tolerance: float = 1e-6,
     ) -> bool:
-        """Whether physics permits reaching the target cell center completely."""
         if isinstance(tolerance, bool) or not isinstance(tolerance, (int, float)):
             raise TypeError("tolerance must be a real number")
         if not math.isfinite(tolerance) or tolerance < 0:
             raise ValueError("tolerance must be finite and non-negative")
         resolution = self.resolve_cell_step(source, target, body)
-        start = local_position_to_world_point(source, self._layout)
-        finish = local_position_to_world_point(target, self._layout)
+        start = self.cell_center(source)
+        finish = self.cell_center(target)
         desired_x = finish.x - start.x
         desired_y = finish.y - start.y
         return (
@@ -174,70 +167,45 @@ class HexPhysicsSnapshot:
 def build_hex_physics_snapshot(
     world_id: WorldId,
     map_definition: HexMapDefinition,
-    layout: HexLayout,
+    hex_size: float = 32.0,
     *,
+    origin: WorldPoint = WorldPoint(0.0, 0.0),
     boundary_policy: BoundaryPolicy = BoundaryPolicy.BLOCKED,
-    object_obstacles: Iterable[ObstacleDefinition] = (),
+    object_obstacles: Iterable[StaticObstacle] = (),
     cell_size: float = 128.0,
 ) -> HexPhysicsSnapshot:
-    """Project one Eldoria map into a disposable lab world and build collision data."""
+    """Build a native physics snapshot directly from Eldoria's canonical map."""
     if not isinstance(world_id, WorldId):
         raise TypeError("world_id must be a canonical WorldId")
     if not isinstance(map_definition, HexMapDefinition):
         raise TypeError("map_definition must be an Eldoria HexMapDefinition")
-    _require_pointy_top(layout)
+    if isinstance(hex_size, bool) or not isinstance(hex_size, (int, float)):
+        raise TypeError("hex_size must be a real number")
+    if not math.isfinite(hex_size) or hex_size <= 0:
+        raise ValueError("hex_size must be finite and positive")
+    if not isinstance(origin, WorldPoint):
+        raise TypeError("origin must be a WorldPoint")
     if not isinstance(boundary_policy, BoundaryPolicy):
         raise TypeError("boundary_policy must be a BoundaryPolicy")
-
-    lab_world_id = to_lab_world_id(world_id)
-    lab_map_id = to_lab_map_id(map_definition.map_id)
-    blocked_landmarks = {
-        landmark.position
-        for landmark in map_definition.landmarks
-        if not landmark.walkable
-    }
-
-    lab_cells = {}
-    for position, cell in map_definition.cells.items():
-        blocked = cell.blocked or position in blocked_landmarks
-        lab_cells[local_position_to_lab_axial(position)] = HexCellData(
-            terrain_id=cell.terrain_id,
-            is_walkable=not blocked,
-            has_obstacle=blocked,
-        )
-
-    projected_definition = LabHexMapDefinition(
-        world_id=lab_world_id,
-        map_id=lab_map_id,
-        name=map_definition.name,
-        layout=layout,
-        cells=lab_cells,
-    )
-    projected_world = HexWorld(lab_world_id)
-    projected_world.register_map(lab_map_id, map_definition.name)
-    projected_world.load_map(projected_definition)
+    supplied_obstacles = tuple(object_obstacles)
+    if any(not isinstance(item, StaticObstacle) for item in supplied_obstacles):
+        raise TypeError("object_obstacles must contain native StaticObstacle values")
 
     geometry = build_hex_map_collision_geometry(
-        projected_world.view,
-        projected_world.runtime,
-        lab_map_id,
+        map_definition,
+        float(hex_size),
+        origin=origin,
         boundary_policy=boundary_policy,
-        object_obstacles=tuple(object_obstacles),
+        object_obstacles=supplied_obstacles,
     )
     return HexPhysicsSnapshot(
         world_id,
         map_definition,
-        layout,
+        float(hex_size),
+        origin,
         geometry,
         cell_size=cell_size,
     )
-
-
-def _require_pointy_top(layout: HexLayout) -> None:
-    if not isinstance(layout, HexLayout):
-        raise TypeError("layout must be a HexLayout")
-    if layout.orientation is not HexOrientation.POINTY_TOP:
-        raise ValueError("Eldoria physics currently supports pointy-top geometry only")
 
 
 __all__ = ["HexPhysicsSnapshot", "build_hex_physics_snapshot"]
