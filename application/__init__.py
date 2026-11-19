@@ -141,8 +141,17 @@ __all__ += [
 ]
 
 from .npc_hex_binding import NPCSpatialBindingError, NPCSpatialBindingService
+from .resource_node_hex_binding import (
+    ResourceNodeHexBindingError,
+    ResourceNodeHexBindingService,
+)
 
-__all__ += ["NPCSpatialBindingError", "NPCSpatialBindingService"]
+__all__ += [
+    "NPCSpatialBindingError",
+    "NPCSpatialBindingService",
+    "ResourceNodeHexBindingError",
+    "ResourceNodeHexBindingService",
+]
 
 from .presentation_content_service import (
     ContentMigrationStatus,
