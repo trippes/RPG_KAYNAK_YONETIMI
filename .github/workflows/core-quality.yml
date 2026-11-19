@@ -39,6 +39,7 @@ jobs:
           application/__init__.py
           application/gameplay_service.py
           application/gameplay_step_clock.py
+          game_ui/movement_input.py
           application/continuous_player_movement.py
           application/actor_system.py
           application/actor_persistence.py
@@ -50,6 +51,8 @@ jobs:
           game_ui/world_rendering/hex_gameplay_view.py
           tests/test_application/test_session_bundle.py
           tests/test_application/test_gameplay_step_clock.py
+          tests/test_application/test_movement_config_content.py
+          tests/test_game_ui/test_movement_input.py
           tests/test_application/test_continuous_player_movement.py
           tests/test_application/test_actor_system.py
           tests/test_application/test_hex_world_runtime.py
