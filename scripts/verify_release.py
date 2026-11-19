@@ -24,7 +24,7 @@ def run(label: str, *args: str) -> None:
 
 
 def verify_installed_content_package() -> None:
-    """Build and install a wheel, then load its shipped map content off-source."""
+    """Build and install a wheel, then load its shipped content off-source."""
     with tempfile.TemporaryDirectory(prefix="rpg-release-package-") as directory:
         temporary_root = Path(directory)
         wheel_dir = temporary_root / "wheel"
@@ -123,7 +123,6 @@ def main() -> int:
         "npc",
         "quests",
         "resources",
-        "world",
         "game_ui",
         "tests",
     )
