@@ -1,5 +1,7 @@
 from types import SimpleNamespace
 
+import pytest
+
 from core.domain.spatial import HexDirection
 from game_ui.input import InputState
 from game_ui.world_rendering.hex_gameplay_view import HexGameplayView
@@ -47,7 +49,7 @@ def test_hex_gameplay_view_mouse_wheel_changes_only_presentation_zoom():
 
     view.handle(InputState(mouse_wheel=2, mouse_pos=(100, 120)))
 
-    assert view.zoom == 1.16
+    assert view.zoom == pytest.approx(1.16)
     assert view.mouse_position == (100, 120)
     assert service.hex_actor_binding.moves == []
 
