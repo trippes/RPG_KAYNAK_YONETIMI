@@ -5,6 +5,7 @@ from dataclasses import dataclass, replace
 
 from application.hex_map_definition import HexMapDefinition
 from application.world_map_definition import WorldMapDefinition, validate_world_map
+from core.foundation import WorldId
 from core.domain.spatial import (
     EntityPosition, HexDirection, LocalHexPosition, MovementFailureReason,
     MovementProfile, MovementRequest, MovementResult,
@@ -83,7 +84,11 @@ class HexWorldRuntime:
     def __init__(
         self, map_definitions, occupancy: HexOccupancyRegistry | None = None,
         world_map_definition: WorldMapDefinition | None = None,
+        *,
+        world_id: WorldId | None = None,
     ):
+        if world_id is not None and not isinstance(world_id, WorldId):
+            raise TypeError("world_id must be a WorldId or None.")
         maps = dict(map_definitions)
         if not maps or any(not isinstance(value, HexMapDefinition) for value in maps.values()):
             raise ValueError("map_definitions must contain at least one HexMapDefinition.")
@@ -93,9 +98,15 @@ class HexWorldRuntime:
             validate_world_map(world_map_definition, maps)
         self._maps = maps
         self._world_map = world_map_definition
+        self._world_id = world_id
         self._occupancy = occupancy or HexOccupancyRegistry()
         self._entities: dict[str, _HexEntityState] = {}
         self._patrol_indices: dict[str, int] = {}
+
+    @property
+    def world_id(self) -> WorldId | None:
+        """World scope bound to this runtime, if it is session-integrated."""
+        return self._world_id
 
     @property
     def occupancy(self) -> HexOccupancyRegistry:
