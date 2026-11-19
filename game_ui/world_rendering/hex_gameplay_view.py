@@ -58,20 +58,8 @@ class HexGameplayView:
     def _npc_at_screen_position(self, runtime, position, map_id):
         if position is None or self._panel is None or not self._panel.collidepoint(position):
             return None
-        entities = getattr(runtime, "entities", None)
-        if not callable(entities):
-            return None
-        cell = LocalHexPosition.from_hex_coord(
-            self.transform.screen_to_axial(*position)
-        )
-        for entity in entities():
-            if (
-                entity.kind == "npc"
-                and entity.position.map_id == map_id
-                and entity.position.cell == cell
-            ):
-                return entity.entity_id
-        return None
+        world_point = self.transform.screen_to_world_point(*position)
+        return self.service.npc_at_world_point(map_id, world_point)
 
     def _cell_world_position(self, cell):
         return self.transform.axial_to_world(cell.to_hex_coord())
