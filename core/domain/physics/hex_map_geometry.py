@@ -7,7 +7,6 @@ import math
 
 from core.domain.spatial import LocalHexPosition, WorldPoint
 from .obstacle import StaticObstacle
-from .shapes import ConvexPolygonShape
 
 
 _BOUNDARY_WALL_THICKNESS = 1e-4
