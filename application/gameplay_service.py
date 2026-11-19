@@ -26,6 +26,7 @@ from .game_application import GameApplication
 from .production_chain import ProductionChain, ProductionChainStage
 from .actor_system import ActivityView, ActorView, WorldActor
 from .hex_actor_binding import ActorHexBindingService
+from .npc_hex_binding import NPCSpatialBindingService
 from character import EquipmentSlot, ItemDefinition
 from npc import Faction, NPC
 from quests import Dialogue, Quest, QuestGraph, QuestGraphProgress
@@ -217,6 +218,15 @@ class GameplayService:
             raise GameplayServiceError(
                 f"Hex runtime is not bound to the active world: {error}"
             ) from error
+
+    @property
+    def npc_hex_binding(self) -> NPCSpatialBindingService:
+        """Resolve NPC spatial operations through the active world's actor binding."""
+        bundle = self._current_bundle()
+        return NPCSpatialBindingService(
+            bundle.social.npcs,
+            self.hex_actor_binding,
+        )
 
     def register_character_factory(self, factory) -> None:
         self._character_factory = factory
