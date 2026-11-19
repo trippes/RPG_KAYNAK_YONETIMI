@@ -124,6 +124,21 @@ class ActorHexBindingService:
             )
         return self._runtime.move(actor_id, direction)
 
+    def move_toward(
+        self, actor_id: str, goal: LocalHexPosition,
+    ) -> MovementResult:
+        """Move one pathfinding step toward a map-local goal."""
+        actor = self._require_actor(actor_id)
+        entity = self._runtime.entity(actor_id)
+        if not actor.active:
+            return MovementResult(
+                False,
+                entity.position,
+                MovementFailureReason.MOVEMENT_NOT_ALLOWED,
+                "Actor is inactive.",
+            )
+        return self._runtime.move_toward(actor_id, goal)
+
     def transition(self, actor_id: str, transition_id: str) -> MovementResult:
         """Move an existing actor across a validated local-map transition."""
         actor = self._require_actor(actor_id)
