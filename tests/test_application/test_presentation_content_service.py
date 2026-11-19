@@ -21,7 +21,7 @@ class TestPresentationContentService(unittest.TestCase):
         self.temporary = tempfile.TemporaryDirectory()
         self.root = Path(self.temporary.name) / "demo_eldoria"
         shutil.copytree(DEMO_PACKAGE, self.root)
-        legacy = self.read_json(self.root / "presentation_assets.json")
+        legacy = self.read_json(self.root / "asset_catalog.json")
         legacy["objects"] = [
             {"object_id": "fixture-tree-1", "asset_id": "flora.tree.test", "map_id": "hex_forest_demo", "q": 0, "r": 0},
             {"object_id": "fixture-tree-2", "asset_id": "flora.tree.test", "map_id": "hex_clearing_demo", "q": 1, "r": 0},
@@ -167,6 +167,7 @@ class TestPresentationContentService(unittest.TestCase):
         manifest = self.read_json(manifest_path)
         manifest.pop("asset_catalog")
         manifest.pop("map_placements")
+        manifest["presentation_assets"] = "presentation_assets.json"
         manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
         (self.root / "asset_catalog.json").unlink()
         shutil.rmtree(self.root / "placements")
