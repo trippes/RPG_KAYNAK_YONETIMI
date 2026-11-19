@@ -5,7 +5,7 @@ import pygame
 
 from application.hex_map_definition import parse_hex_map
 from application.hex_world_runtime import HexMovableEntity
-from core.domain.spatial import EntityPosition, LocalHexPosition, MovementProfile
+from core.domain.spatial import EntityPosition, LocalHexPosition, MovementProfile, WorldPoint, world_point_to_hex
 from core.domain.spatial import HexDirection
 from game_ui.input import InputState
 from game_ui.world_rendering.hex_gameplay_view import HexGameplayView
@@ -60,6 +60,23 @@ class FakeService:
         self.hex_world_runtime = FakeRuntime()
         self.hex_actor_binding = RecordingActorBinding()
         self.player_actor_id = "hero"
+
+    def npc_at_world_point(self, map_id, point):
+        if not isinstance(point, WorldPoint):
+            raise TypeError("point must be a WorldPoint")
+        runtime = self.hex_world_runtime
+        if runtime is None or not hasattr(runtime, "entities"):
+            return None
+        coord = world_point_to_hex(point, 32.0)
+        cell = LocalHexPosition.from_hex_coord(coord)
+        matches = sorted(
+            entity.entity_id
+            for entity in runtime.entities()
+            if entity.kind == "npc"
+            and entity.position.map_id == map_id
+            and entity.position.cell == cell
+        )
+        return matches[0] if matches else None
 
 
 def test_hex_gameplay_view_maps_six_keyboard_actions_to_axial_directions():
