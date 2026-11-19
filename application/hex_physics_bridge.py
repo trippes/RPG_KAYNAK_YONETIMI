@@ -43,6 +43,7 @@ class HexPhysicsSnapshot:
     """
 
     __slots__ = (
+        "_world_id",
         "_map_definition",
         "_layout",
         "_geometry",
@@ -51,12 +52,15 @@ class HexPhysicsSnapshot:
 
     def __init__(
         self,
+        world_id: WorldId,
         map_definition: HexMapDefinition,
         layout: HexLayout,
         geometry: HexMapCollisionGeometry,
         *,
         cell_size: float = 128.0,
     ) -> None:
+        if not isinstance(world_id, WorldId):
+            raise TypeError("world_id must be a canonical WorldId")
         if not isinstance(map_definition, HexMapDefinition):
             raise TypeError("map_definition must be an Eldoria HexMapDefinition")
         _require_pointy_top(layout)
@@ -64,6 +68,7 @@ class HexPhysicsSnapshot:
             raise TypeError("geometry must be a HexMapCollisionGeometry")
         if geometry.map_id.value != map_definition.map_id:
             raise ValueError("collision geometry belongs to a different map")
+        self._world_id = world_id
         self._map_definition = map_definition
         self._layout = layout
         self._geometry = geometry
@@ -71,6 +76,10 @@ class HexPhysicsSnapshot:
             geometry.collision_obstacles,
             cell_size=cell_size,
         )
+
+    @property
+    def world_id(self) -> WorldId:
+        return self._world_id
 
     @property
     def map_id(self) -> str:
@@ -209,6 +218,7 @@ def build_hex_physics_snapshot(
         object_obstacles=tuple(object_obstacles),
     )
     return HexPhysicsSnapshot(
+        world_id,
         map_definition,
         layout,
         geometry,
