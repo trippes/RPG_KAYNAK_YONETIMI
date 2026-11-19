@@ -224,3 +224,84 @@ def test_hex_gameplay_view_ignores_inactive_map_transitions():
         ("hero", HexDirection.EAST),
     ]
 
+
+
+
+def _interaction_service():
+    player = HexMovableEntity(
+        "hero",
+        "player",
+        EntityPosition("village", LocalHexPosition(0, 0)),
+        MovementProfile(),
+    )
+    npc = HexMovableEntity(
+        "guard_eren",
+        "npc",
+        EntityPosition("village", LocalHexPosition(1, 0)),
+        MovementProfile(),
+    )
+
+    class Runtime:
+        def entity(self, entity_id):
+            return {"hero": player, "guard_eren": npc}[entity_id]
+
+        def entities(self):
+            return (player, npc)
+
+        def map_definition(self, _map_id):
+            return SimpleNamespace(
+                transitions=(),
+                has_cell=lambda _cell: True,
+            )
+
+    service = FakeService()
+    service.hex_world_runtime = Runtime()
+    return service
+
+
+def _configure_interaction_view(view):
+    view._panel = pygame.Rect(24, 96, 752, 480)
+    view.transform.configure(
+        camera_x=0,
+        camera_y=0,
+        viewport_center=(400, 336),
+        zoom=1,
+    )
+
+
+def test_left_clicking_npc_selects_it_and_requests_dialogue():
+    service = _interaction_service()
+    view = HexGameplayView(service)
+    _configure_interaction_view(view)
+
+    result = view.handle(InputState(mouse_clicked=True, mouse_pos=(455, 336)))
+
+    assert result == "dialogue"
+    assert view.selected_npc_id == "guard_eren"
+    assert view._move_goal is None
+
+
+def test_right_clicking_npc_opens_empty_context_menu_without_actions():
+    service = _interaction_service()
+    view = HexGameplayView(service)
+    _configure_interaction_view(view)
+
+    view.handle(InputState(mouse_right_clicked=True, mouse_pos=(455, 336)))
+
+    assert view.context_menu_npc_id == "guard_eren"
+    assert view.context_menu_position == (455, 336)
+    assert service.hex_actor_binding.moves == []
+    assert service.hex_actor_binding.toward == []
+
+
+def test_right_clicking_empty_cell_closes_npc_context_menu():
+    service = _interaction_service()
+    view = HexGameplayView(service)
+    _configure_interaction_view(view)
+    view.context_menu_npc_id = "guard_eren"
+    view.context_menu_position = (455, 336)
+
+    view.handle(InputState(mouse_right_clicked=True, mouse_pos=(510, 336)))
+
+    assert view.context_menu_npc_id is None
+    assert view.context_menu_position is None
