@@ -13,6 +13,7 @@ from types import MappingProxyType
 from typing import Callable, Iterable
 
 from core.time import Tick
+from core.domain.spatial import EntityPosition
 from core.actions import ActionType, action_tick_cost
 from core.foundation import Identifier, WorldId
 from core.entity import EntityType
@@ -781,6 +782,53 @@ class GameplayService:
             if bundle.containers.inventory_custody(container_id) is None:
                 bundle.containers.set_inventory_custody(container_id, source_inventory_id)
             raise
+
+    def place_container_from_inventory(
+        self,
+        container_id: str,
+        inventory_id: str,
+        position: EntityPosition,
+        *,
+        blocks_movement: bool,
+        blocks_occupancy: bool,
+    ):
+        """Drop a carried container at an explicit authoritative hex position."""
+        bundle = self._current_bundle()
+        if bundle.hex_world_runtime is None:
+            raise GameplayServiceError(
+                "Hex runtime is required to place a container in the world."
+            )
+        self._inventory(bundle, inventory_id)
+        return self.container_hex_binding.place_from_inventory(
+            container_id,
+            inventory_id,
+            position,
+            blocks_movement=blocks_movement,
+            blocks_occupancy=blocks_occupancy,
+            validate=bundle.validate,
+        )
+
+    def release_nested_container(
+        self,
+        child_id: str,
+        position: EntityPosition,
+        *,
+        blocks_movement: bool,
+        blocks_occupancy: bool,
+    ):
+        """Release a nested container into an explicit authoritative hex position."""
+        bundle = self._current_bundle()
+        if bundle.hex_world_runtime is None:
+            raise GameplayServiceError(
+                "Hex runtime is required to place a released container in the world."
+            )
+        return self.container_hex_binding.release_to_world(
+            child_id,
+            position,
+            blocks_movement=blocks_movement,
+            blocks_occupancy=blocks_occupancy,
+            validate=bundle.validate,
+        )
 
     def contain_container(self, parent_id: str, child_id: str) -> ContainerInstance:
         """Nest a container after removing its authoritative world placement."""
