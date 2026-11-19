@@ -632,6 +632,7 @@ class GameWindow:
 
     def step(self, events=(), *, elapsed_seconds=0.0):
         self._ensure_movement_runtime()
+        events = tuple(events)
         state = self.input.collect(events)
         if self.movement_input is not None:
             self.movement_input.handle_events(events)
