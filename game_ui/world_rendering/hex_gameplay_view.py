@@ -18,6 +18,7 @@ class HexGameplayView:
     MIN_ZOOM = 0.55
     MAX_ZOOM = 1.8
     ZOOM_STEP = 0.08
+    MOVE_STEP_SECONDS = 0.18
 
     DIRECTIONS = (
         ("right", HexDirection.EAST),
@@ -38,9 +39,46 @@ class HexGameplayView:
         self.elapsed_seconds = 0.0
         self.mouse_position = None
         self._camera_map_id = None
+        self._panel = None
+        self._move_goal = None
+        self._move_map_id = None
+        self._movement_accumulator = 0.0
 
     def update(self, elapsed_seconds: float = 0.0) -> None:
         self.elapsed_seconds = max(0.0, float(elapsed_seconds))
+        if self._move_goal is None:
+            return
+        runtime = self.service.hex_world_runtime
+        if runtime is None:
+            self._clear_move_goal()
+            return
+        try:
+            entity = runtime.entity(self.service.player_actor_id)
+        except KeyError:
+            self._clear_move_goal()
+            return
+        if entity.position.map_id != self._move_map_id:
+            self._clear_move_goal()
+            return
+        if entity.position.cell == self._move_goal:
+            self._clear_move_goal()
+            return
+
+        self._movement_accumulator += self.elapsed_seconds
+        if self._movement_accumulator < self.MOVE_STEP_SECONDS:
+            return
+        self._movement_accumulator %= self.MOVE_STEP_SECONDS
+        result = self.service.hex_actor_binding.move_toward(
+            self.service.player_actor_id,
+            self._move_goal,
+        )
+        if not result.success or result.position.cell == self._move_goal:
+            self._clear_move_goal()
+
+    def _clear_move_goal(self) -> None:
+        self._move_goal = None
+        self._move_map_id = None
+        self._movement_accumulator = 0.0
 
     def handle(self, state) -> None:
         runtime = self.service.hex_world_runtime
@@ -57,8 +95,13 @@ class HexGameplayView:
             )
         self.mouse_position = state.mouse_pos
 
+        if state.mouse_right_clicked:
+            self._clear_move_goal()
+
+        manual_move = False
         for action, direction in self.DIRECTIONS:
             if state.pressed(action):
+                manual_move = True
                 actor_id = self.service.player_actor_id
                 entity = runtime.entity(actor_id)
                 map_definition = runtime.map_definition(entity.position.map_id)
@@ -81,6 +124,29 @@ class HexGameplayView:
                     )
                 else:
                     self.service.hex_actor_binding.move(actor_id, direction)
+        if manual_move:
+            self._clear_move_goal()
+        elif (
+            state.mouse_clicked
+            and state.mouse_pos is not None
+            and self._panel is not None
+            and self._panel.collidepoint(state.mouse_pos)
+        ):
+            actor_id = self.service.player_actor_id
+            entity = runtime.entity(actor_id)
+            map_definition = runtime.map_definition(entity.position.map_id)
+            q = self.transform.screen_to_axial(*state.mouse_pos)
+            goal = LocalHexPosition.from_hex_coord(q)
+            if map_definition.has_cell(goal):
+                self._clear_move_goal()
+                self._move_goal = goal
+                self._move_map_id = entity.position.map_id
+                result = self.service.hex_actor_binding.move_toward(
+                    actor_id,
+                    goal,
+                )
+                if not result.success or result.position.cell == goal:
+                    self._clear_move_goal()
 
     def render(self, renderer) -> bool:
         runtime = self.service.hex_world_runtime
@@ -108,6 +174,7 @@ class HexGameplayView:
                 set_clip(panel)
             renderer.pg.draw.rect(surface, (31, 49, 43), panel)
             renderer.pg.draw.rect(surface, (80, 103, 83), panel, 2)
+            self._panel = panel
 
             world_centers = tuple(
                 self.transform.axial_to_world(position.to_hex_coord())
@@ -191,6 +258,18 @@ class HexGameplayView:
                         (round(foot[0]), round(foot[1])),
                         max(5, round(radius * 0.22)),
                     )
+
+            if self._move_goal is not None and self._move_map_id == player.position.map_id:
+                goal_screen = self.transform.axial_to_screen(
+                    self._move_goal.to_hex_coord()
+                )
+                renderer.pg.draw.circle(
+                    surface,
+                    (244, 207, 124),
+                    (round(goal_screen[0]), round(goal_screen[1])),
+                    max(8, round(radius * 0.38)),
+                    2,
+                )
 
             renderer.text(
                 f"{map_definition.name}  ·  {player.position.cell.q}, {player.position.cell.r}",
