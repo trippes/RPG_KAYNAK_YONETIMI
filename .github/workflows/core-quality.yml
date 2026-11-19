@@ -32,25 +32,25 @@ jobs:
           application/migrations.py
           application/game_application.py
           application/session_bundle.py
-           application/gameplay_placement_catalog.py
-           application/content_loader.py
-           application/content_pack.py
-           application/hex_world_initializer.py
-           application/__init__.py
+          application/gameplay_placement_catalog.py
+          application/content_loader.py
+          application/content_pack.py
+          application/hex_world_initializer.py
+          application/__init__.py
           application/gameplay_service.py
           application/actor_system.py
           application/actor_persistence.py
           application/game_application.py
           game_ui/screens/main_screen.py
           game_ui/renderer.py
-           game_ui/game_window.py
-           game_ui/world_rendering/__init__.py
-           game_ui/world_rendering/hex_gameplay_view.py
+          game_ui/game_window.py
+          game_ui/world_rendering/__init__.py
+          game_ui/world_rendering/hex_gameplay_view.py
           tests/test_application/test_session_bundle.py
           tests/test_application/test_actor_system.py
           tests/test_application/test_hex_world_runtime.py
           tests/test_application/test_hex_actor_binding.py
-           tests/test_game_ui/test_hex_gameplay_view.py
+          tests/test_game_ui/test_hex_gameplay_view.py
           tests/test_application/test_gameplay_service_hex_actor_binding.py
           tests/test_application/test_hex_physics_bridge.py
           tests/test_application/test_npc_hex_binding.py
@@ -61,11 +61,11 @@ jobs:
           tests/test_application/test_unified_save_document.py
           tests/test_application/test_game_application_save.py
           tests/test_application/test_container_persistence.py
-           tests/test_application/test_content_loader.py
-           tests/test_application/test_content_pack.py
-           tests/test_application/test_hex_world_initializer.py
-           tests/test_application/test_container_hex_binding.py
-           tests/test_application/test_gameplay_service_container_hex_binding.py
+          tests/test_application/test_content_loader.py
+          tests/test_application/test_content_pack.py
+          tests/test_application/test_hex_world_initializer.py
+          tests/test_application/test_container_hex_binding.py
+          tests/test_application/test_gameplay_service_container_hex_binding.py
       - name: Verify legacy map cleanup boundary
         run: python scripts/check_map_cleanup.py
       - name: Report legacy API usage
