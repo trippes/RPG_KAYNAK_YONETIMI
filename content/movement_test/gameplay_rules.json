@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "player": {
+    "inventory_id": "player",
+    "account_id": "hero"
+  },
+  "economy": {
+    "starting_currency": "gold",
+    "starting_balance": 0
+  },
+  "consumables": [],
+  "movement": {
+    "actors": {
+      "hero": {
+        "max_speed": 64,
+        "running_speed_multiplier": 1.5,
+        "stealth_speed_multiplier": 0.5
+      },
+      "test_guard": {
+        "max_speed": 64,
+        "running_speed_multiplier": 1.5,
+        "stealth_speed_multiplier": 0.5
+      },
+      "test_target": {
+        "max_speed": 64,
+        "running_speed_multiplier": 1.5,
+        "stealth_speed_multiplier": 0.5
+      }
+    }
+  }
+}
