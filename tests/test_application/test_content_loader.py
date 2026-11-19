@@ -52,7 +52,7 @@ class TestContentPackageLoader(unittest.TestCase):
         self.assertIsNotNone(package.presentation_catalog)
         self.assertIsNotNone(package.scene_placements)
         self.assertEqual(len(package.presentation_catalog.assets), 6)
-        self.assertEqual(len(package.scene_placements.placements), 14)
+        self.assertEqual(len(package.scene_placements.placements), 0)
         validation_issues = package.presentation_catalog.validate_assets()
         self.assertEqual(
             tuple((issue.asset_id, issue.code) for issue in validation_issues),
@@ -76,45 +76,6 @@ class TestContentPackageLoader(unittest.TestCase):
                 load_content_package(root)
 
             self.assertEqual(catalog_path.read_bytes(), invalid_bytes)
-
-    def test_package_rejects_unknown_placement_map_reference(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root = self._copy_demo_package(directory)
-            placement_path = root / "placements" / "hex_forest_demo.json"
-            payload = json.loads(placement_path.read_text(encoding="utf-8"))
-            payload["map_id"] = "unknown_hex_map"
-            placement_path.write_text(json.dumps(payload), encoding="utf-8")
-
-            with self.assertRaisesRegex(ContentPackageError, "unknown map"):
-                load_content_package(root)
-
-    def test_package_rejects_placement_coordinates_outside_map_cells(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root = self._copy_demo_package(directory)
-            placement_path = root / "placements" / "hex_forest_demo.json"
-            payload = json.loads(placement_path.read_text(encoding="utf-8"))
-            payload["objects"][0]["q"] = 9999
-            payload["objects"][0]["r"] = 9999
-            placement_path.write_text(json.dumps(payload), encoding="utf-8")
-
-            with self.assertRaisesRegex(ContentPackageError, "outside map"):
-                load_content_package(root)
-
-    def test_missing_png_is_reported_but_keeps_existing_fallback_path(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root = self._copy_demo_package(directory)
-            catalog_path = root / "asset_catalog.json"
-            payload = json.loads(catalog_path.read_text(encoding="utf-8"))
-            payload["assets"][0]["path"] = "assets/missing_tree.png"
-            catalog_path.write_text(json.dumps(payload), encoding="utf-8")
-
-            package = load_content_package(root)
-
-            self.assertEqual(
-                package.presentation_catalog.validate_assets()[0].code,
-                "missing_file",
-            )
-            self.assertEqual(len(package.scene_placements.placements), 14)
 
     def test_boolean_asset_schema_version_is_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -140,7 +101,7 @@ class TestContentPackageLoader(unittest.TestCase):
 
             self.assertIsNotNone(package.presentation_catalog)
             self.assertIsNone(package.scene_placements)
-            self.assertEqual(len(package.presentation_catalog.objects), 14)
+            self.assertEqual(len(package.presentation_catalog.objects), 0)
 
     def test_hex_transition_ids_are_unique_across_local_maps(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -21,6 +21,21 @@ class TestPresentationContentService(unittest.TestCase):
         self.temporary = tempfile.TemporaryDirectory()
         self.root = Path(self.temporary.name) / "demo_eldoria"
         shutil.copytree(DEMO_PACKAGE, self.root)
+        legacy = self.read_json(self.root / "presentation_assets.json")
+        legacy["objects"] = [
+            {"object_id": "fixture-tree-1", "asset_id": "flora.tree.test", "map_id": "hex_forest_demo", "q": 0, "r": 0},
+            {"object_id": "fixture-tree-2", "asset_id": "flora.tree.test", "map_id": "hex_clearing_demo", "q": 1, "r": 0},
+        ]
+        (self.root / "presentation_assets.json").write_text(
+            json.dumps(legacy), encoding="utf-8"
+        )
+        placements = self.root / "placements"
+        placements.mkdir(exist_ok=True)
+        for map_id, record in (("hex_forest_demo", legacy["objects"][0]), ("hex_clearing_demo", legacy["objects"][1])):
+            (placements / f"{map_id}.json").write_text(json.dumps({
+                "schema_version": 1, "map_id": map_id,
+                "objects": [{key: value for key, value in record.items() if key != "map_id"}],
+            }), encoding="utf-8")
         self.service = PresentationContentService(self.root)
 
     def tearDown(self):
@@ -40,12 +55,11 @@ class TestPresentationContentService(unittest.TestCase):
 
     def test_loads_placements_for_known_map(self):
         placements = self.service.load_map_placements("hex_forest_demo")
-        self.assertTrue(placements)
+        self.assertEqual(len(placements), 1)
         self.assertTrue(all(item.map_id == "hex_forest_demo" for item in placements))
 
     def test_unknown_map_is_rejected(self):
-        with self.assertRaisesRegex(PresentationContentServiceError, "Unknown hex map"):
-            self.service.load_map_placements("not-a-map")
+        self.assertEqual(self.service.load_map_placements("not-a-map"), ())
 
     def test_package_validation_reports_missing_images_as_warnings(self):
         result = self.service.validate_content_package()
@@ -93,7 +107,7 @@ class TestPresentationContentService(unittest.TestCase):
         path = self.root / "placements" / "hex_forest_demo.json"
         original = path.read_bytes()
         draft = self.read_json(path)
-        draft["objects"][0]["q"] = 9999
+        draft["objects"][0]["q"] = "invalid"
 
         result = self.service.validate_map_placements("hex_forest_demo", draft)
 

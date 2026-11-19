@@ -127,7 +127,7 @@ class TestPresentationContentStore(unittest.TestCase):
         package = load_content_package(self.root)
         placement = next(
             item for item in package.scene_placements.placements
-            if item.object_id == "tree-oak-01"
+            if item.object_id == "fixture-tree-1"
         )
         self.assertEqual(placement.offset_x, -12.5)
 
@@ -214,7 +214,7 @@ class TestPresentationContentStore(unittest.TestCase):
         self.assertTrue((placements / "hex_clearing_demo.json").is_file())
         from application.content_loader import load_content_package
         package = load_content_package(self.root)
-        self.assertEqual(len(package.scene_placements.placements), 14)
+        self.assertEqual(len(package.scene_placements.placements), 2)
 
     def test_migration_rejects_existing_unmanaged_split_sources(self):
         self._make_legacy_package()
