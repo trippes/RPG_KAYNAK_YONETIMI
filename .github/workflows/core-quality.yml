@@ -78,6 +78,13 @@ jobs:
           core/domain/physics/obstacle_index.py
           core/domain/physics/shapes.py
           core/domain/physics/vector2.py
+          core/domain/movement/__init__.py
+          core/domain/movement/config.py
+          core/domain/movement/integrator.py
+          core/domain/movement/intent.py
+          core/domain/movement/mode.py
+          core/domain/movement/state.py
+          tests/test_spatial/test_native_continuous_movement.py
           tests/test_spatial/test_native_collision_solver.py
           tests/test_spatial/test_native_continuous_collision.py
           tests/test_spatial/test_native_hex_map_geometry.py
