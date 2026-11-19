@@ -123,4 +123,4 @@ Bu bölüm önceki envanterdeki hedeflerin gerçek branch durumuyla güncellenmi
 
 **Save/load kararı:** Eski actor/NPC/resource kare spatial kayıtları ve container placement listeleri decoder seviyesinde tespit edilir ve yükleme reddedilir. Koordinat dönüşümü veya sessiz relocation yoktur.
 
-**Teknik kabul:** HEAD 3790463394b1f47c81655169554e30202de66724; run [#44492476381](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44492476381) Linux/Windows başarılı; 1.341 test + 235 subtest; Ruff, compileall, wheel build, isolated install ve release verification başarılı.
+**Teknik kabul (tarihsel uygulama baseline'ı):** Güncel branch HEAD ve son doğrulama için [cleanup dalının GitHub Actions geçmişi](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions) esas alınmalıdır. Linux/Windows başarılı; 1.341 test + 235 subtest; Ruff, compileall, wheel build, isolated install ve release verification başarılı.
