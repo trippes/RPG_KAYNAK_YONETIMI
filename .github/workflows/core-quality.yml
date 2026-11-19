@@ -70,6 +70,7 @@ jobs:
           tests/test_application/test_container_persistence.py
           tests/test_application/test_content_loader.py
           tests/test_application/test_content_pack.py
+          tests/test_application/test_movement_test_package.py
           tests/test_application/test_hex_world_initializer.py
           tests/test_application/test_container_hex_binding.py
           tests/test_application/test_gameplay_service_container_hex_binding.py
