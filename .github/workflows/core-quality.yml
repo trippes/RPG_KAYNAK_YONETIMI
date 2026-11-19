@@ -30,6 +30,8 @@ jobs:
           tests/test_application/test_session_bundle.py
           tests/test_application/test_actor_system.py
           tests/test_application/test_hex_world_runtime.py
+      - name: Verify legacy map cleanup boundary
+        run: python scripts/check_map_cleanup.py
       - name: Report legacy API usage
         run: python -m core.compatibility.usage . | tee legacy-api-usage.json
       - name: Upload legacy API usage report
