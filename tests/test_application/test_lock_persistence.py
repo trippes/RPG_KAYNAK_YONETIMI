@@ -73,7 +73,7 @@ class TestLockPersistence(unittest.TestCase):
         encoded = SaveJsonCodec.encode(document)
         decoded = SaveJsonCodec.decode(encoded)
 
-        self.assertEqual(decoded.schema_version, 2)
+        self.assertEqual(decoded.schema_version, 3)
         self.assertEqual(decoded.locks.to_dict(), snapshot.to_dict())
         self.assertEqual(SaveJsonCodec.encode(decoded), encoded)
 
