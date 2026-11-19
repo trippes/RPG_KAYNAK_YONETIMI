@@ -66,6 +66,20 @@ jobs:
           tests/test_application/test_hex_world_initializer.py
           tests/test_application/test_container_hex_binding.py
           tests/test_application/test_gameplay_service_container_hex_binding.py
+          application/hex_map_physics.py
+          core/domain/physics/__init__.py
+          core/domain/physics/body.py
+          core/domain/physics/contacts.py
+          core/domain/physics/hex_map_geometry.py
+          core/domain/physics/kinematic_solver.py
+          core/domain/physics/narrowphase.py
+          core/domain/physics/obstacle.py
+          core/domain/physics/obstacle_index.py
+          core/domain/physics/shapes.py
+          core/domain/physics/vector2.py
+          tests/test_spatial/test_native_collision_solver.py
+          tests/test_spatial/test_native_hex_map_geometry.py
+          tests/test_spatial/test_native_physics_primitives.py
       - name: Verify legacy map cleanup boundary
         run: python scripts/check_map_cleanup.py
       - name: Report legacy API usage
