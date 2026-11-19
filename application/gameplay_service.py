@@ -29,6 +29,7 @@ from .actor_system import ActivityView, ActorView, WorldActor
 from .hex_actor_binding import ActorHexBindingService
 from .container_hex_binding import ContainerHexBindingService
 from .gameplay_placement_catalog import GameplayPlacementCatalog
+from .hex_world_runtime import HexMovableEntity
 from .npc_hex_binding import NPCSpatialBindingService
 from .resource_node_hex_binding import ResourceNodeHexBindingService
 from .market_hex_anchor import MarketHexAnchorService
@@ -750,7 +751,7 @@ class GameplayService:
 
     def register_gameplay_placements(
         self, catalog: GameplayPlacementCatalog,
-    ) -> tuple:
+    ) -> tuple[HexMovableEntity, ...]:
         """Register a validated package placement set as one rollback-safe batch."""
         if not isinstance(catalog, GameplayPlacementCatalog):
             raise TypeError("catalog must be a GameplayPlacementCatalog.")
@@ -761,7 +762,7 @@ class GameplayService:
                 "Hex runtime is required to register gameplay placements."
             )
 
-        registered: list[tuple[str, str, object]] = []
+        registered: list[tuple[str, str, HexMovableEntity]] = []
         try:
             for placement in catalog.placements:
                 if placement.kind == "npc":
