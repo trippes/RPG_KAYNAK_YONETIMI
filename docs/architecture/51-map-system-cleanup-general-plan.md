@@ -111,3 +111,13 @@ Aşama ancak aşağıdakiler sağlandığında tamamlanabilir:
 9. Laboratuvar entegrasyonuna ilişkin açık arayüzler ve kalan riskler raporlanmalı.
 
 Bu genel plan ve ayrıntılı teknik plan, kullanıcının teknik temizlik onayıyla uygulama için geçerlidir; kapsam dışı gameplay/ürün kararları ayrıca onay gerektirir.
+
+## 8. Kullanıcı kararı eki — 2026-11-19 (önceki sıralamayı geçersiz kılar)
+
+Kullanıcının son kararıyla eski NPC ve kaynak düğümü içerikleri yeni Hex sistemine taşınmayacaktır. Mevcut dört NPC kaydı, yirmi iki kaynak düğümü ve bunların kare harita yerleşimleri legacy demo içeriği olarak kaldırılacaktır. Bu kayıtlara bağlı eski görev tanımları, NPC diyalog içerikleri ve NPC'ye bağlı başlangıç pazarı da eski demo içerik setinin parçası olarak kaldırılacaktır; yeni dünya entegrasyonundan sonra yeni tasarımla sıfırdan yazılacaktır.
+
+Bu karar yalnızca içerik kayıtlarını kapsar. NPC sistemi, kaynak düğümü domain/runtime mekanikleri, kaynak toplama, diyalog altyapısı, görev sistemi, ekonomi, pazar, envanter ve ilişkili genel oyun servisleri silinmeyecektir. Yeniden kullanılabilir mekanikler korunacak; eski demo tanımları ve eski harita konumlarına bağlı örnek veriler temizlenecektir.
+
+Uygulama sıralaması da kesinleştirilmiştir: önce eski kare harita sistemi ve eski yedi haritalı Hex demo/portal sistemi ile bunlara bağlı demo içerikleri temizlenecek; ardından laboratuvar dalındaki yeni Hex mimarisi bu temizlik dalına entegre edilecektir. Önce Hex entegrasyonu yapıp sonra legacy kare sistemi temizleme yönündeki bu belgenin önceki 16.2–16.6 sıralaması geçersizdir. Laboratuvar dalı arşiv olarak değişmeden kalacaktır.
+
+Tek kare kare-harita easter egg'i, eski dokuz haritanın hiçbirini otomatik olarak koruma gerekçesi değildir. Eski kare harita sistemi tamamen kaldırıldıktan sonra, daha sonra ayrıca tasarlanacak tek ve bağımsız easter egg içeriği gerekirse sıfırdan oluşturulacaktır. Kare (x, y) ile axial (q, r) koordinatları arasında dönüşüm yapılmayacaktır.
