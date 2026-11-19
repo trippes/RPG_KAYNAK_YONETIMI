@@ -256,12 +256,61 @@ class HexWorldSnapshot:
                 raise
             raise HexWorldPersistenceError("Invalid hex-world snapshot.") from error
 
-    def restore_into(self, runtime: HexWorldRuntime) -> HexWorldRuntime:
-        """Restore atomically into an empty runtime with matching world scope.
+    def validate_domain_owners(
+        self,
+        *,
+        actors,
+        npcs,
+        resource_nodes,
+        containers,
+        membership,
+    ) -> None:
+        """Reject spatial IDs that do not resolve to a domain owner in this world."""
+        world_value = self.world_id.value
+        for record in self.entities:
+            if record.kind in {"player", "npc"}:
+                actor = actors.get(record.entity_id)
+                if actor is None:
+                    raise HexWorldPersistenceError(
+                        f"Spatial actor owner is missing: {record.entity_id}"
+                    )
+                if actor.world_id != world_value:
+                    raise HexWorldPersistenceError(
+                        f"Spatial actor belongs to another world: {record.entity_id}"
+                    )
+                if record.kind == "npc" and npcs.get(record.entity_id) is None:
+                    raise HexWorldPersistenceError(
+                        f"Spatial NPC domain record is missing: {record.entity_id}"
+                    )
+                continue
 
-        Domain-owner validation (actor/NPC/resource/container registries) is
-        intentionally performed by the application composition layer.
-        """
+            node = resource_nodes.get(record.entity_id)
+            if node is not None:
+                if node.world_id != world_value:
+                    raise HexWorldPersistenceError(
+                        f"Resource node belongs to another world: {record.entity_id}"
+                    )
+                continue
+
+            container = containers.for_entity(record.entity_id)
+            if container is None:
+                raise HexWorldPersistenceError(
+                    f"Spatial object has no resource/container owner: {record.entity_id}"
+                )
+            if membership.world_id_for(container.entity_id) != world_value:
+                raise HexWorldPersistenceError(
+                    f"Container entity is not a member of this world: {record.entity_id}"
+                )
+            if (
+                containers.parent_of(container.container_id) is not None
+                or containers.inventory_custody(container.container_id) is not None
+            ):
+                raise HexWorldPersistenceError(
+                    f"Nested or carried container cannot have a world position: {record.entity_id}"
+                )
+
+    def restore_into(self, runtime: HexWorldRuntime) -> HexWorldRuntime:
+        """Restore atomically into an empty runtime with matching world scope."""
         if not isinstance(runtime, HexWorldRuntime):
             raise TypeError("runtime must be a HexWorldRuntime.")
         if runtime.world_id != self.world_id:
