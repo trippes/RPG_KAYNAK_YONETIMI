@@ -6,24 +6,25 @@ from application.actor_system import WorldActor, WorldActorRegistry
 from application.hex_actor_binding import ActorHexBindingService
 from application.hex_map_definition import parse_hex_map
 from application.hex_physics_bridge import build_hex_physics_snapshot
-from application.hex_world_geometry_bridge import local_position_to_world_point, make_lab_layout
 from application.hex_world_runtime import HexWorldRuntime
 from core.domain.spatial import (
     EntityPosition,
     HexDirection,
     LocalHexPosition,
     MovementFailureReason,
+    HexCoord,
+    WorldPoint,
+    axial_to_world_point,
 )
 from core.foundation import WorldId
-from hex_world_lab.geometry import WorldPoint
-from hex_world_lab.physics import (
-    BodyDefinition,
+from core.domain.physics import (
     BoundaryPolicy,
     CircleShape,
-    ObstacleDefinition,
+    HexMapCollisionGeometry,
+    PhysicsBodyDefinition,
+    StaticObstacle,
+    Vector2,
 )
-from hex_world_lab.movement.vector import Vector2
-from hex_world_lab.world.identity import MapId
 
 
 def make_map(
@@ -54,13 +55,13 @@ def make_map(
 
 
 def make_body(radius=4.0):
-    return BodyDefinition(
+    return PhysicsBodyDefinition(
         "player-body",
-        CircleShape(radius, Vector2(0.0, 0.0)),
+        CircleShape(radius, WorldPoint(0.0, 0.0)),
     )
 
 
-def test_core_map_blocked_cells_and_nonwalkable_landmarks_become_lab_obstacles():
+def test_core_map_blocked_cells_and_nonwalkable_landmarks_become_native_obstacles():
     map_definition = make_map(
         blocked_cells=((2, 0),),
         landmarks=(
@@ -75,14 +76,14 @@ def test_core_map_blocked_cells_and_nonwalkable_landmarks_become_lab_obstacles()
     snapshot = build_hex_physics_snapshot(
         WorldId("eldoria"),
         map_definition,
-        make_lab_layout(32.0),
+        32.0,
     )
 
     obstacles_by_id = {item.obstacle_id: item for item in snapshot.geometry.obstacles}
     assert "cell:2:0" in obstacles_by_id
     assert "cell:1:-1" in obstacles_by_id
-    assert obstacles_by_id["cell:2:0"].source_cell.world_id.value == "eldoria"
-    assert obstacles_by_id["cell:2:0"].source_cell.map_id.value == "corridor"
+    assert obstacles_by_id["cell:2:0"].map_id == "corridor"
+    assert obstacles_by_id["cell:2:0"].obstacle_id == "cell:2:0"
     assert snapshot.geometry.boundary_edges
     assert snapshot.map_id == "corridor"
 
@@ -101,17 +102,12 @@ def test_open_boundary_policy_does_not_create_perimeter_collision_walls():
 def test_physics_snapshot_rejects_a_layout_with_different_map_identity():
     with pytest.raises(ValueError, match="different map"):
         from application.hex_physics_bridge import HexPhysicsSnapshot
-        from hex_world_lab.physics import HexMapCollisionGeometry
-
         HexPhysicsSnapshot(
             WorldId("eldoria"),
             make_map("corridor"),
             make_lab_layout(32.0),
             HexMapCollisionGeometry(
-                MapId("another-map"),
-                (),
-                (),
-                BoundaryPolicy.OPEN,
+                "another-map", (), (), BoundaryPolicy.OPEN,
             ),
         )
 
@@ -130,8 +126,8 @@ def test_clear_center_to_center_step_is_physically_reachable():
         make_body(),
     )
 
-    start = local_position_to_world_point(LocalHexPosition(0, 0), layout)
-    finish = local_position_to_world_point(LocalHexPosition(1, 0), layout)
+    start = axial_to_world_point(HexCoord(0, 0), 32.0)
+    finish = axial_to_world_point(HexCoord(1, 0), 32.0)
     assert result.applied_displacement.x == pytest.approx(finish.x - start.x)
     assert result.applied_displacement.y == pytest.approx(finish.y - start.y)
     assert snapshot.can_reach_cell(
@@ -146,10 +142,10 @@ def test_static_obstacle_on_step_path_prevents_full_cell_transition():
     layout = make_lab_layout(32.0)
     start = local_position_to_world_point(LocalHexPosition(0, 0), layout)
     finish = local_position_to_world_point(LocalHexPosition(1, 0), layout)
-    rock = ObstacleDefinition(
+    rock = StaticObstacle(
         "rock-on-path",
-        MapId("corridor"),
-        CircleShape(8.0, Vector2(0.0, 0.0)),
+        "corridor",
+        CircleShape(8.0, WorldPoint(0.0, 0.0)),
         WorldPoint((start.x + finish.x) / 2, (start.y + finish.y) / 2),
     )
     snapshot = build_hex_physics_snapshot(
