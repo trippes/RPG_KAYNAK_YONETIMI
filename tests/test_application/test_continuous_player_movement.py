@@ -185,10 +185,11 @@ def test_controller_rejects_snapshot_from_another_map():
         boundary_policy=BoundaryPolicy.OPEN,
     )
     body = PhysicsBodyDefinition("player-body", CircleShape(8.0))
+    controller = ContinuousPlayerMovementController(
+        binding,
+        snapshot,
+        body,
+        MovementConfig(max_speed=60.0),
+    )
     with pytest.raises(ValueError, match="different map"):
-        ContinuousPlayerMovementController(
-            binding,
-            snapshot,
-            body,
-            MovementConfig(max_speed=60.0),
-        )
+        controller.step("hero", east_intent(), 1.0 / 60.0)
