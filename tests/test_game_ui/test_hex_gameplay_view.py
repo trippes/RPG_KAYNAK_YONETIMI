@@ -1,7 +1,11 @@
 from types import SimpleNamespace
 
 import pytest
+import pygame
 
+from application.hex_map_definition import parse_hex_map
+from application.hex_world_runtime import HexMovableEntity
+from core.domain.spatial import EntityPosition, LocalHexPosition, MovementProfile
 from core.domain.spatial import HexDirection
 from game_ui.input import InputState
 from game_ui.world_rendering.hex_gameplay_view import HexGameplayView
@@ -78,3 +82,53 @@ def test_hex_gameplay_view_does_not_issue_moves_without_runtime():
     view.handle(InputState(actions={"right"}))
 
     assert service.hex_actor_binding.moves == []
+
+def test_hex_gameplay_view_renders_runtime_map_without_mutating_entity_position():
+    map_definition = parse_hex_map({
+        "schema_version": 2,
+        "map_id": "village",
+        "name": "Village",
+        "geometry": {
+            "type": "hex_axial",
+            "orientation": "pointy_top",
+            "coordinate_system": "axial",
+        },
+        "terrain_ids": ["grass"],
+        "default_terrain": "grass",
+        "valid_cells": [[0, 0], [1, 0], [0, 1]],
+        "cell_overrides": [],
+    })
+    player = HexMovableEntity(
+        "hero",
+        "player",
+        EntityPosition("village", LocalHexPosition(0, 0)),
+        MovementProfile(),
+    )
+
+    class Runtime:
+        def entity(self, _entity_id):
+            return player
+
+        def entities(self):
+            return (player,)
+
+        def map_definition(self, _map_id):
+            return map_definition
+
+    service = FakeService()
+    service.hex_world_runtime = Runtime()
+    view = HexGameplayView(service)
+    surface = pygame.Surface((800, 600))
+    renderer = SimpleNamespace(
+        pg=pygame,
+        surface=surface,
+        width=800,
+        height=600,
+        text=lambda *_args, **_kwargs: None,
+    )
+
+    assert view.render(renderer) is True
+    assert player.position == EntityPosition(
+        "village", LocalHexPosition(0, 0),
+    )
+
