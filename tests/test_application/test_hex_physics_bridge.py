@@ -347,3 +347,50 @@ def test_physics_snapshot_is_immutable_after_construction():
 
     with pytest.raises(AttributeError, match="immutable"):
         snapshot._world_id = WorldId("other-world")
+
+
+def test_configured_player_binding_applies_physics_to_keyboard_and_click_path_moves():
+    map_definition = make_map(valid_cells=((0, 0), (1, 0), (2, 0)))
+    layout = make_lab_layout(32.0)
+    start = local_position_to_world_point(LocalHexPosition(0, 0), layout)
+    finish = local_position_to_world_point(LocalHexPosition(1, 0), layout)
+    rock = ObstacleDefinition(
+        "rock-on-path",
+        MapId("corridor"),
+        CircleShape(8.0, Vector2(0.0, 0.0)),
+        WorldPoint((start.x + finish.x) / 2, (start.y + finish.y) / 2),
+    )
+    snapshot = build_hex_physics_snapshot(
+        WorldId("eldoria"), map_definition, layout, object_obstacles=(rock,),
+    )
+    actors = WorldActorRegistry()
+    actors.add(WorldActor("hero", "eldoria", "player"))
+    runtime = HexWorldRuntime({"corridor": map_definition}, world_id=WorldId("eldoria"))
+    binding = ActorHexBindingService(
+        actors, runtime, WorldId("eldoria"),
+        physics_snapshot=snapshot, player_body=make_body(radius=8.0),
+    )
+    binding.register_spatial(
+        "hero", "player", EntityPosition("corridor", LocalHexPosition(0, 0)),
+    )
+
+    keyboard_result = binding.move("hero", HexDirection.EAST)
+    assert not keyboard_result.success
+    assert keyboard_result.reason is MovementFailureReason.PHYSICAL_COLLISION
+    assert runtime.entity("hero").position.cell == LocalHexPosition(0, 0)
+
+    path_result = binding.move_toward("hero", LocalHexPosition(2, 0))
+    assert not path_result.success
+    assert runtime.entity("hero").position.cell == LocalHexPosition(0, 0)
+
+
+def test_physics_configuration_must_supply_snapshot_and_body_together():
+    actors = WorldActorRegistry()
+    actors.add(WorldActor("hero", "eldoria", "player"))
+    runtime = HexWorldRuntime(
+        {"corridor": make_map()}, world_id=WorldId("eldoria"),
+    )
+    with pytest.raises(ValueError, match="supplied together"):
+        ActorHexBindingService(
+            actors, runtime, WorldId("eldoria"), player_body=make_body(),
+        )
