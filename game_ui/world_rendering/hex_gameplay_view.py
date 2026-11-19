@@ -64,11 +64,15 @@ class HexGameplayView:
     def _cell_world_position(self, cell):
         return self.transform.axial_to_world(cell.to_hex_coord())
 
-    def _ensure_visual_position(self, map_id, cell):
+    def _ensure_visual_position(self, map_id, cell, continuous_position=None):
+        position = (
+            (continuous_position.x, continuous_position.y)
+            if continuous_position is not None
+            else self._cell_world_position(cell)
+        )
         if self._visual_map_id != map_id or (
             self._visual_cell != cell and not self._visual_moving
         ):
-            position = self._cell_world_position(cell)
             self._visual_map_id = map_id
             self._visual_cell = cell
             self._visual_position = position
@@ -77,8 +81,12 @@ class HexGameplayView:
             self._visual_elapsed = 0.0
             self._visual_moving = False
         elif self._visual_position is None:
-            position = self._cell_world_position(cell)
             self._visual_map_id = map_id
+            self._visual_cell = cell
+            self._visual_position = position
+            self._visual_start = position
+            self._visual_target = position
+        elif not self._visual_moving and continuous_position is not None:
             self._visual_cell = cell
             self._visual_position = position
             self._visual_start = position
@@ -289,7 +297,11 @@ class HexGameplayView:
             min_y = min(point[1] for point in world_centers) - self.HEX_SIZE
             max_x = max(point[0] for point in world_centers) + self.HEX_SIZE
             max_y = max(point[1] for point in world_centers) + self.HEX_SIZE
-            self._ensure_visual_position(player.position.map_id, player.position.cell)
+            self._ensure_visual_position(
+                player.position.map_id,
+                player.position.cell,
+                player.continuous_position.point if player.continuous_position is not None else None,
+            )
             target = self._visual_position
             local_mouse = None
             if self.mouse_position is not None:
@@ -348,9 +360,14 @@ class HexGameplayView:
                     foot = self.transform.world_to_screen(*self._visual_position)
                     moving = self._visual_moving
                 else:
-                    foot = self.transform.axial_to_screen(
-                        entity.position.cell.to_hex_coord()
-                    )
+                    if entity.continuous_position is not None:
+                        foot = self.transform.world_point_to_screen(
+                            entity.continuous_position.point
+                        )
+                    else:
+                        foot = self.transform.axial_to_screen(
+                            entity.position.cell.to_hex_coord()
+                        )
                     moving = False
                 if entity.kind in {"player", "npc"}:
                     self.characters.draw(
