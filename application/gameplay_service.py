@@ -26,6 +26,7 @@ from .game_application import GameApplication
 from .production_chain import ProductionChain, ProductionChainStage
 from .actor_system import ActivityView, ActorView, WorldActor
 from .hex_actor_binding import ActorHexBindingService
+from .container_hex_binding import ContainerHexBindingService
 from .npc_hex_binding import NPCSpatialBindingService
 from .resource_node_hex_binding import ResourceNodeHexBindingService
 from .market_hex_anchor import MarketHexAnchorService
@@ -263,6 +264,32 @@ class GameplayService:
             bundle.economy.market,
             self.npc_hex_binding,
         )
+
+    @property
+    def container_hex_binding(self) -> ContainerHexBindingService:
+        """Resolve world-placed container bindings through canonical session ownership."""
+        bundle = self._current_bundle()
+        world = bundle.session.worlds.get_active()
+        if world is None:
+            raise GameplayServiceError(
+                "An active world is required for container hex placement."
+            )
+        runtime = bundle.hex_world_runtime
+        if runtime is None:
+            raise GameplayServiceError(
+                "The active session has no initialized hex world runtime."
+            )
+        try:
+            return ContainerHexBindingService(
+                bundle.containers,
+                bundle.session.membership,
+                runtime,
+                WorldId(world.world_id),
+            )
+        except (TypeError, ValueError) as error:
+            raise GameplayServiceError(
+                f"Hex runtime is not bound to the active world: {error}"
+            ) from error
 
     def register_character_factory(self, factory) -> None:
         self._character_factory = factory
