@@ -24,6 +24,11 @@ class MainScreen:
         if self._runtime() is not None:
             self._view().update(elapsed_seconds)
 
+    def cancel_click_to_move(self):
+        """Give direct keyboard movement priority over an active click destination."""
+        if self._hex_view is not None:
+            self._hex_view._clear_move_goal()
+
     def handle(self, state):
         if self._runtime() is not None:
             result = self._view().handle(state)
