@@ -23,6 +23,24 @@ class TestPresentationContentStore(unittest.TestCase):
         self.temporary = tempfile.TemporaryDirectory()
         self.root = Path(self.temporary.name) / "demo_eldoria"
         shutil.copytree(DEMO_PACKAGE, self.root)
+        legacy = json.loads((self.root / "presentation_assets.json").read_text(encoding="utf-8"))
+        legacy["objects"] = [
+            {"object_id": "fixture-tree-1", "asset_id": "flora.tree.test", "map_id": "hex_forest_demo", "q": 0, "r": 0},
+            {"object_id": "fixture-tree-2", "asset_id": "flora.tree.test", "map_id": "hex_clearing_demo", "q": 1, "r": 0},
+        ]
+        (self.root / "presentation_assets.json").write_text(
+            PresentationContentStore._encode_json(legacy), encoding="utf-8"
+        )
+        placements = self.root / "placements"
+        placements.mkdir(exist_ok=True)
+        for map_id, record in (("hex_forest_demo", legacy["objects"][0]), ("hex_clearing_demo", legacy["objects"][1])):
+            (placements / f"{map_id}.json").write_text(
+                PresentationContentStore._encode_json({
+                    "schema_version": 1, "map_id": map_id,
+                    "objects": [{key: value for key, value in record.items() if key != "map_id"}],
+                }),
+                encoding="utf-8",
+            )
         self.store = PresentationContentStore(self.root)
 
     def tearDown(self):
@@ -86,8 +104,7 @@ class TestPresentationContentStore(unittest.TestCase):
         target = self.root / "placements" / "hex_forest_demo.json"
         original = target.read_bytes()
         payload = self.read_json(target)
-        payload["objects"][0]["q"] = 9999
-        payload["objects"][0]["r"] = 9999
+        payload["objects"][0]["q"] = "invalid"
 
         with self.assertRaises(ContentWriteError):
             self.store.save_map_placements("hex_forest_demo", payload)
@@ -163,7 +180,7 @@ class TestPresentationContentStore(unittest.TestCase):
         from application.content_loader import load_content_package
         package = load_content_package(self.root)
         self.assertEqual(len(package.presentation_catalog.assets), 6)
-        self.assertEqual(len(package.scene_placements.placements), 14)
+        self.assertEqual(len(package.scene_placements.placements), 2)
 
     def test_migration_reuses_matching_orphaned_files_after_interrupted_attempt(self):
         self._make_legacy_package()

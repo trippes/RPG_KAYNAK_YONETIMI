@@ -263,33 +263,34 @@ def load_content_package(package_dir: str | Path) -> ContentPackage:
                 scene_placements = ScenePlacementCatalog.load_directory(
                     map_placements_path,
                     presentation_catalog,
-                    valid_map_ids=set(hexes),
-                    map_definitions=hexes,
+                    valid_map_ids=set(hexes) if hexes else None,
+                    map_definitions=hexes if hexes else None,
                 )
             else:
                 presentation_catalog = AssetCatalog.load(presentation_assets_path)
-                known_map_ids = set(hexes)
-                unknown_maps = sorted({
-                    item.map_id for item in presentation_catalog.objects
-                    if item.map_id not in known_map_ids
-                })
-                if unknown_maps:
-                    raise ValueError(
-                        "Legacy placements reference unknown hex maps: "
-                        + ", ".join(unknown_maps)
-                    )
-                from core.domain.spatial import LocalHexPosition
-
-                for placement in presentation_catalog.objects:
-                    map_definition = hexes[placement.map_id]
-                    if not map_definition.has_cell(
-                        LocalHexPosition(placement.q, placement.r)
-                    ):
+                if hexes:
+                    known_map_ids = set(hexes)
+                    unknown_maps = sorted({
+                        item.map_id for item in presentation_catalog.objects
+                        if item.map_id not in known_map_ids
+                    })
+                    if unknown_maps:
                         raise ValueError(
-                            f"Legacy placement '{placement.object_id}' uses a cell "
-                            f"outside map '{placement.map_id}': "
-                            f"q={placement.q}, r={placement.r}"
+                            "Legacy placements reference unknown hex maps: "
+                            + ", ".join(unknown_maps)
                         )
+                    from core.domain.spatial import LocalHexPosition
+
+                    for placement in presentation_catalog.objects:
+                        map_definition = hexes[placement.map_id]
+                        if not map_definition.has_cell(
+                            LocalHexPosition(placement.q, placement.r)
+                        ):
+                            raise ValueError(
+                                f"Legacy placement '{placement.object_id}' uses a cell "
+                                f"outside map '{placement.map_id}': "
+                                f"q={placement.q}, r={placement.r}"
+                            )
         except (AssetCatalogError, ScenePlacementCatalogError, OSError, ValueError) as error:
             raise ContentPackageError(
                 f"Invalid presentation content in package '{package_id}': {error}"
