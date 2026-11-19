@@ -73,16 +73,9 @@ class GameApplication:
         validation and cross-reference check succeeds.
         """
         document = GameSaveFileAdapter.load(path)
-        from application.content_pack import load_npc_definitions
         from application.migrations import migrate_save_data
 
-        npc_definitions = load_npc_definitions(
-            package_path=getattr(self, "_content_package_path", None),
-        )
-        migrated_data = migrate_save_data(
-            document.to_dict(),
-            npc_definitions=npc_definitions,
-        )
+        migrated_data = migrate_save_data(document.to_dict())
         document = GameSaveDocument.from_dict(migrated_data)
         candidate_session = GameSession()
         core_state = document.core.to_state()
