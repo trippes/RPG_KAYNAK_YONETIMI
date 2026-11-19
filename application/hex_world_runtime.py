@@ -79,6 +79,15 @@ class HexWorldRuntimeOwner:
             self._runtime = candidate
         return self._runtime
 
+    def discard_if_empty(self, runtime: HexWorldRuntime) -> bool:
+        """Discard only the exact owned runtime when failed initialization left it empty."""
+        if runtime is not self._runtime:
+            return False
+        if runtime.entities():
+            raise RuntimeError("Cannot discard a HexWorldRuntime that still has entities.")
+        self._runtime = None
+        return True
+
 
 class HexWorldRuntime:
     """Owns live hex positions without changing legacy square-map actors."""
@@ -109,6 +118,11 @@ class HexWorldRuntime:
     def world_id(self) -> WorldId | None:
         """World scope bound to this runtime, if it is session-integrated."""
         return self._world_id
+
+    @property
+    def map_ids(self) -> tuple[str, ...]:
+        """Stable IDs of the local maps owned by this runtime."""
+        return tuple(sorted(self._maps))
 
     @property
     def occupancy(self) -> HexOccupancyRegistry:
