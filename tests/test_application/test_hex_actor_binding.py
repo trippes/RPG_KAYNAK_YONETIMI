@@ -23,7 +23,7 @@ from core.domain.spatial import (
 from core.foundation import WorldId
 
 
-def make_map():
+def make_map(*, transitions=None):
     return parse_hex_map({
         "schema_version": 2,
         "map_id": "forest",
@@ -37,7 +37,7 @@ def make_map():
         "default_terrain": "grass",
         "valid_cells": [[0, 0], [1, 0], [2, 0], [0, 1]],
         "cell_overrides": [],
-        "transitions": [],
+        "transitions": transitions or [],
     })
 
 
