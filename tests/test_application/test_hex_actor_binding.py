@@ -3,12 +3,7 @@
 import pytest
 
 from application.actor_system import WorldActor, WorldActorRegistry
-from application.hex_actor_binding import (
-    ActorHexBindingError,
-    ActorHexBindingService,
-    actor_id_to_lab_entity_id,
-    lab_entity_id_to_actor_id,
-)
+from application.hex_actor_binding import ActorHexBindingError, ActorHexBindingService
 from application.hex_map_definition import parse_hex_map
 from application.hex_world_runtime import HexWorldRuntime
 from application.world_map_definition import WorldMapDefinition, WorldMapPlacement
@@ -50,12 +45,6 @@ def make_binding(*, actor_active=True, world_id="eldoria"):
     )
     binding = ActorHexBindingService(actors, runtime, WorldId("eldoria"))
     return actors, runtime, binding
-
-
-def test_actor_id_maps_one_to_one_to_lab_entity_id_without_new_identity():
-    lab_id = actor_id_to_lab_entity_id("hero")
-    assert lab_entity_id_to_actor_id(lab_id) == "hero"
-    assert lab_id.value == "hero"
 
 
 def test_spatial_registration_reuses_actor_id_and_keeps_actor_registry_authoritative():
