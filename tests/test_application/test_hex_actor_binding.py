@@ -23,11 +23,11 @@ from core.domain.spatial import (
 from core.foundation import WorldId
 
 
-def make_map(*, transitions=None):
+def make_map(map_id="forest", *, transitions=None):
     return parse_hex_map({
         "schema_version": 2,
-        "map_id": "forest",
-        "name": "Forest",
+        "map_id": map_id,
+        "name": map_id.replace("_", " ").title(),
         "geometry": {
             "type": "hex_axial",
             "orientation": "pointy_top",
