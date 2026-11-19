@@ -27,7 +27,12 @@ class RecordingActorBinding:
 
     def move(self, actor_id, direction):
         self.moves.append((actor_id, direction))
-        return SimpleNamespace(success=True)
+        source = LocalHexPosition(0, 0)
+        target = LocalHexPosition.from_hex_coord(source.to_hex_coord().neighbor(direction))
+        return SimpleNamespace(
+            success=True,
+            position=EntityPosition("village", target),
+        )
 
     def transition(self, actor_id, transition_id):
         self.transitions.append((actor_id, transition_id))
@@ -319,3 +324,53 @@ def test_main_screen_forwards_selected_npc_to_dialogue_navigation():
 
     assert screen.handle(InputState()) == "dialogue"
     assert screen.selected_npc_id == "guard_eren"
+
+
+def test_player_visual_position_interpolates_between_hex_centers_after_click():
+    service = FakeService()
+    view = HexGameplayView(service)
+    view._panel = pygame.Rect(24, 96, 752, 480)
+    view.transform.configure(
+        camera_x=0,
+        camera_y=0,
+        viewport_center=(400, 336),
+        zoom=1,
+    )
+
+    view.handle(InputState(mouse_clicked=True, mouse_pos=(455, 336)))
+
+    start = view.transform.axial_to_world(LocalHexPosition(0, 0).to_hex_coord())
+    target = view.transform.axial_to_world(LocalHexPosition(1, 0).to_hex_coord())
+    assert view._visual_position == pytest.approx(start)
+    assert view._visual_target == pytest.approx(target)
+    assert view._visual_moving is True
+
+    view.update(HexGameplayView.MOVE_ANIMATION_SECONDS / 2)
+
+    midpoint = (
+        (start[0] + target[0]) / 2,
+        (start[1] + target[1]) / 2,
+    )
+    assert view._visual_position == pytest.approx(midpoint)
+    assert view._visual_moving is True
+
+
+def test_player_visual_position_finishes_at_destination_without_changing_step_rules():
+    service = FakeService()
+    view = HexGameplayView(service)
+    view._panel = pygame.Rect(24, 96, 752, 480)
+    view.transform.configure(
+        camera_x=0,
+        camera_y=0,
+        viewport_center=(400, 336),
+        zoom=1,
+    )
+
+    view.handle(InputState(mouse_clicked=True, mouse_pos=(455, 336)))
+    view.update(HexGameplayView.MOVE_ANIMATION_SECONDS)
+
+    expected = view.transform.axial_to_world(
+        LocalHexPosition(1, 0).to_hex_coord()
+    )
+    assert view._visual_position == pytest.approx(expected)
+    assert view._visual_moving is False
