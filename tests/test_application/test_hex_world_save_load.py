@@ -9,12 +9,10 @@ from application import (
     GameplayService,
     HexWorldPersistenceError,
 )
-from application.actor_system import WorldActor
 from application.content_loader import load_content_package
 from application.hex_world_runtime import HexWorldRuntime
 from core.domain.spatial import EntityPosition, LocalHexPosition, MovementProfile
 from core.foundation import WorldId
-from economy import Currency, Money
 from npc import NPC
 from resources import Quantity, ResourceType, ResourceUnit, WorldResourceNode
 
@@ -69,9 +67,10 @@ def make_application(tmp_path):
     world = bundle.session.worlds.create("Save World", world_id="save-world")
     bundle.session.worlds.set_active(world.world_id)
 
-    bundle.actors.add(WorldActor("hero", world.world_id, "player"))
-    bundle.social.npcs.add(NPC("guard", "Guard"))
-    bundle.actors.add(WorldActor("guard", world.world_id, "npc"))
+    service = GameplayService(app)
+    service.register_actor("hero", "player")
+    service.register_npc(NPC("guard", "Guard"))
+    service.register_actor("guard", "npc")
     bundle.resource_nodes.add(WorldResourceNode(
         "iron-node",
         world.world_id,
@@ -87,7 +86,7 @@ def make_application(tmp_path):
         world_map_definition=package.world_map_definition,
         world_id=WorldId(world.world_id),
     )
-    service = GameplayService(app)
+    bundle.hex_world_runtime_owner.get_or_create(lambda: runtime)
     service.hex_actor_binding.register_spatial(
         "hero",
         "player",
@@ -102,7 +101,6 @@ def make_application(tmp_path):
         EntityPosition("field", LocalHexPosition(0, 0)),
     )
     runtime.restore_patrol_indices({"guard": 2})
-    bundle.hex_world_runtime_owner.get_or_create(lambda: runtime)
     return app, bundle, runtime
 
 
