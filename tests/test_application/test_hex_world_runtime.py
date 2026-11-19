@@ -3,7 +3,18 @@ from application.hex_map_definition import parse_hex_map
 from application.hex_occupancy import HexOccupant, HexOccupancyRegistry
 from application.hex_pathfinding import HexPathfinder
 from application.hex_world_runtime import HexWorldRuntime, HexWorldRuntimeOwner
-from core.domain.spatial import (\n    ContinuousEntityPosition, EntityPosition, HexCoord, HexDirection,\n    LocalHexPosition, MovementFailureReason, MovementProfile, WorldHexPosition,\n    WorldPoint, axial_to_world_point,\n)
+from core.domain.spatial import (
+    ContinuousEntityPosition,
+    EntityPosition,
+    HexCoord,
+    HexDirection,
+    LocalHexPosition,
+    MovementFailureReason,
+    MovementProfile,
+    WorldHexPosition,
+    WorldPoint,
+    axial_to_world_point,
+)
 from application.world_map_definition import WorldMapDefinition, WorldMapPlacement
 
 
