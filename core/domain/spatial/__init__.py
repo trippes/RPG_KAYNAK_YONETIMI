@@ -9,9 +9,9 @@ from .hex_geometry import (
     world_point_to_hex,
 )
 from .world_point import WorldPoint
+from .continuous_position import ContinuousEntityPosition
 from .aabb import AABB
 from .uniform_grid_index import UniformGridIndex
-from .continuous_position import ContinuousEntityPosition
 from .local_hex_position import LocalHexPosition
 from .world_hex_position import WorldHexPosition
 from .position import Position
@@ -28,6 +28,6 @@ __all__ = [
     "EntityPosition", "MovementFailureReason", "MovementProfile",
     "MovementRequest", "MovementResult",
     "axial_to_pixel", "fractional_axial_to_hex", "pixel_to_axial",
-    "WorldPoint", "ContinuousEntityPosition", "AABB", "UniformGridIndex",\n    "axial_to_world_point",
-    "world_point_to_fractional_axial", "world_point_to_hex",
+    "WorldPoint", "ContinuousEntityPosition", "AABB", "UniformGridIndex",
+    "axial_to_world_point", "world_point_to_fractional_axial", "world_point_to_hex",
 ]
