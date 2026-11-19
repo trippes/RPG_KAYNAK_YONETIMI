@@ -64,8 +64,8 @@ def test_native_world_projection_matches_presentation_transform():
     zoom = 1.75
     transform = WorldTransform(
         hex_size=size,
-        camera_x=camera.x - origin.x,
-        camera_y=camera.y - origin.y,
+        camera_x=camera.x,
+        camera_y=camera.y,
         viewport_center=(400.0, 300.0),
         zoom=zoom,
     )
