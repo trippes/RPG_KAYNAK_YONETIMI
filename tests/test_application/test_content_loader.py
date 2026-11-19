@@ -402,6 +402,7 @@ class TestContentPackageLoader(unittest.TestCase):
             root = self._copy_demo_package(directory)
             manifest_path = root / "manifest.json"
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest.pop("maps")
             manifest["gameplay_placements"] = "gameplay_placements"
             (root / "gameplay_placements").mkdir()
             manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
