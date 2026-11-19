@@ -52,3 +52,30 @@ Bu kayıt, laboratuvar kabiliyetlerinin Eldoria mimarisinde yerel olarak uygulan
 - Save migration açık ve sürümlüdür; dış save schema v3 korunmuştur.
 
 **Sonuç:** İlk yerel dikey dilim uygulandı; teknik aktarım tamamlanmış değildir. Sıradaki ana iş, native fizik ve sabit tick movement pipeline'ıdır. Lab paketini kaldırma aşamasına henüz gelinmemiştir.
+
+
+## 2026-11-19 — Native physics foundation (first slice)
+
+After inspecting the laboratory physics package and Eldoria's existing spatial contracts, an Eldoria-owned physics domain package was introduced:
+
+- `core/domain/physics/vector2.py`: finite immutable vector using Eldoria's y-down (+X right, +Y down) convention.
+- `core/domain/physics/shapes.py`: validated circle and strictly-convex polygon collider values.
+- `core/domain/physics/body.py`: immutable physics body definition and ground-anchor transform.
+- `core/domain/physics/obstacle.py`: map-scoped static obstacle value and world-shape projection.
+- `core/domain/physics/__init__.py`: public exports.
+- `tests/test_spatial/test_native_physics_primitives.py`: primitive, validation, transform and obstacle tests.
+
+These are newly authored Eldoria-native contracts; no laboratory source file was copied. They are not yet wired into `hex_physics_bridge.py`, actor binding, map geometry generation, or movement. The existing bridge still uses laboratory types and must remain until the native collision pipeline is complete.
+
+### Simulation timing finding
+
+The canonical Eldoria simulation clock is `core.simulation.SimulationRuntime`, which advances by integer `Tick` values and notifies registered tick listeners. The laboratory movement integrator accepts a seconds-based delta but does not own a clock. Pygame `Clock.tick()` supplies elapsed frame milliseconds and is a render-loop timing measurement, not a canonical simulation tick definition. Therefore no tick frequency or movement speed has been assumed and no Pygame frame delta has been wired directly into authoritative movement.
+
+### Current status after this slice
+
+- Native collider/body primitives: authored; tests added but not executed.
+- Native map collision geometry: not yet implemented.
+- Native narrowphase/continuous sweep/kinematic solver: not yet implemented.
+- Runtime movement integration: not yet implemented.
+- Lab imports: still present; no dependency cleanup attempted.
+- CI/test result: not verified in this session.
