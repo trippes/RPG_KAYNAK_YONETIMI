@@ -1,11 +1,10 @@
 import unittest
-from pathlib import Path
-
 from application import SessionBundle, SessionHolder
-from application.content_loader import load_content_package
+from application.hex_map_definition import HexCell, HexMapDefinition
 from application.hex_world_runtime import HexWorldRuntime, HexWorldRuntimeOwner
 from core.application import GameSession
 from core.simulation import SimulationRuntime
+from core.domain.spatial import LocalHexPosition
 from locks import KeyDefinition, LockDefinition, LockManager
 from resources import (
     Inventory,
@@ -18,15 +17,19 @@ from resources import (
 )
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-
-
 def make_hex_runtime():
-    package = load_content_package(PROJECT_ROOT / "content" / "demo_eldoria")
-    return HexWorldRuntime(
-        package.hex_map_definitions,
-        world_map_definition=package.world_map_definition,
+    cell = LocalHexPosition(0, 0)
+    definition = HexMapDefinition(
+        schema_version=2,
+        map_id="session_test_map",
+        name="Session test map",
+        description="",
+        default_terrain="grass",
+        valid_cells=frozenset({cell}),
+        cells={cell: HexCell(cell, "grass")},
+        terrain_ids=frozenset({"grass"}),
     )
+    return HexWorldRuntime({definition.map_id: definition})
 
 
 def make_bundle(hex_world_runtime=None):
