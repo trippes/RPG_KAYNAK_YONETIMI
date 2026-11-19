@@ -293,3 +293,15 @@ Bu karar collider geometrisini ve başlangıç ölçüsünü onaylar. Kütle, it
 - Sürekli hareket, hücre hareketi ve harita transferi sırasında broadphase AABB'si aynı yerel collider sınırlarıyla yeni anchor'a taşınır. Varsayılanı olmayan aktörlerin mevcut nokta tabanlı indeksi korunur.
 - NPC binding, NPC'nin kendi `PhysicsBodyDefinition` nesnesinden yerel AABB üretip mevcut actor binding/runtime hattına iletir. Statik engel indeksi değiştirilmez.
 - Bu entegrasyon yalnızca broadphase aday kayıtlarının collider boyutunu dikkate almasını sağlar; henüz dinamik dar faz çarpışması, itiş veya NPC hareket çözümlemesi uygulamaz.
+
+
+## 18. Tekrarlanabilir NPC mekânsal indeks benchmark'ı
+
+Depoda `scripts/benchmark_npc_spatial_index.py` aracı bulunur. Depo kökünde şu komutla çalıştırılır:
+
+```powershell
+python scripts/benchmark_npc_spatial_index.py --output npc-spatial-benchmark.json
+notepad npc-spatial-benchmark.json
+```
+
+Araç 100, 500, 1.000 ve 5.000 NPC sayılarında nokta tabanlı indeks ile collider AABB indeksini aynı makinede karşılaştırır. Her senaryoda kayıt süresi, kayıt sonrası bellek, %0/%10/%50/%100 kümülatif hareket güncelleme süresi ve yakın sorgu maliyeti raporlanır. Sonuçlar donanım ve çalışma ortamına bağlıdır; GitHub runner sonucu kullanıcının hedef donanımındaki performansın yerine geçmez. Ölçüm alınmadan ölçeklenebilirlik veya performans kabulü verilmez.
