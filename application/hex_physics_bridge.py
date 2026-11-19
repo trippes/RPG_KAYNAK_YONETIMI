@@ -93,6 +93,32 @@ class HexPhysicsSnapshot:
             raise TypeError("position must be a LocalHexPosition")
         return axial_to_world_point(position.to_hex_coord(), self._hex_size, self._origin)
 
+    def resolve_motion(
+        self,
+        start: WorldPoint,
+        displacement: Vector2,
+        body: PhysicsBodyDefinition,
+    ) -> ContinuousCollisionResolution:
+        """Resolve one continuous body displacement against this map's indexed obstacles."""
+        if not isinstance(start, WorldPoint):
+            raise TypeError("start must be a WorldPoint")
+        if not isinstance(displacement, Vector2):
+            raise TypeError("displacement must be a Vector2")
+        if not isinstance(body, PhysicsBodyDefinition):
+            raise TypeError("body must be a PhysicsBodyDefinition")
+        if not isinstance(body.collider, CircleShape):
+            raise TypeError("continuous movement currently requires a circle body")
+        moving_circle = ActorBodyTransform(start).transform_shape(body)
+        if not isinstance(moving_circle, CircleShape):
+            raise TypeError("continuous movement currently requires a circle collider")
+        return resolve_continuous_motion(
+            moving_circle,
+            displacement,
+            self.collision_obstacles if body.enabled else (),
+            map_id=self.map_id,
+            candidate_provider=self._obstacle_index if body.enabled else None,
+        )
+
     def resolve_cell_step(
         self,
         source: LocalHexPosition,
