@@ -1,4 +1,4 @@
-"""Native collision geometry derived directly from Eldoria HexMapDefinition."""
+"""Immutable native collision geometry contracts for hex maps."""
 from __future__ import annotations
 
 from dataclasses import dataclass
