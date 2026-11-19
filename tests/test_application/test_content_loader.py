@@ -23,7 +23,7 @@ class TestContentPackageLoader(unittest.TestCase):
         self.assertEqual(package.package_version, "0.6.0")
         self.assertEqual(package.asset_catalog_path.name, "asset_catalog.json")
         self.assertEqual(package.map_placements_path.name, "placements")
-        self.assertEqual(package.presentation_assets_path.name, "presentation_assets.json")
+        self.assertIsNone(package.presentation_assets_path)
         self.assertIn("starter", package.files)
         self.assertIn("npcs", package.files)
         self.assertIn("quests", package.files)
@@ -94,6 +94,12 @@ class TestContentPackageLoader(unittest.TestCase):
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
             manifest.pop("asset_catalog")
             manifest.pop("map_placements")
+            manifest["presentation_assets"] = "presentation_assets.json"
+            legacy = json.loads((root / "asset_catalog.json").read_text(encoding="utf-8"))
+            legacy["objects"] = []
+            (root / "presentation_assets.json").write_text(
+                json.dumps(legacy), encoding="utf-8"
+            )
             manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
 
             package = load_content_package(root)
