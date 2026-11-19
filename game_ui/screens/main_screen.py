@@ -10,6 +10,7 @@ class MainScreen:
         self.service = service
         self.message = "Yeni dünya haritası hazırlanıyor."
         self._hex_view = None
+        self.selected_npc_id = None
 
     def _runtime(self):
         return getattr(self.service, "hex_world_runtime", None)
@@ -25,7 +26,10 @@ class MainScreen:
 
     def handle(self, state):
         if self._runtime() is not None:
-            self._view().handle(state)
+            result = self._view().handle(state)
+            if result == "dialogue":
+                self.selected_npc_id = self._view().selected_npc_id
+                return "dialogue"
         return None
 
     def render(self, renderer):
