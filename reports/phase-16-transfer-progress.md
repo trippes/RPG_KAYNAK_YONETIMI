@@ -174,3 +174,20 @@ The directly relevant application bridge and binding files were inspected on thi
 ### Explicitly not connected in this slice
 
 The continuous solver remains a physics preflight capability, not the authoritative per-frame player/NPC movement integrator. It has not been connected to `SimulationRuntime` because the canonical tick-to-seconds and movement-speed contract still requires a separate decision. The existing `HexWorldRuntime` remains the sole discrete world/occupancy owner. No new actor registry, world runtime, save schema migration, gameplay feature, or unapproved collider size was introduced.
+
+
+## 2026-11-19 — Complete branch-specific Python dependency scan
+
+A branch-head scan was completed against `experiment/map-cleanup` at commit `4583bbeb1c1006609a32bd81251d8e04c99d7a23`. The recursive Git tree contained 641 Python files: 257 production files outside the laboratory package, 123 laboratory source files, and 261 test files (179 outside the laboratory test suite and 82 under `tests/test_hex_world_lab/`).
+
+### Findings
+
+- All 257 production Python files outside `hex_world_lab/` were inspected. No production application/domain/UI module imports `hex_world_lab` or its implementation types. The remaining direct production-side coupling is isolated to `scripts/verify_release.py`: its wheel smoke check imports the lab version, `EntityWorldCoordinator`, `PygameWorldRenderer`, `SimulationTickCoordinator`, and `MovementSystem`; its compileall target also includes `hex_world_lab`.
+- All 179 Python tests outside `tests/test_hex_world_lab/` were inspected. No test outside that dedicated legacy suite imports the lab package. Hits for `EntityId` and `BodyDefinition` in the scan were reviewed as false positives or native Eldoria contracts (e.g. `core.foundation.EntityId` and `core.domain.physics.PhysicsBodyDefinition`), not lab dependencies.
+- The 123 files under `hex_world_lab/` and 82 files under `tests/test_hex_world_lab/` remain the isolated reference implementation and its dedicated test suite. They are not yet removable because several lab capabilities (including camera, movement, companion, interaction, content/environment presentation, and procedural rendering systems) have not all been transferred and validated natively.
+- `pyproject.toml` still explicitly includes `hex_world_lab*` in setuptools package discovery. This is currently required by the release wheel check above.
+- `.github/workflows/eldoria-ci.yml`, `.github/workflows/core-quality.yml`, `requirements.txt`, `requirements-test.txt`, and `requirements-release.txt` contain no direct `hex_world_lab` package reference.
+
+### Decision
+
+The application/domain/UI import migration is complete for the scanned production surface, but the laboratory package is **not yet removable**. Keep `hex_world_lab*` in package discovery, keep the lab source and its dedicated tests, and keep the release gate intact until its expected lab capabilities are replaced by native Eldoria equivalents and the release gate is updated to verify those native contracts. No source or packaging files were changed as part of this audit.
