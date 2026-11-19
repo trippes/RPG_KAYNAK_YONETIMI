@@ -2,7 +2,7 @@ name: Eldoria CI
 
 on:
   push:
-    branches: [demo_eldoria]
+    branches: [demo_eldoria, experiment/map-cleanup]
   pull_request:
     branches: [demo_eldoria]
   workflow_dispatch:
