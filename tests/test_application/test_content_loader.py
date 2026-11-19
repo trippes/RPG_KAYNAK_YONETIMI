@@ -24,7 +24,7 @@ class TestContentPackageLoader(unittest.TestCase):
         package = load_content_package(DEMO_PACKAGE)
 
         self.assertEqual(package.package_id, "demo_eldoria")
-        self.assertEqual(package.package_version, "0.6.0")
+        self.assertEqual(package.package_version, "0.7.1")
         self.assertEqual(package.asset_catalog_path.name, "asset_catalog.json")
         self.assertEqual(package.map_placements_path.name, "placements")
         self.assertIsNone(package.presentation_assets_path)
@@ -37,7 +37,9 @@ class TestContentPackageLoader(unittest.TestCase):
         self.assertEqual(package.files["starter"]["schema_version"], 1)
         self.assertNotIn("locations", package.files["starter"])
         self.assertNotIn("connections", package.files["starter"])
-        self.assertEqual(len(package.hex_map_definitions), 0)
+        self.assertEqual(tuple(package.hex_map_definitions), ("starting_valley",))
+        self.assertEqual(len(package.hex_map_definitions["starting_valley"].valid_cells), 61)
+        self.assertIsNone(package.world_map_definition)
         self.assertEqual(package.files["npcs"]["npcs"], [])
         self.assertEqual(package.files["quests"]["quests"], [])
         self.assertEqual(package.files["resources"]["nodes"], [])
@@ -197,9 +199,9 @@ class TestContentPackageLoader(unittest.TestCase):
             with self.assertRaisesRegex(ContentPackageError, "could not be loaded"):
                 load_content_package(root)
 
-    def test_demo_package_contains_no_legacy_square_or_demo_hex_maps(self):
+    def test_demo_package_contains_only_the_new_axial_starting_valley(self):
         package = load_content_package(DEMO_PACKAGE)
-        self.assertEqual(package.hex_map_definitions, {})
+        self.assertEqual(tuple(package.hex_map_definitions), ("starting_valley",))
         self.assertIsNone(package.world_map_definition)
 
     def test_package_rejects_missing_declared_maps_directory(self):
