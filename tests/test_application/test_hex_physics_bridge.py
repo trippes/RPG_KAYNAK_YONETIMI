@@ -80,11 +80,26 @@ def test_core_map_blocked_cells_and_nonwalkable_landmarks_become_native_obstacle
 
     obstacles_by_id = {item.obstacle_id: item for item in snapshot.geometry.obstacles}
     assert "cell:2:0" in obstacles_by_id
-    assert "cell:1:-1" in obstacles_by_id
+    assert "landmark:old-tree" in obstacles_by_id
     assert obstacles_by_id["cell:2:0"].map_id == "corridor"
     assert obstacles_by_id["cell:2:0"].obstacle_id == "cell:2:0"
     assert snapshot.geometry.boundary_edges
     assert snapshot.map_id == "corridor"
+
+
+
+def test_snapshot_preserves_canonical_y_down_world_origin():
+    origin = WorldPoint(125.0, 275.0)
+    snapshot = build_hex_physics_snapshot(
+        WorldId("eldoria"),
+        make_map(valid_cells=((0, 0), (1, 0))),
+        32.0,
+        origin=origin,
+    )
+
+    assert snapshot.cell_center(LocalHexPosition(0, 0)) == origin
+    expected = axial_to_world_point(HexCoord(1, 0), 32.0, origin)
+    assert snapshot.cell_center(LocalHexPosition(1, 0)) == expected
 
 
 def test_open_boundary_policy_does_not_create_perimeter_collision_walls():
@@ -105,6 +120,7 @@ def test_physics_snapshot_rejects_a_layout_with_different_map_identity():
             WorldId("eldoria"),
             make_map("corridor"),
             32.0,
+            WorldPoint(0.0, 0.0),
             HexMapCollisionGeometry(
                 "another-map", (), (), BoundaryPolicy.OPEN,
             ),
