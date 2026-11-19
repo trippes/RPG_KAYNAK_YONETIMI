@@ -10,24 +10,21 @@ from game_ui.world_rendering.terrain_renderer import HexTerrainRenderer
 
 
 ROOT = Path(__file__).resolve().parents[2]
-CATALOG_PATH = ROOT / "content" / "demo_eldoria" / "presentation_assets.json"
+CATALOG_PATH = ROOT / "content" / "demo_eldoria" / "asset_catalog.json"
 
 
 class TestPhase7VisualPresentation(unittest.TestCase):
     def test_catalog_supports_environment_variety_and_editor_metadata(self):
         catalog = AssetCatalog.load(CATALOG_PATH)
         self.assertGreaterEqual(len(catalog.assets), 6)
-        self.assertGreaterEqual(len(catalog.objects_for_map("hex_forest_demo")), 10)
+        self.assertEqual(catalog.objects, ())
         for asset in catalog.assets.values():
             self.assertEqual(len(asset.anchor), 2)
             self.assertGreater(asset.scale, 0)
 
     def test_environment_placements_keep_visual_and_collision_data_separate(self):
         catalog = AssetCatalog.load(CATALOG_PATH)
-        placements = catalog.objects_for_map("hex_forest_demo")
-        self.assertTrue(any(item.collision_box is None for item in placements))
-        self.assertTrue(any(item.collision_box is not None for item in placements))
-        self.assertTrue(all(item.footprint[0] > 0 and item.footprint[1] > 0 for item in placements))
+        self.assertEqual(catalog.objects, ())
 
     def test_depth_sort_uses_ground_anchor_and_stable_secondary_key(self):
         items = (

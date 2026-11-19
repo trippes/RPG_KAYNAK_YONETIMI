@@ -89,7 +89,7 @@ def verify_installed_content_package() -> None:
             "catalog = AssetCatalog.load(package.asset_catalog_path); "
             "placements = ScenePlacementCatalog.load_directory(package.map_placements_path, catalog); "
             "assert len(catalog.assets) == 6; "
-            "assert len(placements.placements) == 14; "
+            "assert len(placements.placements) == 0; "
             "print('Installed content package verified:', package.package_id, "
             "len(package.map_definitions), 'square maps and', "
             "len(package.hex_map_definitions), 'legacy demo hex maps')"

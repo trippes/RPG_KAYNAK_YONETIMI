@@ -19,23 +19,12 @@ PACKAGE_ROOT = ROOT / "content" / "demo_eldoria"
 
 
 class TestScenePlacementCatalog(unittest.TestCase):
-    def test_demo_package_loads_assets_and_placements_from_separate_sources(self):
+    def test_demo_package_has_assets_but_no_legacy_hex_placements(self):
         package = load_content_package(PACKAGE_ROOT)
         self.assertIsNotNone(package.asset_catalog_path)
-        self.assertIsNotNone(package.map_placements_path)
         catalog = AssetCatalog.load(package.asset_catalog_path)
-        placements = ScenePlacementCatalog.load_directory(
-            package.map_placements_path, catalog
-        )
-
         self.assertEqual(len(catalog.assets), 6)
-        self.assertEqual(len(placements.placements), 14)
-        self.assertEqual(
-            placements.map_ids, ("hex_clearing_demo", "hex_forest_demo")
-        )
-        self.assertEqual(len(placements.objects_for_map("hex_forest_demo")), 12)
-        self.assertEqual(len(placements.objects_for_map("hex_clearing_demo")), 2)
-        self.assertEqual(catalog.objects, ())
+        self.assertEqual(package.scene_placements.placements, ())
 
     def test_placement_catalog_exposes_an_immutable_snapshot(self):
         package = load_content_package(PACKAGE_ROOT)
@@ -46,29 +35,13 @@ class TestScenePlacementCatalog(unittest.TestCase):
         with self.assertRaises(FrozenInstanceError):
             placements.placements = ()
 
-    def test_same_asset_can_be_reused_across_maps_and_instances(self):
-        package = load_content_package(PACKAGE_ROOT)
-        catalog = AssetCatalog.load(package.asset_catalog_path)
-        placements = ScenePlacementCatalog.load_directory(
-            package.map_placements_path, catalog
-        )
-        forest = placements.objects_for_map("hex_forest_demo")
-        clearing = placements.objects_for_map("hex_clearing_demo")
-
-        self.assertTrue(any(item.asset_id == "flora.tree.young" for item in forest))
-        self.assertTrue(any(item.asset_id == "flora.tree.young" for item in clearing))
-        first_tree = next(item for item in forest if item.object_id == "tree-oak-01")
-        another_tree = next(item for item in forest if item.object_id == "tree-oak-04")
-        self.assertEqual(first_tree.asset_id, another_tree.asset_id)
-        self.assertNotEqual(first_tree.offset_x, another_tree.offset_x)
-        self.assertIsNotNone(first_tree.collision_box)
 
     def test_legacy_combined_presentation_file_remains_readable(self):
         legacy_path = PACKAGE_ROOT / "presentation_assets.json"
         legacy = AssetCatalog.load(legacy_path)
         self.assertEqual(len(legacy.assets), 6)
-        self.assertEqual(len(legacy.objects_for_map("hex_forest_demo")), 12)
-        self.assertEqual(len(legacy.objects_for_map("hex_clearing_demo")), 2)
+        self.assertEqual(legacy.objects, ())
+        self.assertEqual(legacy.objects, ())
 
         legacy_data = json.loads(legacy_path.read_text(encoding="utf-8"))
         split_assets = json.loads(

@@ -15,21 +15,17 @@ class TestStage6Presentation(unittest.TestCase):
         self.assertEqual(package.presentation_assets_path.name, "presentation_assets.json")
         self.assertTrue(package.presentation_assets_path.is_file())
 
-    def test_demo_tree_sprite_and_three_additional_forest_trees_are_packaged(self):
+    def test_demo_tree_sprite_is_packaged_without_legacy_hex_placements(self):
         package_root = Path(__file__).resolve().parents[2] / "content" / "demo_eldoria"
         package = load_content_package(package_root)
-        catalog = AssetCatalog.load(package.presentation_assets_path)
+        catalog = AssetCatalog.load(package.asset_catalog_path)
         tree = catalog.get("flora.tree.test")
         self.assertIsNotNone(tree)
         self.assertEqual((tree.width, tree.height), (0, 0))
         self.assertTrue(catalog.available("flora.tree.test"))
-        # Phase 7 expands the forest beyond the original four-tree demo while
-        # preserving the original tree sprite and walkable placement contract.
-        self.assertGreaterEqual(len(catalog.objects_for_map("hex_forest_demo")), 4)
-        tree_cell = package.hex_map_definitions["hex_forest_demo"].get_cell(
-            __import__("core.domain.spatial", fromlist=["LocalHexPosition"]).LocalHexPosition(2, 0)
-        )
-        self.assertFalse(tree_cell.blocked)
+        self.assertEqual(catalog.objects, ())
+        self.assertEqual(package.hex_map_definitions, {})
+        self.assertIsNone(package.world_map_definition)
 
     def test_content_package_rejects_presentation_catalog_path_traversal(self):
         with tempfile.TemporaryDirectory() as directory:
