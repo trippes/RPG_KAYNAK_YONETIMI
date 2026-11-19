@@ -14,7 +14,6 @@ from application import (
 )
 from application.save_file_adapter import SaveFileWriteError
 from core.application import GameSession
-from core.domain.spatial import Position
 from npc import NPC
 from core.persistence import CanonicalSessionState, PersistenceDocument
 from core.time import Tick
@@ -184,16 +183,15 @@ class TestGameApplicationSave(unittest.TestCase):
     def test_load_rejects_legacy_npc_square_map_positions(self):
         application = self._application_with_gameplay()
         application.holder.current.social.npcs.add(
-            NPC(
-                "legacy_npc",
-                "Legacy NPC",
-                location_id="legacy_village",
-                position=Position(3, 4),
-            )
+            NPC("legacy_npc", "Legacy NPC")
         )
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "legacy-npc-save.json"
             application.save(path)
+            data = json.loads(path.read_text(encoding="utf-8"))
+            data["social"]["npcs"][0]["location_id"] = "legacy_village"
+            data["social"]["npcs"][0]["position"] = {"x": 3, "y": 4}
+            path.write_text(json.dumps(data), encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "legacy square-map positions"):
                 application.load(path)
 

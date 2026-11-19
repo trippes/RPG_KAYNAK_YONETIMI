@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from typing import Mapping
 from npc import Faction, NPC, NPCRegistry, Relationship, RelationshipGraph, ReputationLedger
 from quests import Dialogue, DialogueChoice, DialogueNode
-from core.domain.spatial import Position
 from .combat_runtime import Combatant, CombatRuntime
 from .social_runtime import SocialRuntime
 
@@ -22,6 +21,14 @@ class SocialSnapshot:
     reputation: tuple[tuple[str, int], ...] = ()
     schema: str = SOCIAL_SCHEMA
     schema_version: int = SOCIAL_SCHEMA_VERSION
+
+    @property
+    def has_legacy_spatial_state(self) -> bool:
+        """Detect retired square-map coordinates in a decoded legacy save."""
+        return any(
+            item.get("location_id") is not None or item.get("position") is not None
+            for item in self.npcs
+        )
 
     def to_dict(self):
         return {"schema": self.schema, "schema_version": self.schema_version, "npcs": list(self.npcs), "relationships": list(self.relationships), "dialogues": list(self.dialogues), "factions": list(self.factions), "reputation": [list(item) for item in self.reputation]}
@@ -45,9 +52,7 @@ class SocialSnapshot:
             "name": n.name,
             "role": n.role,
             "faction_ids": list(n.faction_ids),
-            "location_id": n.location_id,
             "active": n.active,
-            "position": n.position.to_dict(),
         } for n in runtime.npcs.all())
         relationships = tuple({"source_id": r.source_id, "target_id": r.target_id, "value": r.value, "trust": r.trust} for r in runtime.relationships.all())
         factions = tuple({"faction_id": f.faction_id, "name": f.name, "description": f.description, "relations": dict(f.relations)} for f in runtime.factions.all())
@@ -65,20 +70,12 @@ class SocialSnapshot:
         for item in self.factions:
             runtime.add_faction(Faction(item["faction_id"], item["name"], item.get("description", ""), dict(item.get("relations", {}))))
         for item in self.npcs:
-            position_data = item.get("position")
-            position = (
-                Position.from_dict(position_data)
-                if isinstance(position_data, Mapping)
-                else Position()
-            )
             runtime.add_npc(NPC(
                 item["npc_id"],
                 item["name"],
                 item.get("role", "civilian"),
                 tuple(item.get("faction_ids", ())),
-                item.get("location_id"),
                 active=item.get("active", True),
-                position=position,
             ))
         runtime.reputation = ReputationLedger(dict(self.reputation))
         for item in self.relationships:

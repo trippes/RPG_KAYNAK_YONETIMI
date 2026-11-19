@@ -11,7 +11,6 @@ from types import MappingProxyType
 from application import GameplayService
 from application.content_loader import ContentPackageError, load_content_package
 from character import Ability, Attribute, CharacterClass, CharacterFactory, Race
-from core.domain.spatial import Position
 from npc import Faction, NPC
 from economy import Currency, Money, MarketProfile, MarketCatalogEntry
 from quests import Dialogue, DialogueChoice, DialogueNode, Objective, ObjectiveType, Quest, Reward
@@ -128,7 +127,7 @@ def load_npc_definitions(path: str | Path | None = None, *, package_path: str | 
 
     npc_ids: set[str] = set()
     allowed_phases = {"opening", "gameplay"}
-    required_fields = {"id", "name", "role", "location_id", "position", "load_phase"}
+    required_fields = {"id", "name", "role", "load_phase"}
     for index, record in enumerate(records):
         if not isinstance(record, dict):
             raise ContentDefinitionError(f"NPC record at index {index} must be an object.")
@@ -143,20 +142,12 @@ def load_npc_definitions(path: str | Path | None = None, *, package_path: str | 
         if npc_id in npc_ids:
             raise ContentDefinitionError(f"Duplicate NPC id: {npc_id}")
         npc_ids.add(npc_id)
-        for field in ("name", "role", "location_id"):
+        for field in ("name", "role"):
             if not isinstance(record[field], str) or not record[field].strip():
                 raise ContentDefinitionError(f"NPC '{npc_id}' has an invalid {field}.")
         if record["load_phase"] not in allowed_phases:
             raise ContentDefinitionError(
                 f"NPC '{npc_id}' has an unsupported load phase."
-            )
-        if (
-            not isinstance(record["position"], list)
-            or len(record["position"]) != 2
-            or any(type(value) is not int for value in record["position"])
-        ):
-            raise ContentDefinitionError(
-                f"NPC '{npc_id}' position must contain two integer coordinates."
             )
         faction_ids = record.get("faction_ids", [])
         if (
@@ -475,8 +466,6 @@ def _register_npcs_for_phase(service, npc_definitions, phase: str, resolve_id):
                 npc_data["name"],
                 npc_data["role"],
                 tuple(resolve_id(value) for value in npc_data.get("faction_ids", ())),
-                resolve_id(npc_data["location_id"]),
-                position=Position(*npc_data["position"]),
             )
         )
 
