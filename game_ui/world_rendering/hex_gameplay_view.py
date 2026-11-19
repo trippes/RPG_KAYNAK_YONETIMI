@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from core.domain.spatial import HexDirection
+from core.domain.spatial import HexDirection, LocalHexPosition
 from game_ui.world_transform import WorldTransform
 
 from .camera import HexCamera
