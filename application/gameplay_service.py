@@ -28,6 +28,7 @@ from .actor_system import ActivityView, ActorView, WorldActor
 from .hex_actor_binding import ActorHexBindingService
 from .npc_hex_binding import NPCSpatialBindingService
 from .resource_node_hex_binding import ResourceNodeHexBindingService
+from .market_hex_anchor import MarketHexAnchorService
 from character import EquipmentSlot, ItemDefinition
 from npc import Faction, NPC
 from quests import Dialogue, Quest, QuestGraph, QuestGraphProgress
@@ -253,6 +254,15 @@ class GameplayService:
             raise GameplayServiceError(
                 f"Hex runtime is not bound to the active world: {error}"
             ) from error
+
+    @property
+    def market_hex_anchor(self) -> MarketHexAnchorService:
+        """Resolve market positions from their existing NPC spatial anchors."""
+        bundle = self._current_bundle()
+        return MarketHexAnchorService(
+            bundle.economy.market,
+            self.npc_hex_binding,
+        )
 
     def register_character_factory(self, factory) -> None:
         self._character_factory = factory
