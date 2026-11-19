@@ -28,9 +28,8 @@ from .production_chain import ProductionChain, ProductionChainStage
 from .actor_system import ActivityView, ActorView, WorldActor
 from .hex_actor_binding import ActorHexBindingService
 from .hex_physics_bridge import build_hex_physics_snapshot
-from .hex_world_geometry_bridge import make_lab_layout
-from hex_world_lab.physics import BodyDefinition, CircleShape
-from hex_world_lab.movement.vector import Vector2
+from core.domain.physics import CircleShape, PhysicsBodyDefinition
+
 from .container_hex_binding import ContainerHexBindingService
 from .gameplay_placement_catalog import GameplayPlacementCatalog
 from .hex_world_runtime import HexMovableEntity
@@ -241,12 +240,12 @@ class GameplayService:
                 physics_snapshot = build_hex_physics_snapshot(
                     WorldId(world.world_id),
                     runtime.map_definition(player.position.map_id),
-                    make_lab_layout(32.0),
+                    32.0,
                 )
                 self._hex_physics_snapshots[cache_key] = physics_snapshot
-            player_body = BodyDefinition(
+            player_body = PhysicsBodyDefinition(
                 "eldoria-player-body",
-                CircleShape(8.0, Vector2(0.0, 0.0)),
+                CircleShape(8.0, WorldPoint(0.0, 0.0)),
             )
             return ActorHexBindingService(
                 bundle.actors,
