@@ -114,10 +114,29 @@ def make_package(directory, *, include_start=True, start=(0, 0)):
 
 class TestHexWorldInitializer(unittest.TestCase):
     def test_package_without_hex_maps_does_not_create_runtime(self):
+        with tempfile.TemporaryDirectory() as directory:
+            package_path = Path(directory) / "demo_eldoria"
+            shutil.copytree(PACKAGE, package_path)
+            manifest_path = package_path / "manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest.pop("maps")
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            service = FakeService(package_path)
+
+            self.assertIsNone(initialize_hex_world(service))
+            self.assertIsNone(service.hex_world_runtime)
+
+    def test_real_demo_package_initializes_its_authored_starting_valley(self):
         service = FakeService(PACKAGE)
 
-        self.assertIsNone(initialize_hex_world(service))
-        self.assertIsNone(service.hex_world_runtime)
+        runtime = initialize_hex_world(service)
+
+        self.assertIs(runtime, service.hex_world_runtime)
+        self.assertEqual(runtime.map_ids, ("starting_valley",))
+        self.assertEqual(
+            runtime.entity("hero").position,
+            EntityPosition("starting_valley", LocalHexPosition(0, 0)),
+        )
 
     def test_hex_maps_require_explicit_player_start(self):
         with tempfile.TemporaryDirectory() as directory:
