@@ -27,6 +27,10 @@ from .game_application import GameApplication
 from .production_chain import ProductionChain, ProductionChainStage
 from .actor_system import ActivityView, ActorView, WorldActor
 from .hex_actor_binding import ActorHexBindingService
+from .hex_physics_bridge import build_hex_physics_snapshot
+from .hex_world_geometry_bridge import make_lab_layout
+from hex_world_lab.physics import BodyDefinition, CircleShape
+from hex_world_lab.movement.vector import Vector2
 from .container_hex_binding import ContainerHexBindingService
 from .gameplay_placement_catalog import GameplayPlacementCatalog
 from .hex_world_runtime import HexMovableEntity
@@ -185,6 +189,7 @@ class GameplayService:
         self._quest_reward_inventories: dict[str, str] = {}
         self._dialogue_actions: dict[str, Callable[[str, str], None]] = {}
         self._quest_graph_definition: QuestGraph | None = None
+        self._hex_physics_snapshots = {}
 
     @property
     def application(self) -> GameApplication:
@@ -215,10 +220,26 @@ class GameplayService:
                 "The active session has no initialized hex world runtime."
             )
         try:
+            player = runtime.entity(self.player_actor_id)
+            cache_key = (world.world_id, player.position.map_id)
+            physics_snapshot = self._hex_physics_snapshots.get(cache_key)
+            if physics_snapshot is None:
+                physics_snapshot = build_hex_physics_snapshot(
+                    WorldId(world.world_id),
+                    runtime.map_definition(player.position.map_id),
+                    make_lab_layout(32.0),
+                )
+                self._hex_physics_snapshots[cache_key] = physics_snapshot
+            player_body = BodyDefinition(
+                "eldoria-player-body",
+                CircleShape(8.0, Vector2(0.0, 0.0)),
+            )
             return ActorHexBindingService(
                 bundle.actors,
                 runtime,
                 WorldId(world.world_id),
+                physics_snapshot=physics_snapshot,
+                player_body=player_body,
             )
         except (TypeError, ValueError) as error:
             raise GameplayServiceError(
