@@ -18,10 +18,11 @@ from .extended_persistence import SocialSnapshot, CombatSnapshot
 from .migrations import migrate_save_data
 from .container_persistence import ContainerSnapshot
 from .lock_persistence import LockSnapshot
+from .hex_world_persistence import HexWorldSnapshot
 
 
 SAVE_SCHEMA = "rpg-game-save"
-SAVE_SCHEMA_VERSION = 2
+SAVE_SCHEMA_VERSION = 3
 
 
 class SaveDocumentError(PersistenceSchemaError):
@@ -50,6 +51,7 @@ class GameSaveDocument:
     containers: ContainerSnapshot | None = None
     locks: LockSnapshot | None = None
     quest_graph_progress: Mapping[str, object] | None = None
+    hex_world: HexWorldSnapshot | None = None
 
     def __post_init__(self) -> None:
         if self.schema != SAVE_SCHEMA:
@@ -83,6 +85,8 @@ class GameSaveDocument:
         if self.containers is not None and not isinstance(self.containers, ContainerSnapshot): raise TypeError("containers must be ContainerSnapshot or None.")
         if self.locks is not None and not isinstance(self.locks, LockSnapshot): raise TypeError("locks must be LockSnapshot or None.")
         if self.quest_graph_progress is not None and not isinstance(self.quest_graph_progress, Mapping): raise TypeError("quest_graph_progress must be a mapping or None.")
+        if self.hex_world is not None and not isinstance(self.hex_world, HexWorldSnapshot):
+            raise TypeError("hex_world must be HexWorldSnapshot or None.")
         if self.core.simulation_tick.value != self.gameplay.simulation_tick:
             raise SaveDocumentError("Core/gameplay simulation tick mismatch.")
 
@@ -108,6 +112,7 @@ class GameSaveDocument:
         if self.containers is not None: result["containers"] = self.containers.to_dict()
         if self.locks is not None: result["locks"] = self.locks.to_dict()
         if self.quest_graph_progress is not None: result["quest_graph_progress"] = dict(self.quest_graph_progress)
+        if self.hex_world is not None: result["hex_world"] = self.hex_world.to_dict()
         return result
 
     @classmethod
@@ -122,7 +127,7 @@ class GameSaveDocument:
             raise SaveDocumentError(
                 f"Game save document is missing required fields: {sorted(missing)}"
             )
-        unexpected = set(data) - required - {"production", "actors", "characters", "quests", "economy", "social", "combat", "containers", "locks", "quest_graph_progress"}
+        unexpected = set(data) - required - {"production", "actors", "characters", "quests", "economy", "social", "combat", "containers", "locks", "quest_graph_progress", "hex_world"}
         if unexpected:
             raise SaveDocumentError(
                 f"Game save document contains unknown fields: {sorted(unexpected)}"
@@ -172,6 +177,10 @@ class GameSaveDocument:
         locks = LockSnapshot.from_dict(data["locks"]) if "locks" in data and data["locks"] is not None else None
         quest_graph_progress = data.get("quest_graph_progress")
         if quest_graph_progress is not None and not isinstance(quest_graph_progress, Mapping): raise SaveDocumentError("quest_graph_progress must be an object.")
+        hex_world = (
+            HexWorldSnapshot.from_dict(data["hex_world"])
+            if data.get("hex_world") is not None else None
+        )
         return cls(
             core=core,
             gameplay=gameplay,
@@ -185,6 +194,7 @@ class GameSaveDocument:
             containers=containers,
             locks=locks,
             quest_graph_progress=quest_graph_progress,
+            hex_world=hex_world,
             schema=data["schema"],
             schema_version=version,
         )
