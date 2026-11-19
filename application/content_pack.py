@@ -458,22 +458,38 @@ def _register_quest_content(service, records) -> None:
 
 
 def _register_npcs_for_phase(service, npc_definitions, phase: str, resolve_id):
-    """Register validated NPC records for the requested lifecycle phase."""
+    """Register NPC domain records and their matching world-actor identities."""
     bundle = service.application.holder.current
+    world = service.application.aktif_dunya()
+    if world is None:
+        raise ContentDefinitionError(
+            "An active world is required before registering NPC content."
+        )
+
     for npc_data in npc_definitions:
         if npc_data["load_phase"] != phase:
             continue
         npc_id = npc_data["id"]
-        if bundle.social.npcs.get(npc_id) is not None:
-            continue
-        service.register_npc(
-            NPC(
-                npc_id,
-                npc_data["name"],
-                npc_data["role"],
-                tuple(resolve_id(value) for value in npc_data.get("faction_ids", ())),
+        if bundle.social.npcs.get(npc_id) is None:
+            service.register_npc(
+                NPC(
+                    npc_id,
+                    npc_data["name"],
+                    npc_data["role"],
+                    tuple(resolve_id(value) for value in npc_data.get("faction_ids", ())),
+                )
             )
-        )
+
+        # NPCRegistry owns social/behaviour data, while WorldActorRegistry owns
+        # the generic world identity used by spatial bindings. Keep their IDs
+        # aligned before any package placement is applied.
+        actor = bundle.actors.get(npc_id)
+        if actor is None:
+            service.register_actor(npc_id, "npc", world.world_id)
+        elif actor.world_id != world.world_id or actor.role != "npc":
+            raise ContentDefinitionError(
+                f"NPC '{npc_id}' conflicts with its existing world actor identity."
+            )
 
 
 def _validate_content_references(
