@@ -1099,7 +1099,7 @@ class TestPhaseDQuality(unittest.TestCase):
         window.gameplay_active = True
         window.gameplay_screen = "main"
         window.current = "inventory"
-        window.renderer = object()
+        window.renderer = type("Renderer", (), {"clear": lambda self: None})()
         window.window_manager = type(
             "Manager", (), {"render": lambda self, renderer: calls.append("inventory")}
         )()
@@ -1165,7 +1165,7 @@ class TestPhaseDQuality(unittest.TestCase):
         window.gameplay_active = True
         window.gameplay_screen = "main"
         window.current = "dialogue"
-        window.renderer = object()
+        window.renderer = type("Renderer", (), {"clear": lambda self: None})()
         window.window_manager = type(
             "Manager", (), {"render": lambda self, renderer: calls.append("windows")}
         )()
