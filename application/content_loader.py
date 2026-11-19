@@ -36,7 +36,7 @@ class ContentPackage:
     presentation_catalog: object | None = None
     scene_placements: object | None = None
     gameplay_placements_path: Path | None = None
-    gameplay_placements: object | None = None
+    gameplay_placements: GameplayPlacementCatalog | None = None
 
 
 def _load_hex_maps(maps_root: Path) -> dict[str, object]:
