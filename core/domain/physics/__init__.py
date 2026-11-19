@@ -4,7 +4,6 @@ from .hex_map_geometry import (
     BoundaryPolicy,
     HexBoundaryEdge,
     HexMapCollisionGeometry,
-    build_hex_map_collision_geometry,
 )
 from .obstacle import StaticObstacle
 from .obstacle_index import StaticObstacleIndex, obstacle_bounds
@@ -23,6 +22,5 @@ __all__ = [
     "StaticObstacle",
     "StaticObstacleIndex",
     "Vector2",
-    "build_hex_map_collision_geometry",
     "obstacle_bounds",
 ]
