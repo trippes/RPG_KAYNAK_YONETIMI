@@ -11,7 +11,6 @@ from core.domain.spatial import (
     MovementResult,
 )
 from core.foundation import WorldId
-from hex_world_lab.entities.identity import EntityId as LabEntityId
 from hex_world_lab.physics import BodyDefinition
 
 from .actor_system import ActorView, WorldActorRegistry
@@ -23,16 +22,10 @@ class ActorHexBindingError(ValueError):
     """Actor and hex runtime belong to different world scopes."""
 
 
-def actor_id_to_lab_entity_id(actor_id: str) -> LabEntityId:
-    """Wrap an existing actor ID; never generate a second entity identity."""
-    return LabEntityId(actor_id)
-
-
-def lab_entity_id_to_actor_id(entity_id: LabEntityId) -> str:
-    """Unwrap the same stable ID at the Eldoria application boundary."""
-    if not isinstance(entity_id, LabEntityId):
-        raise TypeError("entity_id must be a lab EntityId")
-    return entity_id.value
+def _validate_actor_id(actor_id: str) -> None:
+    """Validate an existing Eldoria actor ID without wrapping or replacing it."""
+    if not isinstance(actor_id, str) or not actor_id.strip():
+        raise ValueError("actor_id must be a non-empty string.")
 
 
 class ActorHexBindingService:
@@ -108,7 +101,7 @@ class ActorHexBindingService:
     ) -> HexMovableEntity:
         """Register the existing actor ID in the spatial runtime exactly once."""
         self._require_actor(actor_id)
-        actor_id_to_lab_entity_id(actor_id)  # Validate the lab boundary representation.
+        _validate_actor_id(actor_id)
         if not isinstance(position, EntityPosition):
             raise TypeError("position must be an EntityPosition")
         if not isinstance(movement_enabled, bool):
@@ -259,7 +252,7 @@ class ActorHexBindingService:
         return self._runtime.remove_entity(actor_id)
 
     def _require_actor(self, actor_id: str) -> ActorView:
-        actor_id_to_lab_entity_id(actor_id)
+        _validate_actor_id(actor_id)
         actor = self._actors.get(actor_id)
         if actor is None:
             raise KeyError(f"Actor not found: {actor_id}")
@@ -274,6 +267,4 @@ class ActorHexBindingService:
 __all__ = [
     "ActorHexBindingError",
     "ActorHexBindingService",
-    "actor_id_to_lab_entity_id",
-    "lab_entity_id_to_actor_id",
 ]
