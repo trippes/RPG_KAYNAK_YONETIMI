@@ -18,6 +18,7 @@ from core.persistence import (
     PersistenceDocument,
     RestoreContract,
 )
+from core.foundation import WorldId
 from resources import GameplaySnapshot
 
 from application.session_bundle import SessionBundle, SessionHolder
@@ -35,6 +36,8 @@ from economy import Economy, EconomySnapshot
 from application.extended_persistence import SocialSnapshot, CombatSnapshot
 from application.container_persistence import ContainerSnapshot
 from application.lock_persistence import LockSnapshot
+from application.hex_world_runtime import HexWorldRuntime
+from application.hex_world_persistence import HexWorldSnapshot
 
 
 class GameApplication:
@@ -170,13 +173,37 @@ class GameApplication:
         active_package_path = _resolve_content_package_path(
             getattr(self, "_content_package_path", None)
         )
-        load_content_package(active_package_path)
+        content_package = load_content_package(active_package_path)
         if container_placements:
             raise ValueError(
                 "This save contains legacy square-map positions or placements. "
                 "It cannot be loaded without its original map package; no "
                 "square-to-hex coordinate conversion is performed."
             )
+        if document.hex_world is not None:
+            active_world = candidate.session.worlds.get_active()
+            if active_world is None:
+                raise ValueError(
+                    "Hex-world snapshot requires an active Core world."
+                )
+            if not content_package.hex_map_definitions:
+                raise ValueError(
+                    "Hex-world snapshot requires axial maps in the active content package."
+                )
+            document.hex_world.validate_domain_owners(
+                actors=candidate.actors,
+                npcs=candidate.social.npcs,
+                resource_nodes=candidate.resource_nodes,
+                containers=candidate.containers,
+                membership=candidate.session.membership,
+            )
+            hex_runtime = HexWorldRuntime(
+                content_package.hex_map_definitions,
+                world_map_definition=content_package.world_map_definition,
+                world_id=WorldId(active_world.world_id),
+            )
+            document.hex_world.restore_into(hex_runtime)
+            candidate.hex_world_runtime_owner.get_or_create(lambda: hex_runtime)
 
         self.holder.publish(candidate)
         return self.holder.current
@@ -213,6 +240,27 @@ class GameApplication:
             LockSnapshot.from_runtime(bundle.locks)
             if bundle.locks.instances() else None
         )
+        hex_world_snapshot = None
+        hex_runtime = bundle.hex_world_runtime
+        if hex_runtime is not None:
+            active_world = bundle.session.worlds.get_active()
+            if (
+                active_world is None
+                or hex_runtime.world_id is None
+                or hex_runtime.world_id != WorldId(active_world.world_id)
+            ):
+                raise ValueError(
+                    "HexWorldRuntime must be scoped to the active Core world before saving."
+                )
+            hex_world_snapshot = HexWorldSnapshot.from_runtime(hex_runtime)
+            hex_world_snapshot.validate_domain_owners(
+                actors=bundle.actors,
+                npcs=bundle.social.npcs,
+                resource_nodes=bundle.resource_nodes,
+                containers=bundle.containers,
+                membership=bundle.session.membership,
+            )
+
         document = GameSaveDocument(
             core=core_document,
             gameplay=gameplay_snapshot,
@@ -234,6 +282,7 @@ class GameApplication:
                 if bundle.pending_quest_graph_progress is not None
                 else bundle.quest_graph_progress.to_dict()
             ),
+            hex_world=hex_world_snapshot,
         )
         return GameSaveFileAdapter.save(document, path)
 
