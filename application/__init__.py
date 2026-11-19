@@ -168,6 +168,16 @@ __all__ += [
     "HexWorldSnapshot",
 ]
 
+from .hex_world_initializer import (
+    HexWorldInitializationError,
+    initialize_hex_world,
+)
+
+__all__ += [
+    "HexWorldInitializationError",
+    "initialize_hex_world",
+]
+
 from .gameplay_placement_catalog import (
     GameplayPlacement,
     GameplayPlacementCatalog,
