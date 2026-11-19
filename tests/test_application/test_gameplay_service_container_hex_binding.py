@@ -109,7 +109,6 @@ def test_gameplay_service_carries_and_drops_container_through_hex_binding():
 
     service.carry_container("chest", "main")
     assert bundle.containers.inventory_custody("chest") == "main"
-    assert bundle.hex_world_runtime.entity("chest_entity") if False else True
 
     placed = service.place_container_from_inventory(
         "chest",
@@ -129,7 +128,7 @@ def test_gameplay_service_carries_and_drops_container_through_hex_binding():
 def test_gameplay_service_releases_nested_container_to_hex_world():
     service, bundle = make_service()
     session = bundle.session
-    world_id = session.worlds.active_world_id
+    world_id = "container_world"
     session.add_entity(
         Entity(EntityType.ESYA, "Bag", entity_id="bag_entity"),
         world_id,
