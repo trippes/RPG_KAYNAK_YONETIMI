@@ -110,7 +110,6 @@ class InputMapper:
                 "e": "equip",
                 "t": "lockpick",
                 "f": "force_lock",
-                "h": "hex_portal",
                 "z": "hex_north_west",
                 "x": "hex_south_west",
             }

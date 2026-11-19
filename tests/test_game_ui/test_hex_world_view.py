@@ -3,7 +3,6 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from game_ui.input import InputState
-from game_ui.screens.main_screen import MainScreen
 from game_ui.hex_world_view import HexWorldView
 from application.hex_world_runtime import HexWorldRuntimeOwner
 from core.domain.spatial import EntityPosition, HexDirection, LocalHexPosition
@@ -295,15 +294,6 @@ class TestHexWorldView(unittest.TestCase):
         ) + 2 * len(
             self.view._tree_skeleton_for(SimpleNamespace(asset_id="tree_oak")).leaf_clusters
         ))
-
-    def test_main_screen_h_key_enters_and_leaves_hex_world(self):
-        screen = MainScreen(self.service)
-        screen.handle(InputState(actions={"hex_portal"}))
-        self.assertTrue(screen._hex_world_view.active)
-        screen.handle(InputState(actions={"hex_portal"}))
-        self.assertFalse(screen._hex_world_view.active)
-        self.assertEqual(self.service.actor.location_id, "village")
-
 
 if __name__ == "__main__":
     unittest.main()
