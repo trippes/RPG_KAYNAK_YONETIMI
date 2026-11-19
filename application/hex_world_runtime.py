@@ -283,6 +283,13 @@ class HexWorldRuntime:
 
     def move_toward(self, entity_id: str, goal: LocalHexPosition) -> MovementResult:
         entity = self.entity(entity_id)
+        if not entity.active or not entity.profile.can_move:
+            return MovementResult(
+                False,
+                entity.position,
+                MovementFailureReason.MOVEMENT_NOT_ALLOWED,
+                "Entity cannot move.",
+            )
         path = self.path_to(entity_id, goal)
         if path is None or len(path) < 2:
             return MovementResult(False, entity.position, MovementFailureReason.INVALID_TARGET, "No path to target.")
