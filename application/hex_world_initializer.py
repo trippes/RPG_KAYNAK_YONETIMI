@@ -87,6 +87,17 @@ def initialize_hex_world(service, *, content_package_path=None):
             raise HexWorldInitializationError(
                 "The session Hex runtime map registry differs from the active content package."
             )
+        if runtime.world_map_definition != package.world_map_definition:
+            raise HexWorldInitializationError(
+                "The session Hex runtime world topology differs from the active content package."
+            )
+        if any(
+            runtime.map_definition(map_id) != definition
+            for map_id, definition in package.hex_map_definitions.items()
+        ):
+            raise HexWorldInitializationError(
+                "The session Hex map definitions differ from the active content package."
+            )
         try:
             runtime.entity(service.player_actor_id)
         except KeyError:
