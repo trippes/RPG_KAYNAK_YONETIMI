@@ -1,3 +1,4 @@
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -9,6 +10,7 @@ from application import (
     SaveJsonCodec,
     SessionBundle,
     SessionHolder,
+    WorldActor,
 )
 from application.save_file_adapter import SaveFileWriteError
 from core.application import GameSession
@@ -162,6 +164,22 @@ class TestGameApplicationSave(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     application.save(path)
                 file_save.assert_not_called()
+
+    def test_load_rejects_legacy_actor_square_map_positions(self):
+        application = self._application_with_gameplay()
+        application.holder.current.actors.add(
+            WorldActor("legacy_actor", "world_main", "player")
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "legacy-actor-save.json"
+            application.save(path)
+            data = json.loads(path.read_text(encoding="utf-8"))
+            data["actors"]["actors"][0]["location_id"] = "legacy_village"
+            data["actors"]["actors"][0]["position"] = {"x": 3, "y": 4}
+            path.write_text(json.dumps(data), encoding="utf-8")
+
+            with self.assertRaisesRegex(ValueError, "legacy square-map actor positions"):
+                application.load(path)
 
     def test_load_rejects_legacy_npc_square_map_positions(self):
         application = self._application_with_gameplay()

@@ -2,7 +2,6 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from core.domain.spatial import Position
 
 from application import (
     ActivityState,
@@ -34,105 +33,16 @@ from resources import (
 
 
 class TestActorSystem(unittest.TestCase):
-    def test_actor_identity_is_immutable_and_independent_of_legacy_location(self):
-        actor = WorldActor("player", "world_eldoria", "player")
+    def test_actor_identity_view_has_no_square_map_spatial_fields(self):
+        actor = WorldActor("hero", "world_actors", "player")
         registry = WorldActorRegistry()
         registry.add(actor)
 
-        self.assertEqual(
-            actor.identity,
-            ActorIdentity("player", "world_eldoria", "player"),
-        )
-        registry.set_legacy_position("player", "legacy_village")
-        registry.set_legacy_position(
-            "player", "legacy_forest", Position(8, 9)
-        )
-        self.assertEqual(actor.identity, ActorIdentity("player", "world_eldoria", "player"))
-        self.assertEqual(registry.get("player").location_id, "legacy_forest")
-        self.assertFalse(hasattr(actor, "location_id"))
-        self.assertFalse(hasattr(actor, "position"))
-        self.assertFalse(hasattr(actor, "set_position"))
-        self.assertEqual(actor.view().identity, actor.identity)
-        with self.assertRaises((AttributeError, TypeError)):
-            actor.identity.role = "merchant"
-
-    def test_gameplay_links_and_activity_survive_legacy_spatial_changes(self):
-        from core.domain.spatial import Position
-
-        actor = WorldActor(
-            "hero", "world_eldoria", "player",
-            character_id="character_hero",
-            inventory_id="inventory_hero",
-        )
-        registry = WorldActorRegistry()
-        registry.add(actor)
-        actor.begin_activity("activity_gather_01")
-        original_identity = actor.identity
-        registry.set_legacy_position(
-            "hero", "legacy_village", Position(3, 5)
-        )
-        registry.set_legacy_position(
-            "hero", "legacy_forest", Position(8, 13)
-        )
-
-        self.assertEqual(actor.identity, original_identity)
-        self.assertEqual(actor.character_id, "character_hero")
-        self.assertEqual(actor.inventory_id, "inventory_hero")
-        self.assertEqual(actor.activity_id, "activity_gather_01")
-        self.assertEqual(registry.get("hero").location_id, "legacy_forest")
-
-    def test_actor_snapshot_preserves_suspended_legacy_spatial_state(self):
-        actor = WorldActor(
-            "hero", "world_actors", "player", inventory_id="main"
-        )
-        registry = self.application.holder.current.actors
-        registry.add(actor)
-        registry.set_legacy_position(
-            "hero", "legacy_village", Position(4, 6)
-        )
-        registry.suspend_legacy_spatial("hero")
-
-        snapshot = ActorSnapshot.from_runtime(
-            registry,
-            self.application.holder.current.actor_activities,
-            self.application.holder.current.characters,
-        )
-        restored_snapshot = ActorSnapshot.from_dict(snapshot.to_dict())
-        restored_registry, _ = restored_snapshot.restore(
-            self.application.holder.current.session.worlds,
-            self.application.holder.current.production_jobs,
-            self.application.holder.current.resource_nodes,
-            self.application.holder.current.facilities,
-            self.application.holder.current.inventories,
-            self.application.holder.current.recipes,
-            self.application.holder.current.characters,
-        )
-
-        restored = restored_registry.get("hero")
-        self.assertEqual(restored.location_id, "legacy_village")
-        self.assertEqual(restored.position, Position(4, 6))
-
-    def test_hex_mode_hides_and_locks_legacy_square_spatial_state(self):
-        from core.domain.spatial import Position
-
-        actor = WorldActor("hero", "world_eldoria", "player")
-        registry = WorldActorRegistry()
-        registry.add(actor)
-        registry.set_legacy_position("hero", "legacy_village", Position(4, 6))
-
-        registry.suspend_legacy_spatial("hero")
-        self.assertIsNone(registry.get("hero").location_id)
-        self.assertIsNone(registry.get("hero").position)
-        self.assertEqual(
-            registry.legacy_spatial_state("hero", include_suspended=True).location_id,
-            "legacy_village",
-        )
-        with self.assertRaises(ActorError):
-            registry.set_legacy_position("hero", "legacy_forest", Position(1, 2))
-
-        registry.resume_legacy_spatial("hero")
-        self.assertEqual(registry.get("hero").location_id, "legacy_village")
-        self.assertEqual(registry.get("hero").position, Position(4, 6))
+        view = registry.get("hero")
+        self.assertEqual(view.identity, ActorIdentity("hero", "world_actors", "player"))
+        self.assertFalse(hasattr(view, "location_id"))
+        self.assertFalse(hasattr(view, "position"))
+        self.assertFalse(hasattr(registry, "set_legacy_position"))
 
     def setUp(self):
         session = GameSession()

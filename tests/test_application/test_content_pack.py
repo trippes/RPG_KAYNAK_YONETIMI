@@ -44,7 +44,6 @@ class TestContentPack(unittest.TestCase):
         self.assertEqual(bundle.social.npcs.all(), ())
         self.assertEqual(tuple(bundle.social.dialogues), ())
         self.assertEqual(tuple(bundle.quest_log.all()), ())
-        self.assertIsNone(service.legacy_actor_spatial_state(ids.hero_id))
         self.assertIn("human", service._character_factory.races)
 
     def test_gameplay_setup_keeps_generic_inventory_but_no_legacy_world_content(self):
@@ -57,7 +56,6 @@ class TestContentPack(unittest.TestCase):
         self.assertIsNone(service.market_for_npc("innkeeper_mira"))
         self.assertEqual(tuple(bundle.social.npcs.all()), ())
         self.assertEqual(tuple(bundle.quest_log.all()), ())
-        self.assertIsNone(service.legacy_actor_spatial_state(ids.hero_id))
 
 
 if __name__ == "__main__":
