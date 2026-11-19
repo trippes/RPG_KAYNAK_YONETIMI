@@ -178,6 +178,14 @@ class TestHexWorldRuntime(unittest.TestCase):
         self.assertTrue(result.success)
         self.assertEqual(self.runtime.entity("player").position.cell, path[1])
 
+    def test_path_movement_preserves_movement_not_allowed_failure(self):
+        self.runtime.set_active("player", False)
+        before = self.runtime.entity("player").position
+        result = self.runtime.move_toward("player", LocalHexPosition(2, 0))
+        self.assertFalse(result.success)
+        self.assertEqual(result.reason, MovementFailureReason.MOVEMENT_NOT_ALLOWED)
+        self.assertEqual(self.runtime.entity("player").position, before)
+
     def test_npc_can_approach_avoid_and_patrol(self):
         self.runtime.move_toward("npc", LocalHexPosition(2, 0))
         self.assertNotEqual(self.runtime.entity("npc").position.cell, LocalHexPosition(0, 1))
