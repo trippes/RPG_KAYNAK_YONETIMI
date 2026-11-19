@@ -21,6 +21,10 @@ class TestPresentationContentService(unittest.TestCase):
         self.temporary = tempfile.TemporaryDirectory()
         self.root = Path(self.temporary.name) / "demo_eldoria"
         shutil.copytree(DEMO_PACKAGE, self.root)
+        maps = self.root / "hex_maps"
+        maps.mkdir(exist_ok=True)
+        for map_id in ("hex_forest_demo", "hex_clearing_demo"):
+            (maps / f"{map_id}.json").write_text("{\"schema_version\":2,\"map_id\":\"placeholder\",\"name\":\"placeholder\",\"description\":\"\",\"geometry\":{\"type\":\"hex_axial\",\"orientation\":\"pointy_top\",\"coordinate_system\":\"axial\"},\"terrain_ids\":[\"grass\"],\"default_terrain\":\"grass\",\"valid_cells\":[[0,0],[1,0]],\"cell_overrides\":[],\"features\":[],\"landmarks\":[],\"transitions\":[]}".replace("placeholder", map_id), encoding="utf-8")
         legacy = self.read_json(self.root / "asset_catalog.json")
         legacy["objects"] = [
             {"object_id": "fixture-tree-1", "asset_id": "flora.tree.test", "map_id": "hex_forest_demo", "q": 0, "r": 0},
