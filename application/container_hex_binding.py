@@ -95,7 +95,7 @@ class ContainerHexBindingService:
         instance = self._require_container(container_id)
         return self._runtime.remove_entity(instance.entity_id)
 
-    def carry(self, container_id: str, inventory_id: str) -> None:
+    def carry(self, container_id: str, inventory_id: str, *, validate=None) -> None:
         """Atomically remove world placement before assigning inventory custody."""
         instance = self._require_container(container_id)
         if self._containers.parent_of(container_id) is not None:
@@ -105,11 +105,15 @@ class ContainerHexBindingService:
         snapshot = self._detach_spatial(instance.entity_id)
         try:
             self._containers.set_inventory_custody(container_id, inventory_id)
+            if validate is not None:
+                validate()
         except Exception:
+            if self._containers.inventory_custody(container_id) == inventory_id:
+                self._containers.clear_inventory_custody(container_id, inventory_id)
             self._restore_spatial(snapshot)
             raise
 
-    def contain(self, parent_id: str, child_id: str) -> ContainerInstance:
+    def contain(self, parent_id: str, child_id: str, *, validate=None) -> ContainerInstance:
         """Atomically remove a child's world placement before nesting it."""
         child = self._require_container(child_id)
         if self._containers.parent_of(child_id) is not None:
@@ -118,8 +122,13 @@ class ContainerHexBindingService:
             raise ContainerHexBindingError("Carried container cannot be nested directly.")
         snapshot = self._detach_spatial(child.entity_id)
         try:
-            return self._containers.contain(parent_id, child_id)
+            result = self._containers.contain(parent_id, child_id)
+            if validate is not None:
+                validate()
+            return result
         except Exception:
+            if self._containers.parent_of(child_id) is not None:
+                self._containers.release(child_id)
             self._restore_spatial(snapshot)
             raise
 
