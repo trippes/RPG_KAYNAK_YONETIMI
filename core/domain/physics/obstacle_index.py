@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from core.domain.spatial import AABB, UniformGridIndex, WorldPoint
 from .obstacle import StaticObstacle
-from .shapes import CircleShape, ConvexPolygonShape
+from .shapes import CircleShape
 
 
 def obstacle_bounds(obstacle: StaticObstacle) -> AABB:
