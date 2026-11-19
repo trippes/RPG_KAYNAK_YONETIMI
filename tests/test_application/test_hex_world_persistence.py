@@ -1,6 +1,7 @@
 """Versioned hex-world snapshot and atomic restore tests."""
 
 import pytest
+from types import SimpleNamespace
 
 from application import (
     HexWorldEntityRecord,
@@ -213,3 +214,172 @@ def test_snapshot_detects_orphaned_occupancy_records():
 
     with pytest.raises(HexWorldPersistenceError, match="inconsistent"):
         HexWorldSnapshot.from_runtime(runtime)
+
+
+
+def owner_context(*, actor_world="world", include_npc=True, resource_world="world",
+                  container_parent=None, container_custody=None):
+    container = SimpleNamespace(
+        container_id="chest_01",
+        entity_id="container_entity",
+    )
+    actors = SimpleNamespace(
+        get=lambda entity_id: (
+            SimpleNamespace(world_id=actor_world)
+            if entity_id in {"hero", "guard"} else None
+        )
+    )
+    npcs = SimpleNamespace(
+        get=lambda entity_id: (
+            object() if include_npc and entity_id == "guard" else None
+        )
+    )
+    resource_nodes = SimpleNamespace(
+        get=lambda entity_id: (
+            SimpleNamespace(world_id=resource_world)
+            if entity_id == "ore" else None
+        )
+    )
+    containers = SimpleNamespace(
+        for_entity=lambda entity_id: container if entity_id == "container_entity" else None,
+        parent_of=lambda container_id: container_parent,
+        inventory_custody=lambda container_id: container_custody,
+    )
+    membership = SimpleNamespace(
+        world_id_for=lambda entity_id: "world" if entity_id == "container_entity" else None
+    )
+    return actors, npcs, resource_nodes, containers, membership
+
+
+def test_domain_owner_validation_accepts_actor_npc_resource_and_world_placed_container():
+    snapshot = HexWorldSnapshot(
+        WorldId("world"),
+        (
+            record("hero", LocalHexPosition(0, 0), kind="player"),
+            record("guard", LocalHexPosition(1, 0), kind="npc"),
+            record("ore", LocalHexPosition(2, 0), kind="object"),
+            record("container_entity", LocalHexPosition(0, 0), kind="object",
+                   blocks_movement=False, blocks_occupancy=False),
+        ),
+    )
+    owners = owner_context()
+
+    snapshot.validate_domain_owners(
+        actors=owners[0],
+        npcs=owners[1],
+        resource_nodes=owners[2],
+        containers=owners[3],
+        membership=owners[4],
+    )
+
+
+def test_domain_owner_validation_rejects_missing_actor_or_npc_record():
+    snapshot = HexWorldSnapshot(
+        WorldId("world"),
+        (record("guard", LocalHexPosition(0, 0), kind="npc"),),
+    )
+    owners = owner_context(include_npc=False)
+
+    with pytest.raises(HexWorldPersistenceError, match="NPC domain record is missing"):
+        snapshot.validate_domain_owners(
+            actors=owners[0],
+            npcs=owners[1],
+            resource_nodes=owners[2],
+            containers=owners[3],
+            membership=owners[4],
+        )
+
+    missing_actor = HexWorldSnapshot(
+        WorldId("world"),
+        (record("missing", LocalHexPosition(0, 0), kind="player"),),
+    )
+    with pytest.raises(HexWorldPersistenceError, match="actor owner is missing"):
+        missing_actor.validate_domain_owners(
+            actors=owners[0],
+            npcs=owners[1],
+            resource_nodes=owners[2],
+            containers=owners[3],
+            membership=owners[4],
+        )
+
+
+def test_domain_owner_validation_rejects_actor_or_resource_from_another_world():
+    actor_snapshot = HexWorldSnapshot(
+        WorldId("world"),
+        (record("hero", LocalHexPosition(0, 0), kind="player"),),
+    )
+    actor_owners = owner_context(actor_world="other")
+    with pytest.raises(HexWorldPersistenceError, match="actor belongs to another world"):
+        actor_snapshot.validate_domain_owners(
+            actors=actor_owners[0],
+            npcs=actor_owners[1],
+            resource_nodes=actor_owners[2],
+            containers=actor_owners[3],
+            membership=actor_owners[4],
+        )
+
+    resource_snapshot = HexWorldSnapshot(
+        WorldId("world"),
+        (record("ore", LocalHexPosition(0, 0), kind="object"),),
+    )
+    resource_owners = owner_context(resource_world="other")
+    with pytest.raises(HexWorldPersistenceError, match="Resource node belongs to another world"):
+        resource_snapshot.validate_domain_owners(
+            actors=resource_owners[0],
+            npcs=resource_owners[1],
+            resource_nodes=resource_owners[2],
+            containers=resource_owners[3],
+            membership=resource_owners[4],
+        )
+
+
+def test_domain_owner_validation_rejects_unowned_objects_and_wrong_container_membership():
+    snapshot = HexWorldSnapshot(
+        WorldId("world"),
+        (record("unknown-object", LocalHexPosition(0, 0), kind="object"),),
+    )
+    owners = owner_context()
+    with pytest.raises(HexWorldPersistenceError, match="no resource/container owner"):
+        snapshot.validate_domain_owners(
+            actors=owners[0],
+            npcs=owners[1],
+            resource_nodes=owners[2],
+            containers=owners[3],
+            membership=owners[4],
+        )
+
+    owners = list(owner_context())
+    owners[4] = SimpleNamespace(world_id_for=lambda entity_id: "other")
+    container_snapshot = HexWorldSnapshot(
+        WorldId("world"),
+        (record("container_entity", LocalHexPosition(0, 0), kind="object"),),
+    )
+    with pytest.raises(HexWorldPersistenceError, match="not a member of this world"):
+        container_snapshot.validate_domain_owners(
+            actors=owners[0],
+            npcs=owners[1],
+            resource_nodes=owners[2],
+            containers=owners[3],
+            membership=owners[4],
+        )
+
+
+@pytest.mark.parametrize("custody", ["nested", "inventory"])
+def test_domain_owner_validation_rejects_nested_or_carried_containers(custody):
+    owners = list(owner_context(
+        container_parent=object() if custody == "nested" else None,
+        container_custody="player" if custody == "inventory" else None,
+    ))
+    snapshot = HexWorldSnapshot(
+        WorldId("world"),
+        (record("container_entity", LocalHexPosition(0, 0), kind="object"),),
+    )
+
+    with pytest.raises(HexWorldPersistenceError, match="Nested or carried container"):
+        snapshot.validate_domain_owners(
+            actors=owners[0],
+            npcs=owners[1],
+            resource_nodes=owners[2],
+            containers=owners[3],
+            membership=owners[4],
+        )
