@@ -9,9 +9,9 @@ from application.hex_map_definition import HexMapDefinition
 from application.world_map_definition import WorldMapDefinition, validate_world_map
 from core.foundation import WorldId
 from core.domain.spatial import (
-    ContinuousEntityPosition, EntityPosition, HexDirection, LocalHexPosition,
+    AABB, ContinuousEntityPosition, EntityPosition, HexDirection, LocalHexPosition,
     MovementFailureReason, MovementProfile, MovementRequest, MovementResult,
-    WorldPoint, axial_to_world_point, world_point_to_hex,
+    UniformGridIndex, WorldPoint, axial_to_world_point, world_point_to_hex,
 )
 from .hex_movement_rules import MovementRules
 from .hex_occupancy import HexOccupant, HexOccupancyRegistry
@@ -122,6 +122,7 @@ class HexWorldRuntime:
         self._occupancy = occupancy or HexOccupancyRegistry()
         self._entities: dict[str, _HexEntityState] = {}
         self._continuous_positions: dict[str, ContinuousEntityPosition] = {}
+        self._spatial_index = UniformGridIndex()
         self._patrol_indices: dict[str, int] = {}
 
     @property
@@ -190,6 +191,15 @@ class HexWorldRuntime:
         self._occupancy.add(
             occupant, ignore_blockers=profile.ignores_occupancy
         )
+        try:
+            self._spatial_index.insert(
+                entity_id,
+                continuous_position.map_id,
+                AABB.at_point(continuous_position.point),
+            )
+        except Exception:
+            self._occupancy.remove(entity_id)
+            raise
         self._entities[entity_id] = state
         self._continuous_positions[entity_id] = continuous_position
         return self.entity(entity_id)
@@ -227,6 +237,10 @@ class HexWorldRuntime:
         )
         if resolved_cell != occupant.position.cell:
             raise RuntimeError(f"Hex entity continuous position and occupancy diverged: {entity_id}")
+        if entity_id not in self._spatial_index.query(
+            continuous_position.map_id, AABB.at_point(continuous_position.point)
+        ):
+            raise RuntimeError(f"Hex entity spatial index is inconsistent: {entity_id}")
         return HexMovableEntity(
             state.entity_id, state.kind, occupant.position,
             state.profile, state.active, continuous_position,
@@ -239,6 +253,7 @@ class HexWorldRuntime:
         """Remove one spatial registration and its authoritative occupancy."""
         previous = self.entity(entity_id)
         self._occupancy.remove(entity_id)
+        self._spatial_index.remove(entity_id)
         del self._entities[entity_id]
         del self._continuous_positions[entity_id]
         self._patrol_indices.pop(entity_id, None)
@@ -314,6 +329,9 @@ class HexWorldRuntime:
             ignore_blockers=self._entity_state(entity_id).profile.ignores_occupancy,
         )
         self._continuous_positions[entity_id] = continuous_position
+        self._spatial_index.update(
+            entity_id, continuous_position.map_id, AABB.at_point(continuous_position.point)
+        )
         return result
 
     def continuous_position(self, entity_id: str) -> ContinuousEntityPosition:
@@ -355,8 +373,10 @@ class HexWorldRuntime:
             )
 
         if target_cell == entity.position.cell:
-            self._continuous_positions[entity_id] = ContinuousEntityPosition(
-                entity.position.map_id, point
+            next_position = ContinuousEntityPosition(entity.position.map_id, point)
+            self._continuous_positions[entity_id] = next_position
+            self._spatial_index.update(
+                entity_id, next_position.map_id, AABB.at_point(next_position.point)
             )
             return MovementResult(True, entity.position)
 
@@ -380,7 +400,14 @@ class HexWorldRuntime:
             ignore_blockers=entity.profile.ignores_occupancy,
         )
         self._continuous_positions[entity_id] = next_position
+        self._spatial_index.update(
+            entity_id, next_position.map_id, AABB.at_point(next_position.point)
+        )
         return MovementResult(True, target)
+
+    def query_spatial_candidates(self, map_id: str, bounds: AABB) -> tuple[str, ...]:
+        """Return stable broadphase actor IDs near a map-scoped world-space AABB."""
+        return self._spatial_index.query(map_id, bounds)
 
     def path_to(self, entity_id: str, goal: LocalHexPosition, *, edge_validator=None):
         entity = self.entity(entity_id)
@@ -475,6 +502,11 @@ class HexWorldRuntime:
             ignore_blockers=entity.profile.ignores_occupancy,
         )
         self._continuous_positions[entity_id] = next_continuous_position
+        self._spatial_index.update(
+            entity_id,
+            next_continuous_position.map_id,
+            AABB.at_point(next_continuous_position.point),
+        )
         return MovementResult(True, target)
 
     @property
