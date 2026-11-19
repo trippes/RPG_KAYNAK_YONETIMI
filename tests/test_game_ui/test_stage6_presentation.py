@@ -12,8 +12,9 @@ class TestStage6Presentation(unittest.TestCase):
     def test_active_package_exposes_validated_presentation_catalog(self):
         package_root = Path(__file__).resolve().parents[2] / "content" / "demo_eldoria"
         package = load_content_package(package_root)
-        self.assertEqual(package.presentation_assets_path.name, "presentation_assets.json")
-        self.assertTrue(package.presentation_assets_path.is_file())
+        self.assertIsNone(package.presentation_assets_path)
+        self.assertIsNotNone(package.asset_catalog_path)
+        self.assertIsNotNone(package.presentation_catalog)
 
     def test_demo_tree_sprite_is_packaged_without_legacy_hex_placements(self):
         package_root = Path(__file__).resolve().parents[2] / "content" / "demo_eldoria"
