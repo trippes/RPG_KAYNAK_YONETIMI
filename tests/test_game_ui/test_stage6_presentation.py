@@ -25,7 +25,7 @@ class TestStage6Presentation(unittest.TestCase):
         self.assertEqual((tree.width, tree.height), (0, 0))
         self.assertTrue(catalog.available("flora.tree.test"))
         self.assertEqual(catalog.objects, ())
-        self.assertEqual(package.hex_map_definitions, {})
+        self.assertEqual(tuple(package.hex_map_definitions), ("starting_valley",))
         self.assertIsNone(package.world_map_definition)
 
     def test_content_package_rejects_presentation_catalog_path_traversal(self):
