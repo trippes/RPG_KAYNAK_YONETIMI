@@ -87,3 +87,18 @@ Each slice must have targeted regression tests. The cleanup branch must not be m
 - Save behavior is explicit and tested; no silent coordinate conversion.
 - Core world simulation, gameplay domain systems, and the laboratory Hex architecture remain intact.
 - Pytest, Ruff, wheel/package verification, and Linux/Windows CI pass.
+
+## 7. Kullanıcı kararı eki — demo gameplay içerikleri taşınmayacak
+
+2026-11-19 tarihinde kullanıcı, mevcut NPC ve kaynak düğümü içeriklerinin yeni haritaya taşınması yerine tamamen kaldırılmasını ve yeni Hex sistem entegrasyonundan sonra sıfırdan oluşturulmasını kararlaştırdı.
+
+Bu nedenle:
+- Dört mevcut NPC kaydı ve yirmi iki mevcut resource-node kaydı kaldırılacak; axial konuma dönüştürülmeyecek ve ID/konum eşlemesi korunmaya çalışılmayacak.
+- Bu NPC/resource kayıtlarına bağlı eski quest tanımları, NPC diyalog içerikleri, NPC'ye bağlı starter market ve eski demo yerleşimleri de kaldırılacak.
+- Bu kayıtları yükleyen/harita üzerinde doğrulayan demo content loader ve starter-content bağlantıları temizlenecek.
+- NPC, resource node, gathering, dialogue, quest, market/economy, inventory ve save sistemlerinin genel domain/runtime kodu korunacak. Yalnızca eski demo içerik kayıtları silinecek.
+- Yeni NPC, kaynak, quest, diyalog ve pazar kayıtları yeni Hex mimarisi entegre edildikten sonra yeni dünya tasarımına göre sıfırdan yazılacak.
+
+### Bağlayıcı sıra
+
+Önce eski kare harita ve eski yedi haritalı Hex demo/portal sistemi ile bunlara bağlı demo gameplay içerikleri kaldırılır. Bu temizlik tamamlanıp otomatik teknik doğrulamadan geçtikten sonra laboratuvar Hex mimarisi entegre edilir. Önceki sürümlerdeki “NPC/resource ID'lerini koruyarak axial yerleşime taşı” yönündeki ifadeler bu kullanıcı kararıyla geçersizdir. Hiçbir kare koordinat axial koordinata dönüştürülmez.
