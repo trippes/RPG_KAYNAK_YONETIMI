@@ -1,5 +1,8 @@
 # Harita Sistemi Temizliği — Genel Plan
 
+> **Belge durumu — 2026-11-19:** Bu belge ilk planlama aşamasının tarihsel kaydıdır. Başlangıçtaki “tek kare harita easter egg'ini mevcut sistemden koruma” ve “önce Hex runtime entegrasyonu” kararları daha sonra kullanıcı tarafından değiştirildi. Bağlayıcı son karar: eski kare harita runtime'ı, dokuz kare harita içeriği, yedi haritalı Hex demo/portal sistemi ve eski demo gameplay kayıtları kaldırılır; laboratuvar Hex mimarisi ancak temizlik kabulünden sonra ayrı olarak entegre edilir. Bu nedenle aşağıdaki ilk plan maddeleri güncel uygulama talimatı değildir. Gerçekleşen sonuç için [57 numaralı kaldırma envanterine](57-legacy-map-system-removal-inventory.md) ve [58 numaralı bağımlılık grafına](58-legacy-map-runtime-dependency-graph.md) bakın.
+
+
 | Alan | Değer |
 |---|---|
 | Proje | Eldoria — Kaynak Yönetimi RPG |
@@ -137,9 +140,7 @@ Bu bölüm önceki kapsam/sıralama metinlerindeki çelişkili ifadeleri geçers
 
 ### Teknik kabul
 
-Cleanup dalı HEAD: 3790463394b1f47c81655169554e30202de66724.
-
-GitHub Actions run [#44492476381](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44492476381) Linux ve Windows işlerinin ikisinde de başarılı:
+Temizlik uygulamasının kod kabulü, o tarihteki cleanup HEAD üzerinde tamamlanmıştır. Güncel ve belge düzeltmelerini de kapsayan doğrulama için [cleanup dalının GitHub Actions geçmişi](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions) esas alınmalıdır; aşağıdaki sayısal test çıktıları önceki kabul çalışmasının tarihsel kanıtıdır. Linux ve Windows işlerinin ikisinde de başarılı:
 - Pytest: 1.341 test + 235 subtest geçti.
 - Ruff: başarılı.
 - compileall: başarılı.
