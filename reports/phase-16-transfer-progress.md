@@ -146,3 +146,31 @@ The continuous solver is intentionally limited to a moving circle against static
 - Core quality passed on Linux and Windows, including Ruff, legacy map cleanup boundary checks, and release-candidate verification.
 - The new native continuous-collision tests are included in the successful 1,405-test unittest matrix.
 - Context7 Pygame documentation was used to confirm that Pygame rectangle overlap is not the authoritative continuous collision mechanism; the new solver remains Pygame-independent.
+
+
+## 2026-11-19 — Native bridge and actor-binding integration (fifth slice)
+
+The native collision stack is now connected to the existing Eldoria application contracts without copying laboratory implementation files:
+
+- `application/hex_physics_bridge.py` now builds and consumes `HexMapCollisionGeometry`, `StaticObstacleIndex`, native `PhysicsBodyDefinition`, and `resolve_continuous_motion`. Its snapshot is immutable and validates world/map scope. Center-to-center movement preflight checks the canonical map mask and reports whether the full requested displacement is physically reachable.
+- `application/hex_map_physics.py` projects Eldoria's existing `HexMapDefinition` into native obstacles for blocked cells, non-walkable landmarks, caller-supplied static obstacles, and exposed finite-map perimeter edges. `BoundaryPolicy.OPEN` deliberately omits perimeter walls.
+- `application/hex_actor_binding.py` and `application/npc_hex_binding.py` now use native `PhysicsBodyDefinition` contracts rather than the lab body-definition type. `application/gameplay_service.py` creates the player's body with native `CircleShape` / `PhysicsBodyDefinition` values. The already-existing player radius 8 approval remains the only actor collider-size decision; no NPC or prop radius was inferred.
+- `application/hex_world_geometry_bridge.py` has been rewritten as Eldoria-native axial/local/world adapters using `HexCoord`, `LocalHexPosition`, `WorldHexPosition`, and `WorldPoint`. It no longer imports or adapts laboratory coordinate types.
+- The bridge tests now cover map/world scope, origin handling, blocked-cell and landmark geometry, open/blocked map boundaries, static obstacle blocking, native body contracts, and safe commit behavior through the existing actor/hex runtime. Coordinate adapter tests cover round trips, all six directions, canonical y-down projection, and deterministic boundary tie-break.
+
+### Final CI check for this slice
+
+On branch head `d86865e56fd6ce3d8a78a2ba2a992533543b2585`:
+
+- Eldoria CI run `44558298584`: all five jobs succeeded (Python 3.11/3.12 Linux and Windows plus Pygame headless smoke).
+- Core Quality run `44558298827`: both Linux and Windows jobs succeeded, including Ruff, legacy map cleanup boundary checks, and release-candidate verification.
+
+### Remaining audit boundary — do not remove lab discovery yet
+
+The directly relevant application bridge and binding files were inspected on this branch. The player and NPC physics body bindings in those files are native; the container and resource-node hex binding modules contain no lab/body-definition references. The native geometry factory and static obstacle index were also reviewed, and their targeted boundary/query tests are present in the passing CI suite.
+
+**A complete repository-wide scan of every production module and test import has not yet been completed.** Therefore this report does not claim that all laboratory imports have been eliminated. `pyproject.toml` still includes `hex_world_lab*` package discovery intentionally. Do not remove that entry, lab package files, or any test package until a complete branch-specific import/consumer scan establishes that every production consumer has migrated and the remaining test-only dependencies are understood.
+
+### Explicitly not connected in this slice
+
+The continuous solver remains a physics preflight capability, not the authoritative per-frame player/NPC movement integrator. It has not been connected to `SimulationRuntime` because the canonical tick-to-seconds and movement-speed contract still requires a separate decision. The existing `HexWorldRuntime` remains the sole discrete world/occupancy owner. No new actor registry, world runtime, save schema migration, gameplay feature, or unapproved collider size was introduced.
