@@ -761,38 +761,37 @@ class GameplayService:
                 "Hex runtime is required to register gameplay placements."
             )
 
-        registered: list[tuple[str, str]] = []
+        registered: list[tuple[str, str, object]] = []
         try:
             for placement in catalog.placements:
                 if placement.kind == "npc":
-                    self.npc_hex_binding.register_spatial(
+                    entity = self.npc_hex_binding.register_spatial(
                         placement.domain_id,
                         placement.position,
                         blocks_movement=placement.blocks_movement,
                         blocks_occupancy=placement.blocks_occupancy,
                     )
                 elif placement.kind == "resource_node":
-                    self.resource_node_hex_binding.register_spatial(
+                    entity = self.resource_node_hex_binding.register_spatial(
                         placement.domain_id,
                         placement.position,
                     )
                 elif placement.kind == "container":
-                    self.container_hex_binding.register_spatial(
+                    entity = self.container_hex_binding.register_spatial(
                         placement.domain_id,
                         placement.position,
                         blocks_movement=placement.blocks_movement,
-                        blocks_occupancy=placement.blocks_occupancy,
                     )
                 else:
                     raise GameplayServiceError(
                         f"Unsupported gameplay placement kind: {placement.kind}"
                     )
-                registered.append((placement.kind, placement.domain_id))
+                registered.append((placement.kind, placement.domain_id, entity))
 
             bundle.validate()
-            return tuple(runtime.entity(domain_id) for _, domain_id in registered)
+            return tuple(entity for _, _, entity in registered)
         except Exception:
-            for kind, domain_id in reversed(registered):
+            for kind, domain_id, _entity in reversed(registered):
                 if kind == "npc":
                     self.npc_hex_binding.unregister_spatial(domain_id)
                 elif kind == "resource_node":
