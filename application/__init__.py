@@ -145,12 +145,15 @@ from .resource_node_hex_binding import (
     ResourceNodeHexBindingError,
     ResourceNodeHexBindingService,
 )
+from .market_hex_anchor import MarketHexAnchorError, MarketHexAnchorService
 
 __all__ += [
     "NPCSpatialBindingError",
     "NPCSpatialBindingService",
     "ResourceNodeHexBindingError",
     "ResourceNodeHexBindingService",
+    "MarketHexAnchorError",
+    "MarketHexAnchorService",
 ]
 
 from .presentation_content_service import (
