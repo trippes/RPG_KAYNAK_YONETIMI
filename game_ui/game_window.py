@@ -342,7 +342,6 @@ class GameWindow:
         self.service = service
         self.screens.update({
             "opening": OpeningScreen(),
-            "map": MapScreen(service),
             "main": MainScreen(service),
             "inventory": InventoryScreen(service),
             "production": ProductionScreen(service),
