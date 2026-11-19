@@ -42,7 +42,10 @@ def make_map():
 def make_binding(*, actor_active=True, world_id="eldoria"):
     actors = WorldActorRegistry()
     actors.add(WorldActor("hero", world_id, "player", active=actor_active))
-    runtime = HexWorldRuntime({"forest": make_map()})
+    runtime = HexWorldRuntime(
+        {"forest": make_map()},
+        world_id=WorldId("eldoria"),
+    )
     binding = ActorHexBindingService(actors, runtime, WorldId("eldoria"))
     return actors, runtime, binding
 
@@ -78,7 +81,10 @@ def test_spatial_registration_reuses_actor_id_and_keeps_actor_registry_authorita
 def test_actor_from_another_world_cannot_be_bound_to_this_runtime():
     actors = WorldActorRegistry()
     actors.add(WorldActor("remote-hero", "other-world", "player"))
-    runtime = HexWorldRuntime({"forest": make_map()})
+    runtime = HexWorldRuntime(
+        {"forest": make_map()},
+        world_id=WorldId("eldoria"),
+    )
     binding = ActorHexBindingService(actors, runtime, WorldId("eldoria"))
 
     with pytest.raises(ActorHexBindingError, match="belongs to world"):
@@ -162,11 +168,34 @@ def test_unregistering_spatial_binding_keeps_actor_identity_and_gameplay_state()
     assert actors.get("hero").world_id == "eldoria"
 
 
+
+def test_runtime_from_another_world_cannot_be_bound():
+    actors = WorldActorRegistry()
+    actors.add(WorldActor("hero", "eldoria", "player"))
+    runtime = HexWorldRuntime(
+        {"forest": make_map()},
+        world_id=WorldId("other-world"),
+    )
+
+    with pytest.raises(ActorHexBindingError, match="Runtime belongs to world"):
+        ActorHexBindingService(actors, runtime, WorldId("eldoria"))
+
+
+def test_unscoped_runtime_cannot_be_bound_to_an_actor_registry():
+    actors = WorldActorRegistry()
+    runtime = HexWorldRuntime({"forest": make_map()})
+
+    with pytest.raises(ValueError, match="bound to a WorldId"):
+        ActorHexBindingService(actors, runtime, WorldId("eldoria"))
+
 def test_unknown_actor_cannot_be_registered_or_moved():
     actors = WorldActorRegistry()
     binding = ActorHexBindingService(
         actors,
-        HexWorldRuntime({"forest": make_map()}),
+        HexWorldRuntime(
+            {"forest": make_map()},
+            world_id=WorldId("eldoria"),
+        ),
         WorldId("eldoria"),
     )
     with pytest.raises(KeyError, match="Actor not found"):
