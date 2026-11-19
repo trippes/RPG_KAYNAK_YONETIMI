@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "races": [
+    {
+      "id": "human",
+      "name": "İnsan",
+      "attribute_modifiers": {},
+      "abilities": []
+    }
+  ],
+  "classes": [
+    {
+      "id": "tester",
+      "name": "Test Karakteri",
+      "hit_points": 20,
+      "skill_ranks": {
+        "survival": 1
+      },
+      "abilities": []
+    }
+  ]
+}
