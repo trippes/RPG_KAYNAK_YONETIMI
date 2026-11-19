@@ -46,6 +46,10 @@ class HexGameplayView:
         runtime = self.service.hex_world_runtime
         if runtime is None:
             return
+        try:
+            runtime.entity(self.service.player_actor_id)
+        except KeyError:
+            return
         if state.mouse_wheel:
             self.zoom = max(
                 self.MIN_ZOOM,
