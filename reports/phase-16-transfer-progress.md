@@ -79,3 +79,22 @@ The canonical Eldoria simulation clock is `core.simulation.SimulationRuntime`, w
 - Runtime movement integration: not yet implemented.
 - Lab imports: still present; no dependency cleanup attempted.
 - CI/test result: not verified in this session.
+
+
+## 2026-11-19 — Native map collision geometry (second slice)
+
+Added an Eldoria-native map collision projection without constructing a laboratory world:
+
+- `core/domain/physics/hex_map_geometry.py`: immutable `BoundaryPolicy`, `HexBoundaryEdge`, and `HexMapCollisionGeometry` contracts. Boundary edges can be represented as thin static polygon obstacles.
+- `core/domain/physics/obstacle_index.py`: static obstacle AABB calculation and a map-scoped `StaticObstacleIndex` backed by Eldoria's `UniformGridIndex`.
+- `application/hex_map_physics.py`: application-layer factory that reads the canonical `HexMapDefinition` directly and creates native obstacles for blocked cells, non-walkable landmarks, supplied static obstacles, and exposed perimeter edges.
+- `tests/test_spatial/test_native_hex_map_geometry.py`: tests for blocked cells, non-walkable/walkable landmarks, blocked/open boundaries, deterministic broadphase lookup, and invalid hex size.
+
+Architecture correction during implementation: map-definition projection belongs in the application layer because `HexMapDefinition` is owned by `application`. The physics domain package now contains only physics/spatial contracts and does not import application types. No second world/runtime or lab-world conversion is used by the new builder.
+
+### Current limits
+
+- The native map geometry is authored but not yet consumed by `application/hex_physics_bridge.py`; the existing bridge and its lab imports remain in place.
+- The native obstacle index currently covers static obstacle bounds only. Dynamic actor collider AABBs are not yet registered.
+- Circle-vs-polygon narrowphase, swept collision, contact resolution, and sliding response are not implemented yet.
+- The newly added tests have not been executed in this session; no passing CI result is claimed.
