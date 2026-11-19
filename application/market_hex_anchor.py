@@ -5,7 +5,6 @@ from __future__ import annotations
 from core.domain.spatial import EntityPosition
 from economy import Market, MarketProfile
 
-from .hex_actor_binding import ActorHexBindingError
 from .npc_hex_binding import NPCSpatialBindingService
 from .hex_world_runtime import HexMovableEntity
 
