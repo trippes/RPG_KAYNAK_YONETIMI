@@ -257,3 +257,21 @@ The next slice must source the actual player movement speed from authoritative g
 ### Safety
 
 All changes target `experiment/map-cleanup` only. No changes were made to `main`, `demo_eldoria`, or `experiment/hex-world-laboratory`. The lab release-gate imports and package discovery remain intact.
+
+
+## 2026-11-19 — Application fixed-step movement clock
+
+The timing boundary was advanced without coupling continuous movement to canonical world time:
+
+- Added `application/gameplay_step_clock.py` with `FixedStepAccumulator`. It converts measured frame elapsed seconds into a count of fixed movement steps (default 1/60 second), carries fractional time between frames, validates numeric inputs, and discards partial accumulated time when gameplay is inactive.
+- Added `tests/test_application/test_gameplay_step_clock.py` for partial-frame accumulation, multiple due steps, pause/inactive reset, zero elapsed time, and invalid inputs.
+- Extended Core Quality Ruff scope to include the new application clock and its tests.
+- Context7 Pygame documentation confirms `Clock.tick()` reports elapsed milliseconds between frames and optionally caps render framerate. It is therefore an elapsed-time measurement source, not itself a simulation tick or movement executor.
+
+### Deliberate boundary
+
+This clock is application-owned movement scheduling infrastructure only. It does not create or advance canonical `core.time.Tick`, does not change the in-world calendar, does not own actors/world state, and does not invoke the movement integrator. The default 60 Hz step preserves the laboratory movement system's existing fixed-step cadence; the scheduler remains independent of whether a duration-based world activity is running.
+
+No movement speed/balance value, save schema, collider size, or gameplay behavior has been added. The next slice can consume the returned step count to orchestrate the native integrator and continuous collision solver through the existing actor registry and `HexWorldRuntime`.
+
+CI validation for this new slice is pending the newly triggered workflow runs.
