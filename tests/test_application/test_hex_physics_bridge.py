@@ -23,8 +23,7 @@ from core.domain.physics import (
     HexMapCollisionGeometry,
     PhysicsBodyDefinition,
     StaticObstacle,
-    Vector2,
-)
+    )
 
 
 def make_map(
@@ -92,7 +91,7 @@ def test_open_boundary_policy_does_not_create_perimeter_collision_walls():
     snapshot = build_hex_physics_snapshot(
         WorldId("eldoria"),
         make_map(valid_cells=((0, 0), (1, 0))),
-        make_lab_layout(32.0),
+        32.0,
         boundary_policy=BoundaryPolicy.OPEN,
     )
     assert snapshot.geometry.boundary_edges == ()
@@ -105,7 +104,7 @@ def test_physics_snapshot_rejects_a_layout_with_different_map_identity():
         HexPhysicsSnapshot(
             WorldId("eldoria"),
             make_map("corridor"),
-            make_lab_layout(32.0),
+            32.0,
             HexMapCollisionGeometry(
                 "another-map", (), (), BoundaryPolicy.OPEN,
             ),
@@ -114,7 +113,7 @@ def test_physics_snapshot_rejects_a_layout_with_different_map_identity():
 
 def test_clear_center_to_center_step_is_physically_reachable():
     map_definition = make_map(valid_cells=((0, 0), (1, 0)))
-    layout = make_lab_layout(32.0)
+    layout = 32.0
     snapshot = build_hex_physics_snapshot(
         WorldId("eldoria"),
         map_definition,
@@ -139,9 +138,9 @@ def test_clear_center_to_center_step_is_physically_reachable():
 
 def test_static_obstacle_on_step_path_prevents_full_cell_transition():
     map_definition = make_map(valid_cells=((0, 0), (1, 0)))
-    layout = make_lab_layout(32.0)
-    start = local_position_to_world_point(LocalHexPosition(0, 0), layout)
-    finish = local_position_to_world_point(LocalHexPosition(1, 0), layout)
+    layout = 32.0
+    start = axial_to_world_point(HexCoord(0, 0), 32.0)
+    finish = axial_to_world_point(HexCoord(1, 0), 32.0)
     rock = StaticObstacle(
         "rock-on-path",
         "corridor",
@@ -169,13 +168,13 @@ def test_static_obstacle_on_step_path_prevents_full_cell_transition():
 
 def test_actor_binding_checks_physics_before_committing_hex_occupancy():
     map_definition = make_map(valid_cells=((0, 0), (1, 0)))
-    layout = make_lab_layout(32.0)
-    start = local_position_to_world_point(LocalHexPosition(0, 0), layout)
-    finish = local_position_to_world_point(LocalHexPosition(1, 0), layout)
-    rock = ObstacleDefinition(
+    layout = 32.0
+    start = axial_to_world_point(HexCoord(0, 0), 32.0)
+    finish = axial_to_world_point(HexCoord(1, 0), 32.0)
+    rock = StaticObstacle(
         "rock-on-path",
-        MapId("corridor"),
-        CircleShape(8.0, Vector2(0.0, 0.0)),
+        "corridor",
+        CircleShape(8.0, WorldPoint(0.0, 0.0)),
         WorldPoint((start.x + finish.x) / 2, (start.y + finish.y) / 2),
     )
     snapshot = build_hex_physics_snapshot(
@@ -216,7 +215,7 @@ def test_clear_physics_step_commits_through_the_existing_hex_runtime():
     snapshot = build_hex_physics_snapshot(
         WorldId("eldoria"),
         map_definition,
-        make_lab_layout(32.0),
+        32.0,
     )
     actors = WorldActorRegistry()
     actors.add(WorldActor("hero", "eldoria", "player"))
@@ -246,7 +245,7 @@ def test_physics_snapshot_from_another_map_is_rejected_before_move():
     other_snapshot = build_hex_physics_snapshot(
         WorldId("eldoria"),
         make_map("other-map", valid_cells=((0, 0), (1, 0))),
-        make_lab_layout(32.0),
+        32.0,
     )
     actors = WorldActorRegistry()
     actors.add(WorldActor("hero", "eldoria", "player"))
@@ -277,7 +276,7 @@ def test_physics_snapshot_world_scope_is_checked_before_move():
     foreign_snapshot = build_hex_physics_snapshot(
         WorldId("another-world"),
         map_definition,
-        make_lab_layout(32.0),
+        32.0,
     )
     actors = WorldActorRegistry()
     actors.add(WorldActor("hero", "eldoria", "player"))
@@ -307,7 +306,7 @@ def test_directional_physics_move_uses_the_same_preflight_and_commit_path():
     snapshot = build_hex_physics_snapshot(
         WorldId("eldoria"),
         map_definition,
-        make_lab_layout(32.0),
+        32.0,
     )
     actors = WorldActorRegistry()
     actors.add(WorldActor("hero", "eldoria", "player"))
@@ -338,7 +337,7 @@ def test_physics_snapshot_is_immutable_after_construction():
     snapshot = build_hex_physics_snapshot(
         WorldId("eldoria"),
         make_map(),
-        make_lab_layout(32.0),
+        32.0,
     )
 
     with pytest.raises(AttributeError, match="immutable"):
@@ -347,13 +346,13 @@ def test_physics_snapshot_is_immutable_after_construction():
 
 def test_configured_player_binding_applies_physics_to_keyboard_and_click_path_moves():
     map_definition = make_map(valid_cells=((0, 0), (1, 0), (2, 0)))
-    layout = make_lab_layout(32.0)
-    start = local_position_to_world_point(LocalHexPosition(0, 0), layout)
-    finish = local_position_to_world_point(LocalHexPosition(1, 0), layout)
-    rock = ObstacleDefinition(
+    layout = 32.0
+    start = axial_to_world_point(HexCoord(0, 0), 32.0)
+    finish = axial_to_world_point(HexCoord(1, 0), 32.0)
+    rock = StaticObstacle(
         "rock-on-path",
-        MapId("corridor"),
-        CircleShape(8.0, Vector2(0.0, 0.0)),
+        "corridor",
+        CircleShape(8.0, WorldPoint(0.0, 0.0)),
         WorldPoint((start.x + finish.x) / 2, (start.y + finish.y) / 2),
     )
     snapshot = build_hex_physics_snapshot(
