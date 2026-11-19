@@ -301,3 +301,8 @@ CI was triggered by these commits; passing status is not claimed until the corre
 ### Safety
 
 All changes target `experiment/map-cleanup`. No changes were made to `main`, `demo_eldoria`, or `experiment/hex-world-laboratory`. The laboratory package, tests, release-gate imports, and package discovery remain intact.
+
+
+### CI feedback and correction
+
+The first full-suite CI run exposed one incorrect test expectation: map compatibility is validated when a controller processes an actor step, because the actor/map binding is not selected until an actor ID is supplied. The test was corrected to assert rejection at `step(...)` rather than at controller construction. This was a test-contract correction; no runtime behavior was weakened. The corrected commit has triggered fresh CI, and its result remains pending.
