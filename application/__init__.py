@@ -168,6 +168,18 @@ __all__ += [
     "HexWorldSnapshot",
 ]
 
+from .gameplay_placement_catalog import (
+    GameplayPlacement,
+    GameplayPlacementCatalog,
+    GameplayPlacementCatalogError,
+)
+
+__all__ += [
+    "GameplayPlacement",
+    "GameplayPlacementCatalog",
+    "GameplayPlacementCatalogError",
+]
+
 from .presentation_content_service import (
     ContentMigrationStatus,
     ContentValidationIssue,
