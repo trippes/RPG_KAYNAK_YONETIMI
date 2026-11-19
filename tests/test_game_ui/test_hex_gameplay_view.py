@@ -15,6 +15,14 @@ class RecordingActorBinding:
     def __init__(self):
         self.moves = []
         self.transitions = []
+        self.toward = []
+
+    def move_toward(self, actor_id, goal):
+        self.toward.append((actor_id, goal))
+        return SimpleNamespace(
+            success=True,
+            position=EntityPosition("village", LocalHexPosition(1, 0)),
+        )
 
     def move(self, actor_id, direction):
         self.moves.append((actor_id, direction))
@@ -144,6 +152,19 @@ def test_hex_gameplay_view_renders_runtime_map_without_mutating_entity_position(
     assert player.position == EntityPosition(
         "village", LocalHexPosition(0, 0),
     )
+
+def test_hex_gameplay_view_update_advances_click_to_move_goal():
+    service = FakeService()
+    view = HexGameplayView(service)
+    view._move_goal = LocalHexPosition(2, 0)
+    view._move_map_id = "village"
+
+    view.update(HexGameplayView.MOVE_STEP_SECONDS)
+
+    assert service.hex_actor_binding.toward == [
+        ("hero", LocalHexPosition(2, 0)),
+    ]
+
 
 def test_hex_gameplay_view_uses_authored_map_transition_at_exit_cell():
     transition = SimpleNamespace(
