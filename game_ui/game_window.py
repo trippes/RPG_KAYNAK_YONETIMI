@@ -585,7 +585,9 @@ class GameWindow:
         return None
 
     def _render_current(self):
-        """Render the persistent world before the current gameplay surface."""
+        """Clear the previous frame, then render the active screen and overlays."""
+        self.renderer.clear()
+
         if self.gameplay_active:
             world = self.screens[self.gameplay_screen]
             world.render(self.renderer)
