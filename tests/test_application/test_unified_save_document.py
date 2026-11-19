@@ -5,7 +5,8 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from application import GameSaveDocument, GameSaveFileAdapter, SaveJsonCodec
+from application import GameSaveDocument, GameSaveFileAdapter, SaveJsonCodec, HexWorldSnapshot
+from core.foundation import WorldId
 from application.migrations import migrate_save_data
 from application.save_file_adapter import SaveFileReadError, SaveFileWriteError
 from application.save_document import (
@@ -50,9 +51,23 @@ class TestUnifiedSaveDocument(unittest.TestCase):
         data = document.to_dict()
 
         self.assertEqual(data["schema"], "rpg-game-save")
-        self.assertEqual(data["schema_version"], 2)
+        self.assertEqual(data["schema_version"], 3)
         self.assertEqual(data["core"]["schema"], "rpg-core")
         self.assertEqual(data["gameplay"]["schema"], "rpg-gameplay")
+
+    def test_hex_world_snapshot_is_optional_and_round_trips(self):
+        document = self._document()
+        snapshot = HexWorldSnapshot(WorldId("save-world"), ())
+        with_hex_world = GameSaveDocument(
+            core=document.core,
+            gameplay=document.gameplay,
+            hex_world=snapshot,
+        )
+
+        decoded = SaveJsonCodec.decode(SaveJsonCodec.encode(with_hex_world))
+
+        self.assertEqual(decoded.hex_world, snapshot)
+        self.assertIsNone(GameSaveDocument.from_dict(document.to_dict()).hex_world)
 
     def test_quest_graph_progress_is_optional_and_round_trips(self):
         document = self._document()
@@ -81,7 +96,7 @@ class TestUnifiedSaveDocument(unittest.TestCase):
             GameSaveDocument.from_dict(data)
 
         data = self._document().to_dict()
-        data["schema_version"] = 3
+        data["schema_version"] = 4
         with self.assertRaises(UnsupportedSaveSchemaError):
             GameSaveDocument.from_dict(data)
 
@@ -351,15 +366,16 @@ class TestUnifiedSaveDocument(unittest.TestCase):
                     path, older_than_seconds=0
                 )
 
-    def test_legacy_version_one_envelope_migrates_to_v2_without_container_data(self):
+    def test_legacy_version_one_envelope_migrates_to_v3_without_container_or_hex_data(self):
         data = self._document().to_dict()
         data["schema_version"] = 1
 
         migrated = GameSaveDocument.from_dict(data)
 
         self.assertEqual(data["schema_version"], 1)
-        self.assertEqual(migrated.schema_version, 2)
+        self.assertEqual(migrated.schema_version, 3)
         self.assertIsNone(migrated.containers)
+        self.assertIsNone(migrated.hex_world)
 
     def test_legacy_version_zero_envelope_migrates_without_mutating_input(self):
         data = self._document().to_dict()
@@ -368,7 +384,7 @@ class TestUnifiedSaveDocument(unittest.TestCase):
         migrated = GameSaveDocument.from_dict(data)
 
         self.assertEqual(data["schema_version"], 0)
-        self.assertEqual(migrated.schema_version, 2)
+        self.assertEqual(migrated.schema_version, 3)
         self.assertEqual(
             SaveJsonCodec.encode(migrated),
             SaveJsonCodec.encode(self._document()),
@@ -388,6 +404,8 @@ class TestUnifiedSaveDocument(unittest.TestCase):
 
         migrated = migrate_save_data(original)
 
+        self.assertEqual(migrated["schema_version"], 3)
+        self.assertIsNone(migrated["hex_world"])
         self.assertEqual(migrated["social"], original["social"])
         self.assertEqual(original["social"]["npcs"][0]["position"], {"x": 0, "y": 0})
         self.assertNotIn("position", migrated["social"]["npcs"][1])
