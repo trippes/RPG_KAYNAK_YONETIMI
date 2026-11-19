@@ -43,7 +43,10 @@ class FakeRuntime:
         )
 
     def map_definition(self, _map_id):
-        return SimpleNamespace(transitions=self.transitions)
+        return SimpleNamespace(
+            transitions=self.transitions,
+            has_cell=lambda _cell: True,
+        )
 
 
 class FakeService:
@@ -152,6 +155,24 @@ def test_hex_gameplay_view_renders_runtime_map_without_mutating_entity_position(
     assert player.position == EntityPosition(
         "village", LocalHexPosition(0, 0),
     )
+
+def test_hex_gameplay_view_click_selects_axial_destination():
+    service = FakeService()
+    view = HexGameplayView(service)
+    view._panel = pygame.Rect(24, 96, 752, 480)
+    view.transform.configure(
+        camera_x=0,
+        camera_y=0,
+        viewport_center=(400, 336),
+        zoom=1,
+    )
+
+    view.handle(InputState(mouse_clicked=True, mouse_pos=(455, 336)))
+
+    assert service.hex_actor_binding.toward == [
+        ("hero", LocalHexPosition(1, 0)),
+    ]
+
 
 def test_hex_gameplay_view_update_advances_click_to_move_goal():
     service = FakeService()
