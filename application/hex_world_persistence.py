@@ -5,14 +5,17 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass
 
-from core.domain.spatial import EntityPosition, LocalHexPosition, MovementProfile
+from core.domain.spatial import (
+    ContinuousEntityPosition, EntityPosition, LocalHexPosition, MovementProfile,
+    axial_to_world_point, world_point_to_hex,
+)
 from core.foundation import WorldId
 
 from .hex_world_runtime import HexWorldRuntime
 
 
 HEX_WORLD_SCHEMA = "rpg-hex-world"
-HEX_WORLD_SCHEMA_VERSION = 1
+HEX_WORLD_SCHEMA_VERSION = 2
 
 
 class HexWorldPersistenceError(ValueError):
@@ -28,6 +31,7 @@ class HexWorldEntityRecord:
     active: bool
     blocks_movement: bool
     blocks_occupancy: bool
+    continuous_position: ContinuousEntityPosition | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.entity_id, str) or not self.entity_id.strip():
@@ -44,6 +48,25 @@ class HexWorldEntityRecord:
             raise TypeError("blocks_movement must be a boolean.")
         if not isinstance(self.blocks_occupancy, bool):
             raise TypeError("blocks_occupancy must be a boolean.")
+        continuous = self.continuous_position
+        if continuous is None:
+            center = axial_to_world_point(
+                self.position.cell.to_hex_coord(), HexWorldRuntime.HEX_SIZE
+            )
+            continuous = ContinuousEntityPosition(self.position.map_id, center)
+            object.__setattr__(self, "continuous_position", continuous)
+        if not isinstance(continuous, ContinuousEntityPosition):
+            raise TypeError("continuous_position must be a ContinuousEntityPosition.")
+        if continuous.map_id != self.position.map_id:
+            raise ValueError("continuous position belongs to a different map.")
+        resolved = LocalHexPosition.from_hex_coord(
+            world_point_to_hex(
+                continuous.point, HexWorldRuntime.HEX_SIZE,
+                previous_cell=self.position.cell.to_hex_coord(),
+            )
+        )
+        if resolved != self.position.cell:
+            raise ValueError("continuous position does not resolve to the record cell.")
 
 
 @dataclass(frozen=True, slots=True)
@@ -136,6 +159,7 @@ class HexWorldSnapshot:
                 entity.active,
                 occupant.blocks_movement,
                 occupant.blocks_occupancy,
+                entity.continuous_position,
             ))
         return cls(
             runtime.world_id,
@@ -156,6 +180,10 @@ class HexWorldSnapshot:
                         "map_id": item.position.map_id,
                         "q": item.position.cell.q,
                         "r": item.position.cell.r,
+                    },
+                    "continuous_position": {
+                        "x": item.continuous_position.x,
+                        "y": item.continuous_position.y,
                     },
                     "profile": {
                         "can_move": item.profile.can_move,
@@ -188,7 +216,7 @@ class HexWorldSnapshot:
         if data.get("schema") != HEX_WORLD_SCHEMA:
             raise HexWorldPersistenceError("Unknown hex-world schema identifier.")
         version = data.get("schema_version")
-        if type(version) is not int or version != HEX_WORLD_SCHEMA_VERSION:
+        if type(version) is not int or version not in {1, HEX_WORLD_SCHEMA_VERSION}:
             raise HexWorldPersistenceError("Unsupported hex-world snapshot version.")
         world_value = data.get("world_id")
         if not isinstance(world_value, str) or not world_value.strip():
@@ -200,10 +228,13 @@ class HexWorldSnapshot:
 
         records = []
         for raw in raw_entities:
-            if not isinstance(raw, Mapping) or set(raw) != {
+            expected_entity_fields = {
                 "entity_id", "kind", "position", "profile", "active",
                 "blocks_movement", "blocks_occupancy",
-            }:
+            }
+            if version >= 2:
+                expected_entity_fields.add("continuous_position")
+            if not isinstance(raw, Mapping) or set(raw) != expected_entity_fields:
                 raise HexWorldPersistenceError("Malformed hex entity record.")
             position = raw.get("position")
             if not isinstance(position, Mapping) or set(position) != {"map_id", "q", "r"}:
@@ -224,6 +255,17 @@ class HexWorldSnapshot:
                 or len(allowed) != len(set(allowed))
             ):
                 raise HexWorldPersistenceError("Invalid allowed_terrain_ids list.")
+            continuous_position = None
+            if version >= 2:
+                raw_continuous = raw.get("continuous_position")
+                if not isinstance(raw_continuous, Mapping) or set(raw_continuous) != {"x", "y"}:
+                    raise HexWorldPersistenceError("Malformed continuous entity position.")
+                try:
+                    continuous_position = ContinuousEntityPosition.from_xy(
+                        position["map_id"], raw_continuous["x"], raw_continuous["y"]
+                    )
+                except (TypeError, ValueError) as error:
+                    raise HexWorldPersistenceError("Invalid continuous entity position.") from error
             try:
                 records.append(HexWorldEntityRecord(
                     raw["entity_id"],
@@ -238,6 +280,7 @@ class HexWorldSnapshot:
                     raw["active"],
                     raw["blocks_movement"],
                     raw["blocks_occupancy"],
+                    continuous_position,
                 ))
             except (KeyError, TypeError, ValueError) as error:
                 raise HexWorldPersistenceError("Invalid hex entity record.") from error
@@ -254,7 +297,7 @@ class HexWorldSnapshot:
                 tuple(records),
                 tuple(patrol_indices),
                 schema=data["schema"],
-                schema_version=version,
+                schema_version=HEX_WORLD_SCHEMA_VERSION,
             )
         except (TypeError, ValueError) as error:
             if isinstance(error, HexWorldPersistenceError):
@@ -355,6 +398,7 @@ class HexWorldSnapshot:
                     active=record.active,
                     blocks_movement=record.blocks_movement,
                     blocks_occupancy=record.blocks_occupancy,
+                    continuous_position=record.continuous_position,
                 )
                 registered.append(record.entity_id)
             runtime.restore_patrol_indices(dict(self.patrol_indices))
