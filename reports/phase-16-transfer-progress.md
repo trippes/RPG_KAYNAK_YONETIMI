@@ -341,3 +341,32 @@ The approved movement-input and content-configuration design has been implemente
 - Ruff scope now includes the new adapter and its tests plus the actor-profile tests. Final CI verification passed on commit `52ec419f575fcdb308e95796d5357d783334e983`: Eldoria CI run `44581524784` succeeded on Python 3.11/3.12, Linux/Windows, including the Pygame headless smoke test; Core Quality run `44581524798` succeeded on Linux and Windows, including Ruff and release-candidate verification.
 - CI initially exposed compatibility gaps in test-created `GameWindow` instances and a focus-regain test expectation. The adapter test and lazy inert runtime initialization were corrected; the successful runs above validate the corrected code.
 - All changes remain on `experiment/map-cleanup`. No changes were made to `main`, `content/demo_eldoria`, or `experiment/hex-world-laboratory`.
+
+
+## 2026-11-19 — Isolated mechanics test content package
+
+Added `content/movement_test/` as a separate, deliberately non-visual test package. It is selected through the existing explicit `--content-package` launch argument; neither `content/active_package.json` nor the protected `content/demo_eldoria/` package is changed.
+
+### Test content
+
+- One 61-cell axial arena with a defined start cell and a small cluster of blocked water/stone cells for continuous collision and wall-sliding checks.
+- A player movement profile and two NPC movement profiles. The 64 world-units/second base speed and 1.5/0.5 mode multipliers are test-only values, not final balance.
+- One opening-phase NPC with a minimal dialogue and one gameplay-phase NPC used as a blocking spatial actor.
+- Two non-blocking resource nodes placed through the package's gameplay-placement catalog.
+- No art assets, presentation catalog, or visual effects are included; the package intentionally exercises the existing fallback/minimal world presentation.
+
+### Launch and validation
+
+Run from the repository root:
+
+```powershell
+python main.py --play --content-package content/movement_test
+```
+
+Added `tests/test_application/test_movement_test_package.py` to verify package loading, movement-profile parsing, NPC/resource registration, and spatial placements. Added that test to the Core Quality Ruff target list.
+
+### Explicit remaining boundary
+
+The package makes player movement, static map collision, NPC presence/occupancy, dialogue, resource placement, and save/load available for manual in-game verification. NPC movement profiles are loaded as content, but autonomous NPC movement orchestration is not yet implemented; do not interpret profile presence as autonomous movement. The test package has not yet been confirmed by a completed CI run or by the user's in-game test.
+
+All files added in this slice are under `content/movement_test/`, the dedicated test module, the Core Quality workflow's Ruff target list, and this report. No changes were made to `main`, `content/demo_eldoria/`, `content/active_package.json`, or `experiment/hex-world-laboratory`.
