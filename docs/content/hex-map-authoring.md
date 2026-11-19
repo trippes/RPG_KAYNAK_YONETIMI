@@ -4,10 +4,12 @@
 **Geometri:** pointy_top axial (q,r)  
 **Content package manifest:** schema_version 1
 
-Çalışan tam örnek: content/demo_eldoria/maps/hex_forest_demo.json. Bu dosya yalnızca test/demo içeriğidir ve başlangıç haritası değildir.
+Bu belge, yeni axial harita dosyaları için şema örneği ve alan sözleşmesidir. Temizlik dalındaki `demo_eldoria` paketi kasıtlı olarak harita içeriği barındırmaz; aşağıdaki JSON bir başlangıç şablonudur, depoda mevcut bir harita dosyasına işaret etmez.
 
 ## Örnek JSON
-    {
+
+```json
+{
       "schema_version": 2,
       "map_id": "hex_forest_demo",
       "name": "Altıgen Orman",
@@ -19,7 +21,8 @@
       "features": [{"id":"river","type":"river","cells":[[0,-1]]}],
       "landmarks": [{"id":"old_tree","name":"Yaşlı Ağaç","position":[-1,0]}],
       "transitions": [{"id":"exit","source_cells":[[0,0]],"exit_direction":"east","target_map_id":"future_map","target_entry_direction":"west","traversal_mode":"one_way"}]
-    }
+}
+```
 
 ## Alanlar ve doğrulama
 - geometry.type yalnızca hex_axial; orientation yalnızca pointy_top; coordinate_system yalnızca axial.
