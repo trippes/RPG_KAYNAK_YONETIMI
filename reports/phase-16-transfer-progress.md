@@ -306,3 +306,37 @@ All changes target `experiment/map-cleanup`. No changes were made to `main`, `de
 ### CI feedback and correction
 
 The first full-suite CI run exposed one incorrect test expectation: map compatibility is validated when a controller processes an actor step, because the actor/map binding is not selected until an actor ID is supplied. The test was corrected to assert rejection at `step(...)` rather than at controller construction. This was a test-contract correction; no runtime behavior was weakened. The corrected commit has triggered fresh CI, and its result remains pending.
+
+
+## 2026-11-19 — Native keyboard input, actor movement profiles, and live fixed-step wiring
+
+The approved movement-input and content-configuration design has been implemented on the integration branch.
+
+### Keyboard adapter
+
+- Added `game_ui/movement_input.py`, an Eldoria-owned Pygame adapter that emits native `MovementIntent`, `MovementMode`, and `Vector2` values. It does not import or depend on `hex_world_lab`.
+- WASD and arrow keys provide held movement; Shift is hold-to-run; Alt toggles stealth on a press edge. Focus loss clears direction and mode state, and focus regain requires Alt to be released before a fresh stealth toggle.
+- Direction vectors follow Eldoria's canonical world frame: +X right and +Y down. This intentionally differs from the lab adapter's mathematical +Y-up convention.
+- Added focused adapter tests for direction combinations, mode priority, Alt edge behavior, and focus loss/regain.
+
+### Actor-specific movement configuration
+
+- Extended `load_gameplay_rules` with an optional `movement.actors` section and added `load_movement_configs`, returning an immutable mapping from existing stable actor IDs to native `MovementConfig` values.
+- Each profile requires a finite, strictly positive `max_speed` in world units per second. Optional running/stealth multipliers retain the laboratory's established 1.5 and 0.5 values unless the package explicitly overrides them.
+- Profiles are keyed by the actual actor ID (the player is currently `hero`; NPCs use their existing NPC/actor IDs). Missing profiles are not assigned a default speed.
+- Added tests for multiple actor profiles, immutable lookup, absent profiles, invalid speeds, and unsupported fields.
+- The protected `content/demo_eldoria/gameplay_rules.json` was not changed. It currently contains no movement profiles, so it does not yet supply a production player speed or NPC speeds.
+
+### Live gameplay-loop composition
+
+- `GameWindow` now owns the native keyboard adapter and `FixedStepAccumulator`. It samples held input during normal gameplay and consumes the accumulator's fixed-duration steps through `ContinuousPlayerMovementController`.
+- Movement is inactive during pause, dialogue, open gameplay windows, non-gameplay screens, or lost keyboard focus; the accumulator discards partial elapsed time while inactive. This clock remains separate from canonical world-time ticks and does not change the calendar.
+- Configured direct keyboard movement takes priority over click-to-move and cancels the pending click destination. Existing click-to-move remains available when no direct keyboard direction is held. Arrow keys remain UI navigation inputs outside active configured world movement.
+- The controller is rebuilt against the current map-scoped binding/snapshot when a movement batch is consumed, so the existing map-transition ownership remains authoritative.
+
+### Activation boundary and verification
+
+- The live loop is wired, but the protected active demo package has no `hero` movement profile. Consequently the default demo does not start continuous keyboard movement yet; no arbitrary speed was inserted. Once an authorized content package supplies a real `hero.max_speed`, the player path becomes active. NPC profiles can be authored independently, while NPC autonomous movement remains a separate future orchestration task.
+- Context7 Pygame documentation was used to verify held-key snapshots and `Clock.tick()` elapsed-time semantics.
+- Ruff scope now includes the new adapter and its tests plus the actor-profile tests. GitHub Actions validation was triggered; final status must be checked before this slice is marked CI-verified.
+- All changes remain on `experiment/map-cleanup`. No changes were made to `main`, `content/demo_eldoria`, or `experiment/hex-world-laboratory`.
