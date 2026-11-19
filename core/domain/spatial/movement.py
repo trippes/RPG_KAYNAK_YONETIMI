@@ -78,6 +78,7 @@ class MovementFailureReason(str, Enum):
     NON_ADJACENT_TARGET = "non_adjacent_target"
     BLOCKED_CELL = "blocked_cell"
     OCCUPIED_CELL = "occupied_cell"
+    PHYSICAL_COLLISION = "physical_collision"
     TERRAIN_NOT_ALLOWED = "terrain_not_allowed"
     INVALID_TRANSITION = "invalid_transition"
 
