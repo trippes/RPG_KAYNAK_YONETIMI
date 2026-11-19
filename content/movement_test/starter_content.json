@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "ids": {
+    "world_id": "movement_test_world",
+    "hero_id": "hero"
+  },
+  "world": {
+    "name": "Mekanik Test Dünyası",
+    "width": 1,
+    "height": 1,
+    "hex_start": {
+      "map_id": "movement_test_arena",
+      "q": 0,
+      "r": 0
+    }
+  },
+  "character": {
+    "name": "Test Oyuncusu",
+    "race": {
+      "id": "human"
+    },
+    "class": {
+      "id": "tester"
+    }
+  },
+  "dialogue": {
+    "id": "movement_test_guard_dialogue",
+    "start_node": "start",
+    "nodes": [
+      {
+        "id": "start",
+        "text": "Bu NPC, test paketindeki etkileşim ve diyalog bağlantısını doğrulamak için burada.",
+        "choices": [
+          {
+            "id": "continue",
+            "text": "Testi anladım.",
+            "next": "end"
+          }
+        ]
+      },
+      {
+        "id": "end",
+        "text": "Diyalog akışı başarıyla çalışıyor.",
+        "choices": []
+      }
+    ]
+  }
+}
