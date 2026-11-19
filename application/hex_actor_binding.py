@@ -189,6 +189,7 @@ class ActorHexBindingService:
         """Move one adjacent cell after static physics preflight."""
         if not isinstance(direction, HexDirection):
             raise TypeError("direction must be a HexDirection")
+        self._require_actor(actor_id)
         entity = self._runtime.entity(actor_id)
         target = LocalHexPosition.from_hex_coord(
             entity.position.cell.to_hex_coord().neighbor(direction)
