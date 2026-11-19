@@ -89,7 +89,8 @@ def load_content_package(package_dir: str | Path) -> ContentPackage:
         raise ContentPackageError("Content package manifest must be a JSON object.")
     allowed = {
         "schema_version", "package_id", "package_version", "files", "maps",
-        "world_map", "presentation_assets", "asset_catalog", "map_placements",\n        "gameplay_placements",
+        "world_map", "presentation_assets", "asset_catalog", "map_placements",
+        "gameplay_placements",
     }
     extra = sorted(set(manifest) - allowed)
     if extra:
