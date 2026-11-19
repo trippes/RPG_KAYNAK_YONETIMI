@@ -8,7 +8,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import math
 
-from core.domain.spatial import HexCoord
+from core.domain.spatial import HexCoord, WorldPoint, axial_to_world_point
 from core.domain.spatial.hex_geometry import axial_to_pixel, pixel_to_axial
 
 
@@ -92,3 +92,19 @@ class WorldTransform:
     def screen_to_axial(self, x: float, y: float) -> HexCoord:
         world_x, world_y = self.screen_to_world(x, y)
         return pixel_to_axial(world_x, world_y, self.hex_size)
+
+
+    def world_point_to_screen(self, point: WorldPoint) -> tuple[float, float]:
+        """Transform an Eldoria y-down continuous world point into screen pixels."""
+        if not isinstance(point, WorldPoint):
+            raise TypeError("point must be a WorldPoint.")
+        return self.world_to_screen(point.x, point.y)
+
+    def screen_to_world_point(self, x: float, y: float) -> WorldPoint:
+        """Transform screen pixels into an Eldoria y-down continuous world point."""
+        world_x, world_y = self.screen_to_world(x, y)
+        return WorldPoint(world_x, world_y)
+
+    def axial_to_world_point(self, coord: HexCoord) -> WorldPoint:
+        """Return an axial cell center in the canonical continuous world plane."""
+        return axial_to_world_point(coord, self.hex_size)
