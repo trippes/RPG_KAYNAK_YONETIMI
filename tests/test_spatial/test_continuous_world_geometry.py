@@ -69,7 +69,7 @@ class ContinuousHexGeometryTests(unittest.TestCase):
             left,
         )
 
-    def test_invalid_hex_size_is_rejected(self):
+    def test_world_transform_round_trips_continuous_points(self):\n        transform = WorldTransform(\n            hex_size=self.HEX_SIZE, camera_x=120.0, camera_y=80.0,\n            viewport_center=(400.0, 300.0), zoom=1.25,\n        )\n        point = WorldPoint(245.5, 318.25)\n        screen = transform.world_point_to_screen(point)\n        restored = transform.screen_to_world_point(*screen)\n        self.assertAlmostEqual(restored.x, point.x)\n        self.assertAlmostEqual(restored.y, point.y)\n\n    def test_invalid_hex_size_is_rejected(self):
         with self.assertRaises(ValueError):
             axial_to_world_point(HexCoord(0, 0), 0)
         with self.assertRaises(ValueError):
