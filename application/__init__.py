@@ -82,6 +82,7 @@ from .hex_pathfinding import HexPathfinder
 from .hex_occupancy import HexOccupant, HexOccupancyRegistry
 from .hex_world_runtime import HexMovableEntity, HexWorldRuntime
 from .hex_transition_service import HexMapTransitionService
+from .hex_interaction import HexInteractionService
 from .npc_hex_binding import NPCSpatialBindingError, NPCSpatialBindingService
 from .resource_node_hex_binding import (
     ResourceNodeHexBindingError,
@@ -193,6 +194,7 @@ __all__ = [
     "HexMovableEntity",
     "HexWorldRuntime",
     "HexMapTransitionService",
+    "HexInteractionService",
     "NPCSpatialBindingError",
     "NPCSpatialBindingService",
     "ResourceNodeHexBindingError",
