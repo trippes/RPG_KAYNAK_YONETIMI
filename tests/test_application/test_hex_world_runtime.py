@@ -69,6 +69,25 @@ class TestHexOccupancy(unittest.TestCase):
         self.assertTrue(registry.is_movement_blocked(position))
         self.assertFalse(registry.is_occupied(position))
 
+    def test_non_blocking_occupants_can_overlap_blocking_entities_in_either_order(self):
+        position = EntityPosition("forest", LocalHexPosition(0, 0))
+        for first, second in (
+            (
+                HexOccupant("resource", position, False, False, "object"),
+                HexOccupant("hero", position),
+            ),
+            (
+                HexOccupant("hero", position),
+                HexOccupant("resource", position, False, False, "object"),
+            ),
+        ):
+            registry = HexOccupancyRegistry()
+            registry.add(first)
+            registry.add(second)
+            self.assertEqual(len(registry.at(position)), 2)
+            self.assertTrue(registry.is_occupied(position))
+            self.assertTrue(registry.is_movement_blocked(position))
+
     def test_rejects_duplicate_occupancy_and_keeps_failed_move_atomic(self):
         registry = HexOccupancyRegistry()
         first = EntityPosition("forest", LocalHexPosition(0, 0))
