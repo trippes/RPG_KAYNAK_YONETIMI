@@ -76,7 +76,7 @@ class PygameMovementInputTests(unittest.TestCase):
         self.assertIs(self.adapter.read_intent().mode, MovementMode.STEALTH)
 
     def test_focus_loss_clears_input_and_requires_alt_release(self):
-        self.keys.pressed = {9, 11, 1}
+        self.keys.pressed = {9}
         self.adapter.handle_events([SimpleNamespace(type=100)])
         self.assertFalse(self.adapter.focused)
         self.assertEqual(self.adapter.read_intent(), MovementIntent())
