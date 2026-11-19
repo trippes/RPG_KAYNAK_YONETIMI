@@ -674,6 +674,21 @@ def populate_gameplay_resources(service, definition_path=None, resource_definiti
 
 
 
+
+def populate_gameplay_placements(service, *, content_package_path=None):
+    """Apply package axial placements after domain owners and Hex runtime exist."""
+    active_package_path = (
+        content_package_path
+        or getattr(service, "_content_package_path", None)
+    )
+    package = load_content_package(
+        _resolve_content_package_path(active_package_path)
+    )
+    if package.gameplay_placements is None:
+        return ()
+    return service.register_gameplay_placements(package.gameplay_placements)
+
+
 def load_gameplay_rules(path: str | Path | None = None, *, package_path: str | Path | None = None) -> dict:
     """Load configurable player identity, starting economy and consumable effects."""
     definition = _load_package_file("gameplay_rules", package_path) if path is None else _read_json_definition(Path(path), "Gameplay rules")
@@ -761,5 +776,6 @@ __all__ = [
     "load_gameplay_rules",
     "populate_opening_content",
     "populate_gameplay_resources",
+    "populate_gameplay_placements",
     "content_package_world_id",
 ]
