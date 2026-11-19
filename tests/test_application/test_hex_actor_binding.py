@@ -11,6 +11,7 @@ from application.hex_actor_binding import (
 )
 from application.hex_map_definition import parse_hex_map
 from application.hex_world_runtime import HexWorldRuntime
+from application.world_map_definition import WorldMapDefinition, WorldMapPlacement
 from core.domain.spatial import (
     EntityPosition,
     HexDirection,
