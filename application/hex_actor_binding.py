@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from core.domain.physics import PhysicsPhysicsBodyDefinition
+from core.domain.physics import PhysicsBodyDefinition
 from core.domain.spatial import (
     EntityPosition,
     HexDirection,
@@ -46,7 +46,7 @@ class ActorHexBindingService:
         world_id: WorldId,
         *,
         physics_snapshot: HexPhysicsSnapshot | None = None,
-        player_body: BodyDefinition | None = None,
+        player_body: PhysicsBodyDefinition | None = None,
     ) -> None:
         if not isinstance(actors, WorldActorRegistry):
             raise TypeError("actors must be a WorldActorRegistry")
@@ -63,8 +63,8 @@ class ActorHexBindingService:
             )
         if physics_snapshot is not None and not isinstance(physics_snapshot, HexPhysicsSnapshot):
             raise TypeError("physics_snapshot must be a HexPhysicsSnapshot or None")
-        if player_body is not None and not isinstance(player_body, BodyDefinition):
-            raise TypeError("player_body must be a BodyDefinition or None")
+        if player_body is not None and not isinstance(player_body, PhysicsBodyDefinition):
+            raise TypeError("player_body must be a PhysicsBodyDefinition or None")
         if (physics_snapshot is None) != (player_body is None):
             raise ValueError("physics_snapshot and player_body must be supplied together")
         self._actors = actors
@@ -188,7 +188,7 @@ class ActorHexBindingService:
         actor_id: str,
         target: LocalHexPosition,
         physics_snapshot: HexPhysicsSnapshot,
-        body: BodyDefinition,
+        body: PhysicsBodyDefinition,
     ) -> MovementResult:
         """Validate a cell transition with static physics before committing occupancy."""
         actor = self._require_actor(actor_id)
@@ -202,8 +202,8 @@ class ActorHexBindingService:
             )
         if not isinstance(physics_snapshot, HexPhysicsSnapshot):
             raise TypeError("physics_snapshot must be a HexPhysicsSnapshot")
-        if not isinstance(body, BodyDefinition):
-            raise TypeError("body must be a BodyDefinition")
+        if not isinstance(body, PhysicsBodyDefinition):
+            raise TypeError("body must be a PhysicsBodyDefinition")
         if physics_snapshot.world_id != self._world_id:
             raise ValueError("physics snapshot belongs to a different world")
         if physics_snapshot.map_id != entity.position.map_id:
