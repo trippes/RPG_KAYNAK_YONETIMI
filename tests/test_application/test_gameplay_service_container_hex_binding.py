@@ -6,6 +6,8 @@ from application import (
     GameApplication,
     GameplayService,
     GameplayServiceError,
+    GameplayPlacement,
+    GameplayPlacementCatalog,
     ProductionFacilityRegistry,
     SessionBundle,
     SessionHolder,
@@ -153,4 +155,66 @@ def test_gameplay_service_releases_nested_container_to_hex_world():
     assert service.container_hex_binding.position("chest") == EntityPosition(
         "village", LocalHexPosition(1, 0),
     )
+
+def test_gameplay_service_registers_container_placement_catalog():
+    service, bundle = make_service()
+    catalog = GameplayPlacementCatalog((
+        GameplayPlacement(
+            "chest",
+            "container",
+            "village",
+            1,
+            0,
+            False,
+            True,
+        ),
+    ))
+
+    registered = service.register_gameplay_placements(catalog)
+
+    assert len(registered) == 1
+    assert registered[0].entity_id == "chest_entity"
+    assert service.container_hex_binding.position("chest") == EntityPosition(
+        "village", LocalHexPosition(1, 0),
+    )
+    assert bundle.hex_world_runtime.occupancy.get("chest_entity").blocks_movement is False
+    assert bundle.hex_world_runtime.occupancy.get("chest_entity").blocks_occupancy is True
+
+
+def test_gameplay_service_rolls_back_partial_placement_catalog_registration():
+    service, bundle = make_service()
+    catalog = GameplayPlacementCatalog((
+        GameplayPlacement(
+            "chest",
+            "container",
+            "village",
+            0,
+            0,
+            False,
+            True,
+        ),
+        GameplayPlacement(
+            "missing_container",
+            "container",
+            "village",
+            1,
+            0,
+            False,
+            True,
+        ),
+    ))
+
+    with pytest.raises(KeyError, match="missing_container"):
+        service.register_gameplay_placements(catalog)
+
+    assert bundle.hex_world_runtime.entities() == ()
+    assert bundle.hex_world_runtime.occupancy.get("chest_entity") is None
+
+
+def test_gameplay_service_rejects_placement_catalog_without_hex_runtime():
+    service, _bundle = make_service(initialize_runtime=False)
+    catalog = GameplayPlacementCatalog(())
+
+    with pytest.raises(GameplayServiceError, match="Hex runtime is required"):
+        service.register_gameplay_placements(catalog)
 
