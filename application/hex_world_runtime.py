@@ -161,6 +161,14 @@ class HexWorldRuntime:
     def entities(self) -> tuple[HexMovableEntity, ...]:
         return tuple(self.entity(key) for key in sorted(self._entities))
 
+    def remove_entity(self, entity_id: str) -> HexMovableEntity:
+        """Remove one spatial registration and its authoritative occupancy."""
+        previous = self.entity(entity_id)
+        self._occupancy.remove(entity_id)
+        del self._entities[entity_id]
+        self._patrol_indices.pop(entity_id, None)
+        return previous
+
     def set_active(self, entity_id: str, active: bool) -> HexMovableEntity:
         if not isinstance(active, bool):
             raise TypeError("active must be boolean.")
