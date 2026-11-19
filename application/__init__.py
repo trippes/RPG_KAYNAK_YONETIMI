@@ -140,6 +140,10 @@ __all__ += [
     "HexMovableEntity", "HexWorldRuntime", "HexMapTransitionService",
 ]
 
+from .npc_hex_binding import NPCSpatialBindingError, NPCSpatialBindingService
+
+__all__ += ["NPCSpatialBindingError", "NPCSpatialBindingService"]
+
 from .presentation_content_service import (
     ContentMigrationStatus,
     ContentValidationIssue,
