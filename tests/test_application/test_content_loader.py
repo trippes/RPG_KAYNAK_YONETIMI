@@ -224,6 +224,15 @@ class TestContentPackageLoader(unittest.TestCase):
         manifest["gameplay_placements"] = "gameplay_placements"
         manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
 
+        presentation_empty = root / "placements" / "empty.json"
+        presentation_payload = json.loads(
+            presentation_empty.read_text(encoding="utf-8")
+        )
+        presentation_payload["map_id"] = "village"
+        presentation_empty.write_text(
+            json.dumps(presentation_payload), encoding="utf-8"
+        )
+
         maps = root / "maps"
         maps.mkdir()
         (maps / "village.json").write_text(json.dumps({
