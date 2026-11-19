@@ -16,9 +16,14 @@ class RecordingActorBinding:
         return SimpleNamespace(success=True)
 
 
+class FakeRuntime:
+    def entity(self, _actor_id):
+        return object()
+
+
 class FakeService:
     def __init__(self):
-        self.hex_world_runtime = object()
+        self.hex_world_runtime = FakeRuntime()
         self.hex_actor_binding = RecordingActorBinding()
         self.player_actor_id = "hero"
 
