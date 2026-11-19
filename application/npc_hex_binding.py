@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from core.domain.physics import PhysicsBodyDefinition
 from core.domain.spatial import (
     EntityPosition,
     HexDirection,
@@ -11,7 +12,6 @@ from core.domain.spatial import (
     MovementResult,
 )
 from core.foundation import WorldId
-from hex_world_lab.physics import BodyDefinition
 from npc import NPC, NPCRegistry
 
 from .hex_actor_binding import ActorHexBindingService
@@ -106,7 +106,7 @@ class NPCSpatialBindingService:
         npc_id: str,
         target: LocalHexPosition,
         physics_snapshot: HexPhysicsSnapshot,
-        body: BodyDefinition,
+        body: PhysicsBodyDefinition,
     ) -> MovementResult:
         npc = self._require_npc(npc_id)
         if not npc.active:
@@ -123,7 +123,7 @@ class NPCSpatialBindingService:
         npc_id: str,
         direction: HexDirection,
         physics_snapshot: HexPhysicsSnapshot,
-        body: BodyDefinition,
+        body: PhysicsBodyDefinition,
     ) -> MovementResult:
         npc = self._require_npc(npc_id)
         if not npc.active:
