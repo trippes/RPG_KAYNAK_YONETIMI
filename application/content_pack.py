@@ -63,9 +63,6 @@ def _resolve_content_package_path(package_path: str | Path | None = None) -> Pat
 class StarterContentIds:
     world_id: str | None = None
     hero_id: str | None = None
-    village_id: str | None = None
-    forest_id: str | None = None
-    faction_id: str | None = None
 
 from core.errors import RPGError
 
@@ -652,26 +649,28 @@ def _register_opening_content(application, definition: dict, npc_definitions, ch
     service = GameplayService(application)
     service.register_character_factory(factory)
     service._starter_content_ids = ids
-    faction_data = definition["faction"]
-    service.register_faction(Faction(resolve_id("faction_id"), faction_data["name"]))
+    faction_data = definition.get("faction")
+    if faction_data is not None:
+        service.register_faction(Faction(resolve_id("faction_id"), faction_data["name"]))
     _register_npcs_for_phase(service, npc_definitions, "opening", resolve_id)
-    opening_dialogue_data = definition["dialogue"]
-    speaker_record = next(
-        (
-            record for record in npc_definitions
-            if record.get("dialogue_id") == opening_dialogue_data.get("id")
-        ),
-        None,
-    )
-    if speaker_record is None:
-        raise ContentDefinitionError(
-            f"No NPC references opening dialogue '{opening_dialogue_data.get('id')}'."
+    opening_dialogue_data = definition.get("dialogue")
+    if opening_dialogue_data is not None:
+        speaker_record = next(
+            (
+                record for record in npc_definitions
+                if record.get("dialogue_id") == opening_dialogue_data.get("id")
+            ),
+            None,
         )
-    dialogue = _build_dialogue_from_definition(
-        opening_dialogue_data,
-        speaker_record["id"],
-    )
-    service.register_dialogue(dialogue)
+        if speaker_record is None:
+            raise ContentDefinitionError(
+                f"No NPC references opening dialogue '{opening_dialogue_data.get('id')}'."
+            )
+        dialogue = _build_dialogue_from_definition(
+            opening_dialogue_data,
+            speaker_record["id"],
+        )
+        service.register_dialogue(dialogue)
     if map_definitions:
         world_map = build_world_map(dict(map_definitions), world.world_id)
         service.register_world_map(world_map)

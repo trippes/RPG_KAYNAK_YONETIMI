@@ -6,9 +6,9 @@ class OpeningScreen:
 
     INTRO_TEXT = (
         "Uzak diyarlardan geldin.\n\n"
-        "Uzun bir yolculuğun ardından nihayet küçük bir köyün girişine ulaştın.\n\n"
-        "Yolun iki yanında uzanan tepeler sislerin ardında kayboluyor.\n\n"
-        "Tahta surların önünde nöbet tutan bir muhafız seni fark ediyor ve sana doğru yaklaşıyor.\n\n"
+        "Uzun bir yolculuğun ardından henüz keşfedilmemiş toprakların eşiğindesin.\n\n"
+        "Önünde şekillenmeyi bekleyen geniş bir dünya uzanıyor.\n\n"
+        "Bu yolculuğun nasıl başlayacağına ve nasıl bir kahraman olacağına sen karar vereceksin.\n\n"
         "Yeni bir yolculuk başlamak üzere..."
     )
     ARTWORK_SIZE = (1365, 768)
@@ -27,7 +27,7 @@ class OpeningScreen:
                 self.scroll_offset = 0
                 self.finished = True
             else:
-                return "dialogue"
+                return "character_creation"
 
         if state.pressed("back") or state.pressed("world"):
             return None

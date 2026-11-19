@@ -1,91 +1,21 @@
 {
   "schema_version": 1,
   "ids": {
-    "world_id": "demo_valley",
-    "hero_id": "hero",
-    "village_id": "village",
-    "forest_id": "forest",
-    "faction_id": "wardens"
+    "world_id": "eldoria_world",
+    "hero_id": "hero"
   },
   "world": {
-    "name": "Başlangıç Vadisi",
-    "width": 24,
-    "height": 16
+    "name": "Eldoria",
+    "width": 1,
+    "height": 1
   },
   "character": {
-    "name": "Arin",
+    "name": "",
     "race": {
       "id": "human"
     },
     "class": {
       "id": "gatherer"
     }
-  },
-  "faction": {
-    "name": "Vadi Muhafızları"
-  },
-  "dialogue": {
-    "id": "warden_intro",
-    "start_node": "start",
-    "nodes": [
-      {
-        "id": "start",
-        "text": "Bir dakika! Seni bu köyde daha önce görmedim. Kimsin sen?",
-        "choices": []
-      }
-    ]
-  },
-  "markets": [
-    {
-      "market_id": "village_inn",
-      "location_id": "village_id",
-      "npc_id": "innkeeper_mira",
-      "merchant_id": "merchant_inn",
-      "inventory_id": "market_inn_inventory",
-      "restock_interval": 2,
-      "visible_products": 2,
-      "position": [
-        20,
-        23
-      ],
-      "dialogue": {
-        "id": "innkeeper_dialogue",
-        "start_node": "greeting",
-        "nodes": [
-          {
-            "id": "greeting",
-            "text": "Yol yorgunluğunu biraz olsun hafifletecek yiyecek ve içeceklerim var. Buyur, göz at.",
-            "choices": [
-              {
-                "id": "open_inn_market",
-                "text": "Han ürünlerini görmek istiyorum.",
-                "action": "open_market"
-              }
-            ]
-          }
-        ]
-      },
-      "catalog": [
-        {
-          "resource_type": "bread",
-          "base_price": 5,
-          "min_quantity": 5,
-          "max_quantity": 14
-        },
-        {
-          "resource_type": "water",
-          "base_price": 2,
-          "min_quantity": 6,
-          "max_quantity": 16
-        },
-        {
-          "resource_type": "wood",
-          "base_price": 5,
-          "min_quantity": 1,
-          "max_quantity": 3
-        }
-      ]
-    }
-  ],
-  "trade_partners": []
+  }
 }
