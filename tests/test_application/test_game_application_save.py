@@ -178,7 +178,7 @@ class TestGameApplicationSave(unittest.TestCase):
             data["actors"]["actors"][0]["position"] = {"x": 3, "y": 4}
             path.write_text(json.dumps(data), encoding="utf-8")
 
-            with self.assertRaisesRegex(ValueError, "legacy square-map actor positions"):
+            with self.assertRaisesRegex(ValueError, "legacy square-map positions or placements"):
                 application.load(path)
 
     def test_load_rejects_legacy_npc_square_map_positions(self):
