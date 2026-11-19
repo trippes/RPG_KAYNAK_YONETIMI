@@ -6,6 +6,12 @@ from .hex_map_geometry import (
     HexMapCollisionGeometry,
 )
 from .contacts import Contact, ContactManifold
+from .continuous_solver import (
+    ContinuousCollisionResolution,
+    SweepHit,
+    resolve_continuous_motion,
+    sweep_circle_polygon,
+)
 from .kinematic_solver import CollisionResolution, resolve_kinematic_motion
 from .narrowphase import collide_shapes
 from .obstacle import StaticObstacle
@@ -20,6 +26,7 @@ __all__ = [
     "CollisionResolution",
     "Contact",
     "ContactManifold",
+    "ContinuousCollisionResolution",
     "ColliderShape",
     "ConvexPolygonShape",
     "HexBoundaryEdge",
@@ -27,8 +34,11 @@ __all__ = [
     "PhysicsBodyDefinition",
     "StaticObstacle",
     "StaticObstacleIndex",
+    "SweepHit",
     "Vector2",
     "collide_shapes",
     "obstacle_bounds",
     "resolve_kinematic_motion",
+    "resolve_continuous_motion",
+    "sweep_circle_polygon",
 ]
