@@ -2,7 +2,7 @@ import unittest
 from application.hex_map_definition import parse_hex_map
 from application.hex_occupancy import HexOccupant, HexOccupancyRegistry
 from application.hex_pathfinding import HexPathfinder
-from application.hex_world_runtime import HexWorldRuntime
+from application.hex_world_runtime import HexWorldRuntime, HexWorldRuntimeOwner
 from core.domain.spatial import EntityPosition, HexDirection, LocalHexPosition, MovementFailureReason, MovementProfile, WorldHexPosition
 from application.world_map_definition import WorldMapDefinition, WorldMapPlacement
 
@@ -294,6 +294,33 @@ class TestHexWorldRuntime(unittest.TestCase):
         result = runtime.transition("player", "open")
         self.assertTrue(result.success)
         self.assertEqual(result.position, EntityPosition("b", LocalHexPosition(1, 0)))
+
+
+class TestHexWorldRuntimeOwner(unittest.TestCase):
+    def test_discard_if_empty_releases_only_the_owned_runtime(self):
+        owner = HexWorldRuntimeOwner()
+        runtime = owner.get_or_create(
+            lambda: HexWorldRuntime({"forest": make_map("forest")})
+        )
+
+        self.assertTrue(owner.discard_if_empty(runtime))
+        self.assertIsNone(owner.runtime)
+
+    def test_discard_if_empty_rejects_runtime_with_spatial_entities(self):
+        owner = HexWorldRuntimeOwner()
+        runtime = owner.get_or_create(
+            lambda: HexWorldRuntime({"forest": make_map("forest")})
+        )
+        runtime.register_entity(
+            "hero",
+            "player",
+            EntityPosition("forest", LocalHexPosition(0, 0)),
+        )
+
+        with self.assertRaisesRegex(RuntimeError, "still has entities"):
+            owner.discard_if_empty(runtime)
+        self.assertIs(owner.runtime, runtime)
+
 
 
 if __name__ == "__main__":
