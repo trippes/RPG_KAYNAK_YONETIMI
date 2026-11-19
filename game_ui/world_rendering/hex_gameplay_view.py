@@ -43,6 +43,27 @@ class HexGameplayView:
         self._move_goal = None
         self._move_map_id = None
         self._movement_accumulator = 0.0
+        self.context_menu_npc_id = None
+        self.context_menu_position = None
+        self.selected_npc_id = None
+
+    def _npc_at_screen_position(self, runtime, position, map_id):
+        if position is None or self._panel is None or not self._panel.collidepoint(position):
+            return None
+        entities = getattr(runtime, "entities", None)
+        if not callable(entities):
+            return None
+        cell = LocalHexPosition.from_hex_coord(
+            self.transform.screen_to_axial(*position)
+        )
+        for entity in entities():
+            if (
+                entity.kind == "npc"
+                and entity.position.map_id == map_id
+                and entity.position.cell == cell
+            ):
+                return entity.entity_id
+        return None
 
     def update(self, elapsed_seconds: float = 0.0) -> None:
         self.elapsed_seconds = max(0.0, float(elapsed_seconds))
@@ -97,6 +118,13 @@ class HexGameplayView:
 
         if state.mouse_right_clicked:
             self._clear_move_goal()
+            player = runtime.entity(self.service.player_actor_id)
+            npc_id = self._npc_at_screen_position(
+                runtime, state.mouse_pos, player.position.map_id,
+            )
+            self.context_menu_npc_id = npc_id
+            self.context_menu_position = state.mouse_pos if npc_id is not None else None
+            return
 
         manual_move = False
         for action, direction in self.DIRECTIONS:
@@ -126,12 +154,19 @@ class HexGameplayView:
                     self.service.hex_actor_binding.move(actor_id, direction)
         if manual_move:
             self._clear_move_goal()
-        elif (
-            state.mouse_clicked
-            and state.mouse_pos is not None
-            and self._panel is not None
-            and self._panel.collidepoint(state.mouse_pos)
-        ):
+        elif state.mouse_clicked and state.mouse_pos is not None:
+            player = runtime.entity(self.service.player_actor_id)
+            npc_id = self._npc_at_screen_position(
+                runtime, state.mouse_pos, player.position.map_id,
+            )
+            self.context_menu_npc_id = None
+            self.context_menu_position = None
+            if npc_id is not None:
+                self._clear_move_goal()
+                self.selected_npc_id = npc_id
+                return "dialogue"
+            if self._panel is None or not self._panel.collidepoint(state.mouse_pos):
+                return None
             actor_id = self.service.player_actor_id
             entity = runtime.entity(actor_id)
             map_definition = runtime.map_definition(entity.position.map_id)
@@ -281,6 +316,25 @@ class HexGameplayView:
                 panel.x + 16,
                 panel.bottom - 28,
             )
+            if self.context_menu_npc_id is not None and self.context_menu_position is not None:
+                menu_width, menu_height = 220, 76
+                menu_x = min(
+                    max(panel.x, self.context_menu_position[0]),
+                    max(panel.x, panel.right - menu_width),
+                )
+                menu_y = min(
+                    max(panel.y, self.context_menu_position[1]),
+                    max(panel.y, panel.bottom - menu_height),
+                )
+                menu_rect = renderer.pg.Rect(menu_x, menu_y, menu_width, menu_height)
+                renderer.panel(menu_rect, (23, 29, 43), (145, 118, 70))
+                renderer.text("Eylemler", menu_x + 12, menu_y + 9)
+                renderer.text(
+                    self.context_menu_npc_id,
+                    menu_x + 12,
+                    menu_y + 39,
+                    max_width=menu_width - 24,
+                )
             return True
         finally:
             if callable(set_clip):
