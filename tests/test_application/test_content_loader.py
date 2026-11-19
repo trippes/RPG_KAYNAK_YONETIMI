@@ -4,6 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from core.domain.spatial import WorldHexPosition
 from application.content_loader import (
     ContentPackageError,
     _load_hex_maps,
@@ -21,6 +22,9 @@ class TestContentPackageLoader(unittest.TestCase):
 
         self.assertEqual(package.package_id, "demo_eldoria")
         self.assertEqual(package.package_version, "0.6.0")
+        self.assertEqual(package.asset_catalog_path.name, "asset_catalog.json")
+        self.assertEqual(package.map_placements_path.name, "placements")
+        self.assertEqual(package.presentation_assets_path.name, "presentation_assets.json")
         self.assertIn("starter", package.files)
         self.assertIn("npcs", package.files)
         self.assertIn("quests", package.files)
@@ -41,6 +45,102 @@ class TestContentPackageLoader(unittest.TestCase):
         target = Path(parent) / "demo_eldoria"
         shutil.copytree(DEMO_PACKAGE, target)
         return target
+
+    def test_package_exposes_one_prevalidated_presentation_snapshot(self):
+        package = load_content_package(DEMO_PACKAGE)
+
+        self.assertIsNotNone(package.presentation_catalog)
+        self.assertIsNotNone(package.scene_placements)
+        self.assertEqual(len(package.presentation_catalog.assets), 6)
+        self.assertEqual(len(package.scene_placements.placements), 14)
+        validation_issues = package.presentation_catalog.validate_assets()
+        self.assertEqual(
+            tuple((issue.asset_id, issue.code) for issue in validation_issues),
+            (
+                ("prop.rock.large", "missing_file"),
+                ("flora.shrub.green", "missing_file"),
+                ("flora.plant.wildflower", "missing_file"),
+            ),
+        )
+
+    def test_package_rejects_duplicate_asset_ids_before_exposing_snapshot(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = self._copy_demo_package(directory)
+            catalog_path = root / "asset_catalog.json"
+            payload = json.loads(catalog_path.read_text(encoding="utf-8"))
+            payload["assets"][1]["asset_id"] = payload["assets"][0]["asset_id"]
+            catalog_path.write_text(json.dumps(payload), encoding="utf-8")
+            invalid_bytes = catalog_path.read_bytes()
+
+            with self.assertRaisesRegex(ContentPackageError, "Duplicate asset id"):
+                load_content_package(root)
+
+            self.assertEqual(catalog_path.read_bytes(), invalid_bytes)
+
+    def test_package_rejects_unknown_placement_map_reference(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = self._copy_demo_package(directory)
+            placement_path = root / "placements" / "hex_forest_demo.json"
+            payload = json.loads(placement_path.read_text(encoding="utf-8"))
+            payload["map_id"] = "unknown_hex_map"
+            placement_path.write_text(json.dumps(payload), encoding="utf-8")
+
+            with self.assertRaisesRegex(ContentPackageError, "unknown map"):
+                load_content_package(root)
+
+    def test_package_rejects_placement_coordinates_outside_map_cells(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = self._copy_demo_package(directory)
+            placement_path = root / "placements" / "hex_forest_demo.json"
+            payload = json.loads(placement_path.read_text(encoding="utf-8"))
+            payload["objects"][0]["q"] = 9999
+            payload["objects"][0]["r"] = 9999
+            placement_path.write_text(json.dumps(payload), encoding="utf-8")
+
+            with self.assertRaisesRegex(ContentPackageError, "outside map"):
+                load_content_package(root)
+
+    def test_missing_png_is_reported_but_keeps_existing_fallback_path(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = self._copy_demo_package(directory)
+            catalog_path = root / "asset_catalog.json"
+            payload = json.loads(catalog_path.read_text(encoding="utf-8"))
+            payload["assets"][0]["path"] = "assets/missing_tree.png"
+            catalog_path.write_text(json.dumps(payload), encoding="utf-8")
+
+            package = load_content_package(root)
+
+            self.assertEqual(
+                package.presentation_catalog.validate_assets()[0].code,
+                "missing_file",
+            )
+            self.assertEqual(len(package.scene_placements.placements), 14)
+
+    def test_boolean_asset_schema_version_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = self._copy_demo_package(directory)
+            catalog_path = root / "asset_catalog.json"
+            payload = json.loads(catalog_path.read_text(encoding="utf-8"))
+            payload["schema_version"] = True
+            catalog_path.write_text(json.dumps(payload), encoding="utf-8")
+
+            with self.assertRaisesRegex(ContentPackageError, "Unsupported"):
+                load_content_package(root)
+
+    def test_legacy_combined_catalog_is_prevalidated_when_split_sources_are_absent(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = self._copy_demo_package(directory)
+            manifest_path = root / "manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest.pop("asset_catalog")
+            manifest.pop("map_placements")
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+            package = load_content_package(root)
+
+            self.assertIsNotNone(package.presentation_catalog)
+            self.assertIsNone(package.scene_placements)
+            self.assertEqual(len(package.presentation_catalog.objects), 14)
 
     def test_hex_transition_ids_are_unique_across_local_maps(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -126,6 +226,18 @@ class TestContentPackageLoader(unittest.TestCase):
 
             with self.assertRaisesRegex(ContentPackageError, "could not be loaded"):
                 load_content_package(root)
+
+    def test_demo_package_discovers_all_map_json_files(self):
+        package = load_content_package(DEMO_PACKAGE)
+
+        self.assertEqual(
+            set(package.map_definitions),
+            {
+                "village", "forest", "south_forest", "west_forest",
+                "east_forest", "north_mine", "south_mine", "west_mine",
+                "east_mine",
+            },
+        )
 
     def test_package_rejects_missing_declared_maps_directory(self):
         with tempfile.TemporaryDirectory() as directory:
