@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from core.application.ownership import WorldMembershipService
 from core.domain.spatial import EntityPosition, MovementProfile
 from core.foundation import WorldId
@@ -95,7 +97,7 @@ class ContainerHexBindingService:
         instance = self._require_container(container_id)
         return self._runtime.remove_entity(instance.entity_id)
 
-    def carry(self, container_id: str, inventory_id: str, *, validate=None) -> None:
+    def carry(self, container_id: str, inventory_id: str, *, validate: Callable[[], None] | None = None) -> None:
         """Atomically remove world placement before assigning inventory custody."""
         instance = self._require_container(container_id)
         if self._containers.parent_of(container_id) is not None:
@@ -113,7 +115,7 @@ class ContainerHexBindingService:
             self._restore_spatial(snapshot)
             raise
 
-    def contain(self, parent_id: str, child_id: str, *, validate=None) -> ContainerInstance:
+    def contain(self, parent_id: str, child_id: str, *, validate: Callable[[], None] | None = None) -> ContainerInstance:
         """Atomically remove a child's world placement before nesting it."""
         child = self._require_container(child_id)
         if self._containers.parent_of(child_id) is not None:
@@ -140,7 +142,7 @@ class ContainerHexBindingService:
         *,
         blocks_movement: bool,
         blocks_occupancy: bool,
-        validate=None,
+        validate: Callable[[], None] | None = None,
     ) -> HexMovableEntity:
         """Atomically release inventory custody and place the container in the world."""
         instance = self._require_container(container_id)
@@ -150,6 +152,7 @@ class ContainerHexBindingService:
             )
         self._membership_world_required(instance.entity_id)
         self._containers.clear_inventory_custody(container_id, inventory_id)
+        registered = False
         try:
             entity = self.register_spatial(
                 container_id,
@@ -157,14 +160,13 @@ class ContainerHexBindingService:
                 blocks_movement=blocks_movement,
                 blocks_occupancy=blocks_occupancy,
             )
+            registered = True
             if validate is not None:
                 validate()
             return entity
         except Exception:
-            try:
+            if registered:
                 self._runtime.remove_entity(instance.entity_id)
-            except KeyError:
-                pass
             self._containers.set_inventory_custody(container_id, inventory_id)
             raise
 
@@ -184,6 +186,7 @@ class ContainerHexBindingService:
             raise ContainerHexBindingError("Container is not nested.")
         self._membership_world_required(child.entity_id)
         self._containers.release(child_id)
+        registered = False
         try:
             entity = self.register_spatial(
                 child_id,
@@ -191,14 +194,13 @@ class ContainerHexBindingService:
                 blocks_movement=blocks_movement,
                 blocks_occupancy=blocks_occupancy,
             )
+            registered = True
             if validate is not None:
                 validate()
             return entity
         except Exception:
-            try:
+            if registered:
                 self._runtime.remove_entity(child.entity_id)
-            except KeyError:
-                pass
             self._containers.contain(parent.container_id, child_id)
             raise
 
@@ -210,7 +212,9 @@ class ContainerHexBindingService:
                 f"world '{self._world_id.value}'."
             )
 
-    def _detach_spatial(self, entity_id: str):
+    def _detach_spatial(
+        self, entity_id: str,
+    ) -> tuple[HexMovableEntity, bool, bool] | None:
         occupant = self._runtime.occupancy.get(entity_id)
         if occupant is None:
             try:
@@ -227,7 +231,9 @@ class ContainerHexBindingService:
             occupant.blocks_occupancy,
         )
 
-    def _restore_spatial(self, snapshot) -> None:
+    def _restore_spatial(
+        self, snapshot: tuple[HexMovableEntity, bool, bool] | None,
+    ) -> None:
         if snapshot is None:
             return
         entity, blocks_movement, blocks_occupancy = snapshot
