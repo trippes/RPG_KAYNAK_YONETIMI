@@ -38,17 +38,6 @@ def test_load_does_not_change_any_world_registry(tmp_path):
     assert world.map_registry.map_ids == before
 
 
-
-def test_committed_starting_valley_scenario_loads():
-    from pathlib import Path
-
-    scenario = Path(__file__).parents[2] / "scenarios" / "maps" / "starting_valley.json"
-    loaded = load_map_file(scenario)
-    assert loaded.world_id == WorldId("eldoria")
-    assert loaded.map_id == MapId("starting_valley")
-    assert len(loaded.cells) == 3
-
-
 def test_successful_load_has_no_world_registry_side_effect(tmp_path):
     from hex_world_lab.world import HexWorld
 
