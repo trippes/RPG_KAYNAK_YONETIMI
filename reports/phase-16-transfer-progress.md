@@ -275,3 +275,29 @@ This clock is application-owned movement scheduling infrastructure only. It does
 No movement speed/balance value, save schema, collider size, or gameplay behavior has been added. The next slice can consume the returned step count to orchestrate the native integrator and continuous collision solver through the existing actor registry and `HexWorldRuntime`.
 
 CI validation for this new slice is pending the newly triggered workflow runs.
+
+
+## 2026-11-19 — Native continuous player movement orchestration (next slice)
+
+Added the first application-layer composition of the Eldoria-native movement and collision contracts:
+
+- `HexPhysicsSnapshot.resolve_motion(...)` now resolves arbitrary continuous circle-body displacement against its own map-scoped static obstacle index. This keeps broadphase ownership inside the existing immutable physics snapshot.
+- `application/continuous_player_movement.py` adds `ContinuousPlayerMovementController`. It validates the existing actor binding and map/world scope, reads the current continuous position from `HexWorldRuntime`, integrates one caller-supplied intent/delta, resolves static collision, then commits the final position through `HexWorldRuntime.set_continuous_position(...)`.
+- The controller does not create an actor registry, world runtime, clock, input device, or persistence store. `WorldActorRegistry` remains the identity owner and `HexWorldRuntime` remains the continuous position/occupancy owner.
+- Failed actor eligibility, collision resolution, or occupancy/map validation does not overwrite the canonical position. Successful cell-boundary crossings update the existing occupancy and spatial index through the runtime API.
+- `tests/test_application/test_continuous_player_movement.py` covers continuous position updates, cell/occupancy synchronization, static obstacle response, occupied destination rejection, inactive actors, idle intent, and map-scope validation.
+- Core Quality Ruff scope now includes the new controller and tests.
+
+### Important integration boundary
+
+This is an application orchestration component, not yet the live `GameWindow` movement path. The current game input adapter is event-edge based and does not yet provide the laboratory's held-key snapshot semantics, Alt stealth toggle, Shift run hold, or focus-loss reset. In addition, no authoritative production player `max_speed` setting has been identified in Eldoria's existing content/configuration. Test fixtures using a speed value are test-only and are not a gameplay balance decision.
+
+Therefore do not wire an invented speed or infer one from a unit-test fixture. The next slice must migrate the device-independent keyboard intent adapter into Eldoria's input boundary, source or explicitly define the production movement configuration, and only then connect the fixed-step accumulator to this controller in the persistent gameplay loop. Preserve click-to-move, map transitions, dialogue selection, and pause behavior while doing so.
+
+### Validation
+
+CI was triggered by these commits; passing status is not claimed until the corresponding GitHub Actions runs complete. No local test execution is claimed in this GitHub-only implementation pass.
+
+### Safety
+
+All changes target `experiment/map-cleanup`. No changes were made to `main`, `demo_eldoria`, or `experiment/hex-world-laboratory`. The laboratory package, tests, release-gate imports, and package discovery remain intact.
