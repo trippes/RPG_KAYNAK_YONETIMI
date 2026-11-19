@@ -5,19 +5,12 @@ from dataclasses import dataclass
 from enum import Enum
 import math
 
-from application.hex_map_definition import HexMapDefinition
 from core.domain.spatial import LocalHexPosition, WorldPoint
 from .obstacle import StaticObstacle
 from .shapes import ConvexPolygonShape
 
 
 _BOUNDARY_WALL_THICKNESS = 1e-4
-_NEIGHBOR_DELTAS = (
-    (1, 0), (1, -1), (0, -1),
-    (-1, 0), (-1, 1), (0, 1),
-)
-
-
 class BoundaryPolicy(Enum):
     """Whether the perimeter of the finite map blocks physical movement."""
     BLOCKED = "blocked"
