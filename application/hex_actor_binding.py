@@ -81,6 +81,16 @@ class ActorHexBindingService:
     def runtime(self) -> HexWorldRuntime:
         return self._runtime
 
+    @property
+    def physics_snapshot(self) -> HexPhysicsSnapshot | None:
+        """Return the map-scoped static physics snapshot for this binding."""
+        return self._physics_snapshot
+
+    @property
+    def player_body(self) -> PhysicsBodyDefinition | None:
+        """Return the approved player collision body, when physics is enabled."""
+        return self._player_body
+
     def actor(self, actor_id: str) -> ActorView:
         return self._require_actor(actor_id)
 
