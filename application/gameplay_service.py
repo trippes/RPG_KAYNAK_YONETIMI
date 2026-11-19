@@ -34,6 +34,7 @@ from hex_world_lab.movement.vector import Vector2
 from .container_hex_binding import ContainerHexBindingService
 from .gameplay_placement_catalog import GameplayPlacementCatalog
 from .hex_world_runtime import HexMovableEntity
+from .hex_interaction import HexInteractionService
 from .npc_hex_binding import NPCSpatialBindingService
 from .resource_node_hex_binding import ResourceNodeHexBindingService
 from .market_hex_anchor import MarketHexAnchorService
@@ -204,6 +205,13 @@ class GameplayService:
     def hex_world_runtime(self):
         """Return the active session's hex runtime, when it has been initialized."""
         return self._current_bundle().hex_world_runtime
+
+    def npc_at_world_point(self, map_id: str, point):
+        """Resolve an NPC target through the application interaction service."""
+        runtime = self.hex_world_runtime
+        if runtime is None:
+            return None
+        return HexInteractionService(runtime).npc_at_world_point(map_id, point)
 
     @property
     def hex_actor_binding(self) -> ActorHexBindingService:
