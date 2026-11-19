@@ -10,8 +10,9 @@ from core.domain.spatial import (
     MovementProfile,
     MovementResult,
 )
-from npc import NPCRegistry
+from core.foundation import WorldId
 from hex_world_lab.physics import BodyDefinition
+from npc import NPCRegistry
 
 from .hex_actor_binding import ActorHexBindingService
 from .hex_physics_bridge import HexPhysicsSnapshot
@@ -46,7 +47,7 @@ class NPCSpatialBindingService:
         self._actor_binding = actor_binding
 
     @property
-    def world_id(self):
+    def world_id(self) -> WorldId:
         return self._actor_binding.world_id
 
     def npc(self, npc_id: str):
