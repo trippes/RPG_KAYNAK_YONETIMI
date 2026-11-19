@@ -92,7 +92,7 @@ class PygameMovementInput:
         return MovementIntent(
             Vector2(
                 float(int(right) - int(left)),
-                float(int(up) - int(down)),
+                float(int(down) - int(up)),
             ),
             mode,
         )
