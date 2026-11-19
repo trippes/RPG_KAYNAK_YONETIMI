@@ -107,7 +107,12 @@ class HexWorldSnapshot:
             occupant.entity_id: occupant
             for occupant in runtime.occupancy.snapshot()
         }
-        runtime_entities = runtime.entities()
+        try:
+            runtime_entities = runtime.entities()
+        except RuntimeError as error:
+            raise HexWorldPersistenceError(
+                "Runtime entity and occupancy registries are inconsistent."
+            ) from error
         if set(occupants) != {entity.entity_id for entity in runtime_entities}:
             raise HexWorldPersistenceError(
                 "Runtime entity and occupancy registries are inconsistent."
