@@ -1,5 +1,8 @@
 # Harita Sistemi Temizliği — Ayrıntılı Teknik Plan
 
+> **Belge durumu — 2026-11-19:** Bu teknik plan tarihsel başlangıç tasarımını ve ara kararları korur; güncel uygulama talimatı değildir. Mevcut kare harita easter egg'ini koruma, Hex entegrasyonunu önce yapma ve eski NPC/resource kimliklerini taşıma yönündeki eski hükümler geçersizdir. Bağlayıcı sıra: eski kare + eski yedi haritalı Hex demo/portal ve ilişkili demo içeriklerini tamamen temizle → otomatik teknik kabul → laboratuvar Hex mimarisini ayrı entegrasyon olarak getir → yeni gameplay içeriklerini sıfırdan oluştur. Son gerçek durum [57 numaralı kaldırma envanterinde](57-legacy-map-system-removal-inventory.md) ve [58 numaralı bağımlılık grafında](58-legacy-map-runtime-dependency-graph.md) kayıtlıdır.
+
+
 | Alan | Değer |
 |---|---|
 | Çalışma dalı | `experiment/map-cleanup` |
@@ -341,7 +344,7 @@ Bu uygulama durumu, önceki 10. bölümdeki “Hex entegrasyonunu kare harita te
 
 ### 12.3 Doğrulama
 
-Cleanup HEAD 3790463394b1f47c81655169554e30202de66724; run [#44492476381](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44492476381): Linux ve Windows başarılı; 1.341 test + 235 subtest; Ruff, compileall, wheel build, isolated install ve release verification başarılı.
+Önceki cleanup kabul çalışması (tarihsel kanıt; güncel doğrulama için [cleanup dalının GitHub Actions geçmişi](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions) esas alınır): Linux ve Windows başarılı; 1.341 test + 235 subtest; Ruff, compileall, wheel build, isolated install ve release verification başarılı.
 
 ### 12.4 Henüz yapılmayan iş
 
