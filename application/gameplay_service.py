@@ -1461,7 +1461,8 @@ class GameplayService:
             if profile is None:
                 raise KeyError(f"Market not found: {market_id}")
             self._require_actor_in_active_world(bundle, self.player_actor_id)
-            if self._require_legacy_actor_location(bundle, self.player_actor_id) != profile.location_id:
+            spatial = self.legacy_actor_spatial_state(self.player_actor_id)
+            if spatial is not None and spatial.location_id != profile.location_id:
                 raise GameplayServiceError(
                     "Player must be at the market's registered location."
                 )
