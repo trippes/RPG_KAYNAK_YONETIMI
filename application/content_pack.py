@@ -14,7 +14,13 @@ from character import Ability, Attribute, CharacterClass, CharacterFactory, Race
 from npc import Faction, NPC
 from economy import Currency, Money, MarketProfile, MarketCatalogEntry
 from quests import Dialogue, DialogueChoice, DialogueNode, Objective, ObjectiveType, Quest, Reward
-from resources import Inventory, ResourceType, ResourceUnit
+from resources import (
+    Inventory,
+    Quantity,
+    ResourceType,
+    ResourceUnit,
+    WorldResourceNode,
+)
 
 
 CONTENT_SCHEMA_VERSION = 1
@@ -632,6 +638,45 @@ def populate_gameplay_resources(service, definition_path=None, resource_definiti
     package = load_content_package(_resolve_content_package_path(active_package_path))
     _register_quest_content(service, load_quest_definitions(package_path=active_package_path))
     bundle = service.application.holder.current
+    for record in load_resource_definitions(
+        resource_definitions_path,
+        package_path=active_package_path,
+    ):
+        existing_node = bundle.resource_nodes.get(record["id"])
+        if existing_node is not None:
+            if existing_node.world_id != world.world_id:
+                raise ContentDefinitionError(
+                    f"Resource node '{record['id']}' is already registered in another world."
+                )
+            expected = (
+                ResourceType(record["resource_type"]),
+                Quantity(record["capacity"], ResourceUnit(record["unit"])),
+                Quantity(record["regeneration_rate"], ResourceUnit(record["unit"])),
+                record["gathering_duration_ticks"],
+            )
+            actual = (
+                existing_node.resource_type,
+                existing_node.capacity,
+                existing_node.regeneration_rate,
+                existing_node.gathering_duration_ticks.value,
+            )
+            if actual != expected:
+                raise ContentDefinitionError(
+                    f"Existing resource node '{record['id']}' conflicts with package configuration."
+                )
+            continue
+
+        unit = ResourceUnit(record["unit"])
+        bundle.resource_nodes.add(WorldResourceNode(
+            record["id"],
+            world.world_id,
+            ResourceType(record["resource_type"]),
+            Quantity(record["initial_quantity"], unit),
+            Quantity(record["capacity"], unit),
+            Quantity(record["regeneration_rate"], unit),
+            bundle.simulation.current_tick,
+            record["gathering_duration_ticks"],
+        ))
     inventories = dict(bundle.inventories)
     inventories.setdefault(player_rules["inventory_id"], Inventory())
     object.__setattr__(bundle, "inventories", MappingProxyType(inventories))
