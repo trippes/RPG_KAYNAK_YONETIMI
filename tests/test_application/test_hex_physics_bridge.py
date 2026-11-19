@@ -10,6 +10,7 @@ from application.hex_world_geometry_bridge import local_position_to_world_point,
 from application.hex_world_runtime import HexWorldRuntime
 from core.domain.spatial import (
     EntityPosition,
+    HexDirection,
     LocalHexPosition,
     MovementFailureReason,
 )
@@ -103,6 +104,7 @@ def test_physics_snapshot_rejects_a_layout_with_different_map_identity():
         from hex_world_lab.physics import HexMapCollisionGeometry
 
         HexPhysicsSnapshot(
+            WorldId("eldoria"),
             make_map("corridor"),
             make_lab_layout(32.0),
             HexMapCollisionGeometry(
@@ -209,6 +211,8 @@ def test_actor_binding_checks_physics_before_committing_hex_occupancy():
     assert not result.success
     assert result.reason is MovementFailureReason.PHYSICAL_COLLISION
     assert runtime.entity("hero").position.cell == LocalHexPosition(0, 0)
+    assert runtime.occupancy.get("hero").position.cell == LocalHexPosition(0, 0)
+    assert actors.get("hero").actor_id == "hero"
 
 
 def test_clear_physics_step_commits_through_the_existing_hex_runtime():
@@ -269,3 +273,65 @@ def test_physics_snapshot_from_another_map_is_rejected_before_move():
             make_body(),
         )
     assert runtime.entity("hero").position.cell == LocalHexPosition(0, 0)
+
+
+
+def test_physics_snapshot_world_scope_is_checked_before_move():
+    map_definition = make_map(valid_cells=((0, 0), (1, 0)))
+    foreign_snapshot = build_hex_physics_snapshot(
+        WorldId("another-world"),
+        map_definition,
+        make_lab_layout(32.0),
+    )
+    actors = WorldActorRegistry()
+    actors.add(WorldActor("hero", "eldoria", "player"))
+    runtime = HexWorldRuntime(
+        {"corridor": map_definition},
+        world_id=WorldId("eldoria"),
+    )
+    binding = ActorHexBindingService(actors, runtime, WorldId("eldoria"))
+    binding.register_spatial(
+        "hero",
+        "player",
+        EntityPosition("corridor", LocalHexPosition(0, 0)),
+    )
+
+    with pytest.raises(ValueError, match="different world"):
+        binding.move_to_with_physics(
+            "hero",
+            LocalHexPosition(1, 0),
+            foreign_snapshot,
+            make_body(),
+        )
+    assert runtime.entity("hero").position.cell == LocalHexPosition(0, 0)
+
+
+def test_directional_physics_move_uses_the_same_preflight_and_commit_path():
+    map_definition = make_map(valid_cells=((0, 0), (1, 0)))
+    snapshot = build_hex_physics_snapshot(
+        WorldId("eldoria"),
+        map_definition,
+        make_lab_layout(32.0),
+    )
+    actors = WorldActorRegistry()
+    actors.add(WorldActor("hero", "eldoria", "player"))
+    runtime = HexWorldRuntime(
+        {"corridor": map_definition},
+        world_id=WorldId("eldoria"),
+    )
+    binding = ActorHexBindingService(actors, runtime, WorldId("eldoria"))
+    binding.register_spatial(
+        "hero",
+        "player",
+        EntityPosition("corridor", LocalHexPosition(0, 0)),
+    )
+
+    result = binding.move_with_physics(
+        "hero",
+        HexDirection.EAST,
+        snapshot,
+        make_body(),
+    )
+
+    assert result.success
+    assert runtime.entity("hero").position.cell == LocalHexPosition(1, 0)
