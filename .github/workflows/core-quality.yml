@@ -38,6 +38,7 @@ jobs:
           application/hex_world_initializer.py
           application/__init__.py
           application/gameplay_service.py
+          application/gameplay_step_clock.py
           application/actor_system.py
           application/actor_persistence.py
           application/game_application.py
@@ -47,6 +48,7 @@ jobs:
           game_ui/world_rendering/__init__.py
           game_ui/world_rendering/hex_gameplay_view.py
           tests/test_application/test_session_bundle.py
+          tests/test_application/test_gameplay_step_clock.py
           tests/test_application/test_actor_system.py
           tests/test_application/test_hex_world_runtime.py
           tests/test_application/test_hex_actor_binding.py
