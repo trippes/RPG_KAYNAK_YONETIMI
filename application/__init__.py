@@ -146,6 +146,13 @@ from .resource_node_hex_binding import (
     ResourceNodeHexBindingService,
 )
 from .market_hex_anchor import MarketHexAnchorError, MarketHexAnchorService
+from .hex_world_persistence import (
+    HEX_WORLD_SCHEMA,
+    HEX_WORLD_SCHEMA_VERSION,
+    HexWorldEntityRecord,
+    HexWorldPersistenceError,
+    HexWorldSnapshot,
+)
 
 __all__ += [
     "NPCSpatialBindingError",
@@ -154,6 +161,11 @@ __all__ += [
     "ResourceNodeHexBindingService",
     "MarketHexAnchorError",
     "MarketHexAnchorService",
+    "HEX_WORLD_SCHEMA",
+    "HEX_WORLD_SCHEMA_VERSION",
+    "HexWorldEntityRecord",
+    "HexWorldPersistenceError",
+    "HexWorldSnapshot",
 ]
 
 from .presentation_content_service import (
