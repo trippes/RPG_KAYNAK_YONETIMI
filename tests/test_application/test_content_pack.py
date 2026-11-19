@@ -23,9 +23,9 @@ class TestContentPack(unittest.TestCase):
         self.assertEqual(package.map_definitions, {})
         self.assertEqual(package.hex_map_definitions, {})
         self.assertIsNone(package.world_map_definition)
-        self.assertEqual(load_npc_definitions(package_path=PACKAGE), [])
-        self.assertEqual(load_quest_definitions(package_path=PACKAGE), [])
-        self.assertEqual(load_resource_definitions(package_path=PACKAGE), [])
+        self.assertEqual(load_npc_definitions(package_path=PACKAGE), ())
+        self.assertEqual(load_quest_definitions(package_path=PACKAGE), ())
+        self.assertEqual(load_resource_definitions(package_path=PACKAGE), ())
         self.assertTrue(load_character_definitions(package_path=PACKAGE))
         self.assertTrue(load_gameplay_rules(package_path=PACKAGE))
         starter = package.files["starter"]

@@ -34,9 +34,9 @@ class TestContentPackageLoader(unittest.TestCase):
         self.assertNotIn("locations", package.files["starter"])
         self.assertNotIn("connections", package.files["starter"])
         self.assertEqual(len(package.map_definitions), 0)
-        self.assertEqual(len(package.files["npcs"]["npcs"]), 4)
-        self.assertEqual(len(package.files["quests"]["quests"]), 2)
-        self.assertEqual(len(package.files["resources"]["nodes"]), 22)
+        self.assertEqual(package.files["npcs"]["npcs"], [])
+        self.assertEqual(package.files["quests"]["quests"], [])
+        self.assertEqual(package.files["resources"]["nodes"], [])
         self.assertEqual(len(package.files["characters"]["races"]), 3)
         self.assertEqual(len(package.files["characters"]["classes"]), 3)
 
