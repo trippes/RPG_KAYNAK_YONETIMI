@@ -28,6 +28,7 @@ from .production_chain import ProductionChain, ProductionChainStage
 from .actor_system import ActivityView, ActorView, WorldActor
 from .hex_actor_binding import ActorHexBindingService
 from .container_hex_binding import ContainerHexBindingService
+from .gameplay_placement_catalog import GameplayPlacementCatalog
 from .npc_hex_binding import NPCSpatialBindingService
 from .resource_node_hex_binding import ResourceNodeHexBindingService
 from .market_hex_anchor import MarketHexAnchorService
@@ -746,6 +747,59 @@ class GameplayService:
         if lock is not None and (lock.locked or lock.jammed):
             raise GameplayServiceError("Container is not accessible while its lock is locked, jammed, or broken.")
         return self.container_state(container_id)
+
+    def register_gameplay_placements(
+        self, catalog: GameplayPlacementCatalog,
+    ) -> tuple:
+        """Register a validated package placement set as one rollback-safe batch."""
+        if not isinstance(catalog, GameplayPlacementCatalog):
+            raise TypeError("catalog must be a GameplayPlacementCatalog.")
+        bundle = self._current_bundle()
+        runtime = bundle.hex_world_runtime
+        if runtime is None:
+            raise GameplayServiceError(
+                "Hex runtime is required to register gameplay placements."
+            )
+
+        registered: list[tuple[str, str]] = []
+        try:
+            for placement in catalog.placements:
+                if placement.kind == "npc":
+                    self.npc_hex_binding.register_spatial(
+                        placement.domain_id,
+                        placement.position,
+                        blocks_movement=placement.blocks_movement,
+                        blocks_occupancy=placement.blocks_occupancy,
+                    )
+                elif placement.kind == "resource_node":
+                    self.resource_node_hex_binding.register_spatial(
+                        placement.domain_id,
+                        placement.position,
+                    )
+                elif placement.kind == "container":
+                    self.container_hex_binding.register_spatial(
+                        placement.domain_id,
+                        placement.position,
+                        blocks_movement=placement.blocks_movement,
+                        blocks_occupancy=placement.blocks_occupancy,
+                    )
+                else:
+                    raise GameplayServiceError(
+                        f"Unsupported gameplay placement kind: {placement.kind}"
+                    )
+                registered.append((placement.kind, placement.domain_id))
+
+            bundle.validate()
+            return tuple(runtime.entity(domain_id) for _, domain_id in registered)
+        except Exception:
+            for kind, domain_id in reversed(registered):
+                if kind == "npc":
+                    self.npc_hex_binding.unregister_spatial(domain_id)
+                elif kind == "resource_node":
+                    self.resource_node_hex_binding.unregister_spatial(domain_id)
+                else:
+                    self.container_hex_binding.unregister_spatial(domain_id)
+            raise
 
     def carry_container(self, container_id: str, inventory_id: str) -> None:
         """Assign a unique container instance to a registered character/NPC inventory."""
