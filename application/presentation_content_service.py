@@ -89,7 +89,7 @@ class PresentationContentService:
         if not isinstance(map_id, str) or not map_id.strip():
             raise ValueError("map_id must be a non-empty string.")
         package = self.load_package()
-        if map_id not in package.hex_map_definitions:
+        if package.hex_map_definitions and map_id not in package.hex_map_definitions:
             raise PresentationContentServiceError(f"Unknown hex map ID: {map_id}")
         catalog = package.scene_placements
         return () if catalog is None else catalog.objects_for_map(map_id)

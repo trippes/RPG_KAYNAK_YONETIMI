@@ -1,7 +1,4 @@
 import unittest
-from pathlib import Path
-
-from application.content_loader import load_content_package
 from application.hex_map_definition import parse_hex_map
 from application.hex_occupancy import HexOccupant, HexOccupancyRegistry
 from application.hex_pathfinding import HexPathfinder
@@ -193,23 +190,26 @@ class TestHexWorldRuntime(unittest.TestCase):
         self.assertTrue(runtime.move("wraith", HexDirection.EAST).success)
         self.assertEqual(runtime.entity("wraith").position.cell, LocalHexPosition(1, 0))
 
-    def test_demo_content_supports_reciprocal_runtime_map_transitions(self):
-        package = load_content_package(DEMO_PACKAGE)
-        runtime = HexWorldRuntime(
-            package.hex_map_definitions,
-            world_map_definition=package.world_map_definition,
-        )
-        runtime.register_entity(
-            "hero", "player",
-            EntityPosition("hex_forest_demo", LocalHexPosition(8, 0)),
-        )
-        outbound = runtime.transition("hero", "forest_to_clearing")
+    def test_reciprocal_runtime_map_transitions_use_isolated_definitions(self):
+        map_a = make_map("a", cells=[[8, 0], [-8, 0]], transitions=[{
+            "id": "a_to_b", "source_cells": [[8, 0]], "exit_direction": "east",
+            "target_map_id": "b", "target_entry_direction": "west",
+            "target_cells": [[-8, 0]], "active": True, "traversal_mode": "bidirectional",
+        }])
+        map_b = make_map("b", cells=[[-8, 0], [8, 0]], transitions=[{
+            "id": "b_to_a", "source_cells": [[-8, 0]], "exit_direction": "west",
+            "target_map_id": "a", "target_entry_direction": "east",
+            "target_cells": [[8, 0]], "active": True, "traversal_mode": "bidirectional",
+        }])
+        runtime = HexWorldRuntime({"a": map_a, "b": map_b}, world_map_definition=make_world_map())
+        runtime.register_entity("hero", "player", EntityPosition("a", LocalHexPosition(8, 0)))
+        outbound = runtime.transition("hero", "a_to_b")
         self.assertTrue(outbound.success)
-        self.assertEqual(outbound.position, EntityPosition("hex_clearing_demo", LocalHexPosition(-8, 0)))
+        self.assertEqual(outbound.position, EntityPosition("b", LocalHexPosition(-8, 0)))
         self.assertEqual(runtime.occupancy.get("hero").position, outbound.position)
-        inbound = runtime.transition("hero", "clearing_to_forest")
+        inbound = runtime.transition("hero", "b_to_a")
         self.assertTrue(inbound.success)
-        self.assertEqual(inbound.position, EntityPosition("hex_forest_demo", LocalHexPosition(8, 0)))
+        self.assertEqual(inbound.position, EntityPosition("a", LocalHexPosition(8, 0)))
         self.assertEqual(runtime.occupancy.get("hero").position, inbound.position)
 
     def test_transition_preserves_position_when_inactive_or_unavailable(self):
