@@ -20,6 +20,7 @@ class WorldPoint:
                 raise TypeError(f"{name} must be a finite real number.")
             if not math.isfinite(value):
                 raise ValueError(f"{name} must be finite.")
+            object.__setattr__(self, name, float(value))
 
     def translated(self, dx: float = 0.0, dy: float = 0.0) -> "WorldPoint":
         return WorldPoint(self.x + dx, self.y + dy)
