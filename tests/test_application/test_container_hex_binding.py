@@ -167,3 +167,82 @@ def test_unregistering_spatial_binding_preserves_container_capability_and_member
     assert runtime.occupancy.get("chest_entity") is None
     assert manager.get("chest").entity_id == "chest_entity"
     assert session.membership.world_id_for("chest_entity") == "container_world"
+
+def test_carry_removes_world_occupancy_before_assigning_inventory_custody():
+    _session, manager, runtime, binding = make_binding()
+    binding.register_spatial(
+        "chest",
+        EntityPosition("village", LocalHexPosition(1, 0)),
+        blocks_movement=True,
+        blocks_occupancy=False,
+    )
+
+    binding.carry("chest", "player_inventory")
+
+    assert manager.inventory_custody("chest") == "player_inventory"
+    assert runtime.occupancy.get("chest_entity") is None
+    assert runtime.entities() == ()
+
+
+def test_contain_removes_child_world_occupancy_before_nesting():
+    _session, manager, runtime, binding = make_binding()
+    binding.register_spatial(
+        "chest",
+        EntityPosition("village", LocalHexPosition(1, 0)),
+        blocks_movement=True,
+        blocks_occupancy=True,
+    )
+
+    binding.contain("bag", "chest")
+
+    assert manager.parent_of("chest").container_id == "bag"
+    assert runtime.occupancy.get("chest_entity") is None
+    assert runtime.entities() == ()
+
+
+def test_failed_carry_validation_restores_world_placement_and_custody():
+    _session, manager, runtime, binding = make_binding()
+    original = binding.register_spatial(
+        "chest",
+        EntityPosition("village", LocalHexPosition(1, 0)),
+        blocks_movement=True,
+        blocks_occupancy=False,
+    )
+
+    def reject():
+        raise RuntimeError("session validation failed")
+
+    with pytest.raises(RuntimeError, match="session validation failed"):
+        binding.carry("chest", "player_inventory", validate=reject)
+
+    restored = runtime.entity("chest_entity")
+    occupant = runtime.occupancy.get("chest_entity")
+    assert restored.position == original.position
+    assert restored.profile == original.profile
+    assert occupant.blocks_movement is True
+    assert occupant.blocks_occupancy is False
+    assert manager.inventory_custody("chest") is None
+
+
+def test_failed_nesting_validation_restores_world_placement_and_parentage():
+    _session, manager, runtime, binding = make_binding()
+    original = binding.register_spatial(
+        "chest",
+        EntityPosition("village", LocalHexPosition(1, 0)),
+        blocks_movement=False,
+        blocks_occupancy=True,
+    )
+
+    def reject():
+        raise RuntimeError("session validation failed")
+
+    with pytest.raises(RuntimeError, match="session validation failed"):
+        binding.contain("bag", "chest", validate=reject)
+
+    restored = runtime.entity("chest_entity")
+    occupant = runtime.occupancy.get("chest_entity")
+    assert restored.position == original.position
+    assert occupant.blocks_movement is False
+    assert occupant.blocks_occupancy is True
+    assert manager.parent_of("chest") is None
+
