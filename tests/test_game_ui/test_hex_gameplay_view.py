@@ -14,15 +14,28 @@ from game_ui.world_rendering.hex_gameplay_view import HexGameplayView
 class RecordingActorBinding:
     def __init__(self):
         self.moves = []
+        self.transitions = []
 
     def move(self, actor_id, direction):
         self.moves.append((actor_id, direction))
         return SimpleNamespace(success=True)
 
+    def transition(self, actor_id, transition_id):
+        self.transitions.append((actor_id, transition_id))
+        return SimpleNamespace(success=True)
+
 
 class FakeRuntime:
+    def __init__(self, transitions=()):
+        self.transitions = transitions
+
     def entity(self, _actor_id):
-        return object()
+        return SimpleNamespace(
+            position=EntityPosition("village", LocalHexPosition(0, 0)),
+        )
+
+    def map_definition(self, _map_id):
+        return SimpleNamespace(transitions=self.transitions)
 
 
 class FakeService:
@@ -131,4 +144,41 @@ def test_hex_gameplay_view_renders_runtime_map_without_mutating_entity_position(
     assert player.position == EntityPosition(
         "village", LocalHexPosition(0, 0),
     )
+
+def test_hex_gameplay_view_uses_authored_map_transition_at_exit_cell():
+    transition = SimpleNamespace(
+        active=True,
+        exit_direction=HexDirection.EAST,
+        source_cells=(LocalHexPosition(0, 0),),
+        transition_id="village_to_forest",
+    )
+    service = FakeService()
+    service.hex_world_runtime = FakeRuntime((transition,))
+    view = HexGameplayView(service)
+
+    view.handle(InputState(actions={"right"}))
+
+    assert service.hex_actor_binding.transitions == [
+        ("hero", "village_to_forest"),
+    ]
+    assert service.hex_actor_binding.moves == []
+
+
+def test_hex_gameplay_view_ignores_inactive_map_transitions():
+    transition = SimpleNamespace(
+        active=False,
+        exit_direction=HexDirection.EAST,
+        source_cells=(LocalHexPosition(0, 0),),
+        transition_id="inactive_exit",
+    )
+    service = FakeService()
+    service.hex_world_runtime = FakeRuntime((transition,))
+    view = HexGameplayView(service)
+
+    view.handle(InputState(actions={"right"}))
+
+    assert service.hex_actor_binding.transitions == []
+    assert service.hex_actor_binding.moves == [
+        ("hero", HexDirection.EAST),
+    ]
 
