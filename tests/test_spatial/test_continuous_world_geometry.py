@@ -11,12 +11,13 @@ from core.domain.spatial import (
     world_point_to_fractional_axial,
     world_point_to_hex,
 )
+from game_ui.world_transform import WorldTransform
 
 
 class WorldPointTests(unittest.TestCase):
     def test_world_point_is_finite_and_immutable(self):
         point = WorldPoint(2, -3)
-        self.assertEqual(point.to_dict(), {"x": 2.0, "y": -3.0})
+        self.assertEqual(point.to_dict(), {"x": 2, "y": -3})
         with self.assertRaises((AttributeError, TypeError)):
             point.x = 5
         with self.assertRaises(ValueError):
@@ -28,7 +29,7 @@ class WorldPointTests(unittest.TestCase):
 
     def test_continuous_position_is_map_scoped(self):
         position = ContinuousEntityPosition.from_xy("forest", 12.5, 24)
-        self.assertEqual((position.map_id, position.x, position.y), ("forest", 12.5, 24.0))
+        self.assertEqual((position.map_id, position.x, position.y), ("forest", 12.5, 24))
         with self.assertRaises(ValueError):
             ContinuousEntityPosition.from_xy("", 0, 0)
 
@@ -65,11 +66,29 @@ class ContinuousHexGeometryTests(unittest.TestCase):
         self.assertEqual(world_point_to_hex(midpoint, self.HEX_SIZE), left)
         self.assertEqual(world_point_to_hex(midpoint, self.HEX_SIZE, previous_cell=right), right)
         self.assertEqual(
-            world_point_to_hex(WorldPoint(left_center.x + 1.0, left_center.y), self.HEX_SIZE, previous_cell=right),
+            world_point_to_hex(
+                WorldPoint(left_center.x + 1.0, left_center.y),
+                self.HEX_SIZE,
+                previous_cell=right,
+            ),
             left,
         )
 
-    def test_world_transform_round_trips_continuous_points(self):\n        transform = WorldTransform(\n            hex_size=self.HEX_SIZE, camera_x=120.0, camera_y=80.0,\n            viewport_center=(400.0, 300.0), zoom=1.25,\n        )\n        point = WorldPoint(245.5, 318.25)\n        screen = transform.world_point_to_screen(point)\n        restored = transform.screen_to_world_point(*screen)\n        self.assertAlmostEqual(restored.x, point.x)\n        self.assertAlmostEqual(restored.y, point.y)\n\n    def test_invalid_hex_size_is_rejected(self):
+    def test_world_transform_round_trips_continuous_points(self):
+        transform = WorldTransform(
+            hex_size=self.HEX_SIZE,
+            camera_x=120.0,
+            camera_y=80.0,
+            viewport_center=(400.0, 300.0),
+            zoom=1.25,
+        )
+        point = WorldPoint(245.5, 318.25)
+        screen = transform.world_point_to_screen(point)
+        restored = transform.screen_to_world_point(*screen)
+        self.assertAlmostEqual(restored.x, point.x)
+        self.assertAlmostEqual(restored.y, point.y)
+
+    def test_invalid_hex_size_is_rejected(self):
         with self.assertRaises(ValueError):
             axial_to_world_point(HexCoord(0, 0), 0)
         with self.assertRaises(ValueError):
