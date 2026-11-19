@@ -295,3 +295,24 @@ Kullanılmayan kare harita dosyalarının kaldırılması ancak tek harita karar
 Kullanıcı, altıgen runtime'ın ana oyun entegrasyonunun kare haritaların son temizliğinden önce yapılmasını onayladı. Bu karar [54 numaralı migration planında](54-hex-runtime-authoritative-gameplay-migration.md) ayrıntılandırılmıştır. Uygulama sırası 16.2 runtime sahipliği, 16.3 içerik/gameplay referansları, 16.4 persistence, 16.5 UI entegrasyonu, 16.6 tek kare easter egg temizliği ve 16.7 otomatik teknik doğrulamadır.
 
 Kullanıcı görsel test istemediğini açıkça belirtti. --play manuel kontrolü istenmeyecek; teknik kararlar kod, bağımlılık grafı, Pytest, Ruff, paketleme ve GitHub Actions ile doğrulanacaktır. Kare save konumları için örtük kare→hex dönüşümü yapılmayacak. Korunan dallar değiştirilmeyecektir.
+
+## 11. Kullanıcı kararı eki — 2026-11-19 (önceki faz sıralamasını geçersiz kılar)
+
+### 11.1 Demo NPC/resource içeriği sıfırlanacak
+
+Kullanıcının kararıyla mevcut dört NPC kaydı ve yirmi iki kaynak düğümü yeni Hex sistemine taşınmayacaktır. Bunlar eski harita demo içeriği olarak kaldırılacaktır. Bunlara bağlı eski quest tanımları, NPC diyalog kayıtları, NPC'ye bağlı pazar ve demo yerleşimleri de kaldırılacaktır. Yeni Hex dünya entegrasyonundan sonra NPC, kaynak düğümü, görev, diyalog ve pazar içerikleri yeni dünya tasarımına göre sıfırdan yazılacaktır.
+
+Bu bir domain mekaniklerinin silinmesi değildir. NPC, kaynak düğümü, toplama, diyalog, quest, ekonomi, market, envanter ve persistence altyapıları korunur. Temizlik yalnızca eski demo içerik verilerini, eski map ID/koordinat referanslarını ve bunlara özgü doğrulama/fixture varsayımlarını kaldırır.
+
+### 11.2 Bağlayıcı uygulama sırası
+
+Bu ek, belgenin önceki 16.2–16.6 faz sıralamasını geçersiz kılar:
+
+1. Eski dokuz kare harita sistemi ve eski yedi haritalı Hex demo/portal içeriği tamamen temizlenir.
+2. Eski NPC/resource/quest/dialogue/market demo kayıtları ve eski harita konum referansları kaldırılır.
+3. Kare harita runtime, eski demo Hex portalı ve bunların paket/test/CI bağımlılıkları kaldırılır.
+4. Eski kare save verileri için açık sürüm/reddetme/geri kazanım politikası belirlenir; (x, y) hiçbir zaman (q, r) olarak yorumlanmaz.
+5. Bu temizlik teknik test kapılarından geçtikten sonra laboratuvar Hex mimarisi bu dala entegre edilir.
+6. Yeni Hex dünya içerikleri — oyuncu başlangıcı, NPC, kaynak, görev, diyalog ve pazar — entegrasyon sonrasında sıfırdan oluşturulur.
+
+Tek kare easter egg kararı, eski kare harita altyapısını korumaz. Gerekirse daha sonra bağımsız ve minimal bir kare sahne olarak yeniden tasarlanır.
