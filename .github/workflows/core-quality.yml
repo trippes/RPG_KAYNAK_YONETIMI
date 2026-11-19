@@ -70,6 +70,7 @@ jobs:
           core/domain/physics/__init__.py
           core/domain/physics/body.py
           core/domain/physics/contacts.py
+          core/domain/physics/continuous_solver.py
           core/domain/physics/hex_map_geometry.py
           core/domain/physics/kinematic_solver.py
           core/domain/physics/narrowphase.py
@@ -78,6 +79,7 @@ jobs:
           core/domain/physics/shapes.py
           core/domain/physics/vector2.py
           tests/test_spatial/test_native_collision_solver.py
+          tests/test_spatial/test_native_continuous_collision.py
           tests/test_spatial/test_native_hex_map_geometry.py
           tests/test_spatial/test_native_physics_primitives.py
       - name: Verify legacy map cleanup boundary
