@@ -9,6 +9,7 @@ from core.domain.spatial import EntityPosition, LocalHexPosition, MovementProfil
 from core.domain.spatial import HexDirection
 from game_ui.input import InputState
 from game_ui.world_rendering.hex_gameplay_view import HexGameplayView
+from game_ui.screens.main_screen import MainScreen
 
 
 class RecordingActorBinding:
@@ -305,3 +306,16 @@ def test_right_clicking_empty_cell_closes_npc_context_menu():
 
     assert view.context_menu_npc_id is None
     assert view.context_menu_position is None
+
+
+
+def test_main_screen_forwards_selected_npc_to_dialogue_navigation():
+    service = FakeService()
+    screen = MainScreen(service)
+    screen._hex_view = SimpleNamespace(
+        selected_npc_id="guard_eren",
+        handle=lambda _state: "dialogue",
+    )
+
+    assert screen.handle(InputState()) == "dialogue"
+    assert screen.selected_npc_id == "guard_eren"
