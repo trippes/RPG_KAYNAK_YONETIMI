@@ -8,7 +8,7 @@ from collections.abc import Iterable
 from application.hex_map_definition import HexMapDefinition
 from core.domain.spatial import LocalHexPosition
 from core.foundation import WorldId
-from hex_world_lab.geometry import HexLayout, HexOrientation, WorldPoint
+from hex_world_lab.geometry import HexLayout, HexOrientation
 from hex_world_lab.movement.vector import Vector2
 from hex_world_lab.physics import (
     ActorBodyTransform,
@@ -24,13 +24,11 @@ from hex_world_lab.physics import (
 )
 from hex_world_lab.world import HexWorld
 from hex_world_lab.world.cell import HexCellData
-from hex_world_lab.world.identity import MapId as LabMapId
 from hex_world_lab.world.map_definition import HexMapDefinition as LabHexMapDefinition
 
 from .hex_world_geometry_bridge import (
     local_position_to_lab_axial,
     local_position_to_world_point,
-    make_lab_camera_center,
     to_lab_map_id,
     to_lab_world_id,
 )
