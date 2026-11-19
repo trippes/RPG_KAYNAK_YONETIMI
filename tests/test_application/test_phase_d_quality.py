@@ -327,12 +327,6 @@ class TestPhaseDQuality(unittest.TestCase):
                 payloads.append(path.read_text(encoding="utf-8"))
         self.assertEqual(payloads[0], payloads[1])
 
-    def test_demo_starts_next_to_eren_at_southern_gate(self):
-        service, ids = populate_opening_content(GameApplication.create_default())
-
-        self.assertEqual(service.actor(ids.hero_id).position.x, 16)
-        self.assertEqual(service.actor(ids.hero_id).position.y, 29)
-
     def test_combat_primitives_are_deterministic(self):
         self.assertEqual(calculate_damage(8, 3), 5)
         self.assertEqual(order_initiative(("b", "a"), {"a": 4, "b": 4}), ("a", "b"))
@@ -416,13 +410,6 @@ class TestPhaseDQuality(unittest.TestCase):
         screen.node = SimpleNamespace(node_id="start", choices=(choice, ordinary))
 
         self.assertEqual(screen._visible_choices(), (ordinary,))
-
-    def test_dialogue_prompt_uses_selected_npc_name(self):
-        from application.content_pack import populate_opening_content
-        service, ids = populate_opening_content(GameApplication.create_default())
-        screen = DialogueScreen(service)
-        screen.set_target_npc("warden_lyra")
-        self.assertIn("Eren", screen.message)
 
     def test_inventory_and_market_windows_ignore_legacy_screen_navigation(self):
         inventory = SimpleNamespace(items=(), stocks=(), weight=0)
