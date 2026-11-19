@@ -753,7 +753,7 @@ class GameplayService:
         instance = bundle.containers.get(container_id)
         if instance is None:
             raise KeyError(f"Container not found: {container_id}")
-        bundle.containers.set_inventory_custody(container_id, inventory_id)
+        self.container_hex_binding.carry(container_id, inventory_id)
         try:
             bundle.validate()
         except Exception:
@@ -778,8 +778,8 @@ class GameplayService:
             raise
 
     def contain_container(self, parent_id: str, child_id: str) -> ContainerInstance:
-        """Nest one container inside another."""
-        return self._current_bundle().containers.contain(parent_id, child_id)
+        """Nest a container after removing its authoritative world placement."""
+        return self.container_hex_binding.contain(parent_id, child_id)
 
     def transfer_actor_item_to_container(
         self, actor_id: str, source_inventory_id: str, container_id: str,
