@@ -7,7 +7,6 @@ from unittest import mock
 from application import (
     GameApplication,
     GameSaveFileAdapter,
-    SaveJsonCodec,
     SessionBundle,
     SessionHolder,
     WorldActor,
@@ -15,7 +14,6 @@ from application import (
 from application.save_file_adapter import SaveFileWriteError
 from core.application import GameSession
 from npc import NPC
-from core.persistence import CanonicalSessionState, PersistenceDocument
 from core.time import Tick
 from resources import (
     GameplaySnapshot,
