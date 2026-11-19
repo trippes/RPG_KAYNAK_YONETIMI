@@ -7,7 +7,12 @@
   "world": {
     "name": "Eldoria",
     "width": 1,
-    "height": 1
+    "height": 1,
+    "hex_start": {
+      "map_id": "starting_valley",
+      "q": 0,
+      "r": 0
+    }
   },
   "character": {
     "name": "Kahraman",
