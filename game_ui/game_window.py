@@ -675,9 +675,12 @@ class GameWindow:
                 initialize_hex_world,
             )
             populate_gameplay_resources(self.service)
-            actors = self.service.state().actors
-            if actors and actors[0].inventory_id is None:
-                self.service.bind_actor_inventory(actors[0].actor_id, self.service.player_inventory_id)
+            player_actor = self.service.actor(self.service.player_actor_id)
+            if player_actor.inventory_id is None:
+                self.service.bind_actor_inventory(
+                    self.service.player_actor_id,
+                    self.service.player_inventory_id,
+                )
             try:
                 initialize_hex_world(
                     self.service,
