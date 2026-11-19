@@ -218,3 +218,42 @@ The safe implementation order is:
 ### Guardrails retained
 
 No source implementation, package discovery, release gate, save schema, or gameplay behavior was changed in this decision pass. `main`, `demo_eldoria`, and `experiment/hex-world-laboratory` remain untouched. All further work stays on `experiment/map-cleanup`.
+
+## 2026-11-19 — Native continuous movement domain slice
+
+### Existing timing policy verified
+
+- `time_system/tick.py` defines the legacy calendar's `TICKS_PER_SECOND = 60`.
+- `game_ui/game_window.py` currently accumulates 60 simulation ticks per elapsed real second, but only while a duration-based activity is running and gameplay is unpaused.
+- `hex_world_lab/simulation/movement_system.py` uses a 1/60-second movement step.
+- Canonical `SimulationRuntime` itself remains integer-tick-only and has no seconds-per-tick contract. The 60 Hz behavior currently lives in application/legacy policy, not in the canonical clock abstraction.
+- No authoritative player world-units-per-second movement speed was found in the inspected native gameplay configuration. No speed value was invented.
+
+### Native implementation added
+
+Created `core/domain/movement/` as an Eldoria-owned, Pygame-independent domain package:
+
+- `MovementMode`: normal, running, stealth identifiers.
+- `MovementConfig`: validated speed and mode multipliers; maximum speed is mandatory and has no invented default.
+- `MovementIntent`: device-independent direction and mode.
+- `MovementState`: immutable continuous world position, velocity, and mode using native Eldoria `WorldPoint` and `Vector2`.
+- `MovementIntegrator`: pure seconds-based integration. It owns no clock, tick counter, actor registry, map runtime, or presentation state.
+- `tests/test_spatial/test_native_continuous_movement.py`: coverage for normalization, mode multipliers, idle input, zero delta, invalid delta/configuration, and state immutability.
+
+The native implementation was authored against Eldoria's own domain values; no laboratory source was copied. Context7 Python 3.11 documentation was consulted for dataclass validation and finite-number handling.
+
+### Integration boundary retained
+
+This slice deliberately does not register the integrator with `SimulationRuntime` or change `GameWindow._advance_active_time`. The current 60-tick/real-second policy runs only while timed activities are active, whereas continuous player movement must also function during ordinary exploration. Reusing that policy blindly would make movement stop whenever no timed activity is running or would silently change the game's time progression. A canonical fixed-step gameplay driver and its pause/active-world policy must be established before wiring movement into the canonical runtime.
+
+The next slice must source the actual player movement speed from authoritative gameplay/content configuration, define how gameplay fixed steps advance during exploration and pause, and then compose native integration with the already-native continuous collision solver and `HexWorldRuntime` synchronization.
+
+### Validation
+
+- Eldoria CI and Core Quality workflows were triggered by the new branch commits; their final results are pending at the time of this report.
+- Core Quality's Ruff file list was expanded to include all new native movement files and the new test module.
+- No local Python test execution is claimed in this GitHub-only pass.
+
+### Safety
+
+All changes target `experiment/map-cleanup` only. No changes were made to `main`, `demo_eldoria`, or `experiment/hex-world-laboratory`. The lab release-gate imports and package discovery remain intact.
