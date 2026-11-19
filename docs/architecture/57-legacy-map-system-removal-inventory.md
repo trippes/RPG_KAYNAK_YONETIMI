@@ -38,6 +38,7 @@ These map-specific records are not the future NPC/resource/market axial placemen
 ### Gameplay and UI
 
 - `world/map_definition.py`, `world/map_loader.py`, `world/local_map.py`, `world/location.py`, and `world/map.py` implement the legacy rectangular-map schema, local dimensions, location graph, and graph traversal.
+- `world/map_catalog.py` is a legacy square-map catalog adapter. It is still imported by branch-specific tests/runtime paths and must remain until those consumers are migrated; default-branch code search alone is not sufficient evidence that a file is unused.
 - `application/movement.py` plans movement over `WorldMap` location IDs and stores legacy square positions through the compatibility boundary.
 - `game_ui/screens/main_screen.py` renders the square tile grid, reads square-map landmarks/features, and owns four-direction movement/interaction behavior.
 - `game_ui/screens/map_screen.py` renders the legacy location graph.
