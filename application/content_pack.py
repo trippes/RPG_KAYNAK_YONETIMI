@@ -768,6 +768,10 @@ def populate_gameplay_resources(service, definition_path=None, resource_definiti
     _register_npcs_for_phase(service, npc_definitions, "gameplay", resolve_id)
     package = load_content_package(_resolve_content_package_path(active_package_path))
     _register_quest_content(service, load_quest_definitions(package_path=active_package_path))
+    bundle = service.application.holder.current
+    inventories = dict(bundle.inventories)
+    inventories.setdefault(player_rules["inventory_id"], Inventory())
+    object.__setattr__(bundle, "inventories", MappingProxyType(inventories))
     if package.map_definitions:
         _register_opening_resources(
             service.application.holder.current,

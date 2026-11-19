@@ -1251,7 +1251,8 @@ class GameplayService:
         profile = bundle.economy.market.profile(offer.market_id)
         if profile is not None:
             self._require_actor_in_active_world(bundle, buyer_id)
-            if self._require_legacy_actor_location(bundle, buyer_id) != profile.location_id:
+            spatial = self.legacy_actor_spatial_state(buyer_id)
+            if spatial is not None and spatial.location_id != profile.location_id:
                 raise GameplayServiceError(
                     "Buyer must be at the market's registered location."
                 )

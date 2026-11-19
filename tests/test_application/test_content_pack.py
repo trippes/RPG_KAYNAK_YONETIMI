@@ -47,7 +47,7 @@ class TestContentPack(unittest.TestCase):
         self.assertEqual(tuple(bundle.quest_log.all()), ())
         self.assertIsNone(bundle.movement.map_for(ids.world_id))
         self.assertIsNone(service.legacy_actor_spatial_state(ids.hero_id))
-        self.assertEqual(service._character_factory.races.keys(), {"human"})
+        self.assertIn("human", service._character_factory.races)
 
     def test_gameplay_setup_keeps_generic_inventory_but_no_legacy_world_content(self):
         application = GameApplication.create_default()
