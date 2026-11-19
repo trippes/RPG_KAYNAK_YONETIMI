@@ -127,3 +127,22 @@ Validation completed successfully on commit `293b40104cffd4631df7e68274a6b2053ec
 - The first explicit Ruff pass exposed one missing/unused import pair in the native physics files; both were corrected, and the subsequent Core quality run passed.
 
 This confirms CI validation for the current native map geometry, contact generation, and discrete kinematic solver code. It does not validate continuous collision detection, runtime/gameplay wiring, or local interactive gameplay.
+
+
+## 2026-11-19 — Native continuous circle collision (fourth slice)
+
+Added the Eldoria-native swept-circle collision layer:
+
+- `core/domain/physics/continuous_solver.py`: circle-vs-convex-polygon edge/vertex time-of-impact tests, circle-vs-circle sweeps, earliest-hit selection, collision skin, pre-move depenetration, and wall-slide projection after impact.
+- `tests/test_spatial/test_native_continuous_collision.py`: thin-wall tunneling prevention, polygon edge impact, tangential sliding, moving-away behavior, circle obstacles, and indexed/unindexed result equivalence.
+- Exported `SweepHit`, `ContinuousCollisionResolution`, `sweep_circle_polygon`, and `resolve_continuous_motion`.
+- Extended Core quality Ruff scope to include the native continuous solver and its tests.
+
+The continuous solver is intentionally limited to a moving circle against static circle/polygon obstacles, matching the existing lab capability. It does not yet handle moving-vs-moving actor collisions, polygon actor sweeps, rotation during motion, or simulation tick integration. It is not wired into gameplay movement yet.
+
+### Validation
+
+- Eldoria CI passed on Python 3.11 and 3.12, Linux and Windows; Pygame headless smoke test passed.
+- Core quality passed on Linux and Windows, including Ruff, legacy map cleanup boundary checks, and release-candidate verification.
+- The new native continuous-collision tests are included in the successful 1,405-test unittest matrix.
+- Context7 Pygame documentation was used to confirm that Pygame rectangle overlap is not the authoritative continuous collision mechanism; the new solver remains Pygame-independent.
