@@ -18,7 +18,7 @@ jobs:
         run: >-
           python -m ruff check --select E4,E7,E9,F
           --extend-per-file-ignores
-          application/gameplay_service.py:F401,application/gameplay_service.py:E701,game_ui/hex_world_view.py:E731
+          application/gameplay_service.py:F401,application/gameplay_service.py:E701
           application/hex_world_runtime.py
           application/session_bundle.py
           application/gameplay_service.py
@@ -26,7 +26,6 @@ jobs:
           application/actor_persistence.py
           application/game_application.py
           application/movement.py
-          game_ui/hex_world_view.py
           game_ui/screens/main_screen.py
           game_ui/screens/map_screen.py
           game_ui/renderer.py
@@ -34,7 +33,6 @@ jobs:
           tests/test_application/test_actor_system.py
           tests/test_application/test_movement.py
           tests/test_application/test_hex_world_runtime.py
-          tests/test_game_ui/test_hex_world_view.py
           tests/test_game_ui/test_main_screen.py
           tests/test_game_ui/test_main_screen_map_data.py
           tests/test_game_ui/test_main_screen_map_transitions.py
