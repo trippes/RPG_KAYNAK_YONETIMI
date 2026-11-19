@@ -230,13 +230,22 @@ class GameWindow:
             self._notice_frames = NOTICE_FRAMES
         self._load_movement_profiles()
 
+    def _ensure_movement_runtime(self):
+        """Provide inert defaults for lightweight/headless GameWindow test doubles."""
+        if not hasattr(self, "movement_input"):
+            self.movement_input = None
+        if not hasattr(self, "_movement_clock"):
+            self._movement_clock = FixedStepAccumulator()
+        if not hasattr(self, "_movement_configs"):
+            self._movement_configs = {}
+
     def _load_movement_profiles(self):
         """Load only explicit actor speeds from the selected content package."""
         from application.content_pack import load_movement_configs
 
         try:
             self._movement_configs = dict(
-                load_movement_configs(package_path=self.content_package_path)
+                load_movement_configs(package_path=getattr(self, "content_package_path", None))
             )
         except (OSError, ValueError, TypeError) as error:
             self._movement_configs = {}
@@ -622,6 +631,7 @@ class GameWindow:
                 break
 
     def step(self, events=(), *, elapsed_seconds=0.0):
+        self._ensure_movement_runtime()
         state = self.input.collect(events)
         if self.movement_input is not None:
             self.movement_input.handle_events(events)
