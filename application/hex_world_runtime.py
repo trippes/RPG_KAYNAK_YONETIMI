@@ -270,7 +270,7 @@ class HexWorldRuntime:
         )
         return result
 
-    def path_to(self, entity_id: str, goal: LocalHexPosition):
+    def path_to(self, entity_id: str, goal: LocalHexPosition, *, edge_validator=None):
         entity = self.entity(entity_id)
         if not entity.active or not entity.profile.can_move:
             return None
@@ -279,9 +279,14 @@ class HexWorldRuntime:
             frozenset() if entity.profile.ignores_occupancy
             else self._occupancy.blocked_cells(map_definition.map_id, excluding=entity_id)
         )
-        return HexPathfinder.find_path(map_definition, entity.position.cell, goal, entity.profile, blocked)
+        return HexPathfinder.find_path(
+            map_definition, entity.position.cell, goal, entity.profile, blocked,
+            edge_validator=edge_validator,
+        )
 
-    def move_toward(self, entity_id: str, goal: LocalHexPosition) -> MovementResult:
+    def move_toward(
+        self, entity_id: str, goal: LocalHexPosition, *, edge_validator=None,
+    ) -> MovementResult:
         entity = self.entity(entity_id)
         if not entity.active or not entity.profile.can_move:
             return MovementResult(
@@ -290,7 +295,7 @@ class HexWorldRuntime:
                 MovementFailureReason.MOVEMENT_NOT_ALLOWED,
                 "Entity cannot move.",
             )
-        path = self.path_to(entity_id, goal)
+        path = self.path_to(entity_id, goal, edge_validator=edge_validator)
         if path is None or len(path) < 2:
             return MovementResult(False, entity.position, MovementFailureReason.INVALID_TARGET, "No path to target.")
         return self.move_to(entity_id, path[1])
