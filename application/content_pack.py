@@ -9,6 +9,7 @@ from pathlib import Path
 from types import MappingProxyType
 
 from application import GameplayService
+from core.errors import RPGError
 from application.content_loader import ContentPackageError, load_content_package
 from character import Ability, Attribute, CharacterClass, CharacterFactory, Race
 from npc import Faction, NPC
@@ -67,8 +68,6 @@ def _resolve_content_package_path(package_path: str | Path | None = None) -> Pat
 class StarterContentIds:
     world_id: str | None = None
     hero_id: str | None = None
-
-from core.errors import RPGError
 
 class ContentDefinitionError(ValueError, RPGError):
     """Raised when a content definition cannot safely enter the runtime."""
@@ -519,7 +518,7 @@ def _register_opening_content(application, definition: dict, npc_definitions, ch
     })
     resolve_id = _id_resolver(definition, ids)
     world_data = definition["world"]
-    world = application.aktif_dunya() or application.dunya_olustur(
+    application.aktif_dunya() or application.dunya_olustur(
         world_data["name"],
         width=world_data["width"],
         height=world_data["height"],
@@ -580,7 +579,7 @@ def populate_opening_content(
     character_definitions = load_character_definitions(character_definitions_path, package_path=content_package_path)
     gameplay_rules = load_gameplay_rules(gameplay_rules_path, package_path=content_package_path)
     resolved_package_path = _resolve_content_package_path(content_package_path)
-    package = load_content_package(resolved_package_path)
+    load_content_package(resolved_package_path)
     quest_definitions = load_quest_definitions(package_path=resolved_package_path)
     resource_definitions = load_resource_definitions(package_path=resolved_package_path)
     _validate_content_references(
@@ -635,7 +634,7 @@ def populate_gameplay_resources(service, definition_path=None, resource_definiti
     npc_definitions = load_npc_definitions(package_path=active_package_path)
     resolve_id = _id_resolver(definition, ids)
     _register_npcs_for_phase(service, npc_definitions, "gameplay", resolve_id)
-    package = load_content_package(_resolve_content_package_path(active_package_path))
+    load_content_package(_resolve_content_package_path(active_package_path))
     _register_quest_content(service, load_quest_definitions(package_path=active_package_path))
     bundle = service.application.holder.current
     for record in load_resource_definitions(
