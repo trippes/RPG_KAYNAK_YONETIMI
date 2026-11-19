@@ -347,7 +347,9 @@ class HexWorldRuntime:
         )
         self._continuous_positions[entity_id] = continuous_position
         self._spatial_index.update(
-            entity_id, continuous_position.map_id, self._bounds_at(state, continuous_position.point)
+            entity_id,
+            continuous_position.map_id,
+            self._bounds_at(self._entity_state(entity_id), continuous_position.point),
         )
         return result
 
