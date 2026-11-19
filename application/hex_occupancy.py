@@ -62,7 +62,11 @@ class HexOccupancyRegistry:
             raise TypeError("occupant must be a HexOccupant.")
         if occupant.entity_id in self._occupants:
             raise ValueError(f"Duplicate hex occupant: {occupant.entity_id}")
-        if not ignore_blockers and not self.can_enter(occupant.position):
+        if (
+            not ignore_blockers
+            and (occupant.blocks_movement or occupant.blocks_occupancy)
+            and not self.can_enter(occupant.position)
+        ):
             raise ValueError("The target hex is occupied or movement-blocked.")
         self._occupants[occupant.entity_id] = occupant
         self._index(occupant)
