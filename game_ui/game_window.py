@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from .input import InputMapper
+from .movement_input import PygameMovementInput
 from .renderer import GOLD, NAV_ALIASES, Renderer
 from .screens.character_screen import CharacterScreen
 from .screens.inventory_screen import InventoryScreen
@@ -21,6 +22,8 @@ from .screens.quest_log_screen import QuestLogScreen
 from .screens.container_screen import ContainerScreen
 from .window_manager import WindowManager
 from application.save_storage import SaveStorage, SaveStorageError
+from application.gameplay_step_clock import FixedStepAccumulator
+from application.continuous_player_movement import ContinuousPlayerMovementController
 
 # Screens that show the navigation tab bar / resource bar.
 NAV_SCREENS = frozenset()
@@ -74,6 +77,14 @@ class GameWindow:
         backend.display.set_caption(title)
         self.renderer = Renderer(backend, self.screen, self.width, self.height)
         self.input = InputMapper(backend)
+        key_module = getattr(backend, "key", None)
+        self.movement_input = (
+            PygameMovementInput(backend)
+            if callable(getattr(key_module, "get_pressed", None))
+            else None
+        )
+        self._movement_clock = FixedStepAccumulator()
+        self._movement_configs = {}
         self.save_storage = save_storage
         migration_report = None
         self._save_storage_failure = None
@@ -217,6 +228,68 @@ class GameWindow:
             self.notice = f"Kayıt sistemi kullanılamıyor: {self._save_storage_failure}"
             self.notice_level = "error"
             self._notice_frames = NOTICE_FRAMES
+        self._load_movement_profiles()
+
+    def _load_movement_profiles(self):
+        """Load only explicit actor speeds from the selected content package."""
+        from application.content_pack import load_movement_configs
+
+        try:
+            self._movement_configs = dict(
+                load_movement_configs(package_path=self.content_package_path)
+            )
+        except (OSError, ValueError, TypeError) as error:
+            self._movement_configs = {}
+            self._set_notice(
+                f"Hareket yapılandırması yüklenemedi: {error}",
+                "error",
+            )
+
+    def _advance_continuous_player_movement(
+        self,
+        elapsed_seconds,
+        intent,
+        *,
+        active,
+    ):
+        """Consume fixed movement steps without advancing canonical world time."""
+        actor_id = self.service.player_actor_id
+        config = self._movement_configs.get(actor_id)
+        active = (
+            active
+            and config is not None
+            and self.movement_input is not None
+            and self.movement_input.focused
+        )
+        step_count = self._movement_clock.advance(
+            elapsed_seconds,
+            active=active,
+        )
+        if not active:
+            return
+        if intent is not None and intent.is_moving:
+            self.screens[self.gameplay_screen].cancel_click_to_move()
+        if step_count <= 0:
+            return
+
+        binding = self.service.hex_actor_binding
+        snapshot = binding.physics_snapshot
+        body = binding.player_body
+        if snapshot is None or body is None:
+            self._movement_clock.reset()
+            return
+        controller = ContinuousPlayerMovementController(
+            binding,
+            snapshot,
+            body,
+            config,
+        )
+        for _ in range(step_count):
+            controller.step(
+                actor_id,
+                intent,
+                self._movement_clock.step_seconds,
+            )
 
     def _ensure_save_storage(self):
         failure = getattr(self, "_save_storage_failure", None)
@@ -340,6 +413,8 @@ class GameWindow:
             content_package_path=getattr(self, "content_package_path", None),
         )
         self.service = service
+        self._movement_clock.reset()
+        self._load_movement_profiles()
         self.screens.update({
             "opening": OpeningScreen(),
             "main": MainScreen(service),
@@ -548,6 +623,8 @@ class GameWindow:
 
     def step(self, events=(), *, elapsed_seconds=0.0):
         state = self.input.collect(events)
+        if self.movement_input is not None:
+            self.movement_input.handle_events(events)
 
         if state.mouse_pos is not None:
             self.renderer.mouse_pos = state.mouse_pos
@@ -627,6 +704,28 @@ class GameWindow:
         else:
             window_consumed = self.gameplay_active and self.window_manager.handle_input(state)
             dialogue_input = False
+
+        movement_intent = None
+        movement_configured = (
+            self.service.player_actor_id in self._movement_configs
+            and self.movement_input is not None
+        )
+        movement_input_active = (
+            self.gameplay_active
+            and not self.pause_menu_open
+            and not dialogue_active
+            and not window_consumed
+            and not self.window_manager.open_ids
+            and self.current == self.gameplay_screen
+            and movement_configured
+        )
+        if movement_input_active:
+            movement_intent = self.movement_input.read_intent()
+            if movement_intent.is_moving:
+                state.actions.difference_update({
+                    "left", "right", "up", "down",
+                    "hex_north_west", "hex_south_west",
+                })
 
         if self.current == "world" and not window_consumed:
             current_screen._inject_mouse_action(state, self.renderer)
@@ -734,6 +833,24 @@ class GameWindow:
                     getattr(current_screen, "selected_npc_id", None)
                 )
             self._set_current(next_screen)
+
+        dialogue_now_active = (
+            self.screens.get("dialogue") is not None
+            and self.screens["dialogue"].is_active()
+        )
+        movement_active = (
+            movement_intent is not None
+            and self.gameplay_active
+            and not self.pause_menu_open
+            and not dialogue_now_active
+            and not self.window_manager.open_ids
+            and self.current == self.gameplay_screen
+        )
+        self._advance_continuous_player_movement(
+            elapsed_seconds,
+            movement_intent,
+            active=movement_active,
+        )
 
         if self.gameplay_active:
             world_screen = self.screens.get(getattr(self, "gameplay_screen", "main"))
