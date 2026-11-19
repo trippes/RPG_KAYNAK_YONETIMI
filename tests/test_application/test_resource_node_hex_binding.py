@@ -197,3 +197,22 @@ def test_resource_node_binding_requires_an_initialized_hex_runtime():
 
     with pytest.raises(GameplayServiceError, match="no initialized hex world runtime"):
         _ = service.resource_node_hex_binding
+
+
+
+def test_resource_node_can_register_after_a_blocking_actor_in_the_same_cell():
+    service, bundle, runtime = make_service()
+    bundle.resource_nodes.add(make_node())
+    runtime.register_entity(
+        "hero",
+        "player",
+        EntityPosition("field", LocalHexPosition(0, 0)),
+    )
+
+    service.resource_node_hex_binding.register_spatial(
+        "iron-vein",
+        EntityPosition("field", LocalHexPosition(0, 0)),
+    )
+
+    assert runtime.occupancy.get("hero") is not None
+    assert runtime.occupancy.get("iron-vein") is not None
