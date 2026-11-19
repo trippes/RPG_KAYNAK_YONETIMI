@@ -115,3 +115,15 @@ The implementation intentionally retains the laboratory solver's current discret
 Context7's Pygame documentation was checked. `pygame.Rect` collision tests are pixel-rectangle overlap operations with right/bottom edge exclusion; they are not suitable as the authoritative arbitrary-convex continuous physics layer. No Pygame dependency was added to the domain package.
 
 No gameplay movement, simulation tick, collider sizes, save schema, or existing bridge imports were changed. The new solver is not wired into `HexPhysicsSnapshot` or `HexWorldRuntime` yet. Tests are added but their CI result must be checked before claiming they pass.
+
+
+### Validation result for the native collision slice
+
+Validation completed successfully on commit `293b40104cffd4631df7e68274a6b2053ec4124e`:
+
+- Eldoria CI: all four Python 3.11/3.12 Linux/Windows matrix jobs passed; Pygame headless smoke test passed.
+- Core quality: Linux and Windows verification passed. Ruff now explicitly includes the new native physics/application/test files; the legacy map cleanup boundary check and release-candidate verification passed.
+- The first CI attempt exposed a pre-existing workflow dependency gap: Eldoria CI installed the runtime package but not `requirements-test.txt`, while laboratory tests import pytest. The workflow now installs the test requirements before unittest discovery.
+- The first explicit Ruff pass exposed one missing/unused import pair in the native physics files; both were corrected, and the subsequent Core quality run passed.
+
+This confirms CI validation for the current native map geometry, contact generation, and discrete kinematic solver code. It does not validate continuous collision detection, runtime/gameplay wiring, or local interactive gameplay.
