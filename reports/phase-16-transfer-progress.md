@@ -191,3 +191,30 @@ A branch-head scan was completed against `experiment/map-cleanup` at commit `458
 ### Decision
 
 The application/domain/UI import migration is complete for the scanned production surface, but the laboratory package is **not yet removable**. Keep `hex_world_lab*` in package discovery, keep the lab source and its dedicated tests, and keep the release gate intact until its expected lab capabilities are replaced by native Eldoria equivalents and the release gate is updated to verify those native contracts. No source or packaging files were changed as part of this audit.
+
+## 2026-11-19 — Next-slice decision: simulation timing contract
+
+The release gate and movement timing boundary were re-inspected before selecting the next transfer slice.
+
+### Verified repository facts
+
+- `scripts/verify_release.py` still imports the laboratory package in its isolated wheel smoke test (`__version__`, `EntityWorldCoordinator`, `PygameWorldRenderer`, `SimulationTickCoordinator`, and `MovementSystem`) and includes `hex_world_lab` in its compileall targets. This is an intentional remaining release-gate dependency, not a production gameplay import.
+- Eldoria's canonical `core.time.Tick` is a non-negative integer value. It defines ordering and arithmetic, but no seconds-per-tick conversion or tick frequency.
+- `core.simulation.SimulationRuntime` advances by integer ticks and notifies listeners with the resulting `Tick`. It does not provide elapsed seconds.
+- The laboratory `MovementIntegrator` accepts `delta_time` in seconds, and `MovementConfig.max_speed` is expressed in world units per second. Its coordinator owns neither wall-clock time nor presentation.
+- Pygame frame timing is therefore not a valid substitute for a canonical simulation-time conversion.
+
+### Decision
+
+Do not connect the continuous movement integrator to `SimulationRuntime` yet. Do not infer a tick frequency, movement speed, or movement mode tuning from frame rate or defaults. The movement transfer remains the next major vertical slice, but its integration contract must first define the canonical tick duration and source the actual movement configuration without inventing values.
+
+The safe implementation order is:
+1. Keep the already-native continuous physics and bridge code as-is.
+2. Establish an explicit, game-owned simulation-time conversion contract (tick frequency / seconds per tick) and identify the authoritative player movement configuration.
+3. Implement an Eldoria-native movement state/integrator using that contract, then register it as a listener on the existing `SimulationRuntime`; preserve `HexWorldRuntime` as the sole world/occupancy owner and synchronize continuous position through its existing APIs.
+4. Add deterministic tests for tick-to-displacement, pause/no-op input, mode multipliers, collision response, cell/occupancy synchronization, and save/load continuity.
+5. Only after all remaining lab consumers and the release gate have native replacements should `scripts/verify_release.py` and `pyproject.toml` stop referencing the lab package.
+
+### Guardrails retained
+
+No source implementation, package discovery, release gate, save schema, or gameplay behavior was changed in this decision pass. `main`, `demo_eldoria`, and `experiment/hex-world-laboratory` remain untouched. All further work stays on `experiment/map-cleanup`.
