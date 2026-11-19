@@ -24,7 +24,6 @@ class ContentPackage:
     package_version: str
     schema_version: int
     files: Mapping[str, dict]
-    map_definitions: Mapping[str, object]
     hex_map_definitions: Mapping[str, object]
     world_map_definition: object | None = None
     presentation_assets_path: Path | None = None
@@ -34,13 +33,9 @@ class ContentPackage:
     scene_placements: object | None = None
 
 
-def _load_hex_maps(maps_root: Path, square_maps: Mapping[str, object]) -> dict[str, object]:
+def _load_hex_maps(maps_root: Path) -> dict[str, object]:
     hex_maps: dict[str, object] = {}
-    transition_ids = {
-        transition.transition_id
-        for definition in square_maps.values()
-        for transition in definition.transitions
-    }
+    transition_ids = set()
     for source in sorted(maps_root.glob("*.json")):
         try:
             raw = json.loads(source.read_text(encoding="utf-8"))
@@ -52,7 +47,9 @@ def _load_hex_maps(maps_root: Path, square_maps: Mapping[str, object]) -> dict[s
         if type(version) is not int:
             raise ContentPackageError(f"Map file '{source}' has an invalid schema_version.")
         if version == 1:
-            continue
+            raise ContentPackageError(
+                f"Legacy square-map schema is no longer supported: {source}"
+            )
         if version != 2:
             raise ContentPackageError(
                 f"Map file '{source}' uses unsupported schema_version '{version}'."
@@ -61,7 +58,7 @@ def _load_hex_maps(maps_root: Path, square_maps: Mapping[str, object]) -> dict[s
             definition = load_hex_map_definition(source)
         except (OSError, ValueError) as error:
             raise ContentPackageError(f"Invalid hex map '{source}': {error}") from error
-        if definition.map_id in square_maps or definition.map_id in hex_maps:
+        if definition.map_id in hex_maps:
             raise ContentPackageError(f"Duplicate map ID in package: {definition.map_id}")
         hex_maps[definition.map_id] = definition
         for transition in definition.transitions:
@@ -133,7 +130,6 @@ def load_content_package(package_dir: str | Path) -> ContentPackage:
             )
         files[key] = value
 
-    square = {}
     hexes = {}
     world_map = None
     maps_dir = manifest.get("maps")
@@ -152,10 +148,7 @@ def load_content_package(package_dir: str | Path) -> ContentPackage:
                 f"Content package maps directory could not be loaded: {maps_root}"
             )
         try:
-            from world.map_catalog import load_map_catalog
-
-            square, _ = load_map_catalog(maps_root)
-            hexes = _load_hex_maps(maps_root, square)
+            hexes = _load_hex_maps(maps_root)
             world_map_path = manifest.get("world_map")
             if world_map_path is not None:
                 if not isinstance(world_map_path, str) or not world_map_path.strip():
@@ -301,7 +294,6 @@ def load_content_package(package_dir: str | Path) -> ContentPackage:
         package_version,
         version,
         MappingProxyType(files),
-        MappingProxyType(square),
         MappingProxyType(hexes),
         world_map,
         presentation_assets_path,

@@ -33,7 +33,7 @@ class TestContentPackageLoader(unittest.TestCase):
         self.assertEqual(package.files["starter"]["schema_version"], 1)
         self.assertNotIn("locations", package.files["starter"])
         self.assertNotIn("connections", package.files["starter"])
-        self.assertEqual(len(package.map_definitions), 0)
+        self.assertEqual(len(package.hex_map_definitions), 0)
         self.assertEqual(package.files["npcs"]["npcs"], [])
         self.assertEqual(package.files["quests"]["quests"], [])
         self.assertEqual(package.files["resources"]["nodes"], [])
@@ -189,7 +189,6 @@ class TestContentPackageLoader(unittest.TestCase):
 
     def test_demo_package_contains_no_legacy_square_or_demo_hex_maps(self):
         package = load_content_package(DEMO_PACKAGE)
-        self.assertEqual(package.map_definitions, {})
         self.assertEqual(package.hex_map_definitions, {})
         self.assertIsNone(package.world_map_definition)
 

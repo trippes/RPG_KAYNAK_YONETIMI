@@ -155,112 +155,30 @@ class GameApplication:
 
 
     
-        from application.content_pack import (
-            _resolve_content_package_path,
-            build_starter_world_map, build_starter_local_map_definitions,
-            content_package_world_id,
-        )
+        from application.content_pack import _resolve_content_package_path
         from application.content_loader import load_content_package
 
         active_package_path = _resolve_content_package_path(
             getattr(self, "_content_package_path", None)
         )
-        package = load_content_package(active_package_path)
-        package_world_id = content_package_world_id(active_package_path)
-        if not package.map_definitions:
-            saved_spatial_actors = []
-            if candidate.actors is not None:
-                for actor_view in candidate.actors.actors():
-                    if candidate.actors.legacy_spatial_state(actor_view.actor_id) is not None:
-                        saved_spatial_actors.append(actor_view.actor_id)
-            saved_location_nodes = [
-                node.node_id
-                for world in candidate.session.worlds.get_all()
-                for node in candidate.resource_nodes.for_world(world.world_id)
-                if node.location_id is not None
-            ]
-            if saved_spatial_actors or container_placements or saved_location_nodes:
-                raise ValueError(
-                    "This save contains legacy square-map positions or placements. "
-                    "It cannot be loaded without its original map package; no "
-                    "square-to-hex coordinate conversion is performed."
-                )
-        else:
-            managed_world_ids = set()
-            local_map_catalog = {}
-            for world in candidate.session.worlds.get_all():
-                is_package_world = world.world_id == package_world_id
-                if is_package_world:
-                    managed_world_ids.add(world.world_id)
-                world_map = build_starter_world_map(
-                    world.world_id, package_path=active_package_path,
-                )
-                saved_location_ids = {
-                    spatial.location_id
-                    for actor in candidate.actors.actors()
-                    if actor.world_id == world.world_id
-                    and (
-                        spatial := candidate.actors.legacy_spatial_state(actor.actor_id)
-                    ) is not None
-                } if candidate.actors is not None else set()
-                available_location_ids = {
-                    location.location_id for location in world_map.locations()
-                }
-                missing_location_ids = sorted(saved_location_ids - available_location_ids)
-                if is_package_world and missing_location_ids:
-                    raise ValueError(
-                        f"Save for world '{world.world_id}' references maps missing from "
-                        f"the active content package: {', '.join(missing_location_ids)}. "
-                        "Restore the required content pack or provide an explicit migration."
-                    )
-                candidate.movement.register_map(world_map)
-                for local_map in build_starter_local_map_definitions(
-                    world.world_id, package_path=active_package_path,
-                ):
-                    local_map_catalog[(world.world_id, local_map.location_id)] = local_map
-                    if not candidate.world_objects.has_local_map(
-                        local_map.world_id, local_map.location_id,
-                    ):
-                        candidate.world_objects.register_local_map(local_map)
-                if is_package_world:
-                    for node in candidate.resource_nodes.for_world(world.world_id):
-                        if (
-                            node.location_id is not None
-                            and node.location_id not in available_location_ids
-                        ):
-                            raise ValueError(
-                                f"Saved resource node '{node.node_id}' references map "
-                                f"'{node.location_id}' missing from the active content package."
-                            )
-            for placement in container_placements:
-                candidate.world_objects.place(placement)
-            if candidate.actors is not None:
-                for actor_view in candidate.actors.actors():
-                    spatial = candidate.actors.legacy_spatial_state(actor_view.actor_id)
-                    if spatial is None or actor_view.world_id not in managed_world_ids:
-                        continue
-                    location_id = spatial.location_id
-                    world_map = candidate.movement.map_for(actor_view.world_id)
-                    if world_map is None or world_map.get(location_id) is None:
-                        raise ValueError(
-                            f"Saved actor '{actor_view.actor_id}' references unavailable "
-                            f"map '{location_id}' in world '{actor_view.world_id}'."
-                        )
-                    local_map = local_map_catalog.get((actor_view.world_id, location_id))
-                    if local_map is None:
-                        raise ValueError(
-                            f"Local map dimensions are missing for saved location "
-                            f"'{location_id}'."
-                        )
-                    candidate.movement.set_position(actor_view.actor_id, location_id)
-                    x, y = int(spatial.position.x), int(spatial.position.y)
-                    if not (0 <= x < local_map.width and 0 <= y < local_map.height):
-                        raise ValueError(
-                            f"Saved actor '{actor_view.actor_id}' position ({x}, {y}) "
-                            f"is outside map '{location_id}' bounds "
-                            f"({local_map.width}x{local_map.height}). No relocation was applied."
-                        )
-                    candidate.movement.set_tile_position(actor_view.actor_id, x, y)
+        load_content_package(active_package_path)
+        saved_spatial_actors = []
+        if candidate.actors is not None:
+            for actor_view in candidate.actors.actors():
+                if candidate.actors.legacy_spatial_state(actor_view.actor_id) is not None:
+                    saved_spatial_actors.append(actor_view.actor_id)
+        saved_location_nodes = [
+            node.node_id
+            for world in candidate.session.worlds.get_all()
+            for node in candidate.resource_nodes.for_world(world.world_id)
+            if node.location_id is not None
+        ]
+        if saved_spatial_actors or container_placements or saved_location_nodes:
+            raise ValueError(
+                "This save contains legacy square-map positions or placements. "
+                "It cannot be loaded without its original map package; no "
+                "square-to-hex coordinate conversion is performed."
+            )
 
         self.holder.publish(candidate)
         return self.holder.current

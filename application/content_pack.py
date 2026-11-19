@@ -15,8 +15,7 @@ from core.domain.spatial import Position
 from npc import Faction, NPC
 from economy import Currency, Money, MarketProfile, MarketCatalogEntry
 from quests import Dialogue, DialogueChoice, DialogueNode, Objective, ObjectiveType, Quest, Reward
-from resources import Inventory, Quantity, ResourceType, ResourceUnit, WorldResourceNode
-from world import build_world_map, build_local_map_definitions
+from resources import Inventory, ResourceType, ResourceUnit
 
 
 CONTENT_SCHEMA_VERSION = 1
@@ -483,76 +482,11 @@ def _register_npcs_for_phase(service, npc_definitions, phase: str, resolve_id):
 
 
 def _validate_content_references(
-    definition, map_definitions, npc_definitions, quest_definitions,
-    resource_definitions, ids: StarterContentIds,
+    definition, npc_definitions, quest_definitions, resource_definitions,
 ):
-    """Validate cross-file references, applying spatial checks only when maps exist."""
-    resolved_ids = StarterContentIds(**{
-        field.name: getattr(ids, field.name) or definition["ids"][field.name]
-        for field in fields(StarterContentIds)
-    })
-    resolve_id = _id_resolver(definition, resolved_ids)
-    maps = dict(map_definitions)
-
-    if maps:
-        for map_id, map_definition in maps.items():
-            if map_definition.world_position is None:
-                raise ContentDefinitionError(
-                    f"Map '{map_id}' is missing world_position in its map JSON file."
-                )
-        starting_maps = tuple(
-            item for item in maps.values() if item.starting_position is not None
-        )
-        if len(starting_maps) != 1:
-            raise ContentDefinitionError(
-                "Content package must define exactly one map with starting_position."
-            )
-
+    """Validate references among domain content records without map coupling."""
     npc_ids = {record["id"] for record in npc_definitions}
-    for npc in npc_definitions:
-        if not maps:
-            continue
-        map_id = resolve_id(npc["location_id"])
-        map_definition = maps.get(map_id)
-        if map_definition is None:
-            raise ContentDefinitionError(
-                f"NPC '{npc['id']}' references missing map '{map_id}' "
-                f"through location_id. Check npcs.json."
-            )
-        x, y = npc["position"]
-        if not (0 <= x < map_definition.size.width and 0 <= y < map_definition.size.height):
-            raise ContentDefinitionError(
-                f"NPC '{npc['id']}' position ({x}, {y}) is outside map "
-                f"'{map_id}' bounds ({map_definition.size.width}x{map_definition.size.height})."
-            )
-
     resource_ids = {record["id"] for record in resource_definitions}
-    for resource in resource_definitions:
-        if not maps:
-            continue
-        map_id = resolve_id(resource["location_id"])
-        map_definition = maps.get(map_id)
-        if map_definition is None:
-            raise ContentDefinitionError(
-                f"Resource node '{resource['id']}' references missing map "
-                f"'{map_id}' through location_id."
-            )
-        landmark = next(
-            (item for item in map_definition.landmarks
-             if item.landmark_id == resource["landmark_id"]),
-            None,
-        )
-        if landmark is None:
-            raise ContentDefinitionError(
-                f"Resource node '{resource['id']}' references missing landmark "
-                f"'{resource['landmark_id']}' on map '{map_id}'."
-            )
-        if landmark.resource_node_id != resource["id"]:
-            raise ContentDefinitionError(
-                f"Map '{map_id}' landmark '{landmark.landmark_id}' must reference "
-                f"resource node '{resource['id']}' through resource_node_id."
-            )
-
     for quest in quest_definitions:
         if quest["giver_npc_id"] not in npc_ids:
             raise ContentDefinitionError(
@@ -571,57 +505,19 @@ def _validate_content_references(
                     f"Quest '{quest['id']}' objective '{objective['id']}' "
                     f"references missing NPC '{target_id}'."
                 )
-
-    npc_by_id = {record["id"]: record for record in npc_definitions}
     for market in definition.get("markets", ()):
-        market_npc = npc_by_id.get(market["npc_id"])
-        if market_npc is None:
+        if market["npc_id"] not in npc_ids:
             raise ContentDefinitionError(
                 f"Market '{market['market_id']}' references missing NPC '{market['npc_id']}'."
             )
-        if maps:
-            map_id = resolve_id(market["location_id"])
-            map_definition = maps.get(map_id)
-            if map_definition is None:
-                raise ContentDefinitionError(
-                    f"Market '{market['market_id']}' references missing map '{map_id}'."
-                )
-            npc_map_id = resolve_id(market_npc["location_id"])
-            if npc_map_id != map_id:
-                raise ContentDefinitionError(
-                    f"Market '{market['market_id']}' is on map '{map_id}' but its NPC "
-                    f"'{market['npc_id']}' is assigned to '{npc_map_id}'."
-                )
-            if "position" in market:
-                x, y = market["position"]
-                if not (0 <= x < map_definition.size.width and 0 <= y < map_definition.size.height):
-                    raise ContentDefinitionError(
-                        f"Market '{market['market_id']}' position ({x}, {y}) is outside "
-                        f"map '{map_id}' bounds ({map_definition.size.width}x{map_definition.size.height})."
-                    )
-
     for partner in definition.get("trade_partners", ()):
         if partner["npc_id"] not in npc_ids:
             raise ContentDefinitionError(
                 f"Trade partner references missing NPC '{partner['npc_id']}'."
             )
-        if maps and "location_id" in partner:
-            map_id = resolve_id(partner["location_id"])
-            map_definition = maps.get(map_id)
-            if map_definition is None:
-                raise ContentDefinitionError(
-                    f"Trade partner '{partner['npc_id']}' references missing map '{map_id}'."
-                )
-            if "position" in partner:
-                x, y = partner["position"]
-                if not (0 <= x < map_definition.size.width and 0 <= y < map_definition.size.height):
-                    raise ContentDefinitionError(
-                        f"Trade partner '{partner['npc_id']}' position ({x}, {y}) is outside "
-                        f"map '{map_id}' bounds ({map_definition.size.width}x{map_definition.size.height})."
-                    )
 
 
-def _register_opening_content(application, definition: dict, npc_definitions, character_definitions, map_definitions, ids: StarterContentIds):
+def _register_opening_content(application, definition: dict, npc_definitions, character_definitions, ids: StarterContentIds):
     ids = StarterContentIds(**{
         field.name: getattr(ids, field.name) or definition["ids"][field.name]
         for field in fields(StarterContentIds)
@@ -671,26 +567,6 @@ def _register_opening_content(application, definition: dict, npc_definitions, ch
             speaker_record["id"],
         )
         service.register_dialogue(dialogue)
-    if map_definitions:
-        world_map = build_world_map(dict(map_definitions), world.world_id)
-        service.register_world_map(world_map)
-        local_maps = build_local_map_definitions(dict(map_definitions), world.world_id)
-        for local_map in local_maps:
-            if not bundle.world_objects.has_local_map(local_map.world_id, local_map.location_id):
-                bundle.world_objects.register_local_map(local_map)
-        starting_maps = tuple(
-            item for item in map_definitions.values()
-            if item.starting_position is not None
-        )
-        if len(starting_maps) != 1:
-            raise ContentDefinitionError(
-                "Content package must define exactly one map with starting_position."
-            )
-        start_map = starting_maps[0]
-        service.place_actor(resolve_id("hero_id"), start_map.map_id)
-        service.set_actor_tile_position(
-            resolve_id("hero_id"), start_map.starting_position[0], start_map.starting_position[1]
-        )
     return service, ids
 
 
@@ -713,15 +589,13 @@ def populate_opening_content(
     quest_definitions = load_quest_definitions(package_path=resolved_package_path)
     resource_definitions = load_resource_definitions(package_path=resolved_package_path)
     _validate_content_references(
-        definition, package.map_definitions, npc_definitions,
-        quest_definitions, resource_definitions, ids,
+        definition, npc_definitions, quest_definitions, resource_definitions,
     )
     service, resolved_ids = _register_opening_content(
         application,
         definition,
         npc_definitions,
         character_definitions,
-        package.map_definitions,
         ids,
     )
     service._content_package_path = resolved_package_path
@@ -772,15 +646,6 @@ def populate_gameplay_resources(service, definition_path=None, resource_definiti
     inventories = dict(bundle.inventories)
     inventories.setdefault(player_rules["inventory_id"], Inventory())
     object.__setattr__(bundle, "inventories", MappingProxyType(inventories))
-    if package.map_definitions:
-        _register_opening_resources(
-            service.application.holder.current,
-            package.map_definitions,
-            load_resource_definitions(resource_definitions_path, package_path=active_package_path),
-            _id_resolver(definition, ids),
-            world.world_id,
-            player_rules["inventory_id"],
-        )
     bundle = service.application.holder.current
     for market_data in definition.get("markets", ()):
         market_npc_id = market_data["npc_id"]
@@ -888,72 +753,10 @@ def load_resource_definitions(path: str | Path | None = None, *, package_path: s
 
 
 
-def _register_opening_resources(bundle, map_definitions, resource_definitions, resolve_id, world_id, inventory_id):
-    """Register resource nodes exclusively from validated content records."""
-    inventories = dict(bundle.inventories)
-    inventories.setdefault(inventory_id, Inventory())
-    object.__setattr__(bundle, "inventories", MappingProxyType(inventories))
-
-    landmarks = {
-        (map_id, landmark.landmark_id): landmark
-        for map_id, map_definition in map_definitions.items()
-        for landmark in map_definition.landmarks
-    }
-    for record in resource_definitions:
-        location_id = resolve_id(record["location_id"])
-        landmark = landmarks.get((location_id, record["landmark_id"]))
-        if landmark is None:
-            raise ContentDefinitionError(
-                f"Resource node '{record['id']}' references unknown landmark "
-                f"'{record['landmark_id']}' on map '{location_id}'."
-            )
-        if landmark.resource_node_id != record["id"]:
-            raise ContentDefinitionError(
-                f"Map landmark '{record['landmark_id']}' must reference resource "
-                f"node '{record['id']}' through resource_node_id."
-            )
-        if bundle.resource_nodes.get(record["id"]) is not None:
-            continue
-        unit = ResourceUnit(record["unit"])
-        bundle.resource_nodes.add(
-            WorldResourceNode(
-                record["id"],
-                world_id,
-                ResourceType(record["resource_type"]),
-                Quantity(record["initial_quantity"], unit),
-                Quantity(record["capacity"], unit),
-                Quantity(record["regeneration_rate"], unit),
-                location_id=location_id,
-                gathering_duration_ticks=record["gathering_duration_ticks"],
-            )
-        )
-
-
 def content_package_world_id(package_path=None) -> str:
     """Return the stable world ID owned by the selected content package."""
     definition = load_starter_content(package_path=package_path)
     return _id_resolver(definition, StarterContentIds())("world_id")
-
-
-def build_starter_world_map(
-    world_id: str,
-    ids: StarterContentIds = StarterContentIds(),
-    definition_path=None,
-    package_path=None,
-):
-    """Build the world graph from the selected package's local map catalog."""
-    if definition_path is not None:
-        raise ContentDefinitionError(
-            "World-map construction now requires map JSON files from the content package."
-        )
-    package = load_content_package(_resolve_content_package_path(package_path))
-    return build_world_map(dict(package.map_definitions), world_id)
-
-
-def build_starter_local_map_definitions(world_id: str, package_path=None):
-    """Return the package-defined local dimensions for world-object placement."""
-    package = load_content_package(_resolve_content_package_path(package_path))
-    return build_local_map_definitions(dict(package.map_definitions), world_id)
 
 
 __all__ = [
@@ -970,6 +773,4 @@ __all__ = [
     "populate_opening_content",
     "populate_gameplay_resources",
     "content_package_world_id",
-    "build_starter_world_map",
-    "build_starter_local_map_definitions",
 ]

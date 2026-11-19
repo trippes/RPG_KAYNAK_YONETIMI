@@ -20,7 +20,6 @@ PACKAGE = ROOT / "content" / "demo_eldoria"
 class TestContentPack(unittest.TestCase):
     def test_demo_package_has_no_legacy_map_or_gameplay_demo_records(self):
         package = load_content_package(PACKAGE)
-        self.assertEqual(package.map_definitions, {})
         self.assertEqual(package.hex_map_definitions, {})
         self.assertIsNone(package.world_map_definition)
         self.assertEqual(load_npc_definitions(package_path=PACKAGE), ())
