@@ -221,7 +221,8 @@ class GameplayService:
             )
         try:
             player = runtime.entity(self.player_actor_id)
-            cache_key = (world.world_id, player.position.map_id)
+            map_definition = runtime.map_definition(player.position.map_id)
+            cache_key = (world.world_id, player.position.map_id, id(map_definition))
             physics_snapshot = self._hex_physics_snapshots.get(cache_key)
             if physics_snapshot is None:
                 physics_snapshot = build_hex_physics_snapshot(
