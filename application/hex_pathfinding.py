@@ -18,6 +18,7 @@ class HexPathfinder:
         goal: LocalHexPosition,
         profile: MovementProfile | None = None,
         blocked_cells=(),
+        edge_validator=None,
     ) -> tuple[LocalHexPosition, ...] | None:
         if not isinstance(map_definition, HexMapDefinition):
             raise TypeError("map_definition must be a HexMapDefinition.")
@@ -71,6 +72,8 @@ class HexPathfinder:
                 )
                 result = MovementRules.evaluate(request, map_definition)
                 if not result.success:
+                    continue
+                if edge_validator is not None and not edge_validator(current, neighbor):
                     continue
                 new_cost = current_cost + 1
                 if new_cost >= cost_so_far.get(neighbor, float("inf")):
