@@ -50,6 +50,9 @@ class HexPhysicsSnapshot:
         "_obstacle_index",
     )
 
+    def __setattr__(self, name: str, value: object) -> None:
+        raise AttributeError("HexPhysicsSnapshot is immutable")
+
     def __init__(
         self,
         world_id: WorldId,
@@ -68,13 +71,17 @@ class HexPhysicsSnapshot:
             raise TypeError("geometry must be a HexMapCollisionGeometry")
         if geometry.map_id.value != map_definition.map_id:
             raise ValueError("collision geometry belongs to a different map")
-        self._world_id = world_id
-        self._map_definition = map_definition
-        self._layout = layout
-        self._geometry = geometry
-        self._obstacle_index = ObstacleSpatialIndex(
-            geometry.collision_obstacles,
-            cell_size=cell_size,
+        object.__setattr__(self, "_world_id", world_id)
+        object.__setattr__(self, "_map_definition", map_definition)
+        object.__setattr__(self, "_layout", layout)
+        object.__setattr__(self, "_geometry", geometry)
+        object.__setattr__(
+            self,
+            "_obstacle_index",
+            ObstacleSpatialIndex(
+                geometry.collision_obstacles,
+                cell_size=cell_size,
+            ),
         )
 
     @property
