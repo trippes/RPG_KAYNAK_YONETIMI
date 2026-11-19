@@ -246,3 +246,84 @@ def test_failed_nesting_validation_restores_world_placement_and_parentage():
     assert occupant.blocks_occupancy is True
     assert manager.parent_of("chest") is None
 
+def test_place_from_inventory_restores_world_placement_and_clears_custody():
+    _session, manager, runtime, binding = make_binding()
+    manager.set_inventory_custody("chest", "player_inventory")
+
+    placed = binding.place_from_inventory(
+        "chest",
+        "player_inventory",
+        EntityPosition("village", LocalHexPosition(2, 0)),
+        blocks_movement=True,
+        blocks_occupancy=True,
+    )
+
+    assert placed.entity_id == "chest_entity"
+    assert manager.inventory_custody("chest") is None
+    assert runtime.entity("chest_entity").position == EntityPosition(
+        "village", LocalHexPosition(2, 0),
+    )
+    assert runtime.occupancy.get("chest_entity").blocks_occupancy is True
+
+
+def test_failed_inventory_drop_restores_inventory_custody_without_world_placement():
+    _session, manager, runtime, binding = make_binding()
+    manager.set_inventory_custody("chest", "player_inventory")
+
+    def reject():
+        raise RuntimeError("session validation failed")
+
+    with pytest.raises(RuntimeError, match="session validation failed"):
+        binding.place_from_inventory(
+            "chest",
+            "player_inventory",
+            EntityPosition("village", LocalHexPosition(2, 0)),
+            blocks_movement=True,
+            blocks_occupancy=True,
+            validate=reject,
+        )
+
+    assert manager.inventory_custody("chest") == "player_inventory"
+    assert runtime.entities() == ()
+    assert runtime.occupancy.get("chest_entity") is None
+
+
+def test_release_nested_container_places_it_in_world():
+    _session, manager, runtime, binding = make_binding()
+    manager.contain("bag", "chest")
+
+    placed = binding.release_to_world(
+        "chest",
+        EntityPosition("village", LocalHexPosition(2, 0)),
+        blocks_movement=False,
+        blocks_occupancy=True,
+    )
+
+    assert placed.entity_id == "chest_entity"
+    assert manager.parent_of("chest") is None
+    assert runtime.entity("chest_entity").position == EntityPosition(
+        "village", LocalHexPosition(2, 0),
+    )
+    assert runtime.occupancy.get("chest_entity").blocks_occupancy is True
+
+
+def test_failed_nested_release_restores_parent_and_no_world_placement():
+    _session, manager, runtime, binding = make_binding()
+    manager.contain("bag", "chest")
+
+    def reject():
+        raise RuntimeError("session validation failed")
+
+    with pytest.raises(RuntimeError, match="session validation failed"):
+        binding.release_to_world(
+            "chest",
+            EntityPosition("village", LocalHexPosition(2, 0)),
+            blocks_movement=False,
+            blocks_occupancy=True,
+            validate=reject,
+        )
+
+    assert manager.parent_of("chest").container_id == "bag"
+    assert runtime.entities() == ()
+    assert runtime.occupancy.get("chest_entity") is None
+
