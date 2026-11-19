@@ -67,7 +67,6 @@ class PygameMovementInput:
             return MovementIntent()
 
         keys = self._key_state_provider()
-        pg = self._backend
         right = self._held(keys, "K_d", "K_RIGHT")
         left = self._held(keys, "K_a", "K_LEFT")
         up = self._held(keys, "K_w", "K_UP")
