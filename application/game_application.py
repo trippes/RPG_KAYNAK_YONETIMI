@@ -173,7 +173,16 @@ class GameApplication:
             for node in candidate.resource_nodes.for_world(world.world_id)
             if node.location_id is not None
         ]
-        if saved_spatial_actors or container_placements or saved_location_nodes:
+        saved_legacy_npcs = [
+            npc.npc_id
+            for npc in candidate.social.npcs.all()
+            if (
+                npc.location_id is not None
+                or npc.position.x != 0
+                or npc.position.y != 0
+            )
+        ]
+        if saved_spatial_actors or saved_legacy_npcs or container_placements or saved_location_nodes:
             raise ValueError(
                 "This save contains legacy square-map positions or placements. "
                 "It cannot be loaded without its original map package; no "
