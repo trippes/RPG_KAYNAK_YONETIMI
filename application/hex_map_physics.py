@@ -30,18 +30,23 @@ def _hex_vertices(center: WorldPoint, hex_size: float) -> tuple[WorldPoint, ...]
     )
 
 
-def _cell_center(position: LocalHexPosition, hex_size: float) -> WorldPoint:
-    return axial_to_world_point(HexCoord(position.q, position.r), hex_size)
+def _cell_center(
+    position: LocalHexPosition,
+    hex_size: float,
+    origin: WorldPoint,
+) -> WorldPoint:
+    return axial_to_world_point(HexCoord(position.q, position.r), hex_size, origin)
 
 
 def _boundary_edges(
     map_id: str,
     cells: frozenset[LocalHexPosition],
     hex_size: float,
+    origin: WorldPoint,
 ) -> tuple[HexBoundaryEdge, ...]:
     edges: list[HexBoundaryEdge] = []
     for cell in sorted(cells, key=lambda item: (item.q, item.r)):
-        center = _cell_center(cell, hex_size)
+        center = _cell_center(cell, hex_size, origin)
         vertices = _hex_vertices(center, hex_size)
         for edge_index in range(6):
             start, end = vertices[edge_index], vertices[(edge_index + 1) % 6]
@@ -68,27 +73,34 @@ def build_hex_map_collision_geometry(
     map_definition: HexMapDefinition,
     hex_size: int | float,
     *,
+    origin: WorldPoint = WorldPoint(0.0, 0.0),
     boundary_policy: BoundaryPolicy = BoundaryPolicy.BLOCKED,
     object_obstacles: tuple[StaticObstacle, ...] = (),
 ) -> HexMapCollisionGeometry:
-    """Build a stable native collision snapshot from an Eldoria map definition."""
+    """Build native collision geometry in Eldoria's canonical y-down world frame.
+
+    Origin is the world-space center of axial cell (0, 0).
+    """
     if not isinstance(map_definition, HexMapDefinition):
         raise TypeError("map_definition must be an Eldoria HexMapDefinition.")
     if isinstance(hex_size, bool) or not isinstance(hex_size, (int, float)):
         raise TypeError("hex_size must be a real number.")
     if not math.isfinite(hex_size) or hex_size <= 0:
         raise ValueError("hex_size must be finite and positive.")
+    if not isinstance(origin, WorldPoint):
+        raise TypeError("origin must be a WorldPoint.")
     if not isinstance(boundary_policy, BoundaryPolicy):
         raise TypeError("boundary_policy must be a BoundaryPolicy.")
 
+    size = float(hex_size)
     obstacles: list[StaticObstacle] = []
     for cell in sorted(map_definition.valid_cells, key=lambda item: (item.q, item.r)):
         record = map_definition.get_cell(cell)
         if record is not None and record.blocked:
-            center = _cell_center(cell, float(hex_size))
+            center = _cell_center(cell, size, origin)
             local_vertices = tuple(
                 WorldPoint(point.x - center.x, point.y - center.y)
-                for point in _hex_vertices(center, float(hex_size))
+                for point in _hex_vertices(center, size)
             )
             obstacles.append(StaticObstacle(
                 f"cell:{cell.q}:{cell.r}", map_definition.map_id,
@@ -97,10 +109,10 @@ def build_hex_map_collision_geometry(
 
     for landmark in sorted(map_definition.landmarks, key=lambda item: item.landmark_id):
         if not landmark.walkable:
-            center = _cell_center(landmark.position, float(hex_size))
+            center = _cell_center(landmark.position, size, origin)
             local_vertices = tuple(
                 WorldPoint(point.x - center.x, point.y - center.y)
-                for point in _hex_vertices(center, float(hex_size))
+                for point in _hex_vertices(center, size)
             )
             obstacles.append(StaticObstacle(
                 f"landmark:{landmark.landmark_id}", map_definition.map_id,
@@ -115,7 +127,7 @@ def build_hex_map_collision_geometry(
     obstacles.extend(supplied)
 
     boundaries = (
-        _boundary_edges(map_definition.map_id, map_definition.valid_cells, float(hex_size))
+        _boundary_edges(map_definition.map_id, map_definition.valid_cells, size, origin)
         if boundary_policy is BoundaryPolicy.BLOCKED else ()
     )
     return HexMapCollisionGeometry(
