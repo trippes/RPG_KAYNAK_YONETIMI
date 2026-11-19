@@ -98,3 +98,20 @@ Architecture correction during implementation: map-definition projection belongs
 - The native obstacle index currently covers static obstacle bounds only. Dynamic actor collider AABBs are not yet registered.
 - Circle-vs-polygon narrowphase, swept collision, contact resolution, and sliding response are not implemented yet.
 - The newly added tests have not been executed in this session; no passing CI result is claimed.
+
+
+## 2026-11-19 — Native narrowphase and kinematic resolution (third slice)
+
+Added the first Eldoria-owned collision decision and response layer:
+
+- `core/domain/physics/contacts.py`: immutable contact and contact-manifold values. Contact normals are normalized and point from the obstacle toward the moving shape.
+- `core/domain/physics/narrowphase.py`: circle-circle, circle-convex-polygon, and convex-polygon-convex-polygon overlap/contact calculations using Eldoria `WorldPoint` and `Vector2`.
+- `core/domain/physics/kinematic_solver.py`: deterministic discrete kinematic resolution, bounded depenetration, stable obstacle ordering, conservative swept-AABB candidate selection, and tangential wall sliding.
+- `tests/test_spatial/test_native_collision_solver.py`: narrowphase and kinematic tests, including indexed/unindexed candidate equivalence.
+- Exported the native contracts from `core.domain.physics`.
+
+The implementation intentionally retains the laboratory solver's current discrete-move limitation: this slice does not prevent tunneling when a single displacement crosses a thin obstacle and ends beyond it. It is not continuous collision detection. Swept AABB is used only to gather possible obstacles; final overlap decisions are made by narrowphase.
+
+Context7's Pygame documentation was checked. `pygame.Rect` collision tests are pixel-rectangle overlap operations with right/bottom edge exclusion; they are not suitable as the authoritative arbitrary-convex continuous physics layer. No Pygame dependency was added to the domain package.
+
+No gameplay movement, simulation tick, collider sizes, save schema, or existing bridge imports were changed. The new solver is not wired into `HexPhysicsSnapshot` or `HexWorldRuntime` yet. Tests are added but their CI result must be checked before claiming they pass.
