@@ -44,7 +44,7 @@ class ActorHexBindingService:
     an active actor can be immobilized without changing gameplay identity.
     """
 
-    __slots__ = ("_actors", "_runtime", "_world_id")
+    __slots__ = ("_actors", "_runtime", "_world_id", "_physics_snapshot", "_player_body")
 
     def __init__(
         self,
