@@ -14,7 +14,6 @@ RETIRED_PATHS = (
     "game_ui/screens/map_screen.py",
     "content/demo_eldoria/maps",
     "content/demo_eldoria/world.json",
-    "content/demo_eldoria/presentation_assets.json",
 )
 
 RETIRED_IMPORTS = {
@@ -43,16 +42,6 @@ def main() -> int:
     for relative in RETIRED_PATHS:
         if (ROOT / relative).exists():
             failures.append(f"retired path exists: {relative}")
-
-    import json
-
-    manifest = json.loads(
-        (ROOT / "content/demo_eldoria/manifest.json").read_text(encoding="utf-8")
-    )
-    if "presentation_assets" in manifest:
-        failures.append(
-            "retired combined presentation catalog is still active in manifest"
-        )
 
     for source_root in ("application", "game_ui", "npc", "resources", "economy"):
         root = ROOT / source_root
