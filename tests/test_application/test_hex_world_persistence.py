@@ -10,7 +10,10 @@ from application import (
 )
 from application.hex_map_definition import parse_hex_map
 from application.hex_world_runtime import HexWorldRuntime
-from core.domain.spatial import EntityPosition, LocalHexPosition, MovementProfile
+from core.domain.spatial import (
+    ContinuousEntityPosition, EntityPosition, LocalHexPosition, MovementProfile,
+    WorldPoint, axial_to_world_point,
+)
 from core.foundation import WorldId
 
 
@@ -90,6 +93,49 @@ def test_snapshot_round_trip_preserves_positions_profiles_occupancy_and_patrol()
     assert target.entities() == source.entities()
     assert target.occupancy.snapshot() == source.occupancy.snapshot()
     assert dict(target.patrol_indices) == {"guard": 3}
+
+
+def test_snapshot_round_trip_preserves_continuous_subcell_position():
+    source = make_runtime()
+    source.register_entity(
+        "hero",
+        "player",
+        EntityPosition("field", LocalHexPosition(0, 0)),
+    )
+    source.set_continuous_position("hero", WorldPoint(4.0, 5.0))
+
+    snapshot = HexWorldSnapshot.from_runtime(source)
+    decoded = HexWorldSnapshot.from_dict(snapshot.to_dict())
+    target = make_runtime()
+    decoded.restore_into(target)
+
+    assert decoded == snapshot
+    assert target.continuous_position("hero") == ContinuousEntityPosition(
+        "field", WorldPoint(4.0, 5.0)
+    )
+
+
+def test_schema_v1_cell_only_snapshot_migrates_to_cell_center():
+    source = make_runtime()
+    source.register_entity(
+        "hero",
+        "player",
+        EntityPosition("field", LocalHexPosition(1, 0)),
+    )
+    legacy = HexWorldSnapshot.from_runtime(source).to_dict()
+    legacy["schema_version"] = 1
+    for entity in legacy["entities"]:
+        entity.pop("continuous_position")
+
+    migrated = HexWorldSnapshot.from_dict(legacy)
+    expected_center = axial_to_world_point(
+        LocalHexPosition(1, 0).to_hex_coord(), HexWorldRuntime.HEX_SIZE
+    )
+
+    assert migrated.schema_version == 2
+    assert migrated.entities[0].continuous_position == ContinuousEntityPosition(
+        "field", expected_center
+    )
 
 
 def test_unscoped_runtime_cannot_be_snapshotted():
