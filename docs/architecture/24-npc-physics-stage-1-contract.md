@@ -283,3 +283,13 @@ Aşağıdaki konular uygulama sırasında mevcut kod ve içerik şeması incelen
 **Karar:** NPC'ler için başlangıç collider biçimi daire, yarıçapı **4 dünya birimi** olacaktır. Bu değer oyuncunun onaylı 8 dünya birimi yarıçapından ayrıdır. Her NPC kendi PhysicsBodyDefinition örneğini taşır; ortak fizik profili veya NPC başına simülasyon motoru oluşturulmaz.
 
 Bu karar collider geometrisini ve başlangıç ölçüsünü onaylar. Kütle, itme direnci, collision layer/mask, hareket hızı, NPC aktif yarıçapı ve performans kabul hedefi için değer belirlemez. İleride içerik tanımıyla NPC bazında farklı ölçü verilmesi desteklenebilir; 4 birim başlangıç varsayılanıdır.
+
+
+## 17. Aşama 1 uygulama ayrıntıları — içerik ve broadphase
+
+- NPC içerik kaydı, isteğe bağlı `physics` nesnesiyle dairesel collider tanımlayabilir: `{"shape": "circle", "radius": 4.0}`. Radius sonlu ve pozitif olmalıdır. Bu aşamada içerik loader yalnızca daire collider biçimini kabul eder; domain fizik sistemi diğer mevcut şekilleri desteklemeye devam eder.
+- Eski NPC içerikleriyle geriye dönük uyum için `physics` alanı bulunmayan kayıtlar NPC domain varsayılanını (yarıçap 4 dünya birimi) kullanır. Yeni içerik kayıtlarında fizik alanının açıkça yazılması tercih edilir.
+- `HexWorldRuntime` aktör kimliği ve konum otoritesi olarak kalır. `local_spatial_bounds`, yalnızca anchor'a göre collider AABB'sini taşır; konum veya ikinci aktör kaydı oluşturmaz.
+- Sürekli hareket, hücre hareketi ve harita transferi sırasında broadphase AABB'si aynı yerel collider sınırlarıyla yeni anchor'a taşınır. Varsayılanı olmayan aktörlerin mevcut nokta tabanlı indeksi korunur.
+- NPC binding, NPC'nin kendi `PhysicsBodyDefinition` nesnesinden yerel AABB üretip mevcut actor binding/runtime hattına iletir. Statik engel indeksi değiştirilmez.
+- Bu entegrasyon yalnızca broadphase aday kayıtlarının collider boyutunu dikkate almasını sağlar; henüz dinamik dar faz çarpışması, itiş veya NPC hareket çözümlemesi uygulamaz.

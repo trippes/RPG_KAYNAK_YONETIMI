@@ -143,6 +143,23 @@ class TestHexWorldRuntime(unittest.TestCase):
             (),
         )
 
+    def test_runtime_keeps_local_collider_bounds_through_position_updates(self):
+        self.runtime.register_entity(
+            "bounded_npc", "npc", EntityPosition("forest", LocalHexPosition(2, 0)),
+            local_spatial_bounds=AABB(-4.0, -4.0, 4.0, 4.0),
+        )
+        initial = self.runtime.continuous_position("bounded_npc").point
+        inside = AABB.around_point(WorldPoint(initial.x + 3.5, initial.y), 0.1)
+        outside = AABB.around_point(WorldPoint(initial.x + 4.5, initial.y), 0.1)
+        self.assertIn("bounded_npc", self.runtime.query_spatial_candidates("forest", inside))
+        self.assertNotIn("bounded_npc", self.runtime.query_spatial_candidates("forest", outside))
+        moved = WorldPoint(initial.x + 1.0, initial.y + 1.0)
+        self.assertTrue(self.runtime.set_continuous_position("bounded_npc", moved).success)
+        moved_inside = AABB.around_point(WorldPoint(moved.x + 3.5, moved.y), 0.1)
+        moved_outside = AABB.around_point(WorldPoint(moved.x + 4.5, moved.y), 0.1)
+        self.assertIn("bounded_npc", self.runtime.query_spatial_candidates("forest", moved_inside))
+        self.assertNotIn("bounded_npc", self.runtime.query_spatial_candidates("forest", moved_outside))
+
     def test_runtime_registers_continuous_position_at_cell_center(self):
         position = self.runtime.continuous_position("player")
         expected = axial_to_world_point(HexCoord(0, 0), self.runtime.HEX_SIZE)

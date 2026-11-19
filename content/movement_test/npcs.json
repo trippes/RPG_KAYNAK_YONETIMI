@@ -6,13 +6,21 @@
       "name": "Etkileşim Görevlisi",
       "role": "guard",
       "load_phase": "opening",
-      "dialogue_id": "movement_test_guard_dialogue"
+      "dialogue_id": "movement_test_guard_dialogue",
+      "physics": {
+        "shape": "circle",
+        "radius": 4
+      }
     },
     {
       "id": "test_target",
       "name": "Çarpışma Hedefi",
       "role": "test_dummy",
-      "load_phase": "gameplay"
+      "load_phase": "gameplay",
+      "physics": {
+        "shape": "circle",
+        "radius": 4
+      }
     }
   ]
 }

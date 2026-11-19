@@ -26,6 +26,7 @@ class _HexEntityState:
     kind: str
     profile: MovementProfile
     active: bool
+    local_spatial_bounds: AABB | None = None
 
     def __post_init__(self):
         if not isinstance(self.entity_id, str) or not self.entity_id.strip():
@@ -36,6 +37,8 @@ class _HexEntityState:
             raise TypeError("profile must be a MovementProfile.")
         if not isinstance(self.active, bool):
             raise TypeError("active must be boolean.")
+        if self.local_spatial_bounds is not None and not isinstance(self.local_spatial_bounds, AABB):
+            raise TypeError("local_spatial_bounds must be an AABB or None.")
 
 
 @dataclass(frozen=True, slots=True)
@@ -155,11 +158,14 @@ class HexWorldRuntime:
         profile: MovementProfile | None = None, *, active: bool = True,
         blocks_movement: bool = True, blocks_occupancy: bool = True,
         continuous_position: ContinuousEntityPosition | None = None,
+        local_spatial_bounds: AABB | None = None,
     ) -> HexMovableEntity:
         if entity_id in self._entities:
             raise ValueError(f"Duplicate hex entity: {entity_id}")
         if not isinstance(position, EntityPosition):
             raise TypeError("position must be an EntityPosition.")
+        if local_spatial_bounds is not None and not isinstance(local_spatial_bounds, AABB):
+            raise TypeError("local_spatial_bounds must be an AABB or None.")
         map_definition = self.map_definition(position.map_id)
         if not map_definition.has_cell(position.cell):
             raise ValueError("Entity position is outside the map valid_cells mask.")
@@ -184,7 +190,7 @@ class HexWorldRuntime:
         )
         if resolved_cell != position.cell:
             raise ValueError("continuous position does not resolve to the supplied map cell.")
-        state = _HexEntityState(entity_id, kind, profile, active)
+        state = _HexEntityState(entity_id, kind, profile, active, local_spatial_bounds)
         occupant = HexOccupant(
             entity_id, position, blocks_movement, blocks_occupancy, kind,
         )
@@ -195,7 +201,7 @@ class HexWorldRuntime:
             self._spatial_index.insert(
                 entity_id,
                 continuous_position.map_id,
-                AABB.at_point(continuous_position.point),
+                self._bounds_at(state, continuous_position.point),
             )
         except Exception:
             self._occupancy.remove(entity_id)
@@ -209,6 +215,17 @@ class HexWorldRuntime:
             return self._entities[entity_id]
         except KeyError as error:
             raise KeyError(f"Unknown hex entity: {entity_id}") from error
+
+    @staticmethod
+    def _bounds_at(state: _HexEntityState, point: WorldPoint) -> AABB:
+        """Translate immutable local collider bounds to the authoritative world point."""
+        local = state.local_spatial_bounds
+        if local is None:
+            return AABB.at_point(point)
+        return AABB(
+            point.x + local.min_x, point.y + local.min_y,
+            point.x + local.max_x, point.y + local.max_y,
+        )
 
     def entity(self, entity_id: str) -> HexMovableEntity:
         """Return a read-only entity view with position derived from occupancy."""
@@ -238,7 +255,7 @@ class HexWorldRuntime:
         if resolved_cell != occupant.position.cell:
             raise RuntimeError(f"Hex entity continuous position and occupancy diverged: {entity_id}")
         if entity_id not in self._spatial_index.query(
-            continuous_position.map_id, AABB.at_point(continuous_position.point)
+            continuous_position.map_id, self._bounds_at(state, continuous_position.point)
         ):
             raise RuntimeError(f"Hex entity spatial index is inconsistent: {entity_id}")
         return HexMovableEntity(
@@ -330,7 +347,7 @@ class HexWorldRuntime:
         )
         self._continuous_positions[entity_id] = continuous_position
         self._spatial_index.update(
-            entity_id, continuous_position.map_id, AABB.at_point(continuous_position.point)
+            entity_id, continuous_position.map_id, self._bounds_at(state, continuous_position.point)
         )
         return result
 
@@ -376,7 +393,8 @@ class HexWorldRuntime:
             next_position = ContinuousEntityPosition(entity.position.map_id, point)
             self._continuous_positions[entity_id] = next_position
             self._spatial_index.update(
-                entity_id, next_position.map_id, AABB.at_point(next_position.point)
+                entity_id, next_position.map_id,
+                self._bounds_at(self._entity_state(entity_id), next_position.point),
             )
             return MovementResult(True, entity.position)
 
@@ -401,7 +419,8 @@ class HexWorldRuntime:
         )
         self._continuous_positions[entity_id] = next_position
         self._spatial_index.update(
-            entity_id, next_position.map_id, AABB.at_point(next_position.point)
+            entity_id, next_position.map_id,
+            self._bounds_at(self._entity_state(entity_id), next_position.point),
         )
         return MovementResult(True, target)
 
@@ -505,7 +524,7 @@ class HexWorldRuntime:
         self._spatial_index.update(
             entity_id,
             next_continuous_position.map_id,
-            AABB.at_point(next_continuous_position.point),
+            self._bounds_at(self._entity_state(entity_id), next_continuous_position.point),
         )
         return MovementResult(True, target)
 

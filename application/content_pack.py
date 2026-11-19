@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 import sys
 from dataclasses import dataclass, fields
 from pathlib import Path
@@ -10,6 +11,7 @@ from types import MappingProxyType
 
 from application import GameplayService
 from core.errors import RPGError
+from core.domain.physics import CircleShape, PhysicsBodyDefinition
 from application.content_loader import ContentPackageError, load_content_package
 from character import Ability, Attribute, CharacterClass, CharacterFactory, Race
 from npc import Faction, NPC
@@ -161,6 +163,16 @@ def load_npc_definitions(path: str | Path | None = None, *, package_path: str | 
             or any(not isinstance(value, str) or not value.strip() for value in faction_ids)
         ):
             raise ContentDefinitionError(f"NPC '{npc_id}' has invalid faction ids.")
+        physics = record.get("physics")
+        if physics is not None:
+            if not isinstance(physics, dict):
+                raise ContentDefinitionError(f"NPC '{npc_id}' physics must be an object.")
+            if physics.get("shape") != "circle":
+                raise ContentDefinitionError(f"NPC '{npc_id}' physics shape must be 'circle'.")
+            radius = physics.get("radius")
+            if (isinstance(radius, bool) or not isinstance(radius, (int, float))
+                    or not math.isfinite(radius) or radius <= 0):
+                raise ContentDefinitionError(f"NPC '{npc_id}' physics radius must be finite and positive.")
 
     return tuple(records)
 
@@ -457,6 +469,17 @@ def _register_quest_content(service, records) -> None:
 
 
 
+def _build_npc_physics_body(npc_data: dict) -> PhysicsBodyDefinition | None:
+    """Build an NPC-owned immutable body from its optional content definition."""
+    physics = npc_data.get("physics")
+    if physics is None:
+        return None
+    return PhysicsBodyDefinition(
+        body_id=npc_data["id"],
+        collider=CircleShape(radius=physics["radius"]),
+    )
+
+
 def _register_npcs_for_phase(service, npc_definitions, phase: str, resolve_id):
     """Register NPC domain records and their matching world-actor identities."""
     bundle = service.application.holder.current
@@ -477,6 +500,7 @@ def _register_npcs_for_phase(service, npc_definitions, phase: str, resolve_id):
                     npc_data["name"],
                     npc_data["role"],
                     tuple(resolve_id(value) for value in npc_data.get("faction_ids", ())),
+                    physics_body=_build_npc_physics_body(npc_data),
                 )
             )
 

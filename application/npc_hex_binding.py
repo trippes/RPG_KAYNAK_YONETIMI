@@ -2,14 +2,16 @@
 
 from __future__ import annotations
 
-from core.domain.physics import PhysicsBodyDefinition
+from core.domain.physics import CircleShape, PhysicsBodyDefinition
 from core.domain.spatial import (
+    AABB,
     EntityPosition,
     HexDirection,
     LocalHexPosition,
     MovementFailureReason,
     MovementProfile,
     MovementResult,
+    WorldPoint,
 )
 from core.foundation import WorldId
 from npc import NPC, NPCRegistry
@@ -21,6 +23,25 @@ from .hex_world_runtime import HexMovableEntity
 
 class NPCSpatialBindingError(ValueError):
     """NPC domain record and world actor cannot share a spatial binding."""
+
+
+def _local_physics_bounds(body: PhysicsBodyDefinition) -> AABB:
+    """Return collider bounds relative to the NPC's authoritative ground anchor."""
+    if not isinstance(body, PhysicsBodyDefinition):
+        raise TypeError("body must be a PhysicsBodyDefinition")
+    offset = body.local_offset
+    shape = body.collider
+    if isinstance(shape, CircleShape):
+        center = WorldPoint(offset.x + shape.center.x, offset.y + shape.center.y)
+        return AABB.around_point(center, shape.radius)
+    points = tuple(
+        WorldPoint(offset.x + vertex.x, offset.y + vertex.y)
+        for vertex in shape.vertices
+    )
+    return AABB(
+        min(point.x for point in points), min(point.y for point in points),
+        max(point.x for point in points), max(point.y for point in points),
+    )
 
 
 class NPCSpatialBindingService:
@@ -83,6 +104,7 @@ class NPCSpatialBindingService:
             movement_enabled=movement_enabled,
             blocks_movement=blocks_movement,
             blocks_occupancy=blocks_occupancy,
+            local_spatial_bounds=_local_physics_bounds(npc.physics_body),
         )
 
     def move(self, npc_id: str, direction: HexDirection) -> MovementResult:

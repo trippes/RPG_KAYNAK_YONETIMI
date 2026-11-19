@@ -15,10 +15,12 @@ from application.hex_map_definition import parse_hex_map
 from application.hex_world_runtime import HexWorldRuntime
 from core.application import GameSession
 from core.domain.spatial import (
+    AABB,
     EntityPosition,
     HexDirection,
     LocalHexPosition,
     MovementFailureReason,
+    WorldPoint,
 )
 from core.foundation import WorldId
 from npc import NPC
@@ -87,6 +89,18 @@ def test_npc_spatial_binding_reuses_the_existing_npc_and_actor_identity():
     assert bundle.social.npcs.get("village_guard") is npc
     assert bundle.actors.get("village_guard").actor_id == "village_guard"
     assert runtime.entity("village_guard").position.cell == LocalHexPosition(0, 0)
+
+
+def test_npc_spatial_binding_indexes_the_npc_collider_bounds():
+    service, _bundle, _npc, runtime = prepare_npc()
+    service.npc_hex_binding.register_spatial(
+        "village_guard", EntityPosition("village", LocalHexPosition(0, 0)),
+    )
+    anchor = runtime.continuous_position("village_guard").point
+    inside = AABB.around_point(WorldPoint(anchor.x + 3.5, anchor.y), 0.1)
+    outside = AABB.around_point(WorldPoint(anchor.x + 4.5, anchor.y), 0.1)
+    assert "village_guard" in runtime.query_spatial_candidates("village", inside)
+    assert "village_guard" not in runtime.query_spatial_candidates("village", outside)
 
 
 def test_npc_spatial_binding_requires_an_existing_world_actor():
