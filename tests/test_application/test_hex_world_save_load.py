@@ -71,6 +71,7 @@ def make_application(tmp_path):
     service.register_actor("hero", "player")
     service.register_npc(NPC("guard", "Guard"))
     service.register_actor("guard", "npc")
+    bundle = app.holder.current
     bundle.resource_nodes.add(WorldResourceNode(
         "iron-node",
         world.world_id,
@@ -86,7 +87,7 @@ def make_application(tmp_path):
         world_map_definition=package.world_map_definition,
         world_id=WorldId(world.world_id),
     )
-    bundle.hex_world_runtime_owner.get_or_create(lambda: runtime)
+    service.hex_world_runtime_owner.get_or_create(lambda: runtime)
     service.hex_actor_binding.register_spatial(
         "hero",
         "player",
