@@ -32,7 +32,7 @@ class HexWorldEntityRecord:
     def __post_init__(self) -> None:
         if not isinstance(self.entity_id, str) or not self.entity_id.strip():
             raise ValueError("entity_id must be a non-empty string.")
-        if self.kind not in {"player", "npc", "object"}:
+        if not isinstance(self.kind, str) or self.kind not in {"player", "npc", "object"}:
             raise ValueError("kind must be player, npc, or object.")
         if not isinstance(self.position, EntityPosition):
             raise TypeError("position must be an EntityPosition.")
@@ -107,8 +107,13 @@ class HexWorldSnapshot:
             occupant.entity_id: occupant
             for occupant in runtime.occupancy.snapshot()
         }
+        runtime_entities = runtime.entities()
+        if set(occupants) != {entity.entity_id for entity in runtime_entities}:
+            raise HexWorldPersistenceError(
+                "Runtime entity and occupancy registries are inconsistent."
+            )
         records = []
-        for entity in runtime.entities():
+        for entity in runtime_entities:
             occupant = occupants.get(entity.entity_id)
             if occupant is None:
                 raise HexWorldPersistenceError(
@@ -216,9 +221,9 @@ class HexWorldSnapshot:
                 raise HexWorldPersistenceError("Invalid allowed_terrain_ids list.")
             try:
                 records.append(HexWorldEntityRecord(
-                    str(raw["entity_id"]),
-                    str(raw["kind"]),
-                    EntityPosition(str(position["map_id"]), LocalHexPosition(q, r)),
+                    raw["entity_id"],
+                    raw["kind"],
+                    EntityPosition(position["map_id"], LocalHexPosition(q, r)),
                     MovementProfile(
                         profile["can_move"],
                         frozenset(allowed) if allowed is not None else None,
@@ -243,7 +248,7 @@ class HexWorldSnapshot:
                 WorldId(world_value),
                 tuple(records),
                 tuple(patrol_indices),
-                schema=str(data["schema"]),
+                schema=data["schema"],
                 schema_version=version,
             )
         except (TypeError, ValueError) as error:
