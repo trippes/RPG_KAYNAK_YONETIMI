@@ -10,6 +10,7 @@ from application.content_pack import (
     load_quest_definitions,
     load_resource_definitions,
     populate_gameplay_resources,
+    populate_gameplay_placements,
     populate_opening_content,
 )
 
@@ -56,6 +57,21 @@ class TestContentPack(unittest.TestCase):
         self.assertIsNone(service.market_for_npc("innkeeper_mira"))
         self.assertEqual(tuple(bundle.social.npcs.all()), ())
         self.assertEqual(tuple(bundle.quest_log.all()), ())
+
+
+    def test_empty_demo_package_has_no_gameplay_placements_to_apply(self):
+        application = GameApplication.create_default()
+        service, _ids = populate_opening_content(
+            application, content_package_path=PACKAGE,
+        )
+
+        self.assertEqual(
+            populate_gameplay_placements(
+                service, content_package_path=PACKAGE,
+            ),
+            (),
+        )
+
 
 
 if __name__ == "__main__":
