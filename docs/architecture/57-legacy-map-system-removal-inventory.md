@@ -2,7 +2,7 @@
 
 **Branch:** `experiment/map-cleanup`  
 **Purpose:** Remove the pre-laboratory square-map and demo-Hex gameplay systems before integrating the laboratory Hex architecture.  
-**Status:** Inventory and removal contract; implementation proceeds in dependency-safe slices.
+**Status:** Historical baseline plus completed cleanup record. Sections 2–5 describe the pre-cleanup inventory and are not the current repository state. The current result is recorded in the final section below.
 
 ## 1. Target state
 
