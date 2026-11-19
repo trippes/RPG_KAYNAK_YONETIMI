@@ -5,6 +5,7 @@ import pytest
 from application import (
     GameApplication,
     GameplayService,
+    GameplayServiceError,
     NPCSpatialBindingError,
     ProductionFacilityRegistry,
     SessionBundle,
@@ -168,5 +169,5 @@ def test_npc_spatial_binding_is_scoped_to_the_active_world():
     other_world = bundle.session.worlds.create("Other", world_id="other_world")
     bundle.session.worlds.set_active(other_world.world_id)
 
-    with pytest.raises(Exception, match="not bound to the active world"):
+    with pytest.raises(GameplayServiceError, match="not bound to the active world"):
         _ = service.npc_hex_binding
