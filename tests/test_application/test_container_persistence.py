@@ -14,8 +14,6 @@ from resources import (
 )
 from core.application import GameSession
 from core.persistence import CanonicalSessionState, PersistenceDocument
-from core.entity.entity import Entity
-from core.entity import EntityType
 
 
 class TestContainerPersistence(unittest.TestCase):
