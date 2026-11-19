@@ -117,6 +117,11 @@ class GameApplication:
             character.bind_item_catalog(item_catalog)
         actors = None
         actor_activities = None
+        if document.actors is not None and document.actors.has_legacy_spatial_state:
+            raise ValueError(
+                "This save contains legacy square-map actor positions. "
+                "No square-to-hex coordinate conversion is performed."
+            )
         if document.actors is not None:
             actors, actor_activities = document.actors.restore(
                 candidate_session.worlds,
@@ -162,11 +167,6 @@ class GameApplication:
             getattr(self, "_content_package_path", None)
         )
         load_content_package(active_package_path)
-        saved_spatial_actors = []
-        if candidate.actors is not None:
-            for actor_view in candidate.actors.actors():
-                if candidate.actors.legacy_spatial_state(actor_view.actor_id) is not None:
-                    saved_spatial_actors.append(actor_view.actor_id)
         saved_location_nodes = [
             node.node_id
             for world in candidate.session.worlds.get_all()
@@ -182,7 +182,7 @@ class GameApplication:
                 or npc.position.y != 0
             )
         ]
-        if saved_spatial_actors or saved_legacy_npcs or container_placements or saved_location_nodes:
+        if saved_legacy_npcs or container_placements or saved_location_nodes:
             raise ValueError(
                 "This save contains legacy square-map positions or placements. "
                 "It cannot be loaded without its original map package; no "

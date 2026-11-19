@@ -63,6 +63,14 @@ class ActorSnapshot:
     actors: tuple[ActorRecord, ...]
     activities: tuple[ActivityRecord, ...]
 
+    @property
+    def has_legacy_spatial_state(self) -> bool:
+        """Whether the decoded save still contains retired square-map actor data."""
+        return any(
+            record.location_id is not None or record.position is not None
+            for record in self.actors
+        )
+
     @classmethod
     def from_runtime(
         cls,
@@ -82,9 +90,6 @@ class ActorSnapshot:
 
         actor_records = []
         for view in registry.actors():
-            spatial = registry.legacy_spatial_state(
-                view.actor_id, include_suspended=True
-            )
             actor_records.append(
                 ActorRecord(
                     view.actor_id,
@@ -93,8 +98,8 @@ class ActorSnapshot:
                     view.active,
                     view.activity_id,
                     view.character_id,
-                    spatial.location_id if spatial is not None else None,
-                    spatial.position if spatial is not None else None,
+                    None,
+                    None,
                     view.inventory_id,
                 )
             )
@@ -300,10 +305,6 @@ class ActorSnapshot:
                         record.inventory_id,
                     )
                 )
-                if record.location_id is not None:
-                    registry.set_legacy_position(
-                        record.actor_id, record.location_id, record.position
-                    )
 
             manager = ActorActivityManager(
                 registry,

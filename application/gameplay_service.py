@@ -781,20 +781,6 @@ class GameplayService:
     def actor(self, actor_id: str) -> ActorView | None:
         return self._current_bundle().actors.get(actor_id)
 
-    def legacy_actor_spatial_state(self, actor_id: str):
-        """Return square-map position only when the legacy spatial adapter is active."""
-        return self._current_bundle().actors.legacy_spatial_state(actor_id)
-
-    @staticmethod
-    def _require_legacy_actor_location(bundle, actor_id: str) -> str:
-        """Resolve an actor's square location only through the legacy boundary."""
-        spatial = bundle.actors.legacy_spatial_state(actor_id)
-        if spatial is None:
-            raise GameplayServiceError(
-                f"Actor {actor_id} has no active legacy square location."
-            )
-        return spatial.location_id
-
     def actor_character(self, actor_id: str):
         """Return the character aggregate linked to an actor."""
         bundle = self._current_bundle()
@@ -1039,11 +1025,6 @@ class GameplayService:
         profile = bundle.economy.market.profile(offer.market_id)
         if profile is not None:
             self._require_actor_in_active_world(bundle, buyer_id)
-            spatial = self.legacy_actor_spatial_state(buyer_id)
-            if spatial is not None and spatial.location_id != profile.location_id:
-                raise GameplayServiceError(
-                    "Buyer must be at the market's registered location."
-                )
         buyer_inventory = self._inventory(bundle, buyer_inventory_id)
         seller_inventory = self._inventory(bundle, offer.inventory_id)
         stock = seller_inventory.get(offer.resource_type)
@@ -1220,10 +1201,6 @@ class GameplayService:
             raise KeyError(f"NPC has no trade profile: {npc_id}")
         npc = bundle.social.npcs.get(npc_id)
         self._require_actor_in_active_world(bundle, actor_id)
-        spatial = bundle.actors.legacy_spatial_state(actor_id)
-        actor_location_id = spatial.location_id if spatial is not None else None
-        if actor_location_id != npc.location_id:
-            raise GameplayServiceError("Player must be at the NPC's location to trade.")
         if resource_type not in merchant.accepted_resources:
             raise GameplayServiceError("This NPC does not buy that resource.")
         seller_inventory = self._inventory(bundle, inventory_id)
@@ -1249,11 +1226,6 @@ class GameplayService:
             if profile is None:
                 raise KeyError(f"Market not found: {market_id}")
             self._require_actor_in_active_world(bundle, self.player_actor_id)
-            spatial = self.legacy_actor_spatial_state(self.player_actor_id)
-            if spatial is not None and spatial.location_id != profile.location_id:
-                raise GameplayServiceError(
-                    "Player must be at the market's registered location."
-                )
             inventory = self._inventory(bundle, profile.inventory_id)
             bundle.economy.market.restock(
                 market_id, inventory, bundle.simulation.current_tick.value,
@@ -1303,11 +1275,6 @@ class GameplayService:
         npc = bundle.social.npcs.get(npc_id)
         if npc is None:
             raise KeyError(f"NPC not found: {npc_id}")
-        if (
-            npc.location_id is not None
-            and self._require_legacy_actor_location(bundle, actor_id) != npc.location_id
-        ):
-            raise GameplayServiceError("Actor and NPC must be at the same location.")
         dialogue = bundle.social.dialogues.get(dialogue_id)
         if dialogue is None:
             raise KeyError(f"Dialogue not found: {dialogue_id}")
@@ -1567,11 +1534,6 @@ class GameplayService:
             npc = bundle.social.npcs.get(npc_id)
             if npc is None:
                 raise KeyError(f"NPC not found: {npc_id}")
-            if (
-                npc.location_id is not None
-                and self._require_legacy_actor_location(bundle, actor_id) != npc.location_id
-            ):
-                raise GameplayServiceError("Actor and quest giver must be at the same location.")
 
         quest = bundle.quest_log.get(quest_id)
         if quest is None:
