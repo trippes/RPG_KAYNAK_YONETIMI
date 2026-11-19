@@ -168,4 +168,4 @@ Bu ek, önceki “NPC/resource kimliklerini koruyarak axial yerleşime taşı”
 
 **Save rejection boundary:** ActorSnapshot eski actor spatial alanlarını, SocialSnapshot eski NPC spatial alanlarını, GameplaySnapshot eski resource-node location alanını, ContainerSnapshot eski placement listesini tanır. GameApplication bu verileri kare→axial dönüştürmeden reddeder.
 
-Cleanup HEAD 3790463394b1f47c81655169554e30202de66724; run [#44492476381](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44492476381) Linux/Windows başarılı; 1.341 test + 235 subtest, Ruff, compileall, wheel ve isolated install başarılı.
+Önceki cleanup kabul çalışmasının tarihsel kanıtı. Güncel branch HEAD ve belge düzeltmeleri dâhil CI sonucu için [cleanup dalının GitHub Actions geçmişi](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions) esas alınmalıdır. Linux/Windows başarılı; 1.341 test + 235 subtest, Ruff, compileall, wheel ve isolated install başarılı.
