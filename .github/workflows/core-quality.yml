@@ -25,6 +25,7 @@ jobs:
           application/hex_physics_bridge.py
           application/npc_hex_binding.py
           application/resource_node_hex_binding.py
+          application/market_hex_anchor.py
           application/session_bundle.py
           application/gameplay_service.py
           application/actor_system.py
@@ -40,6 +41,7 @@ jobs:
           tests/test_application/test_hex_physics_bridge.py
           tests/test_application/test_npc_hex_binding.py
           tests/test_application/test_resource_node_hex_binding.py
+          tests/test_application/test_market_hex_anchor.py
       - name: Verify legacy map cleanup boundary
         run: python scripts/check_map_cleanup.py
       - name: Report legacy API usage
