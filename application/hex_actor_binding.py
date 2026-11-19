@@ -56,6 +56,13 @@ class ActorHexBindingService:
             raise TypeError("runtime must be a HexWorldRuntime")
         if not isinstance(world_id, WorldId):
             raise TypeError("world_id must be a canonical WorldId")
+        if runtime.world_id is None:
+            raise ValueError("runtime must be bound to a WorldId before actor integration")
+        if runtime.world_id != world_id:
+            raise ActorHexBindingError(
+                f"Runtime belongs to world '{runtime.world_id.value}', "
+                f"not '{world_id.value}'."
+            )
         self._actors = actors
         self._runtime = runtime
         self._world_id = world_id
