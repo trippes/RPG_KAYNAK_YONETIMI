@@ -560,17 +560,8 @@ class Renderer:
         """Status strip shared by gameplay screens (+ resource bar on main ones)."""
         snapshot = service.state()
         stats = service.actor_stats(actor_id)
-        location = "Bilinmeyen konum"
-        if stats is not None:
-            actor = service.actor(actor_id)
-            spatial = (
-                service.legacy_actor_spatial_state(actor_id)
-                if actor is not None else None
-            )
-            if actor is not None and spatial is not None:
-                world_map = service.application.holder.current.movement.map_for(actor.world_id)
-                if world_map is not None and world_map.get(spatial.location_id) is not None:
-                    location = world_map.get(spatial.location_id).name
+        active_world = service.application.holder.current.session.worlds.get_active()
+        location = active_world.name if active_world is not None else "Eldoria"
         try:
             gold = service.balance(actor_id, "gold").amount
         except (KeyError, ValueError):
@@ -699,38 +690,3 @@ class Renderer:
     def error(self, message):
         self.toast(message, "error")
 
-    # -------------------------------------------------------------------- maps
-    def map_edge(self, start, end, color=PANEL_BORDER, width=4):
-        self.pg.draw.line(self.surface, color, start, end, width)
-
-    def map_node(self, position, color=BUTTON_SELECTED, *, selected=False, current=False):
-        radius = 23 if selected else 18
-        self.pg.draw.circle(self.surface, color, position, radius)
-        border = HIGHLIGHT if current else MUTED
-        self.pg.draw.circle(self.surface, border, position, radius, 3)
-
-    def world_map(self, world_map, current_location_id=None, selected_location_id=None, rect=None):
-        """Draw a location graph inside a panel using content-defined positions."""
-        rect = rect or self.pg.Rect(24, 130, 620, 350)
-        locations = world_map.locations()
-        positions = {}
-        for index, location in enumerate(locations):
-            raw = location.position or (150 + index * 180, 220)
-            positions[location.location_id] = (rect.x + 16 + raw[0], rect.y - 18 + raw[1])
-        drawn = set()
-        for location in locations:
-            for neighbor in world_map.neighbors(location.location_id):
-                edge = tuple(sorted((location.location_id, neighbor.location_id)))
-                if edge in drawn:
-                    continue
-                self.map_edge(positions[location.location_id], positions[neighbor.location_id])
-                drawn.add(edge)
-        for location in locations:
-            position = positions[location.location_id]
-            self.map_node(
-                position,
-                selected=location.location_id == selected_location_id,
-                current=location.location_id == current_location_id,
-            )
-            self.text(location.name, position[0] - 34, position[1] + 30, TEXT)
-        return positions
