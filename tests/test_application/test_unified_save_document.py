@@ -8,7 +8,7 @@ from unittest import mock
 from application import GameSaveDocument, GameSaveFileAdapter, SaveJsonCodec, HexWorldSnapshot
 from core.foundation import WorldId
 from application.migrations import migrate_save_data
-from application.save_file_adapter import SaveFileReadError, SaveFileWriteError
+from application.save_file_adapter import SaveFileWriteError
 from application.save_document import (
     SaveDocumentError,
     UnsupportedSaveSchemaError,
@@ -16,19 +16,16 @@ from application.save_document import (
 from core.application import GameSession
 from core.persistence import CanonicalSessionState, PersistenceDocument
 from core.simulation import SimulationRuntime
-from core.time import Tick
 from resources import (
     GameplayPersistenceError,
     GameplaySnapshot,
     Inventory,
     ProductionJobManager,
     Quantity,
-    Recipe,
     ResourceType,
     ResourceUnit,
     WorldResourceNodeManager,
 )
-from core.foundation import EntityId
 
 
 class TestUnifiedSaveDocument(unittest.TestCase):
