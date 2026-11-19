@@ -220,7 +220,12 @@ class GameplayService:
                 "The active session has no initialized hex world runtime."
             )
         try:
-            player = runtime.entity(self.player_actor_id)
+            try:
+                player = runtime.entity(self.player_actor_id)
+            except KeyError:
+                return ActorHexBindingService(
+                    bundle.actors, runtime, WorldId(world.world_id),
+                )
             map_definition = runtime.map_definition(player.position.map_id)
             cache_key = (world.world_id, player.position.map_id, id(map_definition))
             physics_snapshot = self._hex_physics_snapshots.get(cache_key)
