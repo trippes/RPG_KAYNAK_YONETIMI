@@ -166,6 +166,6 @@ Laboratuvar klasörü silinmez; bağımsız referans ortamı olarak kalır.
 
 ## 10. Nihai mimari kararı
 
-**Kimlik `WorldActorRegistry`'de; sürekli konum ve dünya yaşam döngüsü `HexWorldRuntime`'ta; hücre occupancy türetilmiş registry görünümünde; geometri `core.domain.spatial`'da; statik harita çarpışma kaynağı `HexPhysicsSnapshot)'ta; kamera/screen transform sunum katmanında; etkileşim hedefleme application katmanında; kalıcılık mevcut GameSaveDocument zincirinde kalır.**
+**Kimlik `WorldActorRegistry`'de; sürekli konum ve dünya yaşam döngüsü `HexWorldRuntime`'ta; hücre occupancy türetilmiş registry görünümünde; geometri `core.domain.spatial`'da; statik harita çarpışma kaynağı `HexPhysicsSnapshot`'ta; kamera/screen transform sunum katmanında; etkileşim hedefleme application katmanında; kalıcılık mevcut GameSaveDocument zincirinde kalır.**
 
 Aktarılan şey laboratuvar paketi veya demosu değil, doğrulanmış teknik davranış ve sözleşmelerdir. Bu sözleşme onaylanmadan uygulama koduna geçilmez.
