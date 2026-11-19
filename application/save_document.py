@@ -8,7 +8,7 @@ from core.persistence.contracts import (
     PersistenceSchemaError,
     UnsupportedPersistenceSchemaError,
 )
-from resources.persistence import GameplayPersistenceError, GameplaySnapshot
+from resources.persistence import GameplaySnapshot
 from .production_persistence import ProductionSnapshot
 from .actor_persistence import ActorSnapshot
 from character import CharacterSnapshot
@@ -80,11 +80,16 @@ class GameSaveDocument:
             raise TypeError("quests must be QuestSnapshot or None.")
         if self.economy is not None and not isinstance(self.economy, EconomySnapshot):
             raise TypeError("economy must be EconomySnapshot or None.")
-        if self.social is not None and not isinstance(self.social, SocialSnapshot): raise TypeError("social must be SocialSnapshot or None.")
-        if self.combat is not None and not isinstance(self.combat, CombatSnapshot): raise TypeError("combat must be CombatSnapshot or None.")
-        if self.containers is not None and not isinstance(self.containers, ContainerSnapshot): raise TypeError("containers must be ContainerSnapshot or None.")
-        if self.locks is not None and not isinstance(self.locks, LockSnapshot): raise TypeError("locks must be LockSnapshot or None.")
-        if self.quest_graph_progress is not None and not isinstance(self.quest_graph_progress, Mapping): raise TypeError("quest_graph_progress must be a mapping or None.")
+        if self.social is not None and not isinstance(self.social, SocialSnapshot):
+            raise TypeError("social must be SocialSnapshot or None.")
+        if self.combat is not None and not isinstance(self.combat, CombatSnapshot):
+            raise TypeError("combat must be CombatSnapshot or None.")
+        if self.containers is not None and not isinstance(self.containers, ContainerSnapshot):
+            raise TypeError("containers must be ContainerSnapshot or None.")
+        if self.locks is not None and not isinstance(self.locks, LockSnapshot):
+            raise TypeError("locks must be LockSnapshot or None.")
+        if self.quest_graph_progress is not None and not isinstance(self.quest_graph_progress, Mapping):
+            raise TypeError("quest_graph_progress must be a mapping or None.")
         if self.hex_world is not None and not isinstance(self.hex_world, HexWorldSnapshot):
             raise TypeError("hex_world must be HexWorldSnapshot or None.")
         if self.core.simulation_tick.value != self.gameplay.simulation_tick:
@@ -107,12 +112,18 @@ class GameSaveDocument:
             result["quests"] = self.quests.to_dict()
         if self.economy is not None:
             result["economy"] = self.economy.to_dict()
-        if self.social is not None: result["social"] = self.social.to_dict()
-        if self.combat is not None: result["combat"] = self.combat.to_dict()
-        if self.containers is not None: result["containers"] = self.containers.to_dict()
-        if self.locks is not None: result["locks"] = self.locks.to_dict()
-        if self.quest_graph_progress is not None: result["quest_graph_progress"] = dict(self.quest_graph_progress)
-        if self.hex_world is not None: result["hex_world"] = self.hex_world.to_dict()
+        if self.social is not None:
+            result["social"] = self.social.to_dict()
+        if self.combat is not None:
+            result["combat"] = self.combat.to_dict()
+        if self.containers is not None:
+            result["containers"] = self.containers.to_dict()
+        if self.locks is not None:
+            result["locks"] = self.locks.to_dict()
+        if self.quest_graph_progress is not None:
+            result["quest_graph_progress"] = dict(self.quest_graph_progress)
+        if self.hex_world is not None:
+            result["hex_world"] = self.hex_world.to_dict()
         return result
 
     @classmethod
@@ -165,18 +176,21 @@ class GameSaveDocument:
             characters = CharacterSnapshot.from_dict(data["characters"])
         quests = None
         if "quests" in data:
-            if not isinstance(data["quests"], Mapping): raise SaveDocumentError("quests must be an object.")
+            if not isinstance(data["quests"], Mapping):
+                raise SaveDocumentError("quests must be an object.")
             quests = QuestSnapshot.from_dict(data["quests"])
         economy = None
         if "economy" in data:
-            if not isinstance(data["economy"], Mapping): raise SaveDocumentError("economy must be an object.")
+            if not isinstance(data["economy"], Mapping):
+                raise SaveDocumentError("economy must be an object.")
             economy = EconomySnapshot.from_dict(data["economy"])
         social = SocialSnapshot.from_dict(data["social"]) if "social" in data else None
         combat = CombatSnapshot.from_dict(data["combat"]) if "combat" in data else None
         containers = ContainerSnapshot.from_dict(data["containers"]) if "containers" in data and data["containers"] is not None else None
         locks = LockSnapshot.from_dict(data["locks"]) if "locks" in data and data["locks"] is not None else None
         quest_graph_progress = data.get("quest_graph_progress")
-        if quest_graph_progress is not None and not isinstance(quest_graph_progress, Mapping): raise SaveDocumentError("quest_graph_progress must be an object.")
+        if quest_graph_progress is not None and not isinstance(quest_graph_progress, Mapping):
+            raise SaveDocumentError("quest_graph_progress must be an object.")
         hex_world = (
             HexWorldSnapshot.from_dict(data["hex_world"])
             if data.get("hex_world") is not None else None
