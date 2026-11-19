@@ -138,6 +138,45 @@ class ActorHexBindingService:
             )
         return self._runtime.move_to(actor_id, target)
 
+    def move_to_with_physics(
+        self,
+        actor_id: str,
+        target: LocalHexPosition,
+        physics_snapshot,
+        body,
+    ) -> MovementResult:
+        """Validate a cell transition with static physics before committing occupancy."""
+        from .hex_physics_bridge import HexPhysicsSnapshot
+        from hex_world_lab.physics import BodyDefinition
+
+        actor = self._require_actor(actor_id)
+        entity = self._runtime.entity(actor_id)
+        if not actor.active:
+            return MovementResult(
+                False,
+                entity.position,
+                MovementFailureReason.MOVEMENT_NOT_ALLOWED,
+                "Actor is inactive.",
+            )
+        if not isinstance(physics_snapshot, HexPhysicsSnapshot):
+            raise TypeError("physics_snapshot must be a HexPhysicsSnapshot")
+        if not isinstance(body, BodyDefinition):
+            raise TypeError("body must be a BodyDefinition")
+        if physics_snapshot.map_id != entity.position.map_id:
+            raise ValueError("physics snapshot belongs to a different map")
+
+        preflight = self._runtime.validate_move_to(actor_id, target)
+        if not preflight.success:
+            return preflight
+        if not physics_snapshot.can_reach_cell(entity.position.cell, target, body):
+            return MovementResult(
+                False,
+                entity.position,
+                MovementFailureReason.PHYSICAL_COLLISION,
+                "A static physical obstacle blocks the cell transition.",
+            )
+        return self._runtime.move_to(actor_id, target)
+
     def set_movement_enabled(
         self,
         actor_id: str,
