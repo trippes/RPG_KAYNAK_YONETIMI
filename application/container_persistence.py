@@ -7,7 +7,6 @@ from typing import Mapping
 
 from character import EquipmentSlot, ItemDefinition
 from resources import Quantity, ResourceDefinition, ResourceType, ResourceUnit
-from .world_object_placement import WorldObjectPlacement, WorldObjectPlacementRegistry
 from containers import (
     BreakProfile, BreakProfileRegistry, ContainerDefinition, ContainerInstance,
     ContainerManager, ContainerManagerError,
@@ -28,15 +27,12 @@ class ContainerSnapshot:
     data: Mapping[str, object]
 
     @classmethod
-    def from_runtime(cls, manager, placements, item_catalog, resource_catalog):
+    def from_runtime(cls, manager, item_catalog, resource_catalog):
         if not isinstance(manager, ContainerManager):
             raise TypeError("manager must be ContainerManager.")
         if not isinstance(item_catalog, Mapping) or not isinstance(resource_catalog, Mapping):
             raise TypeError("Physical catalogs must be mappings.")
-        if not isinstance(placements, WorldObjectPlacementRegistry):
-            raise TypeError("placements must be WorldObjectPlacementRegistry.")
         manager.validate()
-        placements.validate()
         instances = manager.instances()
         if not instances:
             raise ContainerPersistenceError("An empty container registry has no snapshot.")
@@ -49,7 +45,6 @@ class ContainerSnapshot:
         inventory_records = []
         parent_records = []
         custody_records = []
-        placement_records = []
 
         for instance in instances:
             definition = manager.definition(instance.definition_id)
@@ -93,9 +88,6 @@ class ContainerSnapshot:
             owner = manager.inventory_custody(instance.container_id)
             if owner is not None:
                 custody_records.append({"container_id": instance.container_id, "inventory_id": owner})
-            placement = placements.get(instance.entity_id)
-            if placement is not None:
-                placement_records.append(_placement_to_dict(placement))
 
         missing_items = item_ids - set(item_catalog)
         missing_resources = resource_ids - set(resource_catalog)
@@ -114,7 +106,7 @@ class ContainerSnapshot:
             "inventories": sorted(inventory_records, key=lambda value: value["container_id"]),
             "parents": sorted(parent_records, key=lambda value: value["container_id"]),
             "custodies": sorted(custody_records, key=lambda value: value["container_id"]),
-            "placements": sorted(placement_records, key=lambda value: value["object_id"]),
+            "placements": [],
             "item_catalog": [_item_to_dict(item_catalog[key]) for key in sorted(item_ids)],
             "resource_catalog": [_resource_to_dict(resource_catalog[key]) for key in sorted(resource_ids)],
         }
@@ -241,7 +233,7 @@ class ContainerSnapshot:
             for value in self.data["custodies"]:
                 manager.set_inventory_custody(value["container_id"], value["inventory_id"])
             manager.validate()
-            placements = tuple(_placement_from_dict(value) for value in self.data["placements"])
+            placements = tuple(self.data["placements"])
             return manager, item_catalog, resource_catalog, placements
         except (KeyError, TypeError, ValueError, ContainerManagerError) as error:
             if isinstance(error, ContainerPersistenceError):
@@ -308,18 +300,6 @@ def _resource_from_dict(value):
         value.get("weight_kg_per_unit", 0.0), value.get("volume_liters_per_unit", 0.0),
         value.get("category", "misc"), tuple(value.get("tags", ())),
     )
-
-
-def _placement_to_dict(value):
-    return {
-        "object_id": value.object_id, "world_id": value.world_id, "location_id": value.location_id,
-        "x": value.x, "y": value.y, "width": value.width, "height": value.height,
-        "blocks_movement": value.blocks_movement, "layer": value.layer, "tags": list(value.tags),
-    }
-
-
-def _placement_from_dict(value):
-    return WorldObjectPlacement(**value)
 
 
 def _copy_json_value(value):

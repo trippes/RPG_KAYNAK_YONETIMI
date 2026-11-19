@@ -20,7 +20,6 @@ from quests import QuestLog, QuestGraph, QuestGraphProgress
 from economy import Economy
 from .social_runtime import SocialRuntime
 from .combat_runtime import CombatRuntime
-from .world_object_placement import WorldObjectPlacementRegistry
 from .hex_world_runtime import HexWorldRuntimeOwner
 
 
@@ -51,7 +50,6 @@ remain mutable domain objects by design; this is not deep immutability.
     social: SocialRuntime | None = None
     combat: CombatRuntime | None = None
     items: Mapping[str, ItemDefinition] | None = None
-    world_objects: WorldObjectPlacementRegistry | None = None
     resource_definitions: Mapping[str, ResourceDefinition] | None = None
     containers: ContainerManager | None = None
     locks: LockManager | None = None
@@ -70,11 +68,6 @@ remain mutable domain objects by design; this is not deep immutability.
             raise TypeError("inventories must be a mapping.")
         if not isinstance(self.recipes, Mapping):
             raise TypeError("recipes must be a mapping.")
-        if self.world_objects is None:
-            object.__setattr__(self, "world_objects", WorldObjectPlacementRegistry())
-        if not isinstance(self.world_objects, WorldObjectPlacementRegistry):
-            raise TypeError("world_objects must be WorldObjectPlacementRegistry.")
-        self.world_objects.validate()
         if self.items is None:
             object.__setattr__(self, "items", {})
         if not isinstance(self.items, Mapping) or any(
@@ -119,18 +112,6 @@ remain mutable domain objects by design; this is not deep immutability.
             if entity.entity_type != EntityType.ESYA:
                 raise ValueError(
                     f"Container {instance.container_id} must reference an ESYA Core entity."
-                )
-            placement = self.world_objects.get(instance.entity_id)
-            if placement is not None and placement.world_id != entity.world_id:
-                raise ValueError(
-                    f"Container placement world does not match its Core entity: {instance.container_id}"
-                )
-            if placement is not None and (
-                self.containers.parent_of(instance.container_id) is not None
-                or self.containers.inventory_custody(instance.container_id) is not None
-            ):
-                raise ValueError(
-                    f"Container cannot be placed while nested or inventory-held: {instance.container_id}"
                 )
         if self.characters is None:
             object.__setattr__(self, "characters", {})
@@ -340,7 +321,6 @@ class SessionHolder:
             or first.social is second.social
             or first.combat is second.combat
             or first.quest_graph_progress is second.quest_graph_progress
-            or first.world_objects is second.world_objects
             or first.hex_world_runtime_owner is second.hex_world_runtime_owner
             or (
                 first.hex_world_runtime is not None

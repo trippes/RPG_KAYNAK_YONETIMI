@@ -44,6 +44,5 @@ include = [
     "resources*",
     "save*",
     "time_system*",
-    "world*",
 ]
 exclude = ["tests*", "docs*", "scripts*"]

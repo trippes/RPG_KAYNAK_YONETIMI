@@ -207,7 +207,7 @@ class GameApplication:
         )
         container_snapshot = (
             ContainerSnapshot.from_runtime(
-                bundle.containers, bundle.world_objects, bundle.items, bundle.resource_definitions
+                bundle.containers, bundle.items, bundle.resource_definitions
             )
             if bundle.containers.instances() else None
         )
