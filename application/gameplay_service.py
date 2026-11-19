@@ -27,6 +27,7 @@ from .production_chain import ProductionChain, ProductionChainStage
 from .actor_system import ActivityView, ActorView, WorldActor
 from .hex_actor_binding import ActorHexBindingService
 from .npc_hex_binding import NPCSpatialBindingService
+from .resource_node_hex_binding import ResourceNodeHexBindingService
 from character import EquipmentSlot, ItemDefinition
 from npc import Faction, NPC
 from quests import Dialogue, Quest, QuestGraph, QuestGraphProgress
@@ -227,6 +228,31 @@ class GameplayService:
             bundle.social.npcs,
             self.hex_actor_binding,
         )
+
+    @property
+    def resource_node_hex_binding(self) -> ResourceNodeHexBindingService:
+        """Resolve fixed resource-node placements through the active hex runtime."""
+        bundle = self._current_bundle()
+        world = bundle.session.worlds.get_active()
+        if world is None:
+            raise GameplayServiceError(
+                "An active world is required for resource-node hex binding."
+            )
+        runtime = bundle.hex_world_runtime
+        if runtime is None:
+            raise GameplayServiceError(
+                "The active session has no initialized hex world runtime."
+            )
+        try:
+            return ResourceNodeHexBindingService(
+                bundle.resource_nodes,
+                runtime,
+                WorldId(world.world_id),
+            )
+        except (TypeError, ValueError) as error:
+            raise GameplayServiceError(
+                f"Hex runtime is not bound to the active world: {error}"
+            ) from error
 
     def register_character_factory(self, factory) -> None:
         self._character_factory = factory
