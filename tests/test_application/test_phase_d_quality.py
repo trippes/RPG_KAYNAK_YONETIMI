@@ -17,8 +17,6 @@ from game_ui.screens.dialogue_screen import DialogueScreen
 from game_ui.screens.market_screen import MarketScreen
 from game_ui.screens.main_menu import MainMenu
 from game_ui.screens.inventory_screen import InventoryScreen
-from game_ui.screens.map_screen import MapScreen
-from game_ui.screens.main_screen import MainScreen
 from game_ui.screens.quest_log_screen import QuestLogScreen
 from game_ui.screens.save_slots_screen import SaveSlotsScreen
 from quests import Objective, ObjectiveType, Quest, QuestLog, QuestState, Reward
@@ -360,68 +358,11 @@ class TestPhaseDQuality(unittest.TestCase):
 
         self.assertIsNone(screen.handle(InputState(actions={"back", "world", "inventory", "character"})))
 
-    def test_map_window_supports_map_input_without_screen_navigation(self):
-        from application.content_pack import populate_opening_content
-        service, _ = populate_opening_content(GameApplication.create_default())
-        screen = MapScreen(service)
-        screen.handle(InputState(actions={"down", "confirm"}))
-        self.assertEqual(service.actor("hero").location_id, "village")
-        self.assertIn("yalnızca konumları gösterir", screen.message)
-        self.assertIsNone(screen.handle(InputState(actions={"back"})))
-
     def test_market_is_not_exposed_as_global_navigation(self):
         service, _ = populate_opening_content(GameApplication.create_default())
         window = object.__new__(GameWindow)
         window.service = service
         self.assertNotIn("market", window._nav_enabled())
-
-    def test_legacy_navigation_bar_does_not_open_gameplay_windows(self):
-        opened = []
-        window = object.__new__(GameWindow)
-        window.current = "main"
-        window.gameplay_active = True
-        window.screens = {
-            "main": SimpleNamespace(menu_open=False),
-            "map": object(),
-        }
-        window.renderer = SimpleNamespace(nav_hit=lambda _position: "map")
-        window.window_manager = SimpleNamespace(
-            windows={"map": object()},
-            open=lambda window_id: opened.append(window_id),
-        )
-        window._nav_enabled = lambda: {"market": True}
-        state = InputState(mouse_clicked=True, mouse_pos=(900, 30))
-
-        window._handle_nav_click(state)
-
-        self.assertEqual(opened, [])
-        self.assertTrue(state.mouse_clicked)
-
-    def test_legacy_navigation_shortcuts_are_not_routed_by_navigation_bar(self):
-        opened = []
-        window = object.__new__(GameWindow)
-        window.current = "main"
-        window.gameplay_active = True
-        window.screens = {
-            "main": SimpleNamespace(menu_open=False),
-            "map": object(),
-            "market": object(),
-        }
-        window.renderer = SimpleNamespace(nav_hit=lambda _position: None)
-        window.window_manager = SimpleNamespace(
-            windows={"map": object(), "market": object()},
-            open=lambda window_id: opened.append(window_id),
-        )
-        window._nav_enabled = lambda: {"market": True}
-
-        map_state = InputState(actions={"map"})
-        market_state = InputState(actions={"market"})
-        window._handle_nav_click(map_state)
-        window._handle_nav_click(market_state)
-
-        self.assertEqual(opened, [])
-        self.assertEqual(map_state.actions, {"map"})
-        self.assertEqual(market_state.actions, {"market"})
 
     def test_market_shortcut_is_not_a_supported_navigation_action(self):
         notices = []
@@ -442,40 +383,6 @@ class TestPhaseDQuality(unittest.TestCase):
 
         self.assertEqual(opened, [])
         self.assertEqual(notices, [])
-
-    def test_main_screen_is_reachable_from_world_map(self):
-        from application.content_pack import populate_opening_content
-        service, _ = populate_opening_content(GameApplication.create_default())
-        map_screen = MapScreen(service)
-        self.assertIsNone(map_screen.handle(InputState(actions={"confirm"})))
-        local_screen = MainScreen(service)
-        self.assertEqual(local_screen.menu_options[0], ("main", "Ana Ekrana Dön"))
-        self.assertIsNone(local_screen.handle(InputState(actions={"confirm"})))
-
-    def test_main_screen_finds_safe_paths_and_blocks_static_landmarks(self):
-        from application.content_pack import populate_opening_content
-        service, _ = populate_opening_content(GameApplication.create_default())
-        local_screen = MainScreen(service)
-        path = local_screen._path_to((16, 16), (8, 8))
-        self.assertTrue(path)
-        self.assertEqual(path[0], (16, 16))
-        self.assertEqual(path[-1], (8, 8))
-        self.assertFalse(local_screen._is_walkable((7, 10)))
-
-    def test_mine_landmark_collects_iron_ore(self):
-        service, ids = populate_opening_content(GameApplication.create_default())
-        from application.content_pack import populate_gameplay_resources
-        populate_gameplay_resources(service)
-        service.move_actor(ids.hero_id, ids.forest_id)
-        service.advance_by(1)
-        service.move_actor(ids.hero_id, "north_mine")
-        service.advance_by(1)
-
-        local_screen = MainScreen(service)
-        local_screen.selected = (15, 15)
-        self.assertTrue(local_screen._gather_at_selected_tree())
-        service.advance_by(service.gathering_duration(ids.hero_id))
-        self.assertEqual(service.inventory("player").stocks, (("iron_ore", 1, "item"),))
 
     def test_dialogue_objective_helpers_tolerate_missing_and_malformed_data(self):
         self.assertIsNone(DialogueScreen._find_objective(None, "missing"))
@@ -516,13 +423,6 @@ class TestPhaseDQuality(unittest.TestCase):
         screen = DialogueScreen(service)
         screen.set_target_npc("warden_lyra")
         self.assertIn("Eren", screen.message)
-
-    def test_village_menu_opens_market(self):
-        service, _ids = populate_opening_content(GameApplication.create_default())
-        screen = MainScreen(service)
-        screen.menu_open = True
-        screen.menu_selected = 4
-        self.assertEqual(screen.handle(InputState(actions={"confirm"})), "market")
 
     def test_inventory_and_market_windows_ignore_legacy_screen_navigation(self):
         inventory = SimpleNamespace(items=(), stocks=(), weight=0)
@@ -580,14 +480,6 @@ class TestPhaseDQuality(unittest.TestCase):
         )()
         self.assertEqual(dispatched, [])
 
-    def test_village_gate_opens_eren_dialogue(self):
-        from application.content_pack import populate_opening_content
-        service, ids = populate_opening_content(GameApplication.create_default())
-        local_screen = MainScreen(service)
-        local_screen.selected = (16, 30)
-        self.assertEqual(local_screen.handle(InputState(actions={"confirm"})), "dialogue")
-        self.assertEqual(local_screen.selected_npc_id, "warden_lyra")
-
     def test_save_load_keys_are_part_of_the_input_contract(self):
         mapper = InputMapper()
         save_event = type("Event", (), {"type": "KEYDOWN", "key": "f5"})()
@@ -609,7 +501,7 @@ class TestPhaseDQuality(unittest.TestCase):
         inventory_event = type("Event", (), {"type": "KEYDOWN", "key": 2})()
         map_state = mapper.collect([market_event])
         self.assertFalse(map_state.pressed("market"))
-        self.assertTrue(map_state.pressed("map"))
+        self.assertFalse(map_state.pressed("map"))
         self.assertTrue(mapper.collect([inventory_event]).pressed("inventory"))
 
     def test_c_key_maps_to_character_action(self):
@@ -774,7 +666,6 @@ class TestPhaseDQuality(unittest.TestCase):
                     "quest_log": Window(),
                     "production": Window(),
                     "market": Window(),
-                    "map": Window(),
                 }
 
             def close(self, window_id):
@@ -812,10 +703,6 @@ class TestPhaseDQuality(unittest.TestCase):
         self.assertIs(
             window.window_manager.windows["market"].screen,
             window.screens["market"],
-        )
-        self.assertIs(
-            window.window_manager.windows["map"].screen,
-            window.screens["map"],
         )
 
     def test_game_window_routes_real_backend_d_key_to_dialogue_history(self):
@@ -1207,7 +1094,7 @@ class TestPhaseDQuality(unittest.TestCase):
         from game_ui.game_window import GAMEPLAY_WINDOW_IDS
 
         self.assertEqual(GAMEPLAY_WINDOW_IDS, {
-            "character", "inventory", "quest_log", "map", "production", "market", "trade",
+            "character", "inventory", "quest_log", "production", "market", "trade",
             "container", "currency_exchange",
         })
 
