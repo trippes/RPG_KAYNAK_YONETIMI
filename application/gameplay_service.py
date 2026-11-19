@@ -13,7 +13,7 @@ from types import MappingProxyType
 from typing import Callable, Iterable
 
 from core.time import Tick
-from core.domain.spatial import EntityPosition
+from core.domain.spatial import EntityPosition, WorldPoint
 from core.actions import ActionType, action_tick_cost
 from core.foundation import Identifier, WorldId
 from core.entity import EntityType
@@ -206,7 +206,7 @@ class GameplayService:
         """Return the active session's hex runtime, when it has been initialized."""
         return self._current_bundle().hex_world_runtime
 
-    def npc_at_world_point(self, map_id: str, point):
+    def npc_at_world_point(self, map_id: str, point: WorldPoint) -> str | None:
         """Resolve an NPC target through the application interaction service."""
         runtime = self.hex_world_runtime
         if runtime is None:
