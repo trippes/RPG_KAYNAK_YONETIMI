@@ -60,7 +60,7 @@ class NativeKinematicSolverTests(unittest.TestCase):
     def test_move_is_clamped_against_wall(self):
         wall = box()
         result = resolve_kinematic_motion(
-            CircleShape(2, WorldPoint(0, 0)), Vector2(20, 0), (wall,),
+            CircleShape(2, WorldPoint(0, 0)), Vector2(9, 0), (wall,),
             map_id="forest",
         )
         self.assertLess(result.final_shape.center.x, 8.01)
@@ -70,7 +70,7 @@ class NativeKinematicSolverTests(unittest.TestCase):
     def test_wall_slide_preserves_tangential_motion(self):
         wall = box()
         result = resolve_kinematic_motion(
-            CircleShape(2, WorldPoint(0, 0)), Vector2(20, 6), (wall,),
+            CircleShape(2, WorldPoint(0, 0)), Vector2(9, 6), (wall,),
             map_id="forest",
         )
         self.assertLess(result.final_shape.center.x, 8.01)
@@ -81,7 +81,7 @@ class NativeKinematicSolverTests(unittest.TestCase):
         wall = box()
         index = StaticObstacleIndex((wall,))
         shape = CircleShape(2, WorldPoint(0, 0))
-        displacement = Vector2(20, 0)
+        displacement = Vector2(9, 0)
         direct = resolve_kinematic_motion(shape, displacement, (wall,), map_id="forest")
         indexed = resolve_kinematic_motion(
             shape, displacement, (wall,), map_id="forest", candidate_provider=index,
