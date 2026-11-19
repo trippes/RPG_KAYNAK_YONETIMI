@@ -11,5 +11,6 @@
     "gameplay_rules": "gameplay_rules.json"
   },
   "asset_catalog": "asset_catalog.json",
-  "map_placements": "placements"
+  "map_placements": "placements",
+  "presentation_assets": "presentation_assets.json"
 }
