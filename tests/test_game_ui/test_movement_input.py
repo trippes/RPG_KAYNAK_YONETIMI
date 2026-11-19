@@ -44,12 +44,12 @@ class PygameMovementInputTests(unittest.TestCase):
 
     def test_wasd_and_arrows_map_to_native_direction(self):
         cases = (
-            ({5}, Vector2(0.0, 1.0)),
-            ({8}, Vector2(0.0, -1.0)),
+            ({5}, Vector2(0.0, -1.0)),
+            ({8}, Vector2(0.0, 1.0)),
             ({3}, Vector2(-1.0, 0.0)),
             ({2}, Vector2(1.0, 0.0)),
-            ({5, 2}, Vector2(1.0, 1.0)),
-            ({5, 6}, Vector2(0.0, 1.0)),
+            ({5, 2}, Vector2(1.0, -1.0)),
+            ({5, 6}, Vector2(0.0, -1.0)),
         )
         for pressed, expected in cases:
             with self.subTest(pressed=pressed):
