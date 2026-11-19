@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
+from types import MappingProxyType
+from collections.abc import Mapping
 
 from application.hex_map_definition import HexMapDefinition
 from application.world_map_definition import WorldMapDefinition, validate_world_map
@@ -328,6 +330,27 @@ class HexWorldRuntime:
             ignore_blockers=entity.profile.ignores_occupancy,
         )
         return MovementResult(True, target)
+
+    @property
+    def patrol_indices(self) -> Mapping[str, int]:
+        """Read-only copy of deterministic NPC patrol progress."""
+        return MappingProxyType(dict(self._patrol_indices))
+
+    def restore_patrol_indices(self, indices: Mapping[str, int]) -> None:
+        """Restore patrol progress after entity registrations are complete."""
+        if not isinstance(indices, Mapping):
+            raise TypeError("indices must be a mapping.")
+        normalized = {}
+        for entity_id, index in indices.items():
+            if not isinstance(entity_id, str) or not entity_id.strip():
+                raise ValueError("patrol entity IDs must be non-empty strings.")
+            state = self._entity_state(entity_id)
+            if state.kind != "npc":
+                raise ValueError("Patrol progress can only belong to NPC entities.")
+            if type(index) is not int or index < 0:
+                raise ValueError("patrol indices must be non-negative integers.")
+            normalized[entity_id] = index
+        self._patrol_indices = normalized
 
     def transition(self, entity_id: str, transition_id: str) -> MovementResult:
         from .hex_transition_service import HexMapTransitionService
