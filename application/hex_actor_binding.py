@@ -162,6 +162,8 @@ class ActorHexBindingService:
             raise TypeError("physics_snapshot must be a HexPhysicsSnapshot")
         if not isinstance(body, BodyDefinition):
             raise TypeError("body must be a BodyDefinition")
+        if physics_snapshot.world_id != self._world_id:
+            raise ValueError("physics snapshot belongs to a different world")
         if physics_snapshot.map_id != entity.position.map_id:
             raise ValueError("physics snapshot belongs to a different map")
 
@@ -176,6 +178,22 @@ class ActorHexBindingService:
                 "A static physical obstacle blocks the cell transition.",
             )
         return self._runtime.move_to(actor_id, target)
+
+    def move_with_physics(
+        self,
+        actor_id: str,
+        direction: HexDirection,
+        physics_snapshot,
+        body,
+    ) -> MovementResult:
+        """Move one adjacent cell after static physics preflight."""
+        if not isinstance(direction, HexDirection):
+            raise TypeError("direction must be a HexDirection")
+        entity = self._runtime.entity(actor_id)
+        target = LocalHexPosition.from_hex_coord(
+            entity.position.cell.to_hex_coord().neighbor(direction)
+        )
+        return self.move_to_with_physics(actor_id, target, physics_snapshot, body)
 
     def set_movement_enabled(
         self,
