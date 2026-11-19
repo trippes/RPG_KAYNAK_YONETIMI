@@ -2,11 +2,8 @@
 import pytest
 
 from application.hex_map_definition import parse_hex_map
-from core.domain.physics import (
-    BoundaryPolicy,
-    StaticObstacleIndex,
-    build_hex_map_collision_geometry,
-)
+from application.hex_map_physics import build_hex_map_collision_geometry
+from core.domain.physics import BoundaryPolicy, StaticObstacleIndex
 from core.domain.spatial import LocalHexPosition, WorldPoint
 
 
