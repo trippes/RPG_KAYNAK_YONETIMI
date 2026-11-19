@@ -333,14 +333,24 @@ def load_content_package(package_dir: str | Path) -> ContentPackage:
                 f"Invalid gameplay placements in package '{package_id}': {error}"
             ) from error
 
+        npc_records = files.get("npcs", {}).get("npcs", [])
+        resource_records = files.get("resources", {}).get("nodes", [])
+        if not isinstance(npc_records, list):
+            raise ContentPackageError(
+                "NPC definitions must contain an 'npcs' list when gameplay placements are declared."
+            )
+        if not isinstance(resource_records, list):
+            raise ContentPackageError(
+                "Resource definitions must contain a 'nodes' list when gameplay placements are declared."
+            )
         npc_ids = {
             record.get("id")
-            for record in files.get("npcs", {}).get("npcs", [])
+            for record in npc_records
             if isinstance(record, dict)
         }
         resource_ids = {
             record.get("id")
-            for record in files.get("resources", {}).get("nodes", [])
+            for record in resource_records
             if isinstance(record, dict)
         }
         for placement in gameplay_placements.placements:
