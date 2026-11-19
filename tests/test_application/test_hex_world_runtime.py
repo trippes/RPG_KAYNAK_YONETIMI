@@ -3,7 +3,7 @@ from application.hex_map_definition import parse_hex_map
 from application.hex_occupancy import HexOccupant, HexOccupancyRegistry
 from application.hex_pathfinding import HexPathfinder
 from application.hex_world_runtime import HexWorldRuntime, HexWorldRuntimeOwner
-from core.domain.spatial import EntityPosition, HexDirection, LocalHexPosition, MovementFailureReason, MovementProfile, WorldHexPosition
+from core.domain.spatial import (\n    ContinuousEntityPosition, EntityPosition, HexCoord, HexDirection,\n    LocalHexPosition, MovementFailureReason, MovementProfile, WorldHexPosition,\n    WorldPoint, axial_to_world_point,\n)
 from application.world_map_definition import WorldMapDefinition, WorldMapPlacement
 
 
@@ -106,6 +106,44 @@ class TestHexWorldRuntime(unittest.TestCase):
         self.runtime = HexWorldRuntime({"forest": self.map})
         self.runtime.register_entity("player", "player", EntityPosition("forest", LocalHexPosition(0, 0)))
         self.runtime.register_entity("npc", "npc", EntityPosition("forest", LocalHexPosition(0, 1)))
+
+    def test_runtime_registers_continuous_position_at_cell_center(self):
+        position = self.runtime.continuous_position("player")
+        expected = axial_to_world_point(HexCoord(0, 0), self.runtime.HEX_SIZE)
+        self.assertEqual(position, ContinuousEntityPosition("forest", expected))
+        self.assertEqual(self.runtime.entity("player").continuous_position, position)
+
+    def test_continuous_motion_updates_subcell_position_and_derived_occupancy(self):
+        within_cell = self.runtime.set_continuous_position("player", WorldPoint(4.0, 5.0))
+        self.assertTrue(within_cell.success)
+        self.assertEqual(self.runtime.entity("player").position.cell, LocalHexPosition(0, 0))
+        self.assertEqual(self.runtime.continuous_position("player").point, WorldPoint(4.0, 5.0))
+
+        next_center = axial_to_world_point(HexCoord(1, 0), self.runtime.HEX_SIZE)
+        across_cell = self.runtime.set_continuous_position("player", next_center)
+        self.assertTrue(across_cell.success)
+        self.assertEqual(self.runtime.entity("player").position.cell, LocalHexPosition(1, 0))
+        self.assertEqual(
+            self.runtime.occupancy.get("player").position,
+            self.runtime.entity("player").position,
+        )
+        self.assertEqual(self.runtime.continuous_position("player").point, next_center)
+
+    def test_continuous_motion_rejects_occupied_cell_without_partial_update(self):
+        before = self.runtime.continuous_position("player")
+        target = axial_to_world_point(HexCoord(0, 1), self.runtime.HEX_SIZE)
+        result = self.runtime.set_continuous_position("player", target)
+        self.assertFalse(result.success)
+        self.assertEqual(result.reason, MovementFailureReason.OCCUPIED_CELL)
+        self.assertEqual(self.runtime.continuous_position("player"), before)
+        self.assertEqual(self.runtime.entity("player").position.cell, LocalHexPosition(0, 0))
+
+    def test_continuous_motion_rejects_out_of_mask_position(self):
+        before = self.runtime.continuous_position("player")
+        result = self.runtime.set_continuous_position("player", WorldPoint(10000.0, 10000.0))
+        self.assertFalse(result.success)
+        self.assertEqual(result.reason, MovementFailureReason.INVALID_TARGET)
+        self.assertEqual(self.runtime.continuous_position("player"), before)
 
     def test_entity_position_is_derived_only_from_occupancy(self):
         stored_state = self.runtime._entities["player"]
