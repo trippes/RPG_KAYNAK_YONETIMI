@@ -81,3 +81,96 @@ def pixel_to_axial(
     q_fraction = (math.sqrt(3.0) / 3.0 * x_value - y_value / 3.0) / size
     r_fraction = (2.0 / 3.0 * y_value) / size
     return fractional_axial_to_hex(q_fraction, r_fraction)
+
+
+# Continuous y-down world geometry is the canonical Eldoria coordinate boundary.
+from .world_point import WorldPoint
+
+_GEOMETRY_ABS_TOLERANCE = 1e-9
+_GEOMETRY_REL_TOLERANCE = 1e-9
+
+
+def axial_to_world_point(
+    coord: HexCoord,
+    hex_size: int | float,
+    origin: WorldPoint = WorldPoint(0.0, 0.0),
+) -> WorldPoint:
+    """Return an axial cell center as an Eldoria y-down world point."""
+    if not isinstance(origin, WorldPoint):
+        raise TypeError("origin must be a WorldPoint.")
+    x, y = axial_to_pixel(coord, hex_size)
+    return WorldPoint(origin.x + x, origin.y + y)
+
+
+def world_point_to_fractional_axial(
+    point: WorldPoint,
+    hex_size: int | float,
+    origin: WorldPoint = WorldPoint(0.0, 0.0),
+) -> tuple[float, float]:
+    """Convert an Eldoria y-down world point to unrounded axial coordinates."""
+    if not isinstance(point, WorldPoint):
+        raise TypeError("point must be a WorldPoint.")
+    if not isinstance(origin, WorldPoint):
+        raise TypeError("origin must be a WorldPoint.")
+    size = _validate_hex_size(hex_size)
+    x = point.x - origin.x
+    y = point.y - origin.y
+    q = (math.sqrt(3.0) / 3.0 * x - y / 3.0) / size
+    r = (2.0 / 3.0 * y) / size
+    return q, r
+
+
+def _round_half_up(value: float) -> int:
+    """Round to nearest integer with deterministic half-up behavior."""
+    return math.floor(value + 0.5)
+
+
+def _cube_round_fractional(q: float, r: float) -> HexCoord:
+    """Round fractional axial coordinates using deterministic cube correction."""
+    s = -q - r
+    rounded_q = _round_half_up(q)
+    rounded_r = _round_half_up(r)
+    rounded_s = _round_half_up(s)
+    q_error = abs(rounded_q - q)
+    r_error = abs(rounded_r - r)
+    s_error = abs(rounded_s - s)
+
+    if q_error >= r_error and q_error >= s_error:
+        rounded_q = -rounded_r - rounded_s
+    elif r_error >= s_error:
+        rounded_r = -rounded_q - rounded_s
+
+    return HexCoord(rounded_q, rounded_r)
+
+
+def world_point_to_hex(
+    point: WorldPoint,
+    hex_size: int | float,
+    *,
+    origin: WorldPoint = WorldPoint(0.0, 0.0),
+    previous_cell: HexCoord | None = None,
+) -> HexCoord:
+    """Resolve a world point to its nearest cell, retaining a previous cell only on a tie.
+
+    The previous cell is a boundary tie-break hint, never a second position
+    authority. Without an equal-distance tie, cube rounding decides the cell.
+    """
+    if previous_cell is not None and not isinstance(previous_cell, HexCoord):
+        raise TypeError("previous_cell must be a HexCoord or None.")
+    q, r = world_point_to_fractional_axial(point, hex_size, origin)
+    selected = _cube_round_fractional(q, r)
+    if previous_cell is None:
+        return selected
+
+    selected_center = axial_to_world_point(selected, hex_size, origin)
+    previous_center = axial_to_world_point(previous_cell, hex_size, origin)
+    selected_distance = point.distance_to(selected_center)
+    previous_distance = point.distance_to(previous_center)
+    if math.isclose(
+        previous_distance,
+        selected_distance,
+        abs_tol=_GEOMETRY_ABS_TOLERANCE,
+        rel_tol=_GEOMETRY_REL_TOLERANCE,
+    ):
+        return previous_cell
+    return selected
