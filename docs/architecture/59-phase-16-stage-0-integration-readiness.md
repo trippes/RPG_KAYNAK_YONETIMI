@@ -2,8 +2,8 @@
 
 Tarih: 19 Kasım 2026  
 Çalışma dalı: `experiment/map-cleanup`  
-Durum: **HAZIRLIK VE KAPSAM KARARLARI TAMAMLANDI — TEKNİK BLOKAJLAR KAYIT ALTINDA**  
-Kod entegrasyonu onayı: **BU BELGE TEK BAŞINA ENTEGRASYON YETKİSİ VERMEZ**
+Durum: **AŞAMA 0 TAMAMLANDI — İLK PACKAGE/RUNTIME SPIKE LINUX VE WINDOWS'TA BAŞARILI**  
+Kod entegrasyonu: **SONRAKİ DİLİME GEÇİŞE HAZIR; ANA OYUN RUNTIME BAĞLANTISI HENÜZ YAPILMADI**
 
 ## 1. Dal ve HEAD doğrulaması
 
@@ -61,7 +61,7 @@ Hariç:
 
 Temizlik dalının `pyproject.toml` dosyası `pygame-ce>=2.5`; laboratuvarın `pyproject.toml` dosyası `pygame>=2.6,<3` tanımlıyor. İki dağıtım da `pygame` import namespace'ini sağlıyor. Context7'nin güncel Pygame-CE kurulum dokümanı, `pygame` dağıtımı kuruluysa kaldırılmasını ve ardından `pygame-ce` kurulmasını öneriyor. Bu nedenle iki dağıtım aynı sanal ortama birlikte eklenmeyecek.
 
-Henüz dağıtım seçimi yapılmadı. Aşama 16'nın package/runtime spike'ında (a) tek dağıtım standardizasyonu, (b) Pygame bağımsız çekirdek + uygulamaya özel adaptör, (c) ayrı ortam yaklaşımı temiz Linux/Windows kurulumlarıyla karşılaştırılacak. Kullanıcı kararı ve smoke test olmadan `pyproject.toml` değiştirilmeyecek.
+Hedef dal için dağıtım kararı verildi: Eldoria kök projesinin mevcut standardı olan `pygame-ce>=2.5` korunacaktır. Yeni Hex World modülleri bu tek dağıtımı kullanır; `pygame` dağıtımı hedef ortama eklenmez. Laboratuvar dalının bağımsız `pyproject.toml` dosyası ve bağımlılık tanımı değiştirilmemiştir. Context7 dokümanı `pygame-ce` dağıtımının `pygame` import adını sağladığını, kurulu `pygame` dağıtımının kaldırılması gerektiğini ve Python 3.11+ ile Windows/Linux platformlarını desteklediğini doğrular. Hedef dalın CI ortamları (Linux/Python 3.11 ve Windows/Python 3.12) bu standardı başarıyla çalıştırmıştır.
 
 ### 5.2 Son aktarım CI hatası
 
@@ -71,20 +71,27 @@ Temizlik dalındaki aktarım commit'i `2d459e46978d93af8804d4ba66efde3770f87fef`
 - `test_movement_tick_contract.py`: `DemoTickPump` export'u bulunamadı.
 - `test_environment_collision_footprints.py`: `movement_demo` modülü bulunamadı.
 
-Bu dosyalar laboratuvarın demo harness katmanına bağımlıdır; hedef entegrasyon kapsamı demo launcher/harness değildir. Çözüm, bu demo dosyalarını körlemesine taşımak değil; testleri gerçek runtime sözleşmelerine göre ayırmak/uyarlamak ve dışarıda bırakılan demo davranışının ana oyuna yanlışlıkla bağlanmadığını doğrulamaktır. Bu düzeltme sonraki teknik dilimde yapılmalıdır.
+Bu dosyalar laboratuvarın demo harness katmanına bağımlıdır; hedef entegrasyon kapsamı demo launcher/harness değildir. Hedef dalda şu ayrıştırma yapıldı: `test_entity_world_lifecycle.py` içindeki gerçek `EntityWorldCoordinator` yaşam döngüsü testi korundu; `EntityDemo` ve `MovementDemo` kullanan demo testleri runtime testlerinden çıkarıldı. `test_simulation_tick_flow.py`, `test_movement_tick_contract.py` ve `test_environment_collision_footprints.py` yalnızca hariç tutulan demo harness/sahne/scheduler davranışını doğruladıkları için hedef dalın runtime test kümesine alınmadı. Ayrıca `test_map_persistence.py` ve `test_runtime_persistence.py` içindeki laboratuvar `starting_valley.json` örnek dosyasına bağlı iki test çıkarıldı; aynı dosyalardaki geçici dosya (`tmp_path`) kullanan genel persistence testleri korundu. Kaynak laboratuvar dalındaki dosyaların hiçbirine dokunulmadı.
+
+Sonuç: pytest collection hataları giderildi. Linux ve Windows'ta 2.125 test, 235 subtest geçti; 59 uyarı kaldı. Bu uyarılar pygame görüntü serileştirme API'sinin deprecated olduğunu bildiriyor; testleri başarısız kılmıyor.
 
 ### 5.3 Kaynak-hedef farkı
 
-Laboratuvar kodu `src/hex_world_lab` altında, cleanup dalı ise `hex_world_lab` kök paketinde tutulmaktadır. Bu fark bilinçli paket yerleşimi uyarlamasıdır; aktarım sırasında modül listesinin kaynak paketle karşılaştırılması ve eksik/fazla dosya denetimi gereklidir.
+Laboratuvar kodu `src/hex_world_lab` altında, cleanup dalı ise `hex_world_lab` kök paketinde tutulmaktadır. Kaynak-hedef manifest karşılaştırması tamamlandı: laboratuvar paketinde 129 dosya, hedef pakette 123 dosya vardır; hedefte kaynakta bulunmayan fazla dosya yoktur. Eksik altı dosya `__main__.py`, `app.py`, `application/demo_tick_pump.py`, `application/entity_demo.py`, `application/movement_demo.py` ve `config.py` dosyalarıdır. Bunların tamamı bağımsız laboratuvar demo kabuğu/başlatıcısı veya demo scheduler'ıdır; runtime paketinden bilinçli olarak dışarıda tutulmuştur.
+
+İlk package/runtime spike kapsamında `scripts/verify_release.py` güncellendi: `hex_world_lab` compileall kapsamına eklendi; üretilen wheel geçici/izole hedefe kuruluyor ve kurulu wheel içinden `EntityWorldCoordinator`, `PygameWorldRenderer`, `SimulationTickCoordinator` ve `MovementSystem` import ediliyor. Böylece yalnızca kaynak ağacından import değil, dağıtılabilir pakette bulunma da doğrulanıyor.
 
 ## 6. Aşama 0 çıkış kararı
 
-**Hazırlık kapsamı, dal güvenliği, koruma sınırları ve seçici aktarım stratejisi belirlendi. Aşama 0 planlama çıktısı tamamlandı.**
+**Aşama 0'ın tüm çıkış kapıları geçildi.** Son doğrulama commit'i: `e29d5cf73f62f52f6de335918586d269009e73b8`. GitHub Actions run `44509987003` hem Linux hem Windows işlerinde başarılıdır: [CI run](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44509987003).
 
-Ancak sistem henüz entegrasyona hazır/CI-yeşil kabul edilmez. Sonraki aşamanın giriş kapıları:
-1. Dört test collection hatasının demo harness ile runtime testleri ayrıştırılarak giderilmesi.
-2. Kaynak/hedef runtime dosya envanterinin eksiksiz karşılaştırılması.
-3. Pygame dağıtım stratejisinin temiz Linux/Windows ortamlarında kanıtlanması ve kullanıcı kararı.
-4. İlk package/runtime spike'ın Linux ve Windows CI'dan geçmesi.
+Her iki platformda da:
+- Ruff kontrolü başarılı.
+- Eski harita temizliği sınır kontrolü başarılı.
+- 2.125 pytest testi ve 235 subtest başarılı; 59 pygame deprecation uyarısı mevcut.
+- `hex_world_lab` dahil compileall başarılı.
+- Wheel oluşturma ve izole hedefe kurulum başarılı.
+- Kurulu wheel içinden Hex World runtime sınıflarının import smoke testi başarılı.
+- Release-candidate verification başarılı.
 
-Bu kapılar geçmeden geometry, movement, physics, simulation, renderer veya content entegrasyonuna başlanmayacaktır.
+Sonraki adım Aşama 16'nın ilk gerçek entegrasyon dilimidir: geometry/world identity bridge tasarımı. Bu aşama, laboratuvarın Hex kimliklerini ve dünya koordinatlarını Eldoria'nın mevcut authoritative axial runtime'ına nasıl bağlayacağını belirleyecek; actor, movement, physics veya renderer sahipliği bu dilimde değiştirilmemelidir. Bu belge tek başına ana oyuna geçiş/merge yetkisi vermez.
