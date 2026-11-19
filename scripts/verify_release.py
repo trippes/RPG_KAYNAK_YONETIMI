@@ -79,7 +79,14 @@ def verify_installed_content_package() -> None:
             "from application.content_loader import load_content_package; "
             "from game_ui.assets.asset_definition import AssetCatalog; "
             "from game_ui.assets.placement_catalog import ScenePlacementCatalog; "
+            "from hex_world_lab import __version__ as hex_world_version; "
+            "from hex_world_lab.application import EntityWorldCoordinator; "
+            "from hex_world_lab.rendering import PygameWorldRenderer; "
+            "from hex_world_lab.simulation import SimulationTickCoordinator, MovementSystem; "
             "package = load_content_package(Path(sys.argv[1])); "
+            "assert hex_world_version == '0.1.0'; "
+            "assert EntityWorldCoordinator is not None and PygameWorldRenderer is not None; "
+            "assert SimulationTickCoordinator is not None and MovementSystem is not None; "
             "assert package.package_id == 'demo_eldoria'; "
             "assert len(package.hex_map_definitions) == 0, "
             "f'Expected no demo hex maps, found {len(package.hex_map_definitions)}'; "
@@ -124,6 +131,7 @@ def main() -> int:
         "quests",
         "resources",
         "game_ui",
+        "hex_world_lab",
         "tests",
     )
     verify_installed_content_package()
