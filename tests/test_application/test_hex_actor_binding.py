@@ -297,3 +297,33 @@ def test_inactive_actor_cannot_transition_between_world_maps():
     assert result.reason is MovementFailureReason.MOVEMENT_NOT_ALLOWED
     assert runtime.entity("hero").position == source
 
+
+def test_actor_binding_moves_one_pathfinding_step_toward_goal():
+    actors, runtime, binding = make_binding()
+    binding.register_spatial(
+        "hero",
+        "player",
+        EntityPosition("forest", LocalHexPosition(0, 0)),
+    )
+
+    result = binding.move_toward("hero", LocalHexPosition(2, 0))
+
+    assert result.success
+    assert result.position == EntityPosition(
+        "forest", LocalHexPosition(1, 0),
+    )
+    assert actors.get("hero").actor_id == "hero"
+    assert runtime.entity("hero").position == result.position
+
+
+def test_inactive_actor_cannot_move_toward_pathfinding_goal():
+    _actors, runtime, binding = make_binding(actor_active=False)
+    source = EntityPosition("forest", LocalHexPosition(0, 0))
+    binding.register_spatial("hero", "player", source)
+
+    result = binding.move_toward("hero", LocalHexPosition(2, 0))
+
+    assert not result.success
+    assert result.reason is MovementFailureReason.MOVEMENT_NOT_ALLOWED
+    assert runtime.entity("hero").position == source
+
