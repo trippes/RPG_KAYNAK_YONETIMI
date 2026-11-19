@@ -10,6 +10,10 @@ from typing import Mapping
 
 from .hex_map_definition import load_hex_map_definition
 from .world_map_definition import parse_world_map, validate_world_map
+from .gameplay_placement_catalog import (
+    GameplayPlacementCatalog,
+    GameplayPlacementCatalogError,
+)
 
 CONTENT_PACKAGE_SCHEMA_VERSION = 1
 
@@ -31,6 +35,8 @@ class ContentPackage:
     map_placements_path: Path | None = None
     presentation_catalog: object | None = None
     scene_placements: object | None = None
+    gameplay_placements_path: Path | None = None
+    gameplay_placements: object | None = None
 
 
 def _load_hex_maps(maps_root: Path) -> dict[str, object]:
@@ -83,7 +89,7 @@ def load_content_package(package_dir: str | Path) -> ContentPackage:
         raise ContentPackageError("Content package manifest must be a JSON object.")
     allowed = {
         "schema_version", "package_id", "package_version", "files", "maps",
-        "world_map", "presentation_assets", "asset_catalog", "map_placements",
+        "world_map", "presentation_assets", "asset_catalog", "map_placements",\n        "gameplay_placements",
     }
     extra = sorted(set(manifest) - allowed)
     if extra:
@@ -289,6 +295,67 @@ def load_content_package(package_dir: str | Path) -> ContentPackage:
                 f"Invalid presentation content in package '{package_id}': {error}"
             ) from error
 
+    gameplay_placements_path = None
+    gameplay_placements = None
+    gameplay_placements_relative = manifest.get("gameplay_placements")
+    if gameplay_placements_relative is not None:
+        if (
+            not isinstance(gameplay_placements_relative, str)
+            or not gameplay_placements_relative.strip()
+        ):
+            raise ContentPackageError(
+                "Gameplay placements path must be a non-empty relative path."
+            )
+        gameplay_placements_path = (
+            root / gameplay_placements_relative
+        ).resolve()
+        if not gameplay_placements_path.is_relative_to(root):
+            raise ContentPackageError(
+                "Gameplay placements path resolves outside the package directory."
+            )
+        if not gameplay_placements_path.is_dir():
+            raise ContentPackageError(
+                f"Gameplay placements directory could not be loaded: "
+                f"{gameplay_placements_path}"
+            )
+        if not hexes:
+            raise ContentPackageError(
+                "Gameplay placements require a package with validated hex maps."
+            )
+        try:
+            gameplay_placements = GameplayPlacementCatalog.load_directory(
+                gameplay_placements_path,
+                map_definitions=hexes,
+            )
+        except (GameplayPlacementCatalogError, OSError, ValueError) as error:
+            raise ContentPackageError(
+                f"Invalid gameplay placements in package '{package_id}': {error}"
+            ) from error
+
+        npc_ids = {
+            record.get("id")
+            for record in files.get("npcs", {}).get("npcs", [])
+            if isinstance(record, dict)
+        }
+        resource_ids = {
+            record.get("id")
+            for record in files.get("resources", {}).get("nodes", [])
+            if isinstance(record, dict)
+        }
+        for placement in gameplay_placements.placements:
+            if placement.kind == "npc" and placement.domain_id not in npc_ids:
+                raise ContentPackageError(
+                    f"Gameplay placement references unknown NPC: {placement.domain_id}"
+                )
+            if (
+                placement.kind == "resource_node"
+                and placement.domain_id not in resource_ids
+            ):
+                raise ContentPackageError(
+                    "Gameplay placement references unknown resource node: "
+                    f"{placement.domain_id}"
+                )
+
     return ContentPackage(
         package_id,
         package_version,
@@ -301,4 +368,6 @@ def load_content_package(package_dir: str | Path) -> ContentPackage:
         map_placements_path,
         presentation_catalog,
         scene_placements,
+        gameplay_placements_path,
+        gameplay_placements,
     )
