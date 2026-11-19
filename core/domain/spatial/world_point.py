@@ -23,6 +23,11 @@ class WorldPoint:
             object.__setattr__(self, name, float(value))
 
     def translated(self, dx: float = 0.0, dy: float = 0.0) -> "WorldPoint":
+        for name, value in (("dx", dx), ("dy", dy)):
+            if isinstance(value, bool) or not isinstance(value, Real):
+                raise TypeError(f"{name} must be a finite real number.")
+            if not math.isfinite(value):
+                raise ValueError(f"{name} must be finite.")
         return WorldPoint(self.x + dx, self.y + dy)
 
     def distance_to(self, other: "WorldPoint") -> float:
