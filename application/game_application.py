@@ -90,6 +90,11 @@ class GameApplication:
         candidate_session.activate_restore(core_plan)
 
         candidate_runtime = candidate_session.simulation
+        if document.gameplay.has_legacy_spatial_state:
+            raise ValueError(
+                "This save contains legacy square-map positions or placements (resource-node location data). "
+                "No square-to-hex coordinate conversion is performed."
+            )
         restored = document.gameplay.restore(runtime=candidate_runtime)
 
         restored.nodes.bind_world_registry(candidate_session.worlds)
@@ -173,13 +178,7 @@ class GameApplication:
             getattr(self, "_content_package_path", None)
         )
         load_content_package(active_package_path)
-        saved_location_nodes = [
-            node.node_id
-            for world in candidate.session.worlds.get_all()
-            for node in candidate.resource_nodes.for_world(world.world_id)
-            if node.location_id is not None
-        ]
-        if container_placements or saved_location_nodes:
+        if container_placements:
             raise ValueError(
                 "This save contains legacy square-map positions or placements. "
                 "It cannot be loaded without its original map package; no "

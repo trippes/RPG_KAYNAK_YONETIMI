@@ -115,7 +115,6 @@ class ResourceNodeView:
     capacity: tuple[int, str]
     regeneration_rate: tuple[int, str]
     last_simulation_tick: int
-    location_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -1700,7 +1699,6 @@ class GameplayService:
                 (node.capacity.value, node.capacity.unit.value),
                 (node.regeneration_rate.value, node.regeneration_rate.unit.value),
                 node.last_simulation_tick.value,
-                node.location_id,
             )
             for node in bundle.resource_nodes.nodes()
         )

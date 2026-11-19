@@ -180,6 +180,17 @@ class TestGameApplicationSave(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "legacy square-map positions or placements"):
                 application.load(path)
 
+    def test_load_rejects_legacy_resource_node_square_map_locations(self):
+        application = self._application_with_gameplay()
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "legacy-resource-save.json"
+            application.save(path)
+            data = json.loads(path.read_text(encoding="utf-8"))
+            data["gameplay"]["nodes"][0]["location_id"] = "legacy_village"
+            path.write_text(json.dumps(data), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "legacy square-map positions or placements"):
+                application.load(path)
+
     def test_load_rejects_legacy_npc_square_map_positions(self):
         application = self._application_with_gameplay()
         application.holder.current.social.npcs.add(

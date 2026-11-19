@@ -715,7 +715,7 @@ def load_resource_definitions(path: str | Path | None = None, *, package_path: s
     if not isinstance(records, list):
         raise ContentDefinitionError("Resource definitions must contain a 'nodes' list.")
     seen: set[str] = set()
-    required_text = ("id", "landmark_id", "location_id", "resource_type", "unit")
+    required_text = ("id", "resource_type", "unit")
     numeric = ("initial_quantity", "capacity", "regeneration_rate", "gathering_duration_ticks")
     for index, record in enumerate(records):
         if not isinstance(record, dict):

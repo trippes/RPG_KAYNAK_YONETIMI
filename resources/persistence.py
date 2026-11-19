@@ -87,6 +87,11 @@ class GameplaySnapshot:
     recipes: tuple[RecipeRecord, ...]
     jobs: tuple[JobRecord, ...]
 
+    @property
+    def has_legacy_spatial_state(self) -> bool:
+        """Detect retired square-map node locations in a decoded legacy save."""
+        return any(record.location_id is not None for record in self.nodes)
+
     @classmethod
     def from_runtime(
         cls,
@@ -275,6 +280,10 @@ class GameplaySnapshot:
         runtime: SimulationRuntime | None = None,
     ) -> "RestoredGameplayState":
         """Construct a complete new gameplay runtime graph before returning it."""
+        if self.has_legacy_spatial_state:
+            raise GameplayPersistenceError(
+                "Legacy square-map resource-node locations cannot be restored."
+            )
         if runtime is not None:
             if not isinstance(runtime, SimulationRuntime):
                 raise TypeError("runtime must be SimulationRuntime.")
@@ -313,7 +322,6 @@ class GameplaySnapshot:
                 _quantity(record.capacity),
                 _quantity(record.regeneration_rate),
                 Tick(record.last_simulation_tick),
-                record.location_id,
                 Tick(record.gathering_duration_ticks),
             )
             nodes.add(node)
@@ -439,7 +447,7 @@ def _node_record(node: WorldResourceNode) -> NodeRecord:
         node.node_id, node.world_id, node.resource_type.value,
         _quantity_tuple(node.quantity), _quantity_tuple(node.capacity),
         _quantity_tuple(node.regeneration_rate), node.last_simulation_tick.value,
-        node.location_id, node.gathering_duration_ticks.value,
+        None, node.gathering_duration_ticks.value,
     )
 
 
