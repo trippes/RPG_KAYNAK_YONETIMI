@@ -2,7 +2,7 @@
 
 **Branch:** `experiment/map-cleanup`  
 **Audit base:** `2aac5035d58a8dc15ec90f04e3b6959d6f353791`  
-**Status:** Dependency audit; no gameplay map content has been deleted by this document.
+**Status:** Historical dependency baseline followed by the completed cleanup state in section 8. Sections 2–7 describe the pre-cleanup architecture and must not be read as current dependencies.
 
 ## 1. Cleanup objective
 
