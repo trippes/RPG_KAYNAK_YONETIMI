@@ -1,5 +1,5 @@
-"""Application-layer helpers used by laboratory demos."""
+"""Application-level orchestration for the Hex World runtime."""
 
-from .demo_tick_pump import DemoTickPump, TickPumpDiagnostics
+from .entity_world_coordinator import EntityWorldCoordinator
 
-__all__ = ["DemoTickPump", "TickPumpDiagnostics"]
+__all__ = ["EntityWorldCoordinator"]
