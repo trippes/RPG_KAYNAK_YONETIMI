@@ -8,15 +8,19 @@ document and the gameplay snapshot without changing either inner schema.
 The outer document is:
 
 - `schema`: `rpg-game-save`
-- `schema_version`: `2`
+- `schema_version`: `3`
 - `core`: a `PersistenceDocument` using `rpg-core`
 - `gameplay`: a `GameplaySnapshot` using `rpg-gameplay`
 - optional `containers`: a `ContainerSnapshot` using `rpg-containers` v1
+- optional `hex_world`: a `HexWorldSnapshot` using `rpg-hex-world` v1
 
 The outer document requires equal Core and gameplay simulation ticks. Core and
 gameplay versions remain independently validated by their existing contracts.
-Container state uses its own `rpg-containers` v1 contract and remains optional in
-the outer v2 envelope so older saves can migrate without fabricated containers.
+Container state uses its own `rpg-containers` v1 contract. The optional
+`hex_world` section stores authoritative axial entity positions and occupancy;
+map geometry and static collision geometry remain content-derived. The outer
+v3 section is optional so older v0/v1/v2 saves migrate without fabricated hex
+positions. No square coordinates are converted.
 
 ## Save flow
 
@@ -27,9 +31,10 @@ snapshots from that same `SessionBundle`:
 2. `PersistenceDocument.from_state(...)` creates the Core document.
 3. `GameplaySnapshot.from_runtime(...)` receives the bundle inventory,
    resource-node, production-job and recipe registries.
-4. `ContainerSnapshot.from_runtime(...)` captures container definitions, break profiles, instance durability, independent contents, nesting/custody and world placements when containers exist.
-5. `GameSaveDocument` validates the combined document and the two simulation ticks.
-6. `GameSaveFileAdapter.save(...)` writes the outer document.
+4. `ContainerSnapshot.from_runtime(...)` captures container definitions, break profiles, instance durability, independent contents, nesting and custody when containers exist. Its legacy `placements` list remains empty; non-empty legacy placement records are rejected on load.
+5. If `bundle.hex_world_runtime` is initialized, `HexWorldSnapshot.from_runtime(...)` captures its entity positions, movement profiles, active flags, occupancy blocking flags and NPC patrol indices. Domain-owner validation checks actor/NPC/resource/container references and world scope.
+6. `GameSaveDocument` validates the combined document and the two simulation ticks.
+7. `GameSaveFileAdapter.save(...)` writes the outer document.
 
 The adapter writes a same-directory temporary file, flushes and fsyncs it,
 then validates the staged document before replacing the target with
@@ -93,11 +98,12 @@ be selected for a new save without an overwrite prompt.
 4. Gameplay restore uses `candidate_session.simulation`.
 5. Resource-node world IDs are checked against candidate Core worlds.
 6. A candidate `SessionBundle` is built and validated.
-7. Only then is `SessionHolder.publish(candidate)` called.
+7. If a `hex_world` section exists, the active content package must supply the referenced axial map definitions. The snapshot's world ID and domain owners are validated, then a fresh world-scoped `HexWorldRuntime` is created and restored atomically.
+8. Only then is `SessionHolder.publish(candidate)` called.
 
 Any failure before publication leaves the previous bundle, session, runtime and
-gameplay objects active. Gameplay restore does not create a second runtime in
-this path.
+gameplay objects active. A restored HexWorldRuntime is created only from the
+candidate content package and is never shared with the current session.
 
 ## Error contract
 
@@ -118,8 +124,12 @@ save/load results.
 
 ## Persistence boundaries
 
-The unified document covers Core session state, gameplay bundle state and optional container runtime state. Container contents remain separate from actor inventories and are restored into their own inventories. It
-does not include:
+The unified document covers Core session state, gameplay bundle state,
+optional container runtime state and optional HexWorldRuntime spatial state.
+Container contents remain separate from actor inventories and are restored into
+their own inventories. HexWorldSnapshot stores only runtime spatial state;
+maps, world-map layout and physics collision geometry are reloaded or derived
+from the active content package. It does not include:
 
 - legacy `ActionManager` state,
 - legacy event queues,
@@ -138,8 +148,10 @@ Persistence-related verification includes:
 - interrupted final-replace recovery tests, including primary/backup preservation,
 - stale staging-file cleanup tests covering age, exact naming, primary/backup retention and unrelated files,\n- concurrent thread/process save tests, load-save exclusion, independent-slot behavior and lock release after exceptions,
 - POSIX directory-fsync ordering and failure-contract tests,
-- legacy version-0 and version-1 envelope migration and input immutability tests,
-- container definition, physical catalog, inventory contents, durability, nesting, custody and world-placement round-trip tests,
+- legacy version-0, version-1 and version-2 envelope migration and input immutability tests,
+- container definition, physical catalog, inventory contents, durability, nesting and custody round-trip tests,
+- versioned HexWorldSnapshot codec, atomic restore, map-mask, occupancy and domain-owner validation tests,
+- GameApplication HexWorldRuntime save/load round-trip and candidate-publication tests,
 - atomic adapter failure tests,
 - candidate restore and publication tests,
 - Core persistence/restore tests,
