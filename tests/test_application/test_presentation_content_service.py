@@ -63,7 +63,8 @@ class TestPresentationContentService(unittest.TestCase):
         self.assertTrue(all(item.map_id == "hex_forest_demo" for item in placements))
 
     def test_unknown_map_is_rejected(self):
-        self.assertEqual(self.service.load_map_placements("not-a-map"), ())
+        with self.assertRaisesRegex(PresentationContentServiceError, "Unknown hex map ID"):
+            self.service.load_map_placements("not-a-map")
 
     def test_package_validation_reports_missing_images_as_warnings(self):
         result = self.service.validate_content_package()
