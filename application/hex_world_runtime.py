@@ -196,24 +196,58 @@ class HexWorldRuntime:
         target_cell = LocalHexPosition.from_hex_coord(entity.position.cell.to_hex_coord().neighbor(direction))
         return self.move_to(entity_id, target_cell)
 
-    def move_to(self, entity_id: str, target: LocalHexPosition) -> MovementResult:
+    def validate_move_to(
+        self,
+        entity_id: str,
+        target: LocalHexPosition,
+    ) -> MovementResult:
+        """Validate a cell move without mutating occupancy or entity state."""
         entity = self.entity(entity_id)
         if not isinstance(target, LocalHexPosition):
             raise TypeError("target must be a LocalHexPosition.")
         if not entity.active or not entity.profile.can_move:
-            return MovementResult(False, entity.position, MovementFailureReason.MOVEMENT_NOT_ALLOWED, "Entity cannot move.")
+            return MovementResult(
+                False,
+                entity.position,
+                MovementFailureReason.MOVEMENT_NOT_ALLOWED,
+                "Entity cannot move.",
+            )
         destination = EntityPosition(entity.position.map_id, target)
-        request = MovementRequest(entity_id, entity.position, destination, entity.profile)
-        result = MovementRules.evaluate(request, self.map_definition(entity.position.map_id))
+        request = MovementRequest(
+            entity_id,
+            entity.position,
+            destination,
+            entity.profile,
+        )
+        result = MovementRules.evaluate(
+            request,
+            self.map_definition(entity.position.map_id),
+        )
         if not result.success:
             return result
-        if not entity.profile.ignores_occupancy and not self._occupancy.can_enter(destination, excluding=entity_id):
-            return MovementResult(False, entity.position, MovementFailureReason.OCCUPIED_CELL, "Target cell is occupied or movement-blocked.")
-        self._occupancy.move(
-            entity_id, destination,
-            ignore_blockers=entity.profile.ignores_occupancy,
-        )
+        if (
+            not entity.profile.ignores_occupancy
+            and not self._occupancy.can_enter(destination, excluding=entity_id)
+        ):
+            return MovementResult(
+                False,
+                entity.position,
+                MovementFailureReason.OCCUPIED_CELL,
+                "Target cell is occupied or movement-blocked.",
+            )
         return MovementResult(True, destination)
+
+    def move_to(self, entity_id: str, target: LocalHexPosition) -> MovementResult:
+        """Validate then atomically commit one map-local cell movement."""
+        result = self.validate_move_to(entity_id, target)
+        if not result.success:
+            return result
+        self._occupancy.move(
+            entity_id,
+            result.position,
+            ignore_blockers=self._entity_state(entity_id).profile.ignores_occupancy,
+        )
+        return result
 
     def path_to(self, entity_id: str, goal: LocalHexPosition):
         entity = self.entity(entity_id)
