@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "nodes": [
+    {
+      "id": "test_wood_node",
+      "resource_type": "wood",
+      "unit": "item",
+      "initial_quantity": 12,
+      "capacity": 20,
+      "regeneration_rate": 1,
+      "gathering_duration_ticks": 60
+    },
+    {
+      "id": "test_iron_node",
+      "resource_type": "iron",
+      "unit": "item",
+      "initial_quantity": 8,
+      "capacity": 16,
+      "regeneration_rate": 0,
+      "gathering_duration_ticks": 90
+    }
+  ]
+}
