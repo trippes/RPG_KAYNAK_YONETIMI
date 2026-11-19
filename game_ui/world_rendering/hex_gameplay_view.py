@@ -19,6 +19,7 @@ class HexGameplayView:
     MAX_ZOOM = 1.8
     ZOOM_STEP = 0.08
     MOVE_STEP_SECONDS = 0.18
+    MOVE_ANIMATION_SECONDS = 0.18
 
     DIRECTIONS = (
         ("right", HexDirection.EAST),
@@ -43,6 +44,13 @@ class HexGameplayView:
         self._move_goal = None
         self._move_map_id = None
         self._movement_accumulator = 0.0
+        self._visual_map_id = None
+        self._visual_cell = None
+        self._visual_position = None
+        self._visual_start = None
+        self._visual_target = None
+        self._visual_elapsed = 0.0
+        self._visual_moving = False
         self.context_menu_npc_id = None
         self.context_menu_position = None
         self.selected_npc_id = None
@@ -65,8 +73,69 @@ class HexGameplayView:
                 return entity.entity_id
         return None
 
+    def _cell_world_position(self, cell):
+        return self.transform.axial_to_world(cell.to_hex_coord())
+
+    def _ensure_visual_position(self, map_id, cell):
+        if self._visual_map_id != map_id or (
+            self._visual_cell != cell and not self._visual_moving
+        ):
+            position = self._cell_world_position(cell)
+            self._visual_map_id = map_id
+            self._visual_cell = cell
+            self._visual_position = position
+            self._visual_start = position
+            self._visual_target = position
+            self._visual_elapsed = 0.0
+            self._visual_moving = False
+        elif self._visual_position is None:
+            position = self._cell_world_position(cell)
+            self._visual_map_id = map_id
+            self._visual_cell = cell
+            self._visual_position = position
+            self._visual_start = position
+            self._visual_target = position
+
+    def _begin_visual_move(self, map_id, source_cell, target_cell):
+        if source_cell == target_cell:
+            return
+        if self._visual_map_id != map_id:
+            self._ensure_visual_position(map_id, source_cell)
+        if self._visual_position is None:
+            self._visual_position = self._cell_world_position(source_cell)
+        target = self._cell_world_position(target_cell)
+        self._visual_start = self._visual_position
+        self._visual_target = target
+        self._visual_elapsed = 0.0
+        self._visual_cell = target_cell
+        self._visual_map_id = map_id
+        self._visual_moving = self._visual_start != target
+
+    def _advance_visual_position(self, elapsed_seconds):
+        if not self._visual_moving:
+            return
+        self._visual_elapsed = min(
+            self.MOVE_ANIMATION_SECONDS,
+            self._visual_elapsed + max(0.0, elapsed_seconds),
+        )
+        progress = min(1.0, self._visual_elapsed / self.MOVE_ANIMATION_SECONDS)
+        start_x, start_y = self._visual_start
+        target_x, target_y = self._visual_target
+        self._visual_position = (
+            start_x + (target_x - start_x) * progress,
+            start_y + (target_y - start_y) * progress,
+        )
+        if progress >= 1.0:
+            self._visual_position = self._visual_target
+            self._visual_moving = False
+
+    def _record_move_result(self, map_id, source_cell, result):
+        if result is not None and result.success:
+            self._begin_visual_move(map_id, source_cell, result.position.cell)
+
     def update(self, elapsed_seconds: float = 0.0) -> None:
         self.elapsed_seconds = max(0.0, float(elapsed_seconds))
+        self._advance_visual_position(self.elapsed_seconds)
         if self._move_goal is None:
             return
         runtime = self.service.hex_world_runtime
@@ -89,10 +158,12 @@ class HexGameplayView:
         if self._movement_accumulator < self.MOVE_STEP_SECONDS:
             return
         self._movement_accumulator %= self.MOVE_STEP_SECONDS
+        source_cell = entity.position.cell
         result = self.service.hex_actor_binding.move_toward(
             self.service.player_actor_id,
             self._move_goal,
         )
+        self._record_move_result(entity.position.map_id, source_cell, result)
         if not result.success or result.position.cell == self._move_goal:
             self._clear_move_goal()
 
@@ -146,12 +217,20 @@ class HexGameplayView:
                     None,
                 )
                 if transition is not None:
-                    self.service.hex_actor_binding.transition(
+                    result = self.service.hex_actor_binding.transition(
                         actor_id,
                         transition.transition_id,
                     )
+                    if result.success:
+                        self._visual_map_id = None
+                        self._visual_cell = None
+                        self._visual_position = None
+                        self._visual_moving = False
                 else:
-                    self.service.hex_actor_binding.move(actor_id, direction)
+                    result = self.service.hex_actor_binding.move(actor_id, direction)
+                    self._record_move_result(
+                        entity.position.map_id, entity.position.cell, result,
+                    )
         if manual_move:
             self._clear_move_goal()
         elif state.mouse_clicked and state.mouse_pos is not None:
@@ -179,6 +258,9 @@ class HexGameplayView:
                 result = self.service.hex_actor_binding.move_toward(
                     actor_id,
                     goal,
+                )
+                self._record_move_result(
+                    entity.position.map_id, entity.position.cell, result,
                 )
                 if not result.success or result.position.cell == goal:
                     self._clear_move_goal()
@@ -219,9 +301,8 @@ class HexGameplayView:
             min_y = min(point[1] for point in world_centers) - self.HEX_SIZE
             max_x = max(point[0] for point in world_centers) + self.HEX_SIZE
             max_y = max(point[1] for point in world_centers) + self.HEX_SIZE
-            target = self.transform.axial_to_world(
-                player.position.cell.to_hex_coord()
-            )
+            self._ensure_visual_position(player.position.map_id, player.position.cell)
+            target = self._visual_position
             local_mouse = None
             if self.mouse_position is not None:
                 mx, my = self.mouse_position
@@ -275,16 +356,21 @@ class HexGameplayView:
             for entity in DepthSorter.sort(
                 entities, lambda item: item.position.cell,
             ):
-                foot = self.transform.axial_to_screen(
-                    entity.position.cell.to_hex_coord()
-                )
+                if entity.kind == "player":
+                    foot = self.transform.world_to_screen(*self._visual_position)
+                    moving = self._visual_moving
+                else:
+                    foot = self.transform.axial_to_screen(
+                        entity.position.cell.to_hex_coord()
+                    )
+                    moving = False
                 if entity.kind in {"player", "npc"}:
                     self.characters.draw(
                         renderer,
                         foot,
                         max(18.0, radius * 1.25),
                         self.elapsed_seconds,
-                        moving=False,
+                        moving=moving,
                     )
                 else:
                     renderer.pg.draw.circle(
