@@ -97,8 +97,8 @@ def test_resource_node_registers_as_non_movable_non_blocking_spatial_object():
 
 
 def test_resource_node_does_not_block_actor_occupancy():
-    service, _bundle, runtime = make_service()
-    service._current_bundle().resource_nodes.add(make_node())
+    service, bundle, runtime = make_service()
+    bundle.resource_nodes.add(make_node())
     service.resource_node_hex_binding.register_spatial(
         "iron-vein",
         EntityPosition("field", LocalHexPosition(0, 0)),
