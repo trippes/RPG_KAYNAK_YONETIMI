@@ -15,7 +15,7 @@ class ContainerHexBindingError(ValueError):
 
 
 class ContainerHexBindingService:
-    """Register world-placed container entities without owning their position.
+    """Coordinate container custody transitions with canonical hex placement.
 
     ContainerManager owns capability, contents, nesting and inventory custody.
     WorldMembershipService owns Core entity-to-world membership.
@@ -91,9 +91,68 @@ class ContainerHexBindingService:
         )
 
     def unregister_spatial(self, container_id: str) -> HexMovableEntity:
-        """Remove the axial placement before moving a container into custody."""
+        """Remove the axial placement while preserving the container capability."""
         instance = self._require_container(container_id)
         return self._runtime.remove_entity(instance.entity_id)
+
+    def carry(self, container_id: str, inventory_id: str) -> None:
+        """Atomically remove world placement before assigning inventory custody."""
+        instance = self._require_container(container_id)
+        if self._containers.parent_of(container_id) is not None:
+            raise ContainerHexBindingError("Nested container cannot be carried directly.")
+        if self._containers.inventory_custody(container_id) is not None:
+            raise ContainerHexBindingError("Container already has inventory custody.")
+        snapshot = self._detach_spatial(instance.entity_id)
+        try:
+            self._containers.set_inventory_custody(container_id, inventory_id)
+        except Exception:
+            self._restore_spatial(snapshot)
+            raise
+
+    def contain(self, parent_id: str, child_id: str) -> ContainerInstance:
+        """Atomically remove a child's world placement before nesting it."""
+        child = self._require_container(child_id)
+        if self._containers.parent_of(child_id) is not None:
+            raise ContainerHexBindingError("Nested container already has a parent.")
+        if self._containers.inventory_custody(child_id) is not None:
+            raise ContainerHexBindingError("Carried container cannot be nested directly.")
+        snapshot = self._detach_spatial(child.entity_id)
+        try:
+            return self._containers.contain(parent_id, child_id)
+        except Exception:
+            self._restore_spatial(snapshot)
+            raise
+
+    def _detach_spatial(self, entity_id: str):
+        occupant = self._runtime.occupancy.get(entity_id)
+        if occupant is None:
+            try:
+                self._runtime.entity(entity_id)
+            except KeyError:
+                return None
+            raise RuntimeError(
+                f"Hex entity has no authoritative occupancy record: {entity_id}"
+            )
+        entity = self._runtime.remove_entity(entity_id)
+        return (
+            entity,
+            occupant.blocks_movement,
+            occupant.blocks_occupancy,
+        )
+
+    def _restore_spatial(self, snapshot) -> None:
+        if snapshot is None:
+            return
+        entity, blocks_movement, blocks_occupancy = snapshot
+        self._runtime.register_entity(
+            entity.entity_id,
+            entity.kind,
+            entity.position,
+            entity.profile,
+            active=entity.active,
+            blocks_movement=blocks_movement,
+            blocks_occupancy=blocks_occupancy,
+        )
 
     def _require_container(self, container_id: str) -> ContainerInstance:
         if not isinstance(container_id, str) or not container_id.strip():
