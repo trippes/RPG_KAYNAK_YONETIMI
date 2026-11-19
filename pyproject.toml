@@ -24,7 +24,6 @@ game_ui = ["assets/*.png"]
 "content/demo_eldoria" = ["content/demo_eldoria/manifest.json", "content/demo_eldoria/starter_content.json", "content/demo_eldoria/npcs.json", "content/demo_eldoria/quests.json", "content/demo_eldoria/resources.json", "content/demo_eldoria/characters.json", "content/demo_eldoria/gameplay_rules.json", "content/demo_eldoria/presentation_assets.json", "content/demo_eldoria/asset_catalog.json"]
 "content/demo_eldoria/placements" = ["content/demo_eldoria/placements/*.json"]
 "content/demo_eldoria/assets" = ["content/demo_eldoria/assets/*.png", "content/demo_eldoria/assets/*.json"]
-"content/demo_eldoria/maps" = ["content/demo_eldoria/maps/*.json"]
 
 [tool.unittest]
 test_command = "python -m unittest discover -s . -t . -p test_*.py"

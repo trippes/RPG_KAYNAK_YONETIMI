@@ -4,7 +4,6 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from core.domain.spatial import WorldHexPosition
 from application.content_loader import (
     ContentPackageError,
     _load_hex_maps,
@@ -34,7 +33,7 @@ class TestContentPackageLoader(unittest.TestCase):
         self.assertEqual(package.files["starter"]["schema_version"], 1)
         self.assertNotIn("locations", package.files["starter"])
         self.assertNotIn("connections", package.files["starter"])
-        self.assertEqual(len(package.map_definitions), 9)
+        self.assertEqual(len(package.map_definitions), 0)
         self.assertEqual(len(package.files["npcs"]["npcs"]), 4)
         self.assertEqual(len(package.files["quests"]["quests"]), 2)
         self.assertEqual(len(package.files["resources"]["nodes"]), 22)
@@ -188,17 +187,11 @@ class TestContentPackageLoader(unittest.TestCase):
             with self.assertRaisesRegex(ContentPackageError, "could not be loaded"):
                 load_content_package(root)
 
-    def test_demo_package_discovers_all_map_json_files(self):
+    def test_demo_package_contains_no_legacy_square_or_demo_hex_maps(self):
         package = load_content_package(DEMO_PACKAGE)
-
-        self.assertEqual(
-            set(package.map_definitions),
-            {
-                "village", "forest", "south_forest", "west_forest",
-                "east_forest", "north_mine", "south_mine", "west_mine",
-                "east_mine",
-            },
-        )
+        self.assertEqual(package.map_definitions, {})
+        self.assertEqual(package.hex_map_definitions, {})
+        self.assertIsNone(package.world_map_definition)
 
     def test_package_rejects_missing_declared_maps_directory(self):
         with tempfile.TemporaryDirectory() as directory:
