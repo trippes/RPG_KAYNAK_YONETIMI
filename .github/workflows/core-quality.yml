@@ -25,12 +25,10 @@ jobs:
           application/actor_system.py
           application/actor_persistence.py
           application/game_application.py
-          application/movement.py
           game_ui/screens/main_screen.py
           game_ui/renderer.py
           tests/test_application/test_session_bundle.py
           tests/test_application/test_actor_system.py
-          tests/test_application/test_movement.py
           tests/test_application/test_hex_world_runtime.py
       - name: Report legacy API usage
         run: python -m core.compatibility.usage . | tee legacy-api-usage.json

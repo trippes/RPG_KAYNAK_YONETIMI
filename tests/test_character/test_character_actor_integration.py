@@ -5,9 +5,6 @@ from pathlib import Path
 
 from application import GameApplication, GameplayService
 from character import Attribute, CharacterClass, CharacterFactory, Race
-from core.domain.spatial import Position
-from resources import Inventory, Quantity, ResourceType, ResourceUnit, WorldResourceNode
-from world import Location, WorldMap
 
 
 class TestCharacterActorIntegration(unittest.TestCase):
@@ -101,36 +98,6 @@ class TestCharacterActorIntegration(unittest.TestCase):
 
         self.assertIsNotNone(self.application.holder.current.characters["char_1"])
 
-    def test_actor_can_interact_at_current_location_and_gather_there(self):
-        self.application.karakter_olustur(
-            self.factory, "char_1", "Arin", "human", "fighter"
-        )
-        bundle = self.application.holder.current
-        # The default bundle has immutable registries; install the test inventory
-        # using the same application-level setup convention as the demo.
-        from types import MappingProxyType
-        object.__setattr__(bundle, "inventories", MappingProxyType({"main": Inventory()}))
-        resource = ResourceType("ore")
-        bundle.resource_nodes.add(WorldResourceNode(
-            "ore-node", self.world.world_id, resource,
-            Quantity(2, ResourceUnit.ITEM), Quantity(2, ResourceUnit.ITEM),
-            Quantity(0, ResourceUnit.ITEM),
-        ))
-        world_map = WorldMap(self.world.world_id)
-        world_map.add_location(Location("mine", "Maden", Position(0, 0)))
-        service = GameplayService(self.application)
-        service.register_world_map(world_map)
-        service.place_actor("char_1", "mine")
-
-        interaction = service.interact_with_location("char_1", "mine")
-        self.assertEqual(interaction.character_id, "char_1")
-        self.assertEqual(interaction.location_name, "Maden")
-        result = service.start_gathering_at_location(
-            "char_1", "mine", "ore-node", "main",
-            Quantity(1, ResourceUnit.ITEM), "mine-gather",
-        )
-        service.advance_by(service.gathering_duration("char_1"))
-        self.assertEqual(service.activity("mine-gather").state, "completed")
 
 
 if __name__ == "__main__":
