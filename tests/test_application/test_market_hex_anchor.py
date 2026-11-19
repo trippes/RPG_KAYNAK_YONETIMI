@@ -129,3 +129,30 @@ def test_market_anchor_rejects_unknown_market_profile():
 
     with pytest.raises(KeyError, match="Market profile not found"):
         service.market_hex_anchor.position("missing-market")
+
+
+
+def test_market_anchor_rejects_npc_actor_from_another_world():
+    service, bundle, _runtime = make_service()
+    other_world = bundle.session.worlds.create("Other", world_id="other_market_world")
+    service.register_npc(NPC("trader", "Trader"))
+    service.register_actor("trader", "npc", world_id=other_world.world_id)
+    service.register_market_profile(MarketProfile(
+        "iron-market",
+        "legacy-square-village-id",
+        "trader",
+        "merchant-trader",
+        "merchant-inventory",
+        1,
+        (
+            MarketCatalogEntry(
+                ResourceType("iron"),
+                Money(3, Currency("gold")),
+                1,
+                2,
+            ),
+        ),
+    ))
+
+    with pytest.raises(MarketHexAnchorError, match="no spatially registered NPC anchor"):
+        service.market_hex_anchor.position("iron-market")
