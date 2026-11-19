@@ -4,6 +4,7 @@ from application.hex_occupancy import HexOccupant, HexOccupancyRegistry
 from application.hex_pathfinding import HexPathfinder
 from application.hex_world_runtime import HexWorldRuntime, HexWorldRuntimeOwner
 from core.domain.spatial import (
+    AABB,
     ContinuousEntityPosition,
     EntityPosition,
     HexCoord,
@@ -117,6 +118,30 @@ class TestHexWorldRuntime(unittest.TestCase):
         self.runtime = HexWorldRuntime({"forest": self.map})
         self.runtime.register_entity("player", "player", EntityPosition("forest", LocalHexPosition(0, 0)))
         self.runtime.register_entity("npc", "npc", EntityPosition("forest", LocalHexPosition(0, 1)))
+
+    def test_runtime_spatial_index_tracks_continuous_actor_positions(self):
+        initial = self.runtime.continuous_position("player").point
+        self.assertEqual(
+            self.runtime.query_spatial_candidates(
+                "forest", AABB.around_point(initial, 2.0)
+            ),
+            ("player",),
+        )
+
+        updated = WorldPoint(4.0, 5.0)
+        self.runtime.set_continuous_position("player", updated)
+        self.assertEqual(
+            self.runtime.query_spatial_candidates(
+                "forest", AABB.around_point(updated, 1.0)
+            ),
+            ("player",),
+        )
+        self.assertEqual(
+            self.runtime.query_spatial_candidates(
+                "other-map", AABB.around_point(updated, 1.0)
+            ),
+            (),
+        )
 
     def test_runtime_registers_continuous_position_at_cell_center(self):
         position = self.runtime.continuous_position("player")
