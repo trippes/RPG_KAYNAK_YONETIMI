@@ -14,7 +14,7 @@ from typing import Callable, Iterable
 
 from core.time import Tick
 from core.actions import ActionType, action_tick_cost
-from core.foundation import Identifier
+from core.foundation import Identifier, WorldId
 from core.entity import EntityType
 
 from resources import Inventory, Quantity, Recipe, ResourceType, ResourceUnit
@@ -25,6 +25,7 @@ from economy import Currency, MarketOffer, Money, TradeService, Merchant, Market
 from .game_application import GameApplication
 from .production_chain import ProductionChain, ProductionChainStage
 from .actor_system import ActivityView, ActorView, WorldActor
+from .hex_actor_binding import ActorHexBindingService
 from character import EquipmentSlot, ItemDefinition
 from npc import Faction, NPC
 from quests import Dialogue, Quest, QuestGraph, QuestGraphProgress
@@ -191,6 +192,31 @@ class GameplayService:
     def hex_world_runtime(self):
         """Return the active session's hex runtime, when it has been initialized."""
         return self._current_bundle().hex_world_runtime
+
+    @property
+    def hex_actor_binding(self) -> ActorHexBindingService:
+        """Resolve the active world's actor-to-hex binding without owning state."""
+        bundle = self._current_bundle()
+        world = bundle.session.worlds.get_active()
+        if world is None:
+            raise GameplayServiceError(
+                "An active world is required for hex actor movement."
+            )
+        runtime = bundle.hex_world_runtime
+        if runtime is None:
+            raise GameplayServiceError(
+                "The active session has no initialized hex world runtime."
+            )
+        try:
+            return ActorHexBindingService(
+                bundle.actors,
+                runtime,
+                WorldId(world.world_id),
+            )
+        except (TypeError, ValueError) as error:
+            raise GameplayServiceError(
+                f"Hex runtime is not bound to the active world: {error}"
+            ) from error
 
     def register_character_factory(self, factory) -> None:
         self._character_factory = factory
