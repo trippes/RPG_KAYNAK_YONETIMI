@@ -6,6 +6,7 @@ import math
 from numbers import Real
 
 from .hex_coord import HexCoord
+from .world_point import WorldPoint
 
 
 def _validate_finite_real(value: object, name: str) -> float:
@@ -84,7 +85,6 @@ def pixel_to_axial(
 
 
 # Continuous y-down world geometry is the canonical Eldoria coordinate boundary.
-from .world_point import WorldPoint
 
 _GEOMETRY_ABS_TOLERANCE = 1e-9
 _GEOMETRY_REL_TOLERANCE = 1e-9
