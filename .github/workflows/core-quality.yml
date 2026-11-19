@@ -97,6 +97,9 @@ jobs:
           tests/test_spatial/test_native_continuous_collision.py
           tests/test_spatial/test_native_hex_map_geometry.py
           tests/test_spatial/test_native_physics_primitives.py
+          tests/test_application/test_npc_physics_content.py
+          tests/test_application/test_npc_spatial_benchmark.py
+          scripts/benchmark_npc_spatial_index.py
       - name: Verify legacy map cleanup boundary
         run: python scripts/check_map_cleanup.py
       - name: Report legacy API usage
