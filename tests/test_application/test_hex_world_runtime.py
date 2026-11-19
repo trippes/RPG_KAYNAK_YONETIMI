@@ -160,6 +160,12 @@ class TestHexWorldRuntime(unittest.TestCase):
         self.assertIn("bounded_npc", self.runtime.query_spatial_candidates("forest", moved_inside))
         self.assertNotIn("bounded_npc", self.runtime.query_spatial_candidates("forest", moved_outside))
 
+        cell_move = self.runtime.move_to("bounded_npc", LocalHexPosition(2, -1))
+        self.assertTrue(cell_move.success)
+        cell_center = self.runtime.continuous_position("bounded_npc").point
+        cell_edge = AABB.around_point(WorldPoint(cell_center.x + 3.5, cell_center.y), 0.1)
+        self.assertIn("bounded_npc", self.runtime.query_spatial_candidates("forest", cell_edge))
+
     def test_runtime_registers_continuous_position_at_cell_center(self):
         position = self.runtime.continuous_position("player")
         expected = axial_to_world_point(HexCoord(0, 0), self.runtime.HEX_SIZE)

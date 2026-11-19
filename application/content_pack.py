@@ -170,8 +170,16 @@ def load_npc_definitions(path: str | Path | None = None, *, package_path: str | 
             if physics.get("shape") != "circle":
                 raise ContentDefinitionError(f"NPC '{npc_id}' physics shape must be 'circle'.")
             radius = physics.get("radius")
-            if (isinstance(radius, bool) or not isinstance(radius, (int, float))
-                    or not math.isfinite(radius) or radius <= 0):
+            try:
+                valid_radius = (
+                    not isinstance(radius, bool)
+                    and isinstance(radius, (int, float))
+                    and math.isfinite(radius)
+                    and radius > 0
+                )
+            except OverflowError:
+                valid_radius = False
+            if not valid_radius:
                 raise ContentDefinitionError(f"NPC '{npc_id}' physics radius must be finite and positive.")
 
     return tuple(records)
