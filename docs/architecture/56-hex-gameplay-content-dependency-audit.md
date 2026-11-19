@@ -84,3 +84,16 @@ Bu kararlar netleşmeden mevcut kare içerikleri silinmez, eski dokuz kare harit
 - Hex runtime save/load testleri round-trip doğrulaması yapıyor.
 - Eski kare kayıtlar için açık, kayıpsız ve belgelenmiş politika bulunuyor.
 - Pytest, Ruff, paketleme ve Linux/Windows CI başarılı.
+
+## Son kararın uygulanma durumu — 2026-11-19
+
+Önceki önerilerdeki “NPC/resource stable ID'lerini koruyarak axial konuma taşı” yaklaşımı geçersizdir. Kullanıcı mevcut dört NPC ve yirmi iki resource node kaydının taşınmadan silinmesini istedi; bu uygulandı.
+
+- Demo NPC kayıtları ve NPC kare konum alanları kaldırıldı.
+- Demo resource-node kayıtları ve resource node kare location_id alanı kaldırıldı.
+- Eski quest örnekleri, NPC dialogue kayıtları, NPC-bound starter market ve demo scene placements kaldırıldı/boşaltıldı.
+- NPC, resource gathering, quest, dialogue, market/economy, inventory ve container domain/runtime sistemleri korundu.
+- Eski social/gameplay/container save alanları decoder seviyesinde tanınır; kare spatial data taşıyan kayıtlar açıkça reddedilir.
+- Yeni NPC/resource/quest/dialogue/market kayıtları Hex entegrasyonundan sonra sıfırdan yazılacaktır; şu anda yeni placement verisi yoktur.
+
+Cleanup HEAD 3790463394b1f47c81655169554e30202de66724; Linux/Windows CI run [#44492476381](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44492476381) başarılı.

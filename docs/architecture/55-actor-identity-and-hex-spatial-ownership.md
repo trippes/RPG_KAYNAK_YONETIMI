@@ -164,3 +164,16 @@ Yeni hex kayıtları axial konumu açık biçimde saklar ve restore sırasında 
 - Eski kare kayıtlar otomatik dönüştürülmeyecek; migration/recovery politikası ayrıca belirlenecek.
 
 **Bir sonraki uygulama işi:** Kalan domain ve içerik bağımlılıklarını envanterleyip hex axial yerleşim şemasını tanımlamak. NPC, kaynak, pazar ve konteyner koordinatları uydurulmayacak; mevcut içerik sahipliği ve oyun tasarımıyla uyumlu açık yerleşim verisi gerekecek.
+
+## Uygulama sonucu — 2026-11-19
+
+Önceki “ActorView legacy konum alanları geçiş için tutuluyor” ve “NPC/resource kare spatial modelleri henüz duruyor” durum notları artık geçerli değildir.
+
+- ActorIdentity değişmez kimlik sınırı olarak korunur.
+- ActorView artık location_id veya position sunmaz; actor runtime'dan legacy square spatial store ve mutasyon API'leri kaldırılmıştır.
+- NPC domain modelinden location_id ve kare Position alanları kaldırılmıştır.
+- Resource-node modelinden location_id kaldırılmıştır.
+- NPC, actor ve resource eski save kayıtlarının spatial alanları runtime'a restore edilmeden önce snapshot decoder tarafından tespit edilir ve GameApplication yüklemeyi reddeder.
+- Yeni Hex konum/occupancy otoritesi laboratuvar runtime'ında kalır; ana oyun UI entegrasyonu henüz başlamamıştır.
+
+Doğrulama: cleanup HEAD 3790463394b1f47c81655169554e30202de66724; run [#44492476381](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44492476381), Linux/Windows başarılı; 1.341 test + 235 subtest.

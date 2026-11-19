@@ -192,3 +192,18 @@ Gerekli otomatik test katmanları:
 - GameplayService aktif oturumun runtime owner'ını ve oluşturulmuş runtime'ını sunar. SessionHolder aynı owner nesnesinin veya farklı owner sarmalayıcıları içindeki aynı mutable runtime örneğinin iki bundle arasında paylaşılmasını reddeder.
 - Oturum değiştirildiğinde görünüm yeni bundle'ın owner'ını çözer; önceki bundle runtime'ına sabitlenmez. Hex runtime henüz save/load verisine dahil değildir; bu iş 16.2.4 persistence kapısının kapsamındadır.
 - Testler, runtime owner'ın tek sefer oluşturulmasını, aynı runtime örneğinin tekrar kullanılmasını ve görünümden çıkıp girerken axial konumun korunmasını kapsar. Sonraki adımda bu değişiklikler Pytest, Ruff ve Linux/Windows GitHub Actions ile doğrulanacaktır.
+
+## 8. Cleanup dalı ile entegrasyon kapısı — 2026-11-19
+
+Eski kare/portal sistemi temizliği tamamlanmadan laboratuvar Hex gameplay entegrasyonu yapılmayacağına ilişkin son kullanıcı kararı bu planın önceki uygulama sırasını geçersiz kılar.
+
+Cleanup dalında korunan ve entegrasyonun hedefi olan Hex altyapısı:
+- HexMapDefinition ve WorldMapDefinition axial içerik sözleşmeleri.
+- HexWorldRuntime, movement rules, occupancy ve pathfinding katmanları.
+- Session-scoped HexWorldRuntimeOwner sahiplik sınırı ve tek runtime örneği garantisi.
+
+Eski yedi haritalı demo JSON, portal view ve demo bağlantıları geri getirilmeyecektir. Ana oyun ekranı şu anda geçici mapless placeholder'dır. Tam entegrasyon aşamasında yeni bir gameplay view bu runtime ve renderer temellerine bağlanacaktır.
+
+Cleanup doğrulaması: HEAD 3790463394b1f47c81655169554e30202de66724; GitHub Actions run [#44492476381](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44492476381), Linux/Windows başarılı; 1.341 test + 235 subtest; Ruff, compileall, wheel ve isolated install başarılı.
+
+Yeni oyuncu başlangıç hücresi, NPC, resource, quest, dialogue, market ve container spatial placement kayıtları henüz oluşturulmamıştır. Bunlar Hex entegrasyonundan sonra yeni dünya tasarımına göre sıfırdan tanımlanacaktır. Kare koordinat dönüşümü yapılmayacaktır.

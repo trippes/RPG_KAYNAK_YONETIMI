@@ -141,3 +141,31 @@ Bu kararın içerik kapsamı:
 Bu karar genel oyun mekaniklerini silmez. NPC ve resource domain modelleri, kaynak toplama servisleri, diyalog/quest altyapısı, market/economy, inventory, persistence ve bunların genel testleri korunacaktır. Eski demo verileri kaldırılır; yeni içerik yeni Hex dünya tasarımına göre daha sonra sıfırdan hazırlanır.
 
 Bu ek, önceki “NPC/resource kimliklerini koruyarak axial yerleşime taşı” yaklaşımını geçersiz kılar. Ayrıca uygulama sırası kesin olarak: legacy square + legacy Hex demo ve bağlı demo içeriklerini temizle → otomatik teknik kabul → laboratuvar Hex mimarisini entegre et → yeni gameplay içeriklerini sıfırdan yaz. Tek kare easter egg daha sonraki bağımsız tasarım kararıdır; eski kare map altyapısının korunmasını gerektirmez.
+
+## Cleanup sonrası bağımlılık durumu — 2026-11-19
+
+Önceki dependency graph, planlanan geçişi tarif ediyordu. Gerçek cleanup sonucu:
+
+**Kaldırılan kare/legacy düğümler:**
+- Square map catalog/schema/loader ve dokuz kare map verisi.
+- WorldMap location graph ve MovementManager.
+- LocalMapDefinition, WorldObjectPlacementRegistry ve kare tile placement API'leri.
+- Actor legacy spatial store ve ActorView location/position projection.
+- NPC location_id/square Position alanları.
+- ResourceNode location_id alanı.
+- Kare map HUD/world-map renderer ve eski Hex demo portal/view.
+
+**Bağımsız tutulan domain düğümleri:**
+- NPC registry/behavior/social services.
+- Resource node regeneration, gathering ve inventory transfer.
+- Quest/dialogue, market/economy, container definitions/content/nesting.
+- Persistence decoder ve save/load boundary.
+
+**Gelecek Hex entegrasyon düğümleri (korunuyor, henüz ana gameplay akışına bağlanmadı):**
+- HexMapDefinition, WorldMapDefinition, HexWorldRuntime.
+- Occupancy, movement rules, pathfinding ve session-scoped runtime ownership.
+- Reusable asset/presentation loader sözleşmeleri.
+
+**Save rejection boundary:** ActorSnapshot eski actor spatial alanlarını, SocialSnapshot eski NPC spatial alanlarını, GameplaySnapshot eski resource-node location alanını, ContainerSnapshot eski placement listesini tanır. GameApplication bu verileri kare→axial dönüştürmeden reddeder.
+
+Cleanup HEAD 3790463394b1f47c81655169554e30202de66724; run [#44492476381](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44492476381) Linux/Windows başarılı; 1.341 test + 235 subtest, Ruff, compileall, wheel ve isolated install başarılı.

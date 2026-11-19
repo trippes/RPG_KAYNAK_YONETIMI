@@ -316,3 +316,33 @@ Bu ek, belgenin önceki 16.2–16.6 faz sıralamasını geçersiz kılar:
 6. Yeni Hex dünya içerikleri — oyuncu başlangıcı, NPC, kaynak, görev, diyalog ve pazar — entegrasyon sonrasında sıfırdan oluşturulur.
 
 Tek kare easter egg kararı, eski kare harita altyapısını korumaz. Gerekirse daha sonra bağımsız ve minimal bir kare sahne olarak yeniden tasarlanır.
+
+## 12. Gerçek uygulama sonucu — 2026-11-19
+
+Bu uygulama durumu, önceki 10. bölümdeki “Hex entegrasyonunu kare harita temizliğinden önce yap” sıralamasını geçersiz kılar. Bağlayıcı sıra, 11.2 kullanıcı kararındaki sıralamadır.
+
+### 12.1 Kaldırılan legacy katmanlar
+
+- Dokuz kare map JSON, yedi eski demo Hex map JSON, eski demo dünya dosyası ve eski map-specific scene placement kayıtları kaldırıldı.
+- Kare map schema/catalog/loader, WorldMap konum grafı ve kare movement manager kaldırıldı.
+- WorldObjectPlacementRegistry, kare local-map bounds ve dünyaya kare koordinatla nesne yerleştirme/toplama API'leri kaldırıldı. Container tanımı, içeriği, nested custody ve persistence mekanikleri korundu.
+- Eski Hex demo view/portal ve square-map HUD/world-map renderer kaldırıldı; geçici MainScreen haritasızdır.
+- ActorView ve actor runtime artık kare location_id/position alanı veya legacy spatial store taşımıyor.
+- NPC runtime modeli ve resource-node runtime modeli kare konum alanı taşımıyor.
+- NPC/resource/quest/dialogue/starter market/demo placement kayıtları boşaltıldı veya kaldırıldı; genel domain servisleri korundu.
+
+### 12.2 Save/load uyumluluğu
+
+- Actor snapshot decoder eski location_id/position alanlarını tespit eder.
+- Social snapshot decoder eski NPC location_id/position alanlarını tespit eder.
+- Gameplay snapshot decoder eski resource-node location_id alanlarını tespit eder.
+- Container snapshot eski placements listesini runtime'a çevirmeden korur; yükleme bunu reddeder.
+- Eski kare spatial verisi için otomatik dönüşüm veya relocation yoktur. Hata, eski kare map package ile kurtarma gerektiğini açıkça bildirir.
+
+### 12.3 Doğrulama
+
+Cleanup HEAD 3790463394b1f47c81655169554e30202de66724; run [#44492476381](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44492476381): Linux ve Windows başarılı; 1.341 test + 235 subtest; Ruff, compileall, wheel build, isolated install ve release verification başarılı.
+
+### 12.4 Henüz yapılmayan iş
+
+Laboratuvar Hex runtime'ın ana oyun ekranına ve içerik paketine tam entegrasyonu henüz başlamadı. Hex map/world definition, occupancy, movement rules ve pathfinding gibi laboratuvar temelleri korunmuştur; eski demo harita verisi geri getirilmemiştir. Entegrasyon ayrı bir sonraki aşamadır. Yeni gameplay içerikleri ancak bu entegrasyondan sonra sıfırdan tanımlanacaktır.

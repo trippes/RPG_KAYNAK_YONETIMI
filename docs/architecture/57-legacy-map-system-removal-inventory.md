@@ -102,3 +102,25 @@ Bu nedenle:
 ### Bağlayıcı sıra
 
 Önce eski kare harita ve eski yedi haritalı Hex demo/portal sistemi ile bunlara bağlı demo gameplay içerikleri kaldırılır. Bu temizlik tamamlanıp otomatik teknik doğrulamadan geçtikten sonra laboratuvar Hex mimarisi entegre edilir. Önceki sürümlerdeki “NPC/resource ID'lerini koruyarak axial yerleşime taşı” yönündeki ifadeler bu kullanıcı kararıyla geçersizdir. Hiçbir kare koordinat axial koordinata dönüştürülmez.
+
+## Gerçekleşen kaldırma sonucu — 2026-11-19
+
+Bu bölüm önceki envanterdeki hedeflerin gerçek branch durumuyla güncellenmiş halidir.
+
+**Kaldırıldı:**
+- Dokuz schema-v1 kare harita JSON'u ve eski kare map catalog/schema/loader.
+- Yedi eski demo Hex map JSON'u ve eski demo world arrangement data.
+- Eski kare WorldMap graph, MovementManager, square local-map model ve world-object placement registry.
+- Eski Hex demo view/portal ve square map screen/HUD graph renderer.
+- Dört NPC, 22 resource node, eski quest örnekleri, NPC dialogue, NPC-bound starter market ve eski scene placement kayıtları.
+- Actor, NPC ve resource runtime'ındaki kare konum sahipliği.
+- Eski kare konumlarıyla çalışan test/fixture ve package bağımlılıkları.
+
+**Korundu:**
+- NPC identity/behavior/social runtime, resource node regeneration/gathering, quest/dialogue, economy/market, inventory, container contents/nesting, save/load altyapısı.
+- Hex map/world definition, HexWorldRuntime, occupancy, movement rules, pathfinding ve session runtime owner temelleri. Bunlar eski demo portalı değildir; sonraki entegrasyonun hedefidir.
+- Reusable asset catalog ve genel presentation/scene-placement loader sözleşmeleri; demo placement kayıtları boşaltılmıştır.
+
+**Save/load kararı:** Eski actor/NPC/resource kare spatial kayıtları ve container placement listeleri decoder seviyesinde tespit edilir ve yükleme reddedilir. Koordinat dönüşümü veya sessiz relocation yoktur.
+
+**Teknik kabul:** HEAD 3790463394b1f47c81655169554e30202de66724; run [#44492476381](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44492476381) Linux/Windows başarılı; 1.341 test + 235 subtest; Ruff, compileall, wheel build, isolated install ve release verification başarılı.

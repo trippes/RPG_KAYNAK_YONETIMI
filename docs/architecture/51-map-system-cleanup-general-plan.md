@@ -121,3 +121,33 @@ Bu karar yalnızca içerik kayıtlarını kapsar. NPC sistemi, kaynak düğümü
 Uygulama sıralaması da kesinleştirilmiştir: önce eski kare harita sistemi ve eski yedi haritalı Hex demo/portal sistemi ile bunlara bağlı demo içerikleri temizlenecek; ardından laboratuvar dalındaki yeni Hex mimarisi bu temizlik dalına entegre edilecektir. Önce Hex entegrasyonu yapıp sonra legacy kare sistemi temizleme yönündeki bu belgenin önceki 16.2–16.6 sıralaması geçersizdir. Laboratuvar dalı arşiv olarak değişmeden kalacaktır.
 
 Tek kare kare-harita easter egg'i, eski dokuz haritanın hiçbirini otomatik olarak koruma gerekçesi değildir. Eski kare harita sistemi tamamen kaldırıldıktan sonra, daha sonra ayrıca tasarlanacak tek ve bağımsız easter egg içeriği gerekirse sıfırdan oluşturulacaktır. Kare (x, y) ile axial (q, r) koordinatları arasında dönüşüm yapılmayacaktır.
+
+## 9. Uygulama kapanış durumu — 2026-11-19
+
+Bu bölüm önceki kapsam/sıralama metinlerindeki çelişkili ifadeleri geçersiz kılar ve gerçek cleanup dalı durumunu kaydeder.
+
+### Tamamlanan temizlik
+
+- Dokuz eski kare harita ve yedi eski Hex demo haritası ile bunların demo dünya/portal bağlantıları kaldırıldı.
+- Eski NPC, kaynak düğümü, görev, diyalog, başlangıç pazarı ve sahne yerleşimi demo kayıtları silindi. Dört NPC ve yirmi iki kaynak düğümü yeni sisteme taşınmadı.
+- Kare harita katalog/loader, WorldMap konum grafı, kare movement manager, kare local-map/nesne yerleşimi, eski Hex demo görünümü ve kare dünya haritası renderer bağlantıları kaldırıldı.
+- Oyuncu aktöründen, NPC modelinden ve kaynak düğümü modelinden kare konum/koordinat sahipliği kaldırıldı. NPC, kaynak, görev, diyalog, market, inventory, container içeriği ve genel gameplay mekanikleri korunuyor.
+- Yeni save kayıtları eski kare konum/yerleşim verisi üretmiyor. Eski actor, NPC, resource-node veya container placement verisi tespit edildiğinde kayıt açık hata ile reddediliyor; (x, y) → (q, r) dönüşümü yapılmıyor.
+- Yeni Hex mimarisinin axial map/world placement sözleşmeleri entegrasyon arayüzleri oldukları için korundu; demo map verisi ve demo runtime bağlantısı korunmadı.
+
+### Teknik kabul
+
+Cleanup dalı HEAD: 3790463394b1f47c81655169554e30202de66724.
+
+GitHub Actions run [#44492476381](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44492476381) Linux ve Windows işlerinin ikisinde de başarılı:
+- Pytest: 1.341 test + 235 subtest geçti.
+- Ruff: başarılı.
+- compileall: başarılı.
+- Wheel build ve izole hedefe kurulum: başarılı.
+- Release-candidate verification: başarılı.
+
+Korunan main, demo_eldoria ve experiment/hex-world-laboratory dalları değiştirilmedi. Görsel/manuel test yapılmadı; cleanup kabul kapısı otomatik teknik doğrulamadır.
+
+### Sıradaki aşama
+
+Eski sistem temizliği ve teknik kabul tamamlandı. Altıncı aşama olarak laboratuvar Hex mimarisinin bu dala entegrasyonu başlayabilir. Bu entegrasyon tamamlanmadan yeni NPC, kaynak, görev, diyalog ve pazar demo kayıtları eklenmeyecek. Tek kare easter egg bu entegrasyonun parçası değildir ve ayrıca tasarlanacaktır.
