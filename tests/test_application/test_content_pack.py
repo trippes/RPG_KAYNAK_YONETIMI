@@ -22,9 +22,9 @@ PACKAGE = ROOT / "content" / "demo_eldoria"
 
 
 class TestContentPack(unittest.TestCase):
-    def test_demo_package_has_no_legacy_map_or_gameplay_demo_records(self):
+    def test_demo_package_has_only_axial_map_and_no_gameplay_demo_records(self):
         package = load_content_package(PACKAGE)
-        self.assertEqual(package.hex_map_definitions, {})
+        self.assertEqual(tuple(package.hex_map_definitions), ("starting_valley",))
         self.assertIsNone(package.world_map_definition)
         self.assertEqual(load_npc_definitions(package_path=PACKAGE), ())
         self.assertEqual(load_quest_definitions(package_path=PACKAGE), ())
