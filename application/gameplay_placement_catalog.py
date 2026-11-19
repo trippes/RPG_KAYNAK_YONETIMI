@@ -67,6 +67,13 @@ class GameplayPlacementCatalog:
 
     def __init__(self, placements=()):
         normalized = tuple(placements)
+        if any(not isinstance(item, GameplayPlacement) for item in normalized):
+            raise TypeError("placements must contain GameplayPlacement records.")
+        domain_ids = [item.domain_id for item in normalized]
+        if len(domain_ids) != len(set(domain_ids)):
+            raise GameplayPlacementCatalogError(
+                "Gameplay placement domain_id values must be unique."
+            )
         by_map: dict[str, list[GameplayPlacement]] = {}
         for placement in normalized:
             by_map.setdefault(placement.map_id, []).append(placement)
