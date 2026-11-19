@@ -82,7 +82,7 @@ def verify_installed_content_package() -> None:
             "package = load_content_package(Path(sys.argv[1])); "
             "assert package.package_id == 'demo_eldoria'; "
             "assert len(package.hex_map_definitions) == 0, "
-            "f'Expected no hex maps, found {len(package.map_definitions)}'; "
+            "f'Expected no demo hex maps, found {len(package.hex_map_definitions)}'; "
             "assert len(package.hex_map_definitions) == 0; "
             "assert package.world_map_definition is None; "
             "assert package.asset_catalog_path is not None and package.map_placements_path is not None; "
@@ -91,8 +91,7 @@ def verify_installed_content_package() -> None:
             "assert len(catalog.assets) == 6; "
             "assert len(placements.placements) == 0; "
             "print('Installed content package verified:', package.package_id, "
-            "len(package.map_definitions), 'legacy square maps and', "
-            "len(package.hex_map_definitions), 'legacy demo hex maps')"
+            "'legacy map content removed; reusable assets retained')"
         )
         subprocess.run(
             [PYTHON, "-c", package_check, str(package_dir)],
