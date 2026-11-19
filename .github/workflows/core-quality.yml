@@ -20,6 +20,10 @@ jobs:
           --extend-per-file-ignores
           application/gameplay_service.py:F401,application/gameplay_service.py:E701
           application/hex_world_runtime.py
+          application/hex_world_geometry_bridge.py
+          application/hex_actor_binding.py
+          application/hex_physics_bridge.py
+          application/npc_hex_binding.py
           application/session_bundle.py
           application/gameplay_service.py
           application/actor_system.py
@@ -30,6 +34,10 @@ jobs:
           tests/test_application/test_session_bundle.py
           tests/test_application/test_actor_system.py
           tests/test_application/test_hex_world_runtime.py
+          tests/test_application/test_hex_actor_binding.py
+          tests/test_application/test_gameplay_service_hex_actor_binding.py
+          tests/test_application/test_hex_physics_bridge.py
+          tests/test_application/test_npc_hex_binding.py
       - name: Verify legacy map cleanup boundary
         run: python scripts/check_map_cleanup.py
       - name: Report legacy API usage
