@@ -217,5 +217,183 @@ class TestContentPackageLoader(unittest.TestCase):
                 load_content_package(root)
 
 
+    def _enable_gameplay_placements(self, root):
+        manifest_path = root / "manifest.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["maps"] = "maps"
+        manifest["gameplay_placements"] = "gameplay_placements"
+        manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+        maps = root / "maps"
+        maps.mkdir()
+        (maps / "village.json").write_text(json.dumps({
+            "schema_version": 2,
+            "map_id": "village",
+            "name": "Village",
+            "description": "",
+            "geometry": {
+                "type": "hex_axial",
+                "orientation": "pointy_top",
+                "coordinate_system": "axial",
+            },
+            "terrain_ids": ["grass"],
+            "default_terrain": "grass",
+            "valid_cells": [[0, 0], [1, 0]],
+            "cell_overrides": [],
+            "transitions": [],
+        }), encoding="utf-8")
+
+        (root / "npcs.json").write_text(json.dumps({
+            "schema_version": 1,
+            "npcs": [{"id": "guard_01"}],
+        }), encoding="utf-8")
+        (root / "resources.json").write_text(json.dumps({
+            "schema_version": 1,
+            "nodes": [{"id": "oak_01"}],
+        }), encoding="utf-8")
+        placements = root / "gameplay_placements"
+        placements.mkdir()
+        return placements
+
+    def test_gameplay_placement_catalog_loads_axial_domain_owners(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = self._copy_demo_package(directory)
+            placements = self._enable_gameplay_placements(root)
+            (placements / "village.json").write_text(json.dumps({
+                "schema_version": 1,
+                "map_id": "village",
+                "placements": [
+                    {
+                        "domain_id": "guard_01",
+                        "kind": "npc",
+                        "q": 0,
+                        "r": 0,
+                        "blocks_movement": True,
+                        "blocks_occupancy": True,
+                    },
+                    {
+                        "domain_id": "oak_01",
+                        "kind": "resource_node",
+                        "q": 1,
+                        "r": 0,
+                        "blocks_movement": False,
+                        "blocks_occupancy": False,
+                    },
+                    {
+                        "domain_id": "chest_01",
+                        "kind": "container",
+                        "q": 0,
+                        "r": 0,
+                        "blocks_movement": False,
+                        "blocks_occupancy": True,
+                    },
+                ],
+            }), encoding="utf-8")
+
+            package = load_content_package(root)
+
+            self.assertEqual(
+                tuple(
+                    (item.domain_id, item.kind, item.position.cell.q, item.position.cell.r)
+                    for item in package.gameplay_placements.placements_for_map("village")
+                ),
+                (
+                    ("guard_01", "npc", 0, 0),
+                    ("oak_01", "resource_node", 1, 0),
+                    ("chest_01", "container", 0, 0),
+                ),
+            )
+
+    def test_gameplay_placement_rejects_unknown_npc_reference(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = self._copy_demo_package(directory)
+            placements = self._enable_gameplay_placements(root)
+            (placements / "village.json").write_text(json.dumps({
+                "schema_version": 1,
+                "map_id": "village",
+                "placements": [{
+                    "domain_id": "missing_npc",
+                    "kind": "npc",
+                    "q": 0,
+                    "r": 0,
+                    "blocks_movement": True,
+                    "blocks_occupancy": True,
+                }],
+            }), encoding="utf-8")
+
+            with self.assertRaisesRegex(ContentPackageError, "unknown NPC"):
+                load_content_package(root)
+
+    def test_gameplay_placement_rejects_cells_outside_hex_map_mask(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = self._copy_demo_package(directory)
+            placements = self._enable_gameplay_placements(root)
+            (placements / "village.json").write_text(json.dumps({
+                "schema_version": 1,
+                "map_id": "village",
+                "placements": [{
+                    "domain_id": "oak_01",
+                    "kind": "resource_node",
+                    "q": 9,
+                    "r": 9,
+                    "blocks_movement": False,
+                    "blocks_occupancy": False,
+                }],
+            }), encoding="utf-8")
+
+            with self.assertRaisesRegex(ContentPackageError, "outside map"):
+                load_content_package(root)
+
+    def test_gameplay_placement_requires_explicit_blocking_flags(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = self._copy_demo_package(directory)
+            placements = self._enable_gameplay_placements(root)
+            (placements / "village.json").write_text(json.dumps({
+                "schema_version": 1,
+                "map_id": "village",
+                "placements": [{
+                    "domain_id": "guard_01",
+                    "kind": "npc",
+                    "q": 0,
+                    "r": 0,
+                }],
+            }), encoding="utf-8")
+
+            with self.assertRaisesRegex(ContentPackageError, "missing fields"):
+                load_content_package(root)
+
+    def test_gameplay_placement_requires_resource_nodes_to_be_non_blocking(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = self._copy_demo_package(directory)
+            placements = self._enable_gameplay_placements(root)
+            (placements / "village.json").write_text(json.dumps({
+                "schema_version": 1,
+                "map_id": "village",
+                "placements": [{
+                    "domain_id": "oak_01",
+                    "kind": "resource_node",
+                    "q": 0,
+                    "r": 0,
+                    "blocks_movement": True,
+                    "blocks_occupancy": False,
+                }],
+            }), encoding="utf-8")
+
+            with self.assertRaisesRegex(ContentPackageError, "non-blocking"):
+                load_content_package(root)
+
+    def test_gameplay_placement_directory_requires_hex_maps(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = self._copy_demo_package(directory)
+            manifest_path = root / "manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["gameplay_placements"] = "gameplay_placements"
+            (root / "gameplay_placements").mkdir()
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+            with self.assertRaisesRegex(ContentPackageError, "require.*hex maps"):
+                load_content_package(root)
+
+
 if __name__ == "__main__":
     unittest.main()
