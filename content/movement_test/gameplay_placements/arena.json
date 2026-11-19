@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "map_id": "movement_test_arena",
+  "placements": [
+    {
+      "domain_id": "test_guard",
+      "kind": "npc",
+      "q": -2,
+      "r": 0,
+      "blocks_movement": true,
+      "blocks_occupancy": true
+    },
+    {
+      "domain_id": "test_target",
+      "kind": "npc",
+      "q": 2,
+      "r": 0,
+      "blocks_movement": true,
+      "blocks_occupancy": true
+    },
+    {
+      "domain_id": "test_wood_node",
+      "kind": "resource_node",
+      "q": 0,
+      "r": 2,
+      "blocks_movement": false,
+      "blocks_occupancy": false
+    },
+    {
+      "domain_id": "test_iron_node",
+      "kind": "resource_node",
+      "q": -2,
+      "r": 2,
+      "blocks_movement": false,
+      "blocks_occupancy": false
+    }
+  ]
+}
