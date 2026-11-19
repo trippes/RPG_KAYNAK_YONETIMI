@@ -156,12 +156,15 @@ class GameApplication:
 
     
         from application.content_pack import (
+            _resolve_content_package_path,
             build_starter_world_map, build_starter_local_map_definitions,
             content_package_world_id,
         )
         from application.content_loader import load_content_package
 
-        active_package_path = getattr(self, "_content_package_path", None)
+        active_package_path = _resolve_content_package_path(
+            getattr(self, "_content_package_path", None)
+        )
         package = load_content_package(active_package_path)
         package_world_id = content_package_world_id(active_package_path)
         if not package.map_definitions:
