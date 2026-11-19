@@ -88,9 +88,10 @@ def verify_installed_content_package() -> None:
             "assert EntityWorldCoordinator is not None and PygameWorldRenderer is not None; "
             "assert SimulationTickCoordinator is not None and MovementSystem is not None; "
             "assert package.package_id == 'demo_eldoria'; "
-            "assert len(package.hex_map_definitions) == 0, "
-            "f'Expected no demo hex maps, found {len(package.hex_map_definitions)}'; "
-            "assert len(package.hex_map_definitions) == 0; "
+            "assert tuple(package.hex_map_definitions) == ('starting_valley',); "
+            "assert len(package.hex_map_definitions['starting_valley'].valid_cells) == 61; "
+            "assert package.files['starter']['world']['hex_start'] == "
+            "{'map_id': 'starting_valley', 'q': 0, 'r': 0}; "
             "assert package.world_map_definition is None; "
             "assert package.asset_catalog_path is not None and package.map_placements_path is not None; "
             "catalog = AssetCatalog.load(package.asset_catalog_path); "
@@ -98,7 +99,7 @@ def verify_installed_content_package() -> None:
             "assert len(catalog.assets) == 6; "
             "assert len(placements.placements) == 0; "
             "print('Installed content package verified:', package.package_id, "
-            "'legacy map content removed; reusable assets retained')"
+            "'axial starting valley and reusable assets retained')"
         )
         subprocess.run(
             [PYTHON, "-c", package_check, str(package_dir)],
