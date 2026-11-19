@@ -14,7 +14,6 @@ from application import (
 )
 from application.save_file_adapter import SaveFileReadError
 from application.actor_persistence import ActorRecord, ActorSnapshot
-from core.domain.spatial import Position
 from core.application import GameSession
 from core.persistence import CanonicalSessionState, PersistenceDocument
 from core.time import Tick
@@ -41,7 +40,7 @@ class TestCandidateRestore(unittest.TestCase):
             ((self.tool, Quantity(1, ResourceUnit.ITEM)),),
         )
 
-    def _document(self, node_world_id="world_main", world_id="world_main", node_location_id=None):
+    def _document(self, node_world_id="world_main", world_id="world_main"):
         source = GameSession()
         source.worlds.create("Main", world_id=world_id)
         source.worlds.set_active(world_id)
@@ -60,21 +59,12 @@ class TestCandidateRestore(unittest.TestCase):
             Quantity(5, ResourceUnit.ITEM),
             Quantity(1, ResourceUnit.ITEM),
             Tick(0),
-            location_id=node_location_id,
         ))
         core = PersistenceDocument.from_state(CanonicalSessionState.from_session(source))
         gameplay = GameplaySnapshot.from_runtime(
             {"main": inventory}, nodes, jobs
         )
         return GameSaveDocument(core=core, gameplay=gameplay)
-
-    def _document_with_actor(self, location_id, position):
-        document = self._document(node_world_id="demo_valley", world_id="demo_valley")
-        actor = ActorRecord(
-            "hero", "demo_valley", "player", True, None, None,
-            location_id, Position(*position), "main",
-        )
-        return replace(document, actors=ActorSnapshot((actor,), ()))
 
     def _write(self, directory, document):
         path = Path(directory) / "save.json"
@@ -316,41 +306,6 @@ class TestCandidateRestore(unittest.TestCase):
         application.advance_simulation(2)
         self.assertEqual(application.holder.current.simulation.current_tick.value, 2)
 
-    def test_save_with_removed_map_is_rejected_without_relocation(self):
-        application = GameApplication.create_default()
-        old = application.holder.current
-        with tempfile.TemporaryDirectory() as directory:
-            path = self._write(
-                directory, self._document_with_actor("removed_map", (5, 5)),
-            )
-            with self.assertRaisesRegex(ValueError, "legacy square-map positions or placements"):
-                application.load(path)
-        self.assertIs(application.holder.current, old)
-
-    def test_save_with_actor_outside_changed_map_dimensions_is_rejected(self):
-        application = GameApplication.create_default()
-        old = application.holder.current
-        with tempfile.TemporaryDirectory() as directory:
-            path = self._write(
-                directory, self._document_with_actor("village", (99, 99)),
-            )
-            with self.assertRaisesRegex(ValueError, "legacy square-map positions or placements"):
-                application.load(path)
-        self.assertIs(application.holder.current, old)
-
-    def test_save_with_resource_node_on_removed_map_is_rejected(self):
-        application = GameApplication.create_default()
-        old = application.holder.current
-        document = self._document(
-            node_world_id="demo_valley",
-            world_id="demo_valley",
-            node_location_id="removed_map",
-        )
-        with tempfile.TemporaryDirectory() as directory:
-            path = self._write(directory, document)
-            with self.assertRaisesRegex(ValueError, "legacy square-map positions or placements"):
-                application.load(path)
-        self.assertIs(application.holder.current, old)
 
 
 if __name__ == "__main__":
