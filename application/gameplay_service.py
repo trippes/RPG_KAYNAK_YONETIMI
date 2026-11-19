@@ -1199,7 +1199,6 @@ class GameplayService:
         merchant = self.trade_partner_for_npc(npc_id)
         if merchant is None:
             raise KeyError(f"NPC has no trade profile: {npc_id}")
-        npc = bundle.social.npcs.get(npc_id)
         self._require_actor_in_active_world(bundle, actor_id)
         if resource_type not in merchant.accepted_resources:
             raise GameplayServiceError("This NPC does not buy that resource.")
