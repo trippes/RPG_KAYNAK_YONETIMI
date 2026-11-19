@@ -9,8 +9,9 @@ from application.hex_map_definition import HexMapDefinition
 from application.world_map_definition import WorldMapDefinition, validate_world_map
 from core.foundation import WorldId
 from core.domain.spatial import (
-    EntityPosition, HexDirection, LocalHexPosition, MovementFailureReason,
-    MovementProfile, MovementRequest, MovementResult,
+    ContinuousEntityPosition, EntityPosition, HexDirection, LocalHexPosition,
+    MovementFailureReason, MovementProfile, MovementRequest, MovementResult,
+    WorldPoint, axial_to_world_point, world_point_to_hex,
 )
 from .hex_movement_rules import MovementRules
 from .hex_occupancy import HexOccupant, HexOccupancyRegistry
@@ -44,6 +45,7 @@ class HexMovableEntity:
     position: EntityPosition
     profile: MovementProfile
     active: bool = True
+    continuous_position: ContinuousEntityPosition | None = None
 
     def __post_init__(self):
         if not isinstance(self.entity_id, str) or not self.entity_id.strip():
@@ -56,6 +58,11 @@ class HexMovableEntity:
             raise TypeError("profile must be a MovementProfile.")
         if not isinstance(self.active, bool):
             raise TypeError("active must be boolean.")
+        if self.continuous_position is not None:
+            if not isinstance(self.continuous_position, ContinuousEntityPosition):
+                raise TypeError("continuous_position must be a ContinuousEntityPosition or None.")
+            if self.continuous_position.map_id != self.position.map_id:
+                raise ValueError("continuous position belongs to a different map.")
 
 
 class HexWorldRuntimeOwner:
@@ -90,7 +97,9 @@ class HexWorldRuntimeOwner:
 
 
 class HexWorldRuntime:
-    """Owns live hex positions without changing legacy square-map actors."""
+    """Owns continuous world positions and their derived hex occupancy view."""
+
+    HEX_SIZE = 32.0
 
     def __init__(
         self, map_definitions, occupancy: HexOccupancyRegistry | None = None,
@@ -112,6 +121,7 @@ class HexWorldRuntime:
         self._world_id = world_id
         self._occupancy = occupancy or HexOccupancyRegistry()
         self._entities: dict[str, _HexEntityState] = {}
+        self._continuous_positions: dict[str, ContinuousEntityPosition] = {}
         self._patrol_indices: dict[str, int] = {}
 
     @property
@@ -143,6 +153,7 @@ class HexWorldRuntime:
         self, entity_id: str, kind: str, position: EntityPosition,
         profile: MovementProfile | None = None, *, active: bool = True,
         blocks_movement: bool = True, blocks_occupancy: bool = True,
+        continuous_position: ContinuousEntityPosition | None = None,
     ) -> HexMovableEntity:
         if entity_id in self._entities:
             raise ValueError(f"Duplicate hex entity: {entity_id}")
@@ -157,6 +168,21 @@ class HexWorldRuntime:
             raise TypeError("profile must be a MovementProfile.")
         if map_definition.is_blocked(position.cell) and not profile.can_traverse_blocked_cells:
             raise ValueError("Entity cannot be placed on a blocked cell.")
+        if continuous_position is None:
+            center = axial_to_world_point(position.cell.to_hex_coord(), self.HEX_SIZE)
+            continuous_position = ContinuousEntityPosition(position.map_id, center)
+        if not isinstance(continuous_position, ContinuousEntityPosition):
+            raise TypeError("continuous_position must be a ContinuousEntityPosition or None.")
+        if continuous_position.map_id != position.map_id:
+            raise ValueError("continuous position belongs to a different map.")
+        resolved_cell = LocalHexPosition.from_hex_coord(
+            world_point_to_hex(
+                continuous_position.point, self.HEX_SIZE,
+                previous_cell=position.cell.to_hex_coord(),
+            )
+        )
+        if resolved_cell != position.cell:
+            raise ValueError("continuous position does not resolve to the supplied map cell.")
         state = _HexEntityState(entity_id, kind, profile, active)
         occupant = HexOccupant(
             entity_id, position, blocks_movement, blocks_occupancy, kind,
@@ -165,6 +191,7 @@ class HexWorldRuntime:
             occupant, ignore_blockers=profile.ignores_occupancy
         )
         self._entities[entity_id] = state
+        self._continuous_positions[entity_id] = continuous_position
         return self.entity(entity_id)
 
     def _entity_state(self, entity_id: str) -> _HexEntityState:
@@ -185,9 +212,24 @@ class HexWorldRuntime:
             raise RuntimeError(
                 f"Hex entity and occupancy kind mismatch: {entity_id}"
             )
+        continuous_position = self._continuous_positions.get(entity_id)
+        if continuous_position is None:
+            raise RuntimeError(
+                f"Hex entity has no authoritative continuous position: {entity_id}"
+            )
+        if continuous_position.map_id != occupant.position.map_id:
+            raise RuntimeError(f"Hex entity continuous position map mismatch: {entity_id}")
+        resolved_cell = LocalHexPosition.from_hex_coord(
+            world_point_to_hex(
+                continuous_position.point, self.HEX_SIZE,
+                previous_cell=occupant.position.cell.to_hex_coord(),
+            )
+        )
+        if resolved_cell != occupant.position.cell:
+            raise RuntimeError(f"Hex entity continuous position and occupancy diverged: {entity_id}")
         return HexMovableEntity(
             state.entity_id, state.kind, occupant.position,
-            state.profile, state.active,
+            state.profile, state.active, continuous_position,
         )
 
     def entities(self) -> tuple[HexMovableEntity, ...]:
@@ -198,6 +240,7 @@ class HexWorldRuntime:
         previous = self.entity(entity_id)
         self._occupancy.remove(entity_id)
         del self._entities[entity_id]
+        del self._continuous_positions[entity_id]
         self._patrol_indices.pop(entity_id, None)
         return previous
 
@@ -263,12 +306,81 @@ class HexWorldRuntime:
         result = self.validate_move_to(entity_id, target)
         if not result.success:
             return result
+        center = axial_to_world_point(result.position.cell.to_hex_coord(), self.HEX_SIZE)
+        continuous_position = ContinuousEntityPosition(result.position.map_id, center)
         self._occupancy.move(
             entity_id,
             result.position,
             ignore_blockers=self._entity_state(entity_id).profile.ignores_occupancy,
         )
+        self._continuous_positions[entity_id] = continuous_position
         return result
+
+    def continuous_position(self, entity_id: str) -> ContinuousEntityPosition:
+        """Return the authoritative map-scoped continuous world position."""
+        self.entity(entity_id)  # Verify consistency with the derived occupancy view.
+        return self._continuous_positions[entity_id]
+
+    def set_continuous_position(
+        self,
+        entity_id: str,
+        point: WorldPoint,
+    ) -> MovementResult:
+        """Apply one continuous position update and atomically refresh derived occupancy.
+
+        A single update may remain within the current cell or cross one adjacent
+        hex. Larger jumps must be subdivided by the movement integrator.
+        """
+        if not isinstance(point, WorldPoint):
+            raise TypeError("point must be a WorldPoint.")
+        entity = self.entity(entity_id)
+        if not entity.active or not entity.profile.can_move:
+            return MovementResult(
+                False, entity.position, MovementFailureReason.MOVEMENT_NOT_ALLOWED,
+                "Entity cannot move.",
+            )
+
+        target_coord = world_point_to_hex(
+            point,
+            self.HEX_SIZE,
+            previous_cell=entity.position.cell.to_hex_coord(),
+        )
+        target_cell = LocalHexPosition.from_hex_coord(target_coord)
+        target = EntityPosition(entity.position.map_id, target_cell)
+        map_definition = self.map_definition(target.map_id)
+        if not map_definition.has_cell(target_cell):
+            return MovementResult(
+                False, entity.position, MovementFailureReason.INVALID_TARGET,
+                "Continuous position resolves outside the map valid_cells mask.",
+            )
+
+        if target_cell == entity.position.cell:
+            self._continuous_positions[entity_id] = ContinuousEntityPosition(
+                entity.position.map_id, point
+            )
+            return MovementResult(True, entity.position)
+
+        request = MovementRequest(entity_id, entity.position, target, entity.profile)
+        validation = MovementRules.evaluate(request, map_definition)
+        if not validation.success:
+            return validation
+        if (
+            not entity.profile.ignores_occupancy
+            and not self._occupancy.can_enter(target, excluding=entity_id)
+        ):
+            return MovementResult(
+                False, entity.position, MovementFailureReason.OCCUPIED_CELL,
+                "Target cell is occupied or movement-blocked.",
+            )
+
+        next_position = ContinuousEntityPosition(entity.position.map_id, point)
+        self._occupancy.move(
+            entity_id,
+            target,
+            ignore_blockers=entity.profile.ignores_occupancy,
+        )
+        self._continuous_positions[entity_id] = next_position
+        return MovementResult(True, target)
 
     def path_to(self, entity_id: str, goal: LocalHexPosition, *, edge_validator=None):
         entity = self.entity(entity_id)
@@ -356,10 +468,13 @@ class HexWorldRuntime:
             return MovementResult(False, entity.position, MovementFailureReason.BLOCKED_CELL, "Destination cell is blocked.")
         if not entity.profile.ignores_occupancy and not self._occupancy.can_enter(target, excluding=entity_id):
             return MovementResult(False, entity.position, MovementFailureReason.OCCUPIED_CELL, "Destination cell is occupied or movement-blocked.")
+        center = axial_to_world_point(target.cell.to_hex_coord(), self.HEX_SIZE)
+        next_continuous_position = ContinuousEntityPosition(target.map_id, center)
         self._occupancy.move(
             entity_id, target,
             ignore_blockers=entity.profile.ignores_occupancy,
         )
+        self._continuous_positions[entity_id] = next_continuous_position
         return MovementResult(True, target)
 
     @property
