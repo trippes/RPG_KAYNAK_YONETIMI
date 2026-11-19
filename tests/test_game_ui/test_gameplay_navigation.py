@@ -86,35 +86,23 @@ class GameplayNavigationTests(unittest.TestCase):
         self.assertIn("production", state.actions)
         self.assertNotIn("character", state.actions)
 
-    def test_m_maps_to_map_and_x_is_not_a_map_shortcut(self):
-        mapper = InputMapper(FakeBackend())
-        map_state = mapper.collect([
+    def test_m_is_no_longer_a_legacy_map_shortcut(self):
+        state = InputMapper(FakeBackend()).collect([
             type("KeyEvent", (), {
                 "type": "KEYDOWN", "key": "m", "unicode": "m",
             })()
         ])
-        x_state = mapper.collect([
-            type("KeyEvent", (), {
-                "type": "KEYDOWN", "key": "x", "unicode": "x",
-            })()
-        ])
-        self.assertIn("map", map_state.actions)
-        self.assertNotIn("map", x_state.actions)
+        self.assertNotIn("map", state.actions)
 
-    def test_p_and_m_toggle_their_windows(self):
+    def test_p_toggles_production_window(self):
         manager = WindowManager(FakeBackend, 960, 640)
         manager.register("production", DummyScreen(), (24, 110, 912, 470))
-        manager.register("map", DummyScreen(), (24, 110, 912, 470))
 
         manager.handle_input(InputState(actions={"production"}))
-        manager.handle_input(InputState(actions={"map"}))
         self.assertTrue(manager.is_open("production"))
-        self.assertTrue(manager.is_open("map"))
 
         manager.handle_input(InputState(actions={"production"}))
-        manager.handle_input(InputState(actions={"map"}))
         self.assertFalse(manager.is_open("production"))
-        self.assertFalse(manager.is_open("map"))
 
 
 if __name__ == "__main__":

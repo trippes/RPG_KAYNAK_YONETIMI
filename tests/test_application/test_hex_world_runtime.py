@@ -80,9 +80,6 @@ class TestHexOccupancy(unittest.TestCase):
         self.assertEqual(registry.get("a").position, first)
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-DEMO_PACKAGE = PROJECT_ROOT / "content" / "demo_eldoria"
-
 
 class TestHexWorldRuntime(unittest.TestCase):
     def setUp(self):

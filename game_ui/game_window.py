@@ -7,7 +7,6 @@ from .renderer import GOLD, NAV_ALIASES, Renderer
 from .screens.character_screen import CharacterScreen
 from .screens.inventory_screen import InventoryScreen
 from .screens.main_menu import MainMenu
-from .screens.map_screen import MapScreen
 from .screens.main_screen import MainScreen
 from .screens.market_screen import MarketScreen
 from .screens.trade_screen import TradeScreen
@@ -27,7 +26,7 @@ from application.save_storage import SaveStorage, SaveStorageError
 NAV_SCREENS = frozenset()
 # Gameplay tools are windows owned by the persistent MainScreen surface.
 GAMEPLAY_WINDOW_IDS = frozenset({
-    "character", "inventory", "quest_log", "map", "production", "market", "trade", "container", "currency_exchange",
+    "character", "inventory", "quest_log", "production", "market", "trade", "container", "currency_exchange",
 })
 NOTICE_FRAMES = 240  # ~4 seconds at 60 fps
 PAUSE_MENU_OPTIONS = (
@@ -98,7 +97,6 @@ class GameWindow:
         self.screens = {
             "menu": MainMenu(width=self.width, height=self.height),
             "opening": OpeningScreen(),
-            "map": MapScreen(service),
             "main": MainScreen(service),
             "inventory": InventoryScreen(service),
             "production": ProductionScreen(service),
@@ -188,13 +186,6 @@ class GameWindow:
             (40, 100, min(self.width - 80, 880), min(self.height - 100, 470)),
             content_origin=(24, 126),
             title="Ticaret",
-        )
-        self.window_manager.register(
-            "map",
-            self.screens["map"],
-            (24, 110, min(self.width - 48, 912), min(self.height - 110, 470)),
-            content_origin=(24, 126),
-            title="Harita",
         )
         self.window_manager.register(
             "container",
@@ -374,7 +365,6 @@ class GameWindow:
             self.window_manager.windows["currency_exchange"].screen = self.screens["currency_exchange"]
         if "trade" in self.window_manager.windows:
             self.window_manager.windows["trade"].screen = self.screens["trade"]
-        self.window_manager.windows["map"].screen = self.screens["map"]
         if "container" in self.window_manager.windows:
             self.window_manager.windows["container"].screen = self.screens["container"]
         for window_id in tuple(self.window_manager.open_ids):
@@ -499,54 +489,12 @@ class GameWindow:
             rect = self._pause_menu_rects()[index]
             self.renderer.button(rect, label, selected=index == self.pause_menu_selected)
 
-    def _current_location(self):
-        """Return the active actor's current location without a legacy world screen."""
-        actors = self.service.state().actors
-        if not actors:
-            return None
-        world_map = self.service.application.holder.current.movement.map_for(
-            actors[0].world_id
-        )
-        return world_map.get(actors[0].location_id) if world_map is not None else None
-
     def _nav_enabled(self):
-        """Which navigation tabs may be used from the current location."""
-        try:
-            location = self._current_location()
-            return {}
-        except (KeyError, ValueError, RuntimeError, AttributeError):
-            return {}
+        """No legacy map-dependent navigation tabs are active during migration."""
+        return {}
 
-    def _handle_nav_click(self, state):
-        """Route gameplay navigation from the visible tabs and mapped shortcuts."""
-        if self.current not in NAV_SCREENS:
-            return
-
-        target = None
-        for action in ("map",):
-            if action in state.actions:
-                state.actions.discard(action)
-                target = action
-                break
-
-        if target is None:
-            if not (state.mouse_clicked and state.mouse_pos is not None):
-                return
-            target = self.renderer.nav_hit(state.mouse_pos)
-            if target is None:
-                return
-            state.mouse_clicked = False
-
-        if target == "quest_log":
-            self.window_manager.toggle("quest_log")
-            return
-        if target == "world":
-            target = "main"
-        if not self._nav_enabled().get(target, True):
-            self._set_notice("Pazar yalnızca yerleşim yerlerinde kullanılabilir.", "error")
-            return
-        if target in self.screens:
-            self._set_current(target)
+    def _handle_nav_click(self, _state):
+        return None
 
     def _render_current(self):
         """Render the persistent world before the current gameplay surface."""
