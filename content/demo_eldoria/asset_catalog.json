@@ -1,0 +1,111 @@
+{
+  "schema_version": 1,
+  "assets": [
+    {
+      "asset_id": "flora.tree.test",
+      "path": "assets/tree_test.png",
+      "width": 0,
+      "height": 0,
+      "scale": 0.19,
+      "anchor": [
+        0.5,
+        1
+      ],
+      "collision": [
+        -8,
+        -14,
+        16,
+        14
+      ],
+      "placement": "ground",
+      "depth_offset": 0
+    },
+    {
+      "asset_id": "flora.tree.young",
+      "path": "assets/tree_test.png",
+      "width": 0,
+      "height": 0,
+      "scale": 0.14,
+      "anchor": [
+        0.5,
+        1
+      ],
+      "collision": [
+        -6,
+        -10,
+        12,
+        10
+      ],
+      "placement": "ground",
+      "depth_offset": -1
+    },
+    {
+      "asset_id": "flora.tree.old",
+      "path": "assets/tree_test.png",
+      "width": 0,
+      "height": 0,
+      "scale": 0.25,
+      "anchor": [
+        0.5,
+        1
+      ],
+      "collision": [
+        -10,
+        -16,
+        20,
+        16
+      ],
+      "placement": "ground",
+      "depth_offset": 1
+    },
+    {
+      "asset_id": "prop.rock.large",
+      "path": "assets/rock_large.png",
+      "width": 0,
+      "height": 0,
+      "scale": 0.18,
+      "anchor": [
+        0.5,
+        1
+      ],
+      "collision": [
+        -9,
+        -7,
+        18,
+        7
+      ],
+      "placement": "ground"
+    },
+    {
+      "asset_id": "flora.shrub.green",
+      "path": "assets/shrub_green.png",
+      "width": 0,
+      "height": 0,
+      "scale": 0.16,
+      "anchor": [
+        0.5,
+        1
+      ],
+      "collision": [
+        -8,
+        -5,
+        16,
+        5
+      ],
+      "placement": "ground"
+    },
+    {
+      "asset_id": "flora.plant.wildflower",
+      "path": "assets/wildflower.png",
+      "width": 0,
+      "height": 0,
+      "scale": 0.12,
+      "anchor": [
+        0.5,
+        1
+      ],
+      "collision": null,
+      "placement": "ground"
+    }
+  ]
+}
