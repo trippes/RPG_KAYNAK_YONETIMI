@@ -12,8 +12,10 @@ from core.domain.spatial import (
 )
 from core.foundation import WorldId
 from hex_world_lab.entities.identity import EntityId as LabEntityId
+from hex_world_lab.physics import BodyDefinition
 
 from .actor_system import ActorView, WorldActorRegistry
+from .hex_physics_bridge import HexPhysicsSnapshot
 from .hex_world_runtime import HexMovableEntity, HexWorldRuntime
 
 
@@ -142,13 +144,10 @@ class ActorHexBindingService:
         self,
         actor_id: str,
         target: LocalHexPosition,
-        physics_snapshot,
-        body,
+        physics_snapshot: HexPhysicsSnapshot,
+        body: BodyDefinition,
     ) -> MovementResult:
         """Validate a cell transition with static physics before committing occupancy."""
-        from .hex_physics_bridge import HexPhysicsSnapshot
-        from hex_world_lab.physics import BodyDefinition
-
         actor = self._require_actor(actor_id)
         entity = self._runtime.entity(actor_id)
         if not actor.active:
