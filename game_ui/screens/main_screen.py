@@ -12,7 +12,7 @@ class MainScreen:
         self._hex_view = None
 
     def _runtime(self):
-        return self.service.hex_world_runtime
+        return getattr(self.service, "hex_world_runtime", None)
 
     def _view(self):
         if self._hex_view is None:
