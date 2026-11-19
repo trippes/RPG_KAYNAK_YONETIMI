@@ -1,3 +1,6 @@
+import json
+import shutil
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -71,6 +74,38 @@ class TestContentPack(unittest.TestCase):
             ),
             (),
         )
+
+
+    def test_gameplay_setup_registers_resource_nodes_from_content_definitions(self):
+        with tempfile.TemporaryDirectory() as directory:
+            package_path = Path(directory) / "demo_eldoria"
+            shutil.copytree(PACKAGE, package_path)
+            (package_path / "resources.json").write_text(json.dumps({
+                "schema_version": 1,
+                "nodes": [{
+                    "id": "oak_01",
+                    "resource_type": "wood",
+                    "unit": "item",
+                    "initial_quantity": 10,
+                    "capacity": 20,
+                    "regeneration_rate": 1,
+                    "gathering_duration_ticks": 60,
+                }],
+            }), encoding="utf-8")
+
+            application = GameApplication.create_default()
+            service, _ids = populate_opening_content(
+                application, content_package_path=package_path,
+            )
+            populate_gameplay_resources(service, content_package_path=package_path)
+            populate_gameplay_resources(service, content_package_path=package_path)
+
+            node = application.holder.current.resource_nodes.get("oak_01")
+            self.assertIsNotNone(node)
+            self.assertEqual(node.quantity.value, 10)
+            self.assertEqual(node.capacity.value, 20)
+            self.assertEqual(node.resource_type.value, "wood")
+            self.assertEqual(node.gathering_duration_ticks.value, 60)
 
 
 
