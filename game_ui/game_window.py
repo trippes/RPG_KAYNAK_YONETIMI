@@ -670,10 +670,24 @@ class GameWindow:
             and next_screen in {"world", "dialogue"}
         ):
             from application.content_pack import populate_gameplay_resources
+            from application.hex_world_initializer import (
+                HexWorldInitializationError,
+                initialize_hex_world,
+            )
             populate_gameplay_resources(self.service)
             actors = self.service.state().actors
             if actors and actors[0].inventory_id is None:
                 self.service.bind_actor_inventory(actors[0].actor_id, self.service.player_inventory_id)
+            try:
+                initialize_hex_world(
+                    self.service,
+                    content_package_path=self.content_package_path,
+                )
+            except (HexWorldInitializationError, KeyError, ValueError, RuntimeError) as error:
+                self._set_notice(
+                    f"Altıgen dünya başlatılamadı: {error}",
+                    "error",
+                )
 
         if next_screen == "market":
             dialogue = self.screens["dialogue"]
