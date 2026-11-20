@@ -22,5 +22,29 @@
     "class": {
       "id": "gatherer"
     }
+  },
+  "dialogue": {
+    "id": "warden_intro",
+    "start_node": "start",
+    "nodes": [
+      {
+        "id": "start",
+        "speaker": "warden_lyra",
+        "text": "Bir dakika! Seni bu köyde daha önce görmedim. Sen kimsin? Kendini tanıt.",
+        "choices": [
+          {
+            "id": "ask_village",
+            "text": "Bu köy hakkında bilgi verir misin?",
+            "next": "village_info"
+          }
+        ]
+      },
+      {
+        "id": "village_info",
+        "speaker": "warden_lyra",
+        "text": "Burası Başlangıç Vadisi. Ormanın içindeki patikaları ve göletin çevresini keşfedebilirsin. Yollarda dikkatli ol.",
+        "choices": []
+      }
+    ]
   }
 }
