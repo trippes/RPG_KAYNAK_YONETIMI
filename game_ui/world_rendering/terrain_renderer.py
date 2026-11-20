@@ -1,6 +1,8 @@
-"""Deterministic, image-capable terrain drawing for the axial world view."""
+"""Deterministic terrain drawing for the isometric axial world."""
 from __future__ import annotations
+
 import math
+
 
 class HexTerrainRenderer:
     TERRAIN_COLORS = {
@@ -18,7 +20,7 @@ class HexTerrainRenderer:
         self._frame_surface_size = None
 
     def begin_frame(self, renderer, terrain_ids=()):
-        """Paint one continuous ground base before organic cell details."""
+        """Paint one continuous ground base before individual cell surfaces."""
         colors = [self.TERRAIN_COLORS.get(item) for item in terrain_ids]
         colors = [item for item in colors if item is not None]
         base = colors[0] if colors else (74, 111, 68)
@@ -42,16 +44,26 @@ class HexTerrainRenderer:
     @staticmethod
     def is_visible(center, radius, width, height):
         x, y = center
-        return not (x + radius < 0 or y + radius < 0 or x - radius > width or y - radius > height)
+        return not (
+            x + radius < 0 or y + radius < 0
+            or x - radius > width or y - radius > height
+        )
 
     @staticmethod
     def polygon_for(center, radius):
+        """Project a pointy-top world hex into a 2:1 isometric screen hex."""
         if radius <= 0:
             raise ValueError("radius must be greater than zero.")
         cx, cy = center
-        return tuple((round(cx + math.cos(math.radians(-90 + i * 60)) * radius),
-                      round(cy + math.sin(math.radians(-90 + i * 60)) * radius))
-                     for i in range(6))
+        points = []
+        for index in range(6):
+            angle = math.radians(-90 + index * 60)
+            world_x = math.cos(angle) * radius
+            world_y = math.sin(angle) * radius
+            screen_x = world_x - world_y
+            screen_y = (world_x + world_y) * 0.5
+            points.append((round(cx + screen_x), round(cy + screen_y)))
+        return tuple(points)
 
     def color_for(self, cell_data, selected=False):
         if selected:
@@ -60,16 +72,15 @@ class HexTerrainRenderer:
             return self.BLOCKED_COLOR
         return self.TERRAIN_COLORS.get(cell_data.terrain_id, (91, 105, 79))
 
-    def draw_cell(self, renderer, cell, cell_data, center, radius, selected=False, image=None, images=()):
+    def draw_cell(
+        self, renderer, cell, cell_data, center, radius,
+        selected=False, image=None, images=(),
+    ):
         pg = renderer.pg
-        # Axial cells are simulation data only. Large overlapping organic
-        # stamps deliberately hide the underlying hex boundaries.
-        base = self.color_for(cell_data, selected=False)
-        stamp_radius = max(1, round(radius * 1.32))
-        pg.draw.circle(
-            renderer.surface, base, (round(center[0]), round(center[1])),
-            stamp_radius,
-        )
+        polygon = self.polygon_for(center, radius)
+        base = self.color_for(cell_data, selected=selected)
+        pg.draw.polygon(renderer.surface, base, polygon)
+
         textures = tuple(images) + ((image,) if image is not None else ())
         size = max(1, round(radius * 2.08))
         for texture in textures:
@@ -77,19 +88,31 @@ class HexTerrainRenderer:
                 self._scaled_texture(pg, texture, size),
                 (round(center[0] - size / 2), round(center[1] - size / 2)),
             )
+
         seed = (cell.q * 73856093) ^ (cell.r * 19349663)
-        detail = (103, 148, 76) if cell_data.terrain_id == "grass" else (39, 86, 54)
-        if not textures and cell_data.terrain_id in ("grass", "forest_floor", "clearing_floor"):
+        detail = (
+            (103, 148, 76)
+            if cell_data.terrain_id == "grass"
+            else (39, 86, 54)
+        )
+        if not textures and cell_data.terrain_id in (
+            "grass", "forest_floor", "clearing_floor",
+        ):
             for index in range(9):
                 dx = ((seed >> (index * 4)) % 13 - 6) * radius / 22
                 dy = ((seed >> (index * 6 + 1)) % 13 - 6) * radius / 22
-                pg.draw.circle(renderer.surface, detail,
-                               (round(center[0] + dx), round(center[1] + dy)),
-                               max(1, round(radius * 0.045)))
+                point = (
+                    round(center[0] + dx - dy),
+                    round(center[1] + (dx + dy) * 0.5),
+                )
+                pg.draw.circle(
+                    renderer.surface, detail, point,
+                    max(1, round(radius * 0.045)),
+                )
         elif image is None and cell_data.terrain_id == "water":
-            pg.draw.line(renderer.surface, (91, 166, 199),
-                         (round(center[0] - radius * .25), round(center[1])),
-                         (round(center[0] + radius * .25), round(center[1] - radius * .08)),
-                         max(1, round(radius * .04)))
-        # Deliberately omit a high-contrast hex outline: cell edges are data,
-        # not a visual grid the player should perceive.
+            pg.draw.line(
+                renderer.surface, (91, 166, 199),
+                (round(center[0] - radius * .25), round(center[1])),
+                (round(center[0] + radius * .25), round(center[1] - radius * .08)),
+                max(1, round(radius * .04)),
+            )
