@@ -76,9 +76,11 @@ def test_native_world_projection_matches_presentation_transform():
         expected = axial_to_world_point(HexCoord(q, r), size, origin)
         assert world == expected
         screen = transform.world_point_to_screen(world)
+        dx = world.x - camera.x
+        dy = world.y - camera.y
         expected_screen = (
-            400.0 + (world.x - camera.x) * zoom,
-            300.0 + (world.y - camera.y) * zoom,
+            400.0 + (dx - dy) * zoom,
+            300.0 + (dx + dy) * 0.5 * zoom,
         )
         assert screen == pytest.approx(expected_screen)
 

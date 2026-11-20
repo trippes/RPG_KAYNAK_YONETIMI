@@ -8,7 +8,7 @@ from game_ui.world_rendering.terrain_renderer import HexTerrainRenderer
 
 class FakeDraw:
     def polygon(self, *args, **kwargs):
-        pass
+        self.calls.append(("polygon", args, kwargs))
     def circle(self, *args, **kwargs):
         self.calls.append(("circle", args, kwargs))
     def __init__(self):
@@ -54,7 +54,7 @@ class TestStage6RenderPrimitives(unittest.TestCase):
         HexTerrainRenderer().draw_cell(renderer, SimpleNamespace(q=0, r=0), cell,
                                        (100, 100), 32, image=FakeImage())
         self.assertEqual(calls, [(66, 66)])
-        self.assertTrue(any(call[0] == "circle" for call in draw.calls))
+        self.assertTrue(any(call[0] == "polygon" for call in draw.calls))
 
 
 if __name__ == "__main__":
