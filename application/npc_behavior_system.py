@@ -65,7 +65,7 @@ class NPCBehaviorSystem:
             if result.success:
                 moved.append(npc.npc_id)
 
-        return tuple(moved)
+        return tuple(sorted(set(moved)))
 
 
 __all__ = ["NPCBehaviorSystem"]
