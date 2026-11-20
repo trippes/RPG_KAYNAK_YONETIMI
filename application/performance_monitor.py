@@ -50,6 +50,7 @@ class PerformanceMonitor:
         return {
             "count": len(values),
             "avg_ms": sum(values) / len(values),
+            "avg_fps": 1000.0 / (sum(values) / len(values)) if sum(values) > 0 else 0.0,
             "min_ms": min(values),
             "p50_ms": _percentile(values, 0.50),
             "p95_ms": _percentile(values, 0.95),
