@@ -24,6 +24,8 @@ class PerformanceMonitorTests(unittest.TestCase):
         self.assertEqual(stats["frames"]["count"], 4)
         self.assertEqual(stats["frames"]["min_ms"], 10.0)
         self.assertEqual(stats["frames"]["max_ms"], 40.0)
+        self.assertEqual(stats["frames"]["avg_fps"], 50.0)
+        self.assertEqual(stats["frames"]["over_16_67_ms"], 3)
         self.assertEqual(stats["frames"]["p50_ms"], 20.0)
         self.assertEqual(stats["frames"]["p95_ms"], 40.0)
         self.assertEqual(stats["phases"]["render"]["avg_ms"], 12.5)
