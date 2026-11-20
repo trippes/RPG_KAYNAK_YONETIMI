@@ -254,12 +254,21 @@ class HexGameplayView:
         if manual_move:
             self._clear_move_goal()
         elif state.mouse_right_clicked and state.mouse_pos is not None:
+            self.context_menu_npc_id = None
+            self.context_menu_position = None
             player = runtime.entity(self.service.player_actor_id)
             npc_id = self._npc_at_screen_position(
                 runtime, state.mouse_pos, player.position.map_id,
             )
             if npc_id is not None:
-                companion = self.service.companion_command_service.registry.get(npc_id)
+                companion_service = getattr(
+                    self.service, "companion_command_service", None,
+                )
+                companion_registry = getattr(companion_service, "registry", None)
+                companion = (
+                    companion_registry.get(npc_id)
+                    if companion_registry is not None else None
+                )
                 if companion is not None:
                     self.context_menu_npc_id = npc_id
                     menu_x, menu_y = state.mouse_pos
