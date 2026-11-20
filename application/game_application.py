@@ -202,7 +202,10 @@ class GameApplication:
                 world_map_definition=content_package.world_map_definition,
                 world_id=WorldId(active_world.world_id),
             )
-            document.hex_world.restore_into(hex_runtime)
+            document.hex_world.restore_into(
+                hex_runtime,
+                npc_registry=candidate.social.npcs,
+            )
             candidate.hex_world_runtime_owner.get_or_create(lambda: hex_runtime)
 
         self.holder.publish(candidate)
