@@ -192,6 +192,8 @@ class GameplayService:
         self._quest_graph_definition: QuestGraph | None = None
         self._hex_physics_snapshots = {}
         self._companion_command_service = None
+        self._npc_behavior_system = None
+        self._npc_behavior_system_key = None
 
     @property
     def application(self) -> GameApplication:
@@ -275,6 +277,26 @@ class GameplayService:
             bundle.social.npcs,
             self.hex_actor_binding,
         )
+
+    def advance_npc_patrols(self, delta_seconds: float):
+        """Advance NPCs whose content-authored behavior state is PATROL."""
+        runtime = self.hex_world_runtime
+        if runtime is None:
+            return ()
+        bundle = self._current_bundle()
+        try:
+            binding = self.hex_actor_binding
+        except GameplayServiceError:
+            return ()
+        from .npc_behavior_system import NPCBehaviorSystem
+
+        key = (id(runtime), id(bundle.social.npcs), id(binding.physics_snapshot))
+        if key != self._npc_behavior_system_key:
+            self._npc_behavior_system = NPCBehaviorSystem(
+                bundle.social.npcs, runtime, binding.physics_snapshot,
+            )
+            self._npc_behavior_system_key = key
+        return self._npc_behavior_system.step(delta_seconds)
 
     def advance_npc_avoidance(self, delta_seconds: float):
         """Advance opt-in fleeing/spacing steering during the fixed gameplay step."""
