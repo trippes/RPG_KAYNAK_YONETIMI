@@ -1,3 +1,5 @@
+import math
+
 from application.hex_map_definition import parse_hex_map
 from application.hex_physics_bridge import build_hex_physics_snapshot
 from application.hex_world_runtime import HexWorldRuntime
@@ -46,25 +48,44 @@ def make_world(*, blocked=False):
     return runtime, npcs, snapshot
 
 
-def test_patrol_uses_runtime_pathfinding_and_advances_one_waypoint_step():
+def test_patrol_moves_continuously_through_physics_and_pathfinding():
+    runtime, npcs, snapshot = make_world()
+    system = NPCBehaviorSystem(npcs, runtime, snapshot)
+    before = runtime.continuous_position("guard").point
+
+    moved = system.step(0.1)
+
+    after = runtime.continuous_position("guard").point
+    assert moved == ("guard",)
+    assert after.x > before.x
+    assert after != snapshot.cell_center(LocalHexPosition(2, 0))
+    assert 0 < after.x - before.x <= (
+        math.sqrt(3.0) * runtime.HEX_SIZE / 0.25 * 0.1 + 1e-7
+    )
+
+
+def test_patrol_reverses_route_after_reaching_waypoint_and_persists_progress():
     runtime, npcs, snapshot = make_world()
     system = NPCBehaviorSystem(npcs, runtime, snapshot)
 
-    assert system.step(0.1) == ()
-    assert runtime.entity("guard").position.cell == LocalHexPosition(1, 0)
+    for _ in range(12):
+        system.step(1.0 / 60.0)
 
-    moved = system.step(0.15)
-
-    assert moved == ("guard",)
     assert runtime.entity("guard").position.cell == LocalHexPosition(2, 0)
+    assert runtime.patrol_indices["guard"] == 1
+
+    # The next fixed step recognizes arrival and selects the first waypoint.
+    system.step(1.0 / 60.0)
     assert runtime.patrol_indices["guard"] == 0
 
 
 def test_patrol_does_not_move_through_blocked_waypoint():
     runtime, npcs, snapshot = make_world(blocked=True)
     system = NPCBehaviorSystem(npcs, runtime, snapshot)
+    before = runtime.continuous_position("guard").point
 
     moved = system.step(0.25)
 
     assert moved == ()
+    assert runtime.continuous_position("guard").point == before
     assert runtime.entity("guard").position.cell == LocalHexPosition(1, 0)
