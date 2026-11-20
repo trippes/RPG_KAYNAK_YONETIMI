@@ -281,7 +281,6 @@ def load_content_package(package_dir: str | Path) -> ContentPackage:
                             "Legacy placements reference unknown hex maps: "
                             + ", ".join(unknown_maps)
                         )
-                    from core.domain.spatial import LocalHexPosition
 
                     for placement in presentation_catalog.objects:
                         map_definition = hexes[placement.map_id]
