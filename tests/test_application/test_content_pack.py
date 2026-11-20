@@ -4,6 +4,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from core.domain.spatial import LocalHexPosition, axial_to_world_point
+
 from application import GameApplication
 from application.content_loader import load_content_package
 from application.hex_world_initializer import initialize_hex_world
@@ -92,6 +94,18 @@ class TestContentPack(unittest.TestCase):
         herb = runtime.entity("herb_patch_01")
         self.assertEqual(herb.kind, "object")
         self.assertEqual((herb.position.cell.q, herb.position.cell.r), (-1, 0))
+        world_point = axial_to_world_point(
+            LocalHexPosition(-1, 0).to_hex_coord(), runtime.HEX_SIZE,
+        )
+        self.assertEqual(
+            service.world_target_at_world_point("starting_valley", world_point),
+            ("resource_node", "herb_patch_01"),
+        )
+        activity = service.start_gathering_one(
+            ids.hero_id, "herb_patch_01", "player",
+        )
+        self.assertEqual(activity.activity_type, "gather")
+        self.assertEqual(activity.target_id, "herb_patch_01")
 
 
     def test_gameplay_setup_registers_resource_nodes_from_content_definitions(self):
