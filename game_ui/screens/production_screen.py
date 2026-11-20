@@ -13,7 +13,14 @@ class ProductionScreen:
         self.service = service
         self.inventory_id = inventory_id
         self.selected_index = 0
+        self.selected_facility_id = None
         self.message = ""
+
+    def set_facility(self, facility_id):
+        if not isinstance(facility_id, str) or not facility_id.strip():
+            raise ValueError("facility_id must be a non-empty string.")
+        self.selected_facility_id = facility_id
+        self.selected_index = 0
 
     @staticmethod
     def _resource_id(resource):
@@ -37,6 +44,15 @@ class ProductionScreen:
 
     def _get_facility(self, recipe):
         bundle = self.service.application.holder.current
+
+        if self.selected_facility_id is not None:
+            facility = bundle.facilities.get(self.selected_facility_id)
+            if (
+                facility is None or not facility.active
+                or not facility.supports(recipe)
+            ):
+                return None
+            return facility
 
         facilities = sorted(
             bundle.facilities.facilities(),
