@@ -50,6 +50,9 @@ class FakeRuntime:
             position=EntityPosition("village", LocalHexPosition(0, 0)),
         )
 
+    def continuous_position(self, _actor_id):
+        return SimpleNamespace(point=WorldPoint(0.0, 0.0))
+
     def map_definition(self, _map_id):
         return SimpleNamespace(
             transitions=self.transitions,
