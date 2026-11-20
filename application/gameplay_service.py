@@ -228,6 +228,20 @@ class GameplayService:
         )
         if entity_id is None:
             return None
+        actor_entity = runtime.entity(self.player_actor_id)
+        target_entity = runtime.entity(entity_id)
+        actor_cell = actor_entity.position.cell
+        target_cell = target_entity.position.cell
+        distance = (
+            abs(actor_cell.q - target_cell.q)
+            + abs(actor_cell.r - target_cell.r)
+            + abs(actor_cell.q + actor_cell.r - target_cell.q - target_cell.r)
+        ) // 2
+        if (
+            actor_entity.position.map_id != target_entity.position.map_id
+            or distance > 1
+        ):
+            return None
         bundle = self._current_bundle()
         if bundle.resource_nodes.get(entity_id) is not None:
             return ("resource_node", entity_id)
