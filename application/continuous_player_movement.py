@@ -101,7 +101,7 @@ class ContinuousPlayerMovementController:
 
         start = entity.continuous_position.point
         current = MovementState(start)
-        if not actor.active or not entity.active:
+        if not actor.active or not entity.active or not entity.profile.can_move:
             result = MovementResult(
                 False,
                 entity.position,
@@ -165,6 +165,17 @@ class ContinuousPlayerMovementController:
         if movement.success:
             state = MovementState(final_position, final_velocity, intent.mode)
         else:
+            # Dynamic pushes remain provisional until the player commit succeeds.
+            # Roll them back in reverse order to preserve an atomic contact step.
+            for push in reversed(dynamic_result.pushes):
+                rollback = self._binding.runtime.set_continuous_position(
+                    push.entity_id, push.previous_position,
+                )
+                if not rollback.success:
+                    raise RuntimeError(
+                        "could not roll back NPC after rejected player movement: "
+                        f"{push.entity_id}"
+                    )
             state = current
 
         self._last_state = state
