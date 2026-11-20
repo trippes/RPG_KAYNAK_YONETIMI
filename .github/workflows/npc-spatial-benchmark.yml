@@ -1,0 +1,38 @@
+name: NPC spatial benchmark
+
+on:
+  push:
+    branches: [experiment/map-cleanup]
+    paths:
+      - "scripts/benchmark_npc_spatial_index.py"
+      - "application/**"
+      - "core/domain/spatial/**"
+      - "npc/**"
+      - ".github/workflows/npc-spatial-benchmark.yml"
+  workflow_dispatch:
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install project
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+      - name: Run repeated NPC spatial benchmark
+        run: python scripts/benchmark_npc_spatial_index.py --repeats 5 --output npc-spatial-benchmark.json
+      - name: Upload benchmark report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: npc-spatial-benchmark
+          path: npc-spatial-benchmark.json
+          if-no-files-found: warn
+          retention-days: 30
