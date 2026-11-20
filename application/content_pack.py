@@ -25,6 +25,7 @@ from core.domain.movement import MovementConfig
 from resources import (
     Inventory,
     Quantity,
+    Recipe,
     ResourceType,
     ResourceUnit,
     WorldResourceNode,
