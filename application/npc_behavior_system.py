@@ -58,13 +58,17 @@ class NPCBehaviorSystem:
             waypoint = self._runtime.patrol_target(
                 npc.npc_id, npc.patrol_route,
             )
-            path = self._runtime.path_to(
-                npc.npc_id, waypoint, edge_validator=edge_validator,
-            )
-            if path is None or len(path) < 2:
-                continue
-
-            next_cell = path[1]
+            if entity.position.cell == waypoint:
+                # The actor may have crossed into the waypoint hex before
+                # reaching its center. Continue the final in-cell movement.
+                next_cell = waypoint
+            else:
+                path = self._runtime.path_to(
+                    npc.npc_id, waypoint, edge_validator=edge_validator,
+                )
+                if path is None or len(path) < 2:
+                    continue
+                next_cell = path[1]
             if self._physics_snapshot is None:
                 result = self._runtime.move_to(npc.npc_id, next_cell)
                 if result.success:
