@@ -132,6 +132,7 @@ def test_occupied_destination_does_not_commit_continuous_position_or_occupancy()
     entity = runtime.entity("hero")
     assert not result.movement.success
     assert result.movement.reason is MovementFailureReason.OCCUPIED_CELL
+    assert result.dynamic_pushes == ()
     assert entity.position.cell == LocalHexPosition(0, 0)
     assert runtime.occupancy.get("hero").position.cell == LocalHexPosition(0, 0)
     assert runtime.continuous_position("hero").point.x < 28.0
