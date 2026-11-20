@@ -320,6 +320,38 @@ class TestContentPackageLoader(unittest.TestCase):
                 ),
             )
 
+    def test_gameplay_placement_rejects_npc_patrol_waypoint_outside_map(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = self._copy_demo_package(directory)
+            placements = self._enable_gameplay_placements(root)
+            (root / "npcs.json").write_text(json.dumps({
+                "schema_version": 1,
+                "npcs": [{
+                    "id": "guard_01",
+                    "name": "Guard",
+                    "role": "guard",
+                    "load_phase": "gameplay",
+                    "patrol_route": [[0, 0], [9, 9]],
+                }],
+            }), encoding="utf-8")
+            (placements / "village.json").write_text(json.dumps({
+                "schema_version": 1,
+                "map_id": "village",
+                "placements": [{
+                    "domain_id": "guard_01",
+                    "kind": "npc",
+                    "q": 0,
+                    "r": 0,
+                    "blocks_movement": True,
+                    "blocks_occupancy": True,
+                }],
+            }), encoding="utf-8")
+
+            with self.assertRaisesRegex(
+                ContentPackageError, "patrol route references a cell outside map"
+            ):
+                load_content_package(root)
+
     def test_gameplay_placement_rejects_unknown_npc_reference(self):
         with tempfile.TemporaryDirectory() as directory:
             root = self._copy_demo_package(directory)
