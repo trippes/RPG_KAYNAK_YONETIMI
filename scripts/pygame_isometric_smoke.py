@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import os
+import time
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -61,6 +62,7 @@ def main():
         )
         for q, r in map_data["valid_cells"]
     ]
+    render_started = time.perf_counter()
     terrain = HexTerrainRenderer()
     terrain.begin_frame(renderer, terrain_ids)
     for q, r in map_data["valid_cells"]:
@@ -118,6 +120,15 @@ def main():
                 64.0 * transform.zoom, (0.5, 1.0), {},
             )
 
+    render_elapsed_ms = (time.perf_counter() - render_started) * 1000.0
+    pygame.draw.rect(
+        surface, (20, 28, 38), pygame.Rect(12, 10, 352, 42),
+        border_radius=6,
+    )
+    pygame.draw.rect(
+        surface, (90, 112, 139), pygame.Rect(12, 10, 352, 42),
+        1, border_radius=6,
+    )
     font = pygame.font.Font(None, 28)
     label = font.render("ELDORIA  |  ISOMETRIC WORLD SMOKE", True, (235, 230, 211))
     surface.blit(label, (20, 18))
