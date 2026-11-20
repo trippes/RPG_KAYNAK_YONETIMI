@@ -114,7 +114,17 @@ class NPCSpatialBindingService:
         npc = self._require_npc(npc_id)
         if not npc.active:
             return self._inactive_result(npc_id)
-        return self._actor_binding.move(npc_id, direction)
+        snapshot = self._actor_binding.physics_snapshot
+        body = npc.physics_body
+        if snapshot is not None and body.enabled:
+            result = self._actor_binding.move_with_physics(
+                npc_id, direction, snapshot, body,
+            )
+        else:
+            result = self._actor_binding.move(npc_id, direction)
+        if result.success:
+            self._resolve_dynamic_contacts()
+        return result
 
     def move_to(
         self,
@@ -124,7 +134,17 @@ class NPCSpatialBindingService:
         npc = self._require_npc(npc_id)
         if not npc.active:
             return self._inactive_result(npc_id)
-        return self._actor_binding.move_to(npc_id, target)
+        snapshot = self._actor_binding.physics_snapshot
+        body = npc.physics_body
+        if snapshot is not None and body.enabled:
+            result = self._actor_binding.move_to_with_physics(
+                npc_id, target, snapshot, body,
+            )
+        else:
+            result = self._actor_binding.move_to(npc_id, target)
+        if result.success:
+            self._resolve_dynamic_contacts()
+        return result
 
     def move_to_with_physics(
         self,
@@ -136,12 +156,12 @@ class NPCSpatialBindingService:
         npc = self._require_npc(npc_id)
         if not npc.active:
             return self._inactive_result(npc_id)
-        return self._actor_binding.move_to_with_physics(
-            npc_id,
-            target,
-            physics_snapshot,
-            body,
+        result = self._actor_binding.move_to_with_physics(
+            npc_id, target, physics_snapshot, body,
         )
+        if result.success:
+            self._resolve_dynamic_contacts()
+        return result
 
     def move_with_physics(
         self,
@@ -153,12 +173,12 @@ class NPCSpatialBindingService:
         npc = self._require_npc(npc_id)
         if not npc.active:
             return self._inactive_result(npc_id)
-        return self._actor_binding.move_with_physics(
-            npc_id,
-            direction,
-            physics_snapshot,
-            body,
+        result = self._actor_binding.move_with_physics(
+            npc_id, direction, physics_snapshot, body,
         )
+        if result.success:
+            self._resolve_dynamic_contacts()
+        return result
 
     def set_movement_enabled(
         self,
@@ -171,6 +191,30 @@ class NPCSpatialBindingService:
     def unregister_spatial(self, npc_id: str) -> HexMovableEntity:
         self._require_npc(npc_id)
         return self._actor_binding.unregister_spatial(npc_id)
+
+    def _resolve_dynamic_contacts(self) -> None:
+        """Resolve NPC pairs and contacts with the active player after direct moves."""
+        snapshot = self._actor_binding.physics_snapshot
+        player_body = self._actor_binding.player_body
+        if snapshot is None or player_body is None:
+            return
+        from .dynamic_actor_collision import DynamicActorCollisionResolver
+
+        runtime = self._actor_binding.runtime
+        bodies = {
+            npc.npc_id: npc.physics_body for npc in self._npcs.all()
+            if npc.physics_body is not None
+        }
+        resolver = DynamicActorCollisionResolver(runtime, snapshot)
+        resolver.resolve_npc_pairs(bodies)
+        player = next(
+            (entity for entity in runtime.entities() if entity.kind == "player"),
+            None,
+        )
+        if player is not None:
+            resolver.resolve_npc_player_contacts(
+                player.entity_id, player_body, bodies,
+            )
 
     def _require_npc(self, npc_id: str) -> NPC:
         if not isinstance(npc_id, str) or not npc_id.strip():
