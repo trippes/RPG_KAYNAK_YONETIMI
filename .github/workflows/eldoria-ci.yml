@@ -52,3 +52,11 @@ jobs:
       - name: Verify Pygame can initialize without a display
         run: |
           python -c "import pygame; pygame.init(); screen = pygame.display.set_mode((1, 1)); assert screen.get_width() == 1; pygame.quit(); print('Pygame headless smoke test passed')"
+      - name: Render the isometric world and actor pipeline
+        run: python scripts/pygame_isometric_smoke.py
+      - name: Upload isometric visual acceptance artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: eldoria-isometric-smoke
+          path: artifacts/eldoria-isometric-smoke.png
+          if-no-files-found: error
