@@ -90,7 +90,7 @@ def test_snapshot_round_trip_preserves_positions_profiles_occupancy_and_patrol()
     target = make_runtime()
 
     assert decoded == snapshot
-    decoded.restore_into(target)
+    decoded.restore_into(target, npc_registry=NPCRegistry([NPC("guard", "Guard")]))
 
     assert target.entities() == source.entities()
     assert target.occupancy.snapshot() == source.occupancy.snapshot()
@@ -211,7 +211,10 @@ def test_restore_rolls_back_all_registrations_after_occupancy_conflict():
     target = make_runtime()
 
     with pytest.raises(HexWorldPersistenceError, match="atomically"):
-        snapshot.restore_into(target)
+        snapshot.restore_into(
+            target,
+            npc_registry=NPCRegistry([NPC("first", "First"), NPC("second", "Second")]),
+        )
 
     assert target.entities() == ()
     assert target.occupancy.snapshot() == ()
