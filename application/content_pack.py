@@ -13,6 +13,7 @@ from application import GameplayService
 from core.errors import RPGError
 from core.entity import Entity, EntityType
 from containers import ContainerDefinition, ContainerInstance
+from .production_facility import ProductionFacility
 from core.domain.physics import CircleShape, PhysicsBodyDefinition
 from core.domain.spatial import LocalHexPosition
 from application.content_loader import ContentPackageError, load_content_package
@@ -822,6 +823,31 @@ def populate_gameplay_resources(service, definition_path=None, resource_definiti
     inventories.setdefault(player_rules["inventory_id"], Inventory())
     object.__setattr__(bundle, "inventories", MappingProxyType(inventories))
     bundle = service.application.holder.current
+    production_facilities, production_recipes = load_production_definitions(
+        package_path=active_package_path,
+    )
+    for facility in production_facilities:
+        existing = bundle.facilities.get(facility.facility_id)
+        if existing is None:
+            bundle.facilities.add(facility)
+        elif (
+            existing.facility_type != facility.facility_type
+            or existing.capacity.capacity != facility.capacity.capacity
+            or existing.capabilities != facility.capabilities
+            or existing.active != facility.active
+        ):
+            raise ContentDefinitionError(
+                f"Existing production facility '{facility.facility_id}' conflicts with package configuration."
+            )
+    recipes = dict(bundle.recipes)
+    for recipe in production_recipes:
+        existing = recipes.get(recipe.recipe_id)
+        if existing is not None and existing != recipe:
+            raise ContentDefinitionError(
+                f"Existing production recipe '{recipe.recipe_id}' conflicts with package configuration."
+            )
+        recipes[recipe.recipe_id] = recipe
+    object.__setattr__(bundle, "recipes", MappingProxyType(recipes))
     for market_data in definition.get("markets", ()):
         market_npc_id = market_data["npc_id"]
         dialogue_data = market_data["dialogue"]
@@ -1018,6 +1044,107 @@ def load_container_definitions(
                 f"Container '{record['container_id']}' definition is invalid: {error}"
             ) from error
     return tuple(records)
+
+
+def load_production_definitions(
+    path: str | Path | None = None,
+    *,
+    package_path: str | Path | None = None,
+) -> tuple[tuple[ProductionFacility, ...], tuple[Recipe, ...]]:
+    """Load typed facility and recipe definitions from starter content."""
+    starter = (
+        load_starter_content(package_path=package_path)
+        if path is None
+        else _read_json_definition(Path(path), "Starter content")
+    )
+    production = starter.get("production", {})
+    if not isinstance(production, dict):
+        raise ContentDefinitionError("Starter production content must be an object.")
+    facility_records = production.get("facilities", [])
+    recipe_records = production.get("recipes", [])
+    if not isinstance(facility_records, list) or not isinstance(recipe_records, list):
+        raise ContentDefinitionError("Production facilities and recipes must be lists.")
+
+    facilities = []
+    facility_ids = set()
+    facility_types = set()
+    for record in facility_records:
+        if not isinstance(record, dict):
+            raise ContentDefinitionError("Production facility records must be objects.")
+        try:
+            facility = ProductionFacility(
+                record["facility_id"],
+                record["facility_type"],
+                record["capacity"],
+                tuple(record.get("capabilities", ())),
+                record.get("active", True),
+            )
+        except (KeyError, TypeError, ValueError) as error:
+            raise ContentDefinitionError(
+                f"Invalid production facility definition: {error}"
+            ) from error
+        if facility.facility_id in facility_ids:
+            raise ContentDefinitionError(
+                f"Duplicate production facility id: {facility.facility_id}"
+            )
+        facility_ids.add(facility.facility_id)
+        facility_types.add(facility.facility_type)
+        facilities.append(facility)
+
+    def components(raw, label):
+        if not isinstance(raw, list) or not raw:
+            raise ContentDefinitionError(
+                f"Production recipe {label} must be a non-empty list."
+            )
+        result = []
+        for component in raw:
+            if not isinstance(component, dict):
+                raise ContentDefinitionError(
+                    f"Production recipe {label} entries must be objects."
+                )
+            try:
+                resource = ResourceType(component["resource_type"])
+                amount = component["quantity"]
+                if type(amount) is not int or amount <= 0:
+                    raise ValueError("quantity must be a positive integer.")
+                unit = ResourceUnit(component["unit"])
+                result.append((resource, Quantity(amount, unit)))
+            except (KeyError, TypeError, ValueError) as error:
+                raise ContentDefinitionError(
+                    f"Invalid production recipe {label} component: {error}"
+                ) from error
+        return tuple(result)
+
+    recipes = []
+    recipe_ids = set()
+    for record in recipe_records:
+        if not isinstance(record, dict):
+            raise ContentDefinitionError("Production recipe records must be objects.")
+        try:
+            recipe = Recipe(
+                record["recipe_id"],
+                components(record["inputs"], "inputs"),
+                components(record["outputs"], "outputs"),
+                record.get("processing_time_ticks", 1),
+                record.get("facility_type"),
+                tuple(record.get("required_capabilities", ())),
+            )
+        except (KeyError, TypeError, ValueError) as error:
+            raise ContentDefinitionError(
+                f"Invalid production recipe definition: {error}"
+            ) from error
+        if recipe.recipe_id in recipe_ids:
+            raise ContentDefinitionError(
+                f"Duplicate production recipe id: {recipe.recipe_id}"
+            )
+        if recipe.facility_type is not None and recipe.facility_type not in facility_types:
+            raise ContentDefinitionError(
+                f"Recipe '{recipe.recipe_id}' references unknown facility type: "
+                f"{recipe.facility_type}"
+            )
+        recipe_ids.add(recipe.recipe_id)
+        recipes.append(recipe)
+    return tuple(facilities), tuple(recipes)
 
 
 def load_resource_definitions(path: str | Path | None = None, *, package_path: str | Path | None = None) -> tuple[dict, ...]:
