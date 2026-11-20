@@ -449,6 +449,7 @@ class TestContentPackageLoader(unittest.TestCase):
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
             manifest.pop("maps")
             manifest["gameplay_placements"] = "gameplay_placements"
+            shutil.rmtree(root / "gameplay_placements", ignore_errors=True)
             (root / "gameplay_placements").mkdir()
             manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
 
