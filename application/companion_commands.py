@@ -83,7 +83,7 @@ class CompanionCommandService:
                 current = self.runtime.continuous_position(state.npc_id).point
             except KeyError:
                 continue
-            if entity.position.map_id != player.position.map_id:
+            if not entity.active or entity.position.map_id != player.position.map_id:
                 continue
             if math.hypot(
                 current.x - player_position.x,

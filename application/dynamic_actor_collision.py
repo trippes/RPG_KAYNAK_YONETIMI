@@ -84,7 +84,7 @@ class DynamicActorCollisionResolver:
             if npc_id == actor_id:
                 continue
             entity = self._runtime.entity(npc_id)
-            if entity.kind != "npc" or not entity.active:
+            if entity.kind != "npc" or not entity.active or not entity.profile.can_move:
                 continue
             body = npc_bodies.get(npc_id)
             if (
@@ -94,7 +94,10 @@ class DynamicActorCollisionResolver:
             ):
                 continue
 
-            previous = self._runtime.continuous_position(npc_id).point
+            try:
+                previous = self._runtime.continuous_position(npc_id).point
+            except KeyError:
+                continue
             player_shape = ActorBodyTransform(player_position).transform_shape(player_body)
             npc_shape = ActorBodyTransform(previous).transform_shape(body)
             contact = collide_shapes(player_shape, npc_shape, npc_id)

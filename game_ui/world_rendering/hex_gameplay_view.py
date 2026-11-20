@@ -61,6 +61,9 @@ class HexGameplayView:
         self._visual_target = None
         self._visual_elapsed = 0.0
         self._visual_moving = False
+        self._continuous_motion_active = False
+        self._runtime_motion_elapsed = 0.0
+        self._last_runtime_position = None
         self.context_menu_npc_id = None
         self.context_menu_position = None
         self.selected_npc_id = None
@@ -113,6 +116,7 @@ class HexGameplayView:
         target = self._cell_world_position(target_cell)
         self._visual_start = self._visual_position
         self._visual_target = target
+        self._continuous_motion_active = False
         self._set_player_facing_from_world_delta(
             target[0] - self._visual_position[0],
             target[1] - self._visual_position[1],
@@ -146,6 +150,7 @@ class HexGameplayView:
 
     def update(self, elapsed_seconds: float = 0.0) -> None:
         self.elapsed_seconds = max(0.0, float(elapsed_seconds))
+        self._sync_continuous_visual()
         self._advance_visual_position(self.elapsed_seconds)
         if self._player_animator is not None:
             state = "walk" if self._visual_moving else "idle"
@@ -187,6 +192,43 @@ class HexGameplayView:
         if not result.success or result.position.cell == self._move_goal:
             self._clear_move_goal()
 
+    def _sync_continuous_visual(self):
+        """Track fixed-step keyboard motion for facing and walk animation."""
+        if self._move_goal is not None:
+            return
+        if self._visual_moving and self._visual_target != self._visual_start:
+            return
+        runtime = getattr(self.service, "hex_world_runtime", None)
+        if runtime is None:
+            return
+        try:
+            entity = runtime.entity(self.service.player_actor_id)
+            continuous = runtime.continuous_position(self.service.player_actor_id)
+        except KeyError:
+            return
+        if continuous is None:
+            return
+        current = continuous.point
+        if self._last_runtime_position is not None:
+            dx = current.x - self._last_runtime_position.x
+            dy = current.y - self._last_runtime_position.y
+            if abs(dx) + abs(dy) > 1e-7:
+                self._set_player_facing_from_world_delta(dx, dy)
+                self._visual_moving = True
+                self._continuous_motion_active = True
+                self._runtime_motion_elapsed = 0.0
+            elif self._continuous_motion_active:
+                self._runtime_motion_elapsed += self.elapsed_seconds
+                if self._runtime_motion_elapsed >= 0.10:
+                    self._visual_moving = False
+                    self._continuous_motion_active = False
+        self._last_runtime_position = current
+        self._visual_map_id = entity.position.map_id
+        self._visual_cell = entity.position.cell
+        self._visual_position = (current.x, current.y)
+        self._visual_start = self._visual_position
+        self._visual_target = self._visual_position
+
     def _clear_move_goal(self) -> None:
         self._move_goal = None
         self._move_map_id = None
@@ -209,12 +251,31 @@ class HexGameplayView:
 
         if state.mouse_right_clicked:
             self._clear_move_goal()
+            self.context_menu_npc_id = None
+            self.context_menu_position = None
             player = runtime.entity(self.service.player_actor_id)
             npc_id = self._npc_at_screen_position(
                 runtime, state.mouse_pos, player.position.map_id,
             )
-            self.context_menu_npc_id = npc_id
-            self.context_menu_position = state.mouse_pos if npc_id is not None else None
+            companion_service = getattr(
+                self.service, "companion_command_service", None,
+            )
+            companion_registry = getattr(companion_service, "registry", None)
+            if npc_id is not None and companion_registry is not None:
+                if companion_registry.get(npc_id) is not None:
+                    self.context_menu_npc_id = npc_id
+                    menu_x, menu_y = state.mouse_pos
+                    if self._panel is not None:
+                        menu_x = min(
+                            max(self._panel.left, menu_x),
+                            max(self._panel.left, self._panel.right - 176),
+                        )
+                        menu_y = min(
+                            max(self._panel.top, menu_y),
+                            max(self._panel.top, self._panel.bottom - 56),
+                        )
+                    self.context_menu_position = (menu_x, menu_y)
+                    return "companion_menu"
             return
 
         manual_move = False
@@ -253,36 +314,6 @@ class HexGameplayView:
                     )
         if manual_move:
             self._clear_move_goal()
-        elif state.mouse_right_clicked and state.mouse_pos is not None:
-            self.context_menu_npc_id = None
-            self.context_menu_position = None
-            player = runtime.entity(self.service.player_actor_id)
-            npc_id = self._npc_at_screen_position(
-                runtime, state.mouse_pos, player.position.map_id,
-            )
-            if npc_id is not None:
-                companion_service = getattr(
-                    self.service, "companion_command_service", None,
-                )
-                companion_registry = getattr(companion_service, "registry", None)
-                companion = (
-                    companion_registry.get(npc_id)
-                    if companion_registry is not None else None
-                )
-                if companion is not None:
-                    self.context_menu_npc_id = npc_id
-                    menu_x, menu_y = state.mouse_pos
-                    if self._panel is not None:
-                        menu_x = min(
-                            max(self._panel.left, menu_x),
-                            max(self._panel.left, self._panel.right - 176),
-                        )
-                        menu_y = min(
-                            max(self._panel.top, menu_y),
-                            max(self._panel.top, self._panel.bottom - 56),
-                        )
-                    self.context_menu_position = (menu_x, menu_y)
-                    return "companion_menu"
         elif state.mouse_clicked and state.mouse_pos is not None:
             if self.context_menu_npc_id is not None and self.context_menu_position is not None:
                 menu_x, menu_y = self.context_menu_position
