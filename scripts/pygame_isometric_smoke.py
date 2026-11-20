@@ -117,7 +117,7 @@ def main():
     for _, _, _, kind, item, foot in ordered_items:
         if kind == "scene":
             if not pipeline.draw(renderer, item, foot, transform.zoom):
-                continue
+                pipeline.draw_fallback(renderer, item, foot, transform.zoom)
         else:
             characters.draw_sprite(
                 renderer, item.current_frame, foot,
