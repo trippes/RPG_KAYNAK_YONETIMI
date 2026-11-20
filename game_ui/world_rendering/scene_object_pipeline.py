@@ -67,6 +67,7 @@ class SceneObjectPipeline:
                 depth_offset=placement.depth_offset + asset.depth_offset,
                 layer=placement.layer,
                 stable_order=stable_order,
+                kind=placement.kind,
             )
             objects_by_map.setdefault(placement.map_id, []).append(obj)
         self._objects_by_map = {
