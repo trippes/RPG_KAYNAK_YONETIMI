@@ -333,6 +333,44 @@ class HexWorldRuntime:
             )
         return MovementResult(True, destination)
 
+    def _commit_position(
+        self,
+        entity_id: str,
+        target: EntityPosition,
+        continuous_position: ContinuousEntityPosition,
+    ) -> None:
+        """Commit occupancy, broadphase bounds, and position as one operation.
+
+        The spatial index is updated first because its update validates all new
+        bucket keys before replacing the old entry. If occupancy rejects the
+        relocation, the previous broadphase entry is restored before re-raising.
+        The authoritative continuous position is assigned only after both
+        derived registries have accepted the move.
+        """
+        state = self._entity_state(entity_id)
+        previous_occupant = self._occupancy.get(entity_id)
+        if previous_occupant is None:
+            raise RuntimeError(f"Hex entity has no occupancy record: {entity_id}")
+        previous_position = self._continuous_positions[entity_id]
+        previous_bounds = self._bounds_at(state, previous_position.point)
+        next_bounds = self._bounds_at(state, continuous_position.point)
+
+        self._spatial_index.update(
+            entity_id, continuous_position.map_id, next_bounds,
+        )
+        try:
+            self._occupancy.move(
+                entity_id,
+                target,
+                ignore_blockers=state.profile.ignores_occupancy,
+            )
+        except Exception:
+            self._spatial_index.update(
+                entity_id, previous_position.map_id, previous_bounds,
+            )
+            raise
+        self._continuous_positions[entity_id] = continuous_position
+
     def move_to(self, entity_id: str, target: LocalHexPosition) -> MovementResult:
         """Validate then atomically commit one map-local cell movement."""
         result = self.validate_move_to(entity_id, target)
@@ -340,17 +378,7 @@ class HexWorldRuntime:
             return result
         center = axial_to_world_point(result.position.cell.to_hex_coord(), self.HEX_SIZE)
         continuous_position = ContinuousEntityPosition(result.position.map_id, center)
-        self._occupancy.move(
-            entity_id,
-            result.position,
-            ignore_blockers=self._entity_state(entity_id).profile.ignores_occupancy,
-        )
-        self._continuous_positions[entity_id] = continuous_position
-        self._spatial_index.update(
-            entity_id,
-            continuous_position.map_id,
-            self._bounds_at(self._entity_state(entity_id), continuous_position.point),
-        )
+        self._commit_position(entity_id, result.position, continuous_position)
         return result
 
     def continuous_position(self, entity_id: str) -> ContinuousEntityPosition:
@@ -393,11 +421,12 @@ class HexWorldRuntime:
 
         if target_cell == entity.position.cell:
             next_position = ContinuousEntityPosition(entity.position.map_id, point)
-            self._continuous_positions[entity_id] = next_position
+            state = self._entity_state(entity_id)
             self._spatial_index.update(
                 entity_id, next_position.map_id,
-                self._bounds_at(self._entity_state(entity_id), next_position.point),
+                self._bounds_at(state, next_position.point),
             )
+            self._continuous_positions[entity_id] = next_position
             return MovementResult(True, entity.position)
 
         request = MovementRequest(entity_id, entity.position, target, entity.profile)
@@ -414,16 +443,7 @@ class HexWorldRuntime:
             )
 
         next_position = ContinuousEntityPosition(entity.position.map_id, point)
-        self._occupancy.move(
-            entity_id,
-            target,
-            ignore_blockers=entity.profile.ignores_occupancy,
-        )
-        self._continuous_positions[entity_id] = next_position
-        self._spatial_index.update(
-            entity_id, next_position.map_id,
-            self._bounds_at(self._entity_state(entity_id), next_position.point),
-        )
+        self._commit_position(entity_id, target, next_position)
         return MovementResult(True, target)
 
     def query_spatial_candidates(self, map_id: str, bounds: AABB) -> tuple[str, ...]:
@@ -518,16 +538,7 @@ class HexWorldRuntime:
             return MovementResult(False, entity.position, MovementFailureReason.OCCUPIED_CELL, "Destination cell is occupied or movement-blocked.")
         center = axial_to_world_point(target.cell.to_hex_coord(), self.HEX_SIZE)
         next_continuous_position = ContinuousEntityPosition(target.map_id, center)
-        self._occupancy.move(
-            entity_id, target,
-            ignore_blockers=entity.profile.ignores_occupancy,
-        )
-        self._continuous_positions[entity_id] = next_continuous_position
-        self._spatial_index.update(
-            entity_id,
-            next_continuous_position.map_id,
-            self._bounds_at(self._entity_state(entity_id), next_continuous_position.point),
-        )
+        self._commit_position(entity_id, target, next_continuous_position)
         return MovementResult(True, target)
 
     @property
