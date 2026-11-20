@@ -353,11 +353,25 @@ def load_content_package(package_dir: str | Path) -> ContentPackage:
             for record in resource_records
             if isinstance(record, dict)
         }
+        npc_by_id = {
+            record["id"]: record
+            for record in npc_records
+            if isinstance(record, dict) and isinstance(record.get("id"), str)
+        }
         for placement in gameplay_placements.placements:
             if placement.kind == "npc" and placement.domain_id not in npc_ids:
                 raise ContentPackageError(
                     f"Gameplay placement references unknown NPC: {placement.domain_id}"
                 )
+            if placement.kind == "npc":
+                npc_record = npc_by_id[placement.domain_id]
+                map_definition = hexes[placement.map_id]
+                for q, r in npc_record.get("patrol_route", ()):
+                    if not map_definition.has_cell(LocalHexPosition(q, r)):
+                        raise ContentPackageError(
+                            f"NPC '{placement.domain_id}' patrol route references a cell "
+                            f"outside map '{placement.map_id}': q={q}, r={r}"
+                        )
             if (
                 placement.kind == "resource_node"
                 and placement.domain_id not in resource_ids
