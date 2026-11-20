@@ -2,6 +2,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import math
+
+from core.domain.spatial import LocalHexPosition
 
 from core.domain.physics import CircleShape, PhysicsBodyDefinition
 
@@ -17,12 +20,26 @@ class NPC:
     behavior: BehaviorController = field(default_factory=BehaviorController)
     active: bool = True
     physics_body: PhysicsBodyDefinition | None = None
+    patrol_route: tuple[LocalHexPosition, ...] = ()
+    patrol_interval_seconds: float = 0.5
 
     def __post_init__(self):
         for value, name in ((self.npc_id, "npc_id"), (self.name, "name"), (self.role, "role")):
             if not isinstance(value, str) or not value.strip():
                 raise ValueError(f"{name} must be non-empty.")
         self.faction_ids = tuple(self.faction_ids)
+        route = tuple(self.patrol_route)
+        if any(not isinstance(point, LocalHexPosition) for point in route):
+            raise TypeError("patrol_route must contain LocalHexPosition values.")
+        if route and len(route) < 2:
+            raise ValueError("patrol_route must contain at least two waypoints.")
+        self.patrol_route = route
+        interval = self.patrol_interval_seconds
+        if isinstance(interval, bool) or not isinstance(interval, (int, float)):
+            raise TypeError("patrol_interval_seconds must be a positive finite number.")
+        if not math.isfinite(interval) or interval <= 0:
+            raise ValueError("patrol_interval_seconds must be a positive finite number.")
+        self.patrol_interval_seconds = float(interval)
         if not isinstance(self.behavior, BehaviorController):
             raise TypeError("behavior must be BehaviorController.")
         if self.physics_body is None:
