@@ -145,7 +145,8 @@ def main():
     assert OUTPUT.is_file() and OUTPUT.stat().st_size > 10_000
     print(
         f"Isometric render smoke passed: {len(pipeline.objects_for_map('starting_valley'))} "
-        f"scene objects, {pipeline.loaded_asset_count} assets, {len(sampled)} sampled colors."
+        f"scene objects, {pipeline.loaded_asset_count} assets, {len(sampled)} sampled colors, "
+        f"{render_elapsed_ms:.2f} ms composition time."
     )
     pygame.quit()
 
