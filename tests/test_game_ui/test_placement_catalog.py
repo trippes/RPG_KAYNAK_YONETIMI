@@ -19,12 +19,12 @@ PACKAGE_ROOT = ROOT / "content" / "demo_eldoria"
 
 
 class TestScenePlacementCatalog(unittest.TestCase):
-    def test_demo_package_has_assets_but_no_legacy_hex_placements(self):
+    def test_demo_package_has_assets_and_map_scoped_scene_placements(self):
         package = load_content_package(PACKAGE_ROOT)
         self.assertIsNotNone(package.asset_catalog_path)
         catalog = AssetCatalog.load(package.asset_catalog_path)
         self.assertEqual(len(catalog.assets), 6)
-        self.assertEqual(package.scene_placements.placements, ())
+        self.assertEqual(len(package.scene_placements.placements), 8)
 
     def test_placement_catalog_exposes_an_immutable_snapshot(self):
         package = load_content_package(PACKAGE_ROOT)
@@ -55,7 +55,7 @@ class TestScenePlacementCatalog(unittest.TestCase):
             legacy = AssetCatalog.load(legacy_path)
 
             self.assertEqual(len(legacy.assets), 6)
-            self.assertEqual(legacy.objects, ())
+            self.assertEqual(len(legacy.objects), 8)
             self.assertEqual(legacy_data["assets"], split_assets["assets"])
             self.assertEqual(legacy_data["objects"], split_placements)
 
