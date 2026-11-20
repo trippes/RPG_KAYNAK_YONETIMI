@@ -6,13 +6,13 @@ from pathlib import Path
 
 from application import GameApplication
 from application.content_loader import load_content_package
+from application.hex_world_initializer import initialize_hex_world
 from application.content_pack import (
     load_character_definitions,
     load_gameplay_rules,
     load_npc_definitions,
     load_quest_definitions,
     load_resource_definitions,
-    initialize_hex_world,
     populate_gameplay_resources,
     populate_gameplay_placements,
     populate_opening_content,
