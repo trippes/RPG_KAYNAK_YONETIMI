@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from npc import Faction, FactionRegistry, NPC, NPCRegistry, Relationship, RelationshipGraph, ReputationLedger
+from npc import CompanionRegistry, Faction, FactionRegistry, NPC, NPCRegistry, Relationship, RelationshipGraph, ReputationLedger
 from quests import Dialogue, DialogueChoice, DialogueNode
 
 from core.errors import RPGError
@@ -12,12 +12,15 @@ class SocialRuntimeError(ValueError, RPGError):
 
 
 class SocialRuntime:
-    def __init__(self, npcs=None, dialogues=None, relationships=None, factions=None, reputation=None):
+    def __init__(self, npcs=None, dialogues=None, relationships=None, factions=None, reputation=None, companions=None):
         self.npcs = npcs if npcs is not None else NPCRegistry()
         self.dialogues: dict[str, Dialogue] = dict(dialogues or {})
         self.relationships = relationships if relationships is not None else RelationshipGraph()
         self.factions = factions if factions is not None else FactionRegistry()
         self.reputation = reputation if reputation is not None else ReputationLedger()
+        self.companions = companions if companions is not None else CompanionRegistry()
+        if not isinstance(self.companions, CompanionRegistry):
+            raise TypeError("companions must be a CompanionRegistry.")
 
     def add_npc(self, npc: NPC) -> NPC:
         missing = [faction_id for faction_id in npc.faction_ids if faction_id not in self.factions]

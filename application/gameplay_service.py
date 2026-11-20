@@ -191,6 +191,7 @@ class GameplayService:
         self._dialogue_actions: dict[str, Callable[[str, str], None]] = {}
         self._quest_graph_definition: QuestGraph | None = None
         self._hex_physics_snapshots = {}
+        self._companion_command_service = None
 
     @property
     def application(self) -> GameApplication:
@@ -295,6 +296,42 @@ class GameplayService:
             binding.physics_snapshot,
             self.player_actor_id,
         ).step(delta_seconds)
+
+    @property
+    def companion_command_service(self):
+        """Resolve the active session's persisted companion command service."""
+        bundle = self._current_bundle()
+        runtime = bundle.hex_world_runtime
+        if runtime is None:
+            raise GameplayServiceError("The active session has no initialized hex world.")
+        cached = self._companion_command_service
+        if (
+            cached is None
+            or cached.runtime is not runtime
+            or cached.registry is not bundle.social.companions
+        ):
+            from .companion_commands import CompanionCommandService
+
+            binding = self.hex_actor_binding
+            self._companion_command_service = CompanionCommandService(
+                runtime,
+                bundle.social.npcs,
+                bundle.social.companions,
+                self.player_actor_id,
+                physics_snapshot=binding.physics_snapshot,
+            )
+        return self._companion_command_service
+
+    def enlist_companion(self, npc_id: str):
+        return self.companion_command_service.enlist(npc_id)
+
+    def command_companion(self, npc_id: str, command):
+        return self.companion_command_service.command(npc_id, command)
+
+    def advance_companions(self, delta_seconds: float):
+        if self.hex_world_runtime is None:
+            return ()
+        return self.companion_command_service.tick(delta_seconds)
 
     @property
     def npc_physics_bodies(self):

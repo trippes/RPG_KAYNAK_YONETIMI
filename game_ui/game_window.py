@@ -309,6 +309,11 @@ class GameWindow:
             )
             if callable(advance_avoidance):
                 advance_avoidance(self._movement_clock.step_seconds)
+            advance_companions = getattr(
+                self.service, "advance_companions", None,
+            )
+            if callable(advance_companions):
+                advance_companions(self._movement_clock.step_seconds)
 
     def _ensure_save_storage(self):
         failure = getattr(self, "_save_storage_failure", None)
