@@ -41,7 +41,9 @@ class TestContentPackageLoader(unittest.TestCase):
         self.assertEqual(tuple(package.hex_map_definitions), ("starting_valley",))
         self.assertEqual(len(package.hex_map_definitions["starting_valley"].valid_cells), 61)
         self.assertIsNone(package.world_map_definition)
-        self.assertEqual(package.files["npcs"]["npcs"], [])
+        npcs = package.files["npcs"]["npcs"]
+        self.assertEqual(tuple(npc["id"] for npc in npcs), ("warden_lyra",))
+        self.assertEqual(npcs[0]["load_phase"], "opening")
         self.assertEqual(package.files["quests"]["quests"], [])
         self.assertEqual(package.files["resources"]["nodes"], [])
         self.assertEqual(len(package.files["characters"]["races"]), 3)
@@ -57,7 +59,7 @@ class TestContentPackageLoader(unittest.TestCase):
 
         self.assertIsNotNone(package.presentation_catalog)
         self.assertIsNotNone(package.scene_placements)
-        self.assertEqual(len(package.presentation_catalog.assets), 6)
+        self.assertEqual(len(package.presentation_catalog.assets), 7)
         self.assertEqual(len(package.scene_placements.placements), 15)
         validation_issues = package.presentation_catalog.validate_assets()
         self.assertEqual(
