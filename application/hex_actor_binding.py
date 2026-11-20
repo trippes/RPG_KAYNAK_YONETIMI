@@ -110,6 +110,7 @@ class ActorHexBindingService:
         blocks_movement: bool = True,
         blocks_occupancy: bool = True,
         local_spatial_bounds: AABB | None = None,
+        broadphase_enabled: bool = True,
     ) -> HexMovableEntity:
         """Register the existing actor ID in the spatial runtime exactly once."""
         self._require_actor(actor_id)
@@ -127,6 +128,7 @@ class ActorHexBindingService:
             blocks_movement=blocks_movement,
             blocks_occupancy=blocks_occupancy,
             local_spatial_bounds=local_spatial_bounds,
+            broadphase_enabled=broadphase_enabled,
         )
 
     def move(self, actor_id: str, direction: HexDirection) -> MovementResult:
