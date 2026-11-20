@@ -355,6 +355,16 @@ def load_content_package(package_dir: str | Path) -> ContentPackage:
             for record in resource_records
             if isinstance(record, dict)
         }
+        container_records = files.get("containers", {}).get("containers", [])
+        if not isinstance(container_records, list):
+            raise ContentPackageError(
+                "Container definitions must contain a 'containers' list when gameplay placements are declared."
+            )
+        container_ids = {
+            record.get("container_id")
+            for record in container_records
+            if isinstance(record, dict)
+        }
         npc_by_id = {
             record["id"]: record
             for record in npc_records
