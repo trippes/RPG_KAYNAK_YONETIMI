@@ -9,6 +9,7 @@ those rules.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import math
 from types import MappingProxyType
 from typing import Callable, Iterable
 
@@ -398,8 +399,8 @@ class GameplayService:
         """Convert one or more held axial directions into normalized world motion."""
         if isinstance(delta_seconds, bool) or not isinstance(delta_seconds, (int, float)):
             raise TypeError("delta_seconds must be a real number")
-        if delta_seconds < 0 or delta_seconds > 0.25:
-            raise ValueError("delta_seconds must be between 0 and 0.25 seconds")
+        if not math.isfinite(delta_seconds) or delta_seconds < 0 or delta_seconds > 0.25:
+            raise ValueError("delta_seconds must be finite and between 0 and 0.25 seconds")
         normalized = tuple(dict.fromkeys(directions))
         if not normalized:
             entity = self.hex_world_runtime.entity(self.player_actor_id)
