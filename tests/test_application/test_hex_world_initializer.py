@@ -81,6 +81,7 @@ def make_package(directory, *, include_start=True, start=(0, 0)):
     presentation_path = package_path / "placements" / "empty.json"
     presentation = json.loads(presentation_path.read_text(encoding="utf-8"))
     presentation["map_id"] = "village"
+    presentation["objects"] = []
     presentation_path.write_text(json.dumps(presentation), encoding="utf-8")
 
     maps = package_path / "maps"

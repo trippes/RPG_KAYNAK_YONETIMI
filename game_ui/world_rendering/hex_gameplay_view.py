@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import math
+
 from core.domain.spatial import HexDirection, LocalHexPosition
 from game_ui.world_transform import WorldTransform
 
@@ -287,6 +289,8 @@ class HexGameplayView:
         """Create directional sprite sets lazily after Pygame is initialized."""
         if self._character_sprite_factory is not None:
             return
+        if not callable(getattr(renderer.pg, "Surface", None)) or not hasattr(renderer.pg, "SRCALPHA"):
+            return
         self._character_sprite_factory = ProceduralCharacterSpriteFactory()
         self._player_animator = self._character_sprite_factory.create_animator(
             renderer.pg, palette="player",
@@ -505,18 +509,19 @@ class HexGameplayView:
                         item.entity_id,
                         player=item.kind == "player",
                     )
+                    if animator is None:
+                        self.characters.draw(
+                            renderer, foot, max(18.0, radius * 1.25),
+                            self.elapsed_seconds, moving=moving,
+                        )
+                        continue
                     animator.select(
                         direction=self._player_facing if item.kind == "player" else animator.direction,
-                        state=(
-                            "walk" if moving else "idle"
-                        ),
+                        state="walk" if moving else "idle",
                     )
                     self.characters.draw_sprite(
-                        renderer,
-                        animator.current_frame,
-                        foot,
-                        64.0 * self.zoom,
-                        (0.5, 1.0),
+                        renderer, animator.current_frame, foot,
+                        64.0 * self.zoom, (0.5, 1.0),
                         self._character_sprite_cache,
                     )
                 else:

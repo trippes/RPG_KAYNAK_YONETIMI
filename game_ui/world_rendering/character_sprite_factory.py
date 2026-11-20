@@ -1,6 +1,8 @@
 """Lightweight directional fantasy actor sprites generated from vector primitives."""
 from __future__ import annotations
 
+import math
+
 from game_ui.assets.animation import Animation
 from .character_animation import CharacterAnimator
 
@@ -36,6 +38,9 @@ class ProceduralCharacterSpriteFactory:
         "run": (4, 0.08),
     }
 
+    def __init__(self):
+        self._frame_cache = {}
+
     def create_animator(self, pygame_module, *, palette="player") -> CharacterAnimator:
         if palette not in _PALETTES:
             raise ValueError(f"Unknown character sprite palette: {palette}")
@@ -45,8 +50,11 @@ class ProceduralCharacterSpriteFactory:
             states = {}
             for state, (frame_count, duration) in self.STATE_CONFIG.items():
                 frames = tuple(
-                    self._draw_frame(
-                        pygame_module, colors, direction, state, index,
+                    self._frame_cache.setdefault(
+                        (id(pygame_module), palette, direction, state, index),
+                        self._draw_frame(
+                            pygame_module, colors, direction, state, index,
+                        ),
                     )
                     for index in range(frame_count)
                 )
@@ -61,9 +69,9 @@ class ProceduralCharacterSpriteFactory:
         phase = (frame_index / 4.0) * 6.283185307179586
         stride = 0.0
         if state == "walk":
-            stride = pg.math.sin(phase) * 3.0 if hasattr(pg, "math") else __import__("math").sin(phase) * 3.0
+            stride = math.sin(phase) * 3.0
         elif state == "run":
-            stride = __import__("math").sin(phase) * 5.0
+            stride = math.sin(phase) * 5.0
         side = -1 if direction in {"west", "north_west", "south_west"} else 1
         back = direction in {"north", "north_east", "north_west"}
         profile = direction in {"east", "west", "north_east", "south_east", "north_west", "south_west"}
