@@ -3,15 +3,16 @@ from __future__ import annotations
 
 import math
 
+from core.domain.physics import CircleShape, Vector2
+from core.domain.spatial import WorldPoint
 from npc import BehaviorState, NPCRegistry
 
 
 class NPCBehaviorSystem:
-    """Advance content-authored patrol routes through HexWorldRuntime pathfinding.
+    """Advance content-authored patrol routes with pathfinding and continuous physics.
 
-    Route definitions belong to NPC content; route progress belongs to the
-    HexWorldRuntime snapshot. Static collision is checked for each path edge,
-    and accepted cell changes are committed by the runtime's occupancy owner.
+    Route definitions belong to NPC content; waypoint progress belongs to
+    HexWorldRuntime and is included in the unified hex-world save snapshot.
     """
 
     def __init__(self, npcs: NPCRegistry, runtime, physics_snapshot):
@@ -22,7 +23,6 @@ class NPCBehaviorSystem:
         self._npcs = npcs
         self._runtime = runtime
         self._physics_snapshot = physics_snapshot
-        self._elapsed: dict[str, float] = {}
 
     def step(self, delta_seconds: float) -> tuple[str, ...]:
         if isinstance(delta_seconds, bool) or not isinstance(delta_seconds, (int, float)):
@@ -39,28 +39,67 @@ class NPCBehaviorSystem:
                 or npc.behavior_state is not BehaviorState.PATROL
                 or len(npc.patrol_route) < 2
             ):
-                self._elapsed.pop(npc.npc_id, None)
                 continue
             try:
                 entity = self._runtime.entity(npc.npc_id)
+                current = self._runtime.continuous_position(npc.npc_id).point
             except KeyError:
                 continue
             if entity.kind != "npc" or not entity.active:
                 continue
 
-            elapsed = self._elapsed.get(npc.npc_id, 0.0) + delta_seconds
-            if elapsed < npc.patrol_interval_seconds:
-                self._elapsed[npc.npc_id] = elapsed
-                continue
-            self._elapsed[npc.npc_id] = elapsed % npc.patrol_interval_seconds
-
             edge_validator = None
             if self._physics_snapshot is not None:
+                if self._physics_snapshot.map_id != entity.position.map_id:
+                    continue
                 edge_validator = lambda source, destination, body=npc.physics_body: (
                     self._physics_snapshot.can_reach_cell(source, destination, body)
                 )
-            result = self._runtime.patrol(
-                npc.npc_id, npc.patrol_route, edge_validator=edge_validator,
+            waypoint = self._runtime.patrol_target(
+                npc.npc_id, npc.patrol_route,
+            )
+            path = self._runtime.path_to(
+                npc.npc_id, waypoint, edge_validator=edge_validator,
+            )
+            if path is None or len(path) < 2:
+                continue
+
+            next_cell = path[1]
+            if self._physics_snapshot is None:
+                result = self._runtime.move_to(npc.npc_id, next_cell)
+                if result.success:
+                    moved.append(npc.npc_id)
+                continue
+
+            body = npc.physics_body
+            if not body.enabled or not isinstance(body.collider, CircleShape):
+                continue
+            target = self._physics_snapshot.cell_center(next_cell)
+            dx, dy = target.x - current.x, target.y - current.y
+            distance = math.hypot(dx, dy)
+            if distance <= 1e-8:
+                continue
+            # The authored interval is the nominal time to traverse one hex edge.
+            edge_distance = math.sqrt(3.0) * self._runtime.HEX_SIZE
+            speed = edge_distance / npc.patrol_interval_seconds
+            step_distance = min(distance, speed * delta_seconds)
+            resolution = self._physics_snapshot.resolve_motion(
+                current,
+                Vector2(dx / distance * step_distance, dy / distance * step_distance),
+                body,
+            )
+            if resolution.unresolved_penetration > 1e-7:
+                raise RuntimeError(
+                    f"NPC '{npc.npc_id}' patrol left unresolved static penetration."
+                )
+            destination = WorldPoint(
+                current.x + resolution.applied_displacement.x,
+                current.y + resolution.applied_displacement.y,
+            )
+            if destination == current:
+                continue
+            result = self._runtime.set_continuous_position(
+                npc.npc_id, destination,
             )
             if result.success:
                 moved.append(npc.npc_id)
