@@ -304,6 +304,7 @@ class GameWindow:
                 intent,
                 self._movement_clock.step_seconds,
             )
+            self.service._player_movement_mode = intent.mode
             advance_avoidance = getattr(
                 self.service, "advance_npc_avoidance", None,
             )

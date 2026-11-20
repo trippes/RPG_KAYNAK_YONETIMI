@@ -153,7 +153,7 @@ class HexGameplayView:
         self._sync_continuous_visual()
         self._advance_visual_position(self.elapsed_seconds)
         if self._player_animator is not None:
-            state = "walk" if self._visual_moving else "idle"
+            state = self._player_animation_state(self._visual_moving)
             self._player_animator.select(
                 direction=self._player_facing, state=state,
             )
@@ -395,6 +395,12 @@ class HexGameplayView:
             self._npc_animators[actor_id] = animator
         return animator
 
+    def _player_animation_state(self, moving):
+        if not moving:
+            return "idle"
+        mode = getattr(self.service, "_player_movement_mode", None)
+        return "run" if getattr(mode, "value", None) == "running" else "walk"
+
     def _set_player_facing_from_world_delta(self, dx, dy):
         screen_dx, screen_dy = self.transform.project_vector(dx, dy)
         if abs(screen_dx) + abs(screen_dy) < 1e-8:
@@ -604,7 +610,10 @@ class HexGameplayView:
                         continue
                     animator.select(
                         direction=self._player_facing if item.kind == "player" else animator.direction,
-                        state="walk" if moving else "idle",
+                        state=(
+                            self._player_animation_state(moving)
+                            if item.kind == "player" else "idle"
+                        ),
                     )
                     self.characters.draw_sprite(
                         renderer, animator.current_frame, foot,
