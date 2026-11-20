@@ -415,6 +415,11 @@ class HexWorldSnapshot:
                     f"Snapshot places '{record.entity_id}' on a blocked cell."
                 )
 
+        if npc_registry is None and any(record.kind == "npc" for record in self.entities):
+            raise HexWorldPersistenceError(
+                "NPC registry is required to rebuild collider bounds during restore."
+            )
+
         registered = []
         try:
             for record in self.entities:
