@@ -62,6 +62,8 @@ class FakeService:
         self.hex_world_runtime = FakeRuntime()
         self.hex_actor_binding = RecordingActorBinding()
         self.player_actor_id = "hero"
+        self.continuous_directions = []
+        self.continuous_toward = []
 
     def move_player_directions(self, directions, delta_seconds):
         self.continuous_directions.append((tuple(directions), delta_seconds))
