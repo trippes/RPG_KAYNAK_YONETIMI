@@ -138,6 +138,18 @@ class TestContentPack(unittest.TestCase):
                     "gathering_duration_ticks": 60,
                 }],
             }), encoding="utf-8")
+            placement_path = (
+                package_path / "gameplay_placements" / "starting_valley.json"
+            )
+            placement_data = json.loads(
+                placement_path.read_text(encoding="utf-8")
+            )
+            for placement in placement_data["placements"]:
+                if placement["kind"] == "resource_node":
+                    placement["domain_id"] = "oak_01"
+            placement_path.write_text(
+                json.dumps(placement_data), encoding="utf-8",
+            )
 
             application = GameApplication.create_default()
             service, _ids = populate_opening_content(
