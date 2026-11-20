@@ -24,6 +24,7 @@ class HexGameplayView:
     ZOOM_STEP = 0.08
     MOVE_STEP_SECONDS = 0.18
     MOVE_ANIMATION_SECONDS = 0.18
+    PHYSICS_STEP_SECONDS = 1.0 / 60.0
 
     DIRECTIONS = (
         ("right", HexDirection.EAST),
@@ -56,6 +57,8 @@ class HexGameplayView:
         self._move_goal = None
         self._move_map_id = None
         self._movement_accumulator = 0.0
+        self._physics_accumulator = 0.0
+        self._manual_directions = ()
         self._visual_map_id = None
         self._visual_cell = None
         self._visual_position = None
@@ -220,36 +223,46 @@ class HexGameplayView:
                 state="walk" if visual and visual["moving"] else "idle",
             )
             animator.update(self.elapsed_seconds)
-        if self._move_goal is None:
-            return
-        runtime = self.service.hex_world_runtime
-        if runtime is None:
-            self._clear_move_goal()
-            return
-        try:
-            entity = runtime.entity(self.service.player_actor_id)
-        except KeyError:
-            self._clear_move_goal()
-            return
-        if entity.position.map_id != self._move_map_id:
-            self._clear_move_goal()
-            return
-        if entity.position.cell == self._move_goal:
-            self._clear_move_goal()
-            return
+        self._advance_player_physics()
 
-        self._movement_accumulator += self.elapsed_seconds
-        if self._movement_accumulator < self.MOVE_STEP_SECONDS:
+    def _advance_player_physics(self) -> None:
+        """Run player input/path movement through the same 60 Hz physics step."""
+        if not self._manual_directions and self._move_goal is None:
+            self._physics_accumulator = 0.0
             return
-        self._movement_accumulator %= self.MOVE_STEP_SECONDS
-        source_cell = entity.position.cell
-        result = self.service.hex_actor_binding.move_toward(
-            self.service.player_actor_id,
-            self._move_goal,
-        )
-        self._record_move_result(entity.position.map_id, source_cell, result)
-        if not result.success or result.position.cell == self._move_goal:
-            self._clear_move_goal()
+        self._physics_accumulator += min(self.elapsed_seconds, 0.25)
+        steps = 0
+        while (
+            self._physics_accumulator >= self.PHYSICS_STEP_SECONDS
+            and steps < 8
+        ):
+            if self._manual_directions:
+                self.service.move_player_directions(
+                    self._manual_directions, self.PHYSICS_STEP_SECONDS,
+                )
+            elif self._move_goal is not None:
+                runtime = self.service.hex_world_runtime
+                if runtime is None:
+                    self._clear_move_goal()
+                    break
+                try:
+                    entity = runtime.entity(self.service.player_actor_id)
+                except KeyError:
+                    self._clear_move_goal()
+                    break
+                if entity.position.map_id != self._move_map_id:
+                    self._clear_move_goal()
+                    break
+                if entity.position.cell == self._move_goal:
+                    self._clear_move_goal()
+                    break
+                result = self.service.move_player_toward(
+                    self._move_goal, self.PHYSICS_STEP_SECONDS,
+                )
+                if not result.success:
+                    self._clear_move_goal()
+            self._physics_accumulator -= self.PHYSICS_STEP_SECONDS
+            steps += 1
 
     def _sync_continuous_visual(self):
         """Track fixed-step keyboard motion for facing and walk animation."""
@@ -294,6 +307,7 @@ class HexGameplayView:
         self._movement_accumulator = 0.0
 
     def handle(self, state) -> str | None:
+        self._manual_directions = ()
         runtime = self.service.hex_world_runtime
         if runtime is None:
             return
@@ -412,6 +426,7 @@ class HexGameplayView:
             return
 
         manual_move = False
+        manual_directions = []
         for action, direction in self.DIRECTIONS:
             if state.pressed(action):
                 manual_move = True
@@ -432,8 +447,7 @@ class HexGameplayView:
                 )
                 if transition is not None:
                     result = self.service.hex_actor_binding.transition(
-                        actor_id,
-                        transition.transition_id,
+                        actor_id, transition.transition_id,
                     )
                     if result.success:
                         self._visual_map_id = None
@@ -441,10 +455,8 @@ class HexGameplayView:
                         self._visual_position = None
                         self._visual_moving = False
                 else:
-                    result = self.service.hex_actor_binding.move(actor_id, direction)
-                    self._record_move_result(
-                        entity.position.map_id, entity.position.cell, result,
-                    )
+                    manual_directions.append(direction)
+        self._manual_directions = tuple(manual_directions)
         if manual_move:
             self._clear_move_goal()
         elif state.mouse_clicked and state.mouse_pos is not None:
@@ -531,15 +543,7 @@ class HexGameplayView:
                 self._clear_move_goal()
                 self._move_goal = goal
                 self._move_map_id = entity.position.map_id
-                result = self.service.hex_actor_binding.move_toward(
-                    actor_id,
-                    goal,
-                )
-                self._record_move_result(
-                    entity.position.map_id, entity.position.cell, result,
-                )
-                if not result.success or result.position.cell == goal:
-                    self._clear_move_goal()
+                self._physics_accumulator = 0.0
 
     def _ensure_character_animators(self, renderer):
         """Create directional sprite sets lazily after Pygame is initialized."""
