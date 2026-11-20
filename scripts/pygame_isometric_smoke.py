@@ -13,6 +13,7 @@ os.environ.setdefault("PYGAME_HIDE_SUPPORT_PROMPT", "1")
 
 import pygame
 
+from application.content_loader import load_content_package
 from core.domain.spatial import HexCoord
 from game_ui.world_transform import WorldTransform
 from game_ui.world_rendering.depth_sorter import DepthSorter
@@ -50,6 +51,7 @@ def main():
         projection="isometric",
     )
 
+    package = load_content_package(PACKAGE)
     map_data = json.loads(
         (PACKAGE / "hex_maps" / "starting_valley.json").read_text(encoding="utf-8")
     )
@@ -100,14 +102,33 @@ def main():
                 f"scene:{obj.object_id}", "scene", obj, foot,
             ))
 
-    for actor_id, coord, animator in (
-        ("player", HexCoord(0, 0), player),
-        ("warden", HexCoord(1, 0), npc),
-    ):
+    starter = package.files["starter"]
+    start = starter["world"]["hex_start"]
+    player_foot = transform.axial_to_screen(
+        HexCoord(start["q"], start["r"]),
+    )
+    draw_items.append((
+        1, player_foot[1], "actor:player", "actor", player, player_foot,
+    ))
+
+    for placement in package.gameplay_placements.placements:
+        coord = placement.position.cell.to_hex_coord()
         foot = transform.axial_to_screen(coord)
-        draw_items.append((
-            1, foot[1], f"actor:{actor_id}", "actor", animator, foot,
-        ))
+        if placement.kind == "npc":
+            draw_items.append((
+                1, foot[1], f"actor:{placement.domain_id}",
+                "actor", npc, foot,
+            ))
+        elif placement.kind == "resource_node":
+            draw_items.append((
+                1, foot[1], f"resource:{placement.domain_id}",
+                "resource", placement, foot,
+            ))
+        elif placement.kind == "container":
+            draw_items.append((
+                1, foot[1], f"container:{placement.domain_id}",
+                "container", placement, foot,
+            ))
 
     ordered_items = DepthSorter.sort_by_depth(
         draw_items,
@@ -118,10 +139,32 @@ def main():
         if kind == "scene":
             if not pipeline.draw(renderer, item, foot, transform.zoom):
                 pipeline.draw_fallback(renderer, item, foot, transform.zoom)
-        else:
+        elif kind == "actor":
             characters.draw_sprite(
                 renderer, item.current_frame, foot,
                 64.0 * transform.zoom, (0.5, 1.0), {},
+            )
+        elif kind == "resource":
+            center = (round(foot[0]), round(foot[1] - 8 * transform.zoom))
+            pygame.draw.circle(
+                surface, (68, 133, 88), center, max(5, round(8 * transform.zoom)),
+            )
+            pygame.draw.circle(
+                surface, (190, 220, 156), center, max(2, round(3 * transform.zoom)),
+            )
+        elif kind == "container":
+            chest = pygame.Rect(
+                round(foot[0] - 12 * transform.zoom),
+                round(foot[1] - 20 * transform.zoom),
+                max(12, round(24 * transform.zoom)),
+                max(8, round(16 * transform.zoom)),
+            )
+            pygame.draw.rect(surface, (105, 66, 39), chest, border_radius=3)
+            pygame.draw.rect(surface, (207, 166, 91), chest, 2, border_radius=3)
+            pygame.draw.line(
+                surface, (207, 166, 91),
+                (chest.centerx, chest.top + 2),
+                (chest.centerx, chest.bottom - 2), 2,
             )
 
     render_elapsed_ms = (time.perf_counter() - render_started) * 1000.0
@@ -144,12 +187,14 @@ def main():
         for x in range(0, WIDTH, 24)
         for y in range(0, HEIGHT, 24)
     }
-    assert len(pipeline.objects_for_map("starting_valley")) == 8
+    assert len(pipeline.objects_for_map("starting_valley")) == 14
+    assert len(package.gameplay_placements.placements) == 3
     assert len(sampled) > 12, "The composed isometric scene appears blank."
     assert OUTPUT.is_file() and OUTPUT.stat().st_size > 10_000
     print(
         f"Isometric render smoke passed: {len(pipeline.objects_for_map('starting_valley'))} "
-        f"scene objects, {pipeline.loaded_asset_count} assets, {len(sampled)} sampled colors, "
+        f"scene objects, {len(package.gameplay_placements.placements)} gameplay placements, "
+        f"{pipeline.loaded_asset_count} assets, {len(sampled)} sampled colors, "
         f"{render_elapsed_ms:.2f} ms composition time."
     )
     pygame.quit()
