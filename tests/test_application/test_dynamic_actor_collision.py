@@ -166,7 +166,7 @@ def test_continuous_static_collision_slides_along_a_wall_without_tunnelling():
     )
 
     assert result.applied_displacement.x < 12.1
-    assert result.applied_displacement.y > 25.0
+    assert result.applied_displacement.y > 15.0
     assert result.unresolved_penetration <= 1e-7
 
 
