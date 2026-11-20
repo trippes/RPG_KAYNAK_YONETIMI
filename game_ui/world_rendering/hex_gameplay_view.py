@@ -44,6 +44,7 @@ class HexGameplayView:
         self._character_sprite_factory = None
         self._player_animator = None
         self._npc_animators = {}
+        self._npc_visual_states = {}
         self._player_facing = "south"
         self._character_sprite_cache = {}
         self._last_render_stats = {}
@@ -155,18 +156,65 @@ class HexGameplayView:
         if result is not None and result.success:
             self._begin_visual_move(map_id, source_cell, result.position.cell)
 
+    def _advance_npc_visuals(self, delta_seconds):
+        runtime = getattr(self.service, "hex_world_runtime", None)
+        if runtime is None:
+            return
+        active_ids = set()
+        for entity in runtime.entities():
+            if entity.kind != "npc":
+                continue
+            active_ids.add(entity.entity_id)
+            try:
+                point = runtime.continuous_position(entity.entity_id).point
+                target = (point.x, point.y)
+            except KeyError:
+                continue
+            state = self._npc_visual_states.get(entity.entity_id)
+            if state is None:
+                state = {
+                    "start": target, "target": target, "current": target,
+                    "elapsed": 0.18, "moving": False, "direction": "south",
+                }
+                self._npc_visual_states[entity.entity_id] = state
+            elif target != state["target"]:
+                current = state["current"]
+                state["start"] = current
+                state["target"] = target
+                state["elapsed"] = 0.0
+                state["moving"] = True
+                state["direction"] = self._direction_from_world_delta(
+                    target[0] - current[0], target[1] - current[1],
+                )
+            if state["elapsed"] < 0.18:
+                state["elapsed"] = min(0.18, state["elapsed"] + delta_seconds)
+            progress = min(1.0, state["elapsed"] / 0.18)
+            eased = progress * progress * (3.0 - 2.0 * progress)
+            state["current"] = (
+                state["start"][0] + (state["target"][0] - state["start"][0]) * eased,
+                state["start"][1] + (state["target"][1] - state["start"][1]) * eased,
+            )
+            state["moving"] = progress < 1.0
+        for stale_id in set(self._npc_visual_states) - active_ids:
+            self._npc_visual_states.pop(stale_id, None)
+
     def update(self, elapsed_seconds: float = 0.0) -> None:
         self.elapsed_seconds = max(0.0, float(elapsed_seconds))
         self._sync_continuous_visual()
         self._advance_visual_position(self.elapsed_seconds)
+        self._advance_npc_visuals(self.elapsed_seconds)
         if self._player_animator is not None:
             state = self._player_animation_state(self._visual_moving)
             self._player_animator.select(
                 direction=self._player_facing, state=state,
             )
             self._player_animator.update(self.elapsed_seconds)
-        for animator in self._npc_animators.values():
-            animator.select(state="idle")
+        for npc_id, animator in self._npc_animators.items():
+            visual = self._npc_visual_states.get(npc_id)
+            animator.select(
+                direction=visual["direction"] if visual else animator.direction,
+                state="walk" if visual and visual["moving"] else "idle",
+            )
             animator.update(self.elapsed_seconds)
         if self._move_goal is None:
             return
@@ -422,17 +470,21 @@ class HexGameplayView:
         mode = getattr(self.service, "_player_movement_mode", None)
         return "run" if getattr(mode, "value", None) == "running" else "walk"
 
-    def _set_player_facing_from_world_delta(self, dx, dy):
+    def _direction_from_world_delta(self, dx, dy):
         screen_dx, screen_dy = self.transform.project_vector(dx, dy)
         if abs(screen_dx) + abs(screen_dy) < 1e-8:
-            return
+            return "south"
         angle = math.degrees(math.atan2(screen_dy, screen_dx))
         directions = (
             "east", "south_east", "south", "south_west",
             "west", "north_west", "north", "north_east",
         )
-        sector = int(round(angle / 45.0)) % 8
-        self._player_facing = directions[sector]
+        return directions[int(round(angle / 45.0)) % 8]
+
+    def _set_player_facing_from_world_delta(self, dx, dy):
+        direction = self._direction_from_world_delta(dx, dy)
+        if direction:
+            self._player_facing = direction
 
     def _ensure_scene_pipeline(self, renderer):
         """Load validated map-authored presentation props once per gameplay view."""
@@ -566,10 +618,15 @@ class HexGameplayView:
                     foot = self.transform.world_to_screen(*self._visual_position)
                     moving = self._visual_moving
                 elif entity.continuous_position is not None:
-                    foot = self.transform.world_point_to_screen(
-                        entity.continuous_position.point
+                    visual = self._npc_visual_states.get(entity.entity_id)
+                    world_position = (
+                        visual["current"] if visual else (
+                            entity.continuous_position.point.x,
+                            entity.continuous_position.point.y,
+                        )
                     )
-                    moving = False
+                    foot = self.transform.world_to_screen(*world_position)
+                    moving = bool(visual and visual["moving"])
                 else:
                     foot = self.transform.axial_to_screen(
                         entity.position.cell.to_hex_coord()
@@ -638,11 +695,20 @@ class HexGameplayView:
                             self.elapsed_seconds, moving=moving,
                         )
                         continue
+                    npc_visual = (
+                        self._npc_visual_states.get(item.entity_id)
+                        if item.kind == "npc" else None
+                    )
                     animator.select(
-                        direction=self._player_facing if item.kind == "player" else animator.direction,
+                        direction=(
+                            self._player_facing if item.kind == "player"
+                            else npc_visual["direction"] if npc_visual
+                            else animator.direction
+                        ),
                         state=(
                             self._player_animation_state(moving)
-                            if item.kind == "player" else "idle"
+                            if item.kind == "player"
+                            else "walk" if moving else "idle"
                         ),
                     )
                     self.characters.draw_sprite(
