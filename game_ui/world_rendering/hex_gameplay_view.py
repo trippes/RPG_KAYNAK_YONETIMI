@@ -254,8 +254,18 @@ class HexGameplayView:
                     self._clear_move_goal()
                     break
                 if entity.position.cell == self._move_goal:
-                    self._clear_move_goal()
-                    break
+                    binding = self.service.hex_actor_binding
+                    snapshot = binding.physics_snapshot
+                    if snapshot is None:
+                        self._clear_move_goal()
+                        break
+                    current = runtime.continuous_position(
+                        self.service.player_actor_id,
+                    ).point
+                    target = snapshot.cell_center(self._move_goal)
+                    if math.hypot(current.x - target.x, current.y - target.y) <= 0.5:
+                        self._clear_move_goal()
+                        break
                 result = self.service.move_player_toward(
                     self._move_goal, self.PHYSICS_STEP_SECONDS,
                 )
