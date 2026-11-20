@@ -802,6 +802,8 @@ class GameWindow:
                 self._set_notice(f"Kaynak toplanamadı: {error}", "error")
             next_screen = self.gameplay_screen
         elif isinstance(next_screen, str) and next_screen.startswith("structure:"):
+            facility_id = next_screen.split(":", 1)[1]
+            self.screens["production"].set_facility(facility_id)
             self.window_manager.open("production")
             next_screen = self.gameplay_screen
         elif isinstance(next_screen, str) and next_screen.startswith("door:"):
