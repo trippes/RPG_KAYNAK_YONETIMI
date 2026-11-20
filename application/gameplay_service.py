@@ -425,7 +425,7 @@ class GameplayService:
         length = (dx * dx + dy * dy) ** 0.5
         if length <= 1e-9 or delta_seconds == 0:
             return MovementResult(True, entity.position)
-        distance = min(1.0, length / length) * self.PLAYER_MOVE_SPEED * delta_seconds
+        distance = self.PLAYER_MOVE_SPEED * delta_seconds
         return self.move_player_continuously(
             Vector2(dx / length * distance, dy / length * distance),
         )
