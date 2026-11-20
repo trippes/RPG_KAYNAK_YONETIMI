@@ -34,7 +34,9 @@ def test_pipeline_loads_map_scoped_objects_and_caches_referenced_assets():
 
     objects = pipeline.objects_for_map("starting_valley")
 
-    assert len(objects) == 14
+    assert len(objects) == 15
+    workbench = next(obj for obj in objects if obj.object_id == "village-workbench")
+    assert workbench.kind == "structure"
     assert pipeline.loaded_asset_count == 3
     assert pipeline.objects_for_map("missing_map") == ()
 
