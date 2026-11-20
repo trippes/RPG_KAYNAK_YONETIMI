@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 
-from core.domain.spatial import HexDirection, WorldPoint, world_point_to_hex
+from core.domain.spatial import HexDirection, LocalHexPosition, WorldPoint, world_point_to_hex
 from game_ui.world_transform import WorldTransform
 
 from .camera import HexCamera
