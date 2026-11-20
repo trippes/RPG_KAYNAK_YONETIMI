@@ -11,6 +11,7 @@ from application.content_loader import load_content_package
 from application.hex_world_initializer import initialize_hex_world
 from application.content_pack import (
     load_character_definitions,
+    load_container_definitions,
     load_gameplay_rules,
     load_npc_definitions,
     load_quest_definitions,
@@ -32,6 +33,8 @@ class TestContentPack(unittest.TestCase):
         self.assertEqual(tuple(npc["id"] for npc in npcs), ("warden_lyra",))
         self.assertEqual(npcs[0]["behavior_state"], "patrol")
         self.assertEqual(npcs[0]["patrol_route"], [[1, 0], [2, 0], [2, 1], [1, 1]])
+        containers = load_container_definitions(package_path=PACKAGE)
+        self.assertEqual(tuple(item["container_id"] for item in containers), ("village_chest",))
         self.assertEqual(load_quest_definitions(package_path=PACKAGE), ())
         resources = load_resource_definitions(package_path=PACKAGE)
         self.assertEqual(tuple(node["id"] for node in resources), ("herb_patch_01",))
@@ -101,6 +104,17 @@ class TestContentPack(unittest.TestCase):
             service.world_target_at_world_point("starting_valley", world_point),
             ("resource_node", "herb_patch_01"),
         )
+        chest_point = axial_to_world_point(
+            LocalHexPosition(0, 1).to_hex_coord(), runtime.HEX_SIZE,
+        )
+        self.assertEqual(
+            service.world_target_at_world_point("starting_valley", chest_point),
+            ("container", "village_chest"),
+        )
+        opened = service.open_container(
+            ids.hero_id, "player", "village_chest",
+        )
+        self.assertEqual(opened.container_id, "village_chest")
         activity = service.start_gathering_one(
             ids.hero_id, "herb_patch_01", "player",
         )
