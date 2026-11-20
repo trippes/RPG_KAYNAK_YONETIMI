@@ -11,6 +11,8 @@ from types import MappingProxyType
 
 from application import GameplayService
 from core.errors import RPGError
+from core.entity import Entity, EntityType
+from containers import ContainerDefinition, ContainerInstance
 from core.domain.physics import CircleShape, PhysicsBodyDefinition
 from core.domain.spatial import LocalHexPosition
 from application.content_loader import ContentPackageError, load_content_package
@@ -764,6 +766,58 @@ def populate_gameplay_resources(service, definition_path=None, resource_definiti
             bundle.simulation.current_tick,
             record["gathering_duration_ticks"],
         ))
+    for record in load_container_definitions(package_path=active_package_path):
+        definition = ContainerDefinition(
+            definition_id=record["definition_id"],
+            name=record["name"],
+            empty_weight_kg=record.get("empty_weight_kg", 0.0),
+            outer_volume_liters=record.get("outer_volume_liters", 0.0),
+            max_contents_weight_kg=record.get("max_contents_weight_kg"),
+            max_slots=record.get("max_slots"),
+            max_contents_volume_liters=record.get("max_contents_volume_liters"),
+            nesting_enabled=record.get("nesting_enabled", True),
+            max_nesting_depth=record.get("max_nesting_depth", 1),
+            allowed_item_tags=tuple(record.get("allowed_item_tags", ())),
+            denied_item_tags=tuple(record.get("denied_item_tags", ())),
+            allowed_resource_tags=tuple(record.get("allowed_resource_tags", ())),
+            denied_resource_tags=tuple(record.get("denied_resource_tags", ())),
+            allowed_container_tags=tuple(record.get("allowed_container_tags", ())),
+            denied_container_tags=tuple(record.get("denied_container_tags", ())),
+            container_tags=tuple(record.get("container_tags", ())),
+            break_profile_id=record.get("break_profile_id"),
+        )
+        existing_definition = bundle.containers.definition(definition.definition_id)
+        if existing_definition is None:
+            service.register_container_definition(definition)
+        elif existing_definition != definition:
+            raise ContentDefinitionError(
+                f"Existing container definition '{definition.definition_id}' conflicts with package configuration."
+            )
+        existing_instance = bundle.containers.get(record["container_id"])
+        if existing_instance is None:
+            entity = bundle.session.entities.get(record["entity_id"])
+            if entity is None:
+                entity = Entity(
+                    EntityType.ESYA, record["name"],
+                    entity_id=record["entity_id"],
+                )
+                service.application.varlik_ekle(entity, world_id=world.world_id)
+            elif entity.entity_type is not EntityType.ESYA:
+                raise ContentDefinitionError(
+                    f"Container entity '{record['entity_id']}' must be an ESYA entity."
+                )
+            service.register_container(ContainerInstance(
+                record["container_id"],
+                record["entity_id"],
+                record["definition_id"],
+            ))
+        elif (
+            existing_instance.entity_id != record["entity_id"]
+            or existing_instance.definition_id != record["definition_id"]
+        ):
+            raise ContentDefinitionError(
+                f"Existing container '{record['container_id']}' conflicts with package configuration."
+            )
     inventories = dict(bundle.inventories)
     inventories.setdefault(player_rules["inventory_id"], Inventory())
     object.__setattr__(bundle, "inventories", MappingProxyType(inventories))
@@ -905,6 +959,65 @@ def load_movement_configs(
         for actor_id, profile in profiles.items()
     }
     return MappingProxyType(configs)
+
+
+def load_container_definitions(
+    path: str | Path | None = None,
+    *,
+    package_path: str | Path | None = None,
+) -> tuple[dict, ...]:
+    """Load and validate container definitions and world-instance identities."""
+    definition = (
+        _load_package_file("containers", package_path)
+        if path is None
+        else _read_json_definition(Path(path), "Container definition")
+    )
+    if definition.get("schema_version") != CONTENT_SCHEMA_VERSION:
+        raise ContentDefinitionError("Unsupported container definition schema version.")
+    records = definition.get("containers")
+    if not isinstance(records, list):
+        raise ContentDefinitionError("Container definitions must contain a 'containers' list.")
+    container_ids, entity_ids = set(), set()
+    for index, record in enumerate(records):
+        if not isinstance(record, dict):
+            raise ContentDefinitionError(f"Container record at index {index} must be an object.")
+        for key in ("container_id", "entity_id", "definition_id", "name"):
+            value = record.get(key)
+            if not isinstance(value, str) or not value.strip():
+                raise ContentDefinitionError(
+                    f"Container record at index {index} has an invalid {key}."
+                )
+        if record["container_id"] in container_ids:
+            raise ContentDefinitionError(f"Duplicate container id: {record['container_id']}")
+        if record["entity_id"] in entity_ids:
+            raise ContentDefinitionError(f"Duplicate container entity id: {record['entity_id']}")
+        container_ids.add(record["container_id"])
+        entity_ids.add(record["entity_id"])
+        try:
+            ContainerDefinition(
+                definition_id=record["definition_id"],
+                name=record["name"],
+                empty_weight_kg=record.get("empty_weight_kg", 0.0),
+                outer_volume_liters=record.get("outer_volume_liters", 0.0),
+                max_contents_weight_kg=record.get("max_contents_weight_kg"),
+                max_slots=record.get("max_slots"),
+                max_contents_volume_liters=record.get("max_contents_volume_liters"),
+                nesting_enabled=record.get("nesting_enabled", True),
+                max_nesting_depth=record.get("max_nesting_depth", 1),
+                allowed_item_tags=tuple(record.get("allowed_item_tags", ())),
+                denied_item_tags=tuple(record.get("denied_item_tags", ())),
+                allowed_resource_tags=tuple(record.get("allowed_resource_tags", ())),
+                denied_resource_tags=tuple(record.get("denied_resource_tags", ())),
+                allowed_container_tags=tuple(record.get("allowed_container_tags", ())),
+                denied_container_tags=tuple(record.get("denied_container_tags", ())),
+                container_tags=tuple(record.get("container_tags", ())),
+                break_profile_id=record.get("break_profile_id"),
+            )
+        except (TypeError, ValueError) as error:
+            raise ContentDefinitionError(
+                f"Container '{record['container_id']}' definition is invalid: {error}"
+            ) from error
+    return tuple(records)
 
 
 def load_resource_definitions(path: str | Path | None = None, *, package_path: str | Path | None = None) -> tuple[dict, ...]:
