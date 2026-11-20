@@ -106,6 +106,25 @@
       ],
       "collision": null,
       "placement": "ground"
+    },
+    {
+      "asset_id": "structure.workbench",
+      "path": "assets/workbench.png",
+      "width": 64,
+      "height": 48,
+      "scale": 0.65,
+      "anchor": [
+        0.5,
+        1
+      ],
+      "collision": [
+        -14,
+        -9,
+        28,
+        9
+      ],
+      "placement": "ground",
+      "depth_offset": 0
     }
   ]
 }
