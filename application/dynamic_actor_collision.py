@@ -56,7 +56,10 @@ class DynamicActorCollisionResolver:
                 continue
             try:
                 entity = self._runtime.entity(npc_id)
-                if entity.kind != "npc" or not entity.active:
+                if (
+                    entity.kind != "npc" or not entity.active
+                    or entity.position.map_id != self._snapshot.map_id
+                ):
                     continue
                 position = self._runtime.continuous_position(npc_id).point
             except KeyError:
@@ -189,7 +192,10 @@ class DynamicActorCollisionResolver:
         if not player_body.enabled or not isinstance(player_body.collider, CircleShape):
             return ()
         player = self._runtime.entity(player_id)
-        if player.kind != "player" or not player.active:
+        if (
+            player.kind != "player" or not player.active
+            or player.position.map_id != self._snapshot.map_id
+        ):
             return ()
         player_position = self._runtime.continuous_position(player_id).point
         player_shape = ActorBodyTransform(player_position).transform_shape(player_body)
@@ -267,6 +273,8 @@ class DynamicActorCollisionResolver:
             max(start.y, proposed.y) + broadphase_margin,
         )
         map_id = self._runtime.entity(actor_id).position.map_id
+        if map_id != self._snapshot.map_id:
+            raise ValueError("player actor and physics snapshot belong to different maps")
         candidate_ids = self._runtime.query_spatial_candidates(map_id, bounds)
         player_position = proposed
         pushes = []
