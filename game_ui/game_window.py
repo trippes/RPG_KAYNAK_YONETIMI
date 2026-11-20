@@ -260,6 +260,7 @@ class GameWindow:
         intent,
         *,
         active,
+        click_to_move=False,
     ):
         """Consume fixed movement steps without advancing canonical world time."""
         service = getattr(self, "service", None)
@@ -268,20 +269,16 @@ class GameWindow:
             return
         actor_id = service.player_actor_id
         config = self._movement_configs.get(actor_id)
-        active = (
-            active
-            and config is not None
-            and self.movement_input is not None
-            and self.movement_input.focused
+        input_focused = (
+            self.movement_input is not None and self.movement_input.focused
         )
+        active = active and config is not None and (input_focused or click_to_move)
         step_count = self._movement_clock.advance(
             elapsed_seconds,
             active=active,
         )
         if not active:
             return
-        if intent is not None and intent.is_moving:
-            self.screens[self.gameplay_screen].cancel_click_to_move()
         if step_count <= 0:
             return
 
@@ -299,12 +296,17 @@ class GameWindow:
             npc_bodies=getattr(self.service, "npc_physics_bodies", {}),
         )
         for _ in range(step_count):
+            step_intent = intent
+            if click_to_move:
+                step_intent = self.screens[self.gameplay_screen].click_move_intent()
+                if not step_intent.is_moving:
+                    break
             controller.step(
                 actor_id,
-                intent,
+                step_intent,
                 self._movement_clock.step_seconds,
             )
-            self.service._player_movement_mode = intent.mode
+            self.service._player_movement_mode = step_intent.mode
             advance_patrols = getattr(
                 self.service, "advance_npc_patrols", None,
             )
@@ -918,10 +920,21 @@ class GameWindow:
             and not self.window_manager.open_ids
             and self.current == self.gameplay_screen
         )
+        manual_movement = movement_intent is not None and movement_intent.is_moving
+        if manual_movement:
+            self.screens[self.gameplay_screen].cancel_click_to_move()
+        click_to_move = (
+            movement_active
+            and not manual_movement
+            and bool(getattr(
+                self.screens[self.gameplay_screen], "has_click_move_goal", False,
+            ))
+        )
         self._advance_continuous_player_movement(
             elapsed_seconds,
             movement_intent,
             active=movement_active,
+            click_to_move=click_to_move,
         )
 
         if self.gameplay_active:
