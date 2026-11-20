@@ -105,6 +105,7 @@ class NPCSpatialBindingService:
             blocks_movement=blocks_movement,
             blocks_occupancy=blocks_occupancy,
             local_spatial_bounds=_local_physics_bounds(npc.physics_body),
+            broadphase_enabled=npc.physics_body.enabled,
         )
 
     def move(self, npc_id: str, direction: HexDirection) -> MovementResult:
