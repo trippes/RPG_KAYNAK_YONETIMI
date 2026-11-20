@@ -1030,8 +1030,10 @@ class GameWindow:
             self._frame_phase_times["display_flip"] = (
                 perf_counter_ns() - flip_started
             ) / 1_000_000.0
-            get_rawtime = getattr(clock, "get_rawtime", None)
-            raw_frame_ms = get_rawtime() if callable(get_rawtime) else elapsed_seconds * 1000.0
+            raw_frame_ms = (
+                self._frame_phase_times["game_step"]
+                + self._frame_phase_times["display_flip"]
+            )
             self.performance_monitor.record_frame(
                 raw_frame_ms,
                 phases=self._frame_phase_times,
