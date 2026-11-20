@@ -12,5 +12,6 @@
   },
   "maps": "hex_maps",
   "asset_catalog": "asset_catalog.json",
-  "map_placements": "placements"
+  "map_placements": "placements",
+  "gameplay_placements": "gameplay_placements"
 }
