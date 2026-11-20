@@ -9,6 +9,14 @@
       "r": 0,
       "blocks_movement": true,
       "blocks_occupancy": true
+    },
+    {
+      "domain_id": "herb_patch_01",
+      "kind": "resource_node",
+      "q": -1,
+      "r": 0,
+      "blocks_movement": false,
+      "blocks_occupancy": false
     }
   ]
 }
