@@ -486,3 +486,17 @@ def test_restore_preserves_disabled_npc_body_participation_from_content():
     assert target.entity("guard").entity_id == "guard"
     assert target.occupancy.get("guard") is not None
     assert target.query_spatial_candidates("field", AABB.around_point(anchor, 0.1)) == ()
+
+
+def test_restore_requires_npc_registry_to_reconstruct_physics_bounds():
+    snapshot = HexWorldSnapshot(
+        WorldId("world"),
+        (record("guard", LocalHexPosition(0, 0), kind="npc"),),
+    )
+    target = make_runtime()
+
+    with pytest.raises(HexWorldPersistenceError, match="NPC registry is required"):
+        snapshot.restore_into(target)
+
+    assert target.entities() == ()
+    assert target.occupancy.snapshot() == ()
