@@ -8,7 +8,8 @@
     "quests": "quests.json",
     "resources": "resources.json",
     "characters": "characters.json",
-    "gameplay_rules": "gameplay_rules.json"
+    "gameplay_rules": "gameplay_rules.json",
+    "containers": "containers.json"
   },
   "maps": "hex_maps",
   "asset_catalog": "asset_catalog.json",
