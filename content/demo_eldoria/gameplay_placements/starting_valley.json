@@ -17,6 +17,14 @@
       "r": 0,
       "blocks_movement": false,
       "blocks_occupancy": false
+    },
+    {
+      "domain_id": "village_chest",
+      "kind": "container",
+      "q": 0,
+      "r": 1,
+      "blocks_movement": true,
+      "blocks_occupancy": true
     }
   ]
 }
