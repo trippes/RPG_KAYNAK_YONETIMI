@@ -13,7 +13,10 @@ from types import MappingProxyType
 from typing import Callable, Iterable
 
 from core.time import Tick
-from core.domain.spatial import EntityPosition, WorldPoint
+from core.domain.spatial import (
+    EntityPosition, HexDirection, LocalHexPosition, MovementFailureReason,
+    MovementResult, WorldPoint,
+)
 from core.actions import ActionType, action_tick_cost
 from core.foundation import Identifier, WorldId
 from core.entity import EntityType
@@ -29,7 +32,7 @@ from .actor_system import ActivityView, ActorView, WorldActor
 from .hex_actor_binding import ActorHexBindingService
 from .hex_physics_bridge import build_hex_physics_snapshot
 from .scene_physics_adapter import build_scene_object_obstacles
-from core.domain.physics import CircleShape, PhysicsBodyDefinition
+from core.domain.physics import CircleShape, PhysicsBodyDefinition, Vector2
 
 from .container_hex_binding import ContainerHexBindingService
 from .gameplay_placement_catalog import GameplayPlacementCatalog
@@ -324,6 +327,159 @@ class GameplayService:
                 f"Hex runtime is not bound to the active world: {error}"
             ) from error
 
+    PLAYER_MOVE_SPEED = 300.0
+
+    def move_player_continuously(self, displacement: Vector2) -> MovementResult:
+        """Resolve one fixed-step player displacement and commit all spatial owners.
+
+        Static geometry is swept first (including contact sliding), then dynamic
+        NPC bodies are pushed. HexWorldRuntime remains the sole writer of actor
+        position, occupancy, and broadphase state.
+        """
+        if not isinstance(displacement, Vector2):
+            raise TypeError("displacement must be a Vector2")
+        binding = self.hex_actor_binding
+        runtime = binding.runtime
+        actor_id = self.player_actor_id
+        actor = binding.actor(actor_id)
+        entity = runtime.entity(actor_id)
+        if not actor.active or not entity.active or not entity.profile.can_move:
+            return MovementResult(
+                False, entity.position, MovementFailureReason.MOVEMENT_NOT_ALLOWED,
+                "Player movement is not allowed.",
+            )
+        snapshot = binding.physics_snapshot
+        body = binding.player_body
+        if snapshot is None or body is None:
+            raise GameplayServiceError("Player continuous movement requires a physics snapshot and body.")
+        start = runtime.continuous_position(actor_id).point
+        static_resolution = snapshot.resolve_motion(start, displacement, body)
+        if static_resolution.unresolved_penetration > 1e-7:
+            raise GameplayServiceError("Player movement left unresolved static penetration.")
+        proposed = WorldPoint(
+            start.x + static_resolution.applied_displacement.x,
+            start.y + static_resolution.applied_displacement.y,
+        )
+        if proposed == start:
+            return MovementResult(
+                False, entity.position, MovementFailureReason.PHYSICAL_COLLISION,
+                "Static geometry blocked player movement.",
+            )
+
+        from .dynamic_actor_collision import DynamicActorCollisionResolver
+
+        dynamic = DynamicActorCollisionResolver(runtime, snapshot).resolve_player_motion(
+            actor_id, start, proposed, body, self.npc_physics_bodies,
+        )
+        target = dynamic.player_position
+        if target == start:
+            return MovementResult(
+                False, entity.position, MovementFailureReason.PHYSICAL_COLLISION,
+                "A dynamic actor blocked player movement.",
+            )
+        committed = runtime.set_continuous_position(actor_id, target)
+        if not committed.success:
+            # NPC pushes are provisional until the player position is accepted.
+            # Restore them in reverse order so a failed player move is atomic.
+            for push in reversed(dynamic.pushes):
+                rollback = runtime.set_continuous_position(
+                    push.entity_id, push.previous_position,
+                )
+                if not rollback.success:
+                    raise GameplayServiceError(
+                        f"Could not roll back NPC '{push.entity_id}' after player movement rejection."
+                    )
+            return committed
+        return MovementResult(True, runtime.entity(actor_id).position)
+
+    def move_player_directions(
+        self, directions: Iterable[HexDirection], delta_seconds: float,
+    ) -> MovementResult:
+        """Convert one or more held axial directions into normalized world motion."""
+        if isinstance(delta_seconds, bool) or not isinstance(delta_seconds, (int, float)):
+            raise TypeError("delta_seconds must be a real number")
+        if delta_seconds < 0 or delta_seconds > 0.25:
+            raise ValueError("delta_seconds must be between 0 and 0.25 seconds")
+        normalized = tuple(dict.fromkeys(directions))
+        if not normalized:
+            entity = self.hex_world_runtime.entity(self.player_actor_id)
+            return MovementResult(True, entity.position)
+        if any(not isinstance(direction, HexDirection) for direction in normalized):
+            raise TypeError("directions must contain HexDirection values")
+        binding = self.hex_actor_binding
+        runtime = binding.runtime
+        entity = runtime.entity(self.player_actor_id)
+        snapshot = binding.physics_snapshot
+        if snapshot is None:
+            raise GameplayServiceError("Player movement requires an initialized physics snapshot.")
+        source = entity.position.cell
+        source_point = snapshot.cell_center(source)
+        dx = dy = 0.0
+        for direction in normalized:
+            target = LocalHexPosition.from_hex_coord(
+                source.to_hex_coord().neighbor(direction),
+            )
+            target_point = snapshot.cell_center(target)
+            dx += target_point.x - source_point.x
+            dy += target_point.y - source_point.y
+        length = (dx * dx + dy * dy) ** 0.5
+        if length <= 1e-9 or delta_seconds == 0:
+            return MovementResult(True, entity.position)
+        distance = min(1.0, length / length) * self.PLAYER_MOVE_SPEED * delta_seconds
+        return self.move_player_continuously(
+            Vector2(dx / length * distance, dy / length * distance),
+        )
+
+    def move_player_toward(
+        self, goal: LocalHexPosition, delta_seconds: float,
+    ) -> MovementResult:
+        """Follow one deterministic path edge using continuous collision motion."""
+        if not isinstance(goal, LocalHexPosition):
+            raise TypeError("goal must be a LocalHexPosition")
+        if isinstance(delta_seconds, bool) or not isinstance(delta_seconds, (int, float)):
+            raise TypeError("delta_seconds must be a real number")
+        if delta_seconds < 0 or delta_seconds > 0.25:
+            raise ValueError("delta_seconds must be between 0 and 0.25 seconds")
+        binding = self.hex_actor_binding
+        runtime = binding.runtime
+        entity = runtime.entity(self.player_actor_id)
+        if entity.position.cell == goal:
+            return MovementResult(True, entity.position)
+        snapshot = binding.physics_snapshot
+        body = binding.player_body
+        if snapshot is None or body is None:
+            raise GameplayServiceError("Player path movement requires a physics snapshot and body.")
+        path = runtime.path_to(
+            self.player_actor_id, goal,
+            edge_validator=lambda source, target: snapshot.can_reach_cell(source, target, body),
+        )
+        if path is None or len(path) < 2:
+            return MovementResult(
+                False, entity.position, MovementFailureReason.INVALID_TARGET,
+                "No collision-free path to target.",
+            )
+        current = runtime.continuous_position(self.player_actor_id).point
+        target = snapshot.cell_center(path[1])
+        dx, dy = target.x - current.x, target.y - current.y
+        distance = (dx * dx + dy * dy) ** 0.5
+        if distance <= 1e-8 or delta_seconds == 0:
+            return MovementResult(True, entity.position)
+        step = min(distance, self.PLAYER_MOVE_SPEED * delta_seconds)
+        return self.move_player_continuously(
+            Vector2(dx / distance * step, dy / distance * step),
+        )
+
+    def _resolve_npc_body_overlaps(self) -> tuple[str, ...]:
+        """Keep enabled NPC bodies separated after autonomous movement ticks."""
+        binding = self.hex_actor_binding
+        if binding.physics_snapshot is None:
+            return ()
+        from .dynamic_actor_collision import DynamicActorCollisionResolver
+
+        return DynamicActorCollisionResolver(
+            binding.runtime, binding.physics_snapshot,
+        ).resolve_npc_pairs(self.npc_physics_bodies)
+
     @property
     def npc_hex_binding(self) -> NPCSpatialBindingService:
         """Resolve NPC spatial operations through the active world's actor binding."""
@@ -351,7 +507,9 @@ class GameplayService:
                 bundle.social.npcs, runtime, binding.physics_snapshot,
             )
             self._npc_behavior_system_key = key
-        return self._npc_behavior_system.step(delta_seconds)
+        moved = self._npc_behavior_system.step(delta_seconds)
+        separated = self._resolve_npc_body_overlaps()
+        return tuple(sorted(set(moved) | set(separated)))
 
     def advance_npc_avoidance(self, delta_seconds: float):
         """Advance opt-in fleeing/spacing steering during the fixed gameplay step."""
@@ -408,7 +566,9 @@ class GameplayService:
     def advance_companions(self, delta_seconds: float):
         if self.hex_world_runtime is None:
             return ()
-        return self.companion_command_service.tick(delta_seconds)
+        moved = self.companion_command_service.tick(delta_seconds)
+        separated = self._resolve_npc_body_overlaps()
+        return tuple(sorted(set(moved) | set(separated)))
 
     @property
     def npc_physics_bodies(self):
