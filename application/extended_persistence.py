@@ -2,9 +2,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import math
 from typing import Mapping
 
-from core.domain.spatial import ContinuousEntityPosition, WorldPoint
+from core.domain.spatial import ContinuousEntityPosition, LocalHexPosition, WorldPoint
 from npc import (
     BehaviorController, BehaviorState, CompanionCommand, CompanionRegistry,
     Faction, NPC, NPCRegistry, Relationship, RelationshipGraph,
@@ -78,6 +79,27 @@ class SocialSnapshot:
         for npc in npcs:
             if npc.get("behavior_state", BehaviorState.IDLE.value) not in valid_behavior_states:
                 raise ValueError("Unknown NPC behavior state.")
+            raw_route = npc.get("patrol_route", [])
+            if not isinstance(raw_route, list):
+                raise ValueError("NPC patrol_route must be a list.")
+            route = []
+            for point in raw_route:
+                if (
+                    not isinstance(point, list) or len(point) != 2
+                    or type(point[0]) is not int or type(point[1]) is not int
+                ):
+                    raise ValueError("NPC patrol waypoints must be integer [q, r] pairs.")
+                route.append([point[0], point[1]])
+            npc["patrol_route"] = route
+            interval = npc.get("patrol_interval_seconds", 0.5)
+            if (
+                isinstance(interval, bool)
+                or not isinstance(interval, (int, float))
+                or not math.isfinite(interval)
+                or interval <= 0
+            ):
+                raise ValueError("NPC patrol interval must be positive and finite.")
+            npc["patrol_interval_seconds"] = float(interval)
 
         raw_reputation = data.get("reputation", [])
         if not isinstance(raw_reputation, list):
@@ -130,6 +152,8 @@ class SocialSnapshot:
             "faction_ids": list(npc.faction_ids),
             "active": npc.active,
             "behavior_state": npc.behavior_state.value,
+            "patrol_route": [[point.q, point.r] for point in npc.patrol_route],
+            "patrol_interval_seconds": npc.patrol_interval_seconds,
         } for npc in runtime.npcs.all())
         relationships = tuple({
             "source_id": item.source_id,
@@ -201,6 +225,11 @@ class SocialSnapshot:
                     BehaviorState(item.get("behavior_state", "idle"))
                 ),
                 active=item.get("active", True),
+                patrol_route=tuple(
+                    LocalHexPosition(q, r)
+                    for q, r in item.get("patrol_route", ())
+                ),
+                patrol_interval_seconds=item.get("patrol_interval_seconds", 0.5),
             ))
         for item in self.companions:
             npc_id = item["npc_id"]
