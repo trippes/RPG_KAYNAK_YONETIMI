@@ -5,6 +5,7 @@ import unittest
 from pathlib import Path
 
 from core.domain.spatial import LocalHexPosition, axial_to_world_point
+from resources import Quantity, ResourceType, ResourceUnit
 
 from application import GameApplication
 from application.content_loader import load_content_package
@@ -14,6 +15,7 @@ from application.content_pack import (
     load_container_definitions,
     load_gameplay_rules,
     load_npc_definitions,
+    load_production_definitions,
     load_quest_definitions,
     load_resource_definitions,
     populate_gameplay_resources,
@@ -35,6 +37,9 @@ class TestContentPack(unittest.TestCase):
         self.assertEqual(npcs[0]["patrol_route"], [[1, 0], [2, 0], [2, 1], [1, 1]])
         containers = load_container_definitions(package_path=PACKAGE)
         self.assertEqual(tuple(item["container_id"] for item in containers), ("village_chest",))
+        facilities, recipes = load_production_definitions(package_path=PACKAGE)
+        self.assertEqual(tuple(facility.facility_id for facility in facilities), ("village-workbench",))
+        self.assertEqual(tuple(recipe.recipe_id for recipe in recipes), ("wooden_plank",))
         self.assertEqual(load_quest_definitions(package_path=PACKAGE), ())
         resources = load_resource_definitions(package_path=PACKAGE)
         self.assertEqual(tuple(node["id"] for node in resources), ("herb_patch_01",))
@@ -120,6 +125,13 @@ class TestContentPack(unittest.TestCase):
         )
         self.assertEqual(activity.activity_type, "gather")
         self.assertEqual(activity.target_id, "herb_patch_01")
+        service.inventory("player").add(
+            ResourceType("wood"), Quantity(2, ResourceUnit.ITEM),
+        )
+        job = service.start_production(
+            "wooden_plank", "player", "village-workbench",
+        )
+        self.assertEqual(job.recipe_id, "wooden_plank")
 
 
     def test_gameplay_setup_registers_resource_nodes_from_content_definitions(self):
