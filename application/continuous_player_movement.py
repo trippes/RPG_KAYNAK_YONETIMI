@@ -10,6 +10,7 @@ from core.domain.spatial import MovementFailureReason, MovementResult, WorldPoin
 
 from .hex_actor_binding import ActorHexBindingService
 from .hex_physics_bridge import HexPhysicsSnapshot
+from .dynamic_actor_collision import DynamicActorCollisionResolver
 
 
 @dataclass(frozen=True, slots=True)
@@ -19,6 +20,7 @@ class ContinuousPlayerMovementStep:
     movement: MovementResult
     state: MovementState
     collision_resolution: object | None = None
+    dynamic_pushes: tuple[str, ...] = ()
 
 
 class ContinuousPlayerMovementController:
@@ -36,6 +38,8 @@ class ContinuousPlayerMovementController:
         "_integrator",
         "_last_state",
         "_last_collision_resolution",
+        "_npc_bodies",
+        "_last_dynamic_pushes",
     )
 
     def __init__(
@@ -44,6 +48,8 @@ class ContinuousPlayerMovementController:
         physics_snapshot: HexPhysicsSnapshot,
         body: PhysicsBodyDefinition,
         config: MovementConfig,
+        *,
+        npc_bodies=None,
     ) -> None:
         if not isinstance(binding, ActorHexBindingService):
             raise TypeError("binding must be an ActorHexBindingService")
@@ -61,6 +67,8 @@ class ContinuousPlayerMovementController:
         self._integrator = MovementIntegrator(config)
         self._last_state: MovementState | None = None
         self._last_collision_resolution = None
+        self._npc_bodies = dict(npc_bodies or {})
+        self._last_dynamic_pushes = ()
 
     @property
     def last_state(self) -> MovementState | None:
@@ -69,6 +77,10 @@ class ContinuousPlayerMovementController:
     @property
     def last_collision_resolution(self):
         return self._last_collision_resolution
+
+    @property
+    def last_dynamic_pushes(self) -> tuple[str, ...]:
+        return self._last_dynamic_pushes
 
     def step(
         self,
@@ -133,6 +145,19 @@ class ContinuousPlayerMovementController:
                 1.0 / float(delta_seconds)
             )
 
+        dynamic_result = DynamicActorCollisionResolver(
+            self._binding.runtime, self._physics_snapshot,
+        ).resolve_player_motion(
+            actor_id, start, final_position, self._body, self._npc_bodies,
+        )
+        final_position = dynamic_result.player_position
+        final_velocity = Vector2(
+            (final_position.x - start.x) / float(delta_seconds),
+            (final_position.y - start.y) / float(delta_seconds),
+        )
+        self._last_dynamic_pushes = tuple(
+            item.entity_id for item in dynamic_result.pushes
+        )
         movement = self._binding.runtime.set_continuous_position(
             actor_id,
             final_position,
@@ -144,7 +169,9 @@ class ContinuousPlayerMovementController:
 
         self._last_state = state
         self._last_collision_resolution = resolution
-        return ContinuousPlayerMovementStep(movement, state, resolution)
+        return ContinuousPlayerMovementStep(
+            movement, state, resolution, self._last_dynamic_pushes,
+        )
 
 
 __all__ = [

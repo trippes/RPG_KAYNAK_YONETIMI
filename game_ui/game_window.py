@@ -296,6 +296,7 @@ class GameWindow:
             snapshot,
             body,
             config,
+            npc_bodies=getattr(self.service, "npc_physics_bodies", {}),
         )
         for _ in range(step_count):
             controller.step(

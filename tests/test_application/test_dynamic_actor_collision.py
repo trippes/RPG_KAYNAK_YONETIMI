@@ -1,0 +1,86 @@
+from application.dynamic_actor_collision import DynamicActorCollisionResolver
+from application.hex_map_definition import parse_hex_map
+from application.hex_physics_bridge import build_hex_physics_snapshot
+from application.hex_world_runtime import HexWorldRuntime
+from core.domain.physics import CircleShape, PhysicsBodyDefinition
+from core.domain.spatial import AABB, EntityPosition, LocalHexPosition, MovementProfile, WorldPoint
+from core.foundation import WorldId
+
+
+def make_runtime():
+    definition = parse_hex_map({
+        "schema_version": 2,
+        "map_id": "field",
+        "name": "Field",
+        "geometry": {
+            "type": "hex_axial",
+            "orientation": "pointy_top",
+            "coordinate_system": "axial",
+        },
+        "terrain_ids": ["grass"],
+        "default_terrain": "grass",
+        "valid_cells": [[0, 0], [1, 0], [2, 0], [3, 0]],
+        "cell_overrides": [],
+        "transitions": [],
+    })
+    runtime = HexWorldRuntime({"field": definition}, world_id=WorldId("world"))
+    runtime.register_entity(
+        "hero", "player", EntityPosition("field", LocalHexPosition(0, 0)),
+        MovementProfile(), local_spatial_bounds=AABB(-8, -8, 8, 8),
+    )
+    runtime.register_entity(
+        "guard", "npc", EntityPosition("field", LocalHexPosition(1, 0)),
+        MovementProfile(), local_spatial_bounds=AABB(-4, -4, 4, 4),
+    )
+    return runtime, definition
+
+
+def test_player_contact_pushes_npc_and_updates_canonical_continuous_position():
+    runtime, definition = make_runtime()
+    snapshot = build_hex_physics_snapshot(WorldId("world"), definition, 32.0)
+    player_body = PhysicsBodyDefinition("hero", CircleShape(8.0))
+    npc_body = PhysicsBodyDefinition("guard", CircleShape(4.0))
+    start = runtime.continuous_position("hero").point
+    proposed = WorldPoint(45.0, 0.0)
+
+    result = DynamicActorCollisionResolver(runtime, snapshot).resolve_player_motion(
+        "hero", start, proposed, player_body, {"guard": npc_body},
+    )
+
+    npc_position = runtime.continuous_position("guard").point
+    assert result.pushes
+    assert result.pushes[0].entity_id == "guard"
+    assert npc_position.x > 55.0
+    assert npc_position.y == 0.0
+
+
+def test_non_overlapping_npc_is_not_moved():
+    runtime, definition = make_runtime()
+    snapshot = build_hex_physics_snapshot(WorldId("world"), definition, 32.0)
+    player_body = PhysicsBodyDefinition("hero", CircleShape(8.0))
+    npc_body = PhysicsBodyDefinition("guard", CircleShape(4.0))
+    before = runtime.continuous_position("guard").point
+
+    result = DynamicActorCollisionResolver(runtime, snapshot).resolve_player_motion(
+        "hero", runtime.continuous_position("hero").point,
+        WorldPoint(10.0, 0.0), player_body, {"guard": npc_body},
+    )
+
+    assert result.pushes == ()
+    assert runtime.continuous_position("guard").point == before
+
+
+def test_disabled_npc_body_is_not_pushed():
+    runtime, definition = make_runtime()
+    snapshot = build_hex_physics_snapshot(WorldId("world"), definition, 32.0)
+    player_body = PhysicsBodyDefinition("hero", CircleShape(8.0))
+    npc_body = PhysicsBodyDefinition("guard", CircleShape(4.0), enabled=False)
+    before = runtime.continuous_position("guard").point
+
+    result = DynamicActorCollisionResolver(runtime, snapshot).resolve_player_motion(
+        "hero", runtime.continuous_position("hero").point,
+        WorldPoint(45.0, 0.0), player_body, {"guard": npc_body},
+    )
+
+    assert result.pushes == ()
+    assert runtime.continuous_position("guard").point == before

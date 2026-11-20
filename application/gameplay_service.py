@@ -276,6 +276,16 @@ class GameplayService:
         )
 
     @property
+    def npc_physics_bodies(self):
+        """Return the active NPC body definitions for dynamic collision queries."""
+        bundle = self._current_bundle()
+        return {
+            npc.npc_id: npc.physics_body
+            for npc in bundle.social.npcs.all()
+            if npc.physics_body is not None
+        }
+
+    @property
     def resource_node_hex_binding(self) -> ResourceNodeHexBindingService:
         """Resolve fixed resource-node placements through the active hex runtime."""
         bundle = self._current_bundle()
