@@ -28,11 +28,13 @@ def make_runtime():
     runtime = HexWorldRuntime({"field": definition}, world_id=WorldId("world"))
     runtime.register_entity(
         "hero", "player", EntityPosition("field", LocalHexPosition(0, 0)),
-        MovementProfile(), local_spatial_bounds=AABB(-8, -8, 8, 8),
+        MovementProfile(), blocks_movement=False, blocks_occupancy=False,
+        local_spatial_bounds=AABB(-8, -8, 8, 8),
     )
     runtime.register_entity(
         "guard", "npc", EntityPosition("field", LocalHexPosition(1, 0)),
-        MovementProfile(), local_spatial_bounds=AABB(-4, -4, 4, 4),
+        MovementProfile(), blocks_movement=False, blocks_occupancy=False,
+        local_spatial_bounds=AABB(-4, -4, 4, 4),
     )
     return runtime, definition
 
@@ -118,22 +120,6 @@ def test_player_push_commits_player_and_npc_position_occupancy_and_broadphase_to
     runtime, definition = make_runtime()
     # Moving actors may share a hex cell; their colliders, not cell occupancy,
     # determine physical separation at sub-cell precision.
-    runtime.occupancy.remove("hero")
-    runtime.occupancy.remove("guard")
-    runtime._spatial_index.remove("hero")
-    runtime._spatial_index.remove("guard")
-    runtime._entities.clear()
-    runtime._continuous_positions.clear()
-    runtime.register_entity(
-        "hero", "player", EntityPosition("field", LocalHexPosition(0, 0)),
-        MovementProfile(), blocks_movement=False, blocks_occupancy=False,
-        local_spatial_bounds=AABB(-8, -8, 8, 8),
-    )
-    runtime.register_entity(
-        "guard", "npc", EntityPosition("field", LocalHexPosition(1, 0)),
-        MovementProfile(), blocks_movement=False, blocks_occupancy=False,
-        local_spatial_bounds=AABB(-4, -4, 4, 4),
-    )
     snapshot = build_hex_physics_snapshot(WorldId("world"), definition, 32.0)
     start = runtime.continuous_position("hero").point
     resolution = DynamicActorCollisionResolver(runtime, snapshot).resolve_player_motion(
