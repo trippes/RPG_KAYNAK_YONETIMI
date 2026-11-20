@@ -1,6 +1,7 @@
 """Pygame application shell for the playable vertical slice."""
 
 from pathlib import Path
+from time import perf_counter_ns
 
 from .input import InputMapper
 from .movement_input import PygameMovementInput
@@ -24,6 +25,7 @@ from .window_manager import WindowManager
 from application.save_storage import SaveStorage, SaveStorageError
 from application.gameplay_step_clock import FixedStepAccumulator
 from application.continuous_player_movement import ContinuousPlayerMovementController
+from application.performance_monitor import PerformanceMonitor
 
 # Screens that show the navigation tab bar / resource bar.
 NAV_SCREENS = frozenset()
@@ -61,6 +63,8 @@ class GameWindow:
         self.service = service
         self.content_package_path = getattr(service, "_content_package_path", None)
         self.pg = backend
+        self.performance_monitor = PerformanceMonitor()
+        self._frame_phase_times = {}
         self.width, self.height = width, height
 
         # The adapter is intentionally import-safe, so initialize pygame only
@@ -257,8 +261,7 @@ class GameWindow:
                 "error",
             )
 
-    def _advance_continuous_player_movement(
-        self,
+    def _advance_continuous_player_movement(        self,
         elapsed_seconds,
         intent,
         *,
@@ -517,8 +520,7 @@ class GameWindow:
         if target not in self.screens:
             return False
 
-        if target == self.gameplay_screen:
-            self.gameplay_active = True
+        if target == self.gameplay_screen:            self.gameplay_active = True
         elif target == "menu":
             self.gameplay_active = False
 
@@ -777,8 +779,7 @@ class GameWindow:
             and movement_configured
         )
         if movement_input_active:
-            movement_intent = self.movement_input.read_intent()
-            if movement_intent.is_moving:
+            movement_intent = self.movement_input.read_intent()            if movement_intent.is_moving:
                 state.actions.difference_update({
                     "left", "right", "up", "down",
                     "hex_north_west", "hex_south_west",
@@ -948,12 +949,15 @@ class GameWindow:
                 self.screens[self.gameplay_screen], "has_click_move_goal", False,
             ))
         )
+        phase_started = perf_counter_ns()
         self._advance_continuous_player_movement(
             elapsed_seconds,
             movement_intent,
             active=movement_active,
             click_to_move=click_to_move,
         )
+        self._frame_phase_times["player_physics"] = (perf_counter_ns() - phase_started) / 1_000_000.0
+        phase_started = perf_counter_ns()
         self._advance_npc_simulation(
             elapsed_seconds,
             active=(
@@ -962,12 +966,15 @@ class GameWindow:
                 and not dialogue_now_active
             ),
         )
+        self._frame_phase_times["npc_simulation"] = (perf_counter_ns() - phase_started) / 1_000_000.0
 
         if self.gameplay_active:
+            phase_started = perf_counter_ns()
             world_screen = self.screens.get(getattr(self, "gameplay_screen", "main"))
             update = getattr(world_screen, "update", None)
             if update is not None:
                 update(elapsed_seconds)
+            self._frame_phase_times["world_update"] = (perf_counter_ns() - phase_started) / 1_000_000.0
 
         self._advance_active_time(elapsed_seconds)
 
@@ -978,7 +985,9 @@ class GameWindow:
             self.renderer.nav_enabled = self._nav_enabled()
         else:
             self.renderer.nav_current = None
+        phase_started = perf_counter_ns()
         self._render_current()
+        self._frame_phase_times["render"] = (perf_counter_ns() - phase_started) / 1_000_000.0
         if self.pause_menu_open:
             self._render_pause_menu()
 
@@ -988,14 +997,45 @@ class GameWindow:
             if self._notice_frames <= 0:
                 self.notice = ""
 
+    @property
+    def performance_stats(self):
+        """Return rolling telemetry; activate it with ELDORIA_PERF=1."""
+        return self.performance_monitor.stats
+
+    def _performance_counters(self):
+        if not self.gameplay_active:
+            return {}
+        world = self.screens.get(self.gameplay_screen)
+        for name in ("view", "gameplay_view", "_view", "_gameplay_view"):
+            candidate = getattr(world, name, None)
+            stats = getattr(candidate, "render_stats", None)
+            if isinstance(stats, dict):
+                return stats
+        stats = getattr(world, "render_stats", None)
+        return stats if isinstance(stats, dict) else {}
+
     def run(self, *, fps=60):
         self.running = True
         clock = self.pg.time.Clock()
 
         while self.running:
+            self._frame_phase_times = {}
             elapsed_seconds = clock.tick(fps) / 1000.0
+            step_started = perf_counter_ns()
             self.step(self.pg.event.get(), elapsed_seconds=elapsed_seconds)
+            self._frame_phase_times["game_step"] = (
+                perf_counter_ns() - step_started
+            ) / 1_000_000.0
+            flip_started = perf_counter_ns()
             self.pg.display.flip()
+            self._frame_phase_times["display_flip"] = (
+                perf_counter_ns() - flip_started
+            ) / 1_000_000.0
+            self.performance_monitor.record_frame(
+                clock.get_rawtime(),
+                phases=self._frame_phase_times,
+                counters=self._performance_counters(),
+            )
 
         self.pg.quit()
 
