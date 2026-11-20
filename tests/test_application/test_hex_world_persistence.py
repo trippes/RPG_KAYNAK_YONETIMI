@@ -16,6 +16,7 @@ from core.domain.spatial import (
     WorldPoint, axial_to_world_point,
 )
 from core.foundation import WorldId
+from core.domain.physics import CircleShape, PhysicsBodyDefinition
 from npc import NPC, NPCRegistry
 
 
@@ -466,3 +467,22 @@ def test_restore_rejects_missing_npc_content_before_leaving_partial_state():
 
     assert target.entities() == ()
     assert target.occupancy.snapshot() == ()
+
+
+def test_restore_preserves_disabled_npc_body_participation_from_content():
+    snapshot = HexWorldSnapshot(
+        WorldId("world"),
+        (record("guard", LocalHexPosition(0, 0), kind="npc"),),
+    )
+    guard = NPC("guard", "Guard")
+    guard.physics_body = PhysicsBodyDefinition(
+        body_id="guard", collider=CircleShape(radius=4.0), enabled=False,
+    )
+    target = make_runtime()
+
+    snapshot.restore_into(target, npc_registry=NPCRegistry([guard]))
+
+    anchor = target.continuous_position("guard").point
+    assert target.entity("guard").entity_id == "guard"
+    assert target.occupancy.get("guard") is not None
+    assert target.query_spatial_candidates("field", AABB.around_point(anchor, 0.1)) == ()
