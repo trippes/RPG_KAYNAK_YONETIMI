@@ -159,8 +159,8 @@ def main():
                 max(12, round(24 * transform.zoom)),
                 max(8, round(16 * transform.zoom)),
             )
-            pygame.draw.rect(surface, (105, 66, 39), chest, border_radius=3)
-            pygame.draw.rect(surface, (207, 166, 91), chest, 2, border_radius=3)
+            pygame.draw.rect(surface, (105, 66, 39), chest)
+            pygame.draw.rect(surface, (207, 166, 91), chest, 2)
             pygame.draw.line(
                 surface, (207, 166, 91),
                 (chest.centerx, chest.top + 2),
