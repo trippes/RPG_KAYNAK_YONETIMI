@@ -489,7 +489,8 @@ class HexGameplayView:
                         self._visual_moving = False
                 else:
                     manual_directions.append(direction)
-        self._manual_directions = tuple(manual_directions)        if manual_move:
+        self._manual_directions = tuple(manual_directions)
+        if manual_move:
             self._clear_move_goal()
         elif state.mouse_clicked and state.mouse_pos is not None:
             if (
