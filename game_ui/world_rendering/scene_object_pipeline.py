@@ -128,6 +128,9 @@ class SceneObjectPipeline:
     def draw(self, renderer, obj: SceneObject, screen_anchor, zoom: float = 1.0) -> bool:
         return self.renderer.draw(renderer, obj, screen_anchor, zoom)
 
+    def draw_fallback(self, renderer, obj: SceneObject, screen_anchor, zoom: float = 1.0) -> None:
+        self.renderer.draw_fallback(renderer, obj, screen_anchor, zoom)
+
     @property
     def loaded_asset_count(self) -> int:
         return self.asset_manager.image_count
