@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 
-from core.domain.spatial import HexDirection, LocalHexPosition
+from core.domain.spatial import world_point_to_hex, HexDirection, LocalHexPosition
 from game_ui.world_transform import WorldTransform
 
 from .camera import HexCamera
@@ -360,8 +360,27 @@ class HexGameplayView:
                 if self._scene_pipeline is not None else None
             )
             if scene_object is not None and scene_object.kind == "structure":
-                self.context_menu_target_kind = "structure"
-                self.context_menu_target_id = scene_object.object_id
+                structure_cell = LocalHexPosition.from_hex_coord(
+                    world_point_to_hex(
+                        WorldPoint(scene_object.world_x, scene_object.world_y),
+                        runtime.HEX_SIZE,
+                    )
+                )
+                actor_cell = player.position.cell
+                distance = (
+                    abs(actor_cell.q - structure_cell.q)
+                    + abs(actor_cell.r - structure_cell.r)
+                    + abs(
+                        actor_cell.q + actor_cell.r
+                        - structure_cell.q - structure_cell.r
+                    )
+                ) // 2
+                if distance <= 1:
+                    self.context_menu_target_kind = "structure"
+                    self.context_menu_target_id = scene_object.object_id
+                else:
+                    self.selected_scene_object_id = scene_object.object_id
+                    return "inspect"
             elif scene_object is not None:
                 self.selected_scene_object_id = scene_object.object_id
                 return "inspect"
