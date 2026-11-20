@@ -235,6 +235,7 @@ class TestContentPackageLoader(unittest.TestCase):
             presentation_empty.read_text(encoding="utf-8")
         )
         presentation_payload["map_id"] = "village"
+        presentation_payload["objects"] = []
         presentation_empty.write_text(
             json.dumps(presentation_payload), encoding="utf-8"
         )
