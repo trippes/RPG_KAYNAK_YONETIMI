@@ -19,7 +19,7 @@ def test_authored_tree_placements_produce_independent_static_colliders():
         PACKAGE_ROOT, map_definition, 32.0,
     )
 
-    assert len(obstacles) == 12
+    assert len(obstacles) == 13
     assert len({item.obstacle_id for item in obstacles}) == len(obstacles)
     assert all(item.map_id == "starting_valley" for item in obstacles)
     assert all(isinstance(item.shape, ConvexPolygonShape) for item in obstacles)
