@@ -5,6 +5,9 @@ from dataclasses import dataclass
 import math
 from typing import Mapping
 
+from core.domain.physics import (
+    CircleShape, ConvexPolygonShape, PhysicsBodyDefinition, Vector2,
+)
 from core.domain.spatial import ContinuousEntityPosition, LocalHexPosition, WorldPoint
 from npc import (
     BehaviorController, BehaviorState, CompanionCommand, CompanionRegistry,
@@ -20,6 +23,76 @@ SOCIAL_SCHEMA = "rpg-social"
 SOCIAL_SCHEMA_VERSION = 2
 COMBAT_SCHEMA = "rpg-combat"
 COMBAT_SCHEMA_VERSION = 1
+
+
+def _physics_body_to_record(body):
+    if body is None:
+        return None
+    if not isinstance(body, PhysicsBodyDefinition):
+        raise TypeError("NPC physics_body must be a PhysicsBodyDefinition or None.")
+    if isinstance(body.collider, CircleShape):
+        collider = {
+            "type": "circle",
+            "radius": body.collider.radius,
+            "center": [body.collider.center.x, body.collider.center.y],
+        }
+    elif isinstance(body.collider, ConvexPolygonShape):
+        collider = {
+            "type": "polygon",
+            "vertices": [
+                [point.x, point.y] for point in body.collider.vertices
+            ],
+        }
+    else:
+        raise TypeError("Unsupported NPC collider shape.")
+    return {
+        "body_id": body.body_id,
+        "collider": collider,
+        "local_offset": [body.local_offset.x, body.local_offset.y],
+        "body_height": body.body_height,
+        "enabled": body.enabled,
+    }
+
+
+def _physics_body_from_record(record):
+    if record is None:
+        return None
+    if not isinstance(record, Mapping):
+        raise ValueError("NPC physics_body must be an object or None.")
+    collider_record = record.get("collider")
+    if not isinstance(collider_record, Mapping):
+        raise ValueError("NPC physics_body requires collider data.")
+    shape_type = collider_record.get("type")
+    if shape_type == "circle":
+        center = collider_record.get("center", [0.0, 0.0])
+        if not isinstance(center, list) or len(center) != 2:
+            raise ValueError("NPC circle collider center must be an [x, y] pair.")
+        collider = CircleShape(
+            collider_record["radius"], WorldPoint(center[0], center[1]),
+        )
+    elif shape_type == "polygon":
+        vertices = collider_record.get("vertices")
+        if not isinstance(vertices, list):
+            raise ValueError("NPC polygon collider vertices must be a list.")
+        collider = ConvexPolygonShape(tuple(
+            WorldPoint(point[0], point[1])
+            for point in vertices
+            if isinstance(point, list) and len(point) == 2
+        ))
+        if len(collider.vertices) != len(vertices):
+            raise ValueError("NPC polygon collider vertices must be [x, y] pairs.")
+    else:
+        raise ValueError("Unsupported NPC physics collider type.")
+    offset = record.get("local_offset", [0.0, 0.0])
+    if not isinstance(offset, list) or len(offset) != 2:
+        raise ValueError("NPC physics local_offset must be an [x, y] pair.")
+    return PhysicsBodyDefinition(
+        record["body_id"],
+        collider,
+        Vector2(offset[0], offset[1]),
+        record.get("body_height", 1.0),
+        record.get("enabled", True),
+    )
 
 
 @dataclass(frozen=True)
@@ -100,6 +173,10 @@ class SocialSnapshot:
             ):
                 raise ValueError("NPC patrol interval must be positive and finite.")
             npc["patrol_interval_seconds"] = float(interval)
+            if "physics_body" in npc:
+                npc["physics_body"] = _physics_body_to_record(
+                    _physics_body_from_record(npc["physics_body"])
+                )
 
         raw_reputation = data.get("reputation", [])
         if not isinstance(raw_reputation, list):
@@ -154,6 +231,7 @@ class SocialSnapshot:
             "behavior_state": npc.behavior_state.value,
             "patrol_route": [[point.q, point.r] for point in npc.patrol_route],
             "patrol_interval_seconds": npc.patrol_interval_seconds,
+            "physics_body": _physics_body_to_record(npc.physics_body),
         } for npc in runtime.npcs.all())
         relationships = tuple({
             "source_id": item.source_id,
@@ -230,6 +308,7 @@ class SocialSnapshot:
                     for q, r in item.get("patrol_route", ())
                 ),
                 patrol_interval_seconds=item.get("patrol_interval_seconds", 0.5),
+                physics_body=_physics_body_from_record(item.get("physics_body")),
             ))
         for item in self.companions:
             npc_id = item["npc_id"]
