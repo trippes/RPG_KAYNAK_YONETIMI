@@ -1,4 +1,36 @@
 {
   "schema_version": 1,
-  "npcs": []
+  "npcs": [
+    {
+      "id": "warden_lyra",
+      "name": "Eren",
+      "role": "village_guard",
+      "load_phase": "opening",
+      "dialogue_id": "warden_intro",
+      "physics": {
+        "shape": "circle",
+        "radius": 5
+      },
+      "behavior_state": "patrol",
+      "patrol_route": [
+        [
+          1,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "patrol_interval_seconds": 0.75
+    }
+  ]
 }
