@@ -769,7 +769,7 @@ def populate_gameplay_resources(service, definition_path=None, resource_definiti
             record["gathering_duration_ticks"],
         ))
     for record in load_container_definitions(package_path=active_package_path):
-        definition = ContainerDefinition(
+        container_definition = ContainerDefinition(
             definition_id=record["definition_id"],
             name=record["name"],
             empty_weight_kg=record.get("empty_weight_kg", 0.0),
@@ -788,12 +788,14 @@ def populate_gameplay_resources(service, definition_path=None, resource_definiti
             container_tags=tuple(record.get("container_tags", ())),
             break_profile_id=record.get("break_profile_id"),
         )
-        existing_definition = bundle.containers.definition(definition.definition_id)
+        existing_definition = bundle.containers.definition(
+            container_definition.definition_id,
+        )
         if existing_definition is None:
-            service.register_container_definition(definition)
-        elif existing_definition != definition:
+            service.register_container_definition(container_definition)
+        elif existing_definition != container_definition:
             raise ContentDefinitionError(
-                f"Existing container definition '{definition.definition_id}' conflicts with package configuration."
+                f"Existing container definition '{container_definition.definition_id}' conflicts with package configuration."
             )
         existing_instance = bundle.containers.get(record["container_id"])
         if existing_instance is None:
@@ -994,11 +996,13 @@ def load_container_definitions(
     package_path: str | Path | None = None,
 ) -> tuple[dict, ...]:
     """Load and validate container definitions and world-instance identities."""
-    definition = (
-        _load_package_file("containers", package_path)
-        if path is None
-        else _read_json_definition(Path(path), "Container definition")
-    )
+    if path is None:
+        package = load_content_package(_resolve_content_package_path(package_path))
+        definition = package.files.get("containers")
+        if definition is None:
+            return ()
+    else:
+        definition = _read_json_definition(Path(path), "Container definition")
     if definition.get("schema_version") != CONTENT_SCHEMA_VERSION:
         raise ContentDefinitionError("Unsupported container definition schema version.")
     records = definition.get("containers")
