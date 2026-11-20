@@ -791,7 +791,7 @@ class GameWindow:
                 if not node_id:
                     raise ValueError("Önce bir kaynak düğümü seçilmelidir.")
                 self.service.start_gathering_one(
-                    self.service.player_actor_id, node_id, "player",
+                    self.service.player_actor_id, node_id, self.service.player_inventory_id,
                 )
                 self._set_notice("Kaynak toplama başladı.", "info")
             except (KeyError, RuntimeError, ValueError) as error:
