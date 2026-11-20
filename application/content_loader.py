@@ -396,6 +396,14 @@ def load_content_package(package_dir: str | Path) -> ContentPackage:
                     "Gameplay placement references unknown resource node: "
                     f"{placement.domain_id}"
                 )
+            if (
+                placement.kind == "container"
+                and placement.domain_id not in container_ids
+            ):
+                raise ContentPackageError(
+                    "Gameplay placement references unknown container: "
+                    f"{placement.domain_id}"
+                )
 
     return ContentPackage(
         package_id,
