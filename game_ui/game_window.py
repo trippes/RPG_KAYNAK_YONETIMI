@@ -781,9 +781,13 @@ class GameWindow:
             return
         if isinstance(next_screen, str) and next_screen.startswith("container:"):
             container_id = next_screen.split(":", 1)[1]
-            self.screens["container"].set_container(container_id)
-            self.window_manager.open("container")
-            next_screen = None
+            try:
+                self.screens["container"].set_container(container_id)
+                self.window_manager.open("container")
+                next_screen = None
+            except (KeyError, RuntimeError, ValueError) as error:
+                self._set_notice(f"Sandık açılamadı: {error}", "error")
+                next_screen = self.gameplay_screen
         elif next_screen == "gather":
             main_screen = self.screens.get(self.gameplay_screen)
             node_id = getattr(main_screen, "selected_interaction_target_id", None)
