@@ -6,9 +6,10 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 
 from core.domain.spatial import (
-    ContinuousEntityPosition, EntityPosition, LocalHexPosition, MovementProfile,
-    axial_to_world_point, world_point_to_hex,
+    AABB, ContinuousEntityPosition, EntityPosition, LocalHexPosition, MovementProfile,
+    WorldPoint, axial_to_world_point, world_point_to_hex,
 )
+from core.domain.physics import CircleShape, PhysicsBodyDefinition
 from core.foundation import WorldId
 
 from .hex_world_runtime import HexWorldRuntime
@@ -20,6 +21,23 @@ HEX_WORLD_SCHEMA_VERSION = 2
 
 class HexWorldPersistenceError(ValueError):
     """Invalid hex-world snapshot or unsafe restore target."""
+
+
+def _npc_local_bounds(body: PhysicsBodyDefinition) -> AABB:
+    """Rebuild an NPC collider AABB from immutable content after snapshot restore."""
+    offset = body.local_offset
+    shape = body.collider
+    if isinstance(shape, CircleShape):
+        center = WorldPoint(offset.x + shape.center.x, offset.y + shape.center.y)
+        return AABB.around_point(center, shape.radius)
+    points = tuple(
+        WorldPoint(offset.x + vertex.x, offset.y + vertex.y)
+        for vertex in shape.vertices
+    )
+    return AABB(
+        min(point.x for point in points), min(point.y for point in points),
+        max(point.x for point in points), max(point.y for point in points),
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -357,8 +375,18 @@ class HexWorldSnapshot:
                     f"Nested or carried container cannot have a world position: {record.entity_id}"
                 )
 
-    def restore_into(self, runtime: HexWorldRuntime) -> HexWorldRuntime:
-        """Restore atomically into an empty runtime with matching world scope."""
+    def restore_into(
+        self,
+        runtime: HexWorldRuntime,
+        *,
+        npc_registry=None,
+    ) -> HexWorldRuntime:
+        """Restore atomically; rebuild NPC collider bounds from content when supplied.
+
+        The snapshot intentionally contains no collider data. Production restore
+        callers pass the already-restored NPCRegistry so immutable physics
+        definitions reconstruct broadphase bounds without changing schema v2.
+        """
         if not isinstance(runtime, HexWorldRuntime):
             raise TypeError("runtime must be a HexWorldRuntime.")
         if runtime.world_id != self.world_id:
@@ -390,6 +418,21 @@ class HexWorldSnapshot:
         registered = []
         try:
             for record in self.entities:
+                local_spatial_bounds = None
+                broadphase_enabled = True
+                if record.kind == "npc" and npc_registry is not None:
+                    npc = npc_registry.get(record.entity_id)
+                    if npc is None:
+                        raise HexWorldPersistenceError(
+                            f"NPC content record is missing during restore: {record.entity_id}"
+                        )
+                    body = npc.physics_body
+                    if not isinstance(body, PhysicsBodyDefinition):
+                        raise HexWorldPersistenceError(
+                            f"NPC physics definition is missing during restore: {record.entity_id}"
+                        )
+                    local_spatial_bounds = _npc_local_bounds(body)
+                    broadphase_enabled = body.enabled
                 runtime.register_entity(
                     record.entity_id,
                     record.kind,
@@ -399,6 +442,8 @@ class HexWorldSnapshot:
                     blocks_movement=record.blocks_movement,
                     blocks_occupancy=record.blocks_occupancy,
                     continuous_position=record.continuous_position,
+                    local_spatial_bounds=local_spatial_bounds,
+                    broadphase_enabled=broadphase_enabled,
                 )
                 registered.append(record.entity_id)
             runtime.restore_patrol_indices(dict(self.patrol_indices))
