@@ -354,8 +354,7 @@ class HexWorldRuntime:
         derived registries have accepted the move.
         """
         state = self._entity_state(entity_id)
-        previous_occupant = self._occupancy.get(entity_id)
-        if previous_occupant is None:
+        if self._occupancy.get(entity_id) is None:
             raise RuntimeError(f"Hex entity has no occupancy record: {entity_id}")
         previous_position = self._continuous_positions[entity_id]
         previous_bounds = self._bounds_at(state, previous_position.point)
