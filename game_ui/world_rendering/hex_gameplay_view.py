@@ -355,7 +355,7 @@ class HexGameplayView:
             world_point = self.transform.screen_to_world_point(*state.mouse_pos)
             scene_object = (
                 self._scene_pipeline.object_at_world_point(
-                    player.position.map_id, world_point, self.transform,
+                    player.position.map_id, world_point,
                 )
                 if self._scene_pipeline is not None else None
             )
