@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 from application.hex_map_definition import parse_hex_map
 from application.hex_occupancy import HexOccupant, HexOccupancyRegistry
 from application.hex_pathfinding import HexPathfinder
@@ -449,3 +450,67 @@ class TestHexWorldRuntimeOwner(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestHexWorldRuntimeTransactionalSpatialUpdates(unittest.TestCase):
+    def test_failed_spatial_update_keeps_continuous_position_and_occupancy(self):
+        runtime = HexWorldRuntime({"forest": make_map()})
+        runtime.register_entity(
+            "npc", "npc", EntityPosition("forest", LocalHexPosition(0, 0)),
+            local_spatial_bounds=AABB(-4.0, -4.0, 4.0, 4.0),
+        )
+        previous_position = runtime.continuous_position("npc")
+        previous_occupancy = runtime.occupancy.get("npc")
+        old_query = AABB.around_point(previous_position.point, 0.1)
+        new_point = WorldPoint(previous_position.point.x + 2.0, previous_position.point.y)
+
+        with patch.object(runtime._spatial_index, "update", side_effect=RuntimeError("index failure")):
+            with self.assertRaisesRegex(RuntimeError, "index failure"):
+                runtime.set_continuous_position("npc", new_point)
+
+        self.assertEqual(runtime.continuous_position("npc"), previous_position)
+        self.assertEqual(runtime.occupancy.get("npc"), previous_occupancy)
+        self.assertIn("npc", runtime.query_spatial_candidates("forest", old_query))
+
+    def test_occupancy_failure_rolls_back_the_updated_broadphase_entry(self):
+        runtime = HexWorldRuntime({"forest": make_map()})
+        runtime.register_entity(
+            "npc", "npc", EntityPosition("forest", LocalHexPosition(0, 0)),
+            local_spatial_bounds=AABB(-4.0, -4.0, 4.0, 4.0),
+        )
+        previous_position = runtime.continuous_position("npc")
+        previous_occupancy = runtime.occupancy.get("npc")
+        old_query = AABB.around_point(previous_position.point, 0.1)
+        new_query = AABB.around_point(
+            WorldPoint(previous_position.point.x + 40.0, previous_position.point.y), 0.1
+        )
+
+        with patch.object(runtime.occupancy, "move", side_effect=RuntimeError("occupancy failure")):
+            with self.assertRaisesRegex(RuntimeError, "occupancy failure"):
+                runtime.set_continuous_position(
+                    "npc", WorldPoint(previous_position.point.x + 40.0, previous_position.point.y)
+                )
+
+        self.assertEqual(runtime.continuous_position("npc"), previous_position)
+        self.assertEqual(runtime.occupancy.get("npc"), previous_occupancy)
+        self.assertIn("npc", runtime.query_spatial_candidates("forest", old_query))
+        self.assertNotIn("npc", runtime.query_spatial_candidates("forest", new_query))
+
+    def test_map_transfer_moves_collider_aabb_without_leaving_old_map_membership(self):
+        runtime = HexWorldRuntime({"forest": make_map("forest"), "village": make_map("village")})
+        runtime.register_entity(
+            "npc", "npc", EntityPosition("forest", LocalHexPosition(0, 0)),
+            local_spatial_bounds=AABB(-4.0, -4.0, 4.0, 4.0),
+        )
+        old_anchor = runtime.continuous_position("npc").point
+        old_query = AABB.around_point(old_anchor, 0.1)
+
+        result = runtime.transfer_entity("npc", EntityPosition("village", LocalHexPosition(1, 0)))
+
+        self.assertTrue(result.success)
+        self.assertNotIn("npc", runtime.query_spatial_candidates("forest", old_query))
+        new_anchor = runtime.continuous_position("npc").point
+        new_edge = AABB.around_point(WorldPoint(new_anchor.x + 3.5, new_anchor.y), 0.1)
+        outside_edge = AABB.around_point(WorldPoint(new_anchor.x + 4.5, new_anchor.y), 0.1)
+        self.assertIn("npc", runtime.query_spatial_candidates("village", new_edge))
+        self.assertNotIn("npc", runtime.query_spatial_candidates("village", outside_edge))
