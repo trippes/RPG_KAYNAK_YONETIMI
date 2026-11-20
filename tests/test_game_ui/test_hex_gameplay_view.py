@@ -207,9 +207,8 @@ def test_hex_gameplay_view_click_selects_axial_destination():
 
     view.handle(InputState(mouse_clicked=True, mouse_pos=view.transform.axial_to_screen(LocalHexPosition(1, 0).to_hex_coord())))
 
-    assert service.hex_actor_binding.toward == [
-        ("hero", LocalHexPosition(1, 0)),
-    ]
+    assert view._move_goal == LocalHexPosition(1, 0)
+    assert service.hex_actor_binding.toward == []
 
 
 def test_hex_gameplay_view_update_advances_click_to_move_goal():
