@@ -2,6 +2,7 @@ from application.hex_map_definition import parse_hex_map
 from application.hex_physics_bridge import build_hex_physics_snapshot
 from application.hex_world_runtime import HexWorldRuntime
 from application.npc_behavior_system import NPCBehaviorSystem
+from core.domain.physics import CircleShape, PhysicsBodyDefinition
 from core.domain.spatial import AABB, EntityPosition, LocalHexPosition, MovementProfile
 from core.foundation import WorldId
 from npc import BehaviorController, BehaviorState, NPC, NPCRegistry
@@ -34,6 +35,7 @@ def make_world(*, blocked=False):
         behavior=BehaviorController(BehaviorState.PATROL),
         patrol_route=(LocalHexPosition(1, 0), LocalHexPosition(2, 0)),
         patrol_interval_seconds=0.25,
+        physics_body=PhysicsBodyDefinition("guard-body", CircleShape(4)),
     )
     npcs = NPCRegistry((npc,))
     runtime.register_entity(
