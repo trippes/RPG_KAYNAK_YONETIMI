@@ -102,8 +102,10 @@ class NPCSpatialBindingService:
             position,
             profile,
             movement_enabled=movement_enabled,
-            blocks_movement=blocks_movement,
-            blocks_occupancy=blocks_occupancy,
+            # A live physics body is the movement blocker. Grid occupancy must
+            # allow two actors to share a hex while their colliders remain apart.
+            blocks_movement=(blocks_movement and not npc.physics_body.enabled),
+            blocks_occupancy=(blocks_occupancy and not npc.physics_body.enabled),
             local_spatial_bounds=_local_physics_bounds(npc.physics_body),
             broadphase_enabled=npc.physics_body.enabled,
         )
