@@ -12,6 +12,14 @@ from game_ui.world_rendering.hex_gameplay_view import HexGameplayView
 from game_ui.screens.main_screen import MainScreen
 
 
+class FakePhysicsSnapshot:
+    def cell_center(self, cell):
+        return WorldPoint(cell.q * 55.42562584220407, cell.r * 48.0)
+
+    def can_reach_cell(self, _source, _target, _body):
+        return True
+
+
 class RecordingActorBinding:
     def __init__(self):
         self.moves = []
@@ -19,6 +27,8 @@ class RecordingActorBinding:
         self.toward = []
         self.continuous_directions = []
         self.continuous_toward = []
+        self.physics_snapshot = FakePhysicsSnapshot()
+        self.player_body = object()
 
     def move_toward(self, actor_id, goal):
         self.toward.append((actor_id, goal))
@@ -52,6 +62,12 @@ class FakeRuntime:
 
     def continuous_position(self, _actor_id):
         return SimpleNamespace(point=WorldPoint(0.0, 0.0))
+
+    def path_to(self, actor_id, goal, *, edge_validator=None):
+        source = self.entity(actor_id).position.cell
+        if edge_validator is not None and not edge_validator(source, goal):
+            return None
+        return (source, goal)
 
     def map_definition(self, _map_id):
         return SimpleNamespace(
@@ -214,17 +230,17 @@ def test_hex_gameplay_view_click_selects_axial_destination():
     assert service.hex_actor_binding.toward == []
 
 
-def test_hex_gameplay_view_update_advances_click_to_move_goal():
+def test_hex_gameplay_view_exposes_click_goal_as_a_movement_intent():
     service = FakeService()
     view = HexGameplayView(service)
     view._move_goal = LocalHexPosition(2, 0)
     view._move_map_id = "village"
 
-    view.update(HexGameplayView.PHYSICS_STEP_SECONDS)
+    intent = view.click_move_intent()
 
-    assert service.continuous_toward == [
-        (LocalHexPosition(2, 0), HexGameplayView.PHYSICS_STEP_SECONDS),
-    ]
+    assert intent.is_moving
+    assert intent.direction.x > 0
+    assert service.continuous_toward == []
 
 
 def test_hex_gameplay_view_uses_authored_map_transition_at_exit_cell():
@@ -359,7 +375,7 @@ def test_main_screen_forwards_selected_npc_to_dialogue_navigation():
     assert screen.selected_npc_id == "guard_eren"
 
 
-def test_player_click_to_move_uses_fixed_step_physics_instead_of_visual_teleport():
+def test_player_click_to_move_produces_intent_for_the_shared_fixed_step_controller():
     service = FakeService()
     view = HexGameplayView(service)
     view._panel = pygame.Rect(24, 96, 752, 480)
@@ -370,13 +386,9 @@ def test_player_click_to_move_uses_fixed_step_physics_instead_of_visual_teleport
     view.handle(InputState(mouse_clicked=True, mouse_pos=view.transform.axial_to_screen(goal.to_hex_coord())))
 
     assert view._move_goal == goal
-    assert service.continuous_toward == []
-
-    view.update(HexGameplayView.PHYSICS_STEP_SECONDS)
-
-    assert service.continuous_toward == [
-        (goal, HexGameplayView.PHYSICS_STEP_SECONDS),
-    ]
+    intent = view.click_move_intent()
+    assert intent.is_moving
+    assert intent.direction.x > 0
 
 
 def test_player_keyboard_input_uses_fixed_step_continuous_physics():
