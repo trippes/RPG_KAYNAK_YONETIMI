@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "containers": [
+    {
+      "container_id": "village_chest",
+      "entity_id": "village_chest_entity",
+      "definition_id": "wooden_chest",
+      "name": "Köy Sandığı",
+      "empty_weight_kg": 2,
+      "outer_volume_liters": 18,
+      "max_contents_weight_kg": 25,
+      "max_slots": 12,
+      "max_contents_volume_liters": 16,
+      "nesting_enabled": true,
+      "max_nesting_depth": 1,
+      "container_tags": [
+        "wooden",
+        "storage"
+      ]
+    }
+  ]
+}
