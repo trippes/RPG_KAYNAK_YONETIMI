@@ -5,10 +5,10 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
-
-from core.domain.spatial import LocalHexPosition
 from types import MappingProxyType
 from typing import Mapping
+
+from core.domain.spatial import LocalHexPosition
 
 from .hex_map_definition import load_hex_map_definition
 from .world_map_definition import parse_world_map, validate_world_map
