@@ -76,6 +76,7 @@ def make_package(directory, *, include_start=True, start=(0, 0)):
     manifest_path = package_path / "manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     manifest["maps"] = "maps"
+    manifest.pop("gameplay_placements", None)
     manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
 
     presentation_path = package_path / "placements" / "empty.json"
@@ -123,6 +124,7 @@ class TestHexWorldInitializer(unittest.TestCase):
             manifest_path = package_path / "manifest.json"
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
             manifest.pop("maps")
+            manifest.pop("gameplay_placements", None)
             manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
             service = FakeService(package_path)
 
