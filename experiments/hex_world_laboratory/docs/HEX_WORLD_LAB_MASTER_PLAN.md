@@ -5,10 +5,10 @@
 > **Depo:** `trippes/RPG_KAYNAK_YONETIMI`  
 > **Çalışma dalı:** `experiment/hex-world-laboratory`  
 > **Hedef entegrasyon dalı:** `demo_eldoria`  
-> **Durum:** AŞAMA 0–15 KAPALI; AŞAMA 16 GENEL PLANLAMASI SIRADAKİ ADIM
-> **Belge sürümü:** 4.6
+> **Durum:** AŞAMA 0–15 TARİHSEL OLARAK KAPALI; ESKİ AŞAMA 16 ENTEGRASYON TASLAĞI UYGULAMA ÖNCESİ KAPATILDI; AŞAMA 17 İZOMETRİK ANA OYUN GENEL PLANI ONAY BEKLİYOR
+> **Belge sürümü:** 4.8
 
-## Aşama 12–14 kapsam ayrımı — 18 Kasım 2026
+## 20 Kasım 2026 — Ürün hedefi ve yol haritası yeniden temellendirmesi\n\n**Bağlayıcı ürün hedefi:** Karakter yaratma ekranından sonra açılan Eldoria ana oyun ekranı, Diablo ve Baldur’s Gate gibi izometrik RPG'lerdeki derinlikli, okunabilir ve yaşayan dünya sunumuna yaklaşmalıdır. Hex topolojisi ve laboratuvarın geometri, hareket, fizik, entity, spatial, render, prosedürel çevre ve content kazanımları korunur; bunlar izometrik sunum katmanına bağlanır. Düzlemsel world-to-screen dönüşümü izometrik projeksiyon sayılmaz.\n\nKaynak incelemesinde laboratuvarın mevcut `WorldScreenTransform` dönüşümünün dünya X/Y koordinatlarını doğrudan ekran X/Y'ye taşıdığı, ana oyunun `WorldTransform` sınıfının da mevcut hex geometri dönüşümünü kullandığı doğrulanmıştır. Bu nedenle izometrik/dimetric projeksiyon, terrain/elevation, karakter ve NPC animasyonları, depth/occlusion, ışık/gölge ve gerçek ana oyun akışına bağlanan oynanabilir dikey dilim yeni yol haritasının merkezidir.\n\nEski Aşama 16 kontrollü entegrasyon taslağı kod uygulaması başlamadan kapatılmış ve geçersiz kılınmıştır. Kapanış kaydı: [PHASE-16-SUPERSESSION-REPORT.md](../reports/PHASE-16-SUPERSESSION-REPORT.md). Yeni genel plan: [Aşama 17 — İzometrik Ana Oyun Ekranı](PHASE-17-ISOMETRIC-MAIN-GAME-PLAN.md). Bu belge kullanıcı onayı bekleyen taslaktır; teknik uygulama başlamamıştır.\n\n## Aşama 12–14 kapsam ayrımı — 18 Kasım 2026
 
 Aşama 12 yalnızca çevresel nesne mimarisi ve kodla çizilmiş ağaç, kaya, çalı prototiplerini kapsar. Hazır PNG/JPG/WebP kullanılmaz; Pygame çizim primitifleri ve deterministik geometri kullanılır. Genel amaçlı çizim motoru ve Content Editor bu aşamanın dışındadır. Aşama 13 genel prosedürel grafik/çizim altyapısını tamamlamıştır. Aşama 14, gelecekte ayrı bir masaüstü uygulaması olarak geliştirilecek **ELDORIA CONTENT EDITOR** için içerik veri modelleri, serileştirme, sürümleme, doğrulama, registry ve harita yerleşim altyapısının temelini hazırlar; editör arayüzü bu aşamada yapılmaz. Harita düzenleme, yapı/nesne çizme, yerleştirme, değiştirme ve kaldırma iş akışları ilerideki editör aşamasına bırakılır. Her aşama ayrıca planlanıp onaylanır. Önceki PNG tabanlı Aşama 12 görseli kabul edilmemiştir. Prosedürel revizyonun 800 laboratuvar testi, Linux/Windows Core Quality, benchmark ve görsel artifact kontrolleri başarılıdır. Kullanıcı 18 Kasım 2026 tarihinde ağaç gövdesi/yaprak ayrımı ile kaya görseli/çarpışma hizalamasını masaüstünde kabul etmiş; Aşama 12 resmen kapatılmıştır.
 
@@ -22,7 +22,7 @@ Aşama 12 yalnızca çevresel nesne mimarisi ve kodla çizilmiş ağaç, kaya, �
 - [15.1 gerçekleşen mimari denetim raporu](../reports/PHASE-15.1-AUDIT-REPORT.md)
 - [Ayrıntılı teknik mimari planı](PHASE-15-TECHNICAL-PLAN.md)
 
-Aşama 15.1–15.8 denetim ve dokümantasyon çalışmaları tamamlandı; kullanıcı belgeleri kabul etti. Son A15 HEAD üzerinde Hex World Laboratory CI ve Core Quality başarılı oldu. Aşama 15 resmen kapatıldı. Ana oyun kodu aktarılmadı; main ve demo_eldoria salt okunur kaldı. Sıradaki adım Aşama 16 genel planının hazırlanmasıdır; uygulama için ayrıca onay gerekir.
+Aşama 15.1–15.8 denetim ve dokümantasyon çalışmaları tamamlandı; kullanıcı belgeleri kabul etti. Son A15 HEAD üzerinde Hex World Laboratory CI ve Core Quality başarılı oldu. Aşama 15 resmen kapatıldı. Ana oyun kodu aktarılmadı; main ve demo_eldoria salt okunur kaldı. Eski Aşama 16 entegrasyon taslağı uygulama başlamadan kapatıldı. Yeni sıradaki aşama, izometrik ana oyun ekranı hedefini tanımlayan Aşama 17'dir; genel plan kullanıcı onayı beklemektedir.
 
 ---
 
@@ -808,7 +808,7 @@ Bu liste tamamlanmadan laboratuvarın ana oyuna aktarılmaya hazır olduğu söy
 | 13 | Genel prosedürel grafik/çizim altyapısı | 13.1–13.8, 859/859 Pytest, Ruff, Linux/Windows CI, benchmark/görsel kanıt ve kullanıcı masaüstü kabulü tamamlandı; 18 Kasım 2026 tarihinde resmen kapatıldı |
 | 14 | İçerik veri altyapısı ve ELDORIA CONTENT EDITOR hazırlığı | 14.1–14.8 tamamlandı; 881/881 Lab Pytest, Ruff, Linux/Windows Core Quality (Linux 2.344 test), benchmark, görsel artifact ve 19 Kasım 2026 kullanıcı görsel kabulü başarılı; [kapanış raporu](../reports/PHASE-14-CLOSURE-REPORT.md); editör GUI kapsam dışı |
 | 15 | Nihai mimari, dokümantasyon ve entegrasyon hazırlığı | **KAPALI** — [Kapanış raporu](../reports/PHASE-15-CLOSURE-REPORT.md); kullanıcı kabulü ve son HEAD CI başarılı |
-| 16 | Kontrollü demo entegrasyonu | Ayrı açık kullanıcı onayı gerektirir |
+| 16 | Eski kontrollü demo entegrasyonu taslağı | **KAPATILDI / GEÇERSİZ KILINDI — uygulama başlamadı; kapanış kaydı mevcut** |\n| 17 | İzometrik ana oyun ekranı ve oynanabilir görsel dikey dilim | Genel plan hazır; kullanıcı onayı bekliyor; teknik plan ve uygulama başlamadı |
 
 - Çalışma dalı: `experiment/hex-world-laboratory`.
 - Aşama 6 son otomatik test kapısında Laboratuvar CI 681/681 testle başarılıdır.
@@ -826,7 +826,7 @@ Aşama 10 Genel Planı ve Teknik Mimari Planı kullanıcı tarafından onaylanm�
 
 Dünya görsel zenginleştirmesi (arazi dokuları, bitki örtüsü, ağaç/kaya/çevre varlıkları, ışık ve atmosfer) Aşama 7'nin geriye dönük eksik işi değildir. Kullanıcı kararı doğrultusunda ihtiyaç duyulan ileriki aşamalarda ayrı kapsam olarak ele alınacaktır.
 
-Aşama 15 genel ve ayrıntılı teknik planları kullanıcı tarafından onaylanmıştır. 15.1–15.8 çalışmaları tamamlanarak [ADR durum envanteri](PHASE-15-ADR-STATUS.md), [API kataloğu](PHASE-15-API-CATALOG.md), [veri akışı](PHASE-15-DATA-FLOW.md), [veri uyumluluğu](PHASE-15-DATA-COMPATIBILITY.md), [Lab/Main eşleştirmesi](../reports/PHASE-15-INTEGRATION-MAPPING.md), [bağımlılık/lisans denetimi](../reports/PHASE-15-DEPENDENCY-AND-LICENSE-AUDIT.md), [A16 entegrasyon taslağı](PHASE-16-INTEGRATION-SEQUENCE-DRAFT.md), [test matrisi](PHASE-15-TEST-AND-ACCEPTANCE-MATRIX.md) ve [koşullu hazırlık kararı](../reports/PHASE-15-READINESS-DECISION.md) oluşturulmuştur. Son HEAD CI ve kullanıcı manuel kabulü beklenmektedir. A16 kod entegrasyonu başlamamıştır.
+Aşama 15 genel ve ayrıntılı teknik planları kullanıcı tarafından onaylanmıştır. 15.1–15.8 çalışmaları tamamlanarak [ADR durum envanteri](PHASE-15-ADR-STATUS.md), [API kataloğu](PHASE-15-API-CATALOG.md), [veri akışı](PHASE-15-DATA-FLOW.md), [veri uyumluluğu](PHASE-15-DATA-COMPATIBILITY.md), [Lab/Main eşleştirmesi](../reports/PHASE-15-INTEGRATION-MAPPING.md), [bağımlılık/lisans denetimi](../reports/PHASE-15-DEPENDENCY-AND-LICENSE-AUDIT.md), [A16 entegrasyon taslağı](PHASE-16-INTEGRATION-SEQUENCE-DRAFT.md), [test matrisi](PHASE-15-TEST-AND-ACCEPTANCE-MATRIX.md) ve [koşullu hazırlık kararı](../reports/PHASE-15-READINESS-DECISION.md) oluşturulmuştur. Son HEAD CI ve kullanıcı manuel kabulü beklenmektedir. Eski A16 kod entegrasyonu başlamamıştır; eski taslak 20 Kasım 2026 tarihinde geçersiz kılınmıştır. Aşama 17 izometrik ana oyun planı onay beklemektedir.
 
 **Her aşama ve kapsam değişikliği ayrıca onaylanır. Korunan `main` ve `demo_eldoria` dallarına bu laboratuvar çalışması kapsamında yazılmaz.**
 
@@ -869,3 +869,5 @@ Aşama 15 genel ve ayrıntılı teknik planları kullanıcı tarafından onaylan
 | 4.6 | Güncellendi — 19 Kasım 2026 | 15.2–15.8 ADR, API, veri akışı/uyumluluk, Lab/Main eşleştirmesi, bağımlılık/lisans denetimi, A16 dilim taslağı, test matrisi ve koşullu hazırlık kararı tamamlandı; son CI ve kullanıcı kabulü bekleniyor |
 
 | 4.7 | Güncellendi — 19 Kasım 2026 | Kullanıcı Aşama 15 belgelerini kabul etti; son HEAD Lab CI ve Core Quality başarılı; Aşama 15 resmen kapatıldı |
+
+| 4.8 | Güncellendi — 20 Kasım 2026 | Eski Aşama 16 entegrasyon taslağı uygulama başlamadan kapatılıp geçersiz kılındı; izometrik ana oyun hedefi bağlayıcı ürün yönü olarak eklendi; Aşama 17 genel planı oluşturuldu ve kullanıcı onayına sunuldu |
