@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "map_id": "starting_valley",
+  "placements": [
+    {
+      "domain_id": "warden_lyra",
+      "kind": "npc",
+      "q": 1,
+      "r": 0,
+      "blocks_movement": true,
+      "blocks_occupancy": true
+    }
+  ]
+}
