@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import math
 
+from core.domain.movement import MovementIntent
+from core.domain.physics import Vector2
 from core.domain.spatial import HexDirection, LocalHexPosition, WorldPoint, world_point_to_hex
 from game_ui.world_transform import WorldTransform
 
@@ -223,52 +225,64 @@ class HexGameplayView:
             animator.update(self.elapsed_seconds)
         self._advance_player_physics()
 
+    @property
+    def has_click_move_goal(self) -> bool:
+        return self._move_goal is not None
+
+    def click_move_intent(self) -> MovementIntent:
+        """Return a direction intent for the shared native movement controller."""
+        if self._move_goal is None:
+            return MovementIntent()
+        runtime = self.service.hex_world_runtime
+        if runtime is None:
+            self._clear_move_goal()
+            return MovementIntent()
+        try:
+            entity = runtime.entity(self.service.player_actor_id)
+            binding = self.service.hex_actor_binding
+        except (KeyError, RuntimeError, ValueError):
+            self._clear_move_goal()
+            return MovementIntent()
+        if entity.position.map_id != self._move_map_id:
+            self._clear_move_goal()
+            return MovementIntent()
+        snapshot = binding.physics_snapshot
+        body = binding.player_body
+        if snapshot is None or body is None:
+            self._clear_move_goal()
+            return MovementIntent()
+        current = runtime.continuous_position(self.service.player_actor_id).point
+        if entity.position.cell == self._move_goal:
+            target = snapshot.cell_center(self._move_goal)
+        else:
+            path = runtime.path_to(
+                self.service.player_actor_id,
+                self._move_goal,
+                edge_validator=lambda source, destination: snapshot.can_reach_cell(
+                    source, destination, body,
+                ),
+            )
+            if path is None or len(path) < 2:
+                self._clear_move_goal()
+                return MovementIntent()
+            target = snapshot.cell_center(path[1])
+        dx, dy = target.x - current.x, target.y - current.y
+        if math.hypot(dx, dy) <= 0.5:
+            self._clear_move_goal()
+            return MovementIntent()
+        return MovementIntent(Vector2(dx, dy))
+
     def _advance_player_physics(self) -> None:
-        """Run player input/path movement through the same 60 Hz physics step."""
-        if not self._manual_directions and self._move_goal is None:
+        """Fallback fixed-step input for views hosted without the native loop."""
+        if not self._manual_directions:
             self._physics_accumulator = 0.0
             return
         self._physics_accumulator += min(self.elapsed_seconds, 0.25)
         steps = 0
-        while (
-            self._physics_accumulator >= self.PHYSICS_STEP_SECONDS
-            and steps < 8
-        ):
-            if self._manual_directions:
-                self.service.move_player_directions(
-                    self._manual_directions, self.PHYSICS_STEP_SECONDS,
-                )
-            elif self._move_goal is not None:
-                runtime = self.service.hex_world_runtime
-                if runtime is None:
-                    self._clear_move_goal()
-                    break
-                try:
-                    entity = runtime.entity(self.service.player_actor_id)
-                except KeyError:
-                    self._clear_move_goal()
-                    break
-                if entity.position.map_id != self._move_map_id:
-                    self._clear_move_goal()
-                    break
-                if entity.position.cell == self._move_goal:
-                    binding = self.service.hex_actor_binding
-                    snapshot = binding.physics_snapshot
-                    if snapshot is None:
-                        self._clear_move_goal()
-                        break
-                    current = runtime.continuous_position(
-                        self.service.player_actor_id,
-                    ).point
-                    target = snapshot.cell_center(self._move_goal)
-                    if math.hypot(current.x - target.x, current.y - target.y) <= 0.5:
-                        self._clear_move_goal()
-                        break
-                result = self.service.move_player_toward(
-                    self._move_goal, self.PHYSICS_STEP_SECONDS,
-                )
-                if not result.success:
-                    self._clear_move_goal()
+        while self._physics_accumulator >= self.PHYSICS_STEP_SECONDS and steps < 8:
+            self.service.move_player_directions(
+                self._manual_directions, self.PHYSICS_STEP_SECONDS,
+            )
             self._physics_accumulator -= self.PHYSICS_STEP_SECONDS
             steps += 1
 
