@@ -1,4 +1,14 @@
 {
   "schema_version": 1,
-  "nodes": []
+  "nodes": [
+    {
+      "id": "herb_patch_01",
+      "resource_type": "wood",
+      "unit": "item",
+      "initial_quantity": 12,
+      "capacity": 20,
+      "regeneration_rate": 1,
+      "gathering_duration_ticks": 60
+    }
+  ]
 }
