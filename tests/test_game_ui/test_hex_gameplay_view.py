@@ -64,6 +64,9 @@ class FakeService:
     def world_target_at_world_point(self, map_id, point):
         return None
 
+    def transition_at_world_point(self, map_id, point):
+        return None
+
     def npc_at_world_point(self, map_id, point):
         if not isinstance(point, WorldPoint):
             raise TypeError("point must be a WorldPoint")
