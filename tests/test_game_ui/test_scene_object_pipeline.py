@@ -1,3 +1,6 @@
+import json
+import shutil
+import tempfile
 from pathlib import Path
 
 from core.domain.spatial import HexCoord, WorldPoint, axial_to_world_point
@@ -54,3 +57,19 @@ def test_prop_hit_test_uses_trunk_collider_not_entire_canopy():
     assert hit is not None
     assert hit.object_id == obj.object_id
     assert canopy_only is None
+
+
+def test_pipeline_preserves_structure_kind_for_interaction_routing():
+    with tempfile.TemporaryDirectory() as directory:
+        package_path = Path(directory) / "demo_eldoria"
+        shutil.copytree(PACKAGE_ROOT, package_path)
+        placement_path = package_path / "placements" / "empty.json"
+        definition = json.loads(placement_path.read_text(encoding="utf-8"))
+        definition["objects"][0]["kind"] = "structure"
+        placement_path.write_text(
+            json.dumps(definition), encoding="utf-8",
+        )
+
+        pipeline = SceneObjectPipeline(package_path, FakePygame(), 32.0)
+
+        assert pipeline.objects_for_map("starting_valley")[0].kind == "structure"
