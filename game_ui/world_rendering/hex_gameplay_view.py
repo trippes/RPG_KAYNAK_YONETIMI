@@ -46,6 +46,7 @@ class HexGameplayView:
         self._npc_animators = {}
         self._player_facing = "south"
         self._character_sprite_cache = {}
+        self._last_render_stats = {}
         self.zoom = 1.0
         self.elapsed_seconds = 0.0
         self.mouse_position = None
@@ -68,6 +69,11 @@ class HexGameplayView:
         self.context_menu_position = None
         self.selected_npc_id = None
         self.selected_scene_object_id = None
+
+    @property
+    def render_stats(self):
+        """Return the latest deterministic renderer counters."""
+        return dict(self._last_render_stats)
 
     def _npc_at_screen_position(self, runtime, position, map_id):
         if position is None or self._panel is None or not self._panel.collidepoint(position):
@@ -506,6 +512,11 @@ class HexGameplayView:
                 zoom=self.zoom,
             )
 
+            visible_cell_count = 0
+            visible_scene_count = 0
+            culled_scene_count = 0
+            drawn_scene_count = 0
+            drawn_actor_count = 0
             cells = sorted(
                 map_definition.valid_cells,
                 key=lambda position: (position.r, position.q),
@@ -519,6 +530,7 @@ class HexGameplayView:
                 if self.terrain.is_visible(
                     center, radius * 1.35, renderer.width, renderer.height,
                 ):
+                    visible_cell_count += 1
                     self.terrain.draw_cell(
                         renderer,
                         position,
@@ -568,7 +580,9 @@ class HexGameplayView:
                     if not self._scene_pipeline.is_visible(
                         scene_object, foot, panel, self.zoom
                     ):
+                        culled_scene_count += 1
                         continue
+                    visible_scene_count += 1
                     layer_group = (
                         0 if scene_object.layer == "underlay"
                         else 2 if scene_object.layer == "overlay"
@@ -595,6 +609,7 @@ class HexGameplayView:
                         renderer, item, foot, self.zoom
                     ):
                         self._draw_scene_fallback(renderer, foot, radius)
+                    drawn_scene_count += 1
                     continue
                 if item.kind in {"player", "npc"}:
                     animator = self._animator_for_actor(
@@ -620,6 +635,7 @@ class HexGameplayView:
                         64.0 * self.zoom, (0.5, 1.0),
                         self._character_sprite_cache,
                     )
+                    drawn_actor_count += 1
                 else:
                     renderer.pg.draw.circle(
                         surface,

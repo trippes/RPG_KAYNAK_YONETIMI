@@ -78,8 +78,14 @@ class HexTerrainRenderer:
     ):
         pg = renderer.pg
         polygon = self.polygon_for(center, radius)
+        seed = (cell.q * 73856093) ^ (cell.r * 19349663)
         base = self.color_for(cell_data, selected=selected)
+        if not selected and not cell_data.blocked:
+            variation = ((seed >> 3) % 7) - 3
+            base = tuple(max(0, min(255, channel + variation)) for channel in base)
         pg.draw.polygon(renderer.surface, base, polygon)
+        outline = tuple(max(0, round(channel * 0.72)) for channel in base)
+        pg.draw.polygon(renderer.surface, outline, polygon, 1)
 
         textures = tuple(images) + ((image,) if image is not None else ())
         size = max(1, round(radius * 2.08))
@@ -89,7 +95,6 @@ class HexTerrainRenderer:
                 (round(center[0] - size / 2), round(center[1] - size / 2)),
             )
 
-        seed = (cell.q * 73856093) ^ (cell.r * 19349663)
         detail = (
             (103, 148, 76)
             if cell_data.terrain_id == "grass"
