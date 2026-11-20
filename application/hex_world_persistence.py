@@ -459,7 +459,7 @@ class HexWorldSnapshot:
                 runtime.remove_entity(entity_id)
             runtime.restore_patrol_indices({})
             raise HexWorldPersistenceError(
-                "Hex-world snapshot could not be restored atomically."
+                f"Hex-world snapshot could not be restored atomically: {error}"
             ) from error
         return runtime
 
