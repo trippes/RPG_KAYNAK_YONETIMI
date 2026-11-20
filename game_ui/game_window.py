@@ -784,6 +784,32 @@ class GameWindow:
             self.screens["container"].set_container(container_id)
             self.window_manager.open("container")
             next_screen = None
+        elif next_screen == "gather":
+            main_screen = self.screens.get(self.gameplay_screen)
+            node_id = getattr(main_screen, "selected_interaction_target_id", None)
+            try:
+                if not node_id:
+                    raise ValueError("Önce bir kaynak düğümü seçilmelidir.")
+                self.service.start_gathering_one(
+                    self.service.player_actor_id, node_id, "player",
+                )
+                self._set_notice("Kaynak toplama başladı.", "info")
+            except (KeyError, RuntimeError, ValueError) as error:
+                self._set_notice(f"Kaynak toplanamadı: {error}", "error")
+            next_screen = self.gameplay_screen
+        elif isinstance(next_screen, str) and next_screen.startswith("door:"):
+            transition_id = next_screen.split(":", 1)[1]
+            try:
+                result = self.service.hex_actor_binding.transition(
+                    self.service.player_actor_id, transition_id,
+                )
+                self._set_notice(
+                    "Geçiş kullanıldı." if result.success else "Geçiş kullanılamadı.",
+                    "info" if result.success else "error",
+                )
+            except (KeyError, RuntimeError, ValueError) as error:
+                self._set_notice(f"Geçiş kullanılamadı: {error}", "error")
+            next_screen = self.gameplay_screen
         if next_screen == "continue":
             next_screen = self._open_save_slots("load")
         elif next_screen == "new_game":
