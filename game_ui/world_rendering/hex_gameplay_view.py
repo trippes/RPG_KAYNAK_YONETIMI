@@ -353,18 +353,31 @@ class HexGameplayView:
             ):
                 return
             world_point = self.transform.screen_to_world_point(*state.mouse_pos)
-            target = self.service.world_target_at_world_point(
-                player.position.map_id, world_point,
+            scene_object = (
+                self._scene_pipeline.object_at_world_point(
+                    player.position.map_id, world_point, self.transform,
+                )
+                if self._scene_pipeline is not None else None
             )
-            if target is not None:
-                self.context_menu_target_kind, self.context_menu_target_id = target
+            if scene_object is not None and scene_object.kind == "structure":
+                self.context_menu_target_kind = "structure"
+                self.context_menu_target_id = scene_object.object_id
+            elif scene_object is not None:
+                self.selected_scene_object_id = scene_object.object_id
+                return "inspect"
             else:
-                transition_id = self.service.transition_at_world_point(
+                target = self.service.world_target_at_world_point(
                     player.position.map_id, world_point,
                 )
-                if transition_id is not None:
-                    self.context_menu_target_kind = "door"
-                    self.context_menu_target_id = transition_id
+                if target is not None:
+                    self.context_menu_target_kind, self.context_menu_target_id = target
+                else:
+                    transition_id = self.service.transition_at_world_point(
+                        player.position.map_id, world_point,
+                    )
+                    if transition_id is not None:
+                        self.context_menu_target_kind = "door"
+                        self.context_menu_target_id = transition_id
             if self.context_menu_target_id is not None:
                 menu_x, menu_y = state.mouse_pos
                 menu_x = min(
@@ -440,6 +453,8 @@ class HexGameplayView:
                         return f"container:{target_id}"
                     if target_kind == "door":
                         return f"door:{target_id}"
+                    if target_kind == "structure":
+                        return f"structure:{target_id}"
                 self.context_menu_target_kind = None
                 self.context_menu_target_id = None
                 self.context_menu_position = None
