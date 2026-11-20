@@ -84,6 +84,9 @@ class GameWindow:
             else None
         )
         self._movement_clock = FixedStepAccumulator()
+        # NPC simulation advances independently from player input. Opening an
+        # overlay or standing still must not freeze patrols and companions.
+        self._npc_simulation_clock = FixedStepAccumulator()
         self._movement_configs = {}
         self.save_storage = save_storage
         migration_report = None
@@ -307,21 +310,36 @@ class GameWindow:
                 self._movement_clock.step_seconds,
             )
             self.service._player_movement_mode = step_intent.mode
-            advance_patrols = getattr(
-                self.service, "advance_npc_patrols", None,
-            )
-            if callable(advance_patrols):
-                advance_patrols(self._movement_clock.step_seconds)
-            advance_avoidance = getattr(
-                self.service, "advance_npc_avoidance", None,
-            )
-            if callable(advance_avoidance):
-                advance_avoidance(self._movement_clock.step_seconds)
-            advance_companions = getattr(
-                self.service, "advance_companions", None,
-            )
-            if callable(advance_companions):
-                advance_companions(self._movement_clock.step_seconds)
+
+    def _advance_npc_simulation(self, elapsed_seconds, *, active):
+        """Advance NPC behaviors on their own fixed clock, even while the player is idle.
+
+        Overlay windows do not pause the world. The pause menu and active dialogue
+        do, matching the gameplay input/simulation pause policy.
+        """
+        service = getattr(self, "service", None)
+        clock = getattr(self, "_npc_simulation_clock", None)
+        if service is None or clock is None:
+            return
+        step_count = clock.advance(elapsed_seconds, active=active)
+        if not active or step_count <= 0:
+            return
+
+        behavior_steps = (
+            "advance_npc_patrols",
+            "advance_npc_avoidance",
+            "advance_companions",
+        )
+        for _ in range(step_count):
+            try:
+                for method_name in behavior_steps:
+                    advance = getattr(service, method_name, None)
+                    if callable(advance):
+                        advance(clock.step_seconds)
+            except (KeyError, RuntimeError, ValueError) as error:
+                clock.reset()
+                self._set_notice(f"NPC simülasyonu durduruldu: {error}", "error")
+                break
 
     def _ensure_save_storage(self):
         failure = getattr(self, "_save_storage_failure", None)
@@ -935,6 +953,14 @@ class GameWindow:
             movement_intent,
             active=movement_active,
             click_to_move=click_to_move,
+        )
+        self._advance_npc_simulation(
+            elapsed_seconds,
+            active=(
+                self.gameplay_active
+                and not self.pause_menu_open
+                and not dialogue_now_active
+            ),
         )
 
         if self.gameplay_active:
