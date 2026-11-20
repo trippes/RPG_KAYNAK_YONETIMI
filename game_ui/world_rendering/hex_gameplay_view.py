@@ -262,7 +262,17 @@ class HexGameplayView:
                 companion = self.service.companion_command_service.registry.get(npc_id)
                 if companion is not None:
                     self.context_menu_npc_id = npc_id
-                    self.context_menu_position = state.mouse_pos
+                    menu_x, menu_y = state.mouse_pos
+                    if self._panel is not None:
+                        menu_x = min(
+                            max(self._panel.left, menu_x),
+                            max(self._panel.left, self._panel.right - 176),
+                        )
+                        menu_y = min(
+                            max(self._panel.top, menu_y),
+                            max(self._panel.top, self._panel.bottom - 56),
+                        )
+                    self.context_menu_position = (menu_x, menu_y)
                     return "companion_menu"
         elif state.mouse_clicked and state.mouse_pos is not None:
             if self.context_menu_npc_id is not None and self.context_menu_position is not None:

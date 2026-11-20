@@ -14,6 +14,7 @@ class MainScreen:
         self.selected_scene_object_id = None
         self.context_menu_npc_id = None
         self.context_menu_position = None
+        self.notice = None
 
     def _runtime(self):
         return getattr(self.service, "hex_world_runtime", None)
@@ -35,6 +36,9 @@ class MainScreen:
     def handle(self, state):
         if self._runtime() is not None:
             result = self._view().handle(state)
+            self.selected_scene_object_id = self._view().selected_scene_object_id
+            self.context_menu_npc_id = self._view().context_menu_npc_id
+            self.context_menu_position = self._view().context_menu_position
             if result == "dialogue":
                 self.selected_npc_id = self._view().selected_npc_id
                 self.selected_scene_object_id = None
@@ -50,7 +54,7 @@ class MainScreen:
             if result == "companion_command":
                 self.context_menu_npc_id = None
                 self.context_menu_position = None
-                self.message = "Yoldaş komutu uygulandı."
+                self.notice = "Yoldaş komutu uygulandı."
                 return "companion_command"
         return None
 
@@ -61,6 +65,8 @@ class MainScreen:
                     f"Seçili çevre nesnesi: {self.selected_scene_object_id}",
                     28, 34,
                 )
+            if self.notice is not None:
+                renderer.text(self.notice, 28, 58)
             if self.context_menu_npc_id is not None and self.context_menu_position is not None:
                 x, y = self.context_menu_position
                 x = min(max(8, x), max(8, renderer.width - 184))
