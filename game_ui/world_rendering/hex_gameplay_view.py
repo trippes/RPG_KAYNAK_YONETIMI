@@ -682,6 +682,7 @@ class HexGameplayView:
                 if panel.collidepoint((mx, my)):
                     local_mouse = (mx - panel.x, my - panel.y)
 
+            camera_started = perf_counter_ns()
             camera_x, camera_y = self.camera.update(
                 target,
                 local_mouse,
@@ -691,6 +692,7 @@ class HexGameplayView:
                 self.elapsed_seconds,
                 projection=self.transform.projection,
             )
+            camera_ms = (perf_counter_ns() - camera_started) / 1_000_000.0
             if self._camera_map_id != player.position.map_id:
                 self.camera.x, self.camera.y = target
                 self._camera_map_id = player.position.map_id
@@ -896,10 +898,12 @@ class HexGameplayView:
             self._last_render_stats = {
                 "render_ms": (perf_counter_ns() - frame_started) / 1_000_000.0,
                 "terrain_ms": terrain_ms,
+                "camera_ms": camera_ms,
                 "total_cells": len(map_definition.valid_cells),
                 "visible_cells": visible_cell_count,
                 "drawn_cells": visible_cell_count,
                 "total_actors": len(entities),
+                "total_npcs": sum(1 for entity in entities if entity.kind == "npc"),
                 "drawn_actors": drawn_actor_count,
                 "visible_scene_objects": visible_scene_count,
                 "culled_scene_objects": culled_scene_count,
