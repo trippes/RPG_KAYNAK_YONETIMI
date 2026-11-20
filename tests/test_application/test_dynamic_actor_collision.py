@@ -1,4 +1,9 @@
+from types import SimpleNamespace
+
 from application.dynamic_actor_collision import DynamicActorCollisionResolver
+from application.gameplay_service import GameplayService
+from application.hex_actor_binding import ActorHexBindingService
+from application.actor_system import WorldActor, WorldActorRegistry
 from application.hex_map_definition import parse_hex_map
 from application.hex_physics_bridge import build_hex_physics_snapshot
 from application.hex_world_runtime import HexWorldRuntime
@@ -163,3 +168,67 @@ def test_continuous_static_collision_slides_along_a_wall_without_tunnelling():
     assert result.applied_displacement.x < 12.1
     assert result.applied_displacement.y > 25.0
     assert result.unresolved_penetration <= 1e-7
+
+
+def test_gameplay_service_commits_player_motion_and_npc_push_through_one_runtime():
+    runtime, definition = make_runtime()
+    snapshot = build_hex_physics_snapshot(WorldId("world"), definition, 32.0)
+    actors = WorldActorRegistry()
+    actors.add(WorldActor("hero", "world", "player"))
+    actors.add(WorldActor("guard", "world", "npc"))
+    player_body = PhysicsBodyDefinition("hero", CircleShape(8.0))
+    npc_body = PhysicsBodyDefinition("guard", CircleShape(4.0))
+    binding = ActorHexBindingService(
+        actors, runtime, WorldId("world"),
+        physics_snapshot=snapshot, player_body=player_body,
+    )
+    service = SimpleNamespace(
+        hex_actor_binding=binding,
+        player_actor_id="hero",
+        npc_physics_bodies={"guard": npc_body},
+    )
+
+    result = GameplayService.move_player_continuously(
+        service, Vector2(45.0, 0.0),
+    )
+
+    assert result.success
+    assert runtime.continuous_position("hero").point.x > 40.0
+    assert runtime.continuous_position("guard").point.x > 55.0
+    for entity_id in ("hero", "guard"):
+        assert runtime.occupancy.get(entity_id).position == runtime.entity(entity_id).position
+
+
+def test_gameplay_service_uses_static_contact_sliding_for_player_motion():
+    runtime, definition = make_runtime()
+    wall = StaticObstacle(
+        "vertical-wall", "field",
+        ConvexPolygonShape((
+            WorldPoint(20.0, -100.0), WorldPoint(25.0, -100.0),
+            WorldPoint(25.0, 100.0), WorldPoint(20.0, 100.0),
+        )),
+        WorldPoint(0.0, 0.0),
+    )
+    snapshot = build_hex_physics_snapshot(
+        WorldId("world"), definition, 32.0, object_obstacles=(wall,),
+    )
+    actors = WorldActorRegistry()
+    actors.add(WorldActor("hero", "world", "player"))
+    binding = ActorHexBindingService(
+        actors, runtime, WorldId("world"),
+        physics_snapshot=snapshot,
+        player_body=PhysicsBodyDefinition("hero", CircleShape(8.0)),
+    )
+    service = SimpleNamespace(
+        hex_actor_binding=binding, player_actor_id="hero", npc_physics_bodies={},
+    )
+
+    result = GameplayService.move_player_continuously(
+        service, Vector2(40.0, 15.0),
+    )
+
+    point = runtime.continuous_position("hero").point
+    assert result.success
+    assert point.x < 12.1
+    assert point.y > 10.0
+    assert runtime.occupancy.get("hero").position == runtime.entity("hero").position
