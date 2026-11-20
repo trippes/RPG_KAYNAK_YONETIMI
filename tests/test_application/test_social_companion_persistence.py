@@ -1,3 +1,4 @@
+from core.domain.physics import CircleShape, PhysicsBodyDefinition
 from core.domain.spatial import ContinuousEntityPosition, LocalHexPosition, WorldPoint
 from npc import (
     BehaviorController, BehaviorState, CompanionCommand, CompanionRegistry,
@@ -13,6 +14,7 @@ def test_social_snapshot_persists_npc_behavior_and_companion_wait_command():
         behavior=BehaviorController(BehaviorState.FLEE),
         patrol_route=(LocalHexPosition(1, 0), LocalHexPosition(2, 0)),
         patrol_interval_seconds=0.25,
+        physics_body=PhysicsBodyDefinition("guard_body", CircleShape(5)),
     )
     companions = CompanionRegistry()
     companions.add("guard")
@@ -32,6 +34,8 @@ def test_social_snapshot_persists_npc_behavior_and_companion_wait_command():
         LocalHexPosition(1, 0), LocalHexPosition(2, 0),
     )
     assert restored_npc.patrol_interval_seconds == 0.25
+    assert restored_npc.physics_body.body_id == "guard_body"
+    assert restored_npc.physics_body.collider.radius == 5
     state = restored.companions.get("guard")
     assert state.command is CompanionCommand.WAIT
     assert state.wait_position == wait_position
