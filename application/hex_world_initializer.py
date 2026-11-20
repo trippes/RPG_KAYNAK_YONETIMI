@@ -124,8 +124,10 @@ def initialize_hex_world(service, *, content_package_path=None):
             "player",
             EntityPosition(map_id, start_position),
             MovementProfile(),
-            blocks_movement=True,
-            blocks_occupancy=True,
+            # Player/NPC overlap is resolved by continuous collider physics;
+            # cell occupancy remains an index, not a coarse actor collision wall.
+            blocks_movement=False,
+            blocks_occupancy=False,
         )
         player_registered = True
 
