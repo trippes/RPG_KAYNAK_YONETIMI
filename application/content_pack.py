@@ -826,6 +826,24 @@ def populate_gameplay_resources(service, definition_path=None, resource_definiti
     inventories.setdefault(player_rules["inventory_id"], Inventory())
     object.__setattr__(bundle, "inventories", MappingProxyType(inventories))
     bundle = service.application.holder.current
+    # The player inventory is created here, after the opening actor exists.
+    # Bind it at the domain boundary so possession checks never infer ownership
+    # from a caller-supplied inventory ID.
+    player_actor = bundle.actors.get(service.player_actor_id)
+    if player_actor is None:
+        raise ContentDefinitionError(
+            f"Configured player actor does not exist: {service.player_actor_id}"
+        )
+    if player_actor.inventory_id is None:
+        service.bind_actor_inventory(
+            service.player_actor_id, player_rules["inventory_id"],
+        )
+    elif player_actor.inventory_id != player_rules["inventory_id"]:
+        raise ContentDefinitionError(
+            f"Player actor '{service.player_actor_id}' is bound to inventory "
+            f"'{player_actor.inventory_id}', expected '{player_rules["inventory_id"]}'."
+        )
+    bundle = service.application.holder.current
     production_facilities, production_recipes = load_production_definitions(
         package_path=active_package_path,
     )
