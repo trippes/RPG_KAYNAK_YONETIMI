@@ -12,6 +12,7 @@ from types import MappingProxyType
 from application import GameplayService
 from core.errors import RPGError
 from core.domain.physics import CircleShape, PhysicsBodyDefinition
+from core.domain.spatial import LocalHexPosition
 from application.content_loader import ContentPackageError, load_content_package
 from character import Ability, Attribute, CharacterClass, CharacterFactory, Race
 from npc import Faction, NPC
@@ -156,6 +157,29 @@ def load_npc_definitions(path: str | Path | None = None, *, package_path: str | 
         if record["load_phase"] not in allowed_phases:
             raise ContentDefinitionError(
                 f"NPC '{npc_id}' has an unsupported load phase."
+            )
+        patrol_route = record.get("patrol_route", [])
+        if not isinstance(patrol_route, list):
+            raise ContentDefinitionError(f"NPC '{npc_id}' patrol_route must be a list.")
+        if patrol_route and len(patrol_route) < 2:
+            raise ContentDefinitionError(f"NPC '{npc_id}' patrol_route requires at least two waypoints.")
+        for waypoint in patrol_route:
+            if (
+                not isinstance(waypoint, list) or len(waypoint) != 2
+                or type(waypoint[0]) is not int or type(waypoint[1]) is not int
+            ):
+                raise ContentDefinitionError(
+                    f"NPC '{npc_id}' patrol waypoints must be integer [q, r] pairs."
+                )
+        interval = record.get("patrol_interval_seconds", 0.5)
+        if (
+            isinstance(interval, bool)
+            or not isinstance(interval, (int, float))
+            or not math.isfinite(interval)
+            or interval <= 0
+        ):
+            raise ContentDefinitionError(
+                f"NPC '{npc_id}' patrol_interval_seconds must be positive and finite."
             )
         faction_ids = record.get("faction_ids", [])
         if (
@@ -509,6 +533,13 @@ def _register_npcs_for_phase(service, npc_definitions, phase: str, resolve_id):
                     npc_data["role"],
                     tuple(resolve_id(value) for value in npc_data.get("faction_ids", ())),
                     physics_body=_build_npc_physics_body(npc_data),
+                    patrol_route=tuple(
+                        LocalHexPosition(q, r)
+                        for q, r in npc_data.get("patrol_route", ())
+                    ),
+                    patrol_interval_seconds=npc_data.get(
+                        "patrol_interval_seconds", 0.5,
+                    ),
                 )
             )
 
