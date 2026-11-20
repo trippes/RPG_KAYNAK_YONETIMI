@@ -4,7 +4,7 @@ from __future__ import annotations
 import math
 
 from core.domain.physics import CircleShape, PhysicsBodyDefinition, Vector2
-from core.domain.spatial import AABB, WorldPoint
+from core.domain.spatial import AABB
 from npc import BehaviorState, NPCRegistry
 
 

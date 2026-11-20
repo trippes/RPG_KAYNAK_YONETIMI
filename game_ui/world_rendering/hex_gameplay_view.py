@@ -12,7 +12,6 @@ from .character_renderer import HexCharacterRenderer
 from .depth_sorter import DepthSorter
 from .terrain_renderer import HexTerrainRenderer
 from .scene_object_pipeline import SceneObjectPipeline
-from .character_animation import CharacterAnimator
 from .character_sprite_factory import ProceduralCharacterSpriteFactory
 
 
