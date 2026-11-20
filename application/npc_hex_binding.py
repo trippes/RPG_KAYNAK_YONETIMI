@@ -116,7 +116,8 @@ class NPCSpatialBindingService:
             return self._inactive_result(npc_id)
         snapshot = self._actor_binding.physics_snapshot
         body = npc.physics_body
-        if snapshot is not None and body.enabled:
+        entity = self._actor_binding.spatial_entity(npc_id)
+        if snapshot is not None and snapshot.map_id == entity.position.map_id and body.enabled:
             result = self._actor_binding.move_with_physics(
                 npc_id, direction, snapshot, body,
             )
@@ -136,7 +137,8 @@ class NPCSpatialBindingService:
             return self._inactive_result(npc_id)
         snapshot = self._actor_binding.physics_snapshot
         body = npc.physics_body
-        if snapshot is not None and body.enabled:
+        entity = self._actor_binding.spatial_entity(npc_id)
+        if snapshot is not None and snapshot.map_id == entity.position.map_id and body.enabled:
             result = self._actor_binding.move_to_with_physics(
                 npc_id, target, snapshot, body,
             )
