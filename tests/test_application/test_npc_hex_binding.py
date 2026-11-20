@@ -185,3 +185,35 @@ def test_npc_spatial_binding_is_scoped_to_the_active_world():
 
     with pytest.raises(GameplayServiceError, match="not bound to the active world"):
         _ = service.npc_hex_binding
+
+
+def test_npc_collider_aabb_moves_with_authoritative_continuous_position():
+    service, _bundle, _npc, runtime = prepare_npc()
+    service.npc_hex_binding.register_spatial(
+        "village_guard", EntityPosition("village", LocalHexPosition(0, 0)),
+    )
+    anchor = runtime.continuous_position("village_guard").point
+    old_edge = AABB.around_point(WorldPoint(anchor.x - 4.5, anchor.y), 0.1)
+
+    result = runtime.set_continuous_position(
+        "village_guard", WorldPoint(anchor.x + 8.0, anchor.y),
+    )
+
+    assert result.success
+    assert "village_guard" not in runtime.query_spatial_candidates("village", old_edge)
+    new_edge = AABB.around_point(WorldPoint(anchor.x + 11.5, anchor.y), 0.1)
+    assert "village_guard" in runtime.query_spatial_candidates("village", new_edge)
+
+
+def test_unregistering_npc_removes_its_collider_from_broadphase_queries():
+    service, _bundle, _npc, runtime = prepare_npc()
+    service.npc_hex_binding.register_spatial(
+        "village_guard", EntityPosition("village", LocalHexPosition(0, 0)),
+    )
+    anchor = runtime.continuous_position("village_guard").point
+    query = AABB.around_point(anchor, 0.1)
+    assert "village_guard" in runtime.query_spatial_candidates("village", query)
+
+    service.npc_hex_binding.unregister_spatial("village_guard")
+
+    assert "village_guard" not in runtime.query_spatial_candidates("village", query)
