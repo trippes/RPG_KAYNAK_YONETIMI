@@ -84,3 +84,29 @@ def test_disabled_npc_body_is_not_pushed():
 
     assert result.pushes == ()
     assert runtime.continuous_position("guard").point == before
+
+
+
+def test_overlapping_npcs_are_separated_by_dynamic_pair_resolution():
+    runtime, definition = make_runtime()
+    from core.domain.physics import PhysicsBodyDefinition, CircleShape
+
+    body = PhysicsBodyDefinition("guard", CircleShape(4.0))
+    runtime.set_continuous_position("guard", WorldPoint(80.0, 0.0))
+    runtime.register_entity(
+        "guard_two", "npc", EntityPosition("field", LocalHexPosition(2, 0)),
+        MovementProfile(), local_spatial_bounds=AABB(-4, -4, 4, 4),
+    )
+    runtime.set_continuous_position("guard_two", WorldPoint(85.0, 0.0))
+    second_body = PhysicsBodyDefinition("guard_two", CircleShape(4.0))
+    snapshot = build_hex_physics_snapshot(WorldId("world"), definition, 32.0)
+
+    moved = DynamicActorCollisionResolver(runtime, snapshot).resolve_npc_pairs({
+        "guard": body,
+        "guard_two": second_body,
+    })
+
+    first = runtime.continuous_position("guard").point
+    second = runtime.continuous_position("guard_two").point
+    assert set(moved) == {"guard", "guard_two"}
+    assert abs(second.x - first.x) >= 8.0

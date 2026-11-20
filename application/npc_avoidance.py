@@ -5,6 +5,7 @@ import math
 
 from core.domain.physics import CircleShape, PhysicsBodyDefinition, Vector2
 from core.domain.spatial import AABB, WorldPoint
+from .dynamic_actor_collision import DynamicActorCollisionResolver
 from npc import BehaviorState, NPCRegistry
 
 
@@ -125,7 +126,15 @@ class NPCAvoidanceSystem:
             result = self._runtime.set_continuous_position(npc.npc_id, target)
             if result.success:
                 moved.append(npc.npc_id)
-        return tuple(moved)
+        pair_moves = DynamicActorCollisionResolver(
+            self._runtime, self._snapshot,
+        ).resolve_npc_pairs({
+            npc.npc_id: npc.physics_body
+            for npc in self._npcs.all()
+            if npc.physics_body is not None
+        })
+        moved.extend(pair_moves)
+        return tuple(sorted(set(moved)))
 
 
 __all__ = ["NPCAvoidanceSystem"]
