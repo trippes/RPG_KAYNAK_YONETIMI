@@ -2,6 +2,7 @@
 
 from pathlib import Path
 from time import perf_counter_ns
+import json
 
 from .input import InputMapper
 from .movement_input import PygameMovementInput
@@ -1014,6 +1015,7 @@ class GameWindow:
     def run(self, *, fps=60):
         self.running = True
         clock = self.pg.time.Clock()
+        performance_frame_count = 0
 
         while self.running:
             self._frame_phase_times = {}
@@ -1035,6 +1037,15 @@ class GameWindow:
                 phases=self._frame_phase_times,
                 counters=self._performance_counters(),
             )
+            if self.performance_monitor.enabled:
+                performance_frame_count += 1
+                if performance_frame_count % 300 == 0:
+                    print(
+                        "ELDORIA_PERF " + json.dumps(
+                            self.performance_stats, ensure_ascii=False,
+                        ),
+                        flush=True,
+                    )
 
         self.pg.quit()
 
