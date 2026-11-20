@@ -14,7 +14,6 @@ from application.content_pack import (
     load_quest_definitions,
     load_resource_definitions,
     populate_gameplay_resources,
-    populate_gameplay_placements,
     populate_opening_content,
 )
 
