@@ -1,6 +1,8 @@
 """Runtime orchestration for player, NPC, and movable-object hex movement."""
 from __future__ import annotations
 
+import math
+
 from dataclasses import dataclass, replace
 from types import MappingProxyType
 from collections.abc import Mapping
@@ -527,7 +529,16 @@ class HexWorldRuntime:
         if any(not map_definition.has_cell(point) for point in points):
             raise ValueError("Patrol route leaves the map valid_cells mask.")
         index = self._patrol_indices.get(entity_id, 0) % len(points)
-        if entity.position.cell == points[index]:
+        waypoint_center = axial_to_world_point(
+            points[index].to_hex_coord(), self.HEX_SIZE,
+        )
+        current_point = self.continuous_position(entity_id).point
+        if (
+            math.hypot(
+                current_point.x - waypoint_center.x,
+                current_point.y - waypoint_center.y,
+            ) <= 1e-5
+        ):
             index = (index + 1) % len(points)
             self._patrol_indices[entity_id] = index
         return points[index]
