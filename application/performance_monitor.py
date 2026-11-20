@@ -44,9 +44,10 @@ class PerformanceMonitor:
     @staticmethod
     def _summary(values):
         if not values:
-            return {"count": 0, "avg_ms": 0.0, "min_ms": 0.0,
-                    "p50_ms": 0.0, "p95_ms": 0.0, "p99_ms": 0.0,
-                    "max_ms": 0.0}
+            return {"count": 0, "avg_ms": 0.0, "avg_fps": 0.0,
+                    "min_ms": 0.0, "p50_ms": 0.0, "p95_ms": 0.0,
+                    "p99_ms": 0.0, "max_ms": 0.0,
+                    "over_16_67_ms": 0, "over_25_ms": 0}
         return {
             "count": len(values),
             "avg_ms": sum(values) / len(values),
