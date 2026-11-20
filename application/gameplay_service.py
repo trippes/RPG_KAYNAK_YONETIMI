@@ -476,9 +476,15 @@ class GameplayService:
             return ()
         from .dynamic_actor_collision import DynamicActorCollisionResolver
 
-        return DynamicActorCollisionResolver(
+        resolver = DynamicActorCollisionResolver(
             binding.runtime, binding.physics_snapshot,
-        ).resolve_npc_pairs(self.npc_physics_bodies)
+        )
+        bodies = self.npc_physics_bodies
+        separated = resolver.resolve_npc_pairs(bodies)
+        player_contacts = resolver.resolve_npc_player_contacts(
+            self.player_actor_id, binding.player_body, bodies,
+        )
+        return tuple(sorted(set(separated) | set(player_contacts)))
 
     @property
     def npc_hex_binding(self) -> NPCSpatialBindingService:
@@ -525,12 +531,14 @@ class GameplayService:
             return ()
         from .npc_avoidance import NPCAvoidanceSystem
 
-        return NPCAvoidanceSystem(
+        moved = NPCAvoidanceSystem(
             bundle.social.npcs,
             runtime,
             binding.physics_snapshot,
             self.player_actor_id,
         ).step(delta_seconds)
+        contacts = self._resolve_npc_body_overlaps()
+        return tuple(sorted(set(moved) | set(contacts)))
 
     @property
     def companion_command_service(self):
