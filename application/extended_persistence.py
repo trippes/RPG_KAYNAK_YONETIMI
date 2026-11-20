@@ -7,7 +7,7 @@ from typing import Mapping
 from core.domain.spatial import ContinuousEntityPosition, WorldPoint
 from npc import (
     BehaviorController, BehaviorState, CompanionCommand, CompanionRegistry,
-    CompanionState, Faction, NPC, NPCRegistry, Relationship, RelationshipGraph,
+    Faction, NPC, NPCRegistry, Relationship, RelationshipGraph,
     ReputationLedger,
 )
 from quests import Dialogue, DialogueChoice, DialogueNode

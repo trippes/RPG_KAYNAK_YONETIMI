@@ -32,7 +32,7 @@ def make_world(*, blocked=False):
     fleeing = NPC("fleeing", "Fleeing", behavior=BehaviorController(BehaviorState.FLEE))
     idle = NPC("idle", "Idle")
     registry = NPCRegistry((fleeing, idle))
-    for npc, q in ((fleeing, 1), (idle, 2)):
+    for npc, q in ((fleeing, 1), (idle, 3 if blocked else 2)):
         runtime.register_entity(
             npc.npc_id, "npc", EntityPosition("field", LocalHexPosition(q, 0)),
             MovementProfile(),
