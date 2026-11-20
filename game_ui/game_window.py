@@ -277,8 +277,7 @@ class GameWindow:
         config = self._movement_configs.get(actor_id)
         input_focused = (
             self.movement_input is not None and self.movement_input.focused
-        )
-        active = active and config is not None and (input_focused or click_to_move)
+        )        active = active and config is not None and (input_focused or click_to_move)
         step_count = self._movement_clock.advance(
             elapsed_seconds,
             active=active,
@@ -557,7 +556,6 @@ class GameWindow:
             self.pause_menu_selected = (self.pause_menu_selected - 1) % len(PAUSE_MENU_OPTIONS)
         if state.pressed("down"):
             self.pause_menu_selected = (self.pause_menu_selected + 1) % len(PAUSE_MENU_OPTIONS)
-
         selected = None
         if state.mouse_pos is not None:
             for index, rect in enumerate(self._pause_menu_rects()):
@@ -837,8 +835,7 @@ class GameWindow:
                     "Geçiş kullanıldı." if result.success else "Geçiş kullanılamadı.",
                     "info" if result.success else "error",
                 )
-            except (KeyError, RuntimeError, ValueError) as error:
-                self._set_notice(f"Geçiş kullanılamadı: {error}", "error")
+            except (KeyError, RuntimeError, ValueError) as error:                self._set_notice(f"Geçiş kullanılamadı: {error}", "error")
             next_screen = self.gameplay_screen
         if next_screen == "continue":
             next_screen = self._open_save_slots("load")
@@ -1031,8 +1028,10 @@ class GameWindow:
             self._frame_phase_times["display_flip"] = (
                 perf_counter_ns() - flip_started
             ) / 1_000_000.0
+            get_rawtime = getattr(clock, "get_rawtime", None)
+            raw_frame_ms = get_rawtime() if callable(get_rawtime) else elapsed_seconds * 1000.0
             self.performance_monitor.record_frame(
-                clock.get_rawtime(),
+                raw_frame_ms,
                 phases=self._frame_phase_times,
                 counters=self._performance_counters(),
             )
