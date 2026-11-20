@@ -35,7 +35,7 @@ def make_world(*, blocked=False):
         behavior=BehaviorController(BehaviorState.PATROL),
         patrol_route=(LocalHexPosition(1, 0), LocalHexPosition(2, 0)),
         patrol_interval_seconds=0.25,
-        physics_body=PhysicsBodyDefinition("guard-body", CircleShape(4)),
+        physics_body=PhysicsBodyDefinition("guard", CircleShape(4)),
     )
     npcs = NPCRegistry((npc,))
     runtime.register_entity(
