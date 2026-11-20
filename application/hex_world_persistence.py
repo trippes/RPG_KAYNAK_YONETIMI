@@ -389,6 +389,8 @@ class HexWorldSnapshot:
         """
         if not isinstance(runtime, HexWorldRuntime):
             raise TypeError("runtime must be a HexWorldRuntime.")
+        if npc_registry is not None and not callable(getattr(npc_registry, "get", None)):
+            raise TypeError("npc_registry must provide a callable get method.")
         if runtime.world_id != self.world_id:
             raise HexWorldPersistenceError(
                 "Snapshot and runtime belong to different worlds."
