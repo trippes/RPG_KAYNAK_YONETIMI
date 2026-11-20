@@ -797,6 +797,9 @@ class GameWindow:
             except (KeyError, RuntimeError, ValueError) as error:
                 self._set_notice(f"Kaynak toplanamadı: {error}", "error")
             next_screen = self.gameplay_screen
+        elif isinstance(next_screen, str) and next_screen.startswith("structure:"):
+            self.window_manager.open("production")
+            next_screen = self.gameplay_screen
         elif isinstance(next_screen, str) and next_screen.startswith("door:"):
             transition_id = next_screen.split(":", 1)[1]
             try:
