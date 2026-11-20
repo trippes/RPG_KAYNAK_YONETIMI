@@ -11,10 +11,12 @@ from application import (
 from application.hex_map_definition import parse_hex_map
 from application.hex_world_runtime import HexWorldRuntime
 from core.domain.spatial import (
+    AABB,
     ContinuousEntityPosition, EntityPosition, LocalHexPosition, MovementProfile,
     WorldPoint, axial_to_world_point,
 )
 from core.foundation import WorldId
+from npc import NPC, NPCRegistry
 
 
 def make_map(*, blocked_cell=False):
@@ -429,3 +431,35 @@ def test_domain_owner_validation_rejects_nested_or_carried_containers(custody):
             containers=owners[3],
             membership=owners[4],
         )
+
+
+def test_restore_rebuilds_npc_collider_from_content_without_schema_change():
+    snapshot = HexWorldSnapshot(
+        WorldId("world"),
+        (record("guard", LocalHexPosition(0, 0), kind="npc"),),
+    )
+    npc_registry = NPCRegistry([NPC("guard", "Guard")])
+    target = make_runtime()
+
+    snapshot.restore_into(target, npc_registry=npc_registry)
+
+    anchor = target.continuous_position("guard").point
+    inside = AABB.around_point(WorldPoint(anchor.x + 3.5, anchor.y), 0.1)
+    outside = AABB.around_point(WorldPoint(anchor.x + 4.5, anchor.y), 0.1)
+    assert "guard" in target.query_spatial_candidates("field", inside)
+    assert "guard" not in target.query_spatial_candidates("field", outside)
+    assert snapshot.schema_version == 2
+
+
+def test_restore_rejects_missing_npc_content_before_leaving_partial_state():
+    snapshot = HexWorldSnapshot(
+        WorldId("world"),
+        (record("guard", LocalHexPosition(0, 0), kind="npc"),),
+    )
+    target = make_runtime()
+
+    with pytest.raises(HexWorldPersistenceError, match="NPC content record is missing"):
+        snapshot.restore_into(target, npc_registry=NPCRegistry())
+
+    assert target.entities() == ()
+    assert target.occupancy.snapshot() == ()
