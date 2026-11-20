@@ -173,6 +173,64 @@ class DynamicActorCollisionResolver:
 
         return tuple(sorted(moved))
 
+    def resolve_npc_player_contacts(
+        self,
+        player_id: str,
+        player_body: PhysicsBodyDefinition,
+        npc_bodies: Mapping[str, PhysicsBodyDefinition],
+    ) -> tuple[str, ...]:
+        """Keep NPCs from stepping through a stationary player after AI movement."""
+        if not isinstance(player_id, str) or not player_id.strip():
+            raise ValueError("player_id must be a non-empty string.")
+        if not isinstance(player_body, PhysicsBodyDefinition):
+            raise TypeError("player_body must be a PhysicsBodyDefinition.")
+        if not isinstance(npc_bodies, Mapping):
+            raise TypeError("npc_bodies must be a mapping.")
+        if not player_body.enabled or not isinstance(player_body.collider, CircleShape):
+            return ()
+        player = self._runtime.entity(player_id)
+        if player.kind != "player" or not player.active:
+            return ()
+        player_position = self._runtime.continuous_position(player_id).point
+        player_shape = ActorBodyTransform(player_position).transform_shape(player_body)
+        moved = []
+        for npc_id in sorted(npc_bodies):
+            body = npc_bodies[npc_id]
+            if (
+                not isinstance(body, PhysicsBodyDefinition)
+                or not body.enabled
+                or not isinstance(body.collider, CircleShape)
+            ):
+                continue
+            try:
+                entity = self._runtime.entity(npc_id)
+                if entity.kind != "npc" or not entity.active or not entity.profile.can_move:
+                    continue
+                if entity.position.map_id != player.position.map_id:
+                    continue
+                previous = self._runtime.continuous_position(npc_id).point
+            except KeyError:
+                continue
+            npc_shape = ActorBodyTransform(previous).transform_shape(body)
+            contact = collide_shapes(player_shape, npc_shape, npc_id)
+            if contact is None or contact.penetration_depth <= 0.0:
+                continue
+            correction = contact.penetration_depth + self.COLLISION_SKIN
+            displacement = Vector2(
+                -contact.normal.x * correction,
+                -contact.normal.y * correction,
+            )
+            resolution = self._snapshot.resolve_motion(previous, displacement, body)
+            target = WorldPoint(
+                previous.x + resolution.applied_displacement.x,
+                previous.y + resolution.applied_displacement.y,
+            )
+            if target != previous and self._runtime.set_continuous_position(
+                npc_id, target,
+            ).success:
+                moved.append(npc_id)
+        return tuple(moved)
+
     def resolve_player_motion(
         self,
         actor_id: str,
