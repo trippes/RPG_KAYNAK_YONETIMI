@@ -517,7 +517,7 @@ class HexWorldRuntime:
         destination = max(candidates)[-1]
         return self.move_to(entity_id, destination)
 
-    def patrol(self, entity_id: str, route) -> MovementResult:
+    def patrol(self, entity_id: str, route, *, edge_validator=None) -> MovementResult:
         entity = self.entity(entity_id)
         if entity.kind != "npc":
             raise ValueError("Patrol behavior is reserved for NPC entities.")
@@ -529,7 +529,9 @@ class HexWorldRuntime:
         index = self._patrol_indices.get(entity_id, 0) % len(points)
         if entity.position.cell == points[index]:
             index = (index + 1) % len(points)
-        result = self.move_toward(entity_id, points[index])
+        result = self.move_toward(
+            entity_id, points[index], edge_validator=edge_validator,
+        )
         if result.success and result.position.cell == points[index]:
             self._patrol_indices[entity_id] = (index + 1) % len(points)
         else:
