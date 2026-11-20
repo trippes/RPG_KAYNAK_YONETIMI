@@ -67,6 +67,7 @@ class HexGameplayView:
         self._last_runtime_position = None
         self.context_menu_npc_id = None
         self.context_menu_position = None
+        self.context_menu_is_companion = False
         self.selected_npc_id = None
         self.selected_scene_object_id = None
 
@@ -259,29 +260,36 @@ class HexGameplayView:
             self._clear_move_goal()
             self.context_menu_npc_id = None
             self.context_menu_position = None
+            self.context_menu_is_companion = False
             player = runtime.entity(self.service.player_actor_id)
             npc_id = self._npc_at_screen_position(
                 runtime, state.mouse_pos, player.position.map_id,
             )
-            companion_service = getattr(
-                self.service, "companion_command_service", None,
-            )
-            companion_registry = getattr(companion_service, "registry", None)
-            if npc_id is not None and companion_registry is not None:
-                if companion_registry.get(npc_id) is not None:
-                    self.context_menu_npc_id = npc_id
-                    menu_x, menu_y = state.mouse_pos
-                    if self._panel is not None:
-                        menu_x = min(
-                            max(self._panel.left, menu_x),
-                            max(self._panel.left, self._panel.right - 176),
-                        )
-                        menu_y = min(
-                            max(self._panel.top, menu_y),
-                            max(self._panel.top, self._panel.bottom - 56),
-                        )
-                    self.context_menu_position = (menu_x, menu_y)
-                    return "companion_menu"
+            if npc_id is not None:
+                companion_service = getattr(
+                    self.service, "companion_command_service", None,
+                )
+                companion_registry = getattr(companion_service, "registry", None)
+                self.context_menu_is_companion = (
+                    companion_registry is not None
+                    and companion_registry.get(npc_id) is not None
+                )
+                self.context_menu_npc_id = npc_id
+                menu_x, menu_y = state.mouse_pos
+                if self._panel is not None:
+                    menu_x = min(
+                        max(self._panel.left, menu_x),
+                        max(self._panel.left, self._panel.right - 176),
+                    )
+                    menu_y = min(
+                        max(self._panel.top, menu_y),
+                        max(self._panel.top, self._panel.bottom - 56),
+                    )
+                self.context_menu_position = (menu_x, menu_y)
+                return (
+                    "companion_menu" if self.context_menu_is_companion
+                    else "npc_menu"
+                )
             return
 
         manual_move = False
@@ -325,15 +333,22 @@ class HexGameplayView:
                 menu_x, menu_y = self.context_menu_position
                 mouse_x, mouse_y = state.mouse_pos
                 if menu_x <= mouse_x <= menu_x + 176 and menu_y <= mouse_y <= menu_y + 56:
-                    command = "follow" if mouse_y < menu_y + 28 else "wait"
-                    self.service.command_companion(
-                        self.context_menu_npc_id, command,
-                    )
+                    first_option = mouse_y < menu_y + 28
+                    npc_id = self.context_menu_npc_id
+                    is_companion = self.context_menu_is_companion
                     self.context_menu_npc_id = None
                     self.context_menu_position = None
-                    return "companion_command"
+                    self.context_menu_is_companion = False
+                    if is_companion:
+                        self.service.command_companion(
+                            npc_id, "follow" if first_option else "wait",
+                        )
+                        return "companion_command"
+                    self.selected_npc_id = npc_id
+                    return "dialogue" if first_option else "inspect_npc"
                 self.context_menu_npc_id = None
                 self.context_menu_position = None
+                self.context_menu_is_companion = False
             player = runtime.entity(self.service.player_actor_id)
             npc_id = self._npc_at_screen_position(
                 runtime, state.mouse_pos, player.position.map_id,

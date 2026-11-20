@@ -14,6 +14,7 @@ class MainScreen:
         self.selected_scene_object_id = None
         self.context_menu_npc_id = None
         self.context_menu_position = None
+        self.context_menu_is_companion = False
         self.notice = None
 
     def _runtime(self):
@@ -36,9 +37,18 @@ class MainScreen:
     def handle(self, state):
         if self._runtime() is not None:
             result = self._view().handle(state)
-            self.selected_scene_object_id = self._view().selected_scene_object_id
-            self.context_menu_npc_id = self._view().context_menu_npc_id
-            self.context_menu_position = self._view().context_menu_position
+            self.selected_scene_object_id = getattr(
+                self._view(), "selected_scene_object_id", None,
+            )
+            self.context_menu_npc_id = getattr(
+                self._view(), "context_menu_npc_id", None,
+            )
+            self.context_menu_position = getattr(
+                self._view(), "context_menu_position", None,
+            )
+            self.context_menu_is_companion = getattr(
+                self._view(), "context_menu_is_companion", False,
+            )
             if result == "dialogue":
                 self.selected_npc_id = self._view().selected_npc_id
                 self.selected_scene_object_id = None
@@ -48,9 +58,12 @@ class MainScreen:
                 self.context_menu_npc_id = None
                 return "inspect"
             if result == "companion_menu":
-                self.context_menu_npc_id = self._view().context_menu_npc_id
-                self.context_menu_position = self._view().context_menu_position
                 return "companion_menu"
+            if result == "npc_menu":
+                return "npc_menu"
+            if result == "inspect_npc":
+                self.notice = f"NPC: {getattr(self._view(), 'selected_npc_id', 'Bilinmeyen')}"
+                return "inspect_npc"
             if result == "companion_command":
                 self.context_menu_npc_id = None
                 self.context_menu_position = None
@@ -73,8 +86,12 @@ class MainScreen:
                 y = min(max(8, y), max(8, renderer.height - 64))
                 menu = renderer.pg.Rect(x, y, 176, 56)
                 renderer.panel(menu, (28, 35, 49), (131, 151, 176))
-                renderer.text("Beni takip et", x + 10, y + 6)
-                renderer.text("Burada bekle", x + 10, y + 31)
+                if self.context_menu_is_companion:
+                    renderer.text("Beni takip et", x + 10, y + 6)
+                    renderer.text("Burada bekle", x + 10, y + 31)
+                else:
+                    renderer.text("Konuş", x + 10, y + 6)
+                    renderer.text("İncele", x + 10, y + 31)
             return
 
         panel = renderer.pg.Rect(
