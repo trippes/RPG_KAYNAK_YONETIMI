@@ -3,6 +3,7 @@ from types import SimpleNamespace
 from application.dynamic_actor_collision import DynamicActorCollisionResolver
 from application.gameplay_service import GameplayService
 from application.hex_actor_binding import ActorHexBindingService
+from application.npc_hex_binding import NPCSpatialBindingService
 from application.actor_system import WorldActor, WorldActorRegistry
 from application.hex_map_definition import parse_hex_map
 from application.hex_physics_bridge import build_hex_physics_snapshot
@@ -14,6 +15,7 @@ from core.domain.spatial import (
     AABB, EntityPosition, HexDirection, LocalHexPosition, MovementProfile, WorldPoint,
 )
 from core.foundation import WorldId
+from npc import NPC, NPCRegistry
 
 
 def make_runtime():
@@ -298,3 +300,27 @@ def test_click_to_move_advances_continuously_along_the_next_path_edge():
     assert result.success
     assert 0.0 < runtime.continuous_position("hero").point.x < 10.0
     assert runtime.entity("hero").position.cell == LocalHexPosition(0, 0)
+
+
+def test_direct_npc_movement_uses_physics_and_resolves_player_contact():
+    runtime, definition = make_runtime()
+    snapshot = build_hex_physics_snapshot(WorldId("world"), definition, 32.0)
+    actors = WorldActorRegistry()
+    actors.add(WorldActor("hero", "world", "player"))
+    actors.add(WorldActor("guard", "world", "npc"))
+    binding = ActorHexBindingService(
+        actors, runtime, WorldId("world"),
+        physics_snapshot=snapshot,
+        player_body=PhysicsBodyDefinition("hero", CircleShape(8.0)),
+    )
+    npcs = NPCRegistry((NPC("guard", "Guard"),))
+    spatial = NPCSpatialBindingService(npcs, binding)
+
+    result = spatial.move("guard", HexDirection.WEST)
+
+    player_point = runtime.continuous_position("hero").point
+    npc_point = runtime.continuous_position("guard").point
+    assert result.success
+    assert npc_point.x > player_point.x
+    assert (npc_point.x - player_point.x) ** 2 + (npc_point.y - player_point.y) ** 2 >= 12.0 ** 2
+    assert runtime.occupancy.get("guard").position == runtime.entity("guard").position
