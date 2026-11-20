@@ -15,6 +15,7 @@ import pygame
 
 from core.domain.spatial import HexCoord
 from game_ui.world_transform import WorldTransform
+from game_ui.world_rendering.depth_sorter import DepthSorter
 from game_ui.world_rendering.character_renderer import HexCharacterRenderer
 from game_ui.world_rendering.character_sprite_factory import ProceduralCharacterSpriteFactory
 from game_ui.world_rendering.scene_object_pipeline import SceneObjectPipeline
@@ -108,9 +109,12 @@ def main():
             1, foot[1], f"actor:{actor_id}", "actor", animator, foot,
         ))
 
-    for _, _, _, kind, item, foot in sorted(
-        draw_items, key=lambda value: (value[0], value[1], value[2])
-    ):
+    ordered_items = DepthSorter.sort_by_depth(
+        draw_items,
+        lambda item: (item[0], item[1]),
+        lambda item: item[2],
+    )
+    for _, _, _, kind, item, foot in ordered_items:
         if kind == "scene":
             if not pipeline.draw(renderer, item, foot, transform.zoom):
                 continue
