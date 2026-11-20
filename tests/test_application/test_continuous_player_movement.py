@@ -10,7 +10,7 @@ from application.hex_physics_bridge import build_hex_physics_snapshot
 from application.hex_world_runtime import HexWorldRuntime
 from core.domain.movement import MovementConfig, MovementIntent
 from core.domain.physics import BoundaryPolicy, CircleShape, PhysicsBodyDefinition, StaticObstacle, Vector2
-from core.domain.spatial import EntityPosition, LocalHexPosition, MovementFailureReason, WorldPoint
+from core.domain.spatial import AABB, EntityPosition, LocalHexPosition, MovementFailureReason, WorldPoint
 from core.foundation import WorldId
 
 
@@ -193,3 +193,72 @@ def test_controller_rejects_snapshot_from_another_map():
     )
     with pytest.raises(ValueError, match="different map"):
         controller.step("hero", east_intent(), 1.0 / 60.0)
+
+
+def make_dynamic_controller(*, blocking_crate=False):
+    map_definition = make_map()
+    actors = WorldActorRegistry()
+    actors.add(WorldActor("hero", "eldoria", "player"))
+    actors.add(WorldActor("guard", "eldoria", "npc"))
+    runtime = HexWorldRuntime(
+        {"corridor": map_definition}, world_id=WorldId("eldoria"),
+    )
+    runtime.register_entity(
+        "hero", "player", EntityPosition("corridor", LocalHexPosition(0, 0)),
+        blocks_movement=False, blocks_occupancy=False,
+        local_spatial_bounds=AABB(-8, -8, 8, 8),
+    )
+    runtime.register_entity(
+        "guard", "npc", EntityPosition("corridor", LocalHexPosition(1, 0)),
+        blocks_movement=False, blocks_occupancy=False,
+        local_spatial_bounds=AABB(-4, -4, 4, 4),
+    )
+    if blocking_crate:
+        runtime.register_entity(
+            "crate", "object", EntityPosition("corridor", LocalHexPosition(1, 0)),
+            blocks_movement=True, blocks_occupancy=True,
+        )
+    snapshot = build_hex_physics_snapshot(
+        WorldId("eldoria"), map_definition, 32.0,
+    )
+    player_body = PhysicsBodyDefinition("hero", CircleShape(8.0))
+    npc_body = PhysicsBodyDefinition("guard", CircleShape(4.0))
+    binding = ActorHexBindingService(
+        actors, runtime, WorldId("eldoria"),
+        physics_snapshot=snapshot, player_body=player_body,
+    )
+    controller = ContinuousPlayerMovementController(
+        binding, snapshot, player_body, MovementConfig(max_speed=300.0),
+        npc_bodies={"guard": npc_body},
+    )
+    return runtime, controller
+
+
+def test_continuous_controller_pushes_npc_and_keeps_occupancy_in_sync():
+    runtime, controller = make_dynamic_controller()
+
+    result = controller.step(
+        "hero", MovementIntent(Vector2(1.0, 0.0)), 0.15,
+    )
+
+    assert result.movement.success
+    assert runtime.continuous_position("hero").point.x == pytest.approx(45.0)
+    assert runtime.continuous_position("guard").point.x > 55.0
+    for entity_id in ("hero", "guard"):
+        assert runtime.occupancy.get(entity_id).position == runtime.entity(entity_id).position
+
+
+def test_failed_player_commit_rolls_back_provisional_npc_push():
+    runtime, controller = make_dynamic_controller(blocking_crate=True)
+    npc_start = runtime.continuous_position("guard").point
+
+    result = controller.step(
+        "hero", MovementIntent(Vector2(1.0, 0.0)), 0.15,
+    )
+
+    assert not result.movement.success
+    assert result.movement.reason is MovementFailureReason.OCCUPIED_CELL
+    assert runtime.continuous_position("hero").point == WorldPoint(0.0, 0.0)
+    assert runtime.continuous_position("guard").point == npc_start
+    for entity_id in ("hero", "guard"):
+        assert runtime.occupancy.get(entity_id).position == runtime.entity(entity_id).position
