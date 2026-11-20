@@ -55,6 +55,8 @@ class PerformanceMonitor:
             "p95_ms": _percentile(values, 0.95),
             "p99_ms": _percentile(values, 0.99),
             "max_ms": max(values),
+            "over_16_67_ms": sum(value > 16.67 for value in values),
+            "over_25_ms": sum(value > 25.0 for value in values),
         }
 
     @property
