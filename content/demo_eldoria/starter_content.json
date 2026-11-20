@@ -46,5 +46,42 @@
         "choices": []
       }
     ]
+  },
+  "production": {
+    "facilities": [
+      {
+        "facility_id": "village-workbench",
+        "facility_type": "workbench",
+        "capacity": 1,
+        "capabilities": [
+          "woodworking"
+        ],
+        "active": true
+      }
+    ],
+    "recipes": [
+      {
+        "recipe_id": "wooden_plank",
+        "inputs": [
+          {
+            "resource_type": "wood",
+            "quantity": 2,
+            "unit": "item"
+          }
+        ],
+        "outputs": [
+          {
+            "resource_type": "wooden_plank",
+            "quantity": 1,
+            "unit": "item"
+          }
+        ],
+        "processing_time_ticks": 60,
+        "facility_type": "workbench",
+        "required_capabilities": [
+          "woodworking"
+        ]
+      }
+    ]
   }
 }
