@@ -578,20 +578,6 @@ class HexGameplayView:
             package_path, renderer.pg, self.HEX_SIZE,
         )
 
-    @staticmethod
-    def _draw_scene_fallback(renderer, foot, radius):
-        """Keep a visible, non-interactive placeholder when an image is unavailable."""
-        x, y = round(foot[0]), round(foot[1])
-        renderer.pg.draw.ellipse(
-            renderer.surface, (34, 48, 34),
-            (x - radius * 0.22, y - radius * 0.12, radius * 0.44, radius * 0.18),
-        )
-        renderer.pg.draw.polygon(
-            renderer.surface, (72, 111, 63),
-            ((x, y - radius * 0.9), (x - radius * 0.42, y - radius * 0.12),
-             (x + radius * 0.42, y - radius * 0.12)),
-        )
-
     def render(self, renderer) -> bool:
         runtime = self.service.hex_world_runtime
         if runtime is None:
@@ -761,7 +747,9 @@ class HexGameplayView:
                     if not self._scene_pipeline.draw(
                         renderer, item, foot, self.zoom
                     ):
-                        self._draw_scene_fallback(renderer, foot, radius)
+                        self._scene_pipeline.draw_fallback(
+                            renderer, item, foot, self.zoom,
+                        )
                     drawn_scene_count += 1
                     continue
                 if item.kind in {"player", "npc"}:
