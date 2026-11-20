@@ -770,7 +770,8 @@ class HexGameplayView:
                 for scene_object in self._scene_pipeline.objects_for_map(
                     player.position.map_id
                 ):
-                    foot = self.transform.world_to_screen(                        scene_object.world_x, scene_object.world_y
+                    foot = self.transform.world_to_screen(
+                        scene_object.world_x, scene_object.world_y
                     )
                     if not self._scene_pipeline.is_visible(
                         scene_object, foot, panel, self.zoom
