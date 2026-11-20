@@ -184,7 +184,7 @@ class TestPresentationContentStore(unittest.TestCase):
         self.assertEqual(manifest["map_placements"], "placements")
         from application.content_loader import load_content_package
         package = load_content_package(self.root)
-        self.assertEqual(len(package.presentation_catalog.assets), 6)
+        self.assertEqual(len(package.presentation_catalog.assets), 7)
         self.assertEqual(len(package.scene_placements.placements), 2)
 
     def test_migration_reuses_matching_orphaned_files_after_interrupted_attempt(self):
