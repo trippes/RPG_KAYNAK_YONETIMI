@@ -22,7 +22,6 @@ class HexGameplayView:
     MIN_ZOOM = 0.55
     MAX_ZOOM = 1.8
     ZOOM_STEP = 0.08
-    MOVE_STEP_SECONDS = 0.18
     MOVE_ANIMATION_SECONDS = 0.18
     PHYSICS_STEP_SECONDS = 1.0 / 60.0
 
@@ -56,7 +55,6 @@ class HexGameplayView:
         self._panel = None
         self._move_goal = None
         self._move_map_id = None
-        self._movement_accumulator = 0.0
         self._physics_accumulator = 0.0
         self._manual_directions = ()
         self._visual_map_id = None
@@ -314,7 +312,6 @@ class HexGameplayView:
     def _clear_move_goal(self) -> None:
         self._move_goal = None
         self._move_map_id = None
-        self._movement_accumulator = 0.0
 
     def handle(self, state) -> str | None:
         self._manual_directions = ()
