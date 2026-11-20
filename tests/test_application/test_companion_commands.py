@@ -1,12 +1,13 @@
 from application.companion_commands import CompanionCommandService
 from application.hex_map_definition import parse_hex_map
+from application.hex_physics_bridge import build_hex_physics_snapshot
 from application.hex_world_runtime import HexWorldRuntime
 from core.domain.spatial import AABB, EntityPosition, LocalHexPosition, MovementProfile
 from core.foundation import WorldId
 from npc import CompanionCommand, CompanionRegistry, NPC, NPCRegistry
 
 
-def make_service():
+def make_service(*, with_physics=False):
     definition = parse_hex_map({
         "schema_version": 2,
         "map_id": "field",
@@ -34,7 +35,13 @@ def make_service():
         MovementProfile(), local_spatial_bounds=AABB(-4, -4, 4, 4),
     )
     companions = CompanionRegistry()
-    return CompanionCommandService(runtime, registry, companions, "hero"), runtime
+    snapshot = (
+        build_hex_physics_snapshot(WorldId("world"), definition, 32.0)
+        if with_physics else None
+    )
+    return CompanionCommandService(
+        runtime, registry, companions, "hero", physics_snapshot=snapshot,
+    ), runtime
 
 
 def test_companion_can_be_enlisted_and_commanded_to_wait():
@@ -64,5 +71,31 @@ def test_wait_then_follow_resumes_movement():
     service.enlist("guard")
     service.command("guard", CompanionCommand.WAIT)
     assert service.tick(1.0) == ()
+    service.command("guard", CompanionCommand.FOLLOW)
+    assert service.tick(0.25) == ("guard",)
+
+
+def test_follow_uses_continuous_physics_motion_instead_of_teleporting_between_cells():
+    service, runtime = make_service(with_physics=True)
+    service.enlist("guard")
+    before = runtime.continuous_position("guard").point
+
+    moved = service.tick(0.25)
+
+    after = runtime.continuous_position("guard").point
+    assert moved == ("guard",)
+    assert after.x < before.x
+    assert after != service.physics_snapshot.cell_center(LocalHexPosition(2, 0))
+    assert 0 < before.x - after.x <= service.FOLLOW_SPEED * 0.25 + 1e-7
+
+
+def test_wait_command_clears_pending_follow_target_before_resuming():
+    service, runtime = make_service(with_physics=True)
+    service.enlist("guard")
+    service.tick(0.1)
+    service.command("guard", CompanionCommand.WAIT)
+    waiting_position = runtime.continuous_position("guard")
+    assert service.tick(1.0) == ()
+    assert runtime.continuous_position("guard") == waiting_position
     service.command("guard", CompanionCommand.FOLLOW)
     assert service.tick(0.25) == ("guard",)
