@@ -1265,7 +1265,6 @@ class GameplayService:
         result = bundle.actor_activities.start_gathering(
             activity_id, actor_id, node_id, inventory_id, quantity, self,
         )
-        self._advance_quests("collect", node_id, quantity.value, actor_id, inventory_id)
         return result
 
     def start_gathering_one(
