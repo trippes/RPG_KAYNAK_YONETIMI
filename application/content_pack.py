@@ -15,7 +15,7 @@ from core.domain.physics import CircleShape, PhysicsBodyDefinition
 from core.domain.spatial import LocalHexPosition
 from application.content_loader import ContentPackageError, load_content_package
 from character import Ability, Attribute, CharacterClass, CharacterFactory, Race
-from npc import Faction, NPC
+from npc import BehaviorController, BehaviorState, Faction, NPC
 from economy import Currency, Money, MarketProfile, MarketCatalogEntry
 from quests import Dialogue, DialogueChoice, DialogueNode, Objective, ObjectiveType, Quest, Reward
 from core.domain.movement import MovementConfig
@@ -157,6 +157,11 @@ def load_npc_definitions(path: str | Path | None = None, *, package_path: str | 
         if record["load_phase"] not in allowed_phases:
             raise ContentDefinitionError(
                 f"NPC '{npc_id}' has an unsupported load phase."
+            )
+        behavior_state = record.get("behavior_state", BehaviorState.IDLE.value)
+        if behavior_state not in {state.value for state in BehaviorState}:
+            raise ContentDefinitionError(
+                f"NPC '{npc_id}' has an unsupported behavior_state."
             )
         patrol_route = record.get("patrol_route", [])
         if not isinstance(patrol_route, list):
@@ -532,6 +537,9 @@ def _register_npcs_for_phase(service, npc_definitions, phase: str, resolve_id):
                     npc_data["name"],
                     npc_data["role"],
                     tuple(resolve_id(value) for value in npc_data.get("faction_ids", ())),
+                    behavior=BehaviorController(
+                        BehaviorState(npc_data.get("behavior_state", "idle"))
+                    ),
                     physics_body=_build_npc_physics_body(npc_data),
                     patrol_route=tuple(
                         LocalHexPosition(q, r)
