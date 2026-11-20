@@ -268,6 +268,15 @@ class TestContentPackageLoader(unittest.TestCase):
             "schema_version": 1,
             "nodes": [{"id": "oak_01"}],
         }), encoding="utf-8")
+        (root / "containers.json").write_text(json.dumps({
+            "schema_version": 1,
+            "containers": [{
+                "container_id": "chest_01",
+                "entity_id": "chest_01_entity",
+                "definition_id": "chest_01_definition",
+                "name": "Chest",
+            }],
+        }), encoding="utf-8")
         placements = root / "gameplay_placements"
         if placements.exists():
             shutil.rmtree(placements)
