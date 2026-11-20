@@ -243,9 +243,19 @@ class GameplayService:
             return None
         from .hex_interaction import HexInteractionService
 
-        return HexInteractionService(runtime).transition_at_world_point(
+        transition_id = HexInteractionService(runtime).transition_at_world_point(
             map_id, point,
         )
+        if transition_id is None:
+            return None
+        actor = runtime.entity(self.player_actor_id)
+        transition = next(
+            item for item in runtime.map_definition(map_id).transitions
+            if item.transition_id == transition_id
+        )
+        if actor.position.map_id != map_id or actor.position.cell not in transition.source_cells:
+            return None
+        return transition_id
 
     @property
     def hex_actor_binding(self) -> ActorHexBindingService:
@@ -728,6 +738,26 @@ class GameplayService:
         container = bundle.containers.get(container_id)
         if container is None:
             raise KeyError(f"Container not found: {container_id}")
+        if bundle.hex_world_runtime is not None:
+            actor_position = bundle.hex_world_runtime.entity(actor_id).position
+            container_position = bundle.hex_world_runtime.entity(
+                container.entity_id,
+            ).position
+            distance = (
+                abs(actor_position.cell.q - container_position.cell.q)
+                + abs(actor_position.cell.r - container_position.cell.r)
+                + abs(
+                    actor_position.cell.q + actor_position.cell.r
+                    - container_position.cell.q - container_position.cell.r
+                )
+            ) // 2
+            if (
+                actor_position.map_id != container_position.map_id
+                or distance > 1
+            ):
+                raise GameplayServiceError(
+                    "Sandığı açmak için yanına yaklaşmalısın."
+                )
         lock = bundle.locks.for_entity(container.entity_id)
         return self.lock_state(lock.lock_id) if lock is not None else None
 
@@ -1276,6 +1306,22 @@ class GameplayService:
             raise KeyError(f"Resource node not found: {node_id}")
         if node.quantity.value < 1:
             raise GameplayServiceError("Resource node has no remaining quantity.")
+        runtime = self.hex_world_runtime
+        if runtime is not None:
+            actor_position = runtime.entity(actor_id).position
+            node_position = runtime.entity(node_id).position
+            distance = (
+                abs(actor_position.cell.q - node_position.cell.q)
+                + abs(actor_position.cell.r - node_position.cell.r)
+                + abs(
+                    actor_position.cell.q + actor_position.cell.r
+                    - node_position.cell.q - node_position.cell.r
+                )
+            ) // 2
+            if actor_position.map_id != node_position.map_id or distance > 1:
+                raise GameplayServiceError(
+                    "Kaynak toplamak için yanına yaklaşmalısın."
+                )
         return self.start_gathering(
             actor_id, node_id, inventory_id, Quantity(1, node.quantity.unit),
         )
