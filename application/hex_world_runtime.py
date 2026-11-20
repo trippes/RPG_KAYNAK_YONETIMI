@@ -27,6 +27,7 @@ class _HexEntityState:
     profile: MovementProfile
     active: bool
     local_spatial_bounds: AABB | None = None
+    broadphase_enabled: bool = True
 
     def __post_init__(self):
         if not isinstance(self.entity_id, str) or not self.entity_id.strip():
@@ -39,6 +40,8 @@ class _HexEntityState:
             raise TypeError("active must be boolean.")
         if self.local_spatial_bounds is not None and not isinstance(self.local_spatial_bounds, AABB):
             raise TypeError("local_spatial_bounds must be an AABB or None.")
+        if not isinstance(self.broadphase_enabled, bool):
+            raise TypeError("broadphase_enabled must be boolean.")
 
 
 @dataclass(frozen=True, slots=True)
@@ -159,6 +162,7 @@ class HexWorldRuntime:
         blocks_movement: bool = True, blocks_occupancy: bool = True,
         continuous_position: ContinuousEntityPosition | None = None,
         local_spatial_bounds: AABB | None = None,
+        broadphase_enabled: bool = True,
     ) -> HexMovableEntity:
         if entity_id in self._entities:
             raise ValueError(f"Duplicate hex entity: {entity_id}")
@@ -166,6 +170,8 @@ class HexWorldRuntime:
             raise TypeError("position must be an EntityPosition.")
         if local_spatial_bounds is not None and not isinstance(local_spatial_bounds, AABB):
             raise TypeError("local_spatial_bounds must be an AABB or None.")
+        if not isinstance(broadphase_enabled, bool):
+            raise TypeError("broadphase_enabled must be boolean.")
         map_definition = self.map_definition(position.map_id)
         if not map_definition.has_cell(position.cell):
             raise ValueError("Entity position is outside the map valid_cells mask.")
@@ -190,7 +196,7 @@ class HexWorldRuntime:
         )
         if resolved_cell != position.cell:
             raise ValueError("continuous position does not resolve to the supplied map cell.")
-        state = _HexEntityState(entity_id, kind, profile, active, local_spatial_bounds)
+        state = _HexEntityState(entity_id, kind, profile, active, local_spatial_bounds, broadphase_enabled)
         occupant = HexOccupant(
             entity_id, position, blocks_movement, blocks_occupancy, kind,
         )
@@ -447,8 +453,16 @@ class HexWorldRuntime:
         return MovementResult(True, target)
 
     def query_spatial_candidates(self, map_id: str, bounds: AABB) -> tuple[str, ...]:
-        """Return stable broadphase actor IDs near a map-scoped world-space AABB."""
-        return self._spatial_index.query(map_id, bounds)
+        """Return enabled broadphase actors near a map-scoped world-space AABB.
+
+        Actors with disabled physics bodies remain registered for identity,
+        occupancy, and movement, but are excluded from physical candidate sets.
+        """
+        return tuple(
+            entity_id
+            for entity_id in self._spatial_index.query(map_id, bounds)
+            if self._entity_state(entity_id).broadphase_enabled
+        )
 
     def path_to(self, entity_id: str, goal: LocalHexPosition, *, edge_validator=None):
         entity = self.entity(entity_id)
