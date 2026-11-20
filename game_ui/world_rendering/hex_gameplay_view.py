@@ -10,6 +10,8 @@ from .character_renderer import HexCharacterRenderer
 from .depth_sorter import DepthSorter
 from .terrain_renderer import HexTerrainRenderer
 from .scene_object_pipeline import SceneObjectPipeline
+from .character_animation import CharacterAnimator
+from .character_sprite_factory import ProceduralCharacterSpriteFactory
 
 
 class HexGameplayView:
@@ -38,6 +40,11 @@ class HexGameplayView:
         self.terrain = HexTerrainRenderer()
         self.characters = HexCharacterRenderer()
         self._scene_pipeline = None
+        self._character_sprite_factory = None
+        self._player_animator = None
+        self._npc_animators = {}
+        self._player_facing = "south"
+        self._character_sprite_cache = {}
         self.zoom = 1.0
         self.elapsed_seconds = 0.0
         self.mouse_position = None
@@ -104,6 +111,10 @@ class HexGameplayView:
         target = self._cell_world_position(target_cell)
         self._visual_start = self._visual_position
         self._visual_target = target
+        self._set_player_facing_from_world_delta(
+            target[0] - self._visual_position[0],
+            target[1] - self._visual_position[1],
+        )
         self._visual_elapsed = 0.0
         self._visual_cell = target_cell
         self._visual_map_id = map_id
@@ -134,6 +145,15 @@ class HexGameplayView:
     def update(self, elapsed_seconds: float = 0.0) -> None:
         self.elapsed_seconds = max(0.0, float(elapsed_seconds))
         self._advance_visual_position(self.elapsed_seconds)
+        if self._player_animator is not None:
+            state = "walk" if self._visual_moving else "idle"
+            self._player_animator.select(
+                direction=self._player_facing, state=state,
+            )
+            self._player_animator.update(self.elapsed_seconds)
+        for animator in self._npc_animators.values():
+            animator.select(state="idle")
+            animator.update(self.elapsed_seconds)
         if self._move_goal is None:
             return
         runtime = self.service.hex_world_runtime
@@ -263,6 +283,39 @@ class HexGameplayView:
                 if not result.success or result.position.cell == goal:
                     self._clear_move_goal()
 
+    def _ensure_character_animators(self, renderer):
+        """Create directional sprite sets lazily after Pygame is initialized."""
+        if self._character_sprite_factory is not None:
+            return
+        self._character_sprite_factory = ProceduralCharacterSpriteFactory()
+        self._player_animator = self._character_sprite_factory.create_animator(
+            renderer.pg, palette="player",
+        )
+
+    def _animator_for_actor(self, renderer, actor_id, *, player=False):
+        self._ensure_character_animators(renderer)
+        if player:
+            return self._player_animator
+        animator = self._npc_animators.get(actor_id)
+        if animator is None:
+            animator = self._character_sprite_factory.create_animator(
+                renderer.pg, palette="npc",
+            )
+            self._npc_animators[actor_id] = animator
+        return animator
+
+    def _set_player_facing_from_world_delta(self, dx, dy):
+        screen_dx, screen_dy = self.transform.project_vector(dx, dy)
+        if abs(screen_dx) + abs(screen_dy) < 1e-8:
+            return
+        angle = math.degrees(math.atan2(screen_dy, screen_dx))
+        directions = (
+            "east", "south_east", "south", "south_west",
+            "west", "north_west", "north", "north_east",
+        )
+        sector = int(round(angle / 45.0)) % 8
+        self._player_facing = directions[sector]
+
     def _ensure_scene_pipeline(self, renderer):
         """Load validated map-authored presentation props once per gameplay view."""
         if self._scene_pipeline is not None:
@@ -378,6 +431,7 @@ class HexGameplayView:
                     )
 
             self._ensure_scene_pipeline(renderer)
+            self._ensure_character_animators(renderer)
             draw_items = []
             entities = tuple(
                 entity for entity in runtime.entities()
@@ -446,12 +500,24 @@ class HexGameplayView:
                         self._draw_scene_fallback(renderer, foot, radius)
                     continue
                 if item.kind in {"player", "npc"}:
-                    self.characters.draw(
+                    animator = self._animator_for_actor(
                         renderer,
+                        item.entity_id,
+                        player=item.kind == "player",
+                    )
+                    animator.select(
+                        direction=self._player_facing if item.kind == "player" else animator.direction,
+                        state=(
+                            "walk" if moving else "idle"
+                        ),
+                    )
+                    self.characters.draw_sprite(
+                        renderer,
+                        animator.current_frame,
                         foot,
-                        max(18.0, radius * 1.25),
-                        self.elapsed_seconds,
-                        moving=moving,
+                        64.0 * self.zoom,
+                        (0.5, 1.0),
+                        self._character_sprite_cache,
                     )
                 else:
                     renderer.pg.draw.circle(

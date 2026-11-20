@@ -1,0 +1,28 @@
+import pygame
+
+from game_ui.world_rendering.character_sprite_factory import (
+    ProceduralCharacterSpriteFactory,
+)
+
+
+def test_factory_builds_eight_direction_idle_walk_and_run_animations():
+    animator = ProceduralCharacterSpriteFactory().create_animator(pygame)
+
+    assert len(animator.animations) == 8 * 3
+    for direction in ProceduralCharacterSpriteFactory.DIRECTIONS:
+        for state in ("idle", "walk", "run"):
+            animator.select(direction=direction, state=state)
+            frame = animator.current_frame
+            assert frame.get_size() == (48, 64)
+            assert frame.get_bounding_rect().width > 0
+
+
+def test_animation_state_transition_restarts_the_selected_clip():
+    animator = ProceduralCharacterSpriteFactory().create_animator(pygame)
+    animator.select(direction="south", state="walk")
+    animator.update(0.13)
+    assert animator.current_animation.index == 1
+
+    animator.select(direction="east", state="walk")
+    assert animator.current_animation.index == 0
+    assert animator.current_animation.elapsed == 0.0
