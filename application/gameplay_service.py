@@ -444,23 +444,26 @@ class GameplayService:
         binding = self.hex_actor_binding
         runtime = binding.runtime
         entity = runtime.entity(self.player_actor_id)
-        if entity.position.cell == goal:
-            return MovementResult(True, entity.position)
         snapshot = binding.physics_snapshot
         body = binding.player_body
         if snapshot is None or body is None:
             raise GameplayServiceError("Player path movement requires a physics snapshot and body.")
-        path = runtime.path_to(
-            self.player_actor_id, goal,
-            edge_validator=lambda source, target: snapshot.can_reach_cell(source, target, body),
-        )
-        if path is None or len(path) < 2:
-            return MovementResult(
-                False, entity.position, MovementFailureReason.INVALID_TARGET,
-                "No collision-free path to target.",
-            )
         current = runtime.continuous_position(self.player_actor_id).point
-        target = snapshot.cell_center(path[1])
+        if entity.position.cell == goal:
+            target = snapshot.cell_center(goal)
+        else:
+            path = runtime.path_to(
+                self.player_actor_id, goal,
+                edge_validator=lambda source, destination: snapshot.can_reach_cell(
+                    source, destination, body,
+                ),
+            )
+            if path is None or len(path) < 2:
+                return MovementResult(
+                    False, entity.position, MovementFailureReason.INVALID_TARGET,
+                    "No collision-free path to target.",
+                )
+            target = snapshot.cell_center(path[1])
         dx, dy = target.x - current.x, target.y - current.y
         distance = (dx * dx + dy * dy) ** 0.5
         if distance <= 1e-8 or delta_seconds == 0:
