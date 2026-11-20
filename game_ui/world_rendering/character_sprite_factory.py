@@ -50,17 +50,23 @@ class ProceduralCharacterSpriteFactory:
             states = {}
             for state, (frame_count, duration) in self.STATE_CONFIG.items():
                 frames = tuple(
-                    self._frame_cache.setdefault(
-                        (id(pygame_module), palette, direction, state, index),
-                        self._draw_frame(
-                            pygame_module, colors, direction, state, index,
-                        ),
+                    self._get_frame(
+                        pygame_module, palette, colors,
+                        direction, state, index,
                     )
                     for index in range(frame_count)
                 )
                 states[state] = Animation(frames, duration, loop=True)
             animations[direction] = states
         return CharacterAnimator(animations)
+
+    def _get_frame(self, pg, palette, colors, direction, state, frame_index):
+        key = (id(pg), palette, direction, state, frame_index)
+        frame = self._frame_cache.get(key)
+        if frame is None:
+            frame = self._draw_frame(pg, colors, direction, state, frame_index)
+            self._frame_cache[key] = frame
+        return frame
 
     @staticmethod
     def _draw_frame(pg, colors, direction, state, frame_index):
@@ -69,9 +75,9 @@ class ProceduralCharacterSpriteFactory:
         phase = (frame_index / 4.0) * 6.283185307179586
         stride = 0.0
         if state == "walk":
-            stride = math.sin(phase) * 3.0
+            stride = round(math.sin(phase) * 3.0)
         elif state == "run":
-            stride = math.sin(phase) * 5.0
+            stride = round(math.sin(phase) * 5.0)
         side = -1 if direction in {"west", "north_west", "south_west"} else 1
         back = direction in {"north", "north_east", "north_west"}
         profile = direction in {"east", "west", "north_east", "south_east", "north_west", "south_west"}
@@ -103,7 +109,7 @@ class ProceduralCharacterSpriteFactory:
         )
 
         # Arms and hands remain attached to the ground-anchored torso.
-        arm_swing = stride * 0.45
+        arm_swing = round(stride * 0.45)
         pg.draw.line(
             surface, colors["cloth_shadow"],
             (center_x - 8, 30), (center_x - 13 - arm_swing, 43), 5,
