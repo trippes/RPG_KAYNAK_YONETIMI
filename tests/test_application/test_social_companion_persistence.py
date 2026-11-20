@@ -1,4 +1,4 @@
-from core.domain.spatial import ContinuousEntityPosition, WorldPoint
+from core.domain.spatial import ContinuousEntityPosition, LocalHexPosition, WorldPoint
 from npc import (
     BehaviorController, BehaviorState, CompanionCommand, CompanionRegistry,
     NPC, NPCRegistry,
@@ -11,6 +11,8 @@ def test_social_snapshot_persists_npc_behavior_and_companion_wait_command():
     npc = NPC(
         "guard", "Guard",
         behavior=BehaviorController(BehaviorState.FLEE),
+        patrol_route=(LocalHexPosition(1, 0), LocalHexPosition(2, 0)),
+        patrol_interval_seconds=0.25,
     )
     companions = CompanionRegistry()
     companions.add("guard")
@@ -24,7 +26,12 @@ def test_social_snapshot_persists_npc_behavior_and_companion_wait_command():
     encoded = SocialSnapshot.from_runtime(social).to_dict()
     restored = SocialSnapshot.from_dict(encoded).restore()
 
-    assert restored.npcs.get("guard").behavior_state is BehaviorState.FLEE
+    restored_npc = restored.npcs.get("guard")
+    assert restored_npc.behavior_state is BehaviorState.FLEE
+    assert restored_npc.patrol_route == (
+        LocalHexPosition(1, 0), LocalHexPosition(2, 0),
+    )
+    assert restored_npc.patrol_interval_seconds == 0.25
     state = restored.companions.get("guard")
     assert state.command is CompanionCommand.WAIT
     assert state.wait_position == wait_position
