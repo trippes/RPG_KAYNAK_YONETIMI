@@ -190,7 +190,7 @@ def test_hex_gameplay_view_click_selects_axial_destination():
         zoom=1,
     )
 
-    view.handle(InputState(mouse_clicked=True, mouse_pos=(455, 336)))
+    view.handle(InputState(mouse_clicked=True, mouse_pos=view.transform.axial_to_screen(LocalHexPosition(1, 0).to_hex_coord())))
 
     assert service.hex_actor_binding.toward == [
         ("hero", LocalHexPosition(1, 0)),
@@ -297,7 +297,7 @@ def test_left_clicking_npc_selects_it_and_requests_dialogue():
     view = HexGameplayView(service)
     _configure_interaction_view(view)
 
-    result = view.handle(InputState(mouse_clicked=True, mouse_pos=(455, 336)))
+    result = view.handle(InputState(mouse_clicked=True, mouse_pos=view.transform.axial_to_screen(LocalHexPosition(1, 0).to_hex_coord())))
 
     assert result == "dialogue"
     assert view.selected_npc_id == "guard_eren"
@@ -309,10 +309,10 @@ def test_right_clicking_npc_opens_empty_context_menu_without_actions():
     view = HexGameplayView(service)
     _configure_interaction_view(view)
 
-    view.handle(InputState(mouse_right_clicked=True, mouse_pos=(455, 336)))
+    view.handle(InputState(mouse_right_clicked=True, mouse_pos=view.transform.axial_to_screen(LocalHexPosition(1, 0).to_hex_coord())))
 
     assert view.context_menu_npc_id == "guard_eren"
-    assert view.context_menu_position == (455, 336)
+    assert view.context_menu_position == view.transform.axial_to_screen(LocalHexPosition(1, 0).to_hex_coord())
     assert service.hex_actor_binding.moves == []
     assert service.hex_actor_binding.toward == []
 
@@ -322,9 +322,9 @@ def test_right_clicking_empty_cell_closes_npc_context_menu():
     view = HexGameplayView(service)
     _configure_interaction_view(view)
     view.context_menu_npc_id = "guard_eren"
-    view.context_menu_position = (455, 336)
+    view.context_menu_position = view.transform.axial_to_screen(LocalHexPosition(1, 0).to_hex_coord())
 
-    view.handle(InputState(mouse_right_clicked=True, mouse_pos=(510, 336)))
+    view.handle(InputState(mouse_right_clicked=True, mouse_pos=view.transform.axial_to_screen(LocalHexPosition(2, 0).to_hex_coord())))
 
     assert view.context_menu_npc_id is None
     assert view.context_menu_position is None
@@ -354,7 +354,7 @@ def test_player_visual_position_interpolates_between_hex_centers_after_click():
         zoom=1,
     )
 
-    view.handle(InputState(mouse_clicked=True, mouse_pos=(455, 336)))
+    view.handle(InputState(mouse_clicked=True, mouse_pos=view.transform.axial_to_screen(LocalHexPosition(1, 0).to_hex_coord())))
 
     start = view.transform.axial_to_world(LocalHexPosition(0, 0).to_hex_coord())
     target = view.transform.axial_to_world(LocalHexPosition(1, 0).to_hex_coord())
@@ -383,7 +383,7 @@ def test_player_visual_position_finishes_at_destination_without_changing_step_ru
         zoom=1,
     )
 
-    view.handle(InputState(mouse_clicked=True, mouse_pos=(455, 336)))
+    view.handle(InputState(mouse_clicked=True, mouse_pos=view.transform.axial_to_screen(LocalHexPosition(1, 0).to_hex_coord())))
     view.update(HexGameplayView.MOVE_ANIMATION_SECONDS)
 
     expected = view.transform.axial_to_world(
