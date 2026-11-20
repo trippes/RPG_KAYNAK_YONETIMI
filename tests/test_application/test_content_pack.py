@@ -131,7 +131,7 @@ class TestContentPack(unittest.TestCase):
         job = service.start_production(
             "wooden_plank", "player", "village-workbench",
         )
-        self.assertEqual(job.recipe_id, "wooden_plank")
+        self.assertEqual(job.recipe.recipe_id, "wooden_plank")
 
 
     def test_gameplay_setup_registers_resource_nodes_from_content_definitions(self):
