@@ -1003,7 +1003,7 @@ class GameWindow:
         if not self.gameplay_active:
             return {}
         world = self.screens.get(self.gameplay_screen)
-        for name in ("view", "gameplay_view", "_view", "_gameplay_view"):
+        for name in ("view", "gameplay_view", "_view", "_gameplay_view", "_hex_view"):
             candidate = getattr(world, name, None)
             stats = getattr(candidate, "render_stats", None)
             if isinstance(stats, dict):
