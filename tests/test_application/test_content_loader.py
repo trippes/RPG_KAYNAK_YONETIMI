@@ -34,6 +34,7 @@ class TestContentPackageLoader(unittest.TestCase):
         self.assertIn("resources", package.files)
         self.assertIn("characters", package.files)
         self.assertIn("gameplay_rules", package.files)
+        self.assertIn("containers", package.files)
         self.assertEqual(package.files["starter"]["schema_version"], 1)
         self.assertNotIn("locations", package.files["starter"])
         self.assertNotIn("connections", package.files["starter"])
