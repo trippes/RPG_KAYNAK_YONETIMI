@@ -367,8 +367,22 @@ def load_content_package(package_dir: str | Path) -> ContentPackage:
                 )
             if placement.kind == "npc":
                 npc_record = npc_by_id[placement.domain_id]
+                route = npc_record.get("patrol_route", [])
+                if not isinstance(route, list):
+                    raise ContentPackageError(
+                        f"NPC '{placement.domain_id}' patrol_route must be a list."
+                    )
                 map_definition = hexes[placement.map_id]
-                for q, r in npc_record.get("patrol_route", ()):
+                for waypoint in route:
+                    if (
+                        not isinstance(waypoint, list) or len(waypoint) != 2
+                        or type(waypoint[0]) is not int
+                        or type(waypoint[1]) is not int
+                    ):
+                        raise ContentPackageError(
+                            f"NPC '{placement.domain_id}' patrol waypoints must be integer [q, r] pairs."
+                        )
+                    q, r = waypoint
                     if not map_definition.has_cell(LocalHexPosition(q, r)):
                         raise ContentPackageError(
                             f"NPC '{placement.domain_id}' patrol route references a cell "
