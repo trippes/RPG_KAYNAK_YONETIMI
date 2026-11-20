@@ -4,7 +4,6 @@ from __future__ import annotations
 import math
 
 from npc import BehaviorState, NPCRegistry
-from .dynamic_actor_collision import DynamicActorCollisionResolver
 
 
 class NPCBehaviorSystem:
@@ -66,15 +65,7 @@ class NPCBehaviorSystem:
             if result.success:
                 moved.append(npc.npc_id)
 
-        if self._physics_snapshot is not None:
-            moved.extend(DynamicActorCollisionResolver(
-                self._runtime, self._physics_snapshot,
-            ).resolve_npc_pairs({
-                npc.npc_id: npc.physics_body
-                for npc in self._npcs.all()
-                if npc.active and npc.physics_body is not None
-            }))
-        return tuple(sorted(set(moved)))
+        return tuple(moved)
 
 
 __all__ = ["NPCBehaviorSystem"]
