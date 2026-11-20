@@ -439,8 +439,8 @@ class GameplayService:
             raise TypeError("goal must be a LocalHexPosition")
         if isinstance(delta_seconds, bool) or not isinstance(delta_seconds, (int, float)):
             raise TypeError("delta_seconds must be a real number")
-        if delta_seconds < 0 or delta_seconds > 0.25:
-            raise ValueError("delta_seconds must be between 0 and 0.25 seconds")
+        if not math.isfinite(delta_seconds) or delta_seconds < 0 or delta_seconds > 0.25:
+            raise ValueError("delta_seconds must be finite and between 0 and 0.25 seconds")
         binding = self.hex_actor_binding
         runtime = binding.runtime
         entity = runtime.entity(self.player_actor_id)
