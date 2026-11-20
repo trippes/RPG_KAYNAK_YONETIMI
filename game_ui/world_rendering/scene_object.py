@@ -202,10 +202,10 @@ class SceneObjectRenderer:
                 (x - width // 2, y - round(3 * scale), width, max(4, round(7 * scale))),
             )
             renderer.pg.draw.rect(
-                renderer.surface, (111, 73, 43), table, border_radius=2,
+                renderer.surface, (111, 73, 43), table,
             )
             renderer.pg.draw.rect(
-                renderer.surface, (190, 145, 82), table, 1, border_radius=2,
+                renderer.surface, (190, 145, 82), table, 1,
             )
             leg_bottom = y - round(2 * scale)
             for leg_x in (table.left + round(4 * scale), table.right - round(4 * scale)):
@@ -223,10 +223,11 @@ class SceneObjectRenderer:
         radius = max(12, round(max(obj.visual_width, obj.visual_height) * 0.5 * scale))
         renderer.pg.draw.ellipse(
             renderer.surface, (34, 48, 34),
-            (x - radius * 0.22, y - radius * 0.12, radius * 0.44, radius * 0.18),
+            (x - round(radius * 0.22), y - round(radius * 0.12), round(radius * 0.44), round(radius * 0.18)),
         )
         renderer.pg.draw.polygon(
             renderer.surface, (72, 111, 63),
-            ((x, y - radius * 0.9), (x - radius * 0.42, y - radius * 0.12),
-             (x + radius * 0.42, y - radius * 0.12)),
+            ((x, y - round(radius * 0.9)),
+             (x - round(radius * 0.42), y - round(radius * 0.12)),
+             (x + round(radius * 0.42), y - round(radius * 0.12))),
         )
