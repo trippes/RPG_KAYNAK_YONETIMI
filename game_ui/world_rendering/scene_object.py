@@ -184,3 +184,49 @@ class SceneObjectRenderer:
             ),
         )
         return True
+
+
+    def draw_fallback(self, renderer, obj, screen_anchor, zoom=1.0):
+        """Draw a deterministic procedural placeholder for missing scene art."""
+        x, y = round(screen_anchor[0]), round(screen_anchor[1])
+        scale = max(0.45, float(zoom))
+        if obj.kind == "structure":
+            width = max(18, round(30 * scale))
+            height = max(10, round(15 * scale))
+            top = y - height - round(5 * scale)
+            table = renderer.pg.Rect(
+                x - width // 2, top, width, max(5, round(6 * scale)),
+            )
+            renderer.pg.draw.ellipse(
+                renderer.surface, (35, 29, 22),
+                (x - width // 2, y - round(3 * scale), width, max(4, round(7 * scale))),
+            )
+            renderer.pg.draw.rect(
+                renderer.surface, (111, 73, 43), table, border_radius=2,
+            )
+            renderer.pg.draw.rect(
+                renderer.surface, (190, 145, 82), table, 1, border_radius=2,
+            )
+            leg_bottom = y - round(2 * scale)
+            for leg_x in (table.left + round(4 * scale), table.right - round(4 * scale)):
+                renderer.pg.draw.line(
+                    renderer.surface, (77, 49, 31),
+                    (leg_x, table.bottom), (leg_x, leg_bottom),
+                    max(2, round(3 * scale)),
+                )
+            renderer.pg.draw.line(
+                renderer.surface, (207, 169, 108),
+                (table.left + 3, table.centery),
+                (table.right - 3, table.centery), 1,
+            )
+            return
+        radius = max(12, round(max(obj.visual_width, obj.visual_height) * 0.5 * scale))
+        renderer.pg.draw.ellipse(
+            renderer.surface, (34, 48, 34),
+            (x - radius * 0.22, y - radius * 0.12, radius * 0.44, radius * 0.18),
+        )
+        renderer.pg.draw.polygon(
+            renderer.surface, (72, 111, 63),
+            ((x, y - radius * 0.9), (x - radius * 0.42, y - radius * 0.12),
+             (x + radius * 0.42, y - radius * 0.12)),
+        )
