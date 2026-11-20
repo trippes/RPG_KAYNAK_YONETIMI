@@ -14,6 +14,7 @@ from application import (
 from application.hex_map_definition import parse_hex_map
 from application.hex_world_runtime import HexWorldRuntime
 from core.application import GameSession
+from core.domain.physics import CircleShape, PhysicsBodyDefinition
 from core.domain.spatial import (
     AABB,
     EntityPosition,
@@ -217,3 +218,23 @@ def test_unregistering_npc_removes_its_collider_from_broadphase_queries():
     service.npc_hex_binding.unregister_spatial("village_guard")
 
     assert "village_guard" not in runtime.query_spatial_candidates("village", query)
+
+
+def test_disabled_npc_physics_body_is_excluded_from_broadphase_but_keeps_spatial_presence():
+    service, _bundle, npc, runtime = prepare_npc()
+    npc.physics_body = PhysicsBodyDefinition(
+        body_id=npc.npc_id,
+        collider=CircleShape(radius=4.0),
+        enabled=False,
+    )
+
+    service.npc_hex_binding.register_spatial(
+        "village_guard", EntityPosition("village", LocalHexPosition(0, 0)),
+    )
+    anchor = runtime.continuous_position("village_guard").point
+    query = AABB.around_point(anchor, 0.1)
+
+    assert runtime.entity("village_guard").entity_id == "village_guard"
+    assert runtime.occupancy.get("village_guard") is not None
+    assert "village_guard" not in runtime.query_spatial_candidates("village", query)
+    assert service.npc_hex_binding.move("village_guard", HexDirection.EAST).success
