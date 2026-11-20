@@ -158,10 +158,11 @@ class HexGameplayView:
 
     def _advance_npc_visuals(self, delta_seconds):
         runtime = getattr(self.service, "hex_world_runtime", None)
-        if runtime is None:
+        entities_method = getattr(runtime, "entities", None)
+        if not callable(entities_method):
             return
         active_ids = set()
-        for entity in runtime.entities():
+        for entity in entities_method():
             if entity.kind != "npc":
                 continue
             active_ids.add(entity.entity_id)
