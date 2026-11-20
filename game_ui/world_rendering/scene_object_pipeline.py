@@ -4,7 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from application.content_loader import load_content_package
-from core.domain.spatial import HexCoord, axial_to_world_point
+from core.domain.spatial import HexCoord, WorldPoint, axial_to_world_point
 from game_ui.assets.asset_manager import AssetManager
 from game_ui.world_rendering.scene_object import SceneObject, SceneObjectRenderer
 
@@ -87,6 +87,42 @@ class SceneObjectPipeline:
             right < viewport.left or bottom < viewport.top
             or left > viewport.right or top > viewport.bottom
         )
+
+    def object_at_world_point(self, map_id: str, point, transform=None):
+        """Return the topmost authored prop whose collider contains a world point."""
+        if not isinstance(point, WorldPoint):
+            raise TypeError("point must be a WorldPoint.")
+        candidates = []
+        for obj in self.objects_for_map(map_id):
+            if obj.collision_box is not None:
+                left, top, width, height = obj.collision_box
+                local_x = point.x - obj.world_x
+                local_y = point.y - obj.world_y
+                hit = (
+                    left <= local_x <= left + width
+                    and top <= local_y <= top + height
+                )
+            else:
+                local_x = point.x - obj.world_x
+                local_y = point.y - obj.world_y
+                left = -obj.visual_width * obj.anchor_x
+                top = -obj.visual_height * obj.anchor_y
+                hit = (
+                    left <= local_x <= left + obj.visual_width
+                    and top <= local_y <= top + obj.visual_height
+                )
+            if not hit:
+                continue
+            if transform is None:
+                depth = obj.world_y + obj.depth_offset
+            else:
+                depth = transform.world_to_screen(
+                    obj.world_x, obj.world_y,
+                )[1] + obj.depth_offset
+            candidates.append((depth, obj.stable_order, obj))
+        if not candidates:
+            return None
+        return max(candidates, key=lambda item: (item[0], item[1]))[2]
 
     def draw(self, renderer, obj: SceneObject, screen_anchor, zoom: float = 1.0) -> bool:
         return self.renderer.draw(renderer, obj, screen_anchor, zoom)

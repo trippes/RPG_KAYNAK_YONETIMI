@@ -262,11 +262,22 @@ class HexGameplayView:
             if npc_id is not None:
                 self._clear_move_goal()
                 self.selected_npc_id = npc_id
+                self.selected_scene_object_id = None
                 return "dialogue"
             if self._panel is None or not self._panel.collidepoint(state.mouse_pos):
                 return None
             actor_id = self.service.player_actor_id
             entity = runtime.entity(actor_id)
+            if self._scene_pipeline is not None:
+                world_point = self.transform.screen_to_world_point(*state.mouse_pos)
+                scene_object = self._scene_pipeline.object_at_world_point(
+                    entity.position.map_id, world_point, self.transform,
+                )
+                if scene_object is not None:
+                    self._clear_move_goal()
+                    self.selected_scene_object_id = scene_object.object_id
+                    return "inspect"
+            self.selected_scene_object_id = None
             map_definition = runtime.map_definition(entity.position.map_id)
             q = self.transform.screen_to_axial(*state.mouse_pos)
             goal = LocalHexPosition.from_hex_coord(q)

@@ -11,6 +11,7 @@ class MainScreen:
         self.message = "Yeni dünya haritası hazırlanıyor."
         self._hex_view = None
         self.selected_npc_id = None
+        self.selected_scene_object_id = None
 
     def _runtime(self):
         return getattr(self.service, "hex_world_runtime", None)
@@ -34,11 +35,20 @@ class MainScreen:
             result = self._view().handle(state)
             if result == "dialogue":
                 self.selected_npc_id = self._view().selected_npc_id
+                self.selected_scene_object_id = None
                 return "dialogue"
+            if result == "inspect":
+                self.selected_scene_object_id = self._view().selected_scene_object_id
+                return "inspect"
         return None
 
     def render(self, renderer):
         if self._runtime() is not None and self._view().render(renderer):
+            if self.selected_scene_object_id is not None:
+                renderer.text(
+                    f"Seçili çevre nesnesi: {self.selected_scene_object_id}",
+                    28, 34,
+                )
             return
 
         panel = renderer.pg.Rect(
