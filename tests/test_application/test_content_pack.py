@@ -31,7 +31,8 @@ class TestContentPack(unittest.TestCase):
         self.assertEqual(npcs[0]["behavior_state"], "patrol")
         self.assertEqual(npcs[0]["patrol_route"], [[1, 0], [2, 0], [2, 1], [1, 1]])
         self.assertEqual(load_quest_definitions(package_path=PACKAGE), ())
-        self.assertEqual(load_resource_definitions(package_path=PACKAGE), ())
+        resources = load_resource_definitions(package_path=PACKAGE)
+        self.assertEqual(tuple(node["id"] for node in resources), ("herb_patch_01",))
         self.assertTrue(load_character_definitions(package_path=PACKAGE))
         self.assertTrue(load_gameplay_rules(package_path=PACKAGE))
         starter = package.files["starter"]
@@ -63,6 +64,9 @@ class TestContentPack(unittest.TestCase):
         bundle = application.holder.current
         self.assertIn("player", bundle.inventories)
         self.assertIsNone(bundle.resource_nodes.get("north_mine_iron"))
+        herb = bundle.resource_nodes.get("herb_patch_01")
+        self.assertIsNotNone(herb)
+        self.assertEqual(herb.quantity.value, 12)
         self.assertIsNone(service.market_for_npc("innkeeper_mira"))
         self.assertEqual(
             tuple(npc.npc_id for npc in bundle.social.npcs.all()),
@@ -85,6 +89,9 @@ class TestContentPack(unittest.TestCase):
         guard = runtime.entity("warden_lyra")
         self.assertEqual(guard.kind, "npc")
         self.assertEqual((guard.position.cell.q, guard.position.cell.r), (1, 0))
+        herb = runtime.entity("herb_patch_01")
+        self.assertEqual(herb.kind, "object")
+        self.assertEqual((herb.position.cell.q, herb.position.cell.r), (-1, 0))
 
 
     def test_gameplay_setup_registers_resource_nodes_from_content_definitions(self):
