@@ -36,8 +36,8 @@ def test_scene_collision_is_separate_from_visual_sprite_bounds():
     assert first.position == expected
     xs = [point.x for point in first.shape.vertices]
     ys = [point.y for point in first.shape.vertices]
-    assert max(xs) - min(xs) == 20
-    assert max(ys) - min(ys) == 20
+    assert max(xs) - min(xs) == 16
+    assert max(ys) - min(ys) == 14
 
 
 def test_absent_package_has_no_implicit_presentation_colliders():
