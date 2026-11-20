@@ -82,7 +82,7 @@ class TestContentPack(unittest.TestCase):
 
     def test_demo_package_places_guard_in_the_starting_hex_world(self):
         application = GameApplication.create_default()
-        service, _ids = populate_opening_content(
+        service, ids = populate_opening_content(
             application, content_package_path=PACKAGE,
         )
 
