@@ -7,7 +7,7 @@
 ## Uygulanan değişiklikler
 
 - `application/performance_monitor.py` eklendi. Son 600 kare için sınırlı bellek kullanan kayan ölçüm penceresi tutar.
-- Kare süresi için ortalama, minimum, p50, p95, p99 ve maksimum değerleri hesaplanır.
+- Kare süresi için ortalama, ortalama FPS, minimum, p50, p95, p99 ve maksimum değerleri hesaplanır.
 - 16,67 ms ve 25 ms bütçelerini aşan kare sayıları raporlanır.
 - `GameWindow` içinde toplam oyun adımı, oyuncu fiziği, NPC simülasyonu, dünya güncellemesi, render ve ekran sunumu ayrı zamanlanır.
 - `HexGameplayView` gerçek render sayaçlarını yayımlar: toplam/görünür/çizilen hücreler, toplam aktör/NPC, çizilen aktörler ve sahne nesneleri.
