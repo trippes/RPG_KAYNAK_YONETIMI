@@ -388,19 +388,11 @@ class HexWorldRuntime:
 
     def continuous_position(self, entity_id: str) -> ContinuousEntityPosition:
         """Return the authoritative map-scoped continuous world position."""
-        self.entity(entity_id)  # Verify consistency with the derived occupancy view.
+        self.entity(entity_id)
         return self._continuous_positions[entity_id]
 
-    def set_continuous_position(
-        self,
-        entity_id: str,
-        point: WorldPoint,
-    ) -> MovementResult:
-        """Apply one continuous position update and atomically refresh derived occupancy.
-
-        A single update may remain within the current cell or cross one adjacent
-        hex. Larger jumps must be subdivided by the movement integrator.
-        """
+    def set_continuous_position(self, entity_id: str, point: WorldPoint) -> MovementResult:
+        """Apply one continuous update and atomically refresh occupancy and broadphase."""
         if not isinstance(point, WorldPoint):
             raise TypeError("point must be a WorldPoint.")
         entity = self.entity(entity_id)
@@ -409,10 +401,8 @@ class HexWorldRuntime:
                 False, entity.position, MovementFailureReason.MOVEMENT_NOT_ALLOWED,
                 "Entity cannot move.",
             )
-
         target_coord = world_point_to_hex(
-            point,
-            self.HEX_SIZE,
+            point, self.HEX_SIZE,
             previous_cell=entity.position.cell.to_hex_coord(),
         )
         target_cell = LocalHexPosition.from_hex_coord(target_coord)
@@ -423,7 +413,6 @@ class HexWorldRuntime:
                 False, entity.position, MovementFailureReason.INVALID_TARGET,
                 "Continuous position resolves outside the map valid_cells mask.",
             )
-
         if target_cell == entity.position.cell:
             next_position = ContinuousEntityPosition(entity.position.map_id, point)
             state = self._entity_state(entity_id)
@@ -433,7 +422,6 @@ class HexWorldRuntime:
             )
             self._continuous_positions[entity_id] = next_position
             return MovementResult(True, entity.position)
-
         request = MovementRequest(entity_id, entity.position, target, entity.profile)
         validation = MovementRules.evaluate(request, map_definition)
         if not validation.success:
@@ -446,17 +434,12 @@ class HexWorldRuntime:
                 False, entity.position, MovementFailureReason.OCCUPIED_CELL,
                 "Target cell is occupied or movement-blocked.",
             )
-
         next_position = ContinuousEntityPosition(entity.position.map_id, point)
         self._commit_position(entity_id, target, next_position)
         return MovementResult(True, target)
 
     def query_spatial_candidates(self, map_id: str, bounds: AABB) -> tuple[str, ...]:
-        """Return enabled broadphase actors near a map-scoped world-space AABB.
-
-        Actors with disabled physics bodies remain registered for identity,
-        occupancy, and movement, but are excluded from physical candidate sets.
-        """
+        """Return enabled broadphase actors near a map-scoped world-space AABB."""
         return tuple(
             entity_id
             for entity_id in self._spatial_index.query(map_id, bounds)
@@ -477,15 +460,11 @@ class HexWorldRuntime:
             edge_validator=edge_validator,
         )
 
-    def move_toward(
-        self, entity_id: str, goal: LocalHexPosition, *, edge_validator=None,
-    ) -> MovementResult:
+    def move_toward(self, entity_id: str, goal: LocalHexPosition, *, edge_validator=None) -> MovementResult:
         entity = self.entity(entity_id)
         if not entity.active or not entity.profile.can_move:
             return MovementResult(
-                False,
-                entity.position,
-                MovementFailureReason.MOVEMENT_NOT_ALLOWED,
+                False, entity.position, MovementFailureReason.MOVEMENT_NOT_ALLOWED,
                 "Entity cannot move.",
             )
         path = self.path_to(entity_id, goal, edge_validator=edge_validator)
@@ -529,17 +508,31 @@ class HexWorldRuntime:
         index = self._patrol_indices.get(entity_id, 0) % len(points)
         if entity.position.cell == points[index]:
             index = (index + 1) % len(points)
-        result = self.move_toward(
-            entity_id, points[index], edge_validator=edge_validator,
-        )
+        result = self.move_toward(entity_id, points[index], edge_validator=edge_validator)
         if result.success and result.position.cell == points[index]:
             self._patrol_indices[entity_id] = (index + 1) % len(points)
         else:
             self._patrol_indices[entity_id] = index
         return result
 
+    def patrol_target(self, entity_id: str, route) -> LocalHexPosition:
+        """Return the current patrol waypoint, advancing progress on waypoint arrival."""
+        entity = self.entity(entity_id)
+        if entity.kind != "npc":
+            raise ValueError("Patrol behavior is reserved for NPC entities.")
+        points = tuple(route)
+        if len(points) < 2 or any(not isinstance(point, LocalHexPosition) for point in points):
+            raise ValueError("route must contain at least two LocalHexPosition waypoints.")
+        map_definition = self.map_definition(entity.position.map_id)
+        if any(not map_definition.has_cell(point) for point in points):
+            raise ValueError("Patrol route leaves the map valid_cells mask.")
+        index = self._patrol_indices.get(entity_id, 0) % len(points)
+        if entity.position.cell == points[index]:
+            index = (index + 1) % len(points)
+            self._patrol_indices[entity_id] = index
+        return points[index]
+
     def transfer_entity(self, entity_id: str, target: EntityPosition) -> MovementResult:
-        """Apply a validated cross-map relocation as one atomic occupancy update."""
         entity = self.entity(entity_id)
         if not isinstance(target, EntityPosition):
             raise TypeError("target must be an EntityPosition.")
