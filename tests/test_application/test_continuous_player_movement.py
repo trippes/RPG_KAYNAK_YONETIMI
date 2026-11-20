@@ -9,7 +9,10 @@ from application.hex_map_definition import parse_hex_map
 from application.hex_physics_bridge import build_hex_physics_snapshot
 from application.hex_world_runtime import HexWorldRuntime
 from core.domain.movement import MovementConfig, MovementIntent
-from core.domain.physics import BoundaryPolicy, CircleShape, PhysicsBodyDefinition, StaticObstacle, Vector2
+from core.domain.physics import (
+    BoundaryPolicy, CircleShape, ConvexPolygonShape, PhysicsBodyDefinition,
+    StaticObstacle, Vector2,
+)
 from core.domain.spatial import AABB, EntityPosition, LocalHexPosition, MovementFailureReason, WorldPoint
 from core.foundation import WorldId
 
@@ -262,3 +265,25 @@ def test_failed_player_commit_rolls_back_provisional_npc_push():
     assert runtime.continuous_position("guard").point == npc_start
     for entity_id in ("hero", "guard"):
         assert runtime.occupancy.get(entity_id).position == runtime.entity(entity_id).position
+
+
+def test_continuous_controller_slides_along_static_wall_instead_of_stopping():
+    wall = StaticObstacle(
+        "vertical-wall", "corridor",
+        ConvexPolygonShape((
+            WorldPoint(20.0, -100.0), WorldPoint(25.0, -100.0),
+            WorldPoint(25.0, 100.0), WorldPoint(20.0, 100.0),
+        )),
+        WorldPoint(0.0, 0.0),
+    )
+    _actors, runtime, controller = make_controller(obstacle=wall)
+    intent = MovementIntent(Vector2(1.0, 0.5))
+
+    for _ in range(30):
+        result = controller.step("hero", intent, 1.0 / 60.0)
+
+    point = runtime.continuous_position("hero").point
+    assert result.collision_resolution is not None
+    assert point.x < 12.1
+    assert point.y > 5.0
+    assert runtime.occupancy.get("hero").position == runtime.entity("hero").position
