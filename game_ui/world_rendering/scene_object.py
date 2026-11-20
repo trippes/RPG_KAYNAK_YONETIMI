@@ -104,10 +104,14 @@ class SceneObject:
     depth_offset: float = 0.0
     layer: str = "ground"
     stable_order: int = 0
+    kind: str = "prop"
 
     def __post_init__(self):
-        if any(not isinstance(value, str) or not value.strip() for value in (self.object_id, self.asset_id)):
-            raise ValueError("Scene object IDs must be non-empty.")
+        if any(
+            not isinstance(value, str) or not value.strip()
+            for value in (self.object_id, self.asset_id, self.kind)
+        ):
+            raise ValueError("Scene object IDs and kind must be non-empty.")
         values = (
             self.world_x, self.world_y, self.visual_width, self.visual_height,
             self.anchor_x, self.anchor_y, self.depth_offset,
