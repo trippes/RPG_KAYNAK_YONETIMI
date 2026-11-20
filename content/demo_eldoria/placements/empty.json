@@ -65,6 +65,54 @@
       "r": -3,
       "layer": "canopy",
       "kind": "tree"
+    },
+    {
+      "object_id": "stone-outcrop-west-01",
+      "asset_id": "prop.rock.large",
+      "q": -4,
+      "r": 4,
+      "layer": "prop",
+      "kind": "rock"
+    },
+    {
+      "object_id": "stone-outcrop-east-01",
+      "asset_id": "prop.rock.large",
+      "q": 4,
+      "r": 0,
+      "layer": "prop",
+      "kind": "rock"
+    },
+    {
+      "object_id": "woodland-shrub-west-01",
+      "asset_id": "flora.shrub.green",
+      "q": -4,
+      "r": 1,
+      "layer": "prop",
+      "kind": "shrub"
+    },
+    {
+      "object_id": "woodland-shrub-east-01",
+      "asset_id": "flora.shrub.green",
+      "q": 4,
+      "r": -1,
+      "layer": "prop",
+      "kind": "shrub"
+    },
+    {
+      "object_id": "wildflower-clearing-01",
+      "asset_id": "flora.plant.wildflower",
+      "q": 0,
+      "r": 3,
+      "layer": "prop",
+      "kind": "flower"
+    },
+    {
+      "object_id": "wildflower-clearing-02",
+      "asset_id": "flora.plant.wildflower",
+      "q": 1,
+      "r": 2,
+      "layer": "prop",
+      "kind": "flower"
     }
   ]
 }
