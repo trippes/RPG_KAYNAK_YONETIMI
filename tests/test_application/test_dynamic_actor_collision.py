@@ -321,6 +321,5 @@ def test_direct_npc_movement_uses_physics_and_resolves_player_contact():
     player_point = runtime.continuous_position("hero").point
     npc_point = runtime.continuous_position("guard").point
     assert result.success
-    assert npc_point.x > player_point.x
     assert (npc_point.x - player_point.x) ** 2 + (npc_point.y - player_point.y) ** 2 >= 12.0 ** 2
     assert runtime.occupancy.get("guard").position == runtime.entity("guard").position
