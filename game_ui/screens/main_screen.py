@@ -37,6 +37,16 @@ class MainScreen:
         if self._hex_view is not None:
             self._hex_view._clear_move_goal()
 
+    @property
+    def has_click_move_goal(self):
+        return self._hex_view is not None and self._hex_view.has_click_move_goal
+
+    def click_move_intent(self):
+        if self._hex_view is None:
+            from core.domain.movement import MovementIntent
+            return MovementIntent()
+        return self._hex_view.click_move_intent()
+
     def handle(self, state):
         if self._runtime() is not None:
             result = self._view().handle(state)
