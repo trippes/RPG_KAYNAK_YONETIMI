@@ -246,7 +246,8 @@ class HexGameplayView:
         if runtime is None:
             self._clear_move_goal()
             return MovementIntent()
-        try:            entity = runtime.entity(self.service.player_actor_id)
+        try:
+            entity = runtime.entity(self.service.player_actor_id)
             binding = self.service.hex_actor_binding
         except (KeyError, RuntimeError, ValueError):
             self._clear_move_goal()
