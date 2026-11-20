@@ -298,9 +298,9 @@ class GameWindow:
         for _ in range(step_count):
             step_intent = intent
             if click_to_move:
-                step_intent = self.screens[self.gameplay_screen].click_move_intent()
-                if not step_intent.is_moving:
-                    break
+                click_intent = self.screens[self.gameplay_screen].click_move_intent()
+                if click_intent.is_moving:
+                    step_intent = click_intent
             controller.step(
                 actor_id,
                 step_intent,
