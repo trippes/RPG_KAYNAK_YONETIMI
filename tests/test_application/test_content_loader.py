@@ -268,6 +268,8 @@ class TestContentPackageLoader(unittest.TestCase):
             "nodes": [{"id": "oak_01"}],
         }), encoding="utf-8")
         placements = root / "gameplay_placements"
+        if placements.exists():
+            shutil.rmtree(placements)
         placements.mkdir()
         return placements
 
