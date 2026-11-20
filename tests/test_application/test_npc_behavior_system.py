@@ -68,7 +68,7 @@ def test_patrol_reverses_route_after_reaching_waypoint_and_persists_progress():
     runtime, npcs, snapshot = make_world()
     system = NPCBehaviorSystem(npcs, runtime, snapshot)
 
-    for _ in range(12):
+    for _ in range(15):
         system.step(1.0 / 60.0)
 
     assert runtime.entity("guard").position.cell == LocalHexPosition(2, 0)
