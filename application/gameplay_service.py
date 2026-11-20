@@ -216,6 +216,37 @@ class GameplayService:
             return None
         return HexInteractionService(runtime).npc_at_world_point(map_id, point)
 
+    def world_target_at_world_point(self, map_id: str, point: WorldPoint):
+        """Resolve a placed resource node or container through canonical owners."""
+        runtime = self.hex_world_runtime
+        if runtime is None:
+            return None
+        from .hex_interaction import HexInteractionService
+
+        entity_id = HexInteractionService(runtime).object_at_world_point(
+            map_id, point,
+        )
+        if entity_id is None:
+            return None
+        bundle = self._current_bundle()
+        if bundle.resource_nodes.get(entity_id) is not None:
+            return ("resource_node", entity_id)
+        container_id = self.container_for_entity(entity_id)
+        if container_id is not None:
+            return ("container", container_id)
+        return None
+
+    def transition_at_world_point(self, map_id: str, point: WorldPoint) -> str | None:
+        """Resolve a map-authored door/portal transition at a world-space point."""
+        runtime = self.hex_world_runtime
+        if runtime is None:
+            return None
+        from .hex_interaction import HexInteractionService
+
+        return HexInteractionService(runtime).transition_at_world_point(
+            map_id, point,
+        )
+
     @property
     def hex_actor_binding(self) -> ActorHexBindingService:
         """Resolve the active world's actor-to-hex binding without owning state."""
@@ -1236,6 +1267,19 @@ class GameplayService:
         )
         self._advance_quests("collect", node_id, quantity.value, actor_id, inventory_id)
         return result
+
+    def start_gathering_one(
+        self, actor_id: str, node_id: str, inventory_id: str,
+    ) -> ActivityView:
+        """Start the smallest valid gather action for a world-selected node."""
+        node = self._current_bundle().resource_nodes.get(node_id)
+        if node is None:
+            raise KeyError(f"Resource node not found: {node_id}")
+        if node.quantity.value < 1:
+            raise GameplayServiceError("Resource node has no remaining quantity.")
+        return self.start_gathering(
+            actor_id, node_id, inventory_id, Quantity(1, node.quantity.unit),
+        )
 
     def gathering_duration(self, actor_id: str, node_id: str | None = None) -> int:
         """Resolve the exact tick duration configured on a resource node.
