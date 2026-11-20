@@ -176,6 +176,7 @@ class ContinuousPlayerMovementController:
                         "could not roll back NPC after rejected player movement: "
                         f"{push.entity_id}"
                     )
+            self._last_dynamic_pushes = ()
             state = current
 
         self._last_state = state
