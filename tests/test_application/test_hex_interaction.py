@@ -77,3 +77,34 @@ def test_npc_target_lookup_validates_map_and_world_point():
         service.npc_at_world_point("missing", WorldPoint(0, 0))
     with pytest.raises(TypeError, match="WorldPoint"):
         service.npc_at_world_point("forest", (0, 0))
+
+
+def test_object_target_lookup_resolves_non_blocking_world_objects():
+    runtime = make_runtime()
+    position = EntityPosition("forest", LocalHexPosition(0, 0))
+    runtime.register_entity(
+        "herb_patch", "object", position,
+        blocks_movement=False, blocks_occupancy=False,
+    )
+    center = axial_to_world_point(position.cell.to_hex_coord(), runtime.HEX_SIZE)
+
+    service = HexInteractionService(runtime)
+
+    assert service.object_at_world_point("forest", center) == "herb_patch"
+    assert service.npc_at_world_point("forest", center) is None
+
+
+def test_object_target_lookup_does_not_select_an_adjacent_hex_object():
+    runtime = make_runtime()
+    runtime.register_entity(
+        "herb_patch", "object",
+        EntityPosition("forest", LocalHexPosition(1, 0)),
+        blocks_movement=False, blocks_occupancy=False,
+    )
+    center = axial_to_world_point(
+        LocalHexPosition(0, 0).to_hex_coord(), runtime.HEX_SIZE,
+    )
+
+    assert HexInteractionService(runtime).object_at_world_point(
+        "forest", center,
+    ) is None
