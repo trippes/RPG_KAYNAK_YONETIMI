@@ -133,8 +133,10 @@ class DynamicActorCollisionResolver:
                     continue
                 if committed_a:
                     moved.add(npc_id)
+                    valid[npc_id] = (entity_a, body_a, target_a)
                 if committed_b:
                     moved.add(other_id)
+                    valid[other_id] = (entity_b, body_b, target_b)
 
                 # A failed half of a split correction transfers its share to
                 # the actor that can still move, preserving non-penetration.
@@ -152,6 +154,7 @@ class DynamicActorCollisionResolver:
                         other_id, fallback_target,
                     ).success:
                         moved.add(other_id)
+                        valid[other_id] = (entity_b, body_b, fallback_target)
                 elif moved_b and not committed_b and committed_a and inverse_a > 0:
                     extra = Vector2(
                         contact.normal.x * correction * inverse_a / inverse_total,
@@ -166,6 +169,7 @@ class DynamicActorCollisionResolver:
                         npc_id, fallback_target,
                     ).success:
                         moved.add(npc_id)
+                        valid[npc_id] = (entity_a, body_a, fallback_target)
 
         return tuple(sorted(moved))
 
