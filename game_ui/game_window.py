@@ -304,6 +304,11 @@ class GameWindow:
                 intent,
                 self._movement_clock.step_seconds,
             )
+            advance_avoidance = getattr(
+                self.service, "advance_npc_avoidance", None,
+            )
+            if callable(advance_avoidance):
+                advance_avoidance(self._movement_clock.step_seconds)
 
     def _ensure_save_storage(self):
         failure = getattr(self, "_save_storage_failure", None)

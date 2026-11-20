@@ -275,6 +275,27 @@ class GameplayService:
             self.hex_actor_binding,
         )
 
+    def advance_npc_avoidance(self, delta_seconds: float):
+        """Advance opt-in fleeing/spacing steering during the fixed gameplay step."""
+        runtime = self.hex_world_runtime
+        if runtime is None:
+            return ()
+        bundle = self._current_bundle()
+        try:
+            binding = self.hex_actor_binding
+        except GameplayServiceError:
+            return ()
+        if binding.physics_snapshot is None:
+            return ()
+        from .npc_avoidance import NPCAvoidanceSystem
+
+        return NPCAvoidanceSystem(
+            bundle.social.npcs,
+            runtime,
+            binding.physics_snapshot,
+            self.player_actor_id,
+        ).step(delta_seconds)
+
     @property
     def npc_physics_bodies(self):
         """Return the active NPC body definitions for dynamic collision queries."""
