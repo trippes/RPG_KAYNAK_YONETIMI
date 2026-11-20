@@ -69,6 +69,9 @@ class HexGameplayView:
         self.context_menu_npc_id = None
         self.context_menu_position = None
         self.context_menu_is_companion = False
+        self.context_menu_target_id = None
+        self.context_menu_target_kind = None
+        self.selected_interaction_target_id = None
         self.selected_npc_id = None
         self.selected_scene_object_id = None
 
@@ -310,6 +313,10 @@ class HexGameplayView:
             self.context_menu_npc_id = None
             self.context_menu_position = None
             self.context_menu_is_companion = False
+            self.context_menu_target_id = None
+            self.context_menu_target_kind = None
+            if state.mouse_pos is None:
+                return
             player = runtime.entity(self.service.player_actor_id)
             npc_id = self._npc_at_screen_position(
                 runtime, state.mouse_pos, player.position.map_id,
@@ -339,6 +346,37 @@ class HexGameplayView:
                     "companion_menu" if self.context_menu_is_companion
                     else "npc_menu"
                 )
+
+            if (
+                self._panel is None
+                or not self._panel.collidepoint(state.mouse_pos)
+            ):
+                return
+            world_point = self.transform.screen_to_world_point(*state.mouse_pos)
+            target = self.service.world_target_at_world_point(
+                player.position.map_id, world_point,
+            )
+            if target is not None:
+                self.context_menu_target_kind, self.context_menu_target_id = target
+            else:
+                transition_id = self.service.transition_at_world_point(
+                    player.position.map_id, world_point,
+                )
+                if transition_id is not None:
+                    self.context_menu_target_kind = "door"
+                    self.context_menu_target_id = transition_id
+            if self.context_menu_target_id is not None:
+                menu_x, menu_y = state.mouse_pos
+                menu_x = min(
+                    max(self._panel.left, menu_x),
+                    max(self._panel.left, self._panel.right - 176),
+                )
+                menu_y = min(
+                    max(self._panel.top, menu_y),
+                    max(self._panel.top, self._panel.bottom - 56),
+                )
+                self.context_menu_position = (menu_x, menu_y)
+                return "world_target_menu"
             return
 
         manual_move = False
@@ -378,6 +416,33 @@ class HexGameplayView:
         if manual_move:
             self._clear_move_goal()
         elif state.mouse_clicked and state.mouse_pos is not None:
+            if (
+                self.context_menu_target_kind is not None
+                and self.context_menu_target_id is not None
+                and self.context_menu_position is not None
+            ):
+                menu_x, menu_y = self.context_menu_position
+                mouse_x, mouse_y = state.mouse_pos
+                target_kind = self.context_menu_target_kind
+                target_id = self.context_menu_target_id
+                if menu_x <= mouse_x <= menu_x + 176 and menu_y <= mouse_y <= menu_y + 56:
+                    first_option = mouse_y < menu_y + 28
+                    self.context_menu_target_kind = None
+                    self.context_menu_target_id = None
+                    self.context_menu_position = None
+                    if not first_option:
+                        self.selected_interaction_target_id = target_id
+                        return "inspect_target"
+                    if target_kind == "resource_node":
+                        self.selected_interaction_target_id = target_id
+                        return "gather"
+                    if target_kind == "container":
+                        return f"container:{target_id}"
+                    if target_kind == "door":
+                        return f"door:{target_id}"
+                self.context_menu_target_kind = None
+                self.context_menu_target_id = None
+                self.context_menu_position = None
             if self.context_menu_npc_id is not None and self.context_menu_position is not None:
                 menu_x, menu_y = self.context_menu_position
                 mouse_x, mouse_y = state.mouse_pos
