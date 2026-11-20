@@ -127,7 +127,7 @@ class HexGameplayView:
         self._visual_moving = self._visual_start != target
 
     def _advance_visual_position(self, elapsed_seconds):
-        if not self._visual_moving:
+        if not self._visual_moving or self._continuous_motion_active:
             return
         self._visual_elapsed = min(
             self.MOVE_ANIMATION_SECONDS,
