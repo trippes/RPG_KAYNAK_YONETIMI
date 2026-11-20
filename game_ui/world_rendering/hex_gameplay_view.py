@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+from time import perf_counter_ns
 
 from core.domain.movement import MovementIntent
 from core.domain.physics import Vector2
@@ -50,6 +51,10 @@ class HexGameplayView:
         self._player_facing = "south"
         self._character_sprite_cache = {}
         self._last_render_stats = {}
+        self._path_query_count = 0
+        self._path_query_ms = 0.0
+        self._last_update_ms = 0.0
+        self._last_npc_update_ms = 0.0
         self.zoom = 1.0
         self.elapsed_seconds = 0.0
         self.mouse_position = None
@@ -206,10 +211,13 @@ class HexGameplayView:
             self._npc_visual_states.pop(stale_id, None)
 
     def update(self, elapsed_seconds: float = 0.0) -> None:
+        update_started = perf_counter_ns()
+        npc_started = perf_counter_ns()
         self.elapsed_seconds = max(0.0, float(elapsed_seconds))
         self._sync_continuous_visual()
         self._advance_visual_position(self.elapsed_seconds)
         self._advance_npc_visuals(self.elapsed_seconds)
+        self._last_npc_update_ms = (perf_counter_ns() - npc_started) / 1_000_000.0
         if self._player_animator is not None:
             state = self._player_animation_state(self._visual_moving)
             self._player_animator.select(
@@ -224,6 +232,7 @@ class HexGameplayView:
             )
             animator.update(self.elapsed_seconds)
         self._advance_player_physics()
+        self._last_update_ms = (perf_counter_ns() - update_started) / 1_000_000.0
 
     @property
     def has_click_move_goal(self) -> bool:
@@ -237,8 +246,7 @@ class HexGameplayView:
         if runtime is None:
             self._clear_move_goal()
             return MovementIntent()
-        try:
-            entity = runtime.entity(self.service.player_actor_id)
+        try:            entity = runtime.entity(self.service.player_actor_id)
             binding = self.service.hex_actor_binding
         except (KeyError, RuntimeError, ValueError):
             self._clear_move_goal()
@@ -255,6 +263,8 @@ class HexGameplayView:
         if entity.position.cell == self._move_goal:
             target = snapshot.cell_center(self._move_goal)
         else:
+            path_started = perf_counter_ns()
+            self._path_query_count += 1
             path = runtime.path_to(
                 self.service.player_actor_id,
                 self._move_goal,
@@ -262,6 +272,7 @@ class HexGameplayView:
                     source, destination, body,
                 ),
             )
+            self._path_query_ms += (perf_counter_ns() - path_started) / 1_000_000.0
             if path is None or len(path) < 2:
                 self._clear_move_goal()
                 return MovementIntent()
@@ -477,8 +488,7 @@ class HexGameplayView:
                         self._visual_moving = False
                 else:
                     manual_directions.append(direction)
-        self._manual_directions = tuple(manual_directions)
-        if manual_move:
+        self._manual_directions = tuple(manual_directions)        if manual_move:
             self._clear_move_goal()
         elif state.mouse_clicked and state.mouse_pos is not None:
             if (
@@ -623,6 +633,7 @@ class HexGameplayView:
         )
 
     def render(self, renderer) -> bool:
+        frame_started = perf_counter_ns()
         runtime = self.service.hex_world_runtime
         if runtime is None:
             return False
@@ -700,6 +711,7 @@ class HexGameplayView:
                 key=lambda position: (position.r, position.q),
             )
             radius = self.HEX_SIZE * self.zoom
+            terrain_started = perf_counter_ns()
             for position in cells:
                 cell = map_definition.get_cell(position)
                 center = self.transform.axial_to_screen(
@@ -716,6 +728,7 @@ class HexGameplayView:
                         center,
                         radius,
                     )
+            terrain_ms = (perf_counter_ns() - terrain_started) / 1_000_000.0
 
             self._ensure_scene_pipeline(renderer)
             self._ensure_character_animators(renderer)
@@ -757,8 +770,7 @@ class HexGameplayView:
                 for scene_object in self._scene_pipeline.objects_for_map(
                     player.position.map_id
                 ):
-                    foot = self.transform.world_to_screen(
-                        scene_object.world_x, scene_object.world_y
+                    foot = self.transform.world_to_screen(                        scene_object.world_x, scene_object.world_y
                     )
                     if not self._scene_pipeline.is_visible(
                         scene_object, foot, panel, self.zoom
@@ -879,6 +891,24 @@ class HexGameplayView:
                     menu_y + 39,
                     max_width=menu_width - 24,
                 )
+            self._last_render_stats = {
+                "render_ms": (perf_counter_ns() - frame_started) / 1_000_000.0,
+                "terrain_ms": terrain_ms,
+                "total_cells": len(map_definition.valid_cells),
+                "visible_cells": visible_cell_count,
+                "drawn_cells": visible_cell_count,
+                "total_actors": len(entities),
+                "drawn_actors": drawn_actor_count,
+                "visible_scene_objects": visible_scene_count,
+                "culled_scene_objects": culled_scene_count,
+                "drawn_scene_objects": drawn_scene_count,
+                "path_queries": self._path_query_count,
+                "path_query_ms": self._path_query_ms,
+                "world_update_ms": self._last_update_ms,
+                "npc_visual_update_ms": self._last_npc_update_ms,
+            }
+            self._path_query_count = 0
+            self._path_query_ms = 0.0
             return True
         finally:
             if callable(set_clip):
