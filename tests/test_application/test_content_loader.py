@@ -45,7 +45,8 @@ class TestContentPackageLoader(unittest.TestCase):
         self.assertEqual(tuple(npc["id"] for npc in npcs), ("warden_lyra",))
         self.assertEqual(npcs[0]["load_phase"], "opening")
         self.assertEqual(package.files["quests"]["quests"], [])
-        self.assertEqual(package.files["resources"]["nodes"], [])
+        resource_nodes = package.files["resources"]["nodes"]
+        self.assertEqual(tuple(node["id"] for node in resource_nodes), ("herb_patch_01",))
         self.assertEqual(len(package.files["characters"]["races"]), 3)
         self.assertEqual(len(package.files["characters"]["classes"]), 3)
 
@@ -68,6 +69,7 @@ class TestContentPackageLoader(unittest.TestCase):
                 ("prop.rock.large", "missing_file"),
                 ("flora.shrub.green", "missing_file"),
                 ("flora.plant.wildflower", "missing_file"),
+            ("structure.workbench", "missing_file"),
             ),
         )
 
