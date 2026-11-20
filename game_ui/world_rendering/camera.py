@@ -25,9 +25,14 @@ class HexCamera:
 
     def update(
         self, target, mouse_position, viewport_size, world_bounds, zoom,
-        elapsed_seconds,
+        elapsed_seconds, *, projection="cartesian",
     ):
-        """Advance camera state; world_bounds is (min_x, min_y, max_x, max_y)."""
+        """Advance camera state; bounds and position remain in world coordinates.
+
+        For the 2:1 isometric projection, a rectangular screen viewport maps to
+        a diamond in world space. Its conservative half extent is the screen
+        half-height plus half the screen half-width on both world axes.
+        """
         dt = max(0.0, min(float(elapsed_seconds), 0.1))
         if not self.initialized:
             self.x, self.y = map(float, target)
@@ -35,8 +40,15 @@ class HexCamera:
 
         width, height = viewport_size
         min_x, min_y, max_x, max_y = world_bounds
-        half_view_x = width / (2.0 * zoom)
-        half_view_y = height / (2.0 * zoom)
+        half_width = width / (2.0 * zoom)
+        half_height = height / (2.0 * zoom)
+        if projection == "isometric":
+            half_view_x = half_height + half_width * 0.5
+            half_view_y = half_height + half_width * 0.5
+        elif projection == "cartesian":
+            half_view_x, half_view_y = half_width, half_height
+        else:
+            raise ValueError("projection must be 'isometric' or 'cartesian'.")
 
         dx = dy = 0.0
         if mouse_position is not None:
@@ -52,9 +64,14 @@ class HexCamera:
 
         self.free_look = bool(dx or dy)
         if self.free_look and dt:
-            length = math.hypot(dx, dy) or 1.0
-            self.x += (dx / length) * self.EDGE_SPEED * dt / zoom
-            self.y += (dy / length) * self.EDGE_SPEED * dt / zoom
+            if projection == "isometric":
+                world_dx = dx * 0.5 + dy
+                world_dy = dy - dx * 0.5
+            else:
+                world_dx, world_dy = dx, dy
+            length = math.hypot(world_dx, world_dy) or 1.0
+            self.x += (world_dx / length) * self.EDGE_SPEED * dt / zoom
+            self.y += (world_dy / length) * self.EDGE_SPEED * dt / zoom
         elif dt:
             blend = 1.0 - math.exp(-self.FOLLOW_RATE * dt)
             self.x += (float(target[0]) - self.x) * blend

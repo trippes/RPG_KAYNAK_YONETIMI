@@ -1,5 +1,70 @@
 {
   "schema_version": 1,
   "map_id": "starting_valley",
-  "objects": []
+  "objects": [
+    {
+      "object_id": "woodland-oak-west-01",
+      "asset_id": "flora.tree.old",
+      "q": -3,
+      "r": 0,
+      "layer": "canopy",
+      "kind": "tree"
+    },
+    {
+      "object_id": "woodland-oak-west-02",
+      "asset_id": "flora.tree.test",
+      "q": -3,
+      "r": 1,
+      "layer": "canopy",
+      "kind": "tree"
+    },
+    {
+      "object_id": "woodland-oak-west-03",
+      "asset_id": "flora.tree.young",
+      "q": -2,
+      "r": 1,
+      "layer": "canopy",
+      "kind": "tree"
+    },
+    {
+      "object_id": "woodland-oak-west-04",
+      "asset_id": "flora.tree.test",
+      "q": -2,
+      "r": 2,
+      "layer": "canopy",
+      "kind": "tree"
+    },
+    {
+      "object_id": "woodland-oak-west-05",
+      "asset_id": "flora.tree.old",
+      "q": -1,
+      "r": 3,
+      "layer": "canopy",
+      "kind": "tree"
+    },
+    {
+      "object_id": "woodland-oak-east-01",
+      "asset_id": "flora.tree.test",
+      "q": 3,
+      "r": -1,
+      "layer": "canopy",
+      "kind": "tree"
+    },
+    {
+      "object_id": "woodland-oak-east-02",
+      "asset_id": "flora.tree.young",
+      "q": 2,
+      "r": -2,
+      "layer": "canopy",
+      "kind": "tree"
+    },
+    {
+      "object_id": "woodland-oak-east-03",
+      "asset_id": "flora.tree.test",
+      "q": 1,
+      "r": -3,
+      "layer": "canopy",
+      "kind": "tree"
+    }
+  ]
 }

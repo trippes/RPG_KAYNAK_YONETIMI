@@ -9,6 +9,7 @@ from .camera import HexCamera
 from .character_renderer import HexCharacterRenderer
 from .depth_sorter import DepthSorter
 from .terrain_renderer import HexTerrainRenderer
+from .scene_object_pipeline import SceneObjectPipeline
 
 
 class HexGameplayView:
@@ -36,6 +37,7 @@ class HexGameplayView:
         self.transform = WorldTransform(hex_size=self.HEX_SIZE)
         self.terrain = HexTerrainRenderer()
         self.characters = HexCharacterRenderer()
+        self._scene_pipeline = None
         self.zoom = 1.0
         self.elapsed_seconds = 0.0
         self.mouse_position = None
@@ -261,6 +263,31 @@ class HexGameplayView:
                 if not result.success or result.position.cell == goal:
                     self._clear_move_goal()
 
+    def _ensure_scene_pipeline(self, renderer):
+        """Load validated map-authored presentation props once per gameplay view."""
+        if self._scene_pipeline is not None:
+            return
+        package_path = getattr(self.service, "_content_package_path", None)
+        if package_path is None:
+            return
+        self._scene_pipeline = SceneObjectPipeline(
+            package_path, renderer.pg, self.HEX_SIZE,
+        )
+
+    @staticmethod
+    def _draw_scene_fallback(renderer, foot, radius):
+        """Keep a visible, non-interactive placeholder when an image is unavailable."""
+        x, y = round(foot[0]), round(foot[1])
+        renderer.pg.draw.ellipse(
+            renderer.surface, (34, 48, 34),
+            (x - radius * 0.22, y - radius * 0.12, radius * 0.44, radius * 0.18),
+        )
+        renderer.pg.draw.polygon(
+            renderer.surface, (72, 111, 63),
+            ((x, y - radius * 0.9), (x - radius * 0.42, y - radius * 0.12),
+             (x + radius * 0.42, y - radius * 0.12)),
+        )
+
     def render(self, renderer) -> bool:
         runtime = self.service.hex_world_runtime
         if runtime is None:
@@ -316,6 +343,7 @@ class HexGameplayView:
                 (min_x, min_y, max_x, max_y),
                 self.zoom,
                 self.elapsed_seconds,
+                projection=self.transform.projection,
             )
             if self._camera_map_id != player.position.map_id:
                 self.camera.x, self.camera.y = target
@@ -349,27 +377,75 @@ class HexGameplayView:
                         radius,
                     )
 
+            self._ensure_scene_pipeline(renderer)
+            draw_items = []
             entities = tuple(
                 entity for entity in runtime.entities()
                 if entity.position.map_id == player.position.map_id
             )
-            for entity in DepthSorter.sort(
-                entities, lambda item: item.position.cell,
-            ):
+            for entity in entities:
                 if entity.kind == "player":
                     foot = self.transform.world_to_screen(*self._visual_position)
                     moving = self._visual_moving
-                else:
-                    if entity.continuous_position is not None:
-                        foot = self.transform.world_point_to_screen(
-                            entity.continuous_position.point
-                        )
-                    else:
-                        foot = self.transform.axial_to_screen(
-                            entity.position.cell.to_hex_coord()
-                        )
+                elif entity.continuous_position is not None:
+                    foot = self.transform.world_point_to_screen(
+                        entity.continuous_position.point
+                    )
                     moving = False
-                if entity.kind in {"player", "npc"}:
+                else:
+                    foot = self.transform.axial_to_screen(
+                        entity.position.cell.to_hex_coord()
+                    )
+                    moving = False
+                draw_items.append((
+                    1,
+                    foot[1],
+                    f"actor:{entity.entity_id}",
+                    "actor",
+                    entity,
+                    foot,
+                    moving,
+                ))
+
+            if self._scene_pipeline is not None:
+                for scene_object in self._scene_pipeline.objects_for_map(
+                    player.position.map_id
+                ):
+                    foot = self.transform.world_to_screen(
+                        scene_object.world_x, scene_object.world_y
+                    )
+                    if not self._scene_pipeline.is_visible(
+                        scene_object, foot, panel, self.zoom
+                    ):
+                        continue
+                    layer_group = (
+                        0 if scene_object.layer == "underlay"
+                        else 2 if scene_object.layer == "overlay"
+                        else 1
+                    )
+                    draw_items.append((
+                        layer_group,
+                        foot[1] + scene_object.depth_offset * self.zoom,
+                        f"scene:{scene_object.object_id}",
+                        "scene",
+                        scene_object,
+                        foot,
+                        False,
+                    ))
+
+            ordered_items = DepthSorter.sort_by_depth(
+                draw_items,
+                lambda item: (item[0], item[1]),
+                lambda item: item[2],
+            )
+            for _, _, _, item_type, item, foot, moving in ordered_items:
+                if item_type == "scene":
+                    if not self._scene_pipeline.draw(
+                        renderer, item, foot, self.zoom
+                    ):
+                        self._draw_scene_fallback(renderer, foot, radius)
+                    continue
+                if item.kind in {"player", "npc"}:
                     self.characters.draw(
                         renderer,
                         foot,

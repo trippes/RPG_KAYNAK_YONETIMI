@@ -28,6 +28,7 @@ from .production_chain import ProductionChain, ProductionChainStage
 from .actor_system import ActivityView, ActorView, WorldActor
 from .hex_actor_binding import ActorHexBindingService
 from .hex_physics_bridge import build_hex_physics_snapshot
+from .scene_physics_adapter import build_scene_object_obstacles
 from core.domain.physics import CircleShape, PhysicsBodyDefinition
 
 from .container_hex_binding import ContainerHexBindingService
@@ -237,10 +238,16 @@ class GameplayService:
             cache_key = (world.world_id, player.position.map_id, id(map_definition))
             physics_snapshot = self._hex_physics_snapshots.get(cache_key)
             if physics_snapshot is None:
+                object_obstacles = build_scene_object_obstacles(
+                    getattr(self, "_content_package_path", None),
+                    map_definition,
+                    32.0,
+                )
                 physics_snapshot = build_hex_physics_snapshot(
                     WorldId(world.world_id),
-                    runtime.map_definition(player.position.map_id),
+                    map_definition,
                     32.0,
+                    object_obstacles=object_obstacles,
                 )
                 self._hex_physics_snapshots[cache_key] = physics_snapshot
             player_body = PhysicsBodyDefinition(
