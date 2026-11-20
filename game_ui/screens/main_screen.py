@@ -88,7 +88,7 @@ class MainScreen:
                     )
                 return result
             if isinstance(result, str) and (
-                result.startswith("container:") or result.startswith("door:")
+                result.startswith("container:") or result.startswith("door:") or result.startswith("structure:")
             ):
                 return result
         return None
@@ -122,6 +122,7 @@ class MainScreen:
                         "resource_node": "Topla",
                         "container": "Aç",
                         "door": "Kullan",
+                        "structure": "Kullan",
                     }.get(self.context_menu_target_kind, "Kullan")
                     renderer.text(first_label, x + 10, y + 6)
                     renderer.text("İncele", x + 10, y + 31)
