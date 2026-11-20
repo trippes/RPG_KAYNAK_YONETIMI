@@ -232,3 +232,19 @@ def test_gameplay_service_uses_static_contact_sliding_for_player_motion():
     assert point.x < 12.1
     assert point.y > 10.0
     assert runtime.occupancy.get("hero").position == runtime.entity("hero").position
+
+
+def test_npc_ai_contact_is_pushed_away_from_stationary_player():
+    runtime, definition = make_runtime()
+    snapshot = build_hex_physics_snapshot(WorldId("world"), definition, 32.0)
+    runtime.set_continuous_position("guard", WorldPoint(10.0, 0.0))
+
+    moved = DynamicActorCollisionResolver(runtime, snapshot).resolve_npc_player_contacts(
+        "hero",
+        PhysicsBodyDefinition("hero", CircleShape(8.0)),
+        {"guard": PhysicsBodyDefinition("guard", CircleShape(4.0))},
+    )
+
+    assert moved == ("guard",)
+    assert runtime.continuous_position("guard").point.x > 10.0
+    assert runtime.occupancy.get("guard").position == runtime.entity("guard").position
