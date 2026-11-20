@@ -4,7 +4,7 @@ from __future__ import annotations
 import math
 
 from core.domain.physics import CircleShape, PhysicsBodyDefinition, Vector2
-from core.domain.spatial import AABB, EntityPosition, WorldPoint
+from core.domain.spatial import AABB, EntityPosition, HexDirection, LocalHexPosition, WorldPoint
 from .dynamic_actor_collision import DynamicActorCollisionResolver
 from npc import BehaviorState, NPCRegistry
 
@@ -44,30 +44,53 @@ class NPCAvoidanceSystem:
         edge_validator = lambda source, destination: (
             self._snapshot.can_reach_cell(source, destination, body)
         )
+        nearby = {current_cell}
+        frontier = {current_cell}
+        for _ in range(self.SEARCH_RADIUS_CELLS):
+            next_frontier = set()
+            for cell in frontier:
+                for direction in HexDirection:
+                    neighbor = LocalHexPosition.from_hex_coord(
+                        cell.to_hex_coord().neighbor(direction),
+                    )
+                    if neighbor not in nearby:
+                        nearby.add(neighbor)
+                        next_frontier.add(neighbor)
+            frontier = next_frontier
+
         candidates = []
-        for cell in sorted(map_definition.valid_cells, key=lambda item: (item.q, item.r)):
-            if cell == current_cell:
+        for cell in nearby:
+            if (
+                cell == current_cell
+                or not map_definition.has_cell(cell)
+                or map_definition.is_blocked(cell)
+            ):
                 continue
-            if current_cell.to_hex_coord().distance_to(cell.to_hex_coord()) > self.SEARCH_RADIUS_CELLS:
-                continue
-            threat_distance = cell.to_hex_coord().distance_to(threat_cell.to_hex_coord())
-            if threat_distance <= current_distance or map_definition.is_blocked(cell):
+            threat_distance = cell.to_hex_coord().distance_to(
+                threat_cell.to_hex_coord(),
+            )
+            if threat_distance <= current_distance:
                 continue
             destination = EntityPosition(entity.position.map_id, cell)
             if not self._runtime.occupancy.can_enter(
                 destination, excluding=npc_id,
             ):
                 continue
+            travel_distance = current_cell.to_hex_coord().distance_to(
+                cell.to_hex_coord(),
+            )
+            candidates.append((
+                -threat_distance, travel_distance, cell.q, cell.r, cell,
+            ))
+
+        # Prefer the greatest threat separation, then the shortest local route.
+        for _threat_score, _travel_score, _q, _r, cell in sorted(candidates):
             path = self._runtime.path_to(
                 npc_id, cell, edge_validator=edge_validator,
             )
             if path is not None and len(path) > 1:
-                candidates.append((
-                    -threat_distance, len(path), cell.q, cell.r, path,
-                ))
-        if not candidates:
-            return None
-        return min(candidates, key=lambda item: item[:4])[4]
+                return path
+        return None
 
     def step(self, delta_seconds: float) -> tuple[str, ...]:
         if isinstance(delta_seconds, bool) or not isinstance(delta_seconds, (int, float)):
