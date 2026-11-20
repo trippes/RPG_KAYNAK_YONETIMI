@@ -278,7 +278,8 @@ class GameWindow:
         config = self._movement_configs.get(actor_id)
         input_focused = (
             self.movement_input is not None and self.movement_input.focused
-        )        active = active and config is not None and (input_focused or click_to_move)
+        )
+        active = active and config is not None and (input_focused or click_to_move)
         step_count = self._movement_clock.advance(
             elapsed_seconds,
             active=active,
@@ -520,7 +521,8 @@ class GameWindow:
         if target not in self.screens:
             return False
 
-        if target == self.gameplay_screen:            self.gameplay_active = True
+        if target == self.gameplay_screen:
+            self.gameplay_active = True
         elif target == "menu":
             self.gameplay_active = False
 
@@ -778,7 +780,8 @@ class GameWindow:
             and movement_configured
         )
         if movement_input_active:
-            movement_intent = self.movement_input.read_intent()            if movement_intent.is_moving:
+            movement_intent = self.movement_input.read_intent()
+            if movement_intent.is_moving:
                 state.actions.difference_update({
                     "left", "right", "up", "down",
                     "hex_north_west", "hex_south_west",
@@ -836,7 +839,8 @@ class GameWindow:
                     "Geçiş kullanıldı." if result.success else "Geçiş kullanılamadı.",
                     "info" if result.success else "error",
                 )
-            except (KeyError, RuntimeError, ValueError) as error:                self._set_notice(f"Geçiş kullanılamadı: {error}", "error")
+            except (KeyError, RuntimeError, ValueError) as error:
+                self._set_notice(f"Geçiş kullanılamadı: {error}", "error")
             next_screen = self.gameplay_screen
         if next_screen == "continue":
             next_screen = self._open_save_slots("load")
