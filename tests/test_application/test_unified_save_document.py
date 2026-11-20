@@ -9,6 +9,13 @@ from application import GameSaveDocument, GameSaveFileAdapter, SaveJsonCodec, He
 from core.foundation import WorldId
 from application.migrations import migrate_save_data
 from application.save_file_adapter import SaveFileWriteError
+from application.extended_persistence import SocialSnapshot
+from application.social_runtime import SocialRuntime
+from core.domain.spatial import ContinuousEntityPosition, WorldPoint
+from npc import (
+    BehaviorController, BehaviorState, CompanionCommand, CompanionRegistry,
+    NPC, NPCRegistry,
+)
 from application.save_document import (
     SaveDocumentError,
     UnsupportedSaveSchemaError,
@@ -42,6 +49,39 @@ class TestUnifiedSaveDocument(unittest.TestCase):
             {"main": inventory}, WorldResourceNodeManager(), jobs
         )
         return GameSaveDocument(core=core, gameplay=gameplay)
+
+    def test_companion_wait_state_round_trips_inside_unified_save_document(self):
+        document = self._document()
+        npc = NPC(
+            "guard", "Guard",
+            behavior=BehaviorController(BehaviorState.FLEE),
+        )
+        companions = CompanionRegistry()
+        companions.add("guard")
+        wait_position = ContinuousEntityPosition(
+            "starting_valley", WorldPoint(96.5, 32.25),
+        )
+        companions.set_command("guard", CompanionCommand.WAIT, wait_position)
+        social = SocialRuntime(
+            npcs=NPCRegistry((npc,)),
+            companions=companions,
+        )
+        with_social = GameSaveDocument(
+            core=document.core,
+            gameplay=document.gameplay,
+            social=SocialSnapshot.from_runtime(social),
+        )
+
+        decoded = SaveJsonCodec.decode(SaveJsonCodec.encode(with_social))
+        restored = decoded.social.restore()
+
+        self.assertEqual(
+            restored.npcs.get("guard").behavior_state,
+            BehaviorState.FLEE,
+        )
+        companion = restored.companions.get("guard")
+        self.assertEqual(companion.command, CompanionCommand.WAIT)
+        self.assertEqual(companion.wait_position, wait_position)
 
     def test_valid_document_preserves_inner_schemas(self):
         document = self._document()
