@@ -3,7 +3,7 @@ from application.hex_map_definition import parse_hex_map
 from application.hex_physics_bridge import build_hex_physics_snapshot
 from application.hex_world_runtime import HexWorldRuntime
 from core.domain.physics import (
-    CircleShape, ConvexPolygonShape, PhysicsBodyDefinition, StaticObstacle,
+    CircleShape, ConvexPolygonShape, PhysicsBodyDefinition, StaticObstacle, Vector2,
 )
 from core.domain.spatial import AABB, EntityPosition, LocalHexPosition, MovementProfile, WorldPoint
 from core.foundation import WorldId
