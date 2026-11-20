@@ -10,7 +10,9 @@ from application.hex_world_runtime import HexWorldRuntime
 from core.domain.physics import (
     CircleShape, ConvexPolygonShape, PhysicsBodyDefinition, StaticObstacle, Vector2,
 )
-from core.domain.spatial import AABB, EntityPosition, LocalHexPosition, MovementProfile, WorldPoint
+from core.domain.spatial import (
+    AABB, EntityPosition, HexDirection, LocalHexPosition, MovementProfile, WorldPoint,
+)
 from core.foundation import WorldId
 
 
@@ -248,3 +250,51 @@ def test_npc_ai_contact_is_pushed_away_from_stationary_player():
     assert moved == ("guard",)
     assert runtime.continuous_position("guard").point.x > 10.0
     assert runtime.occupancy.get("guard").position == runtime.entity("guard").position
+
+
+def _gameplay_service_for_runtime(runtime, definition):
+    snapshot = build_hex_physics_snapshot(WorldId("world"), definition, 32.0)
+    actors = WorldActorRegistry()
+    actors.add(WorldActor("hero", "world", "player"))
+    actors.add(WorldActor("guard", "world", "npc"))
+    binding = ActorHexBindingService(
+        actors, runtime, WorldId("world"),
+        physics_snapshot=snapshot,
+        player_body=PhysicsBodyDefinition("hero", CircleShape(8.0)),
+    )
+    service = SimpleNamespace(
+        PLAYER_MOVE_SPEED=GameplayService.PLAYER_MOVE_SPEED,
+        hex_actor_binding=binding,
+        player_actor_id="hero",
+        npc_physics_bodies={"guard": PhysicsBodyDefinition("guard", CircleShape(4.0))},
+    )
+    service.move_player_continuously = lambda displacement: (
+        GameplayService.move_player_continuously(service, displacement)
+    )
+    return service
+
+
+def test_keyboard_direction_uses_fixed_world_speed_without_cell_teleport():
+    runtime, definition = make_runtime()
+    service = _gameplay_service_for_runtime(runtime, definition)
+
+    result = GameplayService.move_player_directions(
+        service, (HexDirection.EAST,), 1.0 / 60.0,
+    )
+
+    assert result.success
+    assert runtime.continuous_position("hero").point.x == 5.0
+    assert runtime.entity("hero").position.cell == LocalHexPosition(0, 0)
+
+
+def test_click_to_move_advances_continuously_along_the_next_path_edge():
+    runtime, definition = make_runtime()
+    service = _gameplay_service_for_runtime(runtime, definition)
+
+    result = GameplayService.move_player_toward(
+        service, LocalHexPosition(2, 0), 1.0 / 60.0,
+    )
+
+    assert result.success
+    assert 0.0 < runtime.continuous_position("hero").point.x < 10.0
+    assert runtime.entity("hero").position.cell == LocalHexPosition(0, 0)
