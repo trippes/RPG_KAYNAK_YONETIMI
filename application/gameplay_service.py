@@ -752,26 +752,6 @@ class GameplayService:
         container = bundle.containers.get(container_id)
         if container is None:
             raise KeyError(f"Container not found: {container_id}")
-        if bundle.hex_world_runtime is not None:
-            actor_position = bundle.hex_world_runtime.entity(actor_id).position
-            container_position = bundle.hex_world_runtime.entity(
-                container.entity_id,
-            ).position
-            distance = (
-                abs(actor_position.cell.q - container_position.cell.q)
-                + abs(actor_position.cell.r - container_position.cell.r)
-                + abs(
-                    actor_position.cell.q + actor_position.cell.r
-                    - container_position.cell.q - container_position.cell.r
-                )
-            ) // 2
-            if (
-                actor_position.map_id != container_position.map_id
-                or distance > 1
-            ):
-                raise GameplayServiceError(
-                    "Sandığı açmak için yanına yaklaşmalısın."
-                )
         lock = bundle.locks.for_entity(container.entity_id)
         return self.lock_state(lock.lock_id) if lock is not None else None
 
@@ -950,6 +930,26 @@ class GameplayService:
         container = bundle.containers.get(container_id)
         if container is None:
             raise KeyError(f"Container not found: {container_id}")
+        if bundle.hex_world_runtime is not None:
+            actor_position = bundle.hex_world_runtime.entity(actor_id).position
+            container_position = bundle.hex_world_runtime.entity(
+                container.entity_id,
+            ).position
+            distance = (
+                abs(actor_position.cell.q - container_position.cell.q)
+                + abs(actor_position.cell.r - container_position.cell.r)
+                + abs(
+                    actor_position.cell.q + actor_position.cell.r
+                    - container_position.cell.q - container_position.cell.r
+                )
+            ) // 2
+            if (
+                actor_position.map_id != container_position.map_id
+                or distance > 1
+            ):
+                raise GameplayServiceError(
+                    "Sandığı açmak için yanına yaklaşmalısın."
+                )
         lock = bundle.locks.for_entity(container.entity_id)
         if lock is not None and (lock.locked or lock.jammed):
             raise GameplayServiceError("Container is not accessible while its lock is locked, jammed, or broken.")
