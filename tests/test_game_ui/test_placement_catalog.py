@@ -23,7 +23,7 @@ class TestScenePlacementCatalog(unittest.TestCase):
         package = load_content_package(PACKAGE_ROOT)
         self.assertIsNotNone(package.asset_catalog_path)
         catalog = AssetCatalog.load(package.asset_catalog_path)
-        self.assertEqual(len(catalog.assets), 6)
+        self.assertEqual(len(catalog.assets), 7)
         self.assertEqual(len(package.scene_placements.placements), 14)
 
     def test_placement_catalog_exposes_an_immutable_snapshot(self):
@@ -54,7 +54,7 @@ class TestScenePlacementCatalog(unittest.TestCase):
 
             legacy = AssetCatalog.load(legacy_path)
 
-            self.assertEqual(len(legacy.assets), 6)
+            self.assertEqual(len(legacy.assets), 7)
             self.assertEqual(len(legacy.objects), 14)
             self.assertEqual(legacy_data["assets"], split_assets["assets"])
             self.assertEqual(legacy_data["objects"], split_placements)
