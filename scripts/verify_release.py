@@ -97,7 +97,7 @@ def verify_installed_content_package() -> None:
             "catalog = AssetCatalog.load(package.asset_catalog_path); "
             "placements = ScenePlacementCatalog.load_directory(package.map_placements_path, catalog); "
             "assert len(catalog.assets) == 6; "
-            "assert len(placements.placements) == 8; "
+            "assert len(placements.placements) == 14; "
             "assert all(item.map_id == 'starting_valley' for item in placements.placements); "
             "print('Installed content package verified:', package.package_id, "
             "'axial starting valley, authored scene placements and reusable assets retained')"
