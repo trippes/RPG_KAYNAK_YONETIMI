@@ -15,6 +15,9 @@ class MainScreen:
         self.context_menu_npc_id = None
         self.context_menu_position = None
         self.context_menu_is_companion = False
+        self.context_menu_target_id = None
+        self.context_menu_target_kind = None
+        self.selected_interaction_target_id = None
         self.notice = None
 
     def _runtime(self):
@@ -49,6 +52,15 @@ class MainScreen:
             self.context_menu_is_companion = getattr(
                 self._view(), "context_menu_is_companion", False,
             )
+            self.context_menu_target_id = getattr(
+                self._view(), "context_menu_target_id", None,
+            )
+            self.context_menu_target_kind = getattr(
+                self._view(), "context_menu_target_kind", None,
+            )
+            self.selected_interaction_target_id = getattr(
+                self._view(), "selected_interaction_target_id", None,
+            )
             if result == "dialogue":
                 self.selected_npc_id = self._view().selected_npc_id
                 self.selected_scene_object_id = None
@@ -69,6 +81,16 @@ class MainScreen:
                 self.context_menu_position = None
                 self.notice = "Yoldaş komutu uygulandı."
                 return "companion_command"
+            if result in {"world_target_menu", "gather", "inspect_target"}:
+                if result == "inspect_target":
+                    self.notice = (
+                        f"Hedef: {self.selected_interaction_target_id}"
+                    )
+                return result
+            if isinstance(result, str) and (
+                result.startswith("container:") or result.startswith("door:")
+            ):
+                return result
         return None
 
     def render(self, renderer):
@@ -80,7 +102,10 @@ class MainScreen:
                 )
             if self.notice is not None:
                 renderer.text(self.notice, 28, 58)
-            if self.context_menu_npc_id is not None and self.context_menu_position is not None:
+            if self.context_menu_position is not None and (
+                self.context_menu_npc_id is not None
+                or self.context_menu_target_kind is not None
+            ):
                 x, y = self.context_menu_position
                 x = min(max(8, x), max(8, renderer.width - 184))
                 y = min(max(8, y), max(8, renderer.height - 64))
@@ -89,8 +114,16 @@ class MainScreen:
                 if self.context_menu_is_companion:
                     renderer.text("Beni takip et", x + 10, y + 6)
                     renderer.text("Burada bekle", x + 10, y + 31)
-                else:
+                elif self.context_menu_npc_id is not None:
                     renderer.text("Konuş", x + 10, y + 6)
+                    renderer.text("İncele", x + 10, y + 31)
+                else:
+                    first_label = {
+                        "resource_node": "Topla",
+                        "container": "Aç",
+                        "door": "Kullan",
+                    }.get(self.context_menu_target_kind, "Kullan")
+                    renderer.text(first_label, x + 10, y + 6)
                     renderer.text("İncele", x + 10, y + 31)
             return
 
