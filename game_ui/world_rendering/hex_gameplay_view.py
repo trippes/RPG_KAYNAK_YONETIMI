@@ -64,6 +64,7 @@ class HexGameplayView:
         self.context_menu_npc_id = None
         self.context_menu_position = None
         self.selected_npc_id = None
+        self.selected_scene_object_id = None
 
     def _npc_at_screen_position(self, runtime, position, map_id):
         if position is None or self._panel is None or not self._panel.collidepoint(position):
@@ -252,7 +253,31 @@ class HexGameplayView:
                     )
         if manual_move:
             self._clear_move_goal()
+        elif state.mouse_right_clicked and state.mouse_pos is not None:
+            player = runtime.entity(self.service.player_actor_id)
+            npc_id = self._npc_at_screen_position(
+                runtime, state.mouse_pos, player.position.map_id,
+            )
+            if npc_id is not None:
+                companion = self.service.companion_command_service.registry.get(npc_id)
+                if companion is not None:
+                    self.context_menu_npc_id = npc_id
+                    self.context_menu_position = state.mouse_pos
+                    return "companion_menu"
         elif state.mouse_clicked and state.mouse_pos is not None:
+            if self.context_menu_npc_id is not None and self.context_menu_position is not None:
+                menu_x, menu_y = self.context_menu_position
+                mouse_x, mouse_y = state.mouse_pos
+                if menu_x <= mouse_x <= menu_x + 176 and menu_y <= mouse_y <= menu_y + 56:
+                    command = "follow" if mouse_y < menu_y + 28 else "wait"
+                    self.service.command_companion(
+                        self.context_menu_npc_id, command,
+                    )
+                    self.context_menu_npc_id = None
+                    self.context_menu_position = None
+                    return "companion_command"
+                self.context_menu_npc_id = None
+                self.context_menu_position = None
             player = runtime.entity(self.service.player_actor_id)
             npc_id = self._npc_at_screen_position(
                 runtime, state.mouse_pos, player.position.map_id,
@@ -263,6 +288,8 @@ class HexGameplayView:
                 self._clear_move_goal()
                 self.selected_npc_id = npc_id
                 self.selected_scene_object_id = None
+                self.context_menu_npc_id = None
+                self.context_menu_position = None
                 return "dialogue"
             if self._panel is None or not self._panel.collidepoint(state.mouse_pos):
                 return None

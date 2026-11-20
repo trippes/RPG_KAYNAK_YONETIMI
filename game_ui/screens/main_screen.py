@@ -12,6 +12,8 @@ class MainScreen:
         self._hex_view = None
         self.selected_npc_id = None
         self.selected_scene_object_id = None
+        self.context_menu_npc_id = None
+        self.context_menu_position = None
 
     def _runtime(self):
         return getattr(self.service, "hex_world_runtime", None)
@@ -39,7 +41,17 @@ class MainScreen:
                 return "dialogue"
             if result == "inspect":
                 self.selected_scene_object_id = self._view().selected_scene_object_id
+                self.context_menu_npc_id = None
                 return "inspect"
+            if result == "companion_menu":
+                self.context_menu_npc_id = self._view().context_menu_npc_id
+                self.context_menu_position = self._view().context_menu_position
+                return "companion_menu"
+            if result == "companion_command":
+                self.context_menu_npc_id = None
+                self.context_menu_position = None
+                self.message = "Yoldaş komutu uygulandı."
+                return "companion_command"
         return None
 
     def render(self, renderer):
@@ -49,6 +61,14 @@ class MainScreen:
                     f"Seçili çevre nesnesi: {self.selected_scene_object_id}",
                     28, 34,
                 )
+            if self.context_menu_npc_id is not None and self.context_menu_position is not None:
+                x, y = self.context_menu_position
+                x = min(max(8, x), max(8, renderer.width - 184))
+                y = min(max(8, y), max(8, renderer.height - 64))
+                menu = renderer.pg.Rect(x, y, 176, 56)
+                renderer.panel(menu, (28, 35, 49), (131, 151, 176))
+                renderer.text("Beni takip et", x + 10, y + 6)
+                renderer.text("Burada bekle", x + 10, y + 31)
             return
 
         panel = renderer.pg.Rect(

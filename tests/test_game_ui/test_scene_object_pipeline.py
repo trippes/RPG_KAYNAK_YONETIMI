@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from core.domain.spatial import WorldPoint, axial_to_world_point
+from core.domain.spatial import HexCoord, WorldPoint, axial_to_world_point
 from game_ui.world_rendering.scene_object_pipeline import SceneObjectPipeline
 
 
@@ -40,7 +40,7 @@ def test_prop_hit_test_uses_trunk_collider_not_entire_canopy():
     pipeline = SceneObjectPipeline(PACKAGE_ROOT, FakePygame(), 32.0)
     obj = pipeline.objects_for_map("starting_valley")[0]
     center = axial_to_world_point(
-        __import__("core.domain.spatial", fromlist=["HexCoord"]).HexCoord(-3, 0),
+        HexCoord(-3, 0),
         32.0,
     )
 
