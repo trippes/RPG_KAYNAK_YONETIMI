@@ -1,0 +1,37 @@
+name: Player click-move benchmark
+
+on:
+  push:
+    branches:
+      - "experiment/map-cleanup"
+    paths:
+      - "application/click_move_route.py"
+      - "scripts/benchmark_player_click_move.py"
+      - ".github/workflows/player-click-move-benchmark.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install project and test dependencies
+        run: python -m pip install -r requirements.txt -r requirements-test.txt
+      - name: Run player click-move benchmark
+        run: python scripts/benchmark_player_click_move.py --iterations 100 --output player-click-move-benchmark.json
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: player-click-move-benchmark
+          path: player-click-move-benchmark.json
+          if-no-files-found: error
+          retention-days: 30

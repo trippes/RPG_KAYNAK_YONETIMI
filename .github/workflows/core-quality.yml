@@ -104,6 +104,7 @@ jobs:
           tests/test_application/test_npc_physics_content.py
           tests/test_application/test_npc_spatial_benchmark.py
           scripts/benchmark_npc_spatial_index.py
+          scripts/benchmark_player_click_move.py
       - name: Verify legacy map cleanup boundary
         run: python scripts/check_map_cleanup.py
       - name: Report legacy API usage
