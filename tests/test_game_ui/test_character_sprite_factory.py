@@ -28,7 +28,7 @@ def test_walk_and_run_use_eight_distinct_animation_frames():
             assert animation.frame_duration == expected_duration
 
             lower_body_frames = {
-                pygame.image.tostring(frame.subsurface((0, 43, 48, 21)), "RGBA")
+                pygame.image.tobytes(frame.subsurface((0, 43, 48, 21)), "RGBA")
                 for frame in animation.frames
             }
             assert len(lower_body_frames) == 8
