@@ -68,6 +68,59 @@ class TestHexPathfinding(unittest.TestCase):
         definition = make_map(cells=[[0, 0], [1, 0]])
         self.assertIsNone(HexPathfinder.find_path(definition, LocalHexPosition(0, 0), LocalHexPosition(8, 8)))
 
+    def test_edge_validator_skips_non_improving_back_edges(self):
+        definition = make_map(cells=[[0, 0], [1, 0], [2, 0]])
+        validated_edges = []
+
+        def validate_edge(source, destination):
+            validated_edges.append((source, destination))
+            return True
+
+        path = HexPathfinder.find_path(
+            definition,
+            LocalHexPosition(0, 0),
+            LocalHexPosition(2, 0),
+            edge_validator=validate_edge,
+        )
+
+        self.assertEqual(
+            path,
+            (
+                LocalHexPosition(0, 0),
+                LocalHexPosition(1, 0),
+                LocalHexPosition(2, 0),
+            ),
+        )
+        self.assertEqual(len(validated_edges), 2)
+        self.assertEqual(
+            validated_edges,
+            [
+                (LocalHexPosition(0, 0), LocalHexPosition(1, 0)),
+                (LocalHexPosition(1, 0), LocalHexPosition(2, 0)),
+            ],
+        )
+
+    def test_edge_validator_still_rejects_an_improving_candidate(self):
+        definition = make_map(cells=[[0, 0], [1, 0], [2, 0]])
+        validated_edges = []
+
+        def reject_first_edge(source, destination):
+            validated_edges.append((source, destination))
+            return destination != LocalHexPosition(1, 0)
+
+        path = HexPathfinder.find_path(
+            definition,
+            LocalHexPosition(0, 0),
+            LocalHexPosition(2, 0),
+            edge_validator=reject_first_edge,
+        )
+
+        self.assertIsNone(path)
+        self.assertEqual(
+            validated_edges,
+            [(LocalHexPosition(0, 0), LocalHexPosition(1, 0))],
+        )
+
 
 class TestHexOccupancy(unittest.TestCase):
     def test_distinguishes_movement_blocking_from_occupancy_blocking(self):
