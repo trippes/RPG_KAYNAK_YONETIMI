@@ -5,6 +5,7 @@ on:
     branches: [experiment/map-cleanup]
     paths:
       - "scripts/benchmark_npc_spatial_index.py"
+      - "scripts/benchmark_npc_perception.py"
       - "application/**"
       - "core/domain/spatial/**"
       - "npc/**"
