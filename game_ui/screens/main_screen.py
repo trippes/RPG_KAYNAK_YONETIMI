@@ -47,6 +47,11 @@ class MainScreen:
             return MovementIntent()
         return self._hex_view.click_move_intent()
 
+    def click_move_target(self):
+        if self._hex_view is None:
+            return None
+        return self._hex_view.click_move_target()
+
     def handle(self, state):
         if self._runtime() is not None:
             result = self._view().handle(state)
