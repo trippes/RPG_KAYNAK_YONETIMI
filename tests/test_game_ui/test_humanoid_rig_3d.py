@@ -46,6 +46,21 @@ class TestHumanoidRig3D(unittest.TestCase):
             self.assertAlmostEqual(positions[left][1], positions[right][1])
             self.assertAlmostEqual(positions[left][2], positions[right][2])
 
+    def test_a_pose_has_outward_and_downward_arm_segments(self):
+        positions = DEFAULT_HUMANOID_RIG.joint_positions()
+        for side in ("left", "right"):
+            shoulder = positions[f"shoulder_{side}"]
+            elbow = positions[f"elbow_{side}"]
+            outward_distance = abs(elbow[0] - shoulder[0])
+            downward_distance = shoulder[2] - elbow[2]
+            self.assertGreater(outward_distance, 0.0)
+            self.assertGreater(downward_distance, 0.0)
+            self.assertAlmostEqual(
+                math.degrees(math.atan2(downward_distance, outward_distance)),
+                30.0,
+                delta=0.5,
+            )
+
     def test_ground_anchor_is_at_heel_height_in_rest_pose(self):
         positions = DEFAULT_HUMANOID_RIG.joint_positions()
         anchor_z = DEFAULT_HUMANOID_RIG.ground_anchor[2]
@@ -70,7 +85,13 @@ class TestHumanoidRig3D(unittest.TestCase):
             set(controls),
             {"scapula_left_control", "scapula_right_control"},
         )
-        self.assertTrue(all(not bone.deform for bone in rig.bones if "scapula" in bone.name))
+        for control_name in controls:
+            self.assertFalse(
+                any(
+                    control_name in (bone.start_joint, bone.end_joint)
+                    for bone in rig.bones
+                )
+            )
 
     def test_parent_rotation_is_inherited_by_descendant_offsets(self):
         rest = DEFAULT_HUMANOID_RIG.joint_positions()
