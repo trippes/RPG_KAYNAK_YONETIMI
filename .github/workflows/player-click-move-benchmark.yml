@@ -44,10 +44,10 @@ jobs:
       - name: Benchmark baseline (20 iterations per topology/route)
         run: |
           cp optimized/scripts/benchmark_player_click_move.py baseline/scripts/benchmark_player_click_move.py
-          PYTHONPATH=baseline baseline/.venv/bin/python baseline/scripts/benchmark_player_click_move.py --iterations 20 --topologies corridor broad_obstacle --output baseline-results.json
+          PYTHONPATH=baseline baseline/.venv/bin/python baseline/scripts/benchmark_player_click_move.py --iterations 20 --route-lengths 1 10 100 --obstacle-route-lengths 10 30 --topologies corridor broad_obstacle --output baseline-results.json
       - name: Benchmark optimized version (20 iterations per topology/route)
         run: |
-          PYTHONPATH=optimized optimized/.venv/bin/python optimized/scripts/benchmark_player_click_move.py --iterations 20 --topologies corridor broad_obstacle --output optimized-results.json
+          PYTHONPATH=optimized optimized/.venv/bin/python optimized/scripts/benchmark_player_click_move.py --iterations 20 --route-lengths 1 10 100 --obstacle-route-lengths 10 30 --topologies corridor broad_obstacle --output optimized-results.json
       - name: Build same-runner comparison
         run: |
           python - <<'PY'
@@ -95,6 +95,7 @@ jobs:
               "platform": baseline["platform"],
               "iterations_per_scenario": baseline["iterations"],
               "route_lengths_cells": baseline["route_lengths_cells"],
+              "obstacle_route_lengths_cells": baseline["obstacle_route_lengths_cells"],
               "topologies": baseline["topologies"],
               "rows": rows,
               "method_note": "Both revisions ran sequentially on the same GitHub Actions job/runner with isolated virtual environments, identical Python version, dependencies as declared by each revision, 20 iterations per scenario, and the exact same benchmark script copied from the optimized checkout into both environments. p50 percentage is (optimized / baseline - 1) * 100; negative means faster.",
