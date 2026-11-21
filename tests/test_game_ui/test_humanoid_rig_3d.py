@@ -27,7 +27,7 @@ class TestHumanoidRig3D(unittest.TestCase):
         self.assertEqual(rig.forward_axis, (0.0, 1.0, 0.0))
         positions = rig.joint_positions()
         self.assertGreater(positions["head"][2], positions["pelvis"][2])
-        self.assertLess(positions["toe_left"][1], positions["heel_left"][1])
+        self.assertGreater(positions["toe_left"][1], positions["heel_left"][1])
 
     def test_left_and_right_rest_pose_is_mirrored_across_x(self):
         positions = DEFAULT_HUMANOID_RIG.joint_positions()
