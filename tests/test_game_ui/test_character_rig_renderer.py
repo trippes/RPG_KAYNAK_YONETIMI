@@ -85,10 +85,9 @@ class TestCharacterRigRenderer(unittest.TestCase):
         )
 
         self.assertNotEqual(rest["left_elbow"], posed["left_elbow"])
-        self.assertEqual(
-            DEFAULT_CHARACTER_SKELETON.joint_positions()["left_elbow"],
-            (-0.15, 0.25),
-        )
+        rest_elbow = DEFAULT_CHARACTER_SKELETON.joint_positions()["left_elbow"]
+        self.assertAlmostEqual(rest_elbow[0], -0.15)
+        self.assertAlmostEqual(rest_elbow[1], 0.25)
 
     def test_palette_overrides_are_applied_and_unknown_keys_rejected(self):
         custom_tunic = (10, 20, 30)
