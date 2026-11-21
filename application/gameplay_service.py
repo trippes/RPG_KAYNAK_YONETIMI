@@ -485,6 +485,9 @@ class GameplayService:
         resolver = DynamicActorCollisionResolver(
             binding.runtime, binding.physics_snapshot,
         )
+        metrics = getattr(binding.runtime, "metrics", None)
+        if metrics is not None:
+            metrics.increment("overlap_resolver_calls")
         bodies = self.npc_physics_bodies
         separated = resolver.resolve_npc_pairs(bodies)
         player_contacts = resolver.resolve_npc_player_contacts(

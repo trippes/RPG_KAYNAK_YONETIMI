@@ -7,6 +7,7 @@ from core.domain.physics import CircleShape, PhysicsBodyDefinition, Vector2
 from core.domain.spatial import AABB, EntityPosition, HexDirection, LocalHexPosition, WorldPoint
 from .dynamic_actor_collision import DynamicActorCollisionResolver
 from npc import BehaviorState, NPCRegistry
+from .npc_simulation_metrics import timed_npc_step
 
 
 class NPCAvoidanceSystem:
@@ -59,7 +60,10 @@ class NPCAvoidanceSystem:
             frontier = next_frontier
 
         candidates = []
+        metrics = getattr(self._runtime, "metrics", None)
         for cell in nearby:
+            if metrics is not None:
+                metrics.increment("escape_cells_considered")
             if (
                 cell == current_cell
                 or not map_definition.has_cell(cell)
@@ -92,6 +96,7 @@ class NPCAvoidanceSystem:
                 return path
         return None
 
+    @timed_npc_step("npc_avoidance")
     def step(self, delta_seconds: float) -> tuple[str, ...]:
         if isinstance(delta_seconds, bool) or not isinstance(delta_seconds, (int, float)):
             raise TypeError("delta_seconds must be a real number.")
@@ -104,9 +109,14 @@ class NPCAvoidanceSystem:
         threat_position = self._runtime.continuous_position(self._player_id).point
         threat_cell = player.position.cell
         moved = []
+        metrics = getattr(self._runtime, "metrics", None)
         for npc in self._npcs.all():
+            if metrics is not None:
+                metrics.increment("avoidance_registry_scanned")
             if not npc.active or npc.behavior_state is not BehaviorState.FLEE:
                 continue
+            if metrics is not None:
+                metrics.increment("avoidance_eligible")
             try:
                 entity = self._runtime.entity(npc.npc_id)
                 current = self._runtime.continuous_position(npc.npc_id).point
@@ -123,10 +133,14 @@ class NPCAvoidanceSystem:
                 or not isinstance(body.collider, CircleShape)
             ):
                 continue
+            if metrics is not None:
+                metrics.increment("avoidance_threat_distance_checks")
             if math.hypot(
                 current.x - threat_position.x,
                 current.y - threat_position.y,
             ) >= self.AVOIDANCE_RADIUS:
+                if metrics is not None:
+                    metrics.increment("avoidance_radius_rejects")
                 continue
 
             path = self._escape_path(

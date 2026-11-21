@@ -114,6 +114,7 @@ class HexWorldRuntime:
         world_map_definition: WorldMapDefinition | None = None,
         *,
         world_id: WorldId | None = None,
+        metrics=None,
     ):
         if world_id is not None and not isinstance(world_id, WorldId):
             raise TypeError("world_id must be a WorldId or None.")
@@ -127,6 +128,7 @@ class HexWorldRuntime:
         self._maps = maps
         self._world_map = world_map_definition
         self._world_id = world_id
+        self.metrics = metrics
         self._occupancy = occupancy or HexOccupancyRegistry()
         self._entities: dict[str, _HexEntityState] = {}
         self._continuous_positions: dict[str, ContinuousEntityPosition] = {}
@@ -237,6 +239,8 @@ class HexWorldRuntime:
 
     def entity(self, entity_id: str) -> HexMovableEntity:
         """Return a read-only entity view with position derived from occupancy."""
+        if self.metrics is not None:
+            self.metrics.increment("runtime_entity_validation_queries")
         state = self._entity_state(entity_id)
         occupant = self._occupancy.get(entity_id)
         if occupant is None:
@@ -442,13 +446,19 @@ class HexWorldRuntime:
 
     def query_spatial_candidates(self, map_id: str, bounds: AABB) -> tuple[str, ...]:
         """Return enabled broadphase actors near a map-scoped world-space AABB."""
-        return tuple(
+        candidates = tuple(
             entity_id
             for entity_id in self._spatial_index.query(map_id, bounds)
             if self._entity_state(entity_id).broadphase_enabled
         )
+        if self.metrics is not None:
+            self.metrics.increment("runtime_spatial_queries")
+            self.metrics.increment("runtime_spatial_candidates", len(candidates))
+        return candidates
 
     def path_to(self, entity_id: str, goal: LocalHexPosition, *, edge_validator=None):
+        if self.metrics is not None:
+            self.metrics.increment("runtime_path_queries")
         entity = self.entity(entity_id)
         if not entity.active or not entity.profile.can_move:
             return None

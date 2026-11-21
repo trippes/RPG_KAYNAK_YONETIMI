@@ -6,6 +6,7 @@ import math
 from core.domain.physics import CircleShape, Vector2
 from core.domain.spatial import WorldPoint
 from npc import BehaviorState, NPCRegistry
+from .npc_simulation_metrics import timed_npc_step
 
 
 class NPCBehaviorSystem:
@@ -24,6 +25,7 @@ class NPCBehaviorSystem:
         self._runtime = runtime
         self._physics_snapshot = physics_snapshot
 
+    @timed_npc_step("npc_patrol")
     def step(self, delta_seconds: float) -> tuple[str, ...]:
         if isinstance(delta_seconds, bool) or not isinstance(delta_seconds, (int, float)):
             raise TypeError("delta_seconds must be a real number.")
@@ -33,13 +35,18 @@ class NPCBehaviorSystem:
             return ()
 
         moved = []
+        metrics = getattr(self._runtime, "metrics", None)
         for npc in self._npcs.all():
+            if metrics is not None:
+                metrics.increment("patrol_registry_scanned")
             if (
                 not npc.active
                 or npc.behavior_state is not BehaviorState.PATROL
                 or len(npc.patrol_route) < 2
             ):
                 continue
+            if metrics is not None:
+                metrics.increment("patrol_eligible")
             try:
                 entity = self._runtime.entity(npc.npc_id)
                 current = self._runtime.continuous_position(npc.npc_id).point

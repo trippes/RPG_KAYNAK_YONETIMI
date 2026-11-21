@@ -8,6 +8,7 @@ from core.domain.spatial import EntityPosition, HexDirection, LocalHexPosition, 
 from npc import (
     BehaviorState, CompanionCommand, CompanionRegistry, NPCRegistry,
 )
+from .npc_simulation_metrics import timed_npc_step
 
 
 class CompanionCommandService:
@@ -94,6 +95,7 @@ class CompanionCommandService:
             return None
         return min(goals, key=lambda item: (item[0], item[1], item[2]))[3][1]
 
+    @timed_npc_step("npc_companions")
     def tick(self, delta_seconds: float) -> tuple[str, ...]:
         if isinstance(delta_seconds, bool) or not isinstance(delta_seconds, (int, float)):
             raise TypeError("delta_seconds must be a real number.")
@@ -104,8 +106,11 @@ class CompanionCommandService:
         player = self.runtime.entity(self.player_id)
         player_position = self.runtime.continuous_position(self.player_id).point
         moved = []
+        metrics = getattr(self.runtime, "metrics", None)
 
         for state in self.registry.all():
+            if metrics is not None:
+                metrics.increment("companion_registry_scanned")
             npc_id = state.npc_id
             if state.command is not CompanionCommand.FOLLOW:
                 self._targets.pop(npc_id, None)
@@ -123,6 +128,8 @@ class CompanionCommandService:
             if not entity.active or entity.position.map_id != player.position.map_id:
                 self._targets.pop(npc_id, None)
                 continue
+            if metrics is not None:
+                metrics.increment("companion_distance_checks")
             distance_to_player = math.hypot(
                 current.x - player_position.x,
                 current.y - player_position.y,
@@ -134,6 +141,8 @@ class CompanionCommandService:
 
             elapsed = self._elapsed.get(npc_id, 0.0) + delta_seconds
             if npc_id not in self._targets or elapsed + 1e-12 >= self.FOLLOW_INTERVAL:
+                if metrics is not None:
+                    metrics.increment("companion_target_refreshes")
                 self._targets[npc_id] = self._select_follow_target(npc_id, player)
                 elapsed = max(0.0, elapsed - self.FOLLOW_INTERVAL) if elapsed >= self.FOLLOW_INTERVAL else 0.0
             self._elapsed[npc_id] = elapsed
