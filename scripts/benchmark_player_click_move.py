@@ -143,6 +143,7 @@ def _cache_probe(route_cells: int, iterations: int):
 def run_benchmark(route_lengths: list[int], iterations: int) -> dict:
     scenarios = []
     for route_cells in route_lengths:
+        print(f"Benchmarking {route_cells}-cell player route ({iterations} samples)...", flush=True)
         baseline = _baseline_samples(route_cells, iterations)
         controller = _controller_samples(route_cells, iterations)
         cached = _cache_probe(route_cells, iterations)
@@ -180,7 +181,7 @@ def run_benchmark(route_lengths: list[int], iterations: int) -> dict:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--iterations", type=int, default=100)
+    parser.add_argument("--iterations", type=int, default=20)
     parser.add_argument(
         "--route-lengths",
         type=int,

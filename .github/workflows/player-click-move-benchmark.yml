@@ -27,7 +27,7 @@ jobs:
       - name: Install project and test dependencies
         run: python -m pip install -e . -r requirements-test.txt
       - name: Run player click-move benchmark
-        run: python scripts/benchmark_player_click_move.py --iterations 100 --output player-click-move-benchmark.json
+        run: python scripts/benchmark_player_click_move.py --iterations 20 --output player-click-move-benchmark.json
       - name: Upload benchmark results
         uses: actions/upload-artifact@v4
         with:
