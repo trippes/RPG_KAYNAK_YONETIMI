@@ -1,12 +1,13 @@
 # Eldoria — Aşama 3.6 Click-to-Move Performans ve Kalite Raporu
 
 - **Dal:** `experiment/map-cleanup`
-- **Ölçüm commit'i:** `368ac08aa60b21e520c167119dcafbba50879f79`
-- **Benchmark workflow:** `44882633380`
-- **Benchmark job:** `136781054297`
+- **Workflow commit'i:** `a96077270573be388537d28604662c40621a975c`
+- **Route controller commit'i:** `368ac08aa60b21e520c167119dcafbba50879f79`
+- **Benchmark workflow:** `44882884811`
+- **Benchmark job:** `136781805273`
 - **Ortam:** GitHub-hosted Linux, Python 3.12.16
-- **Örnek sayısı:** Her rota uzunluğu için 20 bağımsız path-plan örneği; cache adımı için ilk plan hariç 19 cache-hit çağrısı
-- **Durum:** Ölçüm tamamlandı
+- **Örnek sayısı:** Her rota uzunluğu için 100 bağımsız path-plan örneği; cache adımı için ilk plan hariç 99 cache-hit çağrısı
+- **Durum:** Tamamlandı
 
 ---
 
@@ -14,69 +15,70 @@
 
 Ölçüm gerçek `HexWorldRuntime` A* pathfinder'ını, gerçek occupancy registry'sini ve immutable `HexPhysicsSnapshot` collision edge validator'ını kullanır.
 
-Üç sentetik rota uzunluğu test edildi: 1, 10 ve 100 geçilen hex hücresi. Harita, tek hücre genişliğinde düz axial koridordur; bu nedenle sonuçlar dar koridor stres senaryosudur, her dünya haritasının ortalama performansı olarak yorumlanmamalıdır.
+Üç sentetik rota uzunluğu test edildi: 1, 10 ve 100 geçilen hex hücresi. Harita tek hücre genişliğinde düz axial koridordur; sonuçlar dar koridor stres senaryosudur, her dünya haritasının ortalama performansı olarak yorumlanmamalıdır.
 
 Her rota uzunluğunda:
-- Aynı hedef için doğrudan tekrarlanan `runtime.path_to()` baseline'ı ölçüldü.
+- Aynı hedef için doğrudan tekrarlanan `runtime.path_to()` baseline'ı 100 kez ölçüldü.
 - Controller'ın bağımsız route planları için path planning p50/p95/p99 ölçüldü.
-- Bir kez planlanan aktif rota üzerinde 19 ek intent çağrısı yapılarak cache hit adım maliyeti ölçüldü.
+- Bir kez planlanan aktif rota üzerinde 99 ek intent çağrısı yapılarak cache-hit adım maliyeti ölçüldü.
 - Path query, cache hit/miss, replan, invalidation, blocked-step ve failure sayaçları kaydedildi.
 
 ## 2. Path planning ölçümleri
 
-<text>Milisaniye; 20 örnekli ölçüm, p99 örnek dağılımının üst ucudur.</text>
+<text>Milisaniye; her rota uzunluğu için 100 örnek.</text>
 
 | Rota | Baseline p50 | Baseline p95 | Baseline p99 | Controller p50 | Controller p95 | Controller p99 |
 |---:|---:|---:|---:|---:|---:|---:|
-| 1 hücre | 0,276 | 0,315 | 0,375 | 0,274 | 0,294 | 0,302 |
-| 10 hücre | 13,397 | 13,821 | 13,874 | 13,380 | 13,500 | 13,801 |
-| 100 hücre | 1.134,148 | 1.140,382 | 1.140,703 | 1.134,217 | 1.145,819 | 1.152,848 |
+| 1 hücre | 0,239 | 0,254 | 0,278 | 0,240 | 0,248 | 0,260 |
+| 10 hücre | 11,654 | 11,830 | 11,916 | 11,680 | 11,761 | 12,212 |
+| 100 hücre | 987,757 | 1.007,207 | 1.017,401 | 1.004,000 | 1.029,055 | 1.042,194 |
 
-Controller'ın gerçek A* sorgu maliyeti baseline ile aynı düzeydedir; route controller tek sorgunun maliyetini sihirli biçimde azaltmaz. Kazanç, aynı hedef için bu sorgunun tekrar edilmesini önlemesidir.
+Controller'ın tek A* sorgusunun maliyeti baseline ile aynı düzeydedir. Route controller tek sorgunun maliyetini azaltmaz; aynı hedef için sorgunun tekrar edilmesini önler.
 
 ## 3. Cache-hit fixed-step maliyeti
 
-İlk route planı ölçümünden ayrı olarak, sonraki 19 cache-hit intent çağrısının süresi:
+İlk route planı ölçümünden ayrı olarak, sonraki 99 cache-hit intent çağrısının süresi:
 
 | Rota | İlk plan (ms) | Cache-hit p50 (ms) | Cache-hit p95 (ms) | Cache-hit p99 (ms) |
 |---:|---:|---:|---:|---:|
-| 1 hücre | 0,365 | 0,026 | 0,032 | 0,034 |
-| 10 hücre | 14,163 | 0,030 | 0,037 | 0,045 |
-| 100 hücre | 1.147,509 | 0,032 | 0,045 | 0,052 |
+| 1 hücre | 0,287 | 0,021 | 0,025 | 0,029 |
+| 10 hücre | 12,396 | 0,023 | 0,028 | 0,033 |
+| 100 hücre | 1.040,737 | 0,024 | 0,029 | 0,041 |
 
-100 hücrelik senaryoda cache-hit p95 yaklaşık 0,045 ms'dir. Bu, 60 Hz fizik adımının 16,67 ms zaman bütçesinin oldukça altındadır (GitHub-hosted runner üzerinde).
+100 hücrelik rotada cache-hit p99 yaklaşık 0,041 ms'dir. Bu, 60 Hz fizik adımının 16,67 ms zaman bütçesinin oldukça altındadır (GitHub-hosted runner üzerinde).
 
 ## 4. Cache sayaçları
 
-Her senaryoda 20 intent çağrısı için:
+Her senaryoda 100 intent çağrısı için:
 
 | Sayaç | Sonuç |
 |---|---:|
 | Path query | 1 |
 | Cache miss | 1 |
-| Cache hit | 19 |
-| Cache hit oranı | %95 |
+| Cache hit | 99 |
+| Cache hit oranı | %99 |
 | Replan | 0 |
 | Invalidation | 0 |
 | Blocked step | 0 |
 | Failure | 0 |
-| Path query azalması | %95 |
+| Path query azalması | %99 |
 
-Bu ölçümdeki cache hit oranı 20 çağrı üzerinden hesaplanmıştır. Oyun 60 fixed step/saniye çalışırken aynı hedefin 60 step boyunca değişmediği durumda beklenen sorgu davranışı 1 plan + 59 hit'tir; benchmark'ın 20 çağrılık oranı doğrudan 60 çağrıya eşitlenmemelidir.
+Böylece aynı aktif hedefin 100 çağrıda yalnızca bir A* sorgusu ürettiği doğrudan doğrulandı.
 
 ## 5. Performans yorumu
 
 ### Başarılı sonuç
 
 - Tek aktif hedef için tekrarlanan A* sorguları kaldırıldı.
-- Cached intent adımı 1/10/100 hücre rotalarında yaklaşık 0,03 ms p50 düzeyinde kaldı.
+- 1/10/100 hücre rotalarında cached intent adımı p50 yaklaşık 0,02–0,024 ms aralığında kaldı.
 - Statik edge kontrolleri immutable snapshot ile route planı sırasında yapılıyor.
 - Sonraki fixed step'lerde map mask ve mutable occupancy kontrolü sürüyor.
 - Swept-clearance smoothing kanıtı route cursor segmenti boyunca cache'leniyor; actor segmentten saparsa yeniden hesaplanıyor.
+- 100 intent çağrısında 99 cache hit, 1 cache miss, sıfır replan/invalidation/failure gözlendi.
 
 ### Kalan yüksek maliyet
 
-100 hücrelik tek hücre genişliğinde koridorda ilk path query p50 yaklaşık **1,13 saniye** ölçüldü. Route cache sonraki adımları ucuzlatır ancak ilk uzun rota planını hızlandırmaz. Bu sonuç, pathfinding edge validation/static geometry maliyetinin ayrı bir optimizasyon incelemesini gerektirdiğini gösterir.
+100 hücrelik tek hücre genişliğinde koridorda ilk path query p50 yaklaşık **988 ms**, p95 yaklaşık **1.007 saniye** ölçüldü. Route cache sonraki adımları ucuzlatır ancak ilk uzun rota planını hızlandırmaz. Bu sonuç pathfinding edge validation/static geometry maliyetinin ayrı bir optimizasyon incelemesini gerektirir.
 
 Bu yüksek maliyet oyuncu click-to-move ölçümüdür; Aşama 2 NPC kaçınma pathfinding p95 sonuçlarıyla birleştirilmemiştir. Aşama 2 NPC spatial benchmark ayrı workflow olarak başarılı tamamlandı.
 
@@ -88,6 +90,6 @@ Hedefe gerçek varış süresi ölçülmedi. Mevcut `MovementIntegrator` target-
 
 Ham ölçüm JSON'u: `reports/phase-3.6-player-click-move-benchmark.json`
 
-Workflow ayrıca `player-click-move-benchmark` adlı GitHub Actions artifact'i yükledi (30 gün saklama).
+GitHub Actions ayrıca `player-click-move-benchmark` adlı artifact'i yükledi (30 gün saklama).
 
 **Sonuç:** Aşama 3.6 ölçüm ve kalite doğrulaması tamamlandı. Cache-hit maliyeti 60 Hz bütçesinin çok altında; 100 hücrelik ilk A* sorgusunun yüksek gecikmesi açık risk olarak kaydedildi.
