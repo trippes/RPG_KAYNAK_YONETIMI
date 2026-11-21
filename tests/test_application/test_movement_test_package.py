@@ -31,9 +31,9 @@ class TestMovementTestPackage(unittest.TestCase):
         )
 
         profiles = load_movement_configs(package_path=PACKAGE)
-        self.assertEqual(profiles["hero"].max_speed, 64)
-        self.assertEqual(profiles["test_guard"].max_speed, 64)
-        self.assertEqual(profiles["test_target"].max_speed, 64)
+        self.assertEqual(profiles["hero"].max_speed, 96)
+        self.assertEqual(profiles["test_guard"].max_speed, 96)
+        self.assertEqual(profiles["test_target"].max_speed, 96)
         self.assertEqual(profiles["hero"].running_speed_multiplier, 1.5)
         self.assertEqual(profiles["hero"].stealth_speed_multiplier, 0.5)
 
