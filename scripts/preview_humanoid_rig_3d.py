@@ -45,7 +45,7 @@ def _draw_view(
     center_x: int,
 ) -> None:
     scale = 410.0
-    origin = (center_x, 500)
+    origin = (center_x, 299)
     positions = _screen_positions(yaw, origin, scale)
 
     pygame.draw.line(surface, (90, 96, 105), (center_x - 150, 500), (center_x + 150, 500), 1)
