@@ -27,6 +27,8 @@ class TestCharacterSkeleton(unittest.TestCase):
         self.assertEqual(positions["head"], (0.0, 0.59))
         self.assertAlmostEqual(positions["left_foot"][1], -0.53)
         self.assertAlmostEqual(positions["right_foot"][1], -0.53)
+        self.assertAlmostEqual(positions["left_foot"][0], -0.11)
+        self.assertAlmostEqual(positions["right_foot"][0], 0.11)
         self.assertEqual(DEFAULT_CHARACTER_SKELETON.ground_anchor, (0.0, -0.53))
 
     def test_parent_rotation_is_inherited_by_descendant_joint_offsets(self):
