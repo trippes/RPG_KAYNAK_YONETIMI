@@ -177,7 +177,7 @@ def _joint(name: str, parent: str | None, offset: tuple[float, float]) -> JointD
 
 DEFAULT_CHARACTER_SKELETON = CharacterSkeleton(
     root_joint="pelvis",
-    ground_anchor=(0.0, -0.78),
+    ground_anchor=(0.0, -0.53),
     joints=(
         _joint("pelvis", None, (0.0, 0.0)),
         _joint("spine", "pelvis", (0.0, 0.16)),
