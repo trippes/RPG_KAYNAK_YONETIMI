@@ -2,7 +2,7 @@
 
 **Çalışma dalı:** `experiment/map-cleanup`  
 **İnceleme tarihi:** 21 Kasım 2026  
-**Durum:** A* erken maliyet elemesi, CI ve aynı koşullarda karşılaştırmalı benchmark doğrulandı; geniş/engelli harita ve manuel oyun içi kabul testleri bekliyor  
+**Durum:** A* erken maliyet elemesi, CI ve aynı runner üzerinde koridor + geniş engelli harita benchmark karşılaştırması doğrulandı; manuel oyun içi kabul testleri bekliyor  
 **Kapsam:** İlk click-to-move rota planlamasında 100 hücrelik rotanın yüksek maliyetinin azaltılması
 
 ## 1. Yönetici özeti
@@ -315,3 +315,42 @@ Negatif p50 değişimi optimize sürümün daha hızlı olduğunu gösterir. 1 h
 **CI sonucu:** Karşılaştırma workflow'u `44901126109` başarıyla tamamlandı. Aynı commit için Core Quality `44901126114` ve Eldoria CI `44901126104` workflow'ları da başarılı tamamlandı.
 
 **Teknik karar:** Aynı runner/Python/benchmark koşullarında yapılan kontrollü ölçüm, A* erken maliyet elemesinin hedeflenen performans iyileştirmesini sağladığını doğrulamıştır. Uzun rota optimizasyonu otomatik test ve CI açısından kabul edilmiştir. Bununla birlikte bu sonuç yalnızca mevcut düz koridor benchmark'ı için geçerlidir; geniş/dallanan/engelli haritalar ve oyun içi manuel hareket kabul testleri ayrıca doğrulanmalıdır.
+
+
+### 11.6 Geniş engelli harita benchmark'ı ve aynı runner karşılaştırması — 21 Kasım 2026
+
+Karşılaştırma workflow: [Player click-move benchmark run 44902615737](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44902615737)  
+Artifact: `player-click-move-same-runner-comparison` (artifact ID `14706229692`).  
+Baseline commit: `7490aad580a169a37ad6ef0678ebe0efbc4f16c7`  
+Optimize edilmiş benchmark commit: `ea8b075e3e9b13514e08eb1e23425fc52889cbc9`  
+Ortam: Python `3.12.16`, `Linux-7.0.0-1020-azure-x86_64-with-glibc2.43`, her senaryo için 20 iterasyon.
+
+**Yöntem:** Baseline ve optimize sürüm aynı GitHub Actions job'unda, aynı runner üzerinde art arda ve ayrı sanal ortamlar içinde çalıştırıldı. Her iki sürümde aynı benchmark betiği kullanıldı; benchmark betiği optimize checkout'tan alınarak baseline ortamında da çalıştırıldı. Koridor senaryoları 1/10/100 hücre, geniş engelli harita senaryoları 10/30 hücre olarak ölçüldü. Geniş engelli haritada başlangıç-hedef doğrultusundaki bir hücre bloklu olduğundan doğrulayıcısız tanısal yol, geçerli fiziksel rotadan farklılaşabilir.
+
+| Harita / rota | Baseline p50 | Optimize p50 | p50 değişimi | Baseline p95 | Optimize p95 | Baseline p99 | Optimize p99 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Koridor, 1 hücre | 0,469 ms | 0,468 ms | -%0,06 | 0,526 ms | 0,526 ms | 0,584 ms | 0,609 ms |
+| Koridor, 10 hücre | 22,263 ms | 11,957 ms | -%46,29 | 22,949 ms | 12,214 ms | 23,588 ms | 12,969 ms |
+| Koridor, 100 hücre | 1.826,184 ms | 913,721 ms | -%49,97 | 1.837,578 ms | 920,546 ms | 1.840,472 ms | 946,573 ms |
+| Geniş engelli, 10 hücre | 258,717 ms | 90,043 ms | -%65,20 | 267,899 ms | 91,767 ms | 269,663 ms | 92,076 ms |
+| Geniş engelli, 30 hücre | 1.737,505 ms | 521,877 ms | -%69,96 | 1.744,709 ms | 527,344 ms | 1.756,348 ms | 527,690 ms |
+
+**Fiziksel kenar doğrulayıcı çağrıları / sorgu:**
+
+| Harita / rota | Baseline | Optimize | Azalma |
+|---|---:|---:|---:|
+| Koridor, 1 hücre | 1 | 1 | Değişmedi |
+| Koridor, 10 hücre | 19 | 10 | 9 çağrı |
+| Koridor, 100 hücre | 199 | 100 | 99 çağrı |
+| Geniş engelli, 10 hücre | 168 | 57 | 111 çağrı |
+| Geniş engelli, 30 hücre | 528 | 157 | 371 çağrı |
+
+Optimize edilmiş sürümde fizik edge validator'ın tahmini toplam süre payı koridor 100 hücrede %99,22; geniş engelli 10 hücrede %97,86 ve 30 hücrede %98,90 olarak ölçülmüştür. Bu sonuç, A* erken maliyet elemesinin çağrı sayısını düşürdüğünü doğrularken, fiziksel kenar doğrulamasının kalan path-planning maliyetinin hâlâ baskın bileşeni olduğunu da gösterir. Bu nedenle bu çalışma fizik doğrulamasını kaldırma gerekçesi değildir; sonraki performans çalışmaları fiziksel doğruluk ve callback sözleşmesini koruyarak yürütülmelidir.
+
+**Rota doğruluğu uyarısı:** Geniş engelli haritada validator kapalı tanısal A* rotası, fiziksel olarak doğrulanmış rotayla aynı değildir (10 hücrede 11'e karşı 12 düğüm; 30 hücrede 31'e karşı 32 düğüm). Bu beklenen bir tanısal farktır; validator kapalı sonuç oyun rotası olarak kullanılmamıştır. Ölçümde doğrulamalı baseline ve optimize sürüm rota düğüm sayıları aynı kalmıştır.
+
+**Cache gözlemi:** Her senaryoda 20 intent çağrısının 19'u cache hit olmuş, path query sayısı 1'de kalmış, cache hit oranı %95, replan/invalidation/blocked step/failure sayıları 0 olmuştur. Cache'li intent adımı p50 değerleri yaklaşık 0,05 ms seviyesindedir. Bu metrikler ilk rota planlama maliyetinden ayrıdır.
+
+**CI sonucu:** Benchmark workflow `44902615737` başarıyla tamamlandı. Aynı çalışma dalındaki Eldoria CI `44902615739` ve Core Quality `44902615948` workflow'ları da başarıyla tamamlandı.
+
+**Teknik karar:** Aynı runner üzerinde ölçülen koridor ve geniş engelli harita sonuçları, optimize sürümün kısa rotada anlamlı regresyon oluşturmadan orta/uzun rotalarda p50 planlama süresini yaklaşık %46–70 aralığında düşürdüğünü göstermektedir. Fiziksel edge validation ve runtime mimari değişmezleri korunmuştur. Geniş engelli benchmark kabul edilmiştir. Gerçek oyun sahnesindeki hareket, duvar kayması, NPC itişi ve rollback davranışları için manuel kabul testleri hâlâ yapılmalıdır.
