@@ -22,6 +22,7 @@ jobs:
           --extend-per-file-ignores
           application/gameplay_service.py:F401,application/gameplay_service.py:E701
           application/hex_world_runtime.py
+          application/hex_pathfinding.py
           application/hex_occupancy.py
           application/hex_world_geometry_bridge.py
           application/hex_actor_binding.py
