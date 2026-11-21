@@ -253,3 +253,12 @@ Her paket sonunda:
 4. Sonraki pakete geçiş kapısı sağlanmadan entegrasyon genişletilmez.
 
 **İlk kodlama adımı:** Yalnızca `character_skeleton.py` ve ona ait saf birim testlerini uygulamak. Eski karakter görselleştirme sistemi bu adımda değiştirilmez veya kaldırılmaz.
+
+---
+
+## 15. Uygulama günlüğü
+
+- **Paket 1 — Saf iskelet modeli:** Uygulandı. Kullanıcı tarafından yerel ortamda çalıştırılan `tests.test_game_ui.test_character_skeleton` test paketi 11/11 başarılı oldu.
+- **Paket 2 — Rig renderer:** İlk bağımsız uygulama eklendi: `game_ui/world_rendering/character_rig_renderer.py`. Renderer, mevcut sekiz yön adını kullanır; normalize eklem koordinatlarını ayak referansından ekran koordinatına dönüştürür; gövdeyi, başı ve ayrı uzuv parçalarını Pygame çizim ilkelleriyle oluşturur.
+- **Paket 2 testleri:** `tests/test_game_ui/test_character_rig_renderer.py` eklendi. Yerel doğrulama bekleniyor.
+- **Entegrasyon durumu:** Henüz `hex_gameplay_view.py`, mevcut sprite factory veya mevcut animasyon sistemi değiştirilmedi. Oyuncu/NPC entegrasyonu Paket 4'e bırakılmıştır.
