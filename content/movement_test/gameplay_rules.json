@@ -14,17 +14,26 @@
       "hero": {
         "max_speed": 64,
         "running_speed_multiplier": 1.5,
-        "stealth_speed_multiplier": 0.5
+        "stealth_speed_multiplier": 0.5,
+        "acceleration": 180,
+        "deceleration": 240,
+        "braking_deceleration": 360
       },
       "test_guard": {
         "max_speed": 64,
         "running_speed_multiplier": 1.5,
-        "stealth_speed_multiplier": 0.5
+        "stealth_speed_multiplier": 0.5,
+        "acceleration": 180,
+        "deceleration": 240,
+        "braking_deceleration": 360
       },
       "test_target": {
         "max_speed": 64,
         "running_speed_multiplier": 1.5,
-        "stealth_speed_multiplier": 0.5
+        "stealth_speed_multiplier": 0.5,
+        "acceleration": 180,
+        "deceleration": 240,
+        "braking_deceleration": 360
       }
     }
   }
