@@ -1,14 +1,17 @@
 from types import SimpleNamespace
+from unittest.mock import patch
 
 import pytest
 import pygame
 
+from core.domain.movement import MovementConfig, MovementIntent
 from application.hex_map_definition import parse_hex_map
 from application.hex_world_runtime import HexMovableEntity
 from core.domain.spatial import EntityPosition, LocalHexPosition, MovementProfile, WorldPoint, world_point_to_hex
 from core.domain.spatial import HexDirection
 from game_ui.input import InputState
 from game_ui.world_rendering.hex_gameplay_view import HexGameplayView
+from game_ui.game_window import GameWindow
 from game_ui.screens.main_screen import MainScreen
 
 
@@ -483,3 +486,49 @@ def test_click_move_route_is_cached_across_repeated_fixed_step_intents():
     metrics = view._click_move_route.metrics_snapshot()
     assert metrics["player_click_path_queries"] == 1
     assert metrics["player_click_route_cache_hits"] == 1
+
+
+def test_multiple_fixed_steps_in_one_frame_reuse_one_click_path():
+    service = FakeService()
+    service.npc_physics_bodies = {}
+    view = HexGameplayView(service)
+    view._move_goal = LocalHexPosition(2, 0)
+    view._move_map_id = "village"
+    calls = []
+
+    class Clock:
+        step_seconds = 1.0 / 60.0
+
+        def advance(self, _elapsed, *, active):
+            return 4 if active else 0
+
+    class Controller:
+        def __init__(self, *_args, **_kwargs):
+            pass
+
+        def step(self, actor_id, intent, delta_seconds):
+            calls.append((actor_id, intent, delta_seconds))
+
+    window = SimpleNamespace(
+        service=service,
+        _movement_configs={"hero": MovementConfig()},
+        movement_input=SimpleNamespace(focused=True),
+        _movement_clock=Clock(),
+        screens={"main": view},
+        gameplay_screen="main",
+    )
+
+    with patch("game_ui.game_window.ContinuousPlayerMovementController", Controller):
+        GameWindow._advance_continuous_player_movement(
+            window,
+            1.0 / 60.0,
+            MovementIntent(),
+            active=True,
+            click_to_move=True,
+        )
+
+    assert len(calls) == 4
+    assert service.hex_world_runtime.path_queries == 1
+    metrics = view._click_move_route.metrics_snapshot()
+    assert metrics["player_click_path_queries"] == 1
+    assert metrics["player_click_route_cache_hits"] == 3
