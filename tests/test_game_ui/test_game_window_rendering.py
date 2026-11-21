@@ -72,7 +72,7 @@ class TestGameWindowRendering(unittest.TestCase):
             def __init__(self, *_args, **_kwargs):
                 pass
 
-            def step(self, actor_id, intent, delta_seconds):
+            def step(self, actor_id, intent, delta_seconds, *, target=None):
                 calls.append((actor_id, intent, delta_seconds))
 
         click_intent = MovementIntent(Vector2(1.0, 0.0))
@@ -199,7 +199,7 @@ class TestGameWindowRendering(unittest.TestCase):
             def __init__(self, *_args, **_kwargs):
                 pass
 
-            def step(self, actor_id, intent, delta_seconds):
+            def step(self, actor_id, intent, delta_seconds, *, target=None):
                 calls.append((actor_id, intent, delta_seconds))
 
         click_intent = MovementIntent(Vector2(1.0, 0.0))
@@ -245,7 +245,7 @@ class TestGameWindowRendering(unittest.TestCase):
             def __init__(self, *_args, **_kwargs):
                 pass
 
-            def step(self, actor_id, intent, delta_seconds):
+            def step(self, actor_id, intent, delta_seconds, *, target=None):
                 calls.append((actor_id, intent, delta_seconds))
 
         screen = SimpleNamespace(
