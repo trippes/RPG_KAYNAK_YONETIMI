@@ -26,12 +26,29 @@ def _percentile(samples: list[float], percentile: float) -> float | None:
     return round(ordered[index], 6)
 
 
-def _map_definition(route_cells: int):
-    map_id = f"click_move_benchmark_{route_cells}"
+def _map_definition(route_cells: int, topology: str):
+    map_id = f"click_move_benchmark_{topology}_{route_cells}"
+    valid_cells = (
+        [[q, 0] for q in range(route_cells + 1)]
+        if topology == "corridor"
+        else [
+            [q, r]
+            for q in range(route_cells + 1)
+            for r in range(-2, 3)
+        ]
+    )
+    landmarks = []
+    if topology == "broad_obstacle":
+        landmarks.append({
+            "id": "benchmark_obstacle",
+            "name": "Benchmark Obstacle",
+            "position": [route_cells // 2, 0],
+            "walkable": False,
+        })
     return parse_hex_map({
         "schema_version": 2,
         "map_id": map_id,
-        "name": f"Click Move Benchmark {route_cells}",
+        "name": f"Click Move Benchmark {topology} {route_cells}",
         "geometry": {
             "type": "hex_axial",
             "orientation": "pointy_top",
@@ -39,12 +56,13 @@ def _map_definition(route_cells: int):
         },
         "terrain_ids": ["grass"],
         "default_terrain": "grass",
-        "valid_cells": [[q, 0] for q in range(route_cells + 1)],
+        "valid_cells": valid_cells,
+        "landmarks": landmarks,
     })
 
 
-def _scenario(route_cells: int):
-    map_definition = _map_definition(route_cells)
+def _scenario(route_cells: int, topology: str):
+    map_definition = _map_definition(route_cells, topology)
     origin = WorldPoint(0.0, 0.0)
     geometry = build_hex_map_collision_geometry(
         map_definition, 32.0, origin=origin,
@@ -75,17 +93,17 @@ def _edge_validator(snapshot, body):
     )
 
 
-def _baseline_samples(route_cells: int, iterations: int):
-    runtime, goal, snapshot, body = _scenario(route_cells)
+def _baseline_samples(route_cells: int, topology: str, iterations: int):
+    runtime, goal, snapshot, body = _scenario(route_cells, topology)
     validate_edge = _edge_validator(snapshot, body)
     samples = []
     for _ in range(iterations):
         started = perf_counter_ns()
         path = runtime.path_to("hero", goal, edge_validator=validate_edge)
         samples.append((perf_counter_ns() - started) / 1_000_000.0)
-        if path is None or len(path) != route_cells + 1:
+        if path is None or path[0] != runtime.position_of("hero").cell or path[-1] != goal:
             raise RuntimeError(
-                f"Baseline path failed for {route_cells}-cell route: {path!r}",
+                f"Baseline path failed for {topology} {route_cells}-cell route: {path!r}",
             )
     return {
         "path_queries": iterations,
@@ -96,8 +114,8 @@ def _baseline_samples(route_cells: int, iterations: int):
     }
 
 
-def _controller_samples(route_cells: int, iterations: int):
-    runtime, goal, snapshot, body = _scenario(route_cells)
+def _controller_samples(route_cells: int, topology: str, iterations: int):
+    runtime, goal, snapshot, body = _scenario(route_cells, topology)
     controller = ClickMoveRouteController(timing_enabled=True)
     for _ in range(iterations):
         controller.cancel("independent_benchmark_sample")
@@ -115,8 +133,8 @@ def _controller_samples(route_cells: int, iterations: int):
     }
 
 
-def _cache_probe(route_cells: int, iterations: int):
-    runtime, goal, snapshot, body = _scenario(route_cells)
+def _cache_probe(route_cells: int, topology: str, iterations: int):
+    runtime, goal, snapshot, body = _scenario(route_cells, topology)
     controller = ClickMoveRouteController(timing_enabled=True)
     initial_started = perf_counter_ns()
     initial_intent = controller.intent(runtime, "hero", goal, snapshot, body)
@@ -157,7 +175,7 @@ def _cache_probe(route_cells: int, iterations: int):
 
 
 
-def _edge_validation_profile(route_cells: int, samples: int = 7) -> dict:
+def _edge_validation_profile(route_cells: int, topology: str, samples: int = 7) -> dict:
     """Measure physical edge validation separately from the A* core.
 
     The no-validator run is diagnostic only: it is not a gameplay mode and
@@ -171,7 +189,7 @@ def _edge_validation_profile(route_cells: int, samples: int = 7) -> dict:
     edge_call_samples = []
 
     for sample_index in range(warmups + measured):
-        runtime, goal, snapshot, body = _scenario(route_cells)
+        runtime, goal, snapshot, body = _scenario(route_cells, topology)
         edge_calls = 0
         edge_elapsed_ns = 0
 
@@ -190,24 +208,20 @@ def _edge_validation_profile(route_cells: int, samples: int = 7) -> dict:
         )
         full_elapsed_ns = perf_counter_ns() - started
 
-        core_runtime, core_goal, _, _ = _scenario(route_cells)
+        core_runtime, core_goal, _, _ = _scenario(route_cells, topology)
         started = perf_counter_ns()
         core_path = core_runtime.path_to("hero", core_goal)
         core_elapsed_ns = perf_counter_ns() - started
 
-        expected_length = route_cells + 1
         if (
             full_path is None or core_path is None
-            or len(full_path) != expected_length
-            or len(core_path) != expected_length
+            or full_path[0] != LocalHexPosition(0, 0)
+            or full_path[-1] != goal
+            or core_path[0] != LocalHexPosition(0, 0)
+            or core_path[-1] != core_goal
         ):
             raise RuntimeError(
-                f"Diagnostic path failed for {route_cells}-cell route.",
-            )
-        if full_path != core_path:
-            raise RuntimeError(
-                "Diagnostic no-validator path differs from the validated "
-                f"path for {route_cells}-cell route.",
+                f"Diagnostic path failed for {topology} {route_cells}-cell route.",
             )
 
         if sample_index >= warmups:
@@ -239,21 +253,27 @@ def _edge_validation_profile(route_cells: int, samples: int = 7) -> dict:
         ),
         "edge_validator_calls_per_query_min": min(edge_call_samples),
         "edge_validator_calls_per_query_max": max(edge_call_samples),
+        "validated_path_nodes": len(full_path),
+        "no_validator_path_nodes": len(core_path),
+        "paths_match": full_path == core_path,
         "interpretation": (
             "The no-validator path is a diagnostic counterfactual only. "
-            "Gameplay continues to require physical edge validation."
+            "For obstacle maps it may cross an obstacle and differ from the "
+            "validated route. Gameplay continues to require physical edge validation."
         ),
     }
 
-def run_benchmark(route_lengths: list[int], iterations: int) -> dict:
+def run_benchmark(route_lengths: list[int], topologies: list[str], iterations: int) -> dict:
     scenarios = []
-    for route_cells in route_lengths:
-        print(f"Benchmarking {route_cells}-cell player route ({iterations} samples)...", flush=True)
-        baseline = _baseline_samples(route_cells, iterations)
-        controller = _controller_samples(route_cells, iterations)
-        cached = _cache_probe(route_cells, iterations)
-        edge_profile = _edge_validation_profile(route_cells)
+    for topology in topologies:
+      for route_cells in route_lengths:
+        print(f"Benchmarking {topology} {route_cells}-cell player route ({iterations} samples)...", flush=True)
+        baseline = _baseline_samples(route_cells, topology, iterations)
+        controller = _controller_samples(route_cells, topology, iterations)
+        cached = _cache_probe(route_cells, topology, iterations)
+        edge_profile = _edge_validation_profile(route_cells, topology)
         scenarios.append({
+            "topology": topology,
             "route_cells": route_cells,
             "route_nodes": route_cells + 1,
             "iterations": iterations,
@@ -280,6 +300,7 @@ def run_benchmark(route_lengths: list[int], iterations: int) -> dict:
         "python_version": platform.python_version(),
         "platform": platform.platform(),
         "route_lengths_cells": route_lengths,
+        "topologies": topologies,
         "arrival_time_note": (
             "Not measured: MovementIntegrator has no target-aware braking "
             "or acceleration model; see phase 3.5 assessment."
@@ -298,6 +319,12 @@ def main() -> int:
         default=[1, 10, 100],
     )
     parser.add_argument(
+        "--topologies",
+        choices=["corridor", "broad_obstacle"],
+        nargs="+",
+        default=["corridor"],
+    )
+    parser.add_argument(
         "--output",
         type=Path,
         default=Path("player-click-move-benchmark.json"),
@@ -308,7 +335,7 @@ def main() -> int:
     if not args.route_lengths or any(length < 1 for length in args.route_lengths):
         parser.error("--route-lengths values must be positive")
 
-    result = run_benchmark(args.route_lengths, args.iterations)
+    result = run_benchmark(args.route_lengths, args.topologies, args.iterations)
     rendered = json.dumps(result, indent=2, ensure_ascii=False)
     args.output.write_text(rendered + "\n", encoding="utf-8")
     print(rendered)
