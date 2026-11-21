@@ -2,7 +2,7 @@
 
 **Çalışma dalı:** `experiment/map-cleanup`  
 **İnceleme tarihi:** 21 Kasım 2026  
-**Durum:** Profil ölçümü tamamlandı; A* erken maliyet elemesi uygulandı; CI ve karşılaştırmalı benchmark doğrulaması bekliyor  
+**Durum:** A* erken maliyet elemesi, CI ve aynı koşullarda karşılaştırmalı benchmark doğrulandı; geniş/engelli harita ve manuel oyun içi kabul testleri bekliyor  
 **Kapsam:** İlk click-to-move rota planlamasında 100 hücrelik rotanın yüksek maliyetinin azaltılması
 
 ## 1. Yönetici özeti
@@ -261,11 +261,57 @@ Aynı artifact içindeki ek profil ölçümünde doğrulamalı 100 hücrelik ara
 
 **Çağrı sayısı kabulü:** Önceki profiler çalışmasında aynı düz koridor yapısı için 100 hücre rotada 199 doğrulayıcı çağrısı ölçülmüştü. Optimizasyon sonrası 100 iterasyonlu benchmark artifact'ında her sorguda 100 çağrı ölçülmüştür. Böylece beklenen 199 → 100 çağrı azalması doğrulanmıştır.
 
-**Performans karşılaştırması sınırı:** Önceki 1.459,950 ms profil p50 ölçümü Python 3.11.18 ve 7 örnekli ayrı profiler koşulundan; bu benchmark ise Python 3.12.16 ve 100 iterasyonlu benchmark koşulundan gelmektedir. Dolayısıyla iki p50 değeri doğrudan önce/sonra hızlanma oranı hesaplamak için eşdeğer koşullar değildir. Bu rapor, 659,100 ms değerini optimizasyon sonrası ölçüm olarak kaydeder; farklı koşullardaki eski ölçümle kesin hızlanma iddiasında bulunmaz.
+**Performans karşılaştırması sınırı:** Önceki 1.459,950 ms profil p50 ölçümü Python 3.11.18 ve 7 örnekli ayrı profiler koşulundan; bu benchmark ise Python 3.12.16 ve 100 iterasyonlu benchmark koşulundan gelmiştir. Bu nedenle bu iki eski ölçüm doğrudan önce/sonra hızlanma oranı hesaplamak için eşdeğer değildi. Bu karşılaştırma açığı, aynı runner üzerinde yapılan kontrollü karşılaştırmayla 11.5 bölümünde giderilmiştir.
 
 CI doğrulaması:
 - Benchmark workflow `44899885580`: success.
 - Son rapor commit'ine ait Eldoria CI workflow `44899899819`: success; beş işin tamamı başarılı.
 - Core Quality workflow `44899899753`: success.
 
-**Karar:** A* erken maliyet elemesi test ve CI doğrulamasını geçti; uzun düz rotadaki fiziksel kenar doğrulayıcı çağrı sayısı yarıya yakın azaltıldı. Milisaniye bazında kesin hızlanma oranı için aynı Python sürümü, runner ve benchmark yöntemiyle alınmış optimizasyon öncesi/sonrası karşılaştırmalı koşu hâlâ gereklidir. Geniş/dallanan ve engelli harita performansı ile manuel oyun içi kabul testleri de bu benchmark kapsamı dışındadır.
+**Karar:** A* erken maliyet elemesi test ve CI doğrulamasını geçti; uzun düz rotadaki fiziksel kenar doğrulayıcı çağrı sayısı yarıya yakın azaltıldı. Aynı koşullarda önce/sonra karşılaştırması 11.5 bölümünde tamamlanmıştır. Geniş/dallanan ve engelli harita performansı ile manuel oyun içi kabul testleri hâlâ açık doğrulama alanlarıdır.
+
+
+### 11.5 Aynı runner üzerinde kontrollü önce/sonra karşılaştırması — 21 Kasım 2026
+
+Optimizasyon öncesi baseline commit: `7490aad580a169a37ad6ef0678ebe0efbc4f16c7`  
+Optimize edilmiş commit: `08e9c7c4cbaad6461c03c44407b520b529f6e25d`  
+Karşılaştırma workflow: [Player click-move benchmark run 44901126109](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44901126109)  
+Artifact: `player-click-move-same-runner-comparison` (artifact ID `14706157483`).
+
+**Kontrollü koşullar:**
+- Her iki sürüm aynı GitHub Actions job'unda, aynı Ubuntu runner üzerinde art arda çalıştırıldı.
+- Python sürümü her iki ölçümde de `3.12.16`.
+- Runner: `Linux-7.0.0-1016-aws-x86_64-with-glibc2.43`.
+- Her revizyon ayrı sanal Python ortamına kuruldu.
+- Benchmark betiğinin Git blob SHA değeri iki revizyonda da aynıdır: `c6b95598ddce6814e1bbcb33f5b12e60a62c9bdb`.
+- 1, 10 ve 100 hücrelik senaryoların her biri 100 iterasyonla ölçüldü.
+- Aynı benchmark kodu, aynı rota geometrisi, aynı ölçüm yöntemi ve aynı fizik doğrulama koşulları kullanıldı.
+
+| Rota | Baseline p50 | Optimize p50 | p50 değişimi | Baseline p95 | Optimize p95 | Baseline p99 | Optimize p99 |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| 1 hücre | 0,271 ms | 0,275 ms | +%1,51 | 0,290 ms | 0,298 ms | 0,311 ms | 0,354 ms |
+| 10 hücre | 13,389 ms | 7,201 ms | -%46,22 | 13,700 ms | 7,309 ms | 13,837 ms | 7,364 ms |
+| 100 hücre | 1.127,525 ms | 569,077 ms | -%49,53 | 1.135,994 ms | 573,855 ms | 1.138,558 ms | 574,810 ms |
+
+Negatif p50 değişimi optimize sürümün daha hızlı olduğunu gösterir. 1 hücrelik kısa rotadaki yaklaşık %1,5 artış küçük mutlak farktır (yaklaşık 0,004 ms); bu ölçüm tek başına anlamlı bir regresyon kanıtı değildir. Buna karşılık 10 ve 100 hücrelik rotalarda belirgin ve tutarlı düşüş vardır.
+
+**Fizik edge validator çağrı sayısı:**
+
+| Rota | Baseline çağrı / sorgu | Optimize çağrı / sorgu | Değişim |
+|---:|---:|---:|---:|
+| 1 hücre | 1 | 1 | Değişmedi |
+| 10 hücre | 19 | 10 | 19 → 10 |
+| 100 hücre | 199 | 100 | 199 → 100 |
+
+100 hücrelik rota için:
+- p50 planlama süresi 1.127,525 ms'den 569,077 ms'ye düştü.
+- Ölçülen p50 iyileşmesi yaklaşık **%49,53**.
+- p95 1.135,994 ms'den 573,855 ms'ye düştü.
+- p99 1.138,558 ms'den 574,810 ms'ye düştü.
+- Fizik kenar doğrulama çağrısı sorgu başına 199'dan 100'e düştü.
+
+10 hücrelik rotada da p50 yaklaşık %46,22 azaldı. 1 hücrelik rotada doğrulama çağrı sayısı değişmedi ve süre farkı çok küçüktür. Sonuç, optimizasyonun hedeflenen uzun rotalarda etkili olduğunu ve kısa rotalarda anlamlı bir performans cezası oluşturmadığını gösterir.
+
+**CI sonucu:** Karşılaştırma workflow'u `44901126109` başarıyla tamamlandı. Aynı commit için Core Quality `44901126114` ve Eldoria CI `44901126104` workflow'ları da başarılı tamamlandı.
+
+**Teknik karar:** Aynı runner/Python/benchmark koşullarında yapılan kontrollü ölçüm, A* erken maliyet elemesinin hedeflenen performans iyileştirmesini sağladığını doğrulamıştır. Uzun rota optimizasyonu otomatik test ve CI açısından kabul edilmiştir. Bununla birlikte bu sonuç yalnızca mevcut düz koridor benchmark'ı için geçerlidir; geniş/dallanan/engelli haritalar ve oyun içi manuel hareket kabul testleri ayrıca doğrulanmalıdır.
