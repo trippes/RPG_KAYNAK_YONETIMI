@@ -9,7 +9,13 @@ from .hex_movement_rules import MovementRules
 
 
 class HexPathfinder:
-    """Find shortest unweighted local-map paths using axial hex distance."""
+    """Find shortest unweighted local-map paths using axial hex distance.
+
+    ``edge_validator``, when supplied, is a deterministic, side-effect-free
+    predicate. It is evaluated only when the candidate improves the best
+    known cost for its destination; rejected/non-improving candidates do not
+    invoke it.
+    """
 
     @staticmethod
     def find_path(
@@ -64,6 +70,9 @@ class HexPathfinder:
                     continue
                 if neighbor != goal and map_definition.is_blocked(neighbor) and not profile.can_traverse_blocked_cells:
                     continue
+                new_cost = current_cost + 1
+                if new_cost >= cost_so_far.get(neighbor, float("inf")):
+                    continue
                 request = MovementRequest(
                     "pathfinder",
                     EntityPosition(map_definition.map_id, current),
@@ -74,9 +83,6 @@ class HexPathfinder:
                 if not result.success:
                     continue
                 if edge_validator is not None and not edge_validator(current, neighbor):
-                    continue
-                new_cost = current_cost + 1
-                if new_cost >= cost_so_far.get(neighbor, float("inf")):
                     continue
                 cost_so_far[neighbor] = new_cost
                 came_from[neighbor] = current
