@@ -31,9 +31,8 @@ Kürek kemiği düğümleri kontrol amaçlı işaretlenmiştir; mevcut sürümde
 
 ### Matematik ve doğrulama
 
-- Ön, yan ve çapraz görünüm için Pygame bağımsız ortografik 3B→2B projeksiyon ilkesi eklendi.
+- Ön, yan ve çapraz görünüm için Pygame bağımsız ortografik 3B→2B projeksiyon fonksiyonu eklendi.
 - Üç görünüşlü debug önizleme aracı `scripts/preview_humanoid_rig_3d.py` olarak eklendi.
-
 - Yerel ebeveyn-çocuk dönüşümleri quaternion çarpımıyla çözülür.
 - Eklem sınırları XYZ yerel Euler girdilerine bileşen bazında uygulanır.
 - Bilinmeyen eklem, bozuk vektör, sıfır quaternion, döngülü hiyerarşi ve geçersiz kemik bağlantıları reddedilir.
@@ -56,11 +55,11 @@ Bu rapor yazılırken depo testleri yerel çalışma ortamında çalıştırılm
 
 ## 4. Bilinen sınırlamalar
 
-- Bu teslim yalnızca iskelet veri modeli ve poz matematiğidir; henüz Pygame projeksiyonu veya görsel önizleme renderer'ı yoktur.
+- Bu teslim iskelet veri modeli, poz matematiği, saf ortografik projeksiyon ve bağımsız debug önizlemesidir; henüz oyun içi renderer entegrasyonu yoktur.
 - A-Pose uzuv yerleşimi ilk anatomik taslaktır; nötr kol açısı için ayrı bir rest-orientation kalibrasyonu sonraki teknik düzeltme olabilir.
 - Eklem limitleri ilk oyun kısıtlarıdır; anatomik/oyunsal görsel kabul ile ayarlanacaktır.
 - Kürek kemiği kontrol düğümleri tanımlanmıştır ancak omuz hareketine otomatik katkı henüz uygulanmamıştır.
-- Ayak tabanı ankrajı topuk yüksekliğine göre tanımlanmıştır; ayak temas düzlemi ve ayak ucu projeksiyonu sonraki görsel doğrulamada kontrol edilecektir.
+- Ayak tabanı ankrajı topuk yüksekliğine göre `-0.49` rig biriminde tanımlanmıştır; ayak temas düzlemi ve ayak ucu projeksiyonu sonraki görsel doğrulamada kontrol edilecektir.
 - 3B rig mevcut runtime'a bağlanmamıştır.
 
 ## 5. Sonraki adımlar ve kabul kapısı
