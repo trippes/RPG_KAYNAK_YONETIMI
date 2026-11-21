@@ -276,6 +276,10 @@ class HexGameplayView:
             self._move_map_id = None
         return intent
 
+    def click_move_target(self):
+        """Expose the route's current physical waypoint to the movement domain."""
+        return self._click_move_route.movement_target
+
     def _advance_player_physics(self) -> None:
         """Fallback fixed-step input for views hosted without the native loop."""
         if not self._manual_directions:
