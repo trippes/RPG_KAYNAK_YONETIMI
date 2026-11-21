@@ -266,3 +266,9 @@ Her paket sonunda:
 - **Paket 3 — Rig animasyonu:** İlk bağımsız sürüm eklendi: `game_ui/world_rendering/character_rig_animation.py`. Idle/walk/run durumları için delta-time tabanlı, örnek başına bağımsız eklem pozları üretir; yön değişiminde fazı, durum değişiminde normalize edilmiş döngü fazını korur. Yürüyüş/koşuda karşılıklı kol-bacak salınımı ve ayak yönünü yatay tutan ayak bileği telafisi bulunur.
 - **Paket 3 testleri:** `tests/test_game_ui/test_character_rig_animation.py` eklendi. Kullanıcının yerel ortamda çalıştırdığı dört test grubu (iskelet, rig renderer, rig animasyonu ve mevcut karakter renderer) toplam **33/33 başarılı** oldu.
 - **Entegrasyon durumu:** Oyun görünümü, mevcut sprite factory ve mevcut animasyon API'si değiştirilmedi. Rig animasyonu henüz oyun içinde kullanılmıyor.
+
+
+- **Görsel inceleme — ilk rig önizlemesi:** Kullanıcının paylaştığı 8 yön × 3 animasyon durumu ekran görüntüsü incelendi. Teknik eklem hareketi görünür olmakla birlikte, büyük dairesel eklem kapakları karakteri mekanik gösteriyor; gövde silueti ve baş biçimi fazla basit kalıyor.
+- **Görsel iyileştirme turu 1:** `character_rig_renderer.py` güncellendi. Uzuv parçalarında daha dar uçlu şekiller ve daha küçük eklem geçişleri, gövdede omuz-bel formu belirginleştirilmiş tunik silueti, başta dairesel eklem yerine oval kafa ve biçimli saç üstlüğü kullanıldı. Yeni palette gövde gölgesi ve hafif vurgu renkleri eklendi.
+- **Renderer testleri:** Test beklentileri yeni, daha az dairesel eklem çizimine göre güncellendi. Bu değişiklik henüz kullanıcı yerel ortamında çalıştırılmadı; görsel kabul verilmedi.
+- **Sonraki adım:** Kullanıcı yeni renderer sürümünü çalıştırıp aynı önizleme ekranının güncel görüntüsünü paylaşacak. Yön görünümü, vücut anatomisi ve uzuv birleşimleri yeniden değerlendirilecek. Oyun entegrasyonu hâlâ ertelenmiştir.
