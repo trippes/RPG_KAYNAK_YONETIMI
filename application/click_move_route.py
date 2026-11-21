@@ -21,6 +21,11 @@ class _ActiveRoute:
     body: object
     cells: tuple[LocalHexPosition, ...]
     cursor: int = 0
+    smoothing_cursor: int = -1
+    smoothing_checked: bool = False
+    smoothing_target: LocalHexPosition | None = None
+    smoothing_origin: object = None
+    smoothing_target_point: object = None
 
 
 class ClickMoveRouteController:
@@ -215,9 +220,8 @@ class ClickMoveRouteController:
             state.cursor = cursor
 
         next_cell = state.cells[cursor + 1]
-        if not self._next_edge_valid(
-            runtime, entity, map_id, current_cell, next_cell,
-            physics_snapshot, body, actor_id,
+        if not self._next_edge_occupancy_valid(
+            runtime, entity, map_id, next_cell, actor_id,
         ):
             self._metrics["player_click_route_blocked_steps"] += 1
             if replanned_this_step:
@@ -244,9 +248,8 @@ class ClickMoveRouteController:
                     self._arrive()
                     return MovementIntent()
                 return MovementIntent(Vector2(dx, dy), mode)
-            if len(state.cells) < 2 or not self._next_edge_valid(
-                runtime, entity, map_id, current_cell, state.cells[1],
-                physics_snapshot, body, actor_id,
+            if len(state.cells) < 2 or not self._next_edge_occupancy_valid(
+                runtime, entity, map_id, state.cells[1], actor_id,
             ):
                 self._fail("replan_failed")
                 return MovementIntent()
@@ -385,7 +388,34 @@ class ClickMoveRouteController:
         body,
         actor_id: str,
     ) -> LocalHexPosition:
-        """Skip one collinear waypoint only after a swept-clearance proof."""
+        """Reuse one swept-clearance proof while following a straight segment."""
+        if state.smoothing_cursor != cursor:
+            state.smoothing_cursor = cursor
+            state.smoothing_checked = False
+            state.smoothing_target = None
+            state.smoothing_origin = None
+            state.smoothing_target_point = None
+
+        if state.smoothing_target is not None:
+            if not self._next_edge_occupancy_valid(
+                runtime, entity, map_id, state.smoothing_target, actor_id,
+            ):
+                return next_cell
+            if self._point_on_segment(
+                state.smoothing_origin,
+                state.smoothing_target_point,
+                current_point,
+            ):
+                return state.smoothing_target
+            state.smoothing_target = None
+            state.smoothing_origin = None
+            state.smoothing_target_point = None
+            state.smoothing_checked = False
+
+        if state.smoothing_checked:
+            return next_cell
+        state.smoothing_checked = True
+
         candidate_index = cursor + 2
         if candidate_index >= len(state.cells):
             return next_cell
@@ -394,11 +424,12 @@ class ClickMoveRouteController:
         second_delta = (candidate.q - next_cell.q, candidate.r - next_cell.r)
         if first_delta != second_delta:
             return next_cell
-        if not self._next_edge_valid(
-            runtime, entity, map_id, next_cell, candidate,
-            physics_snapshot, body, actor_id,
+        if not self._next_edge_occupancy_valid(
+            runtime, entity, map_id, candidate, actor_id,
         ):
+            state.smoothing_checked = False
             return next_cell
+
         target = physics_snapshot.cell_center(candidate)
         displacement = Vector2(target.x - current_point.x, target.y - current_point.y)
         sweep = getattr(physics_snapshot, "resolve_motion", None)
@@ -416,28 +447,37 @@ class ClickMoveRouteController:
             or not math.isclose(applied.y, displacement.y, rel_tol=0.0, abs_tol=1e-5)
         ):
             return next_cell
+
+        state.smoothing_target = candidate
+        state.smoothing_origin = current_point
+        state.smoothing_target_point = target
         return candidate
-    def _next_edge_valid(
-        self,
-        runtime,
-        entity,
-        map_id: str,
-        source: LocalHexPosition,
-        destination: LocalHexPosition,
-        physics_snapshot,
-        body,
-        actor_id: str,
-    ) -> bool:
+
+    @staticmethod
+    def _point_on_segment(start, end, point, *, tolerance: float = 0.5) -> bool:
+        dx = end.x - start.x
+        dy = end.y - start.y
+        length_squared = dx * dx + dy * dy
+        if length_squared <= 1e-12:
+            return False
+        offset_x = point.x - start.x
+        offset_y = point.y - start.y
+        projection = (offset_x * dx + offset_y * dy) / length_squared
+        perpendicular = abs(offset_x * dy - offset_y * dx) / math.sqrt(length_squared)
+        return -1e-6 <= projection <= 1.000001 and perpendicular <= tolerance
+
+    @staticmethod
+    def _next_edge_occupancy_valid(runtime, entity, map_id, destination, actor_id):
+        """Check mutable occupancy; static edge clearance is bound to the route snapshot."""
         try:
             if not runtime.map_definition(map_id).has_cell(destination):
                 return False
-            if not entity.profile.ignores_occupancy:
-                occupancy = getattr(runtime, "occupancy", None)
-                if occupancy is not None and not occupancy.can_enter(
-                    EntityPosition(map_id, destination), excluding=actor_id,
-                ):
-                    return False
-            return physics_snapshot.can_reach_cell(source, destination, body)
+            if entity.profile.ignores_occupancy:
+                return True
+            occupancy = getattr(runtime, "occupancy", None)
+            return occupancy is None or occupancy.can_enter(
+                EntityPosition(map_id, destination), excluding=actor_id,
+            )
         except (KeyError, RuntimeError, ValueError):
             return False
 

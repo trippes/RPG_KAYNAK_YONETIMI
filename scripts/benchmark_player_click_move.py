@@ -118,8 +118,15 @@ def _controller_samples(route_cells: int, iterations: int):
 def _cache_probe(route_cells: int, iterations: int):
     runtime, goal, snapshot, body = _scenario(route_cells)
     controller = ClickMoveRouteController(timing_enabled=True)
+    initial_started = perf_counter_ns()
+    initial_intent = controller.intent(runtime, "hero", goal, snapshot, body)
+    initial_plan_ms = (perf_counter_ns() - initial_started) / 1_000_000.0
+    if not initial_intent.is_moving:
+        raise RuntimeError(
+            f"Cached route produced no intent for {route_cells}-cell route.",
+        )
     intent_samples = []
-    for _ in range(iterations):
+    for _ in range(iterations - 1):
         started = perf_counter_ns()
         intent = controller.intent(runtime, "hero", goal, snapshot, body)
         intent_samples.append((perf_counter_ns() - started) / 1_000_000.0)
@@ -130,6 +137,8 @@ def _cache_probe(route_cells: int, iterations: int):
     metrics = controller.metrics_snapshot()
     return {
         "intent_calls": iterations,
+        "initial_plan_ms": round(initial_plan_ms, 6),
+        "cached_intent_calls": len(intent_samples),
         "path_queries": metrics["player_click_path_queries"],
         "cache_hits": metrics["player_click_route_cache_hits"],
         "cache_misses": metrics["player_click_route_cache_misses"],

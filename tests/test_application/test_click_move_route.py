@@ -24,6 +24,7 @@ class FakeSnapshot:
     def __init__(self, blocked_edges=(), *, blocked_sweep=False):
         self.blocked_edges = set(blocked_edges)
         self.blocked_sweep = blocked_sweep
+        self.sweep_calls = 0
 
     def cell_center(self, cell):
         return WorldPoint(cell.q * 10.0, cell.r * 10.0)
@@ -32,6 +33,7 @@ class FakeSnapshot:
         return (source, destination) not in self.blocked_edges
 
     def resolve_motion(self, _start, displacement, _body):
+        self.sweep_calls += 1
         applied = Vector2(0.0, 0.0) if self.blocked_sweep else displacement
         impacts = (object(),) if self.blocked_sweep else ()
         return SimpleNamespace(
@@ -71,9 +73,22 @@ class FakeRuntime:
 
     def path_to(self, _actor_id, goal, *, edge_validator=None):
         self.path_queries += 1
-        if self.paths:
-            return self.paths.pop(0)
-        return (self.current_cell, goal)
+        while self.paths:
+            path = self.paths.pop(0)
+            if path is None:
+                return None
+            if edge_validator is None or all(
+                edge_validator(source, destination)
+                for source, destination in zip(path, path[1:])
+            ):
+                return path
+        path = (self.current_cell, goal)
+        if edge_validator is not None and not all(
+            edge_validator(source, destination)
+            for source, destination in zip(path, path[1:])
+        ):
+            return None
+        return path
 
 
 def make_controller(*, timing_enabled=False):
@@ -106,6 +121,7 @@ def test_same_active_goal_reuses_one_path_across_fixed_steps():
     assert metrics["player_click_path_queries"] == 1
     assert metrics["player_click_route_cache_misses"] == 1
     assert metrics["player_click_route_cache_hits"] == 1
+    assert snapshot.sweep_calls == 1
 
 
 def test_new_goal_replaces_active_route_and_replans():
@@ -184,7 +200,7 @@ def test_authoritative_player_deviation_replans_from_current_runtime_cell():
     assert controller.metrics_snapshot()["player_click_route_replans"] == 1
 
 
-def test_static_collision_on_next_edge_triggers_alternative_route():
+def test_pathfinder_edge_validator_rejects_static_collision_route():
     runtime = FakeRuntime(paths=[(A, B, C), (A, D, C)])
     snapshot = FakeSnapshot(blocked_edges={(A, B)})
     controller = make_controller()
@@ -192,8 +208,9 @@ def test_static_collision_on_next_edge_triggers_alternative_route():
     intent = route_intent(controller, runtime, snapshot=snapshot)
 
     assert intent.is_moving
-    assert runtime.path_queries == 2
-    assert controller.metrics_snapshot()["player_click_route_blocked_steps"] == 1
+    assert runtime.path_queries == 1
+    assert controller.metrics_snapshot()["player_click_route_blocked_steps"] == 0
+    assert controller.metrics_snapshot()["player_click_route_replans"] == 0
 
 
 def test_arrival_uses_authoritative_goal_cell_and_center_tolerance():
