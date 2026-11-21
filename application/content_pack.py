@@ -952,7 +952,8 @@ def load_gameplay_rules(path: str | Path | None = None, *, package_path: str | P
             if not isinstance(actor_id, str) or not actor_id.strip():
                 raise ContentDefinitionError("Movement actor IDs must be non-empty strings.")
             if not isinstance(profile, dict) or set(profile) - {
-                "max_speed", "running_speed_multiplier", "stealth_speed_multiplier"
+                "max_speed", "running_speed_multiplier", "stealth_speed_multiplier",
+                "acceleration", "deceleration", "braking_deceleration"
             }:
                 raise ContentDefinitionError(f"Movement profile for '{actor_id}' has unsupported fields.")
             if "max_speed" not in profile:
@@ -962,6 +963,9 @@ def load_gameplay_rules(path: str | Path | None = None, *, package_path: str | P
                     max_speed=profile["max_speed"],
                     running_speed_multiplier=profile.get("running_speed_multiplier", 1.5),
                     stealth_speed_multiplier=profile.get("stealth_speed_multiplier", 0.5),
+                    acceleration=profile.get("acceleration", 180.0),
+                    deceleration=profile.get("deceleration", 240.0),
+                    braking_deceleration=profile.get("braking_deceleration", 360.0),
                 )
             except (TypeError, ValueError) as error:
                 raise ContentDefinitionError(
@@ -1003,6 +1007,9 @@ def load_movement_configs(
             max_speed=profile["max_speed"],
             running_speed_multiplier=profile.get("running_speed_multiplier", 1.5),
             stealth_speed_multiplier=profile.get("stealth_speed_multiplier", 0.5),
+            acceleration=profile.get("acceleration", 180.0),
+            deceleration=profile.get("deceleration", 240.0),
+            braking_deceleration=profile.get("braking_deceleration", 360.0),
         )
         for actor_id, profile in profiles.items()
     }
