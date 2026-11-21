@@ -177,11 +177,13 @@ class HexGameplayView:
             if entity.kind != "npc":
                 continue
             active_ids.add(entity.entity_id)
-            try:
-                point = runtime.continuous_position(entity.entity_id).point
-                target = (point.x, point.y)
-            except KeyError:
-                continue
+            continuous = entity.continuous_position
+            if continuous is None:
+                try:
+                    continuous = runtime.continuous_position(entity.entity_id)
+                except KeyError:
+                    continue
+            target = (continuous.point.x, continuous.point.y)
             state = self._npc_visual_states.get(entity.entity_id)
             if state is None:
                 state = {

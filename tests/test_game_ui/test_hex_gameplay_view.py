@@ -401,3 +401,45 @@ def test_player_keyboard_input_uses_fixed_step_continuous_physics():
     assert service.continuous_directions == [
         ((HexDirection.EAST,), HexGameplayView.PHYSICS_STEP_SECONDS),
     ]
+
+
+
+def test_npc_visual_update_reuses_runtime_entity_position_snapshot():
+    from application.hex_world_runtime import HexWorldRuntime
+    from application.npc_simulation_metrics import NPCSimulationMetrics
+
+    map_definition = parse_hex_map({
+        "schema_version": 2,
+        "map_id": "village",
+        "name": "Village",
+        "geometry": {
+            "type": "hex_axial",
+            "orientation": "pointy_top",
+            "coordinate_system": "axial",
+        },
+        "terrain_ids": ["grass"],
+        "default_terrain": "grass",
+        "valid_cells": [[0, 0], [1, 0]],
+        "cell_overrides": [],
+        "transitions": [],
+    })
+    metrics = NPCSimulationMetrics()
+    runtime = HexWorldRuntime({"village": map_definition}, metrics=metrics)
+    runtime.register_entity(
+        "hero", "player",
+        EntityPosition("village", LocalHexPosition(0, 0)),
+        MovementProfile(),
+    )
+    runtime.register_entity(
+        "guard", "npc",
+        EntityPosition("village", LocalHexPosition(1, 0)),
+        MovementProfile(),
+    )
+    service = FakeService()
+    service.hex_world_runtime = runtime
+    view = HexGameplayView(service)
+    metrics.reset()
+
+    view._advance_npc_visuals(1.0 / 60.0)
+
+    assert metrics.snapshot()["counts"]["runtime_entity_validation_queries"] == 2
