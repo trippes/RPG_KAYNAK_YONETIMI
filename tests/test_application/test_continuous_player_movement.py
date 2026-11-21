@@ -309,7 +309,8 @@ def test_movement_integrator_accelerates_from_rest_with_delta_time_limit():
 
     assert result.velocity.x == pytest.approx(12.0)
     assert result.velocity.y == pytest.approx(0.0)
-    assert result.position == WorldPoint(1.2, 0.0)
+    assert result.position.x == pytest.approx(1.2)
+    assert result.position.y == pytest.approx(0.0)
 
 
 def test_movement_integrator_decelerates_instead_of_stopping_instantly():
