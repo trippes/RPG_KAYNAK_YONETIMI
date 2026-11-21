@@ -42,10 +42,13 @@ jobs:
           application/companion_commands.py
           application/dynamic_actor_collision.py
           game_ui/world_rendering/hex_gameplay_view.py
+          game_ui/world_rendering/humanoid_rig_3d.py
           scripts/benchmark_npc_perception.py
+          scripts/preview_humanoid_rig_3d.py
           tests/test_application/test_npc_simulation_metrics.py
           tests/test_application/test_npc_behavior_system.py
           tests/test_game_ui/test_hex_gameplay_view.py
+          tests/test_game_ui/test_humanoid_rig_3d.py
 
   pygame-headless-smoke:
     name: Pygame headless smoke test
