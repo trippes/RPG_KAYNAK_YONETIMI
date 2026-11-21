@@ -50,6 +50,8 @@ jobs:
           game_ui/game_window.py
           game_ui/world_rendering/__init__.py
           game_ui/world_rendering/hex_gameplay_view.py
+          application/click_move_route.py
+          tests/test_application/test_click_move_route.py
           tests/test_application/test_session_bundle.py
           tests/test_application/test_gameplay_step_clock.py
           tests/test_application/test_performance_monitor.py

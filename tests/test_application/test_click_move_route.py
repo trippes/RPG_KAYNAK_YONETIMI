@@ -235,3 +235,20 @@ def test_optional_path_and_arrival_percentiles_are_collected():
     metrics = controller.metrics_snapshot()
     assert metrics["player_click_path_planning_p50_ms"] is not None
     assert metrics["player_click_route_arrival_p50_ms"] is not None
+
+
+def test_route_deviation_and_blocked_edge_allow_only_one_replan_per_step():
+    runtime = FakeRuntime(paths=[(A, B, C), (D, B, C)])
+    controller = make_controller()
+    snapshot = FakeSnapshot()
+    route_intent(controller, runtime, snapshot=snapshot)
+
+    runtime.current_cell = D
+    runtime.current_point = snapshot.cell_center(D)
+    runtime.occupancy.blocked_cells.add(B)
+    intent = route_intent(controller, runtime, snapshot=snapshot)
+
+    assert not intent.is_moving
+    assert runtime.path_queries == 2
+    assert controller.metrics_snapshot()["player_click_route_replans"] == 1
+    assert controller.status == "blocked"

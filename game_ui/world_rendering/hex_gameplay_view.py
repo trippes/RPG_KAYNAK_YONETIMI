@@ -7,7 +7,6 @@ from time import perf_counter_ns
 
 from core.domain.movement import MovementIntent
 from application.click_move_route import ClickMoveRouteController
-from core.domain.physics import Vector2
 from core.domain.spatial import HexDirection, LocalHexPosition, WorldPoint, world_point_to_hex
 from game_ui.world_transform import WorldTransform
 

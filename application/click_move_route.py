@@ -140,6 +140,8 @@ class ClickMoveRouteController:
         replan_reason = self._context_change_reason(
             state, runtime, actor_id, map_id, goal, physics_snapshot, body,
         )
+        reused_this_step = state is not None and replan_reason is None
+        replanned_this_step = False
         if state is None:
             if not self._plan(
                 runtime, actor_id, map_id, current_cell, goal,
@@ -149,6 +151,8 @@ class ClickMoveRouteController:
             state = self._active
         elif replan_reason is not None:
             self._invalidate(replan_reason)
+            replanned_this_step = True
+            reused_this_step = False
             if not self._plan(
                 runtime, actor_id, map_id, current_cell, goal,
                 physics_snapshot, body, replan=True,
@@ -163,7 +167,12 @@ class ClickMoveRouteController:
 
         cursor = self._find_cursor(state.cells, state.cursor, current_cell)
         if cursor is None:
+            if replanned_this_step:
+                self._fail("route_deviation")
+                return MovementIntent()
             self._invalidate("route_deviation")
+            replanned_this_step = True
+            reused_this_step = False
             if not self._plan(
                 runtime, actor_id, map_id, current_cell, goal,
                 physics_snapshot, body, replan=True,
@@ -182,11 +191,17 @@ class ClickMoveRouteController:
             if math.hypot(dx, dy) <= self.ARRIVAL_TOLERANCE:
                 self._arrive()
                 return MovementIntent()
-            self._metrics["player_click_route_cache_hits"] += 1
+            if reused_this_step:
+                self._metrics["player_click_route_cache_hits"] += 1
             return MovementIntent(Vector2(dx, dy), mode)
 
         if cursor + 1 >= len(state.cells):
+            if replanned_this_step:
+                self._fail("route_cursor_exhausted")
+                return MovementIntent()
             self._invalidate("route_cursor_exhausted")
+            replanned_this_step = True
+            reused_this_step = False
             if not self._plan(
                 runtime, actor_id, map_id, current_cell, goal,
                 physics_snapshot, body, replan=True,
@@ -205,7 +220,12 @@ class ClickMoveRouteController:
             physics_snapshot, body, actor_id,
         ):
             self._metrics["player_click_route_blocked_steps"] += 1
+            if replanned_this_step:
+                self._fail("replan_failed")
+                return MovementIntent()
             self._invalidate("next_edge_blocked")
+            replanned_this_step = True
+            reused_this_step = False
             if not self._plan(
                 runtime, actor_id, map_id, current_cell, goal,
                 physics_snapshot, body, replan=True,
@@ -231,7 +251,7 @@ class ClickMoveRouteController:
                 self._fail("replan_failed")
                 return MovementIntent()
             next_cell = state.cells[1]
-        else:
+        elif reused_this_step:
             self._metrics["player_click_route_cache_hits"] += 1
 
         target = physics_snapshot.cell_center(next_cell)
