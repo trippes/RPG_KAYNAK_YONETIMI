@@ -1,7 +1,7 @@
 # Eldoria — Karakter Anatomisi, İskelet ve Rig Sistemi Genel Geliştirme Planı
 
 **Belge türü:** Üst seviye teknik geliştirme planı  
-**Durum:** Planlama / uygulama öncesi ana yol haritası  
+**Durum:** Aşama 1 ilk uygulaması yapıldı; teknik doğrulama ve görsel kabul bekleniyor  
 **Hedef dal:** `experiment/map-cleanup`  
 **Korunan dallar:** `main` ve `demo` — bu çalışma kapsamında kesinlikle değiştirilmez  
 **İlgili mevcut belge:** `reports/asama-3-5-karakter-iskeleti-teknik-mimari-plani.md`  
@@ -295,18 +295,18 @@ Anatomik oranlar ve eklem hareketleri uygulama sırasında ayrıca insan iskelet
 - Oyuncu/NPC entegrasyonu Aşama 6'ya kadar kontrollü ve sınırlı tutulur.
 - `main` ve `demo` dalları bu çalışma boyunca değiştirilmeyecektir.
 
-## 9. Uygulama durumu kaydı — 2026-11-22
+## 10. Uygulama durumu kaydı — 2026-11-22
 
 **Aşama 1 durumu:** İlk anatomik iskelet modeli ve matematik altyapısı uygulandı; aşama henüz kabul edilmedi.
 
 Eklenen/ güncellenen bileşenler:
 
-- \`game_ui/world_rendering/humanoid_rig_3d.py\`: Pygame bağımsız 3B humanoid hiyerarşisi, quaternion tabanlı ebeveyn dönüşümleri, eklem limitleri, kemik uzunlukları ve ortografik projeksiyon.
-- \`tests/test_game_ui/test_humanoid_rig_3d.py\`: 17 unittest metodu.
-- \`scripts/preview_humanoid_rig_3d.py\`: Ön, yan ve üç çeyrek debug görünüşü.
-- \`pyproject.toml\`: pytest keşif ve Ruff yapılandırması.
-- \`.github/workflows/eldoria-ci.yml\`: Yeni rig modülü, testleri ve önizleme betiği Ruff kapsamına eklendi.
-- \`reports/asama-1-anatomik-iskelet-uygulama-raporu.md\`: Aşama 1 uygulama kaydı.
+- `game_ui/world_rendering/humanoid_rig_3d.py`: Pygame bağımsız 3B humanoid hiyerarşisi, quaternion tabanlı ebeveyn dönüşümleri, eklem limitleri, kemik uzunlukları ve ortografik projeksiyon.
+- `tests/test_game_ui/test_humanoid_rig_3d.py`: 17 unittest metodu.
+- `scripts/preview_humanoid_rig_3d.py`: Ön, yan ve üç çeyrek debug görünüşü.
+- `pyproject.toml`: pytest keşif ve Ruff yapılandırması.
+- `.github/workflows/eldoria-ci.yml`: Yeni rig modülü, testleri ve önizleme betiği Ruff kapsamına eklendi.
+- `reports/asama-1-anatomik-iskelet-uygulama-raporu.md`: Aşama 1 uygulama kaydı.
 
 **Korunan sınırlar:** Eski 2B iskelet, rig renderer, animator, oyuncu/NPC sprite hattı ve runtime hareket/konum/çarpışma sistemi değiştirilmedi.
 
