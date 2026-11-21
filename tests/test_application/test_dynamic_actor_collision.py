@@ -323,3 +323,43 @@ def test_direct_npc_movement_uses_physics_and_resolves_player_contact():
     assert result.success
     assert (npc_point.x - player_point.x) ** 2 + (npc_point.y - player_point.y) ** 2 >= 12.0 ** 2
     assert runtime.occupancy.get("guard").position == runtime.entity("guard").position
+
+
+
+def test_player_push_respects_static_wall_and_preserves_runtime_indexes():
+    runtime, definition = make_runtime()
+    wall = StaticObstacle(
+        "wall-behind-guard", "field",
+        ConvexPolygonShape((
+            WorldPoint(60.0, -100.0), WorldPoint(65.0, -100.0),
+            WorldPoint(65.0, 100.0), WorldPoint(60.0, 100.0),
+        )),
+        WorldPoint(0.0, 0.0),
+    )
+    snapshot = build_hex_physics_snapshot(
+        WorldId("world"), definition, 32.0, object_obstacles=(wall,),
+    )
+    start = runtime.continuous_position("hero").point
+    guard_start = runtime.continuous_position("guard").point
+
+    resolution = DynamicActorCollisionResolver(runtime, snapshot).resolve_player_motion(
+        "hero", start, WorldPoint(45.0, 0.0),
+        PhysicsBodyDefinition("hero", CircleShape(8.0)),
+        {"guard": PhysicsBodyDefinition("guard", CircleShape(4.0))},
+    )
+    committed = runtime.set_continuous_position("hero", resolution.player_position)
+
+    assert committed.success
+    guard_position = runtime.continuous_position("guard").point
+    player_position = runtime.continuous_position("hero").point
+    assert guard_start.x < guard_position.x <= 56.01
+    assert player_position.x < 45.0
+    assert guard_position.x - player_position.x >= 12.0 - 1e-6
+    for entity_id in ("hero", "guard"):
+        entity = runtime.entity(entity_id)
+        occupant = runtime.occupancy.get(entity_id)
+        point = runtime.continuous_position(entity_id).point
+        assert occupant.position == entity.position
+        assert entity_id in runtime.query_spatial_candidates(
+            "field", AABB.around_point(point, 0.1),
+        )
