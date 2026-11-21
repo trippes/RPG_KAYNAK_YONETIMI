@@ -434,7 +434,7 @@ def _build_default_rig() -> HumanoidRig:
         joints=joints,
         bones=bones,
         root_joint="pelvis",
-        ground_anchor=(0.0, 0.0, -0.47),
+        ground_anchor=(0.0, 0.0, -0.49),
     )
 
 
