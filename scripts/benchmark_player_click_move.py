@@ -264,10 +264,17 @@ def _edge_validation_profile(route_cells: int, topology: str, samples: int = 7) 
         ),
     }
 
-def run_benchmark(route_lengths: list[int], topologies: list[str], iterations: int) -> dict:
+def run_benchmark(
+    route_lengths: list[int],
+    topologies: list[str],
+    iterations: int,
+    obstacle_route_lengths: list[int] | None = None,
+) -> dict:
     scenarios = []
+    obstacle_lengths = obstacle_route_lengths or [10, 30]
     for topology in topologies:
-        for route_cells in route_lengths:
+        selected_lengths = obstacle_lengths if topology == "broad_obstacle" else route_lengths
+        for route_cells in selected_lengths:
             print(f"Benchmarking {topology} {route_cells}-cell player route ({iterations} samples)...", flush=True)
             baseline = _baseline_samples(route_cells, topology, iterations)
             controller = _controller_samples(route_cells, topology, iterations)
@@ -301,6 +308,7 @@ def run_benchmark(route_lengths: list[int], topologies: list[str], iterations: i
         "python_version": platform.python_version(),
         "platform": platform.platform(),
         "route_lengths_cells": route_lengths,
+        "obstacle_route_lengths_cells": obstacle_lengths if "broad_obstacle" in topologies else [],
         "topologies": topologies,
         "arrival_time_note": (
             "Not measured: MovementIntegrator has no target-aware braking "
@@ -320,6 +328,13 @@ def main() -> int:
         default=[1, 10, 100],
     )
     parser.add_argument(
+        "--obstacle-route-lengths",
+        type=int,
+        nargs="+",
+        default=[10, 30],
+        help="Route lengths used only for broad_obstacle scenarios.",
+    )
+    parser.add_argument(
         "--topologies",
         choices=["corridor", "broad_obstacle"],
         nargs="+",
@@ -335,8 +350,13 @@ def main() -> int:
         parser.error("--iterations must be at least 2")
     if not args.route_lengths or any(length < 1 for length in args.route_lengths):
         parser.error("--route-lengths values must be positive")
+    if not args.obstacle_route_lengths or any(length < 3 for length in args.obstacle_route_lengths):
+        parser.error("--obstacle-route-lengths values must be at least 3")
 
-    result = run_benchmark(args.route_lengths, args.topologies, args.iterations)
+    result = run_benchmark(
+        args.route_lengths, args.topologies, args.iterations,
+        args.obstacle_route_lengths,
+    )
     rendered = json.dumps(result, indent=2, ensure_ascii=False)
     args.output.write_text(rendered + "\n", encoding="utf-8")
     print(rendered)
