@@ -156,6 +156,95 @@ def _cache_probe(route_cells: int, iterations: int):
     }
 
 
+
+def _edge_validation_profile(route_cells: int, samples: int = 7) -> dict:
+    """Measure physical edge validation separately from the A* core.
+
+    The no-validator run is diagnostic only: it is not a gameplay mode and
+    must never be used to accept a route in production.
+    """
+    warmups = 2
+    measured = samples
+    full_samples = []
+    core_samples = []
+    edge_time_samples = []
+    edge_call_samples = []
+
+    for sample_index in range(warmups + measured):
+        runtime, goal, snapshot, body = _scenario(route_cells)
+        edge_calls = 0
+        edge_elapsed_ns = 0
+
+        def measured_edge_validator(source, destination):
+            nonlocal edge_calls, edge_elapsed_ns
+            edge_calls += 1
+            started = perf_counter_ns()
+            try:
+                return snapshot.can_reach_cell(source, destination, body)
+            finally:
+                edge_elapsed_ns += perf_counter_ns() - started
+
+        started = perf_counter_ns()
+        full_path = runtime.path_to(
+            "hero", goal, edge_validator=measured_edge_validator,
+        )
+        full_elapsed_ns = perf_counter_ns() - started
+
+        core_runtime, core_goal, _, _ = _scenario(route_cells)
+        started = perf_counter_ns()
+        core_path = core_runtime.path_to("hero", core_goal)
+        core_elapsed_ns = perf_counter_ns() - started
+
+        expected_length = route_cells + 1
+        if (
+            full_path is None or core_path is None
+            or len(full_path) != expected_length
+            or len(core_path) != expected_length
+        ):
+            raise RuntimeError(
+                f"Diagnostic path failed for {route_cells}-cell route.",
+            )
+        if full_path != core_path:
+            raise RuntimeError(
+                "Diagnostic no-validator path differs from the validated "
+                f"path for {route_cells}-cell route.",
+            )
+
+        if sample_index >= warmups:
+            full_samples.append(full_elapsed_ns / 1_000_000.0)
+            core_samples.append(core_elapsed_ns / 1_000_000.0)
+            edge_time_samples.append(edge_elapsed_ns / 1_000_000.0)
+            edge_call_samples.append(edge_calls)
+
+    shares = [
+        edge_ms / full_ms * 100.0
+        for edge_ms, full_ms in zip(
+            edge_time_samples, full_samples, strict=True,
+        )
+    ]
+    deltas = [
+        full_ms - core_ms
+        for full_ms, core_ms in zip(full_samples, core_samples, strict=True)
+    ]
+    return {
+        "samples": measured,
+        "warmup_samples": warmups,
+        "validated_path_p50_ms": _percentile(full_samples, 0.50),
+        "a_star_without_edge_validator_p50_ms": _percentile(core_samples, 0.50),
+        "edge_validator_inclusive_time_p50_ms": _percentile(edge_time_samples, 0.50),
+        "estimated_edge_validator_share_p50_percent": _percentile(shares, 0.50),
+        "validated_minus_core_p50_ms": _percentile(deltas, 0.50),
+        "edge_validator_calls_per_query_p50": _percentile(
+            [float(value) for value in edge_call_samples], 0.50,
+        ),
+        "edge_validator_calls_per_query_min": min(edge_call_samples),
+        "edge_validator_calls_per_query_max": max(edge_call_samples),
+        "interpretation": (
+            "The no-validator path is a diagnostic counterfactual only. "
+            "Gameplay continues to require physical edge validation."
+        ),
+    }
+
 def run_benchmark(route_lengths: list[int], iterations: int) -> dict:
     scenarios = []
     for route_cells in route_lengths:
@@ -163,6 +252,7 @@ def run_benchmark(route_lengths: list[int], iterations: int) -> dict:
         baseline = _baseline_samples(route_cells, iterations)
         controller = _controller_samples(route_cells, iterations)
         cached = _cache_probe(route_cells, iterations)
+        edge_profile = _edge_validation_profile(route_cells)
         scenarios.append({
             "route_cells": route_cells,
             "route_nodes": route_cells + 1,
@@ -170,6 +260,7 @@ def run_benchmark(route_lengths: list[int], iterations: int) -> dict:
             "baseline": baseline,
             "controller_replanned_samples": controller,
             "cached_route": cached,
+            "edge_validation_profile": edge_profile,
             "path_query_reduction_percent": round(
                 100.0 * (
                     1.0 - cached["path_queries"] / baseline["path_queries"]
