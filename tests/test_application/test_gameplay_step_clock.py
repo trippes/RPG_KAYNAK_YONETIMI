@@ -20,6 +20,26 @@ class FixedStepAccumulatorTests(unittest.TestCase):
         clock = FixedStepAccumulator(step_seconds=0.02)
         self.assertEqual(clock.advance(0.1), 5)
 
+    def test_catch_up_is_bounded_and_excess_whole_steps_are_reported(self):
+        clock = FixedStepAccumulator(step_seconds=0.02, max_substeps=3)
+
+        self.assertEqual(clock.advance(0.2), 3)
+        self.assertAlmostEqual(clock.last_dropped_seconds, 0.14)
+        self.assertAlmostEqual(clock.total_dropped_seconds, 0.14)
+        self.assertAlmostEqual(clock.accumulated_seconds, 0.0)
+
+        self.assertEqual(clock.advance(0.02), 1)
+        self.assertAlmostEqual(clock.last_dropped_seconds, 0.0)
+        self.assertAlmostEqual(clock.total_dropped_seconds, 0.14)
+
+    def test_max_substeps_must_be_a_positive_integer(self):
+        for value in (0, -1):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                FixedStepAccumulator(max_substeps=value)
+        for value in (True, 1.5):
+            with self.subTest(value=value), self.assertRaises(TypeError):
+                FixedStepAccumulator(max_substeps=value)
+
     def test_inactive_gameplay_discards_partial_time(self):
         clock = FixedStepAccumulator(step_seconds=0.1)
         self.assertEqual(clock.advance(0.06), 0)
