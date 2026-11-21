@@ -116,7 +116,7 @@ class CharacterRigRenderer:
             colors.update(palette)
 
         scale = float(world_scale)
-        _lateral_x, lateral_y = self._DIRECTION_PROJECTION[facing]
+        _, lateral_y = self._DIRECTION_PROJECTION[facing]
         near_side = (
             "right" if lateral_y > 1e-8
             else "left" if lateral_y < -1e-8
