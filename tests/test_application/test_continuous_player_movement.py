@@ -8,7 +8,10 @@ from application.hex_actor_binding import ActorHexBindingService
 from application.hex_map_definition import parse_hex_map
 from application.hex_physics_bridge import build_hex_physics_snapshot
 from application.hex_world_runtime import HexWorldRuntime
-from core.domain.movement import MovementConfig, MovementIntent
+from core.domain.movement import (
+    MovementConfig, MovementIntent, MovementIntegrator, MovementMode,
+    MovementState, MovementTarget,
+)
 from core.domain.physics import (
     BoundaryPolicy, CircleShape, ConvexPolygonShape, PhysicsBodyDefinition,
     StaticObstacle, Vector2,
@@ -288,3 +291,75 @@ def test_continuous_controller_slides_along_static_wall_instead_of_stopping():
     assert point.x < 12.1
     assert point.y > 5.0
     assert runtime.occupancy.get("hero").position == runtime.entity("hero").position
+
+
+def test_movement_integrator_accelerates_from_rest_with_delta_time_limit():
+    config = MovementConfig(max_speed=100.0, acceleration=120.0)
+    integrator = MovementIntegrator(config)
+    initial = MovementState(WorldPoint(0.0, 0.0))
+
+    result = integrator.step(initial, east_intent(), 0.1)
+
+    assert result.velocity.x == pytest.approx(12.0)
+    assert result.velocity.y == pytest.approx(0.0)
+    assert result.position == WorldPoint(1.2, 0.0)
+
+
+def test_movement_integrator_decelerates_instead_of_stopping_instantly():
+    config = MovementConfig(max_speed=100.0, deceleration=40.0)
+    integrator = MovementIntegrator(config)
+    initial = MovementState(
+        WorldPoint(0.0, 0.0),
+        Vector2(10.0, 0.0),
+        MovementMode.NORMAL,
+    )
+
+    result = integrator.step(initial, MovementIntent(), 0.1)
+
+    assert result.velocity.x == pytest.approx(6.0)
+    assert result.position.x == pytest.approx(0.6)
+
+
+def test_movement_integrator_respects_mode_speed_limit_after_acceleration():
+    config = MovementConfig(
+        max_speed=100.0,
+        running_speed_multiplier=1.5,
+        acceleration=1000.0,
+    )
+    integrator = MovementIntegrator(config)
+    initial = MovementState(WorldPoint(0.0, 0.0))
+
+    result = integrator.step(
+        initial,
+        MovementIntent(Vector2(1.0, 0.0), MovementMode.RUNNING),
+        1.0,
+    )
+
+    assert result.velocity.x == pytest.approx(150.0)
+
+
+def test_movement_integrator_brakes_and_never_proposes_past_target():
+    config = MovementConfig(
+        max_speed=100.0,
+        acceleration=1000.0,
+        braking_deceleration=360.0,
+    )
+    integrator = MovementIntegrator(config)
+    initial = MovementState(
+        WorldPoint(0.0, 0.0),
+        Vector2(100.0, 0.0),
+    )
+    target = MovementTarget(WorldPoint(5.0, 0.0), arrival_tolerance=0.5)
+
+    result = integrator.step(initial, east_intent(), 0.1, target=target)
+
+    assert result.position.x <= 4.5
+    assert result.position.x >= 0.0
+    assert result.velocity.x == pytest.approx(45.0)
+
+
+def test_movement_target_rejects_invalid_arrival_tolerance():
+    with pytest.raises(ValueError):
+        MovementTarget(WorldPoint(1.0, 1.0), arrival_tolerance=-0.1)
+    with pytest.raises(TypeError):
+        MovementTarget(WorldPoint(1.0, 1.0), arrival_tolerance=True)
