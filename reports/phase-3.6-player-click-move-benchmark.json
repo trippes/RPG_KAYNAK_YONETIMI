@@ -1,0 +1,117 @@
+{
+  "benchmark": "eldoria_player_click_to_move",
+  "commit": "368ac08aa60b21e520c167119dcafbba50879f79",
+  "workflow_run_id": 44882633380,
+  "workflow_job_id": 136781054297,
+  "python_version": "3.12.16",
+  "platform": "Linux-7.0.0-1016-aws-x86_64-with-glibc2.43",
+  "iterations": 20,
+  "route_lengths_cells": [1, 10, 100],
+  "method": "Real HexWorldRuntime A* and occupancy with immutable native physics snapshot; direct repeated path_to baseline compared with one active cached route.",
+  "scenarios": [
+    {
+      "route_cells": 1,
+      "route_nodes": 2,
+      "baseline": {
+        "path_queries": 20,
+        "path_planning_p50_ms": 0.275781,
+        "path_planning_p95_ms": 0.314608,
+        "path_planning_p99_ms": 0.375025
+      },
+      "controller_replanned_samples": {
+        "path_queries": 20,
+        "path_planning_p50_ms": 0.273527,
+        "path_planning_p95_ms": 0.293907,
+        "path_planning_p99_ms": 0.301955
+      },
+      "cached_route": {
+        "intent_calls": 20,
+        "initial_plan_ms": 0.365017,
+        "cached_intent_calls": 19,
+        "path_queries": 1,
+        "cache_hits": 19,
+        "cache_misses": 1,
+        "replans": 0,
+        "invalidations": 0,
+        "blocked_steps": 0,
+        "failures": 0,
+        "cache_hit_ratio_percent": 95.0,
+        "cached_intent_step_p50_ms": 0.02608,
+        "cached_intent_step_p95_ms": 0.031867,
+        "cached_intent_step_p99_ms": 0.033502
+      },
+      "path_query_reduction_percent": 95.0,
+      "target_arrival_time_ms": null
+    },
+    {
+      "route_cells": 10,
+      "route_nodes": 11,
+      "baseline": {
+        "path_queries": 20,
+        "path_planning_p50_ms": 13.3971,
+        "path_planning_p95_ms": 13.820794,
+        "path_planning_p99_ms": 13.873864
+      },
+      "controller_replanned_samples": {
+        "path_queries": 20,
+        "path_planning_p50_ms": 13.379595,
+        "path_planning_p95_ms": 13.500306,
+        "path_planning_p99_ms": 13.800945
+      },
+      "cached_route": {
+        "intent_calls": 20,
+        "initial_plan_ms": 14.162885,
+        "cached_intent_calls": 19,
+        "path_queries": 1,
+        "cache_hits": 19,
+        "cache_misses": 1,
+        "replans": 0,
+        "invalidations": 0,
+        "blocked_steps": 0,
+        "failures": 0,
+        "cache_hit_ratio_percent": 95.0,
+        "cached_intent_step_p50_ms": 0.030015,
+        "cached_intent_step_p95_ms": 0.037179,
+        "cached_intent_step_p99_ms": 0.045155
+      },
+      "path_query_reduction_percent": 95.0,
+      "target_arrival_time_ms": null
+    },
+    {
+      "route_cells": 100,
+      "route_nodes": 101,
+      "baseline": {
+        "path_queries": 20,
+        "path_planning_p50_ms": 1134.148211,
+        "path_planning_p95_ms": 1140.382041,
+        "path_planning_p99_ms": 1140.703454
+      },
+      "controller_replanned_samples": {
+        "path_queries": 20,
+        "path_planning_p50_ms": 1134.217121,
+        "path_planning_p95_ms": 1145.818923,
+        "path_planning_p99_ms": 1152.847647
+      },
+      "cached_route": {
+        "intent_calls": 20,
+        "initial_plan_ms": 1147.509258,
+        "cached_intent_calls": 19,
+        "path_queries": 1,
+        "cache_hits": 19,
+        "cache_misses": 1,
+        "replans": 0,
+        "invalidations": 0,
+        "blocked_steps": 0,
+        "failures": 0,
+        "cache_hit_ratio_percent": 95.0,
+        "cached_intent_step_p50_ms": 0.031574,
+        "cached_intent_step_p95_ms": 0.044603,
+        "cached_intent_step_p99_ms": 0.051985
+      },
+      "path_query_reduction_percent": 95.0,
+      "target_arrival_time_ms": null
+    }
+  ],
+  "arrival_time_note": "Not measured: MovementIntegrator has no target-aware braking or acceleration model; see phase 3.5 assessment.",
+  "scenario_note": "Synthetic one-cell-wide axial corridor. Results are a deterministic stress scenario, not a representative average of every world map."
+}
