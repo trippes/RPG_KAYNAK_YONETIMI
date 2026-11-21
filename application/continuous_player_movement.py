@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from core.domain.movement import MovementConfig, MovementIntegrator, MovementIntent, MovementState
+from core.domain.movement import MovementConfig, MovementIntegrator, MovementIntent, MovementState, MovementTarget
 from core.domain.physics import PhysicsBodyDefinition, Vector2
 from core.domain.spatial import MovementFailureReason, MovementResult, WorldPoint
 
@@ -87,10 +87,14 @@ class ContinuousPlayerMovementController:
         actor_id: str,
         intent: MovementIntent,
         delta_seconds: float,
+        *,
+        target: MovementTarget | None = None,
     ) -> ContinuousPlayerMovementStep:
         """Advance one actor, then atomically commit through HexWorldRuntime."""
         if not isinstance(intent, MovementIntent):
             raise TypeError("intent must be a MovementIntent")
+        if target is not None and not isinstance(target, MovementTarget):
+            raise TypeError("target must be a MovementTarget or None")
 
         actor = self._binding.actor(actor_id)
         entity = self._binding.spatial_entity(actor_id)
@@ -118,7 +122,9 @@ class ContinuousPlayerMovementController:
             self._last_collision_resolution = None
             return ContinuousPlayerMovementStep(result, current)
 
-        proposed = self._integrator.step(current, intent, delta_seconds)
+        proposed = self._integrator.step(
+            current, intent, delta_seconds, target=target,
+        )
         displacement = Vector2(
             proposed.position.x - start.x,
             proposed.position.y - start.y,
