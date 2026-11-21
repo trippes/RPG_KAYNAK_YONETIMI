@@ -49,14 +49,14 @@ Kürek kemiği düğümleri kontrol amaçlı işaretlenmiştir; mevcut sürümde
 
 ## 3. Test kapsamı
 
-Yeni unittest dosyası `tests/test_game_ui/test_humanoid_rig_3d.py` eklendi. Dosyada 17 test metodu bulunur. Testler koordinat sözleşmesini, anatomik zincirleri, sol/sağ simetriyi, topuk ankrajını, köprücük kemiği ebeveynliğini, kontrol eklemlerini, quaternion dönüşüm aktarımını, eklem sınırlarını, kemik uzunluklarını ve hatalı verilerin reddini kontrol eder.
+Yeni unittest dosyası `tests/test_game_ui/test_humanoid_rig_3d.py` eklendi. Dosyada 18 test metodu bulunur. Testler koordinat sözleşmesini, anatomik zincirleri, sol/sağ simetriyi, topuk ankrajını, köprücük kemiği ebeveynliğini, kontrol eklemlerini, quaternion dönüşüm aktarımını, eklem sınırlarını, kemik uzunluklarını ve hatalı verilerin reddini kontrol eder.
 
 Bu rapor yazılırken depo testleri yerel çalışma ortamında çalıştırılmamıştır. Test başarısı iddia edilmemektedir. GitHub Actions sonuçları ayrıca doğrulanmalıdır.
 
 ## 4. Bilinen sınırlamalar
 
 - Bu teslim iskelet veri modeli, poz matematiği, saf ortografik projeksiyon ve bağımsız debug önizlemesidir; henüz oyun içi renderer entegrasyonu yoktur.
-- A-Pose uzuv yerleşimi ilk anatomik taslaktır; nötr kol açısı için ayrı bir rest-orientation kalibrasyonu sonraki teknik düzeltme olabilir.
+- A-Pose uzuv yerleşimi ilk anatomik taslaktır; üst kol yaklaşık 30°, ön kol yaklaşık 35° aşağı eğimlidir. Dizlerde de küçük nötr fleksiyon ofseti bulunur. Bu değerler görsel kabul sırasında kalibre edilecektir.
 - Eklem limitleri ilk oyun kısıtlarıdır; anatomik/oyunsal görsel kabul ile ayarlanacaktır.
 - Kürek kemiği kontrol düğümleri tanımlanmıştır ancak omuz hareketine otomatik katkı henüz uygulanmamıştır.
 - Ayak tabanı ankrajı topuk yüksekliğine göre `-0.49` rig biriminde tanımlanmıştır; ayak temas düzlemi ve ayak ucu projeksiyonu sonraki görsel doğrulamada kontrol edilecektir.
