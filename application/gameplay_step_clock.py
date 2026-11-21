@@ -16,6 +16,7 @@ class FixedStepAccumulator:
     __slots__ = (
         "_step_seconds", "_accumulated_seconds", "_max_substeps",
         "_last_dropped_seconds", "_total_dropped_seconds",
+        "_last_substeps",
     )
 
     def __init__(
@@ -36,6 +37,7 @@ class FixedStepAccumulator:
         self._accumulated_seconds = 0.0
         self._last_dropped_seconds = 0.0
         self._total_dropped_seconds = 0.0
+        self._last_substeps = 0
 
     @staticmethod
     def _validate_seconds(name: str, value: Real) -> None:
@@ -66,10 +68,15 @@ class FixedStepAccumulator:
     def total_dropped_seconds(self) -> float:
         return self._total_dropped_seconds
 
+    @property
+    def last_substeps(self) -> int:
+        return self._last_substeps
+
     def reset(self) -> None:
         """Discard partial elapsed time, for example when gameplay is paused."""
         self._accumulated_seconds = 0.0
         self._last_dropped_seconds = 0.0
+        self._last_substeps = 0
 
     def advance(self, elapsed_seconds: Real, *, active: bool = True) -> int:
         """Return at most max_substeps and account for discarded time debt."""
@@ -77,6 +84,7 @@ class FixedStepAccumulator:
         if not isinstance(active, bool):
             raise TypeError("active must be a bool.")
         self._last_dropped_seconds = 0.0
+        self._last_substeps = 0
         if not active:
             self.reset()
             return 0
@@ -91,6 +99,7 @@ class FixedStepAccumulator:
             dropped_steps = due_steps - self._max_substeps
             self._last_dropped_seconds = dropped_steps * self._step_seconds
             self._total_dropped_seconds += self._last_dropped_seconds
+        self._last_substeps = steps
         if due_steps:
             self._accumulated_seconds -= due_steps * self._step_seconds
             if abs(self._accumulated_seconds) <= tolerance:
