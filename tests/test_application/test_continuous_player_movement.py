@@ -383,3 +383,70 @@ def test_continuous_controller_carries_accepted_velocity_between_steps():
     assert first.state.velocity.x == pytest.approx(6.0)
     assert second.state.velocity.x == pytest.approx(12.0)
     assert runtime.continuous_position("hero").point.x == pytest.approx(1.8)
+
+
+
+def test_controller_reconciles_velocity_to_static_collision_displacement():
+    wall = StaticObstacle(
+        "vertical-wall", "corridor",
+        ConvexPolygonShape((
+            WorldPoint(20.0, -100.0), WorldPoint(25.0, -100.0),
+            WorldPoint(25.0, 100.0), WorldPoint(20.0, 100.0),
+        )),
+        WorldPoint(0.0, 0.0),
+    )
+    config = MovementConfig(
+        max_speed=300.0, acceleration=100000.0,
+        deceleration=100000.0, braking_deceleration=100000.0,
+    )
+    _actors, runtime, controller = make_controller(
+        obstacle=wall, movement_config=config,
+    )
+    start = runtime.continuous_position("hero").point
+    delta_seconds = 0.15
+
+    result = controller.step(
+        "hero", MovementIntent(Vector2(1.0, 0.5)), delta_seconds,
+    )
+
+    accepted = runtime.continuous_position("hero").point
+    assert result.movement.success
+    assert result.collision_resolution is not None
+    assert result.state.position == accepted
+    assert result.state.velocity.x == pytest.approx(
+        (accepted.x - start.x) / delta_seconds,
+    )
+    assert result.state.velocity.y == pytest.approx(
+        (accepted.y - start.y) / delta_seconds,
+    )
+    assert result.state.velocity.x < 300.0
+
+
+def test_controller_discards_velocity_when_authoritative_position_changes_externally():
+    config = MovementConfig(max_speed=60.0, acceleration=60.0)
+    _actors, runtime, controller = make_controller(movement_config=config)
+
+    first = controller.step("hero", east_intent(), 0.1)
+    assert first.state.velocity.x == pytest.approx(6.0)
+
+    moved = runtime.set_continuous_position("hero", WorldPoint(10.0, 0.0))
+    assert moved.success
+    second = controller.step("hero", east_intent(), 0.1)
+
+    assert second.state.position == runtime.continuous_position("hero").point
+    assert second.state.velocity.x == pytest.approx(6.0)
+    assert second.state.velocity.x != pytest.approx(12.0)
+
+
+def test_failed_player_commit_does_not_accept_proposed_velocity():
+    runtime, controller = make_dynamic_controller(blocking_crate=True)
+
+    result = controller.step(
+        "hero", MovementIntent(Vector2(1.0, 0.0)), 0.15,
+    )
+
+    assert not result.movement.success
+    assert result.state.position == WorldPoint(0.0, 0.0)
+    assert result.state.velocity == Vector2(0.0, 0.0)
+    assert controller.last_state == result.state
+    assert runtime.continuous_position("hero").point == result.state.position
