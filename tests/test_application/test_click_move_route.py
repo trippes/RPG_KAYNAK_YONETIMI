@@ -14,6 +14,7 @@ A = LocalHexPosition(0, 0)
 B = LocalHexPosition(1, 0)
 C = LocalHexPosition(2, 0)
 D = LocalHexPosition(1, -1)
+BODY = object()
 
 
 class FakeSnapshot:
@@ -74,7 +75,7 @@ def route_intent(controller, runtime, goal=C, snapshot=None, mode=MovementMode.N
         "hero",
         goal,
         snapshot or FakeSnapshot(),
-        object(),
+        BODY,
         mode=mode,
     )
 
