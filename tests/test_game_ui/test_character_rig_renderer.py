@@ -29,17 +29,18 @@ class TestCharacterRigRenderer(unittest.TestCase):
         )
         self.rig_renderer = CharacterRigRenderer()
 
-    def test_draws_solid_body_parts_and_returns_projected_joints(self):
+    def test_draws_shaped_body_parts_and_returns_projected_joints(self):
         positions = self.rig_renderer.draw(
             self.renderer, DEFAULT_CHARACTER_SKELETON, (120, 240), 64.0
         )
 
         self.assertEqual(set(positions), set(DEFAULT_CHARACTER_SKELETON.joint_names))
         self.assertGreaterEqual(
-            sum(call[0] == "polygon" for call in self.draw.calls), 20
+            sum(call[0] == "polygon" for call in self.draw.calls), 22
         )
+        # Joint markers are deliberately smaller/fewer than the first preview.
         self.assertGreaterEqual(
-            sum(call[0] == "circle" for call in self.draw.calls), 30
+            sum(call[0] == "circle" for call in self.draw.calls), 16
         )
         self.assertTrue(any(call[0] == "line" for call in self.draw.calls))
 
