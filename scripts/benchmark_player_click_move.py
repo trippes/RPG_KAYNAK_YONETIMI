@@ -38,7 +38,7 @@ def _map_definition(route_cells: int, topology: str):
         ]
     )
     landmarks = []
-    if topology == "broad_obstacle":
+    if topology == "broad_obstacle" and route_cells >= 3:
         landmarks.append({
             "id": "benchmark_obstacle",
             "name": "Benchmark Obstacle",
@@ -101,13 +101,14 @@ def _baseline_samples(route_cells: int, topology: str, iterations: int):
         started = perf_counter_ns()
         path = runtime.path_to("hero", goal, edge_validator=validate_edge)
         samples.append((perf_counter_ns() - started) / 1_000_000.0)
-        if path is None or path[0] != runtime.position_of("hero").cell or path[-1] != goal:
+        if path is None or path[0] != LocalHexPosition(0, 0) or path[-1] != goal:
             raise RuntimeError(
                 f"Baseline path failed for {topology} {route_cells}-cell route: {path!r}",
             )
     return {
         "path_queries": iterations,
         "path_cells": route_cells,
+        "path_nodes": len(path),
         "path_planning_p50_ms": _percentile(samples, 0.50),
         "path_planning_p95_ms": _percentile(samples, 0.95),
         "path_planning_p99_ms": _percentile(samples, 0.99),
@@ -266,29 +267,29 @@ def _edge_validation_profile(route_cells: int, topology: str, samples: int = 7) 
 def run_benchmark(route_lengths: list[int], topologies: list[str], iterations: int) -> dict:
     scenarios = []
     for topology in topologies:
-      for route_cells in route_lengths:
-        print(f"Benchmarking {topology} {route_cells}-cell player route ({iterations} samples)...", flush=True)
-        baseline = _baseline_samples(route_cells, topology, iterations)
-        controller = _controller_samples(route_cells, topology, iterations)
-        cached = _cache_probe(route_cells, topology, iterations)
-        edge_profile = _edge_validation_profile(route_cells, topology)
-        scenarios.append({
-            "topology": topology,
-            "route_cells": route_cells,
-            "route_nodes": route_cells + 1,
-            "iterations": iterations,
-            "baseline": baseline,
-            "controller_replanned_samples": controller,
-            "cached_route": cached,
-            "edge_validation_profile": edge_profile,
-            "path_query_reduction_percent": round(
-                100.0 * (
-                    1.0 - cached["path_queries"] / baseline["path_queries"]
+        for route_cells in route_lengths:
+            print(f"Benchmarking {topology} {route_cells}-cell player route ({iterations} samples)...", flush=True)
+            baseline = _baseline_samples(route_cells, topology, iterations)
+            controller = _controller_samples(route_cells, topology, iterations)
+            cached = _cache_probe(route_cells, topology, iterations)
+            edge_profile = _edge_validation_profile(route_cells, topology)
+            scenarios.append({
+                "topology": topology,
+                "route_cells": route_cells,
+                "route_nodes": baseline["path_nodes"],
+                "iterations": iterations,
+                "baseline": baseline,
+                "controller_replanned_samples": controller,
+                "cached_route": cached,
+                "edge_validation_profile": edge_profile,
+                "path_query_reduction_percent": round(
+                    100.0 * (
+                        1.0 - cached["path_queries"] / baseline["path_queries"]
+                    ),
+                    3,
                 ),
-                3,
-            ),
-            "target_arrival_time_ms": None,
-        })
+                "target_arrival_time_ms": None,
+            })
     return {
         "benchmark": "eldoria_player_click_to_move",
         "method": (
