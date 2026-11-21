@@ -294,3 +294,22 @@ Anatomik oranlar ve eklem hareketleri uygulama sırasında ayrıca insan iskelet
 - Gerçek hareket mesafesine bağlı animasyon ve ayak temas kontrolü Aşama 4'ün zorunlu gereksinimidir.
 - Oyuncu/NPC entegrasyonu Aşama 6'ya kadar kontrollü ve sınırlı tutulur.
 - `main` ve `demo` dalları bu çalışma boyunca değiştirilmeyecektir.
+
+## 9. Uygulama durumu kaydı — 2026-11-22
+
+**Aşama 1 durumu:** İlk anatomik iskelet modeli ve matematik altyapısı uygulandı; aşama henüz kabul edilmedi.
+
+Eklenen/ güncellenen bileşenler:
+
+- \`game_ui/world_rendering/humanoid_rig_3d.py\`: Pygame bağımsız 3B humanoid hiyerarşisi, quaternion tabanlı ebeveyn dönüşümleri, eklem limitleri, kemik uzunlukları ve ortografik projeksiyon.
+- \`tests/test_game_ui/test_humanoid_rig_3d.py\`: 17 unittest metodu.
+- \`scripts/preview_humanoid_rig_3d.py\`: Ön, yan ve üç çeyrek debug görünüşü.
+- \`pyproject.toml\`: pytest keşif ve Ruff yapılandırması.
+- \`.github/workflows/eldoria-ci.yml\`: Yeni rig modülü, testleri ve önizleme betiği Ruff kapsamına eklendi.
+- \`reports/asama-1-anatomik-iskelet-uygulama-raporu.md\`: Aşama 1 uygulama kaydı.
+
+**Korunan sınırlar:** Eski 2B iskelet, rig renderer, animator, oyuncu/NPC sprite hattı ve runtime hareket/konum/çarpışma sistemi değiştirilmedi.
+
+**Doğrulama durumu:** Depo testleri bu işlem ortamında çalıştırılmadı. Son commit için erişilebilen birleşik commit-status ve PR workflow sorguları sonuç döndürmedi; bu nedenle GitHub Actions başarısı iddia edilmemektedir. Yerel test, Ruff ve görsel kabul beklenmektedir.
+
+**Sonraki işlem:** Kullanıcının yerel ortamında hedefli unittest/pytest ve Ruff doğrulaması; ardından üç görünüşlü önizlemenin görsel değerlendirmesi. Aşama 1 kabul edilmeden Aşama 2'ye geçilmez.
