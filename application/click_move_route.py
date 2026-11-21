@@ -186,6 +186,21 @@ class ClickMoveRouteController:
             return MovementIntent()
 
         cursor = self._find_cursor(state.cells, state.cursor, current_cell)
+        if cursor is not None and cursor > state.cursor:
+            # Occupancy changes at a cell boundary, not at the physical
+            # waypoint. Keep the previous route edge active until its actual
+            # (possibly smoothed) world-space target is reached.
+            braking_cell = (
+                state.smoothing_target
+                if state.smoothing_target is not None
+                else state.cells[state.cursor + 1]
+            )
+            braking_point = physics_snapshot.cell_center(braking_cell)
+            if math.hypot(
+                braking_point.x - current_point.x,
+                braking_point.y - current_point.y,
+            ) > self.ARRIVAL_TOLERANCE:
+                cursor = state.cursor
         if cursor is None:
             if replanned_this_step:
                 self._fail("route_deviation")
@@ -420,6 +435,10 @@ class ClickMoveRouteController:
             if not self._next_edge_occupancy_valid(
                 runtime, entity, map_id, state.smoothing_target, actor_id,
             ):
+                state.smoothing_target = None
+                state.smoothing_origin = None
+                state.smoothing_target_point = None
+                state.smoothing_checked = False
                 return next_cell
             if self._point_on_segment(
                 state.smoothing_origin,
