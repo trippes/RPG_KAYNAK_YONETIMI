@@ -68,3 +68,4 @@ def test_runtime_records_validation_path_and_spatial_query_counts():
     assert counts["runtime_path_queries"] == 1
     assert counts["runtime_spatial_queries"] == 1
     assert counts["runtime_spatial_candidates"] == 1
+    assert metrics.snapshot()["durations_seconds"]["runtime_pathfinder_search"]["samples"] == 1
