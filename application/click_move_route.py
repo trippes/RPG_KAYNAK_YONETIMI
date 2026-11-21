@@ -6,7 +6,7 @@ import math
 from dataclasses import dataclass
 from time import perf_counter_ns
 
-from core.domain.movement import MovementIntent, MovementMode
+from core.domain.movement import MovementIntent, MovementMode, MovementTarget
 from core.domain.physics import Vector2
 from core.domain.spatial import EntityPosition, LocalHexPosition
 
@@ -47,6 +47,7 @@ class ClickMoveRouteController:
         "_arrival_durations_ms",
         "_command_started_ns",
         "_metrics",
+        "_current_target",
     )
 
     def __init__(self, *, timing_enabled: bool = False) -> None:
@@ -59,6 +60,7 @@ class ClickMoveRouteController:
         self._path_durations_ms: list[float] = []
         self._arrival_durations_ms: list[float] = []
         self._command_started_ns = None
+        self._current_target = None
         self._metrics = {
             "player_click_path_queries": 0,
             "player_click_route_cache_hits": 0,
@@ -83,11 +85,17 @@ class ClickMoveRouteController:
     def last_replan_reason(self):
         return self._last_replan_reason
 
+    @property
+    def movement_target(self) -> MovementTarget | None:
+        """Return the current physical waypoint for domain braking."""
+        return self._current_target
+
     def cancel(self, reason: str = "cancelled") -> None:
         """Discard the active command without changing runtime/world state."""
         if self._active is not None:
             self._metrics["player_click_route_invalidations"] += 1
         self._active = None
+        self._current_target = None
         self._last_status = "cancelled"
         self._last_replan_reason = reason
         self._command_started_ns = None
@@ -103,6 +111,7 @@ class ClickMoveRouteController:
         mode: MovementMode = MovementMode.NORMAL,
     ) -> MovementIntent:
         """Return this fixed step's waypoint direction or an idle intent."""
+        self._current_target = None
         if runtime is None:
             self.cancel("runtime_unavailable")
             return MovementIntent()
@@ -196,6 +205,7 @@ class ClickMoveRouteController:
             if math.hypot(dx, dy) <= self.ARRIVAL_TOLERANCE:
                 self._arrive()
                 return MovementIntent()
+            self._current_target = MovementTarget(target, self.ARRIVAL_TOLERANCE)
             if reused_this_step:
                 self._metrics["player_click_route_cache_hits"] += 1
             return MovementIntent(Vector2(dx, dy), mode)
@@ -247,6 +257,7 @@ class ClickMoveRouteController:
                 if math.hypot(dx, dy) <= self.ARRIVAL_TOLERANCE:
                     self._arrive()
                     return MovementIntent()
+                self._current_target = MovementTarget(target, self.ARRIVAL_TOLERANCE)
                 return MovementIntent(Vector2(dx, dy), mode)
             if len(state.cells) < 2 or not self._next_edge_occupancy_valid(
                 runtime, entity, map_id, state.cells[1], actor_id,
@@ -264,6 +275,7 @@ class ClickMoveRouteController:
         target = physics_snapshot.cell_center(target_cell)
         dx = target.x - current_point.x
         dy = target.y - current_point.y
+        self._current_target = MovementTarget(target, self.ARRIVAL_TOLERANCE)
         return MovementIntent(Vector2(dx, dy), mode)
 
     def metrics_snapshot(self) -> dict:
