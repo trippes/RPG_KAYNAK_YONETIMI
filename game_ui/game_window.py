@@ -280,6 +280,8 @@ class GameWindow:
         service = getattr(self, "service", None)
         if service is None:
             self._movement_clock.advance(elapsed_seconds, active=False)
+            self._player_movement_controller = None
+            self._player_movement_controller_key = None
             return
         actor_id = service.player_actor_id
         config = self._movement_configs.get(actor_id)
