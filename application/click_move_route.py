@@ -90,6 +90,12 @@ class ClickMoveRouteController:
         """Return the current physical waypoint for domain braking."""
         return self._current_target
 
+    def consume_movement_target(self) -> MovementTarget | None:
+        """Return the waypoint once, including the terminal arrival target."""
+        target = self._current_target
+        self._current_target = None
+        return target
+
     def cancel(self, reason: str = "cancelled") -> None:
         """Discard the active command without changing runtime/world state."""
         if self._active is not None:
@@ -203,6 +209,7 @@ class ClickMoveRouteController:
             dx = target.x - current_point.x
             dy = target.y - current_point.y
             if math.hypot(dx, dy) <= self.ARRIVAL_TOLERANCE:
+                self._current_target = MovementTarget(target, self.ARRIVAL_TOLERANCE)
                 self._arrive()
                 return MovementIntent()
             self._current_target = MovementTarget(target, self.ARRIVAL_TOLERANCE)
@@ -255,6 +262,7 @@ class ClickMoveRouteController:
                 dx = target.x - current_point.x
                 dy = target.y - current_point.y
                 if math.hypot(dx, dy) <= self.ARRIVAL_TOLERANCE:
+                    self._current_target = MovementTarget(target, self.ARRIVAL_TOLERANCE)
                     self._arrive()
                     return MovementIntent()
                 self._current_target = MovementTarget(target, self.ARRIVAL_TOLERANCE)
