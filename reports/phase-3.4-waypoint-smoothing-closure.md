@@ -17,13 +17,14 @@ Aşama 3.3'te eklenen route cursor ve immutable waypoint dizisi üzerine, yalnı
 1. Mevcut → sonraki ve sonraki → aday hücre axial farkları aynı olmalı. Böylece dönüş/köşe waypoint'i atlanmaz.
 2. İkinci edge güncel map mask kontrolünden geçmeli.
 3. İkinci edge güncel occupancy kontrolünden geçmeli (profil occupancy ignore etmiyorsa).
-4. İkinci edge statik `HexPhysicsSnapshot.can_reach_cell()` kontrolünden geçmeli.
+4. Her iki statik edge, A* route planı sırasında aynı immutable `HexPhysicsSnapshot.can_reach_cell()` edge validator'ıyla doğrulanmış olmalı.
 5. Mevcut continuous runtime konumundan aday waypoint'e `HexPhysicsSnapshot.resolve_motion()` ile swept collision ön kontrolü yapılmalı.
-6. Swept sonuçta impact olmamalı, unresolved penetration tolerans altında olmalı ve uygulanan displacement istenen displacement ile eşleşmeli.
+
+Swept-clearance kanıtı route cursor segmenti için cache'lenir. Oyuncu kanıtlanan doğrusal segment üzerinde kaldığı sürece aynı statik swept test tekrar çalıştırılmaz; oyuncu segmentten saparsa test yeniden yapılır. Mutable occupancy ise her fixed step'te kontrol edilir.
 
 Herhangi bir API bulunmaz, exception oluşur veya güvenlik kontrolü başarısız olursa controller hemen sonraki waypoint'e geri döner. Smoothing bir ara waypoint'ten fazlasını atlamaz.
 
-Gerçek hareket yine mevcut collision resolver ve `HexWorldRuntime.set_continuous_position()` hattından geçer. Ön kontrol yalnızca smoothing kararını verir; authoritative konum/occupancy commit'i yapmaz.
+Gerçek hareket yine mevcut collision resolver ve `HexWorldRuntime.set_continuous_position()` hattından geçer. Ön kontrol yalnızca smoothing kararını verir; authoritative konum/occupancy commit'i yapmaz. A* planında statik edge validation, fixed-step sırasında mutable occupancy kontrolü ve route segmenti başına cached swept-clearance birlikte kullanılır.
 
 ## 2. Eklenen testler
 
