@@ -511,7 +511,7 @@ def test_multiple_fixed_steps_in_one_frame_reuse_one_click_path():
 
     window = SimpleNamespace(
         service=service,
-        _movement_configs={"hero": MovementConfig()},
+        _movement_configs={"hero": MovementConfig(max_speed=100.0)},
         movement_input=SimpleNamespace(focused=True),
         _movement_clock=Clock(),
         screens={"main": view},
