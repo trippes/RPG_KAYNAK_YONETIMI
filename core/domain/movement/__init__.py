@@ -4,6 +4,7 @@ from .integrator import MovementIntegrator
 from .intent import MovementIntent
 from .mode import MovementMode
 from .state import MovementState
+from .target import MovementTarget
 
 __all__ = [
     "MovementConfig",
@@ -11,4 +12,5 @@ __all__ = [
     "MovementIntent",
     "MovementMode",
     "MovementState",
+    "MovementTarget",
 ]
