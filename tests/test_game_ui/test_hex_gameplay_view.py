@@ -506,7 +506,7 @@ def test_multiple_fixed_steps_in_one_frame_reuse_one_click_path():
         def __init__(self, *_args, **_kwargs):
             pass
 
-        def step(self, actor_id, intent, delta_seconds):
+        def step(self, actor_id, intent, delta_seconds, *, target=None):
             calls.append((actor_id, intent, delta_seconds))
 
     window = SimpleNamespace(
