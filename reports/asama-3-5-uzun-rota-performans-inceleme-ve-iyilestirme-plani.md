@@ -2,7 +2,7 @@
 
 **Çalışma dalı:** `experiment/map-cleanup`  
 **İnceleme tarihi:** 21 Kasım 2026  
-**Durum:** Kaynak kod incelemesi tamamlandı; profil ölçümü ve optimizasyon uygulaması bekliyor  
+**Durum:** Profil ölçümü tamamlandı; A* erken maliyet elemesi uygulandı; CI ve karşılaştırmalı benchmark doğrulaması bekliyor  
 **Kapsam:** İlk click-to-move rota planlamasında 100 hücrelik rotanın yüksek maliyetinin azaltılması
 
 ## 1. Yönetici özeti
@@ -23,7 +23,7 @@ Benchmark, her A* kenar doğrulamasında fiziksel erişilebilirlik kontrolü yap
 |---|---|
 | `scripts/benchmark_player_click_move.py` | Gerçek runtime A* + occupancy + immutable native physics snapshot kullanır; 1/10/100 hücre senaryolarını ölçer. |
 | `application/hex_world_runtime.py` | `path_to` entity, map ve occupancy verisini alır; aramayı `HexPathfinder.find_path` metoduna devreder. |
-| `application/hex_pathfinding.py` | `heapq`, axial hex distance heuristic, `came_from` ve `cost_so_far` ile A* uygular. Her komşuda MovementRules ve varsa edge validator çalıştırılır. |
+| `application/hex_pathfinding.py` | `heapq`, axial hex distance heuristic, `came_from` ve `cost_so_far` ile A* uygular. Her aday komşuda maliyet iyileştirmesi önce kontrol edilir; yalnızca iyileştiren adaylarda MovementRules ve varsa edge validator çalıştırılır. |
 | `application/hex_physics_bridge.py` | `can_reach_cell`, hücre merkezleri arasındaki adımı `resolve_cell_step` ile fiziksel olarak doğrular. |
 | `application/hex_movement_rules.py` | Komşuluk, map maskesi, hareket izni, bloklu hücre ve terrain kısıtlarını doğrular. |
 | `application/hex_map_definition.py` | Map hücrelerini immutable `frozenset` ve `MappingProxyType` ile tutar; `has_cell` ve `get_cell` üyelik erişimleri sunar. |
@@ -219,8 +219,26 @@ Mevcut `HexPathfinder.find_path` komşu döngüsünde `edge_validator` çağrıs
 
 Bu bulgu doğrudan, dar kapsamlı bir optimizasyon adayı verir: bir komşuya mevcut maliyetten daha iyi bir yol bulunamayacağı belli olduğunda, pahalı MovementRules ve fizik edge validator çağrılarından önce bu aday elenmelidir. Birim kenar maliyetli mevcut A* modelinde `new_cost` kontrolünün komşu döngüsünün başına alınması en güçlü ilk adaydır. Bu değişiklik uygulanmadan önce eşit/üst maliyetli kenarların atlanmasının callback sözleşmesi ve tüm pathfinding testleriyle uyumu doğrulanmalıdır.
 
-### 11.2 Sonuç ve karar
+### 11.2 Uygulanan düşük riskli optimizasyon — 21 Kasım 2026
 
-Fiziksel kenar doğrulamasının uzun rota darboğazındaki baskın payı ölçümle kanıtlanmıştır. Önceki rapordaki 'ölçülmesi gereken aday' durumu artık kapanmıştır. Bir sonraki uygulama adımı, A* komşu döngüsünde mevcut maliyeti iyileştiremeyen komşuları pahalı doğrulamalardan önce elemek ve aynı CI benchmark'ında çağrı sayısı/süre düşüşünü doğrulamaktır. Fizik doğrulaması tamamen kaldırılmayacak, yalnızca gereksiz tekrarları önlenecektir.
+Uygulama commit'leri:
+- Pathfinding değişikliği: `82152e7bff61276c94af7d42b1908b4055b4c8d6`
+- Regresyon testleri: `eeac0ad45231fdbf03a193a9908dd80667517924`
+- CI Ruff kapsamı: `765263bfb79cfc5d559db35bbe38be5685c19ac3`
+- 100 örnekli benchmark workflow tetikleme kapsamı: `51f9b3a70e20fe4ab72ef909684449bd2ebac98b`
 
-Bu profil benchmark commit'inde yalnızca teşhis telemetrisi eklenmiştir; A* veya fizik davranışında optimizasyon henüz uygulanmamıştır.
+`HexPathfinder.find_path` içinde `new_cost = current_cost + 1` ve `new_cost >= cost_so_far.get(neighbor, inf)` elemesi, `MovementRules.evaluate` ve `edge_validator` çağrılarının önüne taşınmıştır. Böylece mevcut en iyi maliyeti iyileştiremeyen komşular için pahalı kural/fizik doğrulamaları yapılmaz.
+
+Callback sözleşmesi docstring ile açıklandı: `edge_validator` deterministik ve yan etkisiz bir predicate olmalıdır; yalnızca hedef düğüm için daha iyi maliyetli adaylarda çağrılır. Bu, callback'in çağrı sayısını/gözlemlenebilir yan etkilerini kullanan bir API olarak tasarlanmadığını açık hale getirir.
+
+Eklenen regresyon testleri:
+- Üç hücrelik düz koridorda yalnızca iki ileri kenar doğrulanır; daha önce daha düşük maliyetle keşfedilmiş geri kenar doğrulanmaz.
+- İyileştiren bir adayın validator tarafından reddedilmesi hâlâ rotayı engeller.
+
+Bu dar koridor için beklenen fizik doğrulayıcı çağrı sayısı 199'dan 100'e düşer. Bu sayı algoritmik çağrı sırasından çıkarılmış beklentidir; CI benchmark çıktısı alınmadan ölçülmüş performans sonucu olarak değerlendirilmemelidir. Fizik doğrulaması hiçbir zaman kapatılmamıştır.
+
+CI kapsamı, `application/hex_pathfinding.py` Ruff kontrolünü ve pathfinding değişikliği olduğunda 100 iterasyonlu benchmark workflow'unu içerecek şekilde genişletilmiştir. Bu rapor güncellemesi sırasında CI/benchmark sonuçları henüz doğrulanmamıştır.
+
+### 11.3 Sonuç ve karar
+
+Fiziksel kenar doğrulamasının uzun rota darboğazındaki baskın payı ölçümle kanıtlanmıştır. İlk optimizasyon uygulanmıştır; kabul kararı için aynı CI koşullarında 1/10/100 hücre benchmark sonuçları ve tüm test matrisleri beklenmektedir. Fizik doğrulaması tamamen kaldırılmamış, yalnızca daha iyi bir rota adayı üretmeyen komşulardaki tekrar çağrılar elenmiştir.
