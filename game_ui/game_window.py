@@ -324,16 +324,22 @@ class GameWindow:
         controller = self._player_movement_controller
         for _ in range(step_count):
             step_intent = intent
+            step_target = None
             if click_to_move:
-                click_intent = self.screens[self.gameplay_screen].click_move_intent()
+                route_screen = self.screens[self.gameplay_screen]
+                click_intent = route_screen.click_move_intent()
                 if click_intent.is_moving:
                     # Route direction is mouse-driven; movement mode remains
                     # owned by the live keyboard adapter for this fixed step.
                     step_intent = MovementIntent(click_intent.direction, intent.mode)
+                    target_reader = getattr(route_screen, "click_move_target", None)
+                    if callable(target_reader):
+                        step_target = target_reader()
             controller.step(
                 actor_id,
                 step_intent,
                 self._movement_clock.step_seconds,
+                target=step_target,
             )
             self.service._player_movement_mode = step_intent.mode
 
