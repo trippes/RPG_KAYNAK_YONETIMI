@@ -84,7 +84,7 @@ def _build_scenario(npc_count: int):
     body_bounds = AABB(-4, -4, 4, 4)
     for index in range(npc_count):
         npc_id = f"benchmark_npc_{index:03d}"
-        body = PhysicsBodyDefinition(f"body_{index:03d}", CircleShape(4.0))
+        body = PhysicsBodyDefinition(npc_id, CircleShape(4.0))
         role = index % 3
         if role == 0:
             row = index // 3
