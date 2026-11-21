@@ -117,6 +117,20 @@ jobs:
           path: legacy-api-usage.json
           if-no-files-found: warn
           retention-days: 30
+      - name: Benchmark player click-to-move routes
+        run: >-
+          python scripts/benchmark_player_click_move.py
+          --iterations 20
+          --route-lengths 1 10 100
+          --output player-click-move-benchmark.json
+      - name: Upload player movement performance baseline
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: player-click-move-performance-linux
+          path: player-click-move-benchmark.json
+          if-no-files-found: warn
+          retention-days: 30
       - name: Run release-candidate verification
         run: python scripts/verify_release.py
 
