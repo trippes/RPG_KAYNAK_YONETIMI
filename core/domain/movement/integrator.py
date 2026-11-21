@@ -85,12 +85,17 @@ class MovementIntegrator:
                 desired_velocity.length < state.velocity.length
                 or state.velocity.dot(desired_velocity) < 0.0
             )
-            rate = (
-                self._config.braking_deceleration
-                if target is not None and target_direction is not None and reducing_speed
-                else self._config.deceleration if not intent.is_moving
-                else self._config.acceleration
-            )
+            if target is not None and (
+                target_direction is None or reducing_speed
+            ):
+                rate = self._config.braking_deceleration
+            elif (
+                not intent.is_moving
+                or desired_velocity.length < state.velocity.length
+            ):
+                rate = self._config.deceleration
+            else:
+                rate = self._config.acceleration
             max_delta = rate * elapsed
             if max_delta <= 0.0:
                 velocity = state.velocity
