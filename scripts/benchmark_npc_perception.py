@@ -74,17 +74,20 @@ def _build_scenario(npc_count: int):
         local_spatial_bounds=AABB(-8, -8, 8, 8),
     )
     flee_cells = [
-        (center + dq, center + dr)
-        for dq in range(-3, 4)
-        for dr in range(-3, 4)
-        if max(abs(dq), abs(dr), abs(dq + dr)) <= 3 and (dq, dr) != (0, 0)
+        (center + 1, center),
+        (center - 1, center),
+        (center, center + 1),
+        (center, center - 1),
+        (center + 1, center - 1),
+        (center - 1, center + 1),
     ]
+    managed_npc_count = min(npc_count, 18)
     npcs = []
     companion_ids = []
     body_bounds = AABB(-4, -4, 4, 4)
     for index in range(npc_count):
         npc_id = f"benchmark_npc_{index:03d}"
-        role = index % 3
+        role = index % 3 if index < managed_npc_count else 3
         body = PhysicsBodyDefinition(
             npc_id, CircleShape(4.0), enabled=(role == 1),
         )
@@ -98,12 +101,17 @@ def _build_scenario(npc_count: int):
             q, r = flee_cells[flee_index]
             behavior = BehaviorState.FLEE
             route = ()
-        else:
+        elif role == 2:
             row = index // 3
             q, r = 31 - row % 5, 2 + row // 5
             behavior = BehaviorState.IDLE
             route = ()
             companion_ids.append(npc_id)
+        else:
+            idle_index = index - managed_npc_count
+            q, r = idle_index % 18, 28 + idle_index // 18
+            behavior = BehaviorState.IDLE
+            route = ()
         npc = NPC(
             npc_id,
             f"Benchmark NPC {index}",
@@ -196,9 +204,12 @@ def main() -> None:
         "measurement_note": (
             "Measures real patrol, flee and companion perception systems with opt-in counters. "
             "Each repetition uses a separate warmup world followed by a fresh measured world. "
-            "Patrol/companion physics bodies are disabled and those systems use logical "
-            "path movement so the separate overlap resolver does not dominate this "
-            "perception benchmark. Compare revisions on the same machine and Python "
+            "For 25/50/100 NPC scenarios, the first 18 NPCs retain a fixed patrol/flee/"
+            "companion mix and remaining NPCs are idle, isolating registry scan growth "
+            "from changing active behavior density. Patrol/companion physics bodies are "
+            "disabled and those systems use logical path movement so the separate overlap "
+            "resolver does not dominate this perception benchmark. Compare revisions on "
+            "the same machine and Python "
             "build; timings are observations, not hardware-independent guarantees."
         ),
         "scenarios": [],
@@ -222,6 +233,8 @@ def main() -> None:
                     aggregate_metrics.record_duration(name, value)
         report["scenarios"].append({
             "npc_count": count,
+            "managed_npc_count": min(count, 18),
+            "idle_npc_count": max(0, count - 18),
             "repetitions": args.repeats,
             "steps_per_repetition": args.steps,
             "warmup_steps_per_repetition": args.warmup_steps,
