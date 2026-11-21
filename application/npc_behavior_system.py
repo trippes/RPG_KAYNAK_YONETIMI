@@ -49,7 +49,7 @@ class NPCBehaviorSystem:
                 metrics.increment("patrol_eligible")
             try:
                 entity = self._runtime.entity(npc.npc_id)
-                current = self._runtime.continuous_position(npc.npc_id).point
+                current = entity.continuous_position.point
             except KeyError:
                 continue
             if entity.kind != "npc" or not entity.active:

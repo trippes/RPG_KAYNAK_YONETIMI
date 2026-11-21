@@ -106,7 +106,7 @@ class NPCAvoidanceSystem:
             return ()
 
         player = self._runtime.entity(self._player_id)
-        threat_position = self._runtime.continuous_position(self._player_id).point
+        threat_position = player.continuous_position.point
         threat_cell = player.position.cell
         moved = []
         metrics = getattr(self._runtime, "metrics", None)
@@ -119,7 +119,7 @@ class NPCAvoidanceSystem:
                 metrics.increment("avoidance_eligible")
             try:
                 entity = self._runtime.entity(npc.npc_id)
-                current = self._runtime.continuous_position(npc.npc_id).point
+                current = entity.continuous_position.point
             except KeyError:
                 continue
             if entity.position.map_id != player.position.map_id:

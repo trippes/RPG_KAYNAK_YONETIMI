@@ -10,7 +10,7 @@ from core.foundation import WorldId
 from npc import BehaviorController, BehaviorState, NPC, NPCRegistry
 
 
-def make_world(*, blocked=False):
+def make_world(*, blocked=False, metrics=None):
     overrides = [{"q": 2, "r": 0, "blocked": True}] if blocked else []
     definition = parse_hex_map({
         "schema_version": 2,
@@ -27,7 +27,9 @@ def make_world(*, blocked=False):
         "cell_overrides": overrides,
         "transitions": [],
     })
-    runtime = HexWorldRuntime({"field": definition}, world_id=WorldId("world"))
+    runtime = HexWorldRuntime(
+        {"field": definition}, world_id=WorldId("world"), metrics=metrics,
+    )
     runtime.register_entity(
         "hero", "player", EntityPosition("field", LocalHexPosition(0, 0)),
         MovementProfile(), local_spatial_bounds=AABB(-8, -8, 8, 8),
@@ -89,3 +91,15 @@ def test_patrol_does_not_move_through_blocked_waypoint():
     assert moved == ()
     assert runtime.continuous_position("guard").point == before
     assert runtime.entity("guard").position.cell == LocalHexPosition(1, 0)
+
+def test_patrol_reuses_validated_entity_position_without_duplicate_validation():
+    from application.npc_simulation_metrics import NPCSimulationMetrics
+
+    metrics = NPCSimulationMetrics()
+    runtime, npcs, snapshot = make_world(metrics=metrics)
+    metrics.reset()
+
+    NPCBehaviorSystem(npcs, runtime, snapshot).step(0.1)
+
+    # NPC, patrol waypoint, path query and committed movement each validate once.
+    assert metrics.snapshot()["counts"]["runtime_entity_validation_queries"] == 4

@@ -104,7 +104,7 @@ class CompanionCommandService:
         if delta_seconds == 0:
             return ()
         player = self.runtime.entity(self.player_id)
-        player_position = self.runtime.continuous_position(self.player_id).point
+        player_position = player.continuous_position.point
         moved = []
         metrics = getattr(self.runtime, "metrics", None)
 
@@ -122,7 +122,7 @@ class CompanionCommandService:
                 continue
             try:
                 entity = self.runtime.entity(npc_id)
-                current = self.runtime.continuous_position(npc_id).point
+                current = entity.continuous_position.point
             except KeyError:
                 continue
             if not entity.active or entity.position.map_id != player.position.map_id:

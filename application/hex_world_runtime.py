@@ -542,7 +542,7 @@ class HexWorldRuntime:
         waypoint_center = axial_to_world_point(
             points[index].to_hex_coord(), self.HEX_SIZE,
         )
-        current_point = self.continuous_position(entity_id).point
+        current_point = entity.continuous_position.point
         if (
             math.hypot(
                 current_point.x - waypoint_center.x,
