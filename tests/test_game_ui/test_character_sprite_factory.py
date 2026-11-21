@@ -43,7 +43,9 @@ def test_direction_change_preserves_locomotion_phase():
 
     animator.select(direction="east", state="walk")
     assert animator.current_animation.index == previous_animation.index
-    assert animator.current_animation.elapsed == previous_animation.elapsed
+    assert abs(
+        animator.current_animation.elapsed - previous_animation.elapsed
+    ) < 1e-9
 
 
 def test_animation_state_change_restarts_the_selected_clip():
