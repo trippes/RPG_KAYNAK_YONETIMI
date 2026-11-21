@@ -8,23 +8,29 @@ from .mode import MovementMode
 
 @dataclass(frozen=True, slots=True)
 class MovementConfig:
-    """Movement speeds use world units per second; no balance defaults are assumed."""
+    """Movement speeds and acceleration use world units and seconds."""
 
     max_speed: float
     running_speed_multiplier: float = 1.5
     stealth_speed_multiplier: float = 0.5
+    acceleration: float = 180.0
+    deceleration: float = 240.0
+    braking_deceleration: float = 360.0
 
     def __post_init__(self) -> None:
-        self._validate_number("max_speed", self.max_speed)
-        if self.max_speed < 0:
-            raise ValueError("max_speed must not be negative.")
-        self._validate_number("running_speed_multiplier", self.running_speed_multiplier)
-        self._validate_number("stealth_speed_multiplier", self.stealth_speed_multiplier)
-        if self.running_speed_multiplier < 0 or self.stealth_speed_multiplier < 0:
-            raise ValueError("Movement speed multipliers must not be negative.")
-        object.__setattr__(self, "max_speed", float(self.max_speed))
-        object.__setattr__(self, "running_speed_multiplier", float(self.running_speed_multiplier))
-        object.__setattr__(self, "stealth_speed_multiplier", float(self.stealth_speed_multiplier))
+        for name in (
+            "max_speed",
+            "running_speed_multiplier",
+            "stealth_speed_multiplier",
+            "acceleration",
+            "deceleration",
+            "braking_deceleration",
+        ):
+            value = getattr(self, name)
+            self._validate_number(name, value)
+            if value < 0:
+                raise ValueError(f"{name} must not be negative.")
+            object.__setattr__(self, name, float(value))
 
     @staticmethod
     def _validate_number(name: str, value: Real) -> None:
