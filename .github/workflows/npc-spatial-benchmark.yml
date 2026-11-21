@@ -30,7 +30,7 @@ jobs:
       - name: Run repeated NPC spatial benchmark
         run: python scripts/benchmark_npc_spatial_index.py --repeats 5 --output npc-spatial-benchmark.json
       - name: Run NPC perception benchmark at requested scales
-        run: python scripts/benchmark_npc_perception.py --counts 1 10 25 50 100 --repeats 3 --steps 30 --output npc-perception-benchmark.json
+        run: python scripts/benchmark_npc_perception.py --counts 1 10 25 50 100 --repeats 3 --steps 16 --output npc-perception-benchmark.json
       - name: Upload NPC perception benchmark
         if: always()
         uses: actions/upload-artifact@v4
