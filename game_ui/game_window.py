@@ -313,8 +313,8 @@ class GameWindow:
             id(binding), id(snapshot), id(body), actor_id, id(config),
         )
         if (
-            self._player_movement_controller is None
-            or self._player_movement_controller_key != controller_key
+            getattr(self, "_player_movement_controller", None) is None
+            or getattr(self, "_player_movement_controller_key", None) != controller_key
         ):
             self._player_movement_controller = ContinuousPlayerMovementController(
                 binding,
