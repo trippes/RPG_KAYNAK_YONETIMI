@@ -279,3 +279,7 @@ Her paket sonunda:
 
 
 - **Omuz hizası test düzeltmesi:** Kullanıcının yerel testinde iki eski beklenti, yeni omuz hizalama kuralıyla çelişti: yan görünüm testi omuzların farklı yükseklikte olmasını bekliyordu; yön testi ise omuz vektörünün sekiz farklı izdüşüm üretmesini bekliyordu. Omuz kökleri aynı ekran hattına alındığı için bu beklentiler geçersiz hâle gelmişti. Testler, sekiz yön izdüşüm ekseninin benzersizliğini ve doğu/batı dâhil tüm yönlerde omuz hizasının korunmasını doğrulayacak şekilde düzeltildi. Kullanıcının yerel yeniden test sonucu henüz alınmadı.
+
+
+- **Görsel iyileştirme turu 2 — anatomi ve siluet:** Kullanıcının son önizlemesinde omuz hizası önceki sürüme göre daha tutarlı bulundu; ancak gövde hâlâ dikdörtgen, kol/bacak birleşimleri mekanik ve el/ayak biçimleri zayıf kaldı. Renderer'da tunik silueti omuz-göğüs-bel-kalça geçişleriyle yeniden şekillendirildi; göğüs düzlemi ve yan gölge eklendi; yaka bağlantısı tanımlandı. Kol ve bacak uçlarındaki büyük dairesel eklem görünümü azaltıldı; eller avuç biçimli poligonlar, botlar daha uzun tabanlı poligonlar olarak çiziliyor. Doğu/batı yan görünümlerinde gövdenin tek çizgiye çökmesini önlemek için kontrollü minimum profil genişliği eklendi. İskelet, animasyon fazı, runtime hareketi ve çarpışma sistemi değiştirilmedi.
+- **Görsel tur 2 testleri:** Renderer testleri yeni el/ayak çizimlerini ve yan görünüm profil genişliğini doğrulayacak şekilde güncellendi. Yerel test sonucu ve yeni ekran görüntüsü bekleniyor; görsel kabul henüz verilmedi.
