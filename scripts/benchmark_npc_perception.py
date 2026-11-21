@@ -40,7 +40,7 @@ def _percentile(values: list[float], percentile: float) -> float:
     return ordered[rank - 1]
 
 
-def _build_scenario(npc_count: int):
+def _build_scenario(npc_count: int, profile: str):
     size = 36
     cells = [[q, r] for q in range(size) for r in range(size)]
     definition = parse_hex_map({
@@ -73,14 +73,26 @@ def _build_scenario(npc_count: int):
         MovementProfile(),
         local_spatial_bounds=AABB(-8, -8, 8, 8),
     )
-    flee_cells = [
-        (center + 1, center),
-        (center - 1, center),
-        (center, center + 1),
-        (center, center - 1),
-        (center + 1, center - 1),
-        (center - 1, center + 1),
-    ]
+    if profile == "active":
+        flee_cells = [
+            (center + 1, center),
+            (center - 1, center),
+            (center, center + 1),
+            (center, center - 1),
+            (center + 1, center - 1),
+            (center - 1, center + 1),
+        ]
+    elif profile == "scan":
+        flee_cells = [
+            (center + 3, center),
+            (center - 3, center),
+            (center, center + 3),
+            (center, center - 3),
+            (center + 3, center - 3),
+            (center - 3, center + 3),
+        ]
+    else:
+        raise ValueError("profile must be 'scan' or 'active'")
     managed_npc_count = min(npc_count, 18)
     npcs = []
     companion_ids = []
@@ -95,7 +107,11 @@ def _build_scenario(npc_count: int):
             row = index // 3
             q, r = 2 + row % 10, 2 + row // 10
             behavior = BehaviorState.PATROL
-            route = (LocalHexPosition(q, r), LocalHexPosition(q + 1, r))
+            route = (
+                (LocalHexPosition(q, r),)
+                if profile == "scan"
+                else (LocalHexPosition(q, r), LocalHexPosition(q + 1, r))
+            )
         elif role == 1:
             flee_index = (index // 3) % len(flee_cells)
             q, r = flee_cells[flee_index]
@@ -140,23 +156,35 @@ def _build_scenario(npc_count: int):
         runtime, registry, companion_registry, "hero",
         physics_snapshot=None,
     )
+    companion_command = (
+        CompanionCommand.WAIT if profile == "scan" else CompanionCommand.FOLLOW
+    )
     for npc_id in companion_ids:
         companions.enlist(npc_id)
-        companions.command(npc_id, CompanionCommand.FOLLOW)
+        companions.command(npc_id, companion_command)
     metrics.reset()
     return metrics, patrol, avoidance, companions
 
 
-def run_scenario(npc_count: int, steps: int = 4, warmup_steps: int = 2) -> dict:
+def run_scenario(
+    npc_count: int,
+    steps: int = 4,
+    warmup_steps: int = 2,
+    profile: str = "scan",
+) -> dict:
     if npc_count < 1 or steps < 1 or warmup_steps < 0:
         raise ValueError("npc_count and steps must be positive; warmup_steps cannot be negative")
+    if profile not in {"scan", "active"}:
+        raise ValueError("profile must be 'scan' or 'active'")
     if warmup_steps:
-        _, warmup_patrol, warmup_avoidance, warmup_companions = _build_scenario(npc_count)
+        _, warmup_patrol, warmup_avoidance, warmup_companions = _build_scenario(
+            npc_count, profile,
+        )
         for _ in range(warmup_steps):
             warmup_patrol.step(1.0 / 60.0)
             warmup_avoidance.step(1.0 / 60.0)
             warmup_companions.tick(1.0 / 60.0)
-    metrics, patrol, avoidance, companions = _build_scenario(npc_count)
+    metrics, patrol, avoidance, companions = _build_scenario(npc_count, profile)
     step_latencies = []
     for _ in range(steps):
         started = perf_counter()
@@ -168,6 +196,7 @@ def run_scenario(npc_count: int, steps: int = 4, warmup_steps: int = 2) -> dict:
         metrics.record_duration("npc_simulation_total", elapsed)
     return {
         "npc_count": npc_count,
+        "profile": profile,
         "steps": steps,
         "warmup_steps": warmup_steps,
         "step_latency_samples_seconds": step_latencies,
@@ -185,6 +214,10 @@ def run_scenario(npc_count: int, steps: int = 4, warmup_steps: int = 2) -> dict:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--counts", nargs="+", type=int, default=[1, 10, 25, 50, 100])
+    parser.add_argument(
+        "--profiles", nargs="+", choices=["scan", "active"],
+        default=["scan", "active"],
+    )
     parser.add_argument("--repeats", type=int, default=3)
     parser.add_argument("--steps", type=int, default=4)
     parser.add_argument("--warmup-steps", type=int, default=2)
@@ -204,53 +237,59 @@ def main() -> None:
         "measurement_note": (
             "Measures real patrol, flee and companion perception systems with opt-in counters. "
             "Each repetition uses a separate warmup world followed by a fresh measured world. "
-            "For 25/50/100 NPC scenarios, the first 18 NPCs retain a fixed patrol/flee/"
-            "companion mix and remaining NPCs are idle, isolating registry scan growth "
-            "from changing active behavior density. Patrol/companion physics bodies are "
-            "disabled and those systems use logical path movement so the separate overlap "
-            "resolver does not dominate this perception benchmark. Compare revisions on "
-            "the same machine and Python "
+            "Runs two profiles. 'scan' keeps FLEE actors outside threat radius, holds "
+            "patrol routes at their current cells and issues WAIT to companions, isolating "
+            "registry scans and exact distance checks without pathfinding. 'active' runs "
+            "the same fixed active actor mix with nearby FLEE actors and FOLLOW companions "
+            "to expose path-query costs. For 25/50/100 NPC scenarios, the first 18 NPCs "
+            "retain a fixed patrol/flee/companion mix and remaining NPCs are idle, isolating "
+            "registry scan growth from changing active behavior density. Patrol/companion "
+            "physics bodies are disabled and those systems use logical path movement so "
+            "the separate overlap resolver does not dominate this perception benchmark. "
+            "Compare revisions on the same machine and Python "
             "build; timings are observations, not hardware-independent guarantees."
         ),
         "scenarios": [],
     }
-    for count in args.counts:
-        samples = [
-            run_scenario(count, args.steps, args.warmup_steps)
-            for _ in range(args.repeats)
-        ]
-        latency_samples = [
-            value
-            for sample in samples
-            for value in sample["step_latency_samples_seconds"]
-        ]
-        aggregate_metrics = NPCSimulationMetrics()
-        for sample in samples:
-            for name, amount in sample["metrics"]["counts"].items():
-                aggregate_metrics.increment(name, amount)
-            for name, duration in sample["metrics"]["durations_seconds"].items():
-                for value in duration["samples_seconds"]:
-                    aggregate_metrics.record_duration(name, value)
-        report["scenarios"].append({
-            "npc_count": count,
-            "managed_npc_count": min(count, 18),
-            "idle_npc_count": max(0, count - 18),
-            "repetitions": args.repeats,
-            "steps_per_repetition": args.steps,
-            "warmup_steps_per_repetition": args.warmup_steps,
-            "simulation_step_latency_seconds": {
-                "p50": _percentile(latency_samples, 50),
-                "p95": _percentile(latency_samples, 95),
-                "p99": _percentile(latency_samples, 99),
-                "max": max(latency_samples),
-                "mean": statistics.mean(latency_samples),
-            },
-            "simulation_step_spikes_over_16_67ms": sum(
-                value > (1.0 / 60.0) for value in latency_samples
-            ),
-            "metrics": aggregate_metrics.snapshot(),
-            "samples": samples,
-        })
+    for profile in args.profiles:
+        for count in args.counts:
+            samples = [
+                run_scenario(count, args.steps, args.warmup_steps, profile)
+                for _ in range(args.repeats)
+            ]
+            latency_samples = [
+                value
+                for sample in samples
+                for value in sample["step_latency_samples_seconds"]
+            ]
+            aggregate_metrics = NPCSimulationMetrics()
+            for sample in samples:
+                for name, amount in sample["metrics"]["counts"].items():
+                    aggregate_metrics.increment(name, amount)
+                for name, duration in sample["metrics"]["durations_seconds"].items():
+                    for value in duration["samples_seconds"]:
+                        aggregate_metrics.record_duration(name, value)
+            report["scenarios"].append({
+                "profile": profile,
+                "npc_count": count,
+                "managed_npc_count": min(count, 18),
+                "idle_npc_count": max(0, count - 18),
+                "repetitions": args.repeats,
+                "steps_per_repetition": args.steps,
+                "warmup_steps_per_repetition": args.warmup_steps,
+                "simulation_step_latency_seconds": {
+                    "p50": _percentile(latency_samples, 50),
+                    "p95": _percentile(latency_samples, 95),
+                    "p99": _percentile(latency_samples, 99),
+                    "max": max(latency_samples),
+                    "mean": statistics.mean(latency_samples),
+                },
+                "simulation_step_spikes_over_16_67ms": sum(
+                    value > (1.0 / 60.0) for value in latency_samples
+                ),
+                "metrics": aggregate_metrics.snapshot(),
+                "samples": samples,
+            })
     rendered = json.dumps(report, ensure_ascii=False, indent=2)
     if args.output:
         with open(args.output, "w", encoding="utf-8") as output:
