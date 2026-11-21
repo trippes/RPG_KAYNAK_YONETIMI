@@ -36,11 +36,11 @@ class TestCharacterRigRenderer(unittest.TestCase):
 
         self.assertEqual(set(positions), set(DEFAULT_CHARACTER_SKELETON.joint_names))
         self.assertGreaterEqual(
-            sum(call[0] == "polygon" for call in self.draw.calls), 22
+            sum(call[0] == "polygon" for call in self.draw.calls), 28
         )
-        # Joint markers are deliberately smaller/fewer than the first preview.
+        # Limbs use restrained end caps; hands and boots are shaped polygons.
         self.assertGreaterEqual(
-            sum(call[0] == "circle" for call in self.draw.calls), 16
+            sum(call[0] == "circle" for call in self.draw.calls), 8
         )
         self.assertTrue(any(call[0] == "line" for call in self.draw.calls))
 
@@ -78,6 +78,17 @@ class TestCharacterRigRenderer(unittest.TestCase):
                     positions["right_shoulder"][1],
                     places=7,
                 )
+
+    def test_side_views_retain_a_visible_shoulder_span(self):
+        for direction in ("east", "west"):
+            with self.subTest(direction=direction):
+                positions = self.rig_renderer.project_joint_positions(
+                    DEFAULT_CHARACTER_SKELETON, (120, 240), 64.0, facing=direction
+                )
+                shoulder_span = abs(
+                    positions["right_shoulder"][0] - positions["left_shoulder"][0]
+                )
+                self.assertGreater(shoulder_span, 1.0)
 
     def test_side_views_keep_shoulder_roots_on_the_same_screen_line(self):
         for direction in ("east", "west"):
