@@ -74,6 +74,18 @@ class TestCharacterRigRenderer(unittest.TestCase):
 
         self.assertEqual(len(shoulder_vectors), 8)
 
+    def test_both_shoulder_roots_stay_level_in_all_eight_directions(self):
+        for direction in CharacterRigRenderer.DIRECTIONS:
+            with self.subTest(direction=direction):
+                positions = self.rig_renderer.project_joint_positions(
+                    DEFAULT_CHARACTER_SKELETON, (120, 240), 64.0, facing=direction
+                )
+                self.assertAlmostEqual(
+                    positions["left_shoulder"][1],
+                    positions["right_shoulder"][1],
+                    places=7,
+                )
+
     def test_east_and_west_side_views_project_lateral_axis_in_opposite_depth_directions(self):
         east = self.rig_renderer.project_joint_positions(
             DEFAULT_CHARACTER_SKELETON, (120, 240), 64.0, facing="east"
