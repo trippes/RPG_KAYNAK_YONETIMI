@@ -37,7 +37,7 @@ def make_map():
     })
 
 
-def make_controller(*, obstacle=None, actor_active=True, occupied=False):
+def make_controller(*, obstacle=None, actor_active=True, occupied=False, movement_config=None):
     map_definition = make_map()
     actors = WorldActorRegistry()
     actors.add(WorldActor("hero", "eldoria", "player", active=actor_active))
@@ -73,7 +73,10 @@ def make_controller(*, obstacle=None, actor_active=True, occupied=False):
         binding,
         snapshot,
         body,
-        MovementConfig(max_speed=60.0),
+        movement_config or MovementConfig(
+            max_speed=60.0, acceleration=100000.0,
+            deceleration=100000.0, braking_deceleration=100000.0,
+        ),
     )
     return actors, runtime, controller
 
@@ -235,7 +238,11 @@ def make_dynamic_controller(*, blocking_crate=False):
         physics_snapshot=snapshot, player_body=player_body,
     )
     controller = ContinuousPlayerMovementController(
-        binding, snapshot, player_body, MovementConfig(max_speed=300.0),
+        binding, snapshot, player_body,
+        MovementConfig(
+            max_speed=300.0, acceleration=100000.0,
+            deceleration=100000.0, braking_deceleration=100000.0,
+        ),
         npc_bodies={"guard": npc_body},
     )
     return runtime, controller
@@ -363,3 +370,15 @@ def test_movement_target_rejects_invalid_arrival_tolerance():
         MovementTarget(WorldPoint(1.0, 1.0), arrival_tolerance=-0.1)
     with pytest.raises(TypeError):
         MovementTarget(WorldPoint(1.0, 1.0), arrival_tolerance=True)
+
+
+def test_continuous_controller_carries_accepted_velocity_between_steps():
+    config = MovementConfig(max_speed=60.0, acceleration=60.0)
+    _actors, runtime, controller = make_controller(movement_config=config)
+
+    first = controller.step("hero", east_intent(), 0.1)
+    second = controller.step("hero", east_intent(), 0.1)
+
+    assert first.state.velocity.x == pytest.approx(6.0)
+    assert second.state.velocity.x == pytest.approx(12.0)
+    assert runtime.continuous_position("hero").point.x == pytest.approx(1.8)
