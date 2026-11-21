@@ -31,6 +31,9 @@ Kürek kemiği düğümleri kontrol amaçlı işaretlenmiştir; mevcut sürümde
 
 ### Matematik ve doğrulama
 
+- Ön, yan ve çapraz görünüm için Pygame bağımsız ortografik 3B→2B projeksiyon ilkesi eklendi.
+- Üç görünüşlü debug önizleme aracı `scripts/preview_humanoid_rig_3d.py` olarak eklendi.
+
 - Yerel ebeveyn-çocuk dönüşümleri quaternion çarpımıyla çözülür.
 - Eklem sınırları XYZ yerel Euler girdilerine bileşen bazında uygulanır.
 - Bilinmeyen eklem, bozuk vektör, sıfır quaternion, döngülü hiyerarşi ve geçersiz kemik bağlantıları reddedilir.
@@ -63,9 +66,10 @@ Bu rapor yazılırken depo testleri yerel çalışma ortamında çalıştırılm
 ## 5. Sonraki adımlar ve kabul kapısı
 
 1. Yerel hedefli unittest ve pytest çalıştırması.
-2. Ruff kontrolü.
-3. GitHub Actions sonuçlarının incelenmesi.
-4. İskelet debug önizlemesi ve anatomik oranların görsel kontrolü.
-5. Kullanıcı görsel kabulü.
+2. Üç görünüşlü debug önizlemenin yerel çalıştırılması ve A-Pose anatomisinin görsel değerlendirilmesi.
+3. Ruff kontrolü.
+4. GitHub Actions sonuçlarının incelenmesi.
+5. Anatomik oranların görsel kontrolü.
+6. Kullanıcı görsel kabulü.
 
 Bu rapor, Aşama 1'in tamamlandığı anlamına gelmez. Görsel önizleme, test/CI doğrulaması ve kullanıcı kabulü beklenmektedir.
