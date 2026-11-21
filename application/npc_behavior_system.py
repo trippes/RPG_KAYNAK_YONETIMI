@@ -59,9 +59,10 @@ class NPCBehaviorSystem:
             if self._physics_snapshot is not None:
                 if self._physics_snapshot.map_id != entity.position.map_id:
                     continue
-                edge_validator = lambda source, destination, body=npc.physics_body: (
-                    self._physics_snapshot.can_reach_cell(source, destination, body)
-                )
+                def edge_validator(source, destination, body=npc.physics_body):
+                    return self._physics_snapshot.can_reach_cell(
+                        source, destination, body,
+                    )
             waypoint = self._runtime.patrol_target(
                 npc.npc_id, npc.patrol_route,
             )

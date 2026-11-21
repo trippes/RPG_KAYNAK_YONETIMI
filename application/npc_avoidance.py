@@ -42,9 +42,8 @@ class NPCAvoidanceSystem:
         current_distance = current_cell.to_hex_coord().distance_to(
             threat_cell.to_hex_coord(),
         )
-        edge_validator = lambda source, destination: (
-            self._snapshot.can_reach_cell(source, destination, body)
-        )
+        def edge_validator(source, destination):
+            return self._snapshot.can_reach_cell(source, destination, body)
         nearby = {current_cell}
         frontier = {current_cell}
         for _ in range(self.SEARCH_RADIUS_CELLS):

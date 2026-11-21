@@ -83,9 +83,10 @@ class CompanionCommandService:
             npc = self.npcs.get(npc_id)
             edge_validator = None
             if self.physics_snapshot is not None:
-                edge_validator = lambda source, destination, body=npc.physics_body: (
-                    self.physics_snapshot.can_reach_cell(source, destination, body)
-                )
+                def edge_validator(source, destination, body=npc.physics_body):
+                    return self.physics_snapshot.can_reach_cell(
+                        source, destination, body,
+                    )
             path = self.runtime.path_to(
                 npc_id, target_cell, edge_validator=edge_validator,
             )
