@@ -27,14 +27,32 @@ class CharacterAnimator:
         next_state = self.state if state is None else state
         if next_direction not in self.DIRECTIONS or next_state not in self.STATES:
             raise ValueError("Unsupported character direction or animation state.")
-        changed = (next_direction, next_state) != (self.direction, self.state)
+
+        direction_changed = next_direction != self.direction
+        state_changed = next_state != self.state
+        previous_animation = self.current_animation
         self.direction, self.state = next_direction, next_state
-        if changed:
-            animation = self.current_animation
-            if animation is not None:
-                animation.elapsed = 0.0
-                animation.index = 0
-                animation.finished = False
+        animation = self.current_animation
+        if animation is None:
+            return
+
+        if state_changed:
+            animation.elapsed = 0.0
+            animation.index = 0
+            animation.finished = False
+        elif direction_changed and previous_animation is not None:
+            # Keep the gait phase when turning so the legs do not snap back
+            # to the first pose on every direction change.
+            phase = (
+                previous_animation.index
+                + previous_animation.elapsed / previous_animation.frame_duration
+            ) / len(previous_animation.frames)
+            frame_position = phase * len(animation.frames)
+            animation.index = min(int(frame_position), len(animation.frames) - 1)
+            animation.elapsed = (
+                frame_position - animation.index
+            ) * animation.frame_duration
+            animation.finished = False
 
     def update(self, elapsed_seconds):
         if self.current_animation is not None:
