@@ -83,7 +83,7 @@ class CharacterRigRenderer:
         positions = skeleton.joint_positions(local_rotations)
         scale = float(world_scale)
         foot_x, foot_y = float(foot_position[0]), float(foot_position[1])
-        return {
+        projected = {
             name: (
                 foot_x + (point[0] - anchor_x) * scale * lateral_x,
                 foot_y - (point[1] - anchor_y) * scale
@@ -91,6 +91,19 @@ class CharacterRigRenderer:
             )
             for name, point in positions.items()
         }
+
+        # The shoulder girdle is a single visual crossbar. The raw depth
+        # projection can otherwise make one shoulder appear noticeably higher
+        # than the other in diagonal views. Keep both arm roots on one screen
+        # line; their horizontal separation and all elbow/hand articulation
+        # remain direction- and pose-driven.
+        shoulder_y = (
+            projected["left_shoulder"][1] + projected["right_shoulder"][1]
+        ) * 0.5
+        for name in ("left_shoulder", "right_shoulder"):
+            projected[name] = (projected[name][0], shoulder_y)
+
+        return projected
 
     def draw(
         self,
