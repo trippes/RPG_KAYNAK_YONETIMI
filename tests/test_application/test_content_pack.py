@@ -14,6 +14,7 @@ from application.content_pack import (
     load_character_definitions,
     load_container_definitions,
     load_gameplay_rules,
+    load_movement_configs,
     load_npc_definitions,
     load_production_definitions,
     load_quest_definitions,
@@ -51,6 +52,15 @@ class TestContentPack(unittest.TestCase):
         self.assertNotIn("markets", starter)
         self.assertNotIn("trade_partners", starter)
         self.assertNotIn("faction", starter)
+
+    def test_movement_test_package_loads_acceleration_and_braking_profiles(self):
+        package = ROOT / "content" / "movement_test"
+        configs = load_movement_configs(package_path=package)
+
+        self.assertEqual(set(configs), {"hero", "test_guard", "test_target"})
+        self.assertEqual(configs["hero"].acceleration, 180.0)
+        self.assertEqual(configs["hero"].deceleration, 240.0)
+        self.assertEqual(configs["hero"].braking_deceleration, 360.0)
 
     def test_opening_content_registers_guard_and_intro_dialogue_before_character_creation(self):
         application = GameApplication.create_default()
