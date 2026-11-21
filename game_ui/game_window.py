@@ -687,6 +687,10 @@ class GameWindow:
                 break
 
     def step(self, events=(), *, elapsed_seconds=0.0):
+        # Some focused tests construct GameWindow without running __init__.
+        # Keep optional telemetry safe for those lightweight test instances.
+        if not hasattr(self, "_frame_phase_times"):
+            self._frame_phase_times = {}
         self._ensure_movement_runtime()
         events = tuple(events)
         state = self.input.collect(events)
