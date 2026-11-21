@@ -17,7 +17,7 @@ Yeni `game_ui/world_rendering/humanoid_rig_3d.py` modülü eklendi. Modül Pygam
 - +Z: yukarı.
 - Poz açıları radyan cinsinden XYZ Euler girdileridir.
 - İç dönüşüm temsili normalize quaternion'dır.
-- Kök eklem pelvis; zemin ankrajı pelvis köküne göre `(0, 0, -0.47)`.
+- Kök eklem pelvis; zemin ankrajı pelvis köküne göre `(0, 0, -0.49)`.
 - Runtime dünya konumu bu modülün dışında kalır.
 
 ### Anatomik hiyerarşi
@@ -49,7 +49,7 @@ Kürek kemiği düğümleri kontrol amaçlı işaretlenmiştir; mevcut sürümde
 
 ## 3. Test kapsamı
 
-Yeni unittest dosyası `tests/test_game_ui/test_humanoid_rig_3d.py` eklendi. Testler koordinat sözleşmesini, anatomik zincirleri, sol/sağ simetriyi, topuk ankrajını, köprücük kemiği ebeveynliğini, kontrol eklemlerini, quaternion dönüşüm aktarımını, eklem sınırlarını, kemik uzunluklarını ve hatalı verilerin reddini kontrol eder.
+Yeni unittest dosyası `tests/test_game_ui/test_humanoid_rig_3d.py` eklendi. Dosyada 17 test metodu bulunur. Testler koordinat sözleşmesini, anatomik zincirleri, sol/sağ simetriyi, topuk ankrajını, köprücük kemiği ebeveynliğini, kontrol eklemlerini, quaternion dönüşüm aktarımını, eklem sınırlarını, kemik uzunluklarını ve hatalı verilerin reddini kontrol eder.
 
 Bu rapor yazılırken depo testleri yerel çalışma ortamında çalıştırılmamıştır. Test başarısı iddia edilmemektedir. GitHub Actions sonuçları ayrıca doğrulanmalıdır.
 
