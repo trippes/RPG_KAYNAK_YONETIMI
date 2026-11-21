@@ -25,11 +25,13 @@ class FakeSnapshot:
         self.blocked_edges = set(blocked_edges)
         self.blocked_sweep = blocked_sweep
         self.sweep_calls = 0
+        self.edge_checks = 0
 
     def cell_center(self, cell):
         return WorldPoint(cell.q * 10.0, cell.r * 10.0)
 
     def can_reach_cell(self, source, destination, _body):
+        self.edge_checks += 1
         return (source, destination) not in self.blocked_edges
 
     def resolve_motion(self, _start, displacement, _body):
@@ -122,6 +124,7 @@ def test_same_active_goal_reuses_one_path_across_fixed_steps():
     assert metrics["player_click_route_cache_misses"] == 1
     assert metrics["player_click_route_cache_hits"] == 1
     assert snapshot.sweep_calls == 1
+    assert snapshot.edge_checks == 2
 
 
 def test_new_goal_replaces_active_route_and_replans():
@@ -241,13 +244,17 @@ def test_running_or_stealth_mode_is_preserved_in_route_intent():
 def test_changed_physics_snapshot_invalidates_and_replans():
     runtime = FakeRuntime(paths=[(A, B, C), (A, D, C)])
     controller = make_controller()
+    first_snapshot = FakeSnapshot()
+    second_snapshot = FakeSnapshot()
 
-    route_intent(controller, runtime, snapshot=FakeSnapshot())
-    intent = route_intent(controller, runtime, snapshot=FakeSnapshot())
+    route_intent(controller, runtime, snapshot=first_snapshot)
+    intent = route_intent(controller, runtime, snapshot=second_snapshot)
 
     assert intent.is_moving
     assert runtime.path_queries == 2
     assert controller.metrics_snapshot()["player_click_route_replans"] == 1
+    assert first_snapshot.edge_checks == 2
+    assert second_snapshot.edge_checks == 2
 
 
 def test_optional_path_and_arrival_percentiles_are_collected():
