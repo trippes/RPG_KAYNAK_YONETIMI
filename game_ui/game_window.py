@@ -1071,6 +1071,7 @@ class GameWindow:
         if clock is not None:
             counters.update({
                 "movement_fixed_step_cap": clock.max_substeps,
+                "movement_fixed_steps_last_frame": clock.last_substeps,
                 "movement_fixed_step_dropped_seconds_total": (
                     clock.total_dropped_seconds
                 ),
