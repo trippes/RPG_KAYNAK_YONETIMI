@@ -3,6 +3,7 @@ import unittest
 
 from game_ui.world_rendering.humanoid_rig_3d import (
     DEFAULT_HUMANOID_RIG,
+    project_point_orthographic,
     BoneDefinition,
     HumanoidRig,
     JointDefinition,
@@ -58,6 +59,9 @@ class TestHumanoidRig3D(unittest.TestCase):
         self.assertEqual(by_name["shoulder_left"].parent, "clavicle_left")
         self.assertEqual(by_name["clavicle_right"].parent, "chest")
         self.assertEqual(by_name["shoulder_right"].parent, "clavicle_right")
+        bone_names = {bone.name for bone in rig.bones}
+        self.assertIn("clavicle_left", bone_names)
+        self.assertIn("clavicle_right", bone_names)
 
     def test_scapula_controls_are_non_deforming_auxiliary_joints(self):
         rig = DEFAULT_HUMANOID_RIG
@@ -99,6 +103,21 @@ class TestHumanoidRig3D(unittest.TestCase):
         DEFAULT_HUMANOID_RIG.joint_positions({"hip_left": (0.4, 0.0, 0.0)})
         after = DEFAULT_HUMANOID_RIG.joint_positions()
         self.assertEqual(before, after)
+
+    def test_orthographic_projection_preserves_front_and_side_geometry(self):
+        point = (0.25, 0.4, 0.75)
+        front = project_point_orthographic(point)
+        side = project_point_orthographic(point, yaw=math.pi / 2)
+        self.assertAlmostEqual(front[0], 0.25)
+        self.assertAlmostEqual(front[1], -0.75)
+        self.assertAlmostEqual(side[0], -0.4)
+        self.assertAlmostEqual(side[1], -0.75)
+
+    def test_projection_rejects_invalid_scale_and_coordinates(self):
+        with self.assertRaisesRegex(ValueError, "greater than zero"):
+            project_point_orthographic((0.0, 0.0, 0.0), scale=0)
+        with self.assertRaisesRegex(ValueError, "three coordinates"):
+            project_point_orthographic((0.0, 1.0))
 
     def test_unknown_joint_rotation_is_rejected(self):
         with self.assertRaisesRegex(ValueError, "unknown joints"):
