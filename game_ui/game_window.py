@@ -27,6 +27,7 @@ from application.save_storage import SaveStorage, SaveStorageError
 from application.gameplay_step_clock import FixedStepAccumulator
 from application.continuous_player_movement import ContinuousPlayerMovementController
 from application.performance_monitor import PerformanceMonitor
+from core.domain.movement import MovementIntent
 
 # Screens that show the navigation tab bar / resource bar.
 NAV_SCREENS = frozenset()
@@ -307,7 +308,9 @@ class GameWindow:
             if click_to_move:
                 click_intent = self.screens[self.gameplay_screen].click_move_intent()
                 if click_intent.is_moving:
-                    step_intent = click_intent
+                    # Route direction is mouse-driven; movement mode remains
+                    # owned by the live keyboard adapter for this fixed step.
+                    step_intent = MovementIntent(click_intent.direction, intent.mode)
             controller.step(
                 actor_id,
                 step_intent,

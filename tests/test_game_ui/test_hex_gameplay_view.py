@@ -443,3 +443,21 @@ def test_npc_visual_update_reuses_runtime_entity_position_snapshot():
     view._advance_npc_visuals(1.0 / 60.0)
 
     assert metrics.snapshot()["counts"]["runtime_entity_validation_queries"] == 2
+
+
+def test_manual_keyboard_action_cancels_click_goal_and_ignores_same_frame_click():
+    service = FakeService()
+    view = HexGameplayView(service)
+    _configure_interaction_view(view)
+    view._move_goal = LocalHexPosition(2, 0)
+    view._move_map_id = "village"
+    clicked_cell = LocalHexPosition(1, 0)
+
+    view.handle(InputState(
+        actions={"right"},
+        mouse_clicked=True,
+        mouse_pos=view.transform.axial_to_screen(clicked_cell.to_hex_coord()),
+    ))
+
+    assert view._move_goal is None
+    assert view._move_map_id is None

@@ -4,7 +4,7 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from core.domain.movement import MovementConfig, MovementIntent
+from core.domain.movement import MovementConfig, MovementIntent, MovementMode
 from core.domain.physics import Vector2
 from application.gameplay_step_clock import FixedStepAccumulator
 from game_ui.game_window import GameWindow
@@ -185,6 +185,97 @@ class TestGameWindowRendering(unittest.TestCase):
 
         self.assertEqual(calls, ["clear", "save_slots"])
 
+
+    def test_click_to_move_preserves_current_movement_mode(self):
+        calls = []
+
+        class Clock:
+            step_seconds = 1.0 / 60.0
+
+            def advance(self, _elapsed, *, active):
+                return 1 if active else 0
+
+        class Controller:
+            def __init__(self, *_args, **_kwargs):
+                pass
+
+            def step(self, actor_id, intent, delta_seconds):
+                calls.append((actor_id, intent, delta_seconds))
+
+        click_intent = MovementIntent(Vector2(1.0, 0.0))
+        screen = SimpleNamespace(click_move_intent=lambda: click_intent)
+        service = SimpleNamespace(
+            player_actor_id="hero",
+            hex_actor_binding=SimpleNamespace(
+                physics_snapshot=object(), player_body=object(),
+            ),
+            npc_physics_bodies={},
+        )
+        window = SimpleNamespace(
+            service=service,
+            _movement_configs={"hero": MovementConfig(max_speed=100.0)},
+            movement_input=SimpleNamespace(focused=True),
+            _movement_clock=Clock(),
+            screens={"main": screen},
+            gameplay_screen="main",
+        )
+
+        with patch("game_ui.game_window.ContinuousPlayerMovementController", Controller):
+            GameWindow._advance_continuous_player_movement(
+                window, 1.0 / 60.0,
+                MovementIntent(mode=MovementMode.STEALTH),
+                active=True, click_to_move=True,
+            )
+
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(calls[0][1].direction, click_intent.direction)
+        self.assertIs(calls[0][1].mode, MovementMode.STEALTH)
+
+    def test_click_to_move_continues_when_keyboard_focus_is_lost(self):
+        calls = []
+
+        class Clock:
+            step_seconds = 1.0 / 60.0
+
+            def advance(self, _elapsed, *, active):
+                self.active = active
+                return 1 if active else 0
+
+        class Controller:
+            def __init__(self, *_args, **_kwargs):
+                pass
+
+            def step(self, actor_id, intent, delta_seconds):
+                calls.append((actor_id, intent, delta_seconds))
+
+        screen = SimpleNamespace(
+            click_move_intent=lambda: MovementIntent(Vector2(1.0, 0.0)),
+        )
+        service = SimpleNamespace(
+            player_actor_id="hero",
+            hex_actor_binding=SimpleNamespace(
+                physics_snapshot=object(), player_body=object(),
+            ),
+            npc_physics_bodies={},
+        )
+        clock = Clock()
+        window = SimpleNamespace(
+            service=service,
+            _movement_configs={"hero": MovementConfig(max_speed=100.0)},
+            movement_input=SimpleNamespace(focused=False),
+            _movement_clock=clock,
+            screens={"main": screen},
+            gameplay_screen="main",
+        )
+
+        with patch("game_ui.game_window.ContinuousPlayerMovementController", Controller):
+            GameWindow._advance_continuous_player_movement(
+                window, 1.0 / 60.0, MovementIntent(),
+                active=True, click_to_move=True,
+            )
+
+        self.assertTrue(clock.active)
+        self.assertEqual(len(calls), 1)
 
 if __name__ == "__main__":
     unittest.main()
