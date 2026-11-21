@@ -302,7 +302,7 @@ Anatomik oranlar ve eklem hareketleri uygulama sırasında ayrıca insan iskelet
 Eklenen/ güncellenen bileşenler:
 
 - `game_ui/world_rendering/humanoid_rig_3d.py`: Pygame bağımsız 3B humanoid hiyerarşisi, quaternion tabanlı ebeveyn dönüşümleri, eklem limitleri, kemik uzunlukları ve ortografik projeksiyon.
-- `tests/test_game_ui/test_humanoid_rig_3d.py`: 17 unittest metodu.
+- `tests/test_game_ui/test_humanoid_rig_3d.py`: 18 unittest metodu.
 - `scripts/preview_humanoid_rig_3d.py`: Ön, yan ve üç çeyrek debug görünüşü.
 - `pyproject.toml`: pytest keşif ve Ruff yapılandırması.
 - `.github/workflows/eldoria-ci.yml`: Yeni rig modülü, testleri ve önizleme betiği Ruff kapsamına eklendi.
