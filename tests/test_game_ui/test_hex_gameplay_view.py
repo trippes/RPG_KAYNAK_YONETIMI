@@ -13,6 +13,8 @@ from game_ui.screens.main_screen import MainScreen
 
 
 class FakePhysicsSnapshot:
+    map_id = "village"
+
     def cell_center(self, cell):
         return WorldPoint(cell.q * 55.42562584220407, cell.r * 48.0)
 
@@ -54,16 +56,19 @@ class RecordingActorBinding:
 class FakeRuntime:
     def __init__(self, transitions=()):
         self.transitions = transitions
+        self.path_queries = 0
 
     def entity(self, _actor_id):
         return SimpleNamespace(
             position=EntityPosition("village", LocalHexPosition(0, 0)),
+            profile=MovementProfile(),
         )
 
     def continuous_position(self, _actor_id):
         return SimpleNamespace(point=WorldPoint(0.0, 0.0))
 
     def path_to(self, actor_id, goal, *, edge_validator=None):
+        self.path_queries += 1
         source = self.entity(actor_id).position.cell
         if edge_validator is not None and not edge_validator(source, goal):
             return None
@@ -461,3 +466,20 @@ def test_manual_keyboard_action_cancels_click_goal_and_ignores_same_frame_click(
 
     assert view._move_goal is None
     assert view._move_map_id is None
+
+
+def test_click_move_route_is_cached_across_repeated_fixed_step_intents():
+    service = FakeService()
+    view = HexGameplayView(service)
+    view._move_goal = LocalHexPosition(2, 0)
+    view._move_map_id = "village"
+
+    first = view.click_move_intent()
+    second = view.click_move_intent()
+
+    assert first.is_moving
+    assert second.is_moving
+    assert service.hex_world_runtime.path_queries == 1
+    metrics = view._click_move_route.metrics_snapshot()
+    assert metrics["player_click_path_queries"] == 1
+    assert metrics["player_click_route_cache_hits"] == 1

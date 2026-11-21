@@ -6,6 +6,7 @@ import math
 from time import perf_counter_ns
 
 from core.domain.movement import MovementIntent
+from application.click_move_route import ClickMoveRouteController
 from core.domain.physics import Vector2
 from core.domain.spatial import HexDirection, LocalHexPosition, WorldPoint, world_point_to_hex
 from game_ui.world_transform import WorldTransform
@@ -62,6 +63,7 @@ class HexGameplayView:
         self._panel = None
         self._move_goal = None
         self._move_map_id = None
+        self._click_move_route = ClickMoveRouteController()
         self._physics_accumulator = 0.0
         self._manual_directions = ()
         self._visual_map_id = None
@@ -241,50 +243,39 @@ class HexGameplayView:
         return self._move_goal is not None
 
     def click_move_intent(self) -> MovementIntent:
-        """Return a direction intent for the shared native movement controller."""
+        """Return the cached route's next waypoint intent for the shared controller."""
         if self._move_goal is None:
             return MovementIntent()
         runtime = self.service.hex_world_runtime
         if runtime is None:
-            self._clear_move_goal()
+            self._clear_move_goal("runtime_unavailable")
             return MovementIntent()
         try:
-            entity = runtime.entity(self.service.player_actor_id)
             binding = self.service.hex_actor_binding
+            snapshot = binding.physics_snapshot
+            body = binding.player_body
         except (KeyError, RuntimeError, ValueError):
-            self._clear_move_goal()
+            self._clear_move_goal("physics_unavailable")
             return MovementIntent()
-        if entity.position.map_id != self._move_map_id:
-            self._clear_move_goal()
+        if (
+            snapshot is None
+            or body is None
+            or snapshot.map_id != self._move_map_id
+        ):
+            self._clear_move_goal("map_or_physics_changed")
             return MovementIntent()
-        snapshot = binding.physics_snapshot
-        body = binding.player_body
-        if snapshot is None or body is None:
-            self._clear_move_goal()
-            return MovementIntent()
-        current = runtime.continuous_position(self.service.player_actor_id).point
-        if entity.position.cell == self._move_goal:
-            target = snapshot.cell_center(self._move_goal)
-        else:
-            path_started = perf_counter_ns()
-            self._path_query_count += 1
-            path = runtime.path_to(
-                self.service.player_actor_id,
-                self._move_goal,
-                edge_validator=lambda source, destination: snapshot.can_reach_cell(
-                    source, destination, body,
-                ),
-            )
-            self._path_query_ms += (perf_counter_ns() - path_started) / 1_000_000.0
-            if path is None or len(path) < 2:
-                self._clear_move_goal()
-                return MovementIntent()
-            target = snapshot.cell_center(path[1])
-        dx, dy = target.x - current.x, target.y - current.y
-        if math.hypot(dx, dy) <= 0.5:
-            self._clear_move_goal()
-            return MovementIntent()
-        return MovementIntent(Vector2(dx, dy))
+
+        intent = self._click_move_route.intent(
+            runtime,
+            self.service.player_actor_id,
+            self._move_goal,
+            snapshot,
+            body,
+        )
+        if not self._click_move_route.active:
+            self._move_goal = None
+            self._move_map_id = None
+        return intent
 
     def _advance_player_physics(self) -> None:
         """Fallback fixed-step input for views hosted without the native loop."""
@@ -337,9 +328,17 @@ class HexGameplayView:
         self._visual_start = self._visual_position
         self._visual_target = self._visual_position
 
-    def _clear_move_goal(self) -> None:
+    def _clear_move_goal(self, reason: str = "cancelled") -> None:
+        self._click_move_route.cancel(reason)
         self._move_goal = None
         self._move_map_id = None
+
+    def _set_move_goal(self, goal: LocalHexPosition, map_id: str) -> None:
+        if self._move_goal == goal and self._move_map_id == map_id:
+            return
+        self._clear_move_goal("new_goal")
+        self._move_goal = goal
+        self._move_map_id = map_id
 
     def handle(self, state) -> str | None:
         self._manual_directions = ()
@@ -493,7 +492,7 @@ class HexGameplayView:
                     manual_directions.append(direction)
         self._manual_directions = tuple(manual_directions)
         if manual_move:
-            self._clear_move_goal()
+            self._clear_move_goal("manual_keyboard_override")
         elif state.mouse_clicked and state.mouse_pos is not None:
             if (
                 self.context_menu_target_kind is not None
@@ -575,9 +574,7 @@ class HexGameplayView:
             q = self.transform.screen_to_axial(*state.mouse_pos)
             goal = LocalHexPosition.from_hex_coord(q)
             if map_definition.has_cell(goal):
-                self._clear_move_goal()
-                self._move_goal = goal
-                self._move_map_id = entity.position.map_id
+                self._set_move_goal(goal, entity.position.map_id)
                 self._physics_accumulator = 0.0
 
     def _ensure_character_animators(self, renderer):
