@@ -255,7 +255,7 @@ class GameWindow:
             self._player_movement_controller_key = None
 
     def _load_movement_profiles(self):
-        """Load only explicit actor speeds from the selected content package."""
+        """Load explicit actor movement tuning from the selected content package."""
         from application.content_pack import load_movement_configs
 
         try:
@@ -269,7 +269,8 @@ class GameWindow:
                 "error",
             )
 
-    def _advance_continuous_player_movement(        self,
+    def _advance_continuous_player_movement(
+        self,
         elapsed_seconds,
         intent,
         *,
