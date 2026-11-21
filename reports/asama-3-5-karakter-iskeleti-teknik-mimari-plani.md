@@ -264,5 +264,5 @@ Her paket sonunda:
 - **Entegrasyon durumu:** Henüz `hex_gameplay_view.py`, mevcut sprite factory veya mevcut animasyon sistemi değiştirilmedi. Oyuncu/NPC entegrasyonu Paket 4'e bırakılmıştır.
 - **Paket 2 — Rig renderer doğrulaması:** Kullanıcının yerel ortamda çalıştırdığı iskelet, rig renderer ve mevcut karakter renderer testleri toplam 21/21 başarılı oldu.
 - **Paket 3 — Rig animasyonu:** İlk bağımsız sürüm eklendi: `game_ui/world_rendering/character_rig_animation.py`. Idle/walk/run durumları için delta-time tabanlı, örnek başına bağımsız eklem pozları üretir; yön değişiminde fazı, durum değişiminde normalize edilmiş döngü fazını korur. Yürüyüş/koşuda karşılıklı kol-bacak salınımı ve ayak yönünü yatay tutan ayak bileği telafisi bulunur.
-- **Paket 3 testleri:** `tests/test_game_ui/test_character_rig_animation.py` eklendi. Yerel doğrulama bekleniyor.
+- **Paket 3 testleri:** `tests/test_game_ui/test_character_rig_animation.py` eklendi. Kullanıcının yerel ortamda çalıştırdığı dört test grubu (iskelet, rig renderer, rig animasyonu ve mevcut karakter renderer) toplam **33/33 başarılı** oldu.
 - **Entegrasyon durumu:** Oyun görünümü, mevcut sprite factory ve mevcut animasyon API'si değiştirilmedi. Rig animasyonu henüz oyun içinde kullanılmıyor.
