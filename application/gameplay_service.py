@@ -198,6 +198,8 @@ class GameplayService:
         self._companion_command_service = None
         self._npc_behavior_system = None
         self._npc_behavior_system_key = None
+        self._npc_avoidance_system = None
+        self._npc_avoidance_system_key = None
 
     @property
     def application(self) -> GameApplication:
@@ -535,12 +537,21 @@ class GameplayService:
             return ()
         from .npc_avoidance import NPCAvoidanceSystem
 
-        moved = NPCAvoidanceSystem(
-            bundle.social.npcs,
-            runtime,
-            binding.physics_snapshot,
+        key = (
+            id(runtime),
+            id(bundle.social.npcs),
+            id(binding.physics_snapshot),
             self.player_actor_id,
-        ).step(delta_seconds)
+        )
+        if key != self._npc_avoidance_system_key:
+            self._npc_avoidance_system = NPCAvoidanceSystem(
+                bundle.social.npcs,
+                runtime,
+                binding.physics_snapshot,
+                self.player_actor_id,
+            )
+            self._npc_avoidance_system_key = key
+        moved = self._npc_avoidance_system.step(delta_seconds)
         contacts = self._resolve_npc_body_overlaps()
         return tuple(sorted(set(moved) | set(contacts)))
 
@@ -581,6 +592,17 @@ class GameplayService:
         moved = self.companion_command_service.tick(delta_seconds)
         separated = self._resolve_npc_body_overlaps()
         return tuple(sorted(set(moved) | set(separated)))
+
+    def advance_npc_simulation(self, delta_seconds: float):
+        """Advance all autonomous NPC systems in their canonical fixed-step order."""
+        moved = set()
+        for advance in (
+            self.advance_npc_patrols,
+            self.advance_npc_avoidance,
+            self.advance_companions,
+        ):
+            moved.update(advance(delta_seconds))
+        return tuple(sorted(moved))
 
     @property
     def npc_physics_bodies(self):
