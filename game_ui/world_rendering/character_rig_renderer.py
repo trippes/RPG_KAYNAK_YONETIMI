@@ -145,7 +145,7 @@ class CharacterRigRenderer:
                 colors["trousers"] if kind == "leg" else limb_color
             )
             self._draw_segment(
-                draw, positions[start_name], positions[end_name],
+                draw, renderer.surface, positions[start_name], positions[end_name],
                 max(2.0, bone.thickness * scale), color, colors["outline"],
             )
         # Hands and knees receive a small joint cap to avoid visible seams.
@@ -155,7 +155,7 @@ class CharacterRigRenderer:
             (f"{side}_ankle", 0.038),
         ):
             self._draw_joint(
-                draw, positions[joint_name], max(2, round(scale * radius_factor)),
+                draw, renderer.surface, positions[joint_name], max(2, round(scale * radius_factor)),
                 colors["skin"] if joint_name.endswith("hand") else colors["trousers"],
                 colors["outline"],
             )
@@ -187,7 +187,7 @@ class CharacterRigRenderer:
         bone = bone_by_name.get("chest_neck")
         if bone is not None:
             self._draw_segment(
-                renderer.pg.draw, positions["chest"], positions["neck"],
+                renderer.pg.draw, renderer.surface, positions["chest"], positions["neck"],
                 max(2.0, bone.thickness * scale),
                 colors["skin"], colors["outline"],
             )
@@ -195,22 +195,22 @@ class CharacterRigRenderer:
     def _draw_head(self, renderer, center, scale, colors):
         draw = renderer.pg.draw
         radius = max(4, round(scale * 0.105))
-        self._draw_joint(draw, center, radius, colors["skin"], colors["outline"])
+        self._draw_joint(draw, renderer.surface, center, radius, colors["skin"], colors["outline"])
         hair_center = (round(center[0]), round(center[1] - radius * 0.48))
         self._draw_joint(
-            draw, hair_center, max(2, round(radius * 0.78)),
+            draw, renderer.surface, hair_center, max(2, round(radius * 0.78)),
             colors["hair"], colors["outline"],
         )
 
     @staticmethod
-    def _draw_segment(draw, start, end, thickness, fill, outline):
+    def _draw_segment(draw, surface, start, end, thickness, fill, outline):
         dx = end[0] - start[0]
         dy = end[1] - start[1]
         length = math.hypot(dx, dy)
         radius = max(1.0, thickness * 0.5)
         if length <= 1e-6:
             CharacterRigRenderer._draw_joint(
-                draw, start, max(1, round(radius)), fill, outline
+                draw, surface, start, max(1, round(radius)), fill, outline
             )
             return
         perpendicular = (-dy / length * radius, dx / length * radius)
@@ -220,17 +220,17 @@ class CharacterRigRenderer:
             CharacterRigRenderer._point((end[0] - perpendicular[0], end[1] - perpendicular[1])),
             CharacterRigRenderer._point((start[0] - perpendicular[0], start[1] - perpendicular[1])),
         ]
-        draw.polygon(None, fill, points)
-        draw.polygon(None, outline, points, max(1, round(radius * 0.22)))
+        draw.polygon(surface, fill, points)
+        draw.polygon(surface, outline, points, max(1, round(radius * 0.22)))
         cap_radius = max(1, round(radius))
-        CharacterRigRenderer._draw_joint(draw, start, cap_radius, fill, outline)
-        CharacterRigRenderer._draw_joint(draw, end, cap_radius, fill, outline)
+        CharacterRigRenderer._draw_joint(draw, surface, start, cap_radius, fill, outline)
+        CharacterRigRenderer._draw_joint(draw, surface, end, cap_radius, fill, outline)
 
     @staticmethod
-    def _draw_joint(draw, center, radius, fill, outline):
+    def _draw_joint(draw, surface, center, radius, fill, outline):
         point = CharacterRigRenderer._point(center)
-        draw.circle(None, outline, point, radius + 1)
-        draw.circle(None, fill, point, radius)
+        draw.circle(surface, outline, point, radius + 1)
+        draw.circle(surface, fill, point, radius)
 
     @staticmethod
     def _point(position):
