@@ -329,17 +329,26 @@ class GameWindow:
         if not active or step_count <= 0:
             return
 
-        behavior_steps = (
-            "advance_npc_patrols",
-            "advance_npc_avoidance",
-            "advance_companions",
-        )
+        advance_simulation = getattr(service, "advance_npc_simulation", None)
+        if not callable(advance_simulation):
+            # Keep lightweight legacy test doubles and adapters compatible.
+            behavior_steps = (
+                "advance_npc_patrols",
+                "advance_npc_avoidance",
+                "advance_companions",
+            )
+        else:
+            behavior_steps = ()
+
         for _ in range(step_count):
             try:
-                for method_name in behavior_steps:
-                    advance = getattr(service, method_name, None)
-                    if callable(advance):
-                        advance(clock.step_seconds)
+                if callable(advance_simulation):
+                    advance_simulation(clock.step_seconds)
+                else:
+                    for method_name in behavior_steps:
+                        advance = getattr(service, method_name, None)
+                        if callable(advance):
+                            advance(clock.step_seconds)
             except (KeyError, RuntimeError, ValueError) as error:
                 clock.reset()
                 self._set_notice(f"NPC simülasyonu durduruldu: {error}", "error")
