@@ -100,7 +100,13 @@ class ContinuousPlayerMovementController:
             raise ValueError("physics snapshot belongs to a different map")
 
         start = entity.continuous_position.point
-        current = MovementState(start)
+        previous = self._last_state
+        current = MovementState(
+            start,
+            previous.velocity if previous is not None and previous.position == start
+            else Vector2(0.0, 0.0),
+            intent.mode,
+        )
         if not actor.active or not entity.active or not entity.profile.can_move:
             result = MovementResult(
                 False,
@@ -177,7 +183,9 @@ class ContinuousPlayerMovementController:
                         f"{push.entity_id}"
                     )
             self._last_dynamic_pushes = ()
-            state = current
+            # A rejected displacement was not accepted by the authoritative
+            # runtime, so it cannot contribute velocity to the next step.
+            state = MovementState(start, Vector2(0.0, 0.0), intent.mode)
 
         self._last_state = state
         self._last_collision_resolution = resolution
