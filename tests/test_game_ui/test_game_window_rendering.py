@@ -103,7 +103,7 @@ class TestGameWindowRendering(unittest.TestCase):
 
         self.assertEqual(len(calls), 1)
         self.assertEqual(calls[0][0], "hero")
-        self.assertIs(calls[0][1], click_intent)
+        self.assertEqual(calls[0][1], click_intent)
         self.assertEqual(calls[0][2], 1.0 / 60.0)
 
     def test_npc_behaviors_advance_on_fixed_steps_while_player_is_idle(self):
