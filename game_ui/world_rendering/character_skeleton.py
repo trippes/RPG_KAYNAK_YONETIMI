@@ -193,7 +193,7 @@ DEFAULT_CHARACTER_SKELETON = CharacterSkeleton(
         _joint("left_hip", "pelvis", (-0.075, -0.03)),
         _joint("left_knee", "left_hip", (0.0, -0.23)),
         _joint("left_ankle", "left_knee", (0.0, -0.23)),
-        _joint("left_foot", "left_ankle", (0.035, -0.04)),
+        _joint("left_foot", "left_ankle", (-0.035, -0.04)),
         _joint("right_hip", "pelvis", (0.075, -0.03)),
         _joint("right_knee", "right_hip", (0.0, -0.23)),
         _joint("right_ankle", "right_knee", (0.0, -0.23)),
