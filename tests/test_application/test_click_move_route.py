@@ -333,3 +333,24 @@ def test_smoothing_checks_dynamic_occupancy_of_second_edge():
     assert intent.is_moving
     assert intent.direction.x == 10.0
     assert runtime.path_queries == 1
+
+
+def test_route_exposes_smoothed_waypoint_as_explicit_movement_target():
+    runtime = FakeRuntime(paths=[(A, B, C)])
+    controller = make_controller()
+
+    intent = route_intent(controller, runtime)
+
+    assert intent.is_moving
+    assert controller.movement_target.position == WorldPoint(20.0, 0.0)
+    assert controller.movement_target.arrival_tolerance == 0.5
+
+
+def test_route_uses_turning_waypoint_as_braking_target():
+    runtime = FakeRuntime(paths=[(A, B, D)])
+    controller = make_controller()
+
+    intent = route_intent(controller, runtime, goal=D)
+
+    assert intent.is_moving
+    assert controller.movement_target.position == WorldPoint(10.0, 0.0)
