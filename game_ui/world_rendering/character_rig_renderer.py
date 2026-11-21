@@ -19,15 +19,18 @@ class CharacterRigRenderer:
     )
 
     _DIRECTION_PROJECTION = {
-        "east": (1.0, 0.58),
-        "south_east": (1.0, 0.82),
-        "south": (1.0, 1.0),
-        "south_west": (-1.0, 0.82),
-        "west": (-1.0, 0.58),
-        "north_west": (-1.0, 0.82),
-        "north": (1.0, 1.0),
-        "north_east": (1.0, 0.82),
+        # Screen-space projection of the character's local +X (right) axis.
+        # The small vertical component gives the body a readable 2.5D depth cue.
+        "east": (0.0, 1.0),
+        "south_east": (-math.sqrt(0.5), math.sqrt(0.5)),
+        "south": (-1.0, 0.0),
+        "south_west": (-math.sqrt(0.5), -math.sqrt(0.5)),
+        "west": (0.0, -1.0),
+        "north_west": (math.sqrt(0.5), -math.sqrt(0.5)),
+        "north": (1.0, 0.0),
+        "north_east": (math.sqrt(0.5), math.sqrt(0.5)),
     }
+    DEPTH_PROJECTION = 0.45
 
     DEFAULT_PALETTE = {
         "outline": (35, 29, 27),
@@ -75,15 +78,16 @@ class CharacterRigRenderer:
         ):
             raise ValueError("foot_position must contain two finite coordinates.")
 
-        mirror_x, horizontal_scale = cls._DIRECTION_PROJECTION[facing]
+        lateral_x, lateral_y = cls._DIRECTION_PROJECTION[facing]
         anchor_x, anchor_y = skeleton.ground_anchor
         positions = skeleton.joint_positions(local_rotations)
         scale = float(world_scale)
         foot_x, foot_y = float(foot_position[0]), float(foot_position[1])
         return {
             name: (
-                foot_x + (point[0] - anchor_x) * scale * horizontal_scale * mirror_x,
-                foot_y - (point[1] - anchor_y) * scale,
+                foot_x + (point[0] - anchor_x) * scale * lateral_x,
+                foot_y - (point[1] - anchor_y) * scale
+                + (point[0] - anchor_x) * scale * lateral_y * cls.DEPTH_PROJECTION,
             )
             for name, point in positions.items()
         }
@@ -112,9 +116,13 @@ class CharacterRigRenderer:
             colors.update(palette)
 
         scale = float(world_scale)
-        near_side = "right" if facing in {
-            "east", "south_east", "south", "north_east"
-        } else "left"
+        _lateral_x, lateral_y = self._DIRECTION_PROJECTION[facing]
+        near_side = (
+            "right" if lateral_y > 1e-8
+            else "left" if lateral_y < -1e-8
+            else "right" if facing == "south"
+            else "left"
+        )
         far_side = "left" if near_side == "right" else "right"
         bone_by_name = {bone.name: bone for bone in skeleton.bones}
 
