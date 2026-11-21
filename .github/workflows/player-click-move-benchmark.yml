@@ -6,6 +6,7 @@ on:
       - "experiment/map-cleanup"
     paths:
       - "application/click_move_route.py"
+      - "application/hex_pathfinding.py"
       - "scripts/benchmark_player_click_move.py"
       - ".github/workflows/player-click-move-benchmark.yml"
   workflow_dispatch:
