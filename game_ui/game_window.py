@@ -90,6 +90,8 @@ class GameWindow:
             else None
         )
         self._movement_clock = FixedStepAccumulator()
+        self._player_movement_controller = None
+        self._player_movement_controller_key = None
         # NPC simulation advances independently from player input. Opening an
         # overlay or standing still must not freeze patrols and companions.
         self._npc_simulation_clock = FixedStepAccumulator()
@@ -247,6 +249,10 @@ class GameWindow:
             self._movement_clock = FixedStepAccumulator()
         if not hasattr(self, "_movement_configs"):
             self._movement_configs = {}
+        if not hasattr(self, "_player_movement_controller"):
+            self._player_movement_controller = None
+        if not hasattr(self, "_player_movement_controller_key"):
+            self._player_movement_controller_key = None
 
     def _load_movement_profiles(self):
         """Load only explicit actor speeds from the selected content package."""
@@ -286,6 +292,8 @@ class GameWindow:
             active=active,
         )
         if not active:
+            self._player_movement_controller = None
+            self._player_movement_controller_key = None
             return
         if step_count <= 0:
             return
@@ -295,14 +303,25 @@ class GameWindow:
         body = binding.player_body
         if snapshot is None or body is None:
             self._movement_clock.reset()
+            self._player_movement_controller = None
+            self._player_movement_controller_key = None
             return
-        controller = ContinuousPlayerMovementController(
-            binding,
-            snapshot,
-            body,
-            config,
-            npc_bodies=getattr(self.service, "npc_physics_bodies", {}),
+        controller_key = (
+            id(binding), id(snapshot), id(body), actor_id, id(config),
         )
+        if (
+            self._player_movement_controller is None
+            or self._player_movement_controller_key != controller_key
+        ):
+            self._player_movement_controller = ContinuousPlayerMovementController(
+                binding,
+                snapshot,
+                body,
+                config,
+                npc_bodies=getattr(self.service, "npc_physics_bodies", {}),
+            )
+            self._player_movement_controller_key = controller_key
+        controller = self._player_movement_controller
         for _ in range(step_count):
             step_intent = intent
             if click_to_move:
