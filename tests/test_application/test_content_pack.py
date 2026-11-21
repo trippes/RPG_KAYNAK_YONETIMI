@@ -58,9 +58,9 @@ class TestContentPack(unittest.TestCase):
         configs = load_movement_configs(package_path=package)
 
         self.assertEqual(set(configs), {"hero", "test_guard", "test_target"})
-        self.assertEqual(configs["hero"].acceleration, 180.0)
-        self.assertEqual(configs["hero"].deceleration, 240.0)
-        self.assertEqual(configs["hero"].braking_deceleration, 360.0)
+        self.assertEqual(configs["hero"].acceleration, 300.0)
+        self.assertEqual(configs["hero"].deceleration, 360.0)
+        self.assertEqual(configs["hero"].braking_deceleration, 480.0)
 
     def test_opening_content_registers_guard_and_intro_dialogue_before_character_creation(self):
         application = GameApplication.create_default()
