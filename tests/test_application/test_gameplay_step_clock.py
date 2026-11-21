@@ -24,11 +24,13 @@ class FixedStepAccumulatorTests(unittest.TestCase):
         clock = FixedStepAccumulator(step_seconds=0.02, max_substeps=3)
 
         self.assertEqual(clock.advance(0.2), 3)
+        self.assertEqual(clock.last_substeps, 3)
         self.assertAlmostEqual(clock.last_dropped_seconds, 0.14)
         self.assertAlmostEqual(clock.total_dropped_seconds, 0.14)
         self.assertAlmostEqual(clock.accumulated_seconds, 0.0)
 
         self.assertEqual(clock.advance(0.02), 1)
+        self.assertEqual(clock.last_substeps, 1)
         self.assertAlmostEqual(clock.last_dropped_seconds, 0.0)
         self.assertAlmostEqual(clock.total_dropped_seconds, 0.14)
 
