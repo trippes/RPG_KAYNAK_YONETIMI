@@ -9,6 +9,8 @@ from core.domain.physics import (
 )
 from core.domain.spatial import AABB, WorldPoint
 
+from .npc_simulation_metrics import timed_npc_step
+
 
 @dataclass(frozen=True, slots=True)
 class DynamicActorPush:
@@ -40,11 +42,15 @@ class DynamicActorCollisionResolver:
         self._runtime = runtime
         self._snapshot = physics_snapshot
 
+    @timed_npc_step("npc_overlap_pairs")
     def resolve_npc_pairs(
         self,
         npc_bodies: Mapping[str, PhysicsBodyDefinition],
     ) -> tuple[str, ...]:
         """Resolve overlapping NPC circles with deterministic inverse-mass splitting."""
+        metrics = getattr(self._runtime, "metrics", None)
+        if metrics is not None:
+            metrics.increment("overlap_pair_resolver_calls")
         if not isinstance(npc_bodies, Mapping):
             raise TypeError("npc_bodies must be a mapping.")
         valid = {}
@@ -77,7 +83,11 @@ class DynamicActorCollisionResolver:
                 position_a.x + margin, position_a.y + margin,
             )
             map_id = entity_a.position.map_id
-            for other_id in sorted(self._runtime.query_spatial_candidates(map_id, bounds)):
+            candidates = self._runtime.query_spatial_candidates(map_id, bounds)
+            if metrics is not None:
+                metrics.increment("overlap_spatial_queries")
+                metrics.increment("overlap_spatial_candidates", len(candidates))
+            for other_id in candidates:
                 if other_id <= npc_id or other_id not in valid:
                     continue
                 pair = (npc_id, other_id)
@@ -176,6 +186,7 @@ class DynamicActorCollisionResolver:
 
         return tuple(sorted(moved))
 
+    @timed_npc_step("npc_overlap_player_contacts")
     def resolve_npc_player_contacts(
         self,
         player_id: str,
@@ -183,6 +194,9 @@ class DynamicActorCollisionResolver:
         npc_bodies: Mapping[str, PhysicsBodyDefinition],
     ) -> tuple[str, ...]:
         """Keep NPCs from stepping through a stationary player after AI movement."""
+        metrics = getattr(self._runtime, "metrics", None)
+        if metrics is not None:
+            metrics.increment("overlap_player_contact_resolver_calls")
         if not isinstance(player_id, str) or not player_id.strip():
             raise ValueError("player_id must be a non-empty string.")
         if not isinstance(player_body, PhysicsBodyDefinition):
@@ -201,6 +215,8 @@ class DynamicActorCollisionResolver:
         player_shape = ActorBodyTransform(player_position).transform_shape(player_body)
         moved = []
         for npc_id in sorted(npc_bodies):
+            if metrics is not None:
+                metrics.increment("overlap_player_contact_checks")
             body = npc_bodies[npc_id]
             if (
                 not isinstance(body, PhysicsBodyDefinition)
