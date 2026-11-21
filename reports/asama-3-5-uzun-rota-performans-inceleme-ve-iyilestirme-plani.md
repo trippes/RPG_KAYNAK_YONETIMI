@@ -194,3 +194,33 @@ Optimizasyon ancak aşağıdaki koşulların tümü sağlanırsa kabul edilir:
 ## 10. Nihai teknik karar
 
 **Önce ölç, sonra optimize et.** İlk uygulanacak iş A* algoritmasını değiştirmek değil, mevcut pathfinding çağrı zincirini alt maliyetlerine ayıran benchmark/profil telemetrisi eklemektir. Ölçüm fiziksel kenar doğrulamasının baskın maliyet olduğunu gösterirse ilk düşük riskli optimizasyon, aynı path query süresince yönlü kenar doğrulama sonuçlarının query-local memoization ile yeniden kullanılması olacaktır. Bu sırada güncel occupancy, immutable snapshot, MovementRules, optimal path ve runtime commit sınırları korunacaktır.
+
+## 11. CI profil ölçümü — 21 Kasım 2026
+
+Ölçüm commit'i: `3a4e36c13ac65ed8d5dfb6c951060c8d80703e74`
+
+Workflow: [Core Quality run 3017](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44899458761)
+
+Artifact: `player-click-move-performance-linux` (artifact ID `14705805858`, 30 gün saklama).
+
+Ölçüm ortamı: Python 3.11.18, Linux 7.0.0-1020-azure-x86_64, 7 ölçüm örneği ve 2 warm-up örneği. Profil ölçümü her rota için gerçek HexWorldRuntime üzerinde çalıştırılmıştır.
+
+| Rota | Doğrulamalı arama p50 | A* doğrulayıcısız p50 | Fizik doğrulayıcı toplam süresi p50 | Çağrı / sorgu | Ölçülen pay |
+|---:|---:|---:|---:|---:|---:|
+| 1 hücre | 0,382 ms | 0,093 ms | 0,283 ms | 1 | %74,05 |
+| 10 hücre | 17,892 ms | 0,599 ms | 17,125 ms | 19 | %95,67 |
+| 100 hücre | 1.459,950 ms | 5,583 ms | 1.451,200 ms | 199 | %99,34 |
+
+100 hücrelik rota için fizik doğrulayıcı, toplam path query süresinin yaklaşık %99,34'ünü tüketmiştir. Doğrulayıcı kapalı teşhis koşulunda aynı rota ve aynı path sonucu 5,583 ms p50 ile bulunmuştur. Bu doğrulamasız koşul yalnızca karşılaştırma içindir; oyun davranışında fizik doğrulaması kapatılmamıştır.
+
+### 11.1 Çağrı sayısının algoritmik açıklaması
+
+Mevcut `HexPathfinder.find_path` komşu döngüsünde `edge_validator` çağrısı, `new_cost >= cost_so_far.get(neighbor, ...)` kontrolünden önce çalışır. Düz tek hücre genişliğindeki 100 hücre benchmark koridorunda bu sıra, daha önce daha düşük maliyetle keşfedilmiş önceki hücreye geri dönen kenarların da fizik motorunda tekrar doğrulanmasına yol açmaktadır. Ölçülen 199 çağrı, 100 hücrelik bu koridorda her yeni ileri kenar için yapılan doğrulamalara ek olarak 99 geri kenar doğrulamasının da çalıştığını göstermektedir.
+
+Bu bulgu doğrudan, dar kapsamlı bir optimizasyon adayı verir: bir komşuya mevcut maliyetten daha iyi bir yol bulunamayacağı belli olduğunda, pahalı MovementRules ve fizik edge validator çağrılarından önce bu aday elenmelidir. Birim kenar maliyetli mevcut A* modelinde `new_cost` kontrolünün komşu döngüsünün başına alınması en güçlü ilk adaydır. Bu değişiklik uygulanmadan önce eşit/üst maliyetli kenarların atlanmasının callback sözleşmesi ve tüm pathfinding testleriyle uyumu doğrulanmalıdır.
+
+### 11.2 Sonuç ve karar
+
+Fiziksel kenar doğrulamasının uzun rota darboğazındaki baskın payı ölçümle kanıtlanmıştır. Önceki rapordaki 'ölçülmesi gereken aday' durumu artık kapanmıştır. Bir sonraki uygulama adımı, A* komşu döngüsünde mevcut maliyeti iyileştiremeyen komşuları pahalı doğrulamalardan önce elemek ve aynı CI benchmark'ında çağrı sayısı/süre düşüşünü doğrulamaktır. Fizik doğrulaması tamamen kaldırılmayacak, yalnızca gereksiz tekrarları önlenecektir.
+
+Bu profil benchmark commit'inde yalnızca teşhis telemetrisi eklenmiştir; A* veya fizik davranışında optimizasyon henüz uygulanmamıştır.
