@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import platform
 from pathlib import Path
 from time import perf_counter_ns
 
@@ -117,8 +118,11 @@ def _controller_samples(route_cells: int, iterations: int):
 def _cache_probe(route_cells: int, iterations: int):
     runtime, goal, snapshot, body = _scenario(route_cells)
     controller = ClickMoveRouteController(timing_enabled=True)
+    intent_samples = []
     for _ in range(iterations):
+        started = perf_counter_ns()
         intent = controller.intent(runtime, "hero", goal, snapshot, body)
+        intent_samples.append((perf_counter_ns() - started) / 1_000_000.0)
         if not intent.is_moving:
             raise RuntimeError(
                 f"Cached route produced no intent for {route_cells}-cell route.",
@@ -137,6 +141,9 @@ def _cache_probe(route_cells: int, iterations: int):
             100.0 * metrics["player_click_route_cache_hits"] / iterations,
             3,
         ),
+        "cached_intent_step_p50_ms": _percentile(intent_samples, 0.50),
+        "cached_intent_step_p95_ms": _percentile(intent_samples, 0.95),
+        "cached_intent_step_p99_ms": _percentile(intent_samples, 0.99),
     }
 
 
@@ -170,6 +177,8 @@ def run_benchmark(route_lengths: list[int], iterations: int) -> dict:
             "with one active cached route."
         ),
         "iterations": iterations,
+        "python_version": platform.python_version(),
+        "platform": platform.platform(),
         "route_lengths_cells": route_lengths,
         "arrival_time_note": (
             "Not measured: MovementIntegrator has no target-aware braking "
