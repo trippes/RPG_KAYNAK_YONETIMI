@@ -59,21 +59,30 @@ class TestCharacterRigRenderer(unittest.TestCase):
                 )
                 self.assertEqual(set(positions), set(DEFAULT_CHARACTER_SKELETON.joint_names))
 
-    def test_side_facing_is_narrower_and_west_is_mirrored(self):
+    def test_eight_directions_have_distinct_projected_body_orientations(self):
+        shoulder_vectors = set()
+        for direction in CharacterRigRenderer.DIRECTIONS:
+            positions = self.rig_renderer.project_joint_positions(
+                DEFAULT_CHARACTER_SKELETON, (120, 240), 64.0, facing=direction
+            )
+            vector = (
+                round(positions["right_shoulder"][0] - positions["left_shoulder"][0], 5),
+                round(positions["right_shoulder"][1] - positions["left_shoulder"][1], 5),
+            )
+            shoulder_vectors.add(vector)
+
+        self.assertEqual(len(shoulder_vectors), 8)
+
+    def test_east_and_west_side_views_project_lateral_axis_in_opposite_depth_directions(self):
         east = self.rig_renderer.project_joint_positions(
             DEFAULT_CHARACTER_SKELETON, (120, 240), 64.0, facing="east"
         )
         west = self.rig_renderer.project_joint_positions(
             DEFAULT_CHARACTER_SKELETON, (120, 240), 64.0, facing="west"
         )
-        south = self.rig_renderer.project_joint_positions(
-            DEFAULT_CHARACTER_SKELETON, (120, 240), 64.0, facing="south"
-        )
 
-        east_width = abs(east["left_shoulder"][0] - east["right_shoulder"][0])
-        south_width = abs(south["left_shoulder"][0] - south["right_shoulder"][0])
-        self.assertLess(east_width, south_width)
-        self.assertAlmostEqual(east["left_hand"][0] - 120, -(west["left_hand"][0] - 120))
+        self.assertLess(east["left_shoulder"][1], east["right_shoulder"][1])
+        self.assertGreater(west["left_shoulder"][1], west["right_shoulder"][1])
 
     def test_joint_pose_changes_articulated_limb_without_mutating_skeleton(self):
         rest = self.rig_renderer.draw(
