@@ -1046,16 +1046,43 @@ class GameWindow:
         return self.performance_monitor.stats
 
     def _performance_counters(self):
-        if not self.gameplay_active:
+        if (
+            not self.gameplay_active
+            or not getattr(self.performance_monitor, "enabled", False)
+        ):
             return {}
         world = self.screens.get(self.gameplay_screen)
+        counters = {}
+        view = None
         for name in ("view", "gameplay_view", "_view", "_gameplay_view", "_hex_view"):
             candidate = getattr(world, name, None)
+            if candidate is None:
+                continue
+            view = candidate
             stats = getattr(candidate, "render_stats", None)
             if isinstance(stats, dict):
-                return stats
-        stats = getattr(world, "render_stats", None)
-        return stats if isinstance(stats, dict) else {}
+                counters.update(stats)
+                break
+        if not counters:
+            stats = getattr(world, "render_stats", None)
+            if isinstance(stats, dict):
+                counters.update(stats)
+        clock = getattr(self, "_movement_clock", None)
+        if clock is not None:
+            counters.update({
+                "movement_fixed_step_cap": clock.max_substeps,
+                "movement_fixed_step_dropped_seconds_total": (
+                    clock.total_dropped_seconds
+                ),
+                "movement_fixed_step_dropped_seconds_last_frame": (
+                    clock.last_dropped_seconds
+                ),
+            })
+        route = getattr(view, "_click_move_route", None)
+        metrics = getattr(route, "metrics_snapshot", None)
+        if callable(metrics):
+            counters.update(metrics())
+        return counters
 
     def run(self, *, fps=60):
         self.running = True
