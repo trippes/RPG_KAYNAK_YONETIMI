@@ -1,13 +1,13 @@
 # Eldoria RPG — Aşama 1 Anatomik İskelet Uygulama Raporu
 
-**Çalışma dalı:** \`experiment/map-cleanup\`  
-**Ana plan:** \`reports/eldoria-karakter-anatomisi-ve-rig-genel-gelistirme-plani.md\`  
+**Çalışma dalı:** `experiment/map-cleanup`  
+**Ana plan:** `reports/eldoria-karakter-anatomisi-ve-rig-genel-gelistirme-plani.md`  
 **Durum:** İlk 3B anatomik model uygulandı; yerel ve CI doğrulaması bekleniyor.  
 **Kullanıcı tasarım kararı:** A-Pose, sağ elli X/Y/Z koordinat sistemi, yardımcı kürek kemiği kontrolü.
 
 ## 1. Uygulanan değişiklik
 
-Yeni \`game_ui/world_rendering/humanoid_rig_3d.py\` modülü eklendi. Modül Pygame'den bağımsızdır ve mevcut 2B \`character_skeleton.py\`, rig renderer, animator veya gameplay çağrılarını değiştirmez.
+Yeni `game_ui/world_rendering/humanoid_rig_3d.py` modülü eklendi. Modül Pygame'den bağımsızdır ve mevcut 2B `character_skeleton.py`, rig renderer, animator veya gameplay çağrılarını değiştirmez.
 
 ### Koordinat sözleşmesi
 
@@ -17,7 +17,7 @@ Yeni \`game_ui/world_rendering/humanoid_rig_3d.py\` modülü eklendi. Modül Pyg
 - +Z: yukarı.
 - Poz açıları radyan cinsinden XYZ Euler girdileridir.
 - İç dönüşüm temsili normalize quaternion'dır.
-- Kök eklem pelvis; zemin ankrajı pelvis köküne göre \`(0, 0, -0.47)\`.
+- Kök eklem pelvis; zemin ankrajı pelvis köküne göre `(0, 0, -0.47)`.
 - Runtime dünya konumu bu modülün dışında kalır.
 
 ### Anatomik hiyerarşi
@@ -49,7 +49,7 @@ Kürek kemiği düğümleri kontrol amaçlı işaretlenmiştir; mevcut sürümde
 
 ## 3. Test kapsamı
 
-Yeni unittest dosyası \`tests/test_game_ui/test_humanoid_rig_3d.py\` eklendi. Testler koordinat sözleşmesini, anatomik zincirleri, sol/sağ simetriyi, topuk ankrajını, köprücük kemiği ebeveynliğini, kontrol eklemlerini, quaternion dönüşüm aktarımını, eklem sınırlarını, kemik uzunluklarını ve hatalı verilerin reddini kontrol eder.
+Yeni unittest dosyası `tests/test_game_ui/test_humanoid_rig_3d.py` eklendi. Testler koordinat sözleşmesini, anatomik zincirleri, sol/sağ simetriyi, topuk ankrajını, köprücük kemiği ebeveynliğini, kontrol eklemlerini, quaternion dönüşüm aktarımını, eklem sınırlarını, kemik uzunluklarını ve hatalı verilerin reddini kontrol eder.
 
 Bu rapor yazılırken depo testleri yerel çalışma ortamında çalıştırılmamıştır. Test başarısı iddia edilmemektedir. GitHub Actions sonuçları ayrıca doğrulanmalıdır.
 
