@@ -129,6 +129,23 @@ class TestGameWindowRendering(unittest.TestCase):
         )
         self.assertTrue(all(delta == 1.0 / 60.0 for _name, delta in calls))
 
+    def test_npc_simulation_uses_the_central_service_entry_point(self):
+        calls = []
+        service = SimpleNamespace(
+            advance_npc_simulation=lambda delta: calls.append(delta),
+        )
+        window = SimpleNamespace(
+            service=service,
+            _npc_simulation_clock=FixedStepAccumulator(),
+            _set_notice=lambda *_args: None,
+        )
+
+        GameWindow._advance_npc_simulation(
+            window, 1.0 / 30.0, active=True,
+        )
+
+        self.assertEqual(calls, [1.0 / 60.0, 1.0 / 60.0])
+
     def test_npc_simulation_clock_resets_when_gameplay_is_paused(self):
         calls = []
         service = SimpleNamespace(
