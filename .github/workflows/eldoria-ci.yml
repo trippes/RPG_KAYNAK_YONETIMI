@@ -36,8 +36,16 @@ jobs:
         run: >-
           python -m ruff check --select E4,E7,E9,F
           application/npc_simulation_metrics.py
+          application/hex_world_runtime.py
+          application/npc_behavior_system.py
+          application/npc_avoidance.py
+          application/companion_commands.py
+          application/dynamic_actor_collision.py
+          game_ui/world_rendering/hex_gameplay_view.py
           scripts/benchmark_npc_perception.py
           tests/test_application/test_npc_simulation_metrics.py
+          tests/test_application/test_npc_behavior_system.py
+          tests/test_game_ui/test_hex_gameplay_view.py
 
   pygame-headless-smoke:
     name: Pygame headless smoke test
