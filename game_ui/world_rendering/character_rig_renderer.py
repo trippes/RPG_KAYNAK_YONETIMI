@@ -120,12 +120,12 @@ class CharacterRigRenderer:
 
         # Far limbs sit behind the torso; near limbs are drawn over it.
         self._draw_limb_group(
-            renderer, positions, bone_by_name, far_side, scale, colors, near=True
+            renderer, positions, bone_by_name, far_side, scale, colors, near=False
         )
         self._draw_torso(renderer, positions, scale, colors)
         self._draw_neck(renderer, positions, bone_by_name, scale, colors)
         self._draw_limb_group(
-            renderer, positions, bone_by_name, near_side, scale, colors, near=False
+            renderer, positions, bone_by_name, near_side, scale, colors, near=True
         )
         self._draw_head(renderer, positions["head"], scale, colors)
         return positions
