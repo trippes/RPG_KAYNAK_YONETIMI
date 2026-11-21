@@ -228,6 +228,9 @@ def test_arrival_uses_authoritative_goal_cell_and_center_tolerance():
     assert controller.status == "arrived"
     assert runtime.path_queries == 0
     assert controller.metrics_snapshot()["player_click_route_arrivals"] == 1
+    assert controller.movement_target.position == snapshot.cell_center(C)
+    assert controller.consume_movement_target().position == snapshot.cell_center(C)
+    assert controller.movement_target is None
 
 
 def test_running_or_stealth_mode_is_preserved_in_route_intent():
