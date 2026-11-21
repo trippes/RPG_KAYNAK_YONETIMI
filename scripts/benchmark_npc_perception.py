@@ -84,7 +84,9 @@ def _build_scenario(npc_count: int):
     body_bounds = AABB(-4, -4, 4, 4)
     for index in range(npc_count):
         npc_id = f"benchmark_npc_{index:03d}"
-        body = PhysicsBodyDefinition(npc_id, CircleShape(4.0))
+        body = PhysicsBodyDefinition(
+            npc_id, CircleShape(4.0), enabled=(role == 1),
+        )
         role = index % 3
         if role == 0:
             row = index // 3
@@ -121,11 +123,14 @@ def _build_scenario(npc_count: int):
     registry = NPCRegistry(npcs)
     snapshot = build_hex_physics_snapshot(world_id, definition, 32.0)
     avoidance = NPCAvoidanceSystem(registry, runtime, snapshot, "hero")
-    patrol = NPCBehaviorSystem(registry, runtime, snapshot)
+    # Patrol and companion movement use the runtime's logical path step here.
+    # Only fleeing actors keep enabled physics bodies, isolating perception
+    # work from the separate all-body overlap resolver cost.
+    patrol = NPCBehaviorSystem(registry, runtime, None)
     companion_registry = CompanionRegistry()
     companions = CompanionCommandService(
         runtime, registry, companion_registry, "hero",
-        physics_snapshot=snapshot,
+        physics_snapshot=None,
     )
     for npc_id in companion_ids:
         companions.enlist(npc_id)
@@ -179,9 +184,11 @@ def main() -> None:
             "implementation": platform.python_implementation(),
         },
         "measurement_note": (
-            "Measures real patrol, flee and companion systems with opt-in counters. "
-            "Compare revisions on the same machine and Python build; timings are "
-            "observations, not hardware-independent guarantees."
+            "Measures real patrol, flee and companion perception systems with opt-in counters. "
+            "Patrol/companion physics bodies are disabled and those systems use logical "
+            "path movement so the separate overlap resolver does not dominate this "
+            "perception benchmark. Compare revisions on the same machine and Python "
+            "build; timings are observations, not hardware-independent guarantees."
         ),
         "scenarios": [],
     }
