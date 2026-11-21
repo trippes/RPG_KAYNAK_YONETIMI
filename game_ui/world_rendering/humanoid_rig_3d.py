@@ -321,6 +321,42 @@ class HumanoidRig:
         }
 
 
+def project_point_orthographic(
+    point: Vec3,
+    *,
+    yaw: float = 0.0,
+    pitch: float = 0.0,
+    scale: float = 1.0,
+    origin: tuple[float, float] = (0.0, 0.0),
+) -> tuple[float, float]:
+    """Project a rig-local point to a 2D y-down screen plane.
+
+    Yaw rotates the camera around +Z. Pitch tilts the camera around its
+    horizontal view axis. This is a geometric projection primitive, not a
+    camera or runtime-world transform.
+    """
+    x, y, z = _vec3(point, "point")
+    yaw = _finite(yaw, "yaw")
+    pitch = _finite(pitch, "pitch")
+    scale = _finite(scale, "scale")
+    if scale <= 0:
+        raise ValueError("scale must be greater than zero.")
+    if not isinstance(origin, (tuple, list)) or len(origin) != 2:
+        raise ValueError("origin must contain exactly two coordinates.")
+    origin_x = _finite(origin[0], "origin.x")
+    origin_y = _finite(origin[1], "origin.y")
+
+    cosine_yaw, sine_yaw = math.cos(yaw), math.sin(yaw)
+    horizontal = x * cosine_yaw - y * sine_yaw
+    depth = x * sine_yaw + y * cosine_yaw
+    cosine_pitch, sine_pitch = math.cos(pitch), math.sin(pitch)
+    vertical = z * cosine_pitch - depth * sine_pitch
+    return (
+        origin_x + horizontal * scale,
+        origin_y - vertical * scale,
+    )
+
+
 def _joint(
     name: str,
     parent: str | None,
@@ -413,8 +449,10 @@ def _build_default_rig() -> HumanoidRig:
         _bone("spine_upper_chest", "spine_upper", "chest", 0.17),
         _bone("chest_neck", "chest", "neck", 0.09),
         _bone("neck_head", "neck", "head", 0.11),
-        _bone("clavicle_left", "chest", "shoulder_left", 0.045),
-        _bone("clavicle_right", "chest", "shoulder_right", 0.045),
+        _bone("clavicle_left", "chest", "clavicle_left", 0.04),
+        _bone("left_shoulder_girdle", "clavicle_left", "shoulder_left", 0.045),
+        _bone("clavicle_right", "chest", "clavicle_right", 0.04),
+        _bone("right_shoulder_girdle", "clavicle_right", "shoulder_right", 0.045),
         _bone("left_upper_arm", "shoulder_left", "elbow_left", 0.075),
         _bone("left_forearm", "elbow_left", "wrist_left", 0.055),
         _bone("left_hand", "wrist_left", "hand_left", 0.045),
