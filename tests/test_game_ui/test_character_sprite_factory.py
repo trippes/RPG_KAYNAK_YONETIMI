@@ -34,12 +34,23 @@ def test_walk_and_run_use_eight_distinct_animation_frames():
             assert len(lower_body_frames) == 8
 
 
-def test_animation_state_transition_restarts_the_selected_clip():
+def test_direction_change_preserves_locomotion_phase():
     animator = ProceduralCharacterSpriteFactory().create_animator(pygame)
     animator.select(direction="south", state="walk")
     animator.update(0.08)
-    assert animator.current_animation.index == 1
+    previous_animation = animator.current_animation
+    assert previous_animation.index == 1
 
     animator.select(direction="east", state="walk")
+    assert animator.current_animation.index == previous_animation.index
+    assert animator.current_animation.elapsed == previous_animation.elapsed
+
+
+def test_animation_state_change_restarts_the_selected_clip():
+    animator = ProceduralCharacterSpriteFactory().create_animator(pygame)
+    animator.select(direction="south", state="walk")
+    animator.update(0.08)
+
+    animator.select(state="run")
     assert animator.current_animation.index == 0
     assert animator.current_animation.elapsed == 0.0
