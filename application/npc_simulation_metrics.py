@@ -54,6 +54,7 @@ class NPCSimulationMetrics:
                     "p95": _percentile(values, 95),
                     "p99": _percentile(values, 99),
                     "max": max(values),
+                    "samples_seconds": list(values),
                 }
                 for name, values in sorted(self._durations.items())
                 if values

@@ -29,8 +29,42 @@ jobs:
           python -m pip install -e .
       - name: Run repeated NPC spatial benchmark
         run: python scripts/benchmark_npc_spatial_index.py --repeats 5 --output npc-spatial-benchmark.json
-      - name: Run NPC perception benchmark at requested scales
-        run: python scripts/benchmark_npc_perception.py --counts 1 10 25 50 100 --repeats 3 --steps 4 --output npc-perception-benchmark.json
+      - name: Run optimized NPC perception benchmark at requested scales
+        run: python scripts/benchmark_npc_perception.py --counts 1 10 25 50 100 --repeats 3 --steps 4 --warmup-steps 2 --output npc-perception-benchmark.json
+
+  baseline:
+    needs: benchmark
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout pre-optimization baseline
+        uses: actions/checkout@v4
+        with:
+          ref: cd8196f426468d0ee853fd32cd77513a44f4cbcd
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install baseline project
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+      - name: Load identical benchmark and metrics harness
+        run: |
+          git fetch origin "$GITHUB_SHA" --depth=1
+          git show "$GITHUB_SHA:scripts/benchmark_npc_perception.py" > scripts/benchmark_npc_perception.py
+          git show "$GITHUB_SHA:application/npc_simulation_metrics.py" > application/npc_simulation_metrics.py
+      - name: Run pre-optimization NPC perception baseline
+        run: python scripts/benchmark_npc_perception.py --counts 1 10 25 50 100 --repeats 3 --steps 4 --warmup-steps 2 --output npc-perception-baseline.json
+      - name: Upload pre-optimization baseline
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: npc-perception-baseline
+          path: npc-perception-baseline.json
+          if-no-files-found: warn
+          retention-days: 30
+
       - name: Upload NPC perception benchmark
         if: always()
         uses: actions/upload-artifact@v4

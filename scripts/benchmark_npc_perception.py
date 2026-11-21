@@ -139,9 +139,15 @@ def _build_scenario(npc_count: int):
     return metrics, patrol, avoidance, companions
 
 
-def run_scenario(npc_count: int, steps: int = 30) -> dict:
-    if npc_count < 1 or steps < 1:
-        raise ValueError("npc_count and steps must be positive")
+def run_scenario(npc_count: int, steps: int = 4, warmup_steps: int = 2) -> dict:
+    if npc_count < 1 or steps < 1 or warmup_steps < 0:
+        raise ValueError("npc_count and steps must be positive; warmup_steps cannot be negative")
+    if warmup_steps:
+        _, warmup_patrol, warmup_avoidance, warmup_companions = _build_scenario(npc_count)
+        for _ in range(warmup_steps):
+            warmup_patrol.step(1.0 / 60.0)
+            warmup_avoidance.step(1.0 / 60.0)
+            warmup_companions.tick(1.0 / 60.0)
     metrics, patrol, avoidance, companions = _build_scenario(npc_count)
     step_latencies = []
     for _ in range(steps):
@@ -155,6 +161,8 @@ def run_scenario(npc_count: int, steps: int = 30) -> dict:
     return {
         "npc_count": npc_count,
         "steps": steps,
+        "warmup_steps": warmup_steps,
+        "step_latency_samples_seconds": step_latencies,
         "step_latency_seconds": {
             "p50": _percentile(step_latencies, 50),
             "p95": _percentile(step_latencies, 95),
@@ -169,22 +177,25 @@ def run_scenario(npc_count: int, steps: int = 30) -> dict:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--counts", nargs="+", type=int, default=[1, 10, 25, 50, 100])
-    parser.add_argument("--repeats", type=int, default=5)
-    parser.add_argument("--steps", type=int, default=60)
+    parser.add_argument("--repeats", type=int, default=3)
+    parser.add_argument("--steps", type=int, default=4)
+    parser.add_argument("--warmup-steps", type=int, default=2)
     parser.add_argument("--output")
     args = parser.parse_args()
     if any(count < 1 for count in args.counts):
         parser.error("all NPC counts must be positive")
-    if args.repeats < 1 or args.steps < 1:
-        parser.error("--repeats and --steps must be positive")
+    if args.repeats < 1 or args.steps < 1 or args.warmup_steps < 0:
+        parser.error("--repeats and --steps must be positive; --warmup-steps cannot be negative")
     report = {
         "environment": {
             "python": sys.version,
             "platform": platform.platform(),
             "implementation": platform.python_implementation(),
         },
+        "warmup_steps": args.warmup_steps,
         "measurement_note": (
             "Measures real patrol, flee and companion perception systems with opt-in counters. "
+            "Each repetition uses a separate warmup world followed by a fresh measured world. "
             "Patrol/companion physics bodies are disabled and those systems use logical "
             "path movement so the separate overlap resolver does not dominate this "
             "perception benchmark. Compare revisions on the same machine and Python "
@@ -193,17 +204,38 @@ def main() -> None:
         "scenarios": [],
     }
     for count in args.counts:
-        samples = [run_scenario(count, args.steps) for _ in range(args.repeats)]
+        samples = [
+            run_scenario(count, args.steps, args.warmup_steps)
+            for _ in range(args.repeats)
+        ]
+        latency_samples = [
+            value
+            for sample in samples
+            for value in sample["step_latency_samples_seconds"]
+        ]
+        aggregate_metrics = NPCSimulationMetrics()
+        for sample in samples:
+            for name, amount in sample["metrics"]["counts"].items():
+                aggregate_metrics.increment(name, amount)
+            for name, duration in sample["metrics"]["durations_seconds"].items():
+                for value in duration["samples_seconds"]:
+                    aggregate_metrics.record_duration(name, value)
         report["scenarios"].append({
             "npc_count": count,
             "repetitions": args.repeats,
-            "step_latency_seconds": {
-                key: statistics.median(
-                    sample["step_latency_seconds"][key] for sample in samples
-                )
-                for key in ("p50", "p95", "p99", "max", "mean")
+            "steps_per_repetition": args.steps,
+            "warmup_steps_per_repetition": args.warmup_steps,
+            "simulation_step_latency_seconds": {
+                "p50": _percentile(latency_samples, 50),
+                "p95": _percentile(latency_samples, 95),
+                "p99": _percentile(latency_samples, 99),
+                "max": max(latency_samples),
+                "mean": statistics.mean(latency_samples),
             },
-            "metrics": samples[-1]["metrics"],
+            "simulation_step_spikes_over_16_67ms": sum(
+                value > (1.0 / 60.0) for value in latency_samples
+            ),
+            "metrics": aggregate_metrics.snapshot(),
             "samples": samples,
         })
     rendered = json.dumps(report, ensure_ascii=False, indent=2)
