@@ -65,13 +65,16 @@ Yeni hedefte eski komut iptal edilir. Runtime/snapshot değişikliği, rota sapm
 
 ### Dinamik ve statik güvenlik
 
-Her fixed step'te sıradaki route edge'i doğrulanır:
+Route planı oluşturulurken `runtime.path_to()` çağrısına immutable physics snapshot üzerinden `edge_validator` verilir; A* rotasındaki her edge statik collision kontrolünden geçer. Snapshot/body kimliği aktif route state'e bağlanır ve değiştiğinde rota invalid edilir.
 
-1. Hedef hücre map mask içinde mi?
-2. Oyuncu occupancy ignore etmiyorsa güncel occupancy hedef hücreye girişe izin veriyor mu?
-3. Immutable `HexPhysicsSnapshot.can_reach_cell()` statik geçişi doğruluyor mu?
+Her fixed step'te:
+1. Sıradaki hücrenin map mask içinde olduğu doğrulanır.
+2. Oyuncu occupancy ignore etmiyorsa güncel occupancy üzerinden sıradaki hücreye giriş izni kontrol edilir.
+3. Statik edge sonucu yeniden hesaplanmaz; aynı immutable snapshot ile path planında doğrulanmış sonuç kullanılır.
 
-A* planı da aynı snapshot edge validator'ını kullanır. Gerçek hareket yine `ContinuousPlayerMovementController`, statik collision resolver, dynamic actor collision resolver ve `HexWorldRuntime.set_continuous_position()` üzerinden commit edilir. Cache, runtime'ın occupancy/konum sahipliğini devralmaz.
+Bu ayrım statik collision güvenliğini korurken her fixed step'te aynı collision solver çağrılarının tekrarlanmasını önler. Collinear smoothing'in swept static collision kanıtı route cursor segmenti için bir kez hesaplanır ve oyuncu kanıtlanan segment üzerinde kaldığı sürece kullanılır. Oyuncu segmentten saparsa kanıt yeniden hesaplanır.
+
+Gerçek hareket yine `ContinuousPlayerMovementController`, statik collision resolver, dynamic actor collision resolver ve `HexWorldRuntime.set_continuous_position()` üzerinden commit edilir. Cache, runtime'ın occupancy/konum sahipliğini devralmaz.
 
 ### Replan sınırı
 
