@@ -272,3 +272,7 @@ Her paket sonunda:
 - **Görsel iyileştirme turu 1:** `character_rig_renderer.py` güncellendi. Uzuv parçalarında daha dar uçlu şekiller ve daha küçük eklem geçişleri, gövdede omuz-bel formu belirginleştirilmiş tunik silueti, başta dairesel eklem yerine oval kafa ve biçimli saç üstlüğü kullanıldı. Yeni palette gövde gölgesi ve hafif vurgu renkleri eklendi.
 - **Renderer testleri:** Test beklentileri yeni, daha az dairesel eklem çizimine göre güncellendi. Bu değişiklik henüz kullanıcı yerel ortamında çalıştırılmadı; görsel kabul verilmedi.
 - **Sonraki adım:** Kullanıcı yeni renderer sürümünü çalıştırıp aynı önizleme ekranının güncel görüntüsünü paylaşacak. Yön görünümü, vücut anatomisi ve uzuv birleşimleri yeniden değerlendirilecek. Oyun entegrasyonu hâlâ ertelenmiştir.
+
+
+- **Omuz hizası görsel kabul notu:** Kullanıcının ikinci önizlemesinde omuz köklerinin özellikle çapraz yönlerde aynı anatomik hatta oturmadığı bildirildi. İlk düzeltme olarak renderer'ın ekran izdüşümünde iki omuz kökü ortak bir ortalama yüksekliğe alınmıştır; omuzların yatay ayrımı ve dirsek/el eklem hareketleri korunur. Bu, yalnızca sunum koordinatı düzeltmesidir; iskelet verisi veya runtime konumu değişmez.
+- **Omuz hizası regresyon testi:** Sekiz yönün tamamında sol ve sağ omuz köklerinin ekran Y koordinatlarının eşit olması için test eklendi. Yerel test sonucu ve yeni görsel önizleme henüz bekleniyor.
