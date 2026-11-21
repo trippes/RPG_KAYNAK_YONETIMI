@@ -17,10 +17,27 @@ def test_factory_builds_eight_direction_idle_walk_and_run_animations():
             assert frame.get_bounding_rect().width > 0
 
 
+def test_walk_and_run_use_eight_distinct_animation_frames():
+    animator = ProceduralCharacterSpriteFactory().create_animator(pygame)
+
+    for direction in ProceduralCharacterSpriteFactory.DIRECTIONS:
+        for state in ("walk", "run"):
+            animation = animator.animations[(direction, state)]
+            assert len(animation.frames) == 8
+            expected_duration = 0.075 if state == "walk" else 0.055
+            assert animation.frame_duration == expected_duration
+
+            lower_body_frames = {
+                pygame.image.tostring(frame.subsurface((0, 43, 48, 21)), "RGBA")
+                for frame in animation.frames
+            }
+            assert len(lower_body_frames) == 8
+
+
 def test_animation_state_transition_restarts_the_selected_clip():
     animator = ProceduralCharacterSpriteFactory().create_animator(pygame)
     animator.select(direction="south", state="walk")
-    animator.update(0.13)
+    animator.update(0.08)
     assert animator.current_animation.index == 1
 
     animator.select(direction="east", state="walk")
