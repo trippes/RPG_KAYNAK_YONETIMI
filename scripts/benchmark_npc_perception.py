@@ -108,7 +108,7 @@ def _build_scenario(npc_count: int, profile: str):
             q, r = 2 + row % 10, 2 + row // 10
             behavior = BehaviorState.PATROL
             route = (
-                (LocalHexPosition(q, r),)
+                (LocalHexPosition(q, r), LocalHexPosition(q, r))
                 if profile == "scan"
                 else (LocalHexPosition(q, r), LocalHexPosition(q + 1, r))
             )
