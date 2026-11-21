@@ -357,3 +357,20 @@ def test_route_uses_turning_waypoint_as_braking_target():
 
     assert intent.is_moving
     assert controller.movement_target.position == WorldPoint(10.0, 0.0)
+
+
+def test_route_does_not_turn_at_hex_boundary_before_waypoint_arrival():
+    runtime = FakeRuntime(paths=[(A, B, D)])
+    controller = make_controller()
+    snapshot = FakeSnapshot()
+
+    first = route_intent(controller, runtime, goal=D, snapshot=snapshot)
+    runtime.current_cell = B
+    runtime.current_point = WorldPoint(8.0, 0.0)
+    second = route_intent(controller, runtime, goal=D, snapshot=snapshot)
+
+    assert first.is_moving
+    assert second.is_moving
+    assert second.direction.x == 2.0
+    assert second.direction.y == 0.0
+    assert controller.movement_target.position == WorldPoint(10.0, 0.0)
