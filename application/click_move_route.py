@@ -254,7 +254,11 @@ class ClickMoveRouteController:
         elif reused_this_step:
             self._metrics["player_click_route_cache_hits"] += 1
 
-        target = physics_snapshot.cell_center(next_cell)
+        target_cell = self._smoothed_waypoint(
+            runtime, entity, map_id, state, cursor, current_cell, next_cell,
+            current_point, physics_snapshot, body, actor_id,
+        )
+        target = physics_snapshot.cell_center(target_cell)
         dx = target.x - current_point.x
         dy = target.y - current_point.y
         return MovementIntent(Vector2(dx, dy), mode)
@@ -367,6 +371,52 @@ class ClickMoveRouteController:
         self._metrics["player_click_route_waypoints_total"] += max(0, len(path) - 1)
         return True
 
+    def _smoothed_waypoint(
+        self,
+        runtime,
+        entity,
+        map_id: str,
+        state: _ActiveRoute,
+        cursor: int,
+        current_cell: LocalHexPosition,
+        next_cell: LocalHexPosition,
+        current_point,
+        physics_snapshot,
+        body,
+        actor_id: str,
+    ) -> LocalHexPosition:
+        """Skip one collinear waypoint only after a swept-clearance proof."""
+        candidate_index = cursor + 2
+        if candidate_index >= len(state.cells):
+            return next_cell
+        candidate = state.cells[candidate_index]
+        first_delta = (next_cell.q - current_cell.q, next_cell.r - current_cell.r)
+        second_delta = (candidate.q - next_cell.q, candidate.r - next_cell.r)
+        if first_delta != second_delta:
+            return next_cell
+        if not self._next_edge_valid(
+            runtime, entity, map_id, next_cell, candidate,
+            physics_snapshot, body, actor_id,
+        ):
+            return next_cell
+        target = physics_snapshot.cell_center(candidate)
+        displacement = Vector2(target.x - current_point.x, target.y - current_point.y)
+        sweep = getattr(physics_snapshot, "resolve_motion", None)
+        if not callable(sweep):
+            return next_cell
+        try:
+            resolution = sweep(current_point, displacement, body)
+        except (TypeError, ValueError, RuntimeError):
+            return next_cell
+        applied = resolution.applied_displacement
+        if (
+            resolution.impacts
+            or resolution.unresolved_penetration > 1e-6
+            or not math.isclose(applied.x, displacement.x, rel_tol=0.0, abs_tol=1e-5)
+            or not math.isclose(applied.y, displacement.y, rel_tol=0.0, abs_tol=1e-5)
+        ):
+            return next_cell
+        return candidate
     def _next_edge_valid(
         self,
         runtime,

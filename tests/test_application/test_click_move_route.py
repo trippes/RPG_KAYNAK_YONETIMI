@@ -1,6 +1,7 @@
 from types import SimpleNamespace
 
 from core.domain.movement import MovementMode
+from core.domain.physics import Vector2
 from core.domain.spatial import (
     EntityPosition,
     LocalHexPosition,
@@ -20,14 +21,24 @@ BODY = object()
 class FakeSnapshot:
     map_id = "village"
 
-    def __init__(self, blocked_edges=()):
+    def __init__(self, blocked_edges=(), *, blocked_sweep=False):
         self.blocked_edges = set(blocked_edges)
+        self.blocked_sweep = blocked_sweep
 
     def cell_center(self, cell):
         return WorldPoint(cell.q * 10.0, cell.r * 10.0)
 
     def can_reach_cell(self, source, destination, _body):
         return (source, destination) not in self.blocked_edges
+
+    def resolve_motion(self, _start, displacement, _body):
+        applied = Vector2(0.0, 0.0) if self.blocked_sweep else displacement
+        impacts = (object(),) if self.blocked_sweep else ()
+        return SimpleNamespace(
+            applied_displacement=applied,
+            impacts=impacts,
+            unresolved_penetration=0.0,
+        )
 
 
 class FakeOccupancy:
@@ -252,3 +263,49 @@ def test_route_deviation_and_blocked_edge_allow_only_one_replan_per_step():
     assert runtime.path_queries == 2
     assert controller.metrics_snapshot()["player_click_route_replans"] == 1
     assert controller.status == "blocked"
+
+
+def test_collinear_waypoint_is_merged_after_clear_swept_collision_check():
+    runtime = FakeRuntime(paths=[(A, B, C)])
+    controller = make_controller()
+
+    intent = route_intent(controller, runtime)
+
+    assert intent.is_moving
+    assert intent.direction.x == 20.0
+    assert intent.direction.y == 0.0
+
+
+def test_smoothing_falls_back_to_next_waypoint_when_sweep_hits_collision():
+    runtime = FakeRuntime(paths=[(A, B, C)])
+    snapshot = FakeSnapshot(blocked_sweep=True)
+    controller = make_controller()
+
+    intent = route_intent(controller, runtime, snapshot=snapshot)
+
+    assert intent.is_moving
+    assert intent.direction.x == 10.0
+    assert intent.direction.y == 0.0
+
+
+def test_smoothing_never_merges_a_turning_waypoint():
+    runtime = FakeRuntime(paths=[(A, B, D)])
+    controller = make_controller()
+
+    intent = route_intent(controller, runtime, goal=D)
+
+    assert intent.is_moving
+    assert intent.direction.x == 10.0
+    assert intent.direction.y == 0.0
+
+
+def test_smoothing_checks_dynamic_occupancy_of_second_edge():
+    runtime = FakeRuntime(paths=[(A, B, C)])
+    runtime.occupancy.blocked_cells.add(C)
+    controller = make_controller()
+
+    intent = route_intent(controller, runtime)
+
+    assert intent.is_moving
+    assert intent.direction.x == 10.0
+    assert runtime.path_queries == 1
