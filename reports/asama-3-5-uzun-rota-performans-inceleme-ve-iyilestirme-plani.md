@@ -242,3 +242,30 @@ CI kapsamı, `application/hex_pathfinding.py` Ruff kontrolünü ve pathfinding d
 ### 11.3 Sonuç ve karar
 
 Fiziksel kenar doğrulamasının uzun rota darboğazındaki baskın payı ölçümle kanıtlanmıştır. İlk optimizasyon uygulanmıştır; kabul kararı için aynı CI koşullarında 1/10/100 hücre benchmark sonuçları ve tüm test matrisleri beklenmektedir. Fizik doğrulaması tamamen kaldırılmamış, yalnızca daha iyi bir rota adayı üretmeyen komşulardaki tekrar çağrılar elenmiştir.
+
+
+### 11.4 Optimizasyon sonrası CI benchmark doğrulaması — 21 Kasım 2026
+
+Benchmark workflow: [Player click-move benchmark run 44899885580](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/44899885580)  
+Benchmark artifact: `player-click-move-benchmark` (artifact ID `14705627764`).  
+Kaynak commit: `51f9b3a70e20fe4ab72ef909684449bd2ebac98b`.  
+Ortam: Python 3.12.16, Linux 7.0.0-1020-azure-x86_64, her ana senaryo için 100 iterasyon.
+
+| Rota | Doğrudan path planning p50 | p95 | p99 | Fizik edge validator çağrısı / sorgu | Cache'li intent adımı p50 |
+|---:|---:|---:|---:|---:|---:|
+| 1 hücre | 0,317 ms | 0,334 ms | 0,395 ms | 1 | 0,030 ms |
+| 10 hücre | 8,332 ms | 8,801 ms | 9,390 ms | 10 | 0,035 ms |
+| 100 hücre | 659,100 ms | 671,400 ms | 701,184 ms | 100 | 0,035 ms |
+
+Aynı artifact içindeki ek profil ölçümünde doğrulamalı 100 hücrelik arama p50 değeri 664,176 ms, edge validator kapalı tanısal A* çekirdeği p50 değeri 3,946 ms ve edge validator çağrısı 100 olarak raporlanmıştır. Validator kapalı ölçüm yalnızca teşhis amaçlıdır; oyun yol bulmasında fiziksel kenar doğrulaması etkin kalır.
+
+**Çağrı sayısı kabulü:** Önceki profiler çalışmasında aynı düz koridor yapısı için 100 hücre rotada 199 doğrulayıcı çağrısı ölçülmüştü. Optimizasyon sonrası 100 iterasyonlu benchmark artifact'ında her sorguda 100 çağrı ölçülmüştür. Böylece beklenen 199 → 100 çağrı azalması doğrulanmıştır.
+
+**Performans karşılaştırması sınırı:** Önceki 1.459,950 ms profil p50 ölçümü Python 3.11.18 ve 7 örnekli ayrı profiler koşulundan; bu benchmark ise Python 3.12.16 ve 100 iterasyonlu benchmark koşulundan gelmektedir. Dolayısıyla iki p50 değeri doğrudan önce/sonra hızlanma oranı hesaplamak için eşdeğer koşullar değildir. Bu rapor, 659,100 ms değerini optimizasyon sonrası ölçüm olarak kaydeder; farklı koşullardaki eski ölçümle kesin hızlanma iddiasında bulunmaz.
+
+CI doğrulaması:
+- Benchmark workflow `44899885580`: success.
+- Son rapor commit'ine ait Eldoria CI workflow `44899899819`: success; beş işin tamamı başarılı.
+- Core Quality workflow `44899899753`: success.
+
+**Karar:** A* erken maliyet elemesi test ve CI doğrulamasını geçti; uzun düz rotadaki fiziksel kenar doğrulayıcı çağrı sayısı yarıya yakın azaltıldı. Milisaniye bazında kesin hızlanma oranı için aynı Python sürümü, runner ve benchmark yöntemiyle alınmış optimizasyon öncesi/sonrası karşılaştırmalı koşu hâlâ gereklidir. Geniş/dallanan ve engelli harita performansı ile manuel oyun içi kabul testleri de bu benchmark kapsamı dışındadır.
