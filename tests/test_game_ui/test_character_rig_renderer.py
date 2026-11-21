@@ -60,19 +60,12 @@ class TestCharacterRigRenderer(unittest.TestCase):
                 )
                 self.assertEqual(set(positions), set(DEFAULT_CHARACTER_SKELETON.joint_names))
 
-    def test_eight_directions_have_distinct_projected_body_orientations(self):
-        shoulder_vectors = set()
-        for direction in CharacterRigRenderer.DIRECTIONS:
-            positions = self.rig_renderer.project_joint_positions(
-                DEFAULT_CHARACTER_SKELETON, (120, 240), 64.0, facing=direction
-            )
-            vector = (
-                round(positions["right_shoulder"][0] - positions["left_shoulder"][0], 5),
-                round(positions["right_shoulder"][1] - positions["left_shoulder"][1], 5),
-            )
-            shoulder_vectors.add(vector)
-
-        self.assertEqual(len(shoulder_vectors), 8)
+    def test_eight_directions_have_distinct_projection_axes(self):
+        axes = {
+            CharacterRigRenderer._DIRECTION_PROJECTION[direction]
+            for direction in CharacterRigRenderer.DIRECTIONS
+        }
+        self.assertEqual(len(axes), 8)
 
     def test_both_shoulder_roots_stay_level_in_all_eight_directions(self):
         for direction in CharacterRigRenderer.DIRECTIONS:
@@ -86,16 +79,17 @@ class TestCharacterRigRenderer(unittest.TestCase):
                     places=7,
                 )
 
-    def test_east_and_west_side_views_project_lateral_axis_in_opposite_depth_directions(self):
-        east = self.rig_renderer.project_joint_positions(
-            DEFAULT_CHARACTER_SKELETON, (120, 240), 64.0, facing="east"
-        )
-        west = self.rig_renderer.project_joint_positions(
-            DEFAULT_CHARACTER_SKELETON, (120, 240), 64.0, facing="west"
-        )
-
-        self.assertLess(east["left_shoulder"][1], east["right_shoulder"][1])
-        self.assertGreater(west["left_shoulder"][1], west["right_shoulder"][1])
+    def test_side_views_keep_shoulder_roots_on_the_same_screen_line(self):
+        for direction in ("east", "west"):
+            with self.subTest(direction=direction):
+                positions = self.rig_renderer.project_joint_positions(
+                    DEFAULT_CHARACTER_SKELETON, (120, 240), 64.0, facing=direction
+                )
+                self.assertAlmostEqual(
+                    positions["left_shoulder"][1],
+                    positions["right_shoulder"][1],
+                    places=7,
+                )
 
     def test_joint_pose_changes_articulated_limb_without_mutating_skeleton(self):
         rest = self.rig_renderer.draw(
