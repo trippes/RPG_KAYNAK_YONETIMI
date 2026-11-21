@@ -61,6 +61,20 @@ class TestHumanoidRig3D(unittest.TestCase):
                 delta=0.5,
             )
 
+    def test_rest_pose_has_a_small_elbow_flexion(self):
+        positions = DEFAULT_HUMANOID_RIG.joint_positions()
+        for side in ("left", "right"):
+            shoulder = positions[f"shoulder_{side}"]
+            elbow = positions[f"elbow_{side}"]
+            wrist = positions[f"wrist_{side}"]
+            upper_angle = math.degrees(
+                math.atan2(shoulder[2] - elbow[2], abs(elbow[0] - shoulder[0]))
+            )
+            forearm_angle = math.degrees(
+                math.atan2(elbow[2] - wrist[2], abs(wrist[0] - elbow[0]))
+            )
+            self.assertAlmostEqual(forearm_angle - upper_angle, 5.0, delta=0.5)
+
     def test_ground_anchor_is_at_heel_height_in_rest_pose(self):
         positions = DEFAULT_HUMANOID_RIG.joint_positions()
         anchor_z = DEFAULT_HUMANOID_RIG.ground_anchor[2]
