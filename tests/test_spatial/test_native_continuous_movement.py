@@ -32,7 +32,10 @@ class NativeMovementConfigTests(unittest.TestCase):
 
 class NativeMovementIntegratorTests(unittest.TestCase):
     def setUp(self):
-        self.integrator = MovementIntegrator(MovementConfig(120))
+        self.integrator = MovementIntegrator(MovementConfig(
+            120, acceleration=1_000_000.0,
+            deceleration=1_000_000.0, braking_deceleration=1_000_000.0,
+        ))
         self.state = MovementState(WorldPoint(10, 20))
 
     def test_normalized_diagonal_motion_has_constant_speed(self):
@@ -64,7 +67,7 @@ class NativeMovementIntegratorTests(unittest.TestCase):
             self.state, MovementIntent(Vector2(1, 0)), 0
         )
         self.assertEqual(result.position, self.state.position)
-        self.assertEqual(result.velocity, Vector2(120, 0))
+        self.assertEqual(result.velocity, Vector2(0, 0))
 
     def test_invalid_delta_is_rejected(self):
         for value in (-1, math.nan, math.inf, True, "0.1"):
