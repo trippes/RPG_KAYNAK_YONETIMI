@@ -110,8 +110,8 @@ class CharacterRigAnimator:
 
         # The ankle counter-rotates against the accumulated hip/knee rotation,
         # keeping the foot's local orientation close to horizontal.
-        left_ankle = -(left_swing + left_knee) * 0.72
-        right_ankle = -(right_swing + right_knee) * 0.72
+        left_ankle = -(left_swing + left_knee)
+        right_ankle = -(right_swing + right_knee)
 
         return {
             "pelvis": 0.012 * math.sin(self.phase * 2.0),
