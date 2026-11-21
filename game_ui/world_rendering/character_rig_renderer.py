@@ -19,8 +19,6 @@ class CharacterRigRenderer:
     )
 
     _DIRECTION_PROJECTION = {
-        # Screen-space projection of the character's local +X (right) axis.
-        # The small vertical component gives the body a readable 2.5D depth cue.
         "east": (0.0, 1.0),
         "south_east": (-math.sqrt(0.5), math.sqrt(0.5)),
         "south": (-1.0, 0.0),
@@ -41,6 +39,8 @@ class CharacterRigRenderer:
         "boots": (85, 57, 39),
         "far_limb": (48, 75, 59),
         "near_limb": (82, 125, 87),
+        "tunic_shadow": (43, 79, 55),
+        "tunic_highlight": (91, 137, 96),
     }
 
     _LIMB_BONES = {
@@ -126,7 +126,6 @@ class CharacterRigRenderer:
         far_side = "left" if near_side == "right" else "right"
         bone_by_name = {bone.name: bone for bone in skeleton.bones}
 
-        # Far limbs sit behind the torso; near limbs are drawn over it.
         self._draw_limb_group(
             renderer, positions, bone_by_name, far_side, scale, colors, near=False
         )
@@ -152,43 +151,67 @@ class CharacterRigRenderer:
             color = colors["boots"] if kind == "foot" else (
                 colors["trousers"] if kind == "leg" else limb_color
             )
+            width = bone.thickness * scale
             self._draw_segment(
                 draw, renderer.surface, positions[start_name], positions[end_name],
-                max(2.0, bone.thickness * scale), color, colors["outline"],
+                width, color, colors["outline"],
             )
-        # Hands and knees receive a small joint cap to avoid visible seams.
-        for joint_name, radius_factor in (
-            (f"{side}_hand", 0.043),
-            (f"{side}_knee", 0.047),
-            (f"{side}_ankle", 0.038),
+
+        # Small, color-matched joint transitions hide seams without reading as
+        # large mechanical ball joints.
+        for joint_name, radius_factor, fill in (
+            (f"{side}_elbow", 0.027, limb_color),
+            (f"{side}_hand", 0.034, colors["skin"]),
+            (f"{side}_knee", 0.034, colors["trousers"]),
+            (f"{side}_ankle", 0.026, colors["trousers"]),
         ):
             self._draw_joint(
-                draw, renderer.surface, positions[joint_name], max(2, round(scale * radius_factor)),
-                colors["skin"] if joint_name.endswith("hand") else colors["trousers"],
-                colors["outline"],
+                draw, renderer.surface, positions[joint_name],
+                max(2, round(scale * radius_factor)), fill, colors["outline"],
             )
 
     def _draw_torso(self, renderer, positions, scale, colors):
         draw = renderer.pg.draw
+        left_shoulder = positions["left_shoulder"]
+        right_shoulder = positions["right_shoulder"]
+        left_hip = positions["left_hip"]
+        right_hip = positions["right_hip"]
+        center_chest = positions["chest"]
+
+        # A shaped tunic silhouette: broad shoulders, gently tapered waist,
+        # and a slightly wider hem instead of a flat four-point rectangle.
         points = [
-            self._point(positions["left_shoulder"]),
-            self._point(positions["right_shoulder"]),
-            self._point(positions["right_hip"]),
-            self._point(positions["left_hip"]),
+            self._point((left_shoulder[0] - scale * 0.018, left_shoulder[1] + scale * 0.018)),
+            self._point((center_chest[0], center_chest[1] + scale * 0.045)),
+            self._point((right_shoulder[0] + scale * 0.018, right_shoulder[1] + scale * 0.018)),
+            self._point((right_hip[0] + scale * 0.025, right_hip[1] - scale * 0.025)),
+            self._point((center_chest[0], (left_hip[1] + right_hip[1]) * 0.5 - scale * 0.035)),
+            self._point((left_hip[0] - scale * 0.025, left_hip[1] - scale * 0.025)),
         ]
         draw.polygon(renderer.surface, colors["tunic"], points)
         draw.polygon(
             renderer.surface, colors["outline"], points,
-            max(1, round(scale * 0.018)),
+            max(1, round(scale * 0.014)),
         )
-        # A narrow belt separates the tunic from the trousers.
-        left_hip = positions["left_hip"]
-        right_hip = positions["right_hip"]
+
+        # Subtle side shading and a narrow belt give the tunic some volume.
+        side_shadow = [
+            self._point(right_shoulder),
+            self._point((center_chest[0] + scale * 0.025, center_chest[1] - scale * 0.02)),
+            self._point((right_hip[0] + scale * 0.012, right_hip[1] - scale * 0.02)),
+            self._point((right_hip[0], right_hip[1] + scale * 0.015)),
+        ]
+        draw.polygon(renderer.surface, colors["tunic_shadow"], side_shadow)
         belt_y = round((left_hip[1] + right_hip[1]) * 0.5 - scale * 0.025)
         draw.line(
             renderer.surface, colors["outline"],
             (round(left_hip[0]), belt_y), (round(right_hip[0]), belt_y),
-            max(2, round(scale * 0.035)),
+            max(2, round(scale * 0.025)),
+        )
+        draw.line(
+            renderer.surface, colors["tunic_highlight"],
+            self._point(left_shoulder), self._point(left_hip),
+            max(1, round(scale * 0.012)),
         )
 
     def _draw_neck(self, renderer, positions, bone_by_name, scale, colors):
@@ -196,19 +219,41 @@ class CharacterRigRenderer:
         if bone is not None:
             self._draw_segment(
                 renderer.pg.draw, renderer.surface, positions["chest"], positions["neck"],
-                max(2.0, bone.thickness * scale),
+                max(scale * 0.075, bone.thickness * scale),
                 colors["skin"], colors["outline"],
             )
 
     def _draw_head(self, renderer, center, scale, colors):
         draw = renderer.pg.draw
-        radius = max(4, round(scale * 0.105))
-        self._draw_joint(draw, renderer.surface, center, radius, colors["skin"], colors["outline"])
-        hair_center = (round(center[0]), round(center[1] - radius * 0.48))
-        self._draw_joint(
-            draw, renderer.surface, hair_center, max(2, round(radius * 0.78)),
-            colors["hair"], colors["outline"],
+        # The head is an oval silhouette rather than a circular joint marker.
+        width = scale * 0.105
+        height = scale * 0.125
+        head_points = [
+            self._point((
+                center[0] + math.cos(index * math.tau / 16) * width,
+                center[1] + math.sin(index * math.tau / 16) * height,
+            ))
+            for index in range(16)
+        ]
+        draw.polygon(renderer.surface, colors["skin"], head_points)
+        draw.polygon(
+            renderer.surface, colors["outline"], head_points,
+            max(1, round(scale * 0.012)),
         )
+
+        # Hair follows the upper contour as a shaped cap, not a second ball.
+        hair_points = [
+            self._point((
+                center[0] + math.cos(math.pi + index * math.pi / 10) * width * 1.02,
+                center[1] + math.sin(math.pi + index * math.pi / 10) * height * 1.02,
+            ))
+            for index in range(11)
+        ]
+        hair_points.extend([
+            self._point((center[0] + width * 0.78, center[1] - height * 0.22)),
+            self._point((center[0], center[1] - height * 0.38)),
+        ])
+        draw.polygon(renderer.surface, colors["hair"], hair_points)
 
     @staticmethod
     def _draw_segment(draw, surface, start, end, thickness, fill, outline):
@@ -221,18 +266,27 @@ class CharacterRigRenderer:
                 draw, surface, start, max(1, round(radius)), fill, outline
             )
             return
-        perpendicular = (-dy / length * radius, dx / length * radius)
+
+        perpendicular = (-dy / length, dx / length)
+        start_radius = radius * 0.94
+        end_radius = radius * 0.82
         points = [
-            CharacterRigRenderer._point((start[0] + perpendicular[0], start[1] + perpendicular[1])),
-            CharacterRigRenderer._point((end[0] + perpendicular[0], end[1] + perpendicular[1])),
-            CharacterRigRenderer._point((end[0] - perpendicular[0], end[1] - perpendicular[1])),
-            CharacterRigRenderer._point((start[0] - perpendicular[0], start[1] - perpendicular[1])),
+            CharacterRigRenderer._point((start[0] + perpendicular[0] * start_radius,
+                                          start[1] + perpendicular[1] * start_radius)),
+            CharacterRigRenderer._point((end[0] + perpendicular[0] * end_radius,
+                                          end[1] + perpendicular[1] * end_radius)),
+            CharacterRigRenderer._point((end[0] - perpendicular[0] * end_radius,
+                                          end[1] - perpendicular[1] * end_radius)),
+            CharacterRigRenderer._point((start[0] - perpendicular[0] * start_radius,
+                                          start[1] - perpendicular[1] * start_radius)),
         ]
         draw.polygon(surface, fill, points)
-        draw.polygon(surface, outline, points, max(1, round(radius * 0.22)))
-        cap_radius = max(1, round(radius))
-        CharacterRigRenderer._draw_joint(draw, surface, start, cap_radius, fill, outline)
-        CharacterRigRenderer._draw_joint(draw, surface, end, cap_radius, fill, outline)
+        draw.polygon(surface, outline, points, max(1, round(radius * 0.16)))
+        # Only a small end cap remains visible; this softens the connection
+        # without creating the oversized circular joints of the first preview.
+        CharacterRigRenderer._draw_joint(
+            draw, surface, end, max(1, round(end_radius * 0.68)), fill, outline
+        )
 
     @staticmethod
     def _draw_joint(draw, surface, center, radius, fill, outline):
