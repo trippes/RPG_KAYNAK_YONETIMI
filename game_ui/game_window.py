@@ -338,11 +338,12 @@ class GameWindow:
                     # Route direction is mouse-driven; movement mode remains
                     # owned by the live keyboard adapter for this fixed step.
                     step_intent = MovementIntent(click_intent.direction, intent.mode)
+            step_kwargs = {"target": step_target} if step_target is not None else {}
             controller.step(
                 actor_id,
                 step_intent,
                 self._movement_clock.step_seconds,
-                target=step_target,
+                **step_kwargs,
             )
             self.service._player_movement_mode = step_intent.mode
 
