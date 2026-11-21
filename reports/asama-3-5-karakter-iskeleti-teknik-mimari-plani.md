@@ -276,3 +276,6 @@ Her paket sonunda:
 
 - **Omuz hizası görsel kabul notu:** Kullanıcının ikinci önizlemesinde omuz köklerinin özellikle çapraz yönlerde aynı anatomik hatta oturmadığı bildirildi. İlk düzeltme olarak renderer'ın ekran izdüşümünde iki omuz kökü ortak bir ortalama yüksekliğe alınmıştır; omuzların yatay ayrımı ve dirsek/el eklem hareketleri korunur. Bu, yalnızca sunum koordinatı düzeltmesidir; iskelet verisi veya runtime konumu değişmez.
 - **Omuz hizası regresyon testi:** Sekiz yönün tamamında sol ve sağ omuz köklerinin ekran Y koordinatlarının eşit olması için test eklendi. Yerel test sonucu ve yeni görsel önizleme henüz bekleniyor.
+
+
+- **Omuz hizası test düzeltmesi:** Kullanıcının yerel testinde iki eski beklenti, yeni omuz hizalama kuralıyla çelişti: yan görünüm testi omuzların farklı yükseklikte olmasını bekliyordu; yön testi ise omuz vektörünün sekiz farklı izdüşüm üretmesini bekliyordu. Omuz kökleri aynı ekran hattına alındığı için bu beklentiler geçersiz hâle gelmişti. Testler, sekiz yön izdüşüm ekseninin benzersizliğini ve doğu/batı dâhil tüm yönlerde omuz hizasının korunmasını doğrulayacak şekilde düzeltildi. Kullanıcının yerel yeniden test sonucu henüz alınmadı.
