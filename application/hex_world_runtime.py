@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import math
+from time import perf_counter
 
 from dataclasses import dataclass, replace
 from types import MappingProxyType
@@ -467,10 +468,21 @@ class HexWorldRuntime:
             frozenset() if entity.profile.ignores_occupancy
             else self._occupancy.blocked_cells(map_definition.map_id, excluding=entity_id)
         )
-        return HexPathfinder.find_path(
-            map_definition, entity.position.cell, goal, entity.profile, blocked,
-            edge_validator=edge_validator,
-        )
+        if self.metrics is None:
+            return HexPathfinder.find_path(
+                map_definition, entity.position.cell, goal, entity.profile, blocked,
+                edge_validator=edge_validator,
+            )
+        started = perf_counter()
+        try:
+            return HexPathfinder.find_path(
+                map_definition, entity.position.cell, goal, entity.profile, blocked,
+                edge_validator=edge_validator,
+            )
+        finally:
+            self.metrics.record_duration(
+                "runtime_pathfinder_search", perf_counter() - started,
+            )
 
     def move_toward(self, entity_id: str, goal: LocalHexPosition, *, edge_validator=None) -> MovementResult:
         entity = self.entity(entity_id)
