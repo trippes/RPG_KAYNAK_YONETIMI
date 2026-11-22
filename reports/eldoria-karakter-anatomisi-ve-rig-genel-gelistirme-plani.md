@@ -393,3 +393,58 @@ Kullanıcının bağlayıcı kalite kararı: Anatomik gerçekçilik artırılaca
 6. NPC sayısı arttığında üçgen sayısı, mesh-cache hit rate, çizim süresi ve bellek ölçümleri.
 
 Aşama 2 kabul edilmedi. Bu commit yalnızca gövde topolojisinin ilk mimari düzeltmesidir; görsel önizleme ve CI doğrulaması beklenir.
+
+
+## 14. Aşama 2 — skinning, ayak yüzeyi, sekiz yön ve performans altyapısı — 2026-11-22
+
+Bu uygulama diliminde bağlantılı yüzey prototipi animasyon pozlarına hazırlanmış ve performans doğrulama araçları eklenmiştir.
+
+### Skinning ve deformasyon
+
+- `MeshTriangle` artık her köşesi için en fazla iki eklemden oluşan skin weight verisi taşıyor.
+- Ağırlıklar normalize ediliyor; bağlı yüzeylerde istasyonlar arası yumuşatılmış kesit interpolasyonuyla uyumlu biçimde dağıtılıyor.
+- Ellipsoid parçaları tek eklem etkisiyle, segment parçaları uç eklemler arasında ağırlıklandırılıyor.
+- Poz dönüşümünde rig'in global quaternion dönüşümleri kullanılarak Linear Blend Skinning (LBS) uygulanıyor. Her eklemin bind-pose global dönüşümü ile güncel global dönüşümü arasındaki delta, ilgili eklemin bind pivotu çevresinde köşeye uygulanıyor.
+- Dual-quaternion skinning bu aşamada seçilmedi. Mevcut rig ve düşük poligon bütçesinde LBS daha basit, ölçülebilir ve yeterli başlangıç yaklaşımıdır. Omuz/bilek gibi büyük bükülmelerde hacim kaybı görsel testte belirginleşirse alternatif yeniden değerlendirilecektir.
+- Bind-pose mesh'i ayrı 4 kayıtlı cache'te tutuluyor; skinned poz mesh'i ayrı 16 kayıtlı cache'te tutuluyor. Böylece her yeni animasyon pozunda trigonometrik örnekleme ve temel topoloji yeniden üretilmiyor.
+- Yüzey kesitlerinde önceki halkadan taşınan paralel-transport çerçevesi kullanılıyor. Bu, sabit dünya referansına bağlı ani kesit burulmalarını azaltır.
+
+### El ve ayak
+
+- Ayaklar tek oval hacim olmaktan çıkarıldı; topuk → tarak → parmak ucu landmark'ları arasında bağlantılı yüzey olarak üretiliyor.
+- El hacimleri şimdilik bilek/avuç bölgesine bağlı düşük poligon ellipsoid olarak kalıyor. Parmakların ayrı eklemleri mevcut rig'de bulunmadığından bu aşamada bağımsız parmak animasyonu iddia edilmiyor.
+
+### Sekiz yön ve renderer
+
+- Önizleme artık N, NE, E, SE, S, SW, W ve NW olmak üzere sekiz yönü aynı ekranda gösteriyor.
+- Renderer testleri sekiz yaw açısının tamamında çizim yapılmasını kontrol ediyor.
+- Her üçgenin yüz normali mesh oluşturulurken bir kez hesaplanıyor; her karede tekrar vektör çarpımı ve karekök yapılmıyor.
+- Renderer hâlâ üçgenleri derinliğe göre sıralayıp Pygame polygon çağrılarıyla çiziyor. Bu yüzden 50 NPC için performans garantisi verilmemektedir.
+
+### Geometri ve performans ölçümü
+
+- Temel modelin otomatik testteki üst sınırı karakter başına 1.300 üçgendir.
+- Yeni `scripts/benchmark_humanoid_body_3d.py`, 1/10/25/50 karakter senaryolarında kare süresini, eşdeğer FPS'i ve toplam üçgen sayısını raporlar.
+- Benchmark sabit FPS eşiği uygulamaz; makine ve Pygame sürümüne bağlı sonuçları ölçer. CI'da bir karelik tanılama çalışmasıyla benchmark'ın çalışması ve üçgen bütçesinin korunması kontrol edilir.
+- Yüzey normalinin önceden hesaplanması ve bind-pose mesh cache'i çizim/mesh üretimindeki tekrarları azaltır; ekran dışı culling, uzak NPC LOD ve render verisi cache'i henüz tamamlanmamıştır.
+
+### Yeni otomatik kontroller
+
+- Her üçgen köşesinde 1–2 geçerli eklem etkisi.
+- Her köşede toplam skin weight = 1.
+- Dirsek pozu değiştiğinde kol yüzeyinin deforme olması.
+- Sıfır poz girdisinin bind-pose geometrisini koruması.
+- Farklı pozlarda bind-pose geometri cache'inin yeniden kullanılması.
+- Üçgen normallerinin sonlu ve normalize olması.
+- Sekiz yönde renderer çizim testi.
+- Bir karakter için 1.300 üçgen sınırı.
+
+### Bilinen sınırlamalar ve sonraki teknik kapı
+
+- LBS eklenmiş olsa da omuz ve kalça çevresinde gerçek anatomik deformasyon kalitesi statik A-Pose ve testlerle tek başına kanıtlanmış değildir; dirsek hareketi için otomatik geometri testi vardır, görsel ekstrem poz incelemesi beklenir.
+- Gövde, kollar, bacaklar ve ayaklar ayrı bağlantılı yüzey adalarıdır; bütün vücut tek kapalı manifold mesh değildir. Omuz ve kalça birleşimleri görsel önizlemede ayrıca incelenmelidir.
+- El/parmak anatomisi basit tutulmuştur.
+- 8 yönlü statik turnaround ve 1/10/25/50 NPC benchmark çıktısı henüz kullanıcı görsel kabulü veya gerçek hedef makine performans ölçümü değildir.
+- Runtime oyun entegrasyonu, dünya konumu, hareket, çarpışma, kamera ve NPC davranışları değiştirilmemiştir.
+
+Aşama 2 henüz kabul edilmedi. Sonraki kapı: CI doğrulaması, sekiz yönlü yeni önizleme, dirsek/omuz/kalça/diz bükülme pozları ve benchmark sonuçlarının incelenmesi. Bunlar tamamlanmadan yeni rig oyun karakterlerine entegre edilmez.
