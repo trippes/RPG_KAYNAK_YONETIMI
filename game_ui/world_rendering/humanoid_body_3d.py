@@ -126,10 +126,15 @@ class BodySurfaceDefinition:
 
 @dataclass(frozen=True, slots=True)
 class MeshTriangle:
-    """One rig-local triangle and its material key."""
+    """One triangle with optional per-vertex linear-blend skin weights."""
 
     vertices: tuple[Vec3, Vec3, Vec3]
     material: str
+    vertex_weights: tuple[
+        tuple[tuple[str, float], ...],
+        tuple[tuple[str, float], ...],
+        tuple[tuple[str, float], ...],
+    ] = ()
 
 
 def _add(first: Vec3, second: Vec3) -> Vec3:
@@ -163,6 +168,77 @@ def _normalize(vector: Vec3) -> Vec3:
     return _scale(vector, 1.0 / length)
 
 
+def _quat_multiply(first, second):
+    aw, ax, ay, az = first
+    bw, bx, by, bz = second
+    return (
+        aw * bw - ax * bx - ay * by - az * bz,
+        aw * bx + ax * bw + ay * bz - az * by,
+        aw * by - ax * bz + ay * bw + az * bx,
+        aw * bz + ax * by - ay * bx + az * bw,
+    )
+
+
+def _quat_rotate(rotation, vector: Vec3) -> Vec3:
+    w, x, y, z = rotation
+    vx, vy, vz = vector
+    tx = 2.0 * (y * vz - z * vy)
+    ty = 2.0 * (z * vx - x * vz)
+    tz = 2.0 * (x * vy - y * vx)
+    return (
+        vx + w * tx + y * tz - z * ty,
+        vy + w * ty + z * tx - x * tz,
+        vz + w * tz + x * ty - y * tx,
+    )
+
+
+def _skin_vertex(vertex, weights, rest_transforms, posed_transforms) -> Vec3:
+    if not weights:
+        return vertex
+    result = (0.0, 0.0, 0.0)
+    for joint_name, weight in weights:
+        rest = rest_transforms[joint_name]
+        posed = posed_transforms[joint_name]
+        rw, rx, ry, rz = rest.rotation
+        delta = _quat_multiply(posed.rotation, (rw, -rx, -ry, -rz))
+        relative = _subtract(vertex, rest.position)
+        transformed = _add(posed.position, _quat_rotate(delta, relative))
+        result = _add(result, _scale(transformed, weight))
+    return result
+
+
+def _skin_mesh(mesh, rig, local_rotations):
+    if not local_rotations:
+        return mesh
+    rest_transforms = rig.resolve_pose()
+    posed_transforms = rig.resolve_pose(local_rotations)
+    return tuple(
+        MeshTriangle(
+            tuple(
+                _skin_vertex(
+                    vertex,
+                    triangle.vertex_weights[index] if triangle.vertex_weights else (),
+                    rest_transforms,
+                    posed_transforms,
+                )
+                for index, vertex in enumerate(triangle.vertices)
+            ),
+            triangle.material,
+            triangle.vertex_weights,
+        )
+        for triangle in mesh
+    )
+
+
+def _rotate_axis_angle(vector: Vec3, axis: Vec3, angle: float) -> Vec3:
+    cosine = math.cos(angle)
+    sine = math.sin(angle)
+    return _add(
+        _add(_scale(vector, cosine), _scale(_cross(axis, vector), sine)),
+        _scale(axis, _dot(axis, vector) * (1.0 - cosine)),
+    )
+
+
 @lru_cache(maxsize=8)
 def _unit_circle(sides: int) -> tuple[tuple[float, float], ...]:
     """Cache unit-circle samples shared by every body part."""
@@ -183,7 +259,8 @@ def _latitude_samples(rings: int) -> tuple[tuple[float, float], ...]:
 
 
 def _ellipsoid_triangles(
-    center: Vec3, radii: Vec3, material: str, sides: int = 12, rings: int = 8
+    center: Vec3, radii: Vec3, material: str, joint_name: str,
+    sides: int = 12, rings: int = 8
 ) -> list[MeshTriangle]:
     vertices: list[list[Vec3]] = []
     circle = _unit_circle(sides)
@@ -209,8 +286,9 @@ def _ellipsoid_triangles(
             b = vertices[ring][next_side]
             c = vertices[ring + 1][next_side]
             d = vertices[ring + 1][side]
-            triangles.append(MeshTriangle((a, b, c), material))
-            triangles.append(MeshTriangle((a, c, d), material))
+            weight = ((joint_name, 1.0),)
+            triangles.append(MeshTriangle((a, b, c), material, (weight, weight, weight)))
+            triangles.append(MeshTriangle((a, c, d), material, (weight, weight, weight)))
     return triangles
 
 
@@ -219,6 +297,8 @@ def _segment_triangles(
     end: Vec3,
     radii: Vec3,
     material: str,
+    start_joint: str,
+    end_joint: str,
     sides: int = 10,
     profile: tuple[tuple[float, float], ...] | None = None,
 ) -> list[MeshTriangle]:
@@ -264,8 +344,16 @@ def _segment_triangles(
             b = rows[row][next_side]
             c = rows[row + 1][next_side]
             d = rows[row + 1][side]
-            triangles.append(MeshTriangle((a, b, c), material))
-            triangles.append(MeshTriangle((a, c, d), material))
+            first_t = max(0.0, min(1.0, segment_profile[row][0]))
+            second_t = max(0.0, min(1.0, segment_profile[row + 1][0]))
+            first_weights = ((start_joint, 1.0 - first_t), (end_joint, first_t))
+            second_weights = ((start_joint, 1.0 - second_t), (end_joint, second_t))
+            triangles.append(
+                MeshTriangle((a, b, c), material, (first_weights, first_weights, second_weights))
+            )
+            triangles.append(
+                MeshTriangle((a, c, d), material, (first_weights, second_weights, second_weights))
+            )
     return triangles
 
 
@@ -273,13 +361,13 @@ def _connected_surface_triangles(
     surface: BodySurfaceDefinition,
     positions: Mapping[str, Vec3],
 ) -> tuple[MeshTriangle, ...]:
-    """Create a connected loft whose cross-sections follow a curved landmark chain."""
+    """Create a connected loft and retain two-joint weights per vertex."""
     for joint_name, _, _, _ in surface.stations:
         if joint_name not in positions:
             raise ValueError(f"Body surface '{surface.name}' references unknown rig joint '{joint_name}'.")
 
     circle = _unit_circle(surface.sides)
-    samples: list[tuple[Vec3, float, float, str]] = []
+    samples = []
     stations = surface.stations
     for index in range(len(stations) - 1):
         first = stations[index]
@@ -295,20 +383,39 @@ def _connected_surface_triangles(
             )
             width = first[1] + (second[1] - first[1]) * smooth_t
             depth = first[2] + (second[2] - first[2]) * smooth_t
-            samples.append((center, width, depth, first[3]))
+            weights = ((first[0], 1.0 - t), (second[0], t))
+            samples.append((center, width, depth, first[3], weights))
 
     last = stations[-1]
-    samples.append((positions[last[0]], last[1], last[2], last[3]))
+    samples.append((positions[last[0]], last[1], last[2], last[3], ((last[0], 1.0),)))
 
-    rings: list[tuple[list[Vec3], str]] = []
-    for index, (center, width, depth, material) in enumerate(samples):
+    rings = []
+    previous_tangent = None
+    previous_u = None
+    for index, (center, width, depth, material, weights) in enumerate(samples):
         previous = samples[max(0, index - 1)][0]
         following = samples[min(len(samples) - 1, index + 1)][0]
         tangent = _normalize(_subtract(following, previous))
-        reference = (0.0, 1.0, 0.0)
-        if abs(_dot(tangent, reference)) > 0.92:
-            reference = (1.0, 0.0, 0.0)
-        basis_u = _normalize(_cross(tangent, reference))
+        if previous_tangent is None:
+            reference = (0.0, 1.0, 0.0)
+            if abs(_dot(tangent, reference)) > 0.92:
+                reference = (1.0, 0.0, 0.0)
+            basis_u = _normalize(_cross(tangent, reference))
+        else:
+            cross_axis = _cross(previous_tangent, tangent)
+            cross_length = math.sqrt(_dot(cross_axis, cross_axis))
+            alignment = max(-1.0, min(1.0, _dot(previous_tangent, tangent)))
+            if cross_length > 1e-8:
+                axis = _scale(cross_axis, 1.0 / cross_length)
+                angle = math.atan2(cross_length, alignment)
+                basis_u = _rotate_axis_angle(previous_u, axis, angle)
+            elif alignment < 0.0:
+                axis = _normalize(_cross(previous_tangent, previous_u))
+                basis_u = _rotate_axis_angle(previous_u, axis, math.pi)
+            else:
+                basis_u = previous_u
+            basis_u = _subtract(basis_u, _scale(tangent, _dot(basis_u, tangent)))
+            basis_u = _normalize(basis_u)
         basis_v = _normalize(_cross(tangent, basis_u))
         ring = [
             _add(
@@ -320,20 +427,26 @@ def _connected_surface_triangles(
             )
             for cosine, sine in circle
         ]
-        rings.append((ring, material))
+        rings.append((ring, material, weights))
+        previous_tangent = tangent
+        previous_u = basis_u
 
-    triangles: list[MeshTriangle] = []
+    triangles = []
     for ring_index in range(len(rings) - 1):
-        first_ring, material = rings[ring_index]
-        second_ring, _ = rings[ring_index + 1]
+        first_ring, material, first_weights = rings[ring_index]
+        second_ring, _, second_weights = rings[ring_index + 1]
         for side in range(surface.sides):
             next_side = (side + 1) % surface.sides
             a = first_ring[side]
             b = first_ring[next_side]
             c = second_ring[next_side]
             d = second_ring[side]
-            triangles.append(MeshTriangle((a, b, c), material))
-            triangles.append(MeshTriangle((a, c, d), material))
+            triangles.append(
+                MeshTriangle((a, b, c), material, (first_weights, first_weights, second_weights))
+            )
+            triangles.append(
+                MeshTriangle((a, c, d), material, (first_weights, second_weights, second_weights))
+            )
     return tuple(triangles)
 
 
@@ -391,7 +504,7 @@ def _build_mesh_cached(
     pose_key: tuple[tuple[str, tuple[float, float, float]], ...],
 ) -> tuple[MeshTriangle, ...]:
     """Reuse immutable local meshes for repeated rigs and animation poses."""
-    positions = rig.joint_positions(dict(pose_key))
+    positions = rig.joint_positions()
     mesh: list[MeshTriangle] = []
     for surface in surfaces:
         mesh.extend(_connected_surface_triangles(surface, positions))
@@ -417,11 +530,13 @@ def _build_mesh_cached(
                     positions[part.end_joint],
                     part.radii,
                     part.material,
+                    part.start_joint,
+                    part.end_joint,
                     mesh_sides,
                     part.profile,
                 )
             )
-    return tuple(mesh)
+    return _skin_mesh(tuple(mesh), rig, dict(pose_key))
 
 
 def _ellipsoid(name: str, joint: str, radii: Vec3, material: str) -> BodyPartDefinition:
