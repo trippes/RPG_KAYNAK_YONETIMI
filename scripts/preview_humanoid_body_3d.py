@@ -43,45 +43,99 @@ def main() -> None:
             ("W", 3.0 * math.pi / 2.0),
             ("NW", 7.0 * math.pi / 4.0),
         )
-        columns = 4
-        cell_width = WIDTH // columns
-        row_height = HEIGHT // 2
+        stress_poses = (
+            (
+                "ELBOW FLEX",
+                0.0,
+                {"elbow_left": (0.0, 0.0, -1.2), "elbow_right": (0.0, 0.0, -1.2)},
+            ),
+            (
+                "SHOULDER RAISE",
+                math.pi / 4.0,
+                {"shoulder_left": (0.0, 0.7, 0.0), "shoulder_right": (0.0, -0.7, 0.0)},
+            ),
+            (
+                "KNEE FLEX",
+                0.0,
+                {"knee_left": (0.9, 0.0, 0.0), "knee_right": (0.9, 0.0, 0.0)},
+            ),
+            (
+                "TORSO TWIST",
+                math.pi / 4.0,
+                {"spine_upper": (0.0, 0.0, 0.45), "chest": (0.0, 0.0, 0.25)},
+            ),
+        )
+        page = 0
         running = True
         while running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
-                elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                    running = False
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        running = False
+                    elif event.key in (pygame.K_1, pygame.K_KP1):
+                        page = 0
+                    elif event.key in (pygame.K_2, pygame.K_KP2):
+                        page = 1
 
             screen.fill(BACKGROUND)
-            for index, (title, yaw) in enumerate(views):
-                row, column = divmod(index, columns)
-                center_x = column * cell_width + cell_width // 2
-                baseline = row * row_height + 350
-                pygame.draw.line(
-                    screen,
-                    (90, 96, 105),
-                    (center_x - 135, baseline),
-                    (center_x + 135, baseline),
-                    1,
-                )
-                body_renderer.draw(
-                    screen,
-                    DEFAULT_HUMANOID_BODY,
-                    DEFAULT_HUMANOID_RIG,
-                    (center_x, baseline),
-                    190.0,
-                    yaw=yaw,
-                )
-                label = font.render(title, True, (235, 235, 235))
-                screen.blit(
-                    label,
-                    label.get_rect(center=(center_x, row * row_height + 38)),
-                )
+            if page == 0:
+                for index, (title, yaw) in enumerate(views):
+                    row, column = divmod(index, 4)
+                    center_x = column * (WIDTH // 4) + WIDTH // 8
+                    baseline = row * 450 + 350
+                    pygame.draw.line(
+                        screen,
+                        (90, 96, 105),
+                        (center_x - 135, baseline),
+                        (center_x + 135, baseline),
+                        1,
+                    )
+                    body_renderer.draw(
+                        screen,
+                        DEFAULT_HUMANOID_BODY,
+                        DEFAULT_HUMANOID_RIG,
+                        (center_x, baseline),
+                        190.0,
+                        yaw=yaw,
+                    )
+                    label = font.render(title, True, (235, 235, 235))
+                    screen.blit(
+                        label,
+                        label.get_rect(center=(center_x, row * 450 + 38)),
+                    )
+                footer = "1: Eight directions | 2: Joint deformation tests | ESC: close"
+            else:
+                for index, (title, yaw, pose) in enumerate(stress_poses):
+                    row, column = divmod(index, 2)
+                    center_x = column * (WIDTH // 2) + WIDTH // 4
+                    baseline = row * 450 + 390
+                    pygame.draw.line(
+                        screen,
+                        (90, 96, 105),
+                        (center_x - 230, baseline),
+                        (center_x + 230, baseline),
+                        1,
+                    )
+                    body_renderer.draw(
+                        screen,
+                        DEFAULT_HUMANOID_BODY,
+                        DEFAULT_HUMANOID_RIG,
+                        (center_x, baseline),
+                        250.0,
+                        yaw=yaw,
+                        local_rotations=pose,
+                    )
+                    label = font.render(title, True, (235, 235, 235))
+                    screen.blit(
+                        label,
+                        label.get_rect(center=(center_x, row * 450 + 38)),
+                    )
+                footer = "1: Eight directions | 2: Joint deformation tests | ESC: close"
 
             note = note_font.render(
-                "Stage 2 | Eight-direction anatomical turnaround | ESC: close",
+                footer,
                 True,
                 (180, 185, 194),
             )
