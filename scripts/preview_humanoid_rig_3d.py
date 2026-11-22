@@ -12,12 +12,12 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-import pygame
+import pygame  # noqa: E402
 
 from game_ui.world_rendering.humanoid_rig_3d import (
     DEFAULT_HUMANOID_RIG,
     project_point_orthographic,
-)
+)  # noqa: E402
 
 
 WIDTH = 1120
