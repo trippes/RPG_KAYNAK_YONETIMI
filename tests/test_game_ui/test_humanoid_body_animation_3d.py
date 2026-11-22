@@ -6,6 +6,7 @@ import unittest
 from game_ui.world_rendering.humanoid_body_animation_3d import (
     HumanoidBodyAnimator3D,
 )
+from game_ui.world_rendering.humanoid_rig_3d import DEFAULT_HUMANOID_RIG
 
 
 class HumanoidBodyAnimator3DTests(unittest.TestCase):
@@ -87,6 +88,16 @@ class HumanoidBodyAnimator3DTests(unittest.TestCase):
         self.assertEqual(animator.pose, first_pose)
         animator.advance(8.0)
         self.assertNotEqual(animator.phase_index, 0)
+
+    def test_walk_and_run_poses_are_valid_for_the_anatomical_rig(self):
+        for state in ("walk", "run"):
+            with self.subTest(state=state):
+                animator = HumanoidBodyAnimator3D(state=state)
+                animator.advance(18.0)
+                transforms = DEFAULT_HUMANOID_RIG.resolve_pose(animator.pose)
+                self.assertEqual(
+                    set(transforms), set(DEFAULT_HUMANOID_RIG.joint_names)
+                )
 
     def test_invalid_distance_is_rejected(self):
         animator = HumanoidBodyAnimator3D(state="walk")
