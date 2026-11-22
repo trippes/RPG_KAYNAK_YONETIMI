@@ -830,8 +830,12 @@ class GameWindow:
             if callable(to_world):
                 movement_intent = to_world(movement_intent)
             if movement_intent.is_moving:
+                # WASD owns gameplay movement. Its W/D letters must not also
+                # trigger the legacy world/dialogue-history shortcuts.
                 state.actions.difference_update({
+                    "world", "dialogue_history",
                     "left", "right", "up", "down",
+                    "hex_north_west", "hex_south_west",
                 })
 
         if self.current == "world" and not window_consumed:
