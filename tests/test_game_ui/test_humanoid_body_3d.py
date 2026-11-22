@@ -32,8 +32,8 @@ class TestHumanoidBody3D(unittest.TestCase):
             tuple(station[0] for station in torso.stations),
             ("pelvis", "spine_lower", "spine_upper", "chest", "neck"),
         )
-        self.assertEqual(torso.sides, 12)
-        self.assertGreaterEqual(torso.subdivisions, 3)
+        self.assertEqual(torso.sides, 8)
+        self.assertEqual(torso.subdivisions, 3)
 
     def test_connected_surfaces_cover_torso_arms_and_legs(self):
         names = {surface.name for surface in DEFAULT_HUMANOID_BODY.surfaces}
@@ -70,6 +70,7 @@ class TestHumanoidBody3D(unittest.TestCase):
         first = DEFAULT_HUMANOID_BODY.build_mesh(DEFAULT_HUMANOID_RIG)
         second = DEFAULT_HUMANOID_BODY.build_mesh(DEFAULT_HUMANOID_RIG)
         self.assertGreater(len(first), 300)
+        self.assertLessEqual(len(first), 1300)
         self.assertEqual(first, second)
         self.assertIs(first, second)
 
@@ -99,7 +100,8 @@ class TestHumanoidBody3D(unittest.TestCase):
         self.assertIn("right_clavicle_volume", parts)
         for surface in DEFAULT_HUMANOID_BODY.surfaces:
             self.assertGreaterEqual(len(surface.stations), 2)
-            self.assertGreaterEqual(surface.subdivisions, 3)
+            self.assertEqual(surface.sides, 8)
+            self.assertEqual(surface.subdivisions, 3)
 
     def test_unit_mesh_samples_are_cached(self):
         from game_ui.world_rendering.humanoid_body_3d import (
