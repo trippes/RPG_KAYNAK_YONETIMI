@@ -343,8 +343,8 @@ class HumanoidBodyModel:
 
     parts: tuple[BodyPartDefinition, ...]
     surfaces: tuple[BodySurfaceDefinition, ...] = ()
-    mesh_sides: int = 12
-    mesh_rings: int = 8
+    mesh_sides: int = 8
+    mesh_rings: int = 5
 
     def __post_init__(self) -> None:
         parts = tuple(self.parts)
@@ -480,8 +480,8 @@ def _build_default_body() -> HumanoidBodyModel:
                 ("chest", 0.158, 0.103, "tunic"),
                 ("neck", 0.043, 0.043, "skin"),
             ),
-            sides=12,
-            subdivisions=4,
+            sides=8,
+            subdivisions=3,
         ),
     ]
     for side in ("left", "right"):
@@ -494,8 +494,8 @@ def _build_default_body() -> HumanoidBodyModel:
                         (f"elbow_{side}", 0.043, 0.038, "skin"),
                         (f"wrist_{side}", 0.026, 0.024, "skin"),
                     ),
-                    sides=10,
-                    subdivisions=4,
+                    sides=8,
+                    subdivisions=3,
                 ),
                 BodySurfaceDefinition(
                     f"connected_leg_{side}",
