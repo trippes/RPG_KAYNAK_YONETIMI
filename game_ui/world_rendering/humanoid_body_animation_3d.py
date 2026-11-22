@@ -15,8 +15,8 @@ class HumanoidBodyAnimator3D:
         "west", "north_west", "north", "north_east",
     )
     STATES = ("idle", "walk", "run")
-    WALK_CYCLE_DISTANCE = 32.0
-    RUN_CYCLE_DISTANCE = 44.0
+    WALK_CYCLE_DISTANCE = 24.0
+    RUN_CYCLE_DISTANCE = 34.0
     PHASE_STEPS = 16
     IDLE_PHASE_STEPS = 8
     TRANSITION_SECONDS = 0.18

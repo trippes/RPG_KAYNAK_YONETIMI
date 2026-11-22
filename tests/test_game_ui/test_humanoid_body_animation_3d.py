@@ -4,6 +4,7 @@ import math
 import unittest
 
 from game_ui.world_rendering.humanoid_body_animation_3d import HumanoidBodyAnimator3D
+from game_ui.world_rendering.humanoid_locomotion_3d import HumanoidFootLockSolver3D
 from game_ui.world_rendering.humanoid_rig_3d import DEFAULT_HUMANOID_RIG
 
 
@@ -41,6 +42,8 @@ class HumanoidBodyAnimator3DTests(unittest.TestCase):
             HumanoidBodyAnimator3D.RUN_CYCLE_DISTANCE,
             HumanoidBodyAnimator3D.WALK_CYCLE_DISTANCE,
         )
+        self.assertGreater(HumanoidFootLockSolver3D.WALK_STANCE_FRACTION, 0.5)
+        self.assertLess(HumanoidFootLockSolver3D.RUN_STANCE_FRACTION, 0.5)
 
     def test_stationary_frame_preserves_gait_phase(self):
         animator = HumanoidBodyAnimator3D(state="walk")

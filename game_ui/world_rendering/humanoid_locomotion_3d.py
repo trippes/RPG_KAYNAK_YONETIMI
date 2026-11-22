@@ -43,10 +43,10 @@ def solve_two_bone_ik(target_forward, target_down, upper_length, lower_length):
 
 class HumanoidFootLockSolver3D:
     """Keep stance-foot anchors fixed in world space and solve both leg chains."""
-    WALK_STANCE_FRACTION = 0.42
-    RUN_STANCE_FRACTION = 0.30
-    WALK_PELVIS_DROP = 0.09
-    RUN_PELVIS_DROP = 0.08
+    WALK_STANCE_FRACTION = 0.56
+    RUN_STANCE_FRACTION = 0.34
+    WALK_PELVIS_DROP = 0.07
+    RUN_PELVIS_DROP = 0.06
     UPPER_LEG_LENGTH = 0.22
     LOWER_LEG_LENGTH = 0.228
     CONTACT_FORWARD = 0.02

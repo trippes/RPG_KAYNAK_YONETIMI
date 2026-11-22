@@ -93,6 +93,8 @@ class TestHumanoidFootLockSolver3D(unittest.TestCase):
         )
         self.assertIn("hip_left", rotations)
         self.assertIn("knee_left", rotations)
+        self.assertIn("hip_right", rotations)
+        self.assertIn("knee_right", rotations)
         self.assertIn("pelvis", translations)
         self.assertTrue(all(math.isfinite(v) for r in rotations.values() for v in r))
 
