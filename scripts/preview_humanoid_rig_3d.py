@@ -14,7 +14,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 import pygame  # noqa: E402
 
-from game_ui.world_rendering.humanoid_rig_3d import (
+from game_ui.world_rendering.humanoid_rig_3d import (  # noqa: E402
     DEFAULT_HUMANOID_RIG,
     project_point_orthographic,
 )  # noqa: E402
