@@ -268,3 +268,8 @@ Bu ölçümler CI sanal makinesine aittir; kullanıcının düşük donanımlı 
 ## Önizleme değerlendirmesi: omuz ve dirsek biyomekaniği
 
 Otomatik üretilen sekiz yönlü sprite sheet görsel kontrolünde, A-pose omuz açıklığının idle ve locomotion pozlarında fazla korunduğu görüldü. Omuzların yerel Y eksenindeki içe/alçalmaya yönelik rotasyonları eklendi; dirsek fleksiyonu da rig limitleriyle uyumlu Z eksenine taşınıp güçlendirildi. Bu düzeltmenin görsel etkisi yeni idle/walk/run önizleme sayfalarında tekrar kontrol edilecek.
+
+
+## Gait biyomekaniği ince ayarı
+
+Sekiz yönlü önizlemede omuzların gövdeye yakın durması sağlandı. Ardından yürüyüşte çift destek süresini artırmak için stance oranı %56'ya, yürüyüş döngüsü mesafesi 24 dünya birimine ayarlandı. Koşuda stance %34, döngü mesafesi 34 birim oldu. Koşu uçuş fazında pelvis artık sıfıra aniden dönmek yerine yumuşak bir yükselme eğrisi izler. Kol salınımı ve gövde karşı rotasyonu da güçlendirildi; idle nefes ve ağırlık aktarımı hafifçe belirginleştirildi.

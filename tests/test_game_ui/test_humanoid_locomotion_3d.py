@@ -85,6 +85,19 @@ class TestHumanoidFootLockSolver3D(unittest.TestCase):
         self.assertEqual(solver.anchors, {"left": None, "right": None})
         self.assertEqual(solver.diagnostics, {})
 
+    def test_run_flight_phase_lifts_pelvis_between_contacts(self):
+        solver = HumanoidFootLockSolver3D()
+        phase = (
+            math.tau * solver.RUN_STANCE_FRACTION + math.pi
+        ) / 2.0
+        _, translations = solver.update(
+            phase=phase, state="run", world_position=(0.0, 0.0),
+            yaw=0.0, world_scale=54.0,
+        )
+        self.assertAlmostEqual(
+            translations["pelvis"][2], solver.RUN_FLIGHT_RISE
+        )
+
     def test_stance_outputs_both_hip_and_knee_rotations(self):
         solver = HumanoidFootLockSolver3D()
         rotations, translations = solver.update(

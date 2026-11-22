@@ -47,6 +47,7 @@ class HumanoidFootLockSolver3D:
     RUN_STANCE_FRACTION = 0.34
     WALK_PELVIS_DROP = 0.07
     RUN_PELVIS_DROP = 0.06
+    RUN_FLIGHT_RISE = 0.025
     UPPER_LEG_LENGTH = 0.22
     LOWER_LEG_LENGTH = 0.228
     CONTACT_FORWARD = 0.02
@@ -139,7 +140,30 @@ class HumanoidFootLockSolver3D:
             rotations[f"knee_{side}"] = (knee_angle, 0.0, 0.0)
             rotations[f"ankle_{side}"] = (0.0, 0.0, 0.0)
 
-        translations = {"pelvis": (0.0, 0.0, -pelvis_drop)} if self._last_results else {}
+        if self._last_results:
+            translations = {"pelvis": (0.0, 0.0, -pelvis_drop)}
+        elif state == "run":
+            phase_position = phase % math.tau
+            stance_end = math.tau * stance_fraction
+            right_stance_start = math.pi
+            right_stance_end = right_stance_start + stance_end
+            if phase_position < right_stance_start:
+                flight_progress = (
+                    (phase_position - stance_end)
+                    / (right_stance_start - stance_end)
+                )
+            else:
+                flight_progress = (
+                    (phase_position - right_stance_end)
+                    / (math.tau - right_stance_end)
+                )
+            flight_progress = max(0.0, min(1.0, flight_progress))
+            pelvis_height = -pelvis_drop + (
+                pelvis_drop + self.RUN_FLIGHT_RISE
+            ) * math.sin(math.pi * flight_progress)
+            translations = {"pelvis": (0.0, 0.0, pelvis_height)}
+        else:
+            translations = {}
         return rotations, translations
 
 

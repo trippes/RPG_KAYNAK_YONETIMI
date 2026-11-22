@@ -183,10 +183,10 @@ class HumanoidBodyAnimator3D:
         right_hip = -left_hip
         left_knee = -max(0.0, math.sin(phase + math.pi * 0.5)) * knee_amplitude
         right_knee = -max(0.0, math.sin(phase - math.pi * 0.5)) * knee_amplitude
-        left_shoulder = -right_hip * (0.58 if running else 0.50)
-        right_shoulder = -left_hip * (0.58 if running else 0.50)
-        torso_twist = math.sin(phase * 2.0) * (0.035 if running else 0.025)
-        lean = 0.075 if running else 0.015
+        left_shoulder = -right_hip * (0.95 if running else 0.82)
+        right_shoulder = -left_hip * (0.95 if running else 0.82)
+        torso_twist = math.sin(phase * 2.0) * (0.085 if running else 0.060)
+        lean = 0.09 if running else 0.02
         left_leg_phase = phase
         right_leg_phase = (phase + math.pi) % math.tau
         stance_fraction = 0.30 if running else 0.42
@@ -239,9 +239,9 @@ class HumanoidBodyAnimator3D:
             (self._idle_clock % 3.2) / 3.2 * self.IDLE_PHASE_STEPS
         )
         phase = phase_index * math.tau / self.IDLE_PHASE_STEPS
-        breath = math.sin(phase) * 0.018
-        sway = math.sin(phase * 0.5 + 0.7) * 0.035
-        head_motion = math.sin(phase * 0.5 - 0.4) * 0.025
+        breath = math.sin(phase) * 0.025
+        sway = math.sin(phase * 0.5 + 0.7) * 0.055
+        head_motion = math.sin(phase * 0.5 - 0.4) * 0.035
         return {
             "spine_lower": (0.0, 0.0, -breath * 0.25),
             "spine_upper": (breath * 0.35, 0.0, sway * 0.25),
