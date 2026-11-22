@@ -16,6 +16,10 @@ from .depth_sorter import DepthSorter
 from .terrain_renderer import HexTerrainRenderer
 from .scene_object_pipeline import SceneObjectPipeline
 from .character_sprite_factory import ProceduralCharacterSpriteFactory
+from .humanoid_body_3d import DEFAULT_HUMANOID_BODY
+from .humanoid_body_animation_3d import HumanoidBodyAnimator3D
+from .humanoid_body_renderer_3d import HumanoidBodyRenderer3D
+from .humanoid_rig_3d import DEFAULT_HUMANOID_RIG
 
 
 class HexGameplayView:
@@ -46,6 +50,10 @@ class HexGameplayView:
         self._scene_pipeline = None
         self._character_sprite_factory = None
         self._player_animator = None
+        self._humanoid_body_renderer = HumanoidBodyRenderer3D()
+        self._humanoid_body_animator = HumanoidBodyAnimator3D()
+        self._player_body_travel_distance = 0.0
+        self._player_body_triangle_count = 0
         self._npc_animators = {}
         self._npc_visual_states = {}
         self._player_facing = "south"
@@ -217,10 +225,34 @@ class HexGameplayView:
         update_started = perf_counter_ns()
         npc_started = perf_counter_ns()
         self.elapsed_seconds = max(0.0, float(elapsed_seconds))
+        previous_visual_position = self._visual_position
+        previous_visual_map_id = self._visual_map_id
         self._sync_continuous_visual()
         self._advance_visual_position(self.elapsed_seconds)
         self._advance_npc_visuals(self.elapsed_seconds)
         self._last_npc_update_ms = (perf_counter_ns() - npc_started) / 1_000_000.0
+
+        # Measure the same presentation position used to draw the player. This
+        # covers both continuous keyboard motion and click-route interpolation,
+        # without writing to the authoritative runtime position.
+        traveled_distance = 0.0
+        if (
+            previous_visual_position is not None
+            and self._visual_position is not None
+            and previous_visual_map_id == self._visual_map_id
+        ):
+            traveled_distance = math.dist(
+                previous_visual_position, self._visual_position,
+            )
+        self._player_body_travel_distance = traveled_distance
+        self._humanoid_body_animator.select(
+            direction=self._player_facing,
+            state=self._player_animation_state(
+                self._visual_moving and traveled_distance > 1e-6
+            ),
+        )
+        self._humanoid_body_animator.advance(traveled_distance)
+
         if self._player_animator is not None:
             state = self._player_animation_state(self._visual_moving)
             self._player_animator.select(
@@ -625,6 +657,25 @@ class HexGameplayView:
         if direction:
             self._player_facing = direction
 
+    def _humanoid_body_yaw(self, facing):
+        """Convert the screen-facing octant back to the rig's +Y forward axis."""
+        screen_vectors = {
+            "east": (1.0, 0.0),
+            "south_east": (math.sqrt(0.5), math.sqrt(0.5)),
+            "south": (0.0, 1.0),
+            "south_west": (-math.sqrt(0.5), math.sqrt(0.5)),
+            "west": (-1.0, 0.0),
+            "north_west": (-math.sqrt(0.5), -math.sqrt(0.5)),
+            "north": (0.0, -1.0),
+            "north_east": (math.sqrt(0.5), -math.sqrt(0.5)),
+        }
+        if facing not in screen_vectors:
+            raise ValueError(f"Unsupported player facing: {facing!r}.")
+        world_dx, world_dy = self.transform.unproject_vector(
+            *screen_vectors[facing],
+        )
+        return math.atan2(world_dx, world_dy)
+
     def _ensure_scene_pipeline(self, renderer):
         """Load validated map-authored presentation props once per gameplay view."""
         if self._scene_pipeline is not None:
@@ -805,6 +856,7 @@ class HexGameplayView:
                 lambda item: (item[0], item[1]),
                 lambda item: item[2],
             )
+            self._player_body_triangle_count = 0
             for _, _, _, item_type, item, foot, moving in ordered_items:
                 if item_type == "scene":
                     if not self._scene_pipeline.draw(
@@ -815,7 +867,20 @@ class HexGameplayView:
                         )
                     drawn_scene_count += 1
                     continue
-                if item.kind in {"player", "npc"}:
+                if item.kind == "player":
+                    self._player_body_triangle_count = self._humanoid_body_renderer.draw(
+                        surface,
+                        DEFAULT_HUMANOID_BODY,
+                        DEFAULT_HUMANOID_RIG,
+                        foot,
+                        54.0 * self.zoom,
+                        yaw=self._humanoid_body_yaw(self._player_facing),
+                        local_rotations=self._humanoid_body_animator.pose,
+                        detail_level="high",
+                    )
+                    drawn_actor_count += 1
+                    continue
+                if item.kind == "npc":
                     animator = self._animator_for_actor(
                         renderer,
                         item.entity_id,
@@ -915,6 +980,9 @@ class HexGameplayView:
                 "path_query_ms": self._path_query_ms,
                 "world_update_ms": self._last_update_ms,
                 "npc_visual_update_ms": self._last_npc_update_ms,
+                "player_body_triangles": self._player_body_triangle_count,
+                "player_body_travel_distance": self._player_body_travel_distance,
+                "player_body_cache": self._humanoid_body_renderer.cache_info(),
             }
             self._path_query_count = 0
             self._path_query_ms = 0.0
