@@ -32,6 +32,7 @@ class HumanoidBodyRenderer3D:
         yaw: float = 0.0,
         local_rotations: Mapping[str, tuple[float, float, float]] | None = None,
         palette: Mapping[str, tuple[int, int, int]] | None = None,
+        detail_level: str = "high",
     ) -> int:
         """Draw the posed body and return the number of rasterized triangles."""
         if (
@@ -64,7 +65,7 @@ class HumanoidBodyRenderer3D:
 
         anchor = rig.ground_anchor
         triangles = []
-        for triangle in body.build_mesh(rig, local_rotations):
+        for triangle in body.build_mesh(rig, local_rotations, detail_level=detail_level):
             vertices = tuple(
                 (
                     point[0] - anchor[0],
