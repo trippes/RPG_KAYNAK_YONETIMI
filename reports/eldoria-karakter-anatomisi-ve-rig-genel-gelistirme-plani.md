@@ -419,7 +419,7 @@ Bu uygulama diliminde bağlantılı yüzey prototipi animasyon pozlarına hazır
 - Önizleme artık N, NE, E, SE, S, SW, W ve NW olmak üzere sekiz yönü aynı ekranda gösteriyor. İkinci sayfada dirsek fleksiyonu, omuz elevasyonu, diz fleksiyonu ve gövde rotasyonu stres pozları bulunuyor; 1/2 tuşlarıyla sayfalar arasında geçiliyor.
 - Renderer testleri sekiz yaw açısının tamamında çizim yapılmasını kontrol ediyor.
 - Her üçgenin yüz normali mesh oluşturulurken bir kez hesaplanıyor; her karede tekrar vektör çarpımı ve karekök yapılmıyor.
-- `build_mesh` ve renderer `detail_level=high|medium|low` seçeneklerini destekliyor. High/medium/low topoloji bütçeleri sırasıyla 1.248 / 744 / 528 üçgen olarak test sözleşmesine sabitlendi.
+- `build_mesh` ve renderer `detail_level=high|medium|low` seçeneklerini destekliyor. High/medium/low topoloji bütçeleri sırasıyla 1.280 / 768 / 552 üçgen olarak test sözleşmesine sabitlendi.
 - LOD varyantları aynı anatomik landmark ve skinning düzenini koruyup kesit kenarı/bölüm sayısını azaltıyor. Uzaklık veya ekrandaki piksel boyutuna göre LOD seçimi henüz oyun runtime'ına bağlanmadı; çağıran sistem açıkça detail_level seçmelidir.
 - Renderer hâlâ üçgenleri derinliğe göre sıralayıp Pygame polygon çağrılarıyla çiziyor. Bu yüzden 50 NPC için performans garantisi verilmemektedir.
 
