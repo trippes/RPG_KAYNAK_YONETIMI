@@ -229,3 +229,14 @@ Bu uygulama diliminde, animasyonun hareket döngüsünden bağımsız bir sprite
 Pygame tarafında sprite üretimi yazılım rasterizasyonudur. Tekrarlanan pozların yüzey cache'inden blit edilmesi ve cache sınırının korunması sürdürülür. Kare süresi ölçümleri, `Clock.get_rawtime()` ile frame-cap beklemesinden ayrılmalı; update/render maliyetleri ayrıca `perf_counter_ns` ile profillenmelidir.
 
 **Açık işler:** NPC'lerin ortak 3B animatöre geçirilmesi; 1/10/25/50 aktör benchmark'ı; sekiz yönde, tıklayarak hareket, ani dönüş ve duruş sırasında gerçek oyun içi görsel doğrulama. Bu aşama görsel kabul yapılmadan kapanmış sayılmaz.
+
+
+## Uygulama güncellemesi: NPC ortak rig entegrasyonu ve performans aracı (2026-11-23)
+
+NPC'ler de artık sürekli konum verisi bulunan durumlarda ana karakterle aynı `HumanoidBodyAnimator3D`, `DEFAULT_HUMANOID_RIG` ve `HumanoidBodyRenderer3D` hattını kullanır. Her NPC kendi dünya konumunu, facing yönünü ve kat ettiği mesafeyi animatöre verir; fizik ve konum otoritesi yine runtime'dadır. NPC'lerde düşük detaylı gövde mesh'i ve ortak malzeme paleti kullanılır. Sürekli konum verisi bulunmayan aktörler için eski sprite çizimi güvenli geri dönüş olarak korunur.
+
+NPC fazları kimlikten türetilen kararlı başlangıç örnekleriyle dağıtılır; böylece bütün kalabalık aynı karede aynı adımı atmaz. Sprite cache 256 kayıt ve 32 MB bellek tavanı ile sınırlandırılmıştır.
+
+Yeni `scripts/benchmark_humanoid_locomotion_3d.py` aracı 1/10/25/50 aktör senaryolarında update ve render sürelerini, p50/p95 kare maliyetini ve cache hit/miss/bellek kullanımını ayrı raporlar. Bu ölçümler gerçek kullanıcı donanımında da alınmadan performans kabulü verilmez.
+
+**Kalan kabul işleri:** CI doğrulaması, benchmark sonuçlarının değerlendirilmesi, NPC/oyuncu birlikte sahne testi ve kullanıcı görsel kabulü. Dünya temasının her adımda kusursuz olduğu henüz iddia edilmemektedir; IK erişim tanılamaları ve görsel ayak kayması kontrol edilmelidir.
