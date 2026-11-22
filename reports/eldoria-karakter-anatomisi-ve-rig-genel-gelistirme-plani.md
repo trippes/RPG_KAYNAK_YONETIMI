@@ -372,13 +372,15 @@ Kullanıcının bağlayıcı kalite kararı: Anatomik gerçekçilik artırılaca
 - Komşu istasyonlar arasında yumuşatılmış interpolasyon ve kontrollü düşük poligon kesitleri kullanılıyor.
 - Gövde artık beş ayrı kapalı hacmin üst üste bindirilmesiyle oluşturulmuyor. Tunik/pantolon/ten malzeme bantları aynı yüzeyin istasyonları üzerinden atanıyor.
 - Daire örnekleri mevcut önbellekten paylaşılıyor; yüzey topolojisi ve üçgenleri aynı rig/poz için mevcut sınırlı mesh cache üzerinden tekrar kullanılabiliyor.
+- İlk geometri bütçesi bilinçli olarak 8 kesit kenarı ve 3 ara bölümleme düzeyine indirildi. Testte bir temel karakterin toplam mesh'i en fazla 1.300 üçgenle sınırlandırıldı. Bu bir başlangıç geometri bütçesidir; hedef FPS veya ölçülmüş çizim süresi iddiası değildir.
+- 50 karakter için bu üst sınır yaklaşık 65.000 üçgenlik geometri yüküne karşılık gelir. Pygame'in CPU tabanlı çokgen çizim maliyeti ayrıca benchmark edilmelidir; gerekirse uzak NPC LOD/sprite fallback ve görünürlük culling'i uygulanacaktır.
 - Baş, omuz başı, köprücük kemiği, el ve ayak prototipleri şimdilik ayrı parça olarak duruyor. Gövde ve ana kol/bacak zincirleri bağlantılı yüzeylere taşındı. Bu, tüm vücudun tek mesh olduğu veya skinning'in tamamlandığı anlamına gelmez.
 
 ### Bu değişikliğin sınırları
 
 - Henüz lineer blend skinning veya dual-quaternion skinning eklenmedi.
 - Omuz, dirsek, kalça ve diz çevresinde deformasyon kalitesi henüz animasyon pozlarıyla doğrulanmadı.
-- Üçgen derinlik sıralaması ve yüzey gölgelendirme mimarisi henüz performans profiliyle ölçülmedi.
+- Üçgen derinlik sıralaması ve yüzey gölgelendirme mimarisi henüz performans profiliyle ölçülmedi. 1.300 üçgen sınırı yalnızca geometri bütçesidir; 50 NPC'de kabul edilebilir FPS anlamına gelmez.
 - Gerçek zamanlı oyun entegrasyonu, runtime hareket/konum, çarpışma ve NPC davranışları değiştirilmedi.
 
 ### Sonraki uygulama dilimi
