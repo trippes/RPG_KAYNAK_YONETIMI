@@ -13,7 +13,11 @@ class TestHumanoidBody3D(unittest.TestCase):
         for expected in (
             "pelvis_volume",
             "abdomen_volume",
+            "waist_volume",
             "chest_volume",
+            "upper_back_volume",
+            "left_clavicle_volume",
+            "right_clavicle_volume",
             "neck_volume",
             "head_volume",
             "shoulder_left_volume",
@@ -48,6 +52,46 @@ class TestHumanoidBody3D(unittest.TestCase):
         for suffix in ("upper_arm", "elbow", "forearm", "hand", "thigh", "knee", "shin", "foot"):
             self.assertIn(f"left_{suffix}_volume", names)
             self.assertIn(f"right_{suffix}_volume", names)
+
+    def test_limb_segments_use_anatomical_taper_profiles(self):
+        parts = {part.name: part for part in DEFAULT_HUMANOID_BODY.parts}
+        for name in (
+            "left_upper_arm_volume",
+            "right_upper_arm_volume",
+            "left_forearm_volume",
+            "right_forearm_volume",
+            "left_thigh_volume",
+            "right_thigh_volume",
+            "left_shin_volume",
+            "right_shin_volume",
+        ):
+            self.assertIsNotNone(parts[name].profile)
+            self.assertGreaterEqual(len(parts[name].profile), 7)
+            self.assertGreater(
+                max(width for _, width in parts[name].profile),
+                min(width for _, width in parts[name].profile),
+            )
+
+    def test_unit_mesh_samples_are_cached(self):
+        from game_ui.world_rendering.humanoid_body_3d import (
+            _latitude_samples,
+            _unit_circle,
+        )
+
+        self.assertIs(_unit_circle(10), _unit_circle(10))
+        self.assertIs(_latitude_samples(7), _latitude_samples(7))
+
+    def test_invalid_segment_profile_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "strictly increasing"):
+            BodyPartDefinition(
+                "bad_profile",
+                "shoulder_left",
+                "elbow_left",
+                (0.04, 0.04, 0.04),
+                "skin",
+                "segment",
+                ((0.0, 0.5), (0.5, 0.8), (0.4, 0.7)),
+            )
 
     def test_invalid_body_part_geometry_is_rejected(self):
         with self.assertRaisesRegex(ValueError, "positive"):
