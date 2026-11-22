@@ -240,3 +240,10 @@ NPC fazları kimlikten türetilen kararlı başlangıç örnekleriyle dağıtıl
 Yeni `scripts/benchmark_humanoid_locomotion_3d.py` aracı 1/10/25/50 aktör senaryolarında update ve render sürelerini, p50/p95 kare maliyetini ve cache hit/miss/bellek kullanımını ayrı raporlar. Bu ölçümler gerçek kullanıcı donanımında da alınmadan performans kabulü verilmez.
 
 **Kalan kabul işleri:** CI doğrulaması, benchmark sonuçlarının değerlendirilmesi, NPC/oyuncu birlikte sahne testi ve kullanıcı görsel kabulü. Dünya temasının her adımda kusursuz olduğu henüz iddia edilmemektedir; IK erişim tanılamaları ve görsel ayak kayması kontrol edilmelidir.
+
+
+## NPC hareket senkronizasyonu ve tam uzuv pozları (2026-11-23)
+
+NPC sunum katmanı artık runtime'ın zaten sürekli olan konumuna ikinci bir 0.18 saniyelik easing katmanı uygulamaz. Her karede gerçek sunum displacement'ı ölçülür; yön, hız ve gait fazı bu veriden türetilir. Hız 95 dünya birimi/s eşiğini geçtiğinde NPC run, daha düşük hızlarda walk, hareket yoksa idle durumuna geçer. Bu eşik ilk teknik kalibrasyondur ve gerçek oyun hızı/animasyon görüntüsüyle gözden geçirilecektir.
+
+Animasyon pozlarına clavicle ve scapula kontrol noktaları, dirsek fleksiyonu (anatomik Z ekseni), el/avuç, topuk, ayak topu ve parmak ucu eklemleri dahil edildi. Böylece yalnızca ana eklemler değil, kol ve ayak zincirlerinin uç eklemleri de gait/idle pozlarına katılır.

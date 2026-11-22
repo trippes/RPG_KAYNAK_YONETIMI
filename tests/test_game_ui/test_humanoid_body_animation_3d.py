@@ -16,6 +16,9 @@ class HumanoidBodyAnimator3DTests(unittest.TestCase):
         self.assertIn("head", pose)
         self.assertIn("elbow_left", pose)
         self.assertIn("wrist_right", pose)
+        self.assertIn("hand_left", pose)
+        self.assertIn("clavicle_right", pose)
+        self.assertIn("toe_right", pose)
         self.assertIn("hip_left", pose)
         self.assertNotEqual(pose, {})
 

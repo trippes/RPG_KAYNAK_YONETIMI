@@ -187,6 +187,20 @@ class HumanoidBodyAnimator3D:
         right_shoulder = -left_hip * (0.58 if running else 0.50)
         torso_twist = math.sin(phase * 2.0) * (0.035 if running else 0.025)
         lean = 0.075 if running else 0.015
+        left_leg_phase = phase
+        right_leg_phase = (phase + math.pi) % math.tau
+        stance_fraction = 0.30 if running else 0.42
+
+        def toe_roll(leg_phase):
+            stance_end = math.tau * stance_fraction
+            if leg_phase < stance_end:
+                return 0.18 * (leg_phase / stance_end)
+            swing = (leg_phase - stance_end) / (math.tau - stance_end)
+            return -0.07 * math.sin(math.pi * swing)
+
+        left_toe = toe_roll(left_leg_phase)
+        right_toe = toe_roll(right_leg_phase)
+        arm_counter = 0.58 if running else 0.50
         return {
             "pelvis": (0.0, 0.0, torso_twist * 0.45),
             "spine_lower": (-lean * 0.35, 0.0, -torso_twist * 0.35),
@@ -194,18 +208,30 @@ class HumanoidBodyAnimator3D:
             "chest": (-lean * 0.35, 0.0, -torso_twist * 0.65),
             "neck": (0.0, 0.0, -torso_twist * 0.20),
             "head": (lean * 0.20, 0.0, -torso_twist * 0.12),
+            "clavicle_left": (left_shoulder * 0.16, 0.0, left_shoulder * 0.08),
+            "clavicle_right": (right_shoulder * 0.16, 0.0, right_shoulder * 0.08),
+            "scapula_left_control": (left_shoulder * 0.10, 0.0, 0.0),
+            "scapula_right_control": (right_shoulder * 0.10, 0.0, 0.0),
             "hip_left": (left_hip, 0.0, 0.0),
             "hip_right": (right_hip, 0.0, 0.0),
             "knee_left": (left_knee, 0.0, 0.0),
             "knee_right": (right_knee, 0.0, 0.0),
             "ankle_left": (-(left_hip + left_knee) * 0.18, 0.0, 0.0),
             "ankle_right": (-(right_hip + right_knee) * 0.18, 0.0, 0.0),
+            "heel_left": (0.0, 0.0, 0.0),
+            "heel_right": (0.0, 0.0, 0.0),
+            "foot_ball_left": (left_toe, 0.0, 0.0),
+            "foot_ball_right": (right_toe, 0.0, 0.0),
+            "toe_left": (-left_toe * 0.25, 0.0, 0.0),
+            "toe_right": (-right_toe * 0.25, 0.0, 0.0),
             "shoulder_left": (left_shoulder, 0.0, 0.0),
             "shoulder_right": (right_shoulder, 0.0, 0.0),
-            "elbow_left": (-0.14 - max(0.0, left_shoulder) * 0.16, 0.0, 0.0),
-            "elbow_right": (-0.14 - max(0.0, right_shoulder) * 0.16, 0.0, 0.0),
+            "elbow_left": (0.0, 0.0, -0.14 - max(0.0, left_shoulder) * 0.16),
+            "elbow_right": (0.0, 0.0, -0.14 - max(0.0, right_shoulder) * 0.16),
             "wrist_left": (0.025 * math.sin(phase), 0.0, 0.0),
             "wrist_right": (-0.025 * math.sin(phase), 0.0, 0.0),
+            "hand_left": (0.015 * math.sin(phase), 0.0, 0.0),
+            "hand_right": (-0.015 * math.sin(phase), 0.0, 0.0),
         }
 
     def _build_idle_pose(self) -> dict[str, tuple[float, float, float]]:
@@ -222,18 +248,30 @@ class HumanoidBodyAnimator3D:
             "chest": (breath, 0.0, -sway * 0.20),
             "neck": (0.0, 0.0, head_motion * 0.35),
             "head": (head_motion, 0.0, -head_motion),
+            "clavicle_left": (breath * 0.18, 0.0, sway * 0.12),
+            "clavicle_right": (breath * 0.18, 0.0, -sway * 0.12),
+            "scapula_left_control": (breath * 0.12, 0.0, 0.0),
+            "scapula_right_control": (breath * 0.12, 0.0, 0.0),
             "shoulder_left": (breath * 0.20, 0.0, sway * 0.20),
             "shoulder_right": (breath * 0.20, 0.0, -sway * 0.20),
-            "elbow_left": (-0.08, 0.0, 0.0),
-            "elbow_right": (-0.08, 0.0, 0.0),
+            "elbow_left": (0.0, 0.0, -0.08),
+            "elbow_right": (0.0, 0.0, -0.08),
             "wrist_left": (0.0, 0.0, 0.012 * math.sin(phase)),
             "wrist_right": (0.0, 0.0, -0.012 * math.sin(phase)),
+            "hand_left": (0.0, 0.0, 0.008 * math.sin(phase)),
+            "hand_right": (0.0, 0.0, -0.008 * math.sin(phase)),
             "hip_left": (sway, 0.0, 0.0),
             "hip_right": (-sway, 0.0, 0.0),
             "knee_left": (-0.035, 0.0, 0.0),
             "knee_right": (-0.035, 0.0, 0.0),
             "ankle_left": (0.015, 0.0, 0.0),
             "ankle_right": (0.015, 0.0, 0.0),
+            "heel_left": (0.0, 0.0, 0.0),
+            "heel_right": (0.0, 0.0, 0.0),
+            "foot_ball_left": (0.0, 0.0, 0.0),
+            "foot_ball_right": (0.0, 0.0, 0.0),
+            "toe_left": (0.0, 0.0, 0.0),
+            "toe_right": (0.0, 0.0, 0.0),
         }
 
 

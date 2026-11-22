@@ -538,6 +538,45 @@ def test_multiple_fixed_steps_in_one_frame_reuse_one_click_path():
 
 
 
+def test_npc_visual_tracks_runtime_continuous_position_and_selects_run():
+    from types import SimpleNamespace
+
+    entity = SimpleNamespace(
+        kind="npc",
+        entity_id="npc-runner",
+        continuous_position=SimpleNamespace(
+            point=SimpleNamespace(x=0.0, y=0.0)
+        ),
+    )
+
+    class Runtime:
+        def entities(self):
+            return (entity,)
+
+        def continuous_position(self, _entity_id):
+            return entity.continuous_position
+
+    service = FakeService()
+    service.hex_world_runtime = Runtime()
+    view = HexGameplayView(service)
+    view.elapsed_seconds = 0.1
+
+    view._advance_npc_visuals(0.1)
+    view._advance_npc_body_animations()
+    entity.continuous_position = SimpleNamespace(
+        point=SimpleNamespace(x=10.0, y=0.0)
+    )
+    view._advance_npc_visuals(0.1)
+    visual = view._npc_visual_states["npc-runner"]
+
+    assert visual["current"] == (10.0, 0.0)
+    assert visual["moving"] is True
+    assert visual["speed"] == 100.0
+
+    view._advance_npc_body_animations()
+    assert view._npc_body_animators["npc-runner"].state == "run"
+
+
 def test_npcs_use_the_shared_world_aware_humanoid_animator():
     view = HexGameplayView(FakeService())
     view._npc_visual_states["npc-1"] = {

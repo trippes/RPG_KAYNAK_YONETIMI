@@ -31,6 +31,7 @@ class HexGameplayView:
     ZOOM_STEP = 0.08
     MOVE_ANIMATION_SECONDS = 0.18
     PHYSICS_STEP_SECONDS = 1.0 / 60.0
+    NPC_RUN_SPEED_THRESHOLD = 95.0
     NPC_BODY_PALETTE = {
         "skin": (178, 132, 96),
         "tunic": (105, 83, 59),
@@ -190,11 +191,13 @@ class HexGameplayView:
             self._begin_visual_move(map_id, source_cell, result.position.cell)
 
     def _advance_npc_visuals(self, delta_seconds):
+        """Follow the runtime's continuous NPC positions without a second easing layer."""
         runtime = getattr(self.service, "hex_world_runtime", None)
         entities_method = getattr(runtime, "entities", None)
         if not callable(entities_method):
             return
         active_ids = set()
+        safe_delta = max(0.0, float(delta_seconds))
         for entity in entities_method():
             if entity.kind != "npc":
                 continue
@@ -203,34 +206,38 @@ class HexGameplayView:
             if continuous is None:
                 try:
                     continuous = runtime.continuous_position(entity.entity_id)
-                except KeyError:
+                except (AttributeError, KeyError):
                     continue
+            if continuous is None:
+                continue
             target = (continuous.point.x, continuous.point.y)
             state = self._npc_visual_states.get(entity.entity_id)
             if state is None:
                 state = {
-                    "start": target, "target": target, "current": target,
-                    "elapsed": 0.18, "moving": False, "direction": "south",
+                    "start": target,
+                    "target": target,
+                    "current": target,
+                    "elapsed": 0.18,
+                    "moving": False,
+                    "speed": 0.0,
+                    "direction": "south",
                 }
                 self._npc_visual_states[entity.entity_id] = state
-            elif target != state["target"]:
-                current = state["current"]
-                state["start"] = current
-                state["target"] = target
-                state["elapsed"] = 0.0
-                state["moving"] = True
-                state["direction"] = self._direction_from_world_delta(
-                    target[0] - current[0], target[1] - current[1],
-                )
-            if state["elapsed"] < 0.18:
-                state["elapsed"] = min(0.18, state["elapsed"] + delta_seconds)
-            progress = min(1.0, state["elapsed"] / 0.18)
-            eased = progress * progress * (3.0 - 2.0 * progress)
-            state["current"] = (
-                state["start"][0] + (state["target"][0] - state["start"][0]) * eased,
-                state["start"][1] + (state["target"][1] - state["start"][1]) * eased,
-            )
-            state["moving"] = progress < 1.0
+                continue
+
+            current = state["current"]
+            dx = target[0] - current[0]
+            dy = target[1] - current[1]
+            traveled = math.hypot(dx, dy)
+            state["start"] = target
+            state["target"] = target
+            state["current"] = target
+            state["elapsed"] = 0.18
+            state["moving"] = traveled > 1e-6
+            state["speed"] = traveled / safe_delta if safe_delta > 1e-6 else 0.0
+            if traveled > 1e-6:
+                state["direction"] = self._direction_from_world_delta(dx, dy)
+
         for stale_id in set(self._npc_visual_states) - active_ids:
             self._npc_visual_states.pop(stale_id, None)
 
@@ -256,8 +263,9 @@ class HexGameplayView:
                 self._npc_body_animators[npc_id] = animator
 
             state = (
-                "walk" if visual["moving"] and traveled_distance > 1e-6
-                else "idle"
+                "idle" if not visual["moving"] or traveled_distance <= 1e-6
+                else "run" if visual.get("speed", 0.0) >= self.NPC_RUN_SPEED_THRESHOLD
+                else "walk"
             )
             direction = visual["direction"]
             animator.select(direction=direction, state=state)
