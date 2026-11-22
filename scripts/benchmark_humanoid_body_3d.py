@@ -26,7 +26,7 @@ from game_ui.world_rendering.humanoid_body_renderer_3d import (  # noqa: E402
 from game_ui.world_rendering.humanoid_rig_3d import DEFAULT_HUMANOID_RIG  # noqa: E402
 
 
-def run_benchmark(frames: int) -> list[dict[str, float | int]]:
+def run_benchmark(frames: int) -> list[dict[str, object]]:
     if frames < 1:
         raise ValueError("frames must be at least 1.")
 
