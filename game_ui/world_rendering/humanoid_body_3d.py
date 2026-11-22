@@ -7,6 +7,7 @@ and never changes the skeleton, pose, or runtime world position.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import lru_cache
 import math
 from typing import Mapping
 
@@ -26,6 +27,7 @@ class BodyPartDefinition:
     radii: Vec3
     material: str
     shape: str = "ellipsoid"
+    profile: tuple[tuple[float, float], ...] | None = None
 
     def __post_init__(self) -> None:
         for field_name in ("name", "start_joint", "end_joint", "material"):
@@ -47,6 +49,29 @@ class BodyPartDefinition:
         ):
             raise ValueError("radii must contain three finite positive values.")
         object.__setattr__(self, "radii", tuple(float(value) for value in self.radii))
+        if self.profile is not None:
+            profile = tuple(tuple(point) for point in self.profile)
+            if len(profile) < 3 or any(
+                len(point) != 2
+                or any(
+                    isinstance(value, bool)
+                    or not isinstance(value, (int, float))
+                    or not math.isfinite(value)
+                    for value in point
+                )
+                or point[1] <= 0
+                for point in profile
+            ):
+                raise ValueError("profile must contain at least three finite positive-width samples.")
+            if any(
+                profile[index][0] >= profile[index + 1][0]
+                for index in range(len(profile) - 1)
+            ):
+                raise ValueError("profile positions must be strictly increasing.")
+            object.__setattr__(
+                self, "profile",
+                tuple((float(along), float(width)) for along, width in profile),
+            )
 
 
 @dataclass(frozen=True, slots=True)
@@ -88,20 +113,40 @@ def _normalize(vector: Vec3) -> Vec3:
     return _scale(vector, 1.0 / length)
 
 
+@lru_cache(maxsize=8)
+def _unit_circle(sides: int) -> tuple[tuple[float, float], ...]:
+    """Cache unit-circle samples shared by every body part."""
+    return tuple(
+        (math.cos(math.tau * side / sides), math.sin(math.tau * side / sides))
+        for side in range(sides)
+    )
+
+
+@lru_cache(maxsize=8)
+def _latitude_samples(rings: int) -> tuple[tuple[float, float], ...]:
+    """Cache latitude sine/cosine pairs for low-poly ellipsoids."""
+    return tuple(
+        (math.cos(-math.pi / 2 + math.pi * ring / rings),
+         math.sin(-math.pi / 2 + math.pi * ring / rings))
+        for ring in range(rings + 1)
+    )
+
+
 def _ellipsoid_triangles(
     center: Vec3, radii: Vec3, material: str, sides: int = 12, rings: int = 8
 ) -> list[MeshTriangle]:
     vertices: list[list[Vec3]] = []
+    circle = _unit_circle(sides)
+    latitudes = _latitude_samples(rings)
     for ring in range(rings + 1):
-        latitude = -math.pi / 2 + math.pi * ring / rings
+        cosine_latitude, sine_latitude = latitudes[ring]
         row = []
-        for side in range(sides):
-            longitude = math.tau * side / sides
+        for cosine_longitude, sine_longitude in circle:
             row.append(
                 (
-                    center[0] + radii[0] * math.cos(latitude) * math.cos(longitude),
-                    center[1] + radii[1] * math.cos(latitude) * math.sin(longitude),
-                    center[2] + radii[2] * math.sin(latitude),
+                    center[0] + radii[0] * cosine_latitude * cosine_longitude,
+                    center[1] + radii[1] * cosine_latitude * sine_longitude,
+                    center[2] + radii[2] * sine_latitude,
                 )
             )
         vertices.append(row)
@@ -120,7 +165,12 @@ def _ellipsoid_triangles(
 
 
 def _segment_triangles(
-    start: Vec3, end: Vec3, radii: Vec3, material: str, sides: int = 10
+    start: Vec3,
+    end: Vec3,
+    radii: Vec3,
+    material: str,
+    sides: int = 10,
+    profile: tuple[tuple[float, float], ...] | None = None,
 ) -> list[MeshTriangle]:
     axis = _normalize(_subtract(end, start))
     reference = (0.0, 1.0, 0.0)
@@ -132,24 +182,26 @@ def _segment_triangles(
 
     # The end rings extend slightly into neighboring volumes. This overlap
     # avoids visible gaps at elbows, knees, shoulders, and ankles.
-    profile = (
-        (-0.10, 0.34),
-        (0.00, 0.78),
-        (0.14, 1.00),
-        (0.50, 0.94),
-        (0.86, 1.00),
-        (1.00, 0.78),
-        (1.10, 0.34),
+    segment_profile = profile or (
+        (-0.10, 0.28),
+        (0.00, 0.70),
+        (0.10, 0.90),
+        (0.28, 1.00),
+        (0.52, 0.94),
+        (0.76, 0.82),
+        (0.92, 0.68),
+        (1.00, 0.56),
+        (1.10, 0.24),
     )
+    circle = _unit_circle(sides)
     rows: list[list[Vec3]] = []
-    for along, factor in profile:
+    for along, factor in segment_profile:
         center = _add(start, _scale(axis, along * length))
         row = []
-        for side in range(sides):
-            angle = math.tau * side / sides
+        for cosine_angle, sine_angle in circle:
             offset = _add(
-                _scale(basis_u, math.cos(angle) * radii[0] * factor),
-                _scale(basis_v, math.sin(angle) * radii[1] * factor),
+                _scale(basis_u, cosine_angle * radii[0] * factor),
+                _scale(basis_v, sine_angle * radii[1] * factor),
             )
             row.append(_add(center, offset))
         rows.append(row)
@@ -219,6 +271,7 @@ class HumanoidBodyModel:
                         part.radii,
                         part.material,
                         self.mesh_sides,
+                        part.profile,
                     )
                 )
         return tuple(mesh)
@@ -229,29 +282,48 @@ def _ellipsoid(name: str, joint: str, radii: Vec3, material: str) -> BodyPartDef
 
 
 def _segment(
-    name: str, start: str, end: str, radii: Vec3, material: str
+    name: str,
+    start: str,
+    end: str,
+    radii: Vec3,
+    material: str,
+    profile: tuple[tuple[float, float], ...] | None = None,
 ) -> BodyPartDefinition:
-    return BodyPartDefinition(name, start, end, radii, material, "segment")
+    return BodyPartDefinition(name, start, end, radii, material, "segment", profile)
 
 
 def _build_default_body() -> HumanoidBodyModel:
     parts = [
         # Core torso volumes overlap deliberately to form a continuous silhouette.
         _ellipsoid("pelvis_volume", "pelvis", (0.105, 0.078, 0.105), "trousers"),
-        _ellipsoid("abdomen_volume", "spine_lower", (0.090, 0.070, 0.125), "tunic"),
-        _ellipsoid("chest_volume", "chest", (0.145, 0.092, 0.135), "tunic"),
+        _ellipsoid("abdomen_volume", "spine_lower", (0.092, 0.073, 0.115), "tunic"),
+        _ellipsoid("waist_volume", "spine_upper", (0.103, 0.078, 0.078), "tunic"),
+        _ellipsoid("chest_volume", "chest", (0.158, 0.103, 0.132), "tunic"),
+        _ellipsoid("upper_back_volume", "chest", (0.145, 0.075, 0.112), "tunic"),
         _segment("neck_volume", "chest", "neck", (0.043, 0.043, 0.043), "skin"),
         _ellipsoid("head_volume", "head", (0.078, 0.074, 0.105), "skin"),
         # Shoulder caps bridge clavicles, chest, and upper arms.
         _ellipsoid("shoulder_left_volume", "shoulder_left", (0.064, 0.060, 0.064), "skin"),
         _ellipsoid("shoulder_right_volume", "shoulder_right", (0.064, 0.060, 0.064), "skin"),
+        _segment(
+            "left_clavicle_volume", "chest", "clavicle_left",
+            (0.035, 0.035, 0.035), "skin",
+            ((-0.08, 0.25), (0.0, 0.85), (0.65, 1.0), (1.0, 0.55), (1.08, 0.2)),
+        ),
+        _segment(
+            "right_clavicle_volume", "chest", "clavicle_right",
+            (0.035, 0.035, 0.035), "skin",
+            ((-0.08, 0.25), (0.0, 0.85), (0.65, 1.0), (1.0, 0.55), (1.08, 0.2)),
+        ),
     ]
     for side in ("left", "right"):
         parts.extend(
             (
                 _segment(
                     f"{side}_upper_arm_volume", f"shoulder_{side}", f"elbow_{side}",
-                    (0.047, 0.047, 0.047), "skin",
+                    (0.052, 0.044, 0.044), "skin",
+                    ((-0.10, 0.25), (0.0, 0.72), (0.20, 0.92), (0.43, 1.0),
+                     (0.68, 0.88), (0.88, 0.70), (1.0, 0.55), (1.10, 0.22)),
                 ),
                 _ellipsoid(
                     f"{side}_elbow_volume", f"elbow_{side}",
@@ -259,7 +331,9 @@ def _build_default_body() -> HumanoidBodyModel:
                 ),
                 _segment(
                     f"{side}_forearm_volume", f"elbow_{side}", f"wrist_{side}",
-                    (0.038, 0.038, 0.038), "skin",
+                    (0.043, 0.036, 0.036), "skin",
+                    ((-0.10, 0.22), (0.0, 0.58), (0.18, 0.82), (0.42, 0.92),
+                     (0.68, 0.78), (0.88, 0.62), (1.0, 0.48), (1.10, 0.20)),
                 ),
                 _ellipsoid(
                     f"{side}_hand_volume", f"hand_{side}",
@@ -267,7 +341,9 @@ def _build_default_body() -> HumanoidBodyModel:
                 ),
                 _segment(
                     f"{side}_thigh_volume", f"hip_{side}", f"knee_{side}",
-                    (0.067, 0.067, 0.067), "trousers",
+                    (0.074, 0.064, 0.064), "trousers",
+                    ((-0.10, 0.28), (0.0, 0.72), (0.18, 0.92), (0.38, 1.0),
+                     (0.62, 0.92), (0.82, 0.78), (1.0, 0.62), (1.10, 0.24)),
                 ),
                 _ellipsoid(
                     f"{side}_knee_volume", f"knee_{side}",
@@ -275,7 +351,9 @@ def _build_default_body() -> HumanoidBodyModel:
                 ),
                 _segment(
                     f"{side}_shin_volume", f"knee_{side}", f"ankle_{side}",
-                    (0.046, 0.046, 0.046), "trousers",
+                    (0.050, 0.044, 0.044), "trousers",
+                    ((-0.10, 0.24), (0.0, 0.68), (0.20, 0.82), (0.44, 0.76),
+                     (0.68, 0.66), (0.88, 0.54), (1.0, 0.46), (1.10, 0.20)),
                 ),
                 _ellipsoid(
                     f"{side}_foot_volume", f"foot_ball_{side}",
