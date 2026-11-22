@@ -633,7 +633,7 @@ def _build_default_body() -> HumanoidBodyModel:
         _segment(
             "left_clavicle_volume", "chest", "clavicle_left",
             (0.035, 0.035, 0.035), "skin",
-            ((-0.08, 0.25), (0.0, 0.85), (0.65, 1.0), (1.0, 0.55), (1.08, 0.2)),
+            ((-0.08, 0.25), (0.0, 0.85), (0.72, 1.0), (1.08, 0.2)),
         ),
         _segment(
             "right_clavicle_volume", "chest", "clavicle_right",
