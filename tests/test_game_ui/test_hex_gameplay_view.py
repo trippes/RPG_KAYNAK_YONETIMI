@@ -561,7 +561,7 @@ def test_player_body_gait_advances_only_by_measured_visual_travel():
     view.update(1.0 / 60.0)
     phase_after_motion = view._humanoid_body_animator.phase
     assert phase_after_motion == pytest.approx(
-        math.tau * 14.0 / HumanoidBodyAnimator3D.WALK_CYCLE_DISTANCE
+        math.tau * 14.0 / view._humanoid_body_animator.WALK_CYCLE_DISTANCE
     )
     assert view._player_body_travel_distance == pytest.approx(14.0)
 
