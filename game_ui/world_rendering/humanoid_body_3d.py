@@ -600,7 +600,7 @@ def _build_bind_mesh_cached(
 
 
 
-@lru_cache(maxsize=16)
+@lru_cache(maxsize=64)
 def _build_mesh_cached(
     parts: tuple[BodyPartDefinition, ...],
     surfaces: tuple[BodySurfaceDefinition, ...],

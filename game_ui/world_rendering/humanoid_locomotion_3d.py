@@ -50,6 +50,8 @@ class HumanoidFootLockSolver3D:
     UPPER_LEG_LENGTH = 0.22
     LOWER_LEG_LENGTH = 0.228
     CONTACT_FORWARD = 0.02
+    TARGET_QUANTIZATION = 1.0 / 64.0
+    ANGLE_QUANTIZATION = 1.0 / 32.0
     SIDES = ("left", "right")
 
     def __init__(self):
@@ -118,14 +120,23 @@ class HumanoidFootLockSolver3D:
             local_x = world_dx * cosine + world_dy * sine
             local_y = -world_dx * sine + world_dy * cosine
             target_lateral = local_x - hip_x
+            target_forward = round(local_y / self.TARGET_QUANTIZATION) * self.TARGET_QUANTIZATION
+            target_lateral = (
+                round(target_lateral / self.TARGET_QUANTIZATION)
+                * self.TARGET_QUANTIZATION
+            )
             target_down = abs(ground_anchor_z + 0.03) - 0.02 - pelvis_drop
             result = solve_two_bone_ik(
-                local_y, target_down, self.UPPER_LEG_LENGTH, self.LOWER_LEG_LENGTH
+                target_forward, target_down,
+                self.UPPER_LEG_LENGTH, self.LOWER_LEG_LENGTH
             )
             self._last_results[side] = result
             lateral_angle = -math.atan2(target_lateral, max(1e-6, target_down))
-            rotations[f"hip_{side}"] = (result.hip_angle, lateral_angle, 0.0)
-            rotations[f"knee_{side}"] = (result.knee_angle, 0.0, 0.0)
+            hip_angle = round(result.hip_angle / self.ANGLE_QUANTIZATION) * self.ANGLE_QUANTIZATION
+            knee_angle = round(result.knee_angle / self.ANGLE_QUANTIZATION) * self.ANGLE_QUANTIZATION
+            lateral_angle = round(lateral_angle / self.ANGLE_QUANTIZATION) * self.ANGLE_QUANTIZATION
+            rotations[f"hip_{side}"] = (hip_angle, lateral_angle, 0.0)
+            rotations[f"knee_{side}"] = (knee_angle, 0.0, 0.0)
             rotations[f"ankle_{side}"] = (0.0, 0.0, 0.0)
 
         translations = {"pelvis": (0.0, 0.0, -pelvis_drop)} if self._last_results else {}

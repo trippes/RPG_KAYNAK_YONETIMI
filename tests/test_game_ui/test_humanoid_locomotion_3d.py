@@ -47,6 +47,18 @@ class TestHumanoidFootLockSolver3D(unittest.TestCase):
         )
         self.assertEqual(solver.anchors["left"], initial)
 
+    def test_subpixel_motion_reuses_the_same_quantized_ik_pose(self):
+        solver = HumanoidFootLockSolver3D()
+        first, _ = solver.update(
+            phase=0.2, state="walk", world_position=(0.0, 0.0),
+            yaw=0.0, world_scale=54.0,
+        )
+        second, _ = solver.update(
+            phase=0.2, state="walk", world_position=(0.1, 0.1),
+            yaw=0.0, world_scale=54.0,
+        )
+        self.assertEqual(first, second)
+
     def test_turning_keeps_anchor_in_world_space(self):
         solver = HumanoidFootLockSolver3D()
         solver.update(

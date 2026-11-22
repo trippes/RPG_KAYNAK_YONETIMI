@@ -247,3 +247,19 @@ Yeni `scripts/benchmark_humanoid_locomotion_3d.py` aracı 1/10/25/50 aktör sena
 NPC sunum katmanı artık runtime'ın zaten sürekli olan konumuna ikinci bir 0.18 saniyelik easing katmanı uygulamaz. Her karede gerçek sunum displacement'ı ölçülür; yön, hız ve gait fazı bu veriden türetilir. Hız 95 dünya birimi/s eşiğini geçtiğinde NPC run, daha düşük hızlarda walk, hareket yoksa idle durumuna geçer. Bu eşik ilk teknik kalibrasyondur ve gerçek oyun hızı/animasyon görüntüsüyle gözden geçirilecektir.
 
 Animasyon pozlarına clavicle ve scapula kontrol noktaları, dirsek fleksiyonu (anatomik Z ekseni), el/avuç, topuk, ayak topu ve parmak ucu eklemleri dahil edildi. Böylece yalnızca ana eklemler değil, kol ve ayak zincirlerinin uç eklemleri de gait/idle pozlarına katılır.
+
+
+## İlk kalabalık benchmark değerlendirmesi
+
+İlk otomatik benchmark (Linux CI, Python 3.12.16; 120 ölçüm karesi ve 12 ısınma karesi) 974f860 commit'inde şu değerleri verdi:
+
+| Aktör | Update p50 | Render p50 | Birleşik p50 |
+|---:|---:|---:|---:|
+| 1 | 0.048 ms | 0.139 ms | 0.187 ms |
+| 10 | 0.449 ms | 19.687 ms | 20.135 ms |
+| 25 | 1.082 ms | 1.718 ms | 2.800 ms |
+| 50 | 2.136 ms | 14.708 ms | 16.844 ms |
+
+50 aktörde cache 3.11 MB seviyesinde kaldı; 6,108 hit ve 492 miss görüldü. Render p95 sıçramaları 198 ms'ye kadar çıktığı için bu sonuç kabul edilebilir kararlılıkta değildir. Bu nedenle IK hedef/eklem açıları cache dostu alt piksel toleransında kuantize edildi ve skinned body mesh LRU kapasitesi 16'dan 64'e yükseltildi. Bu yeni ayarlar yeniden benchmark edilmelidir.
+
+Bu ölçümler CI sanal makinesine aittir; kullanıcının düşük donanımlı bilgisayarındaki performansın yerine geçmez.
