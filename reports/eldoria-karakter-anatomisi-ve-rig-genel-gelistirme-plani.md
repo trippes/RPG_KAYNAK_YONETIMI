@@ -367,10 +367,12 @@ Kullanıcının bağlayıcı kalite kararı: Anatomik gerçekçilik artırılaca
 
 - `BodySurfaceDefinition` eklendi. Anatomik landmark'lara bağlı, sıralı kesit istasyonları tanımlıyor.
 - `connected_torso` yüzeyi pelvis → alt omurga → üst omurga → göğüs → boyun istasyonları arasında tek bir paylaşılan halka topolojisiyle üretiliyor.
+- Sol/sağ kol yüzeyleri omuz → dirsek → bilek; bacak yüzeyleri kalça → diz → ayak bileği landmark zincirlerini takip eden bağlantılı tüp yüzeyleri olarak üretildi.
+- Kesit halkaları her istasyonda yerel zincir teğetine göre yönlendiriliyor; böylece yüzey yalnızca dikey gövde eksenine değil, bükülen kol/bacak zincirlerine de uyum sağlıyor.
 - Komşu istasyonlar arasında yumuşatılmış interpolasyon ve kontrollü düşük poligon kesitleri kullanılıyor.
 - Gövde artık beş ayrı kapalı hacmin üst üste bindirilmesiyle oluşturulmuyor. Tunik/pantolon/ten malzeme bantları aynı yüzeyin istasyonları üzerinden atanıyor.
 - Daire örnekleri mevcut önbellekten paylaşılıyor; yüzey topolojisi ve üçgenleri aynı rig/poz için mevcut sınırlı mesh cache üzerinden tekrar kullanılabiliyor.
-- Baş, omuz kuşağı, köprücük kemiği, kol ve bacak prototipleri şimdilik ayrı parça olarak duruyor. Bu, bilinçli bir ara adımdır; tüm vücudun tek mesh olduğu veya skinning'in tamamlandığı anlamına gelmez.
+- Baş, omuz başı, köprücük kemiği, el ve ayak prototipleri şimdilik ayrı parça olarak duruyor. Gövde ve ana kol/bacak zincirleri bağlantılı yüzeylere taşındı. Bu, tüm vücudun tek mesh olduğu veya skinning'in tamamlandığı anlamına gelmez.
 
 ### Bu değişikliğin sınırları
 
