@@ -5,6 +5,8 @@ from __future__ import annotations
 import math
 from collections.abc import Mapping
 
+import pygame
+
 from game_ui.world_rendering.humanoid_body_3d import HumanoidBodyModel
 from game_ui.world_rendering.humanoid_rig_3d import HumanoidRig, project_point_orthographic
 
@@ -90,7 +92,7 @@ class HumanoidBodyRenderer3D:
 
         # Camera looks toward the origin from the positive depth side.
         triangles.sort(key=lambda item: item[0])
-        draw = __import__("pygame").draw
+        draw = pygame.draw
         for _, points, color in triangles:
             draw.polygon(
                 surface,
