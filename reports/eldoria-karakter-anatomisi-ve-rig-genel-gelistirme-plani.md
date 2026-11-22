@@ -427,7 +427,7 @@ Bu uygulama diliminde bağlantılı yüzey prototipi animasyon pozlarına hazır
 
 - Temel modelin otomatik testteki üst sınırı karakter başına 1.300 üçgendir.
 - Yeni `scripts/benchmark_humanoid_body_3d.py`, 1/10/25/50 karakter senaryolarında kare süresini, eşdeğer FPS'i, LOD dağılımını ve toplam üçgen sayısını raporlar.
-- Benchmark'ın 50 karakterlik karma LOD senaryosu 5 high + 10 medium + 35 low karakter kullanır; geometri bütçesi 32.160 üçgen/kare olur. Aynı 50 karakterin tamamı high olsaydı 62.400 üçgen/kare olurdu. Bu yalnızca geometri sayısı karşılaştırmasıdır, FPS ölçümü değildir.
+- Benchmark'ın 50 karakterlik karma LOD senaryosu 5 high + 10 medium + 35 low karakter kullanır; geometri bütçesi 33.400 üçgen/kare olur. Aynı 50 karakterin tamamı high olsaydı 64.000 üçgen/kare olurdu. Bu yalnızca geometri sayısı karşılaştırmasıdır, FPS ölçümü değildir.
 - Benchmark sabit FPS eşiği uygulamaz; makine ve Pygame sürümüne bağlı sonuçları ölçer. CI'da bir karelik tanılama çalışmasıyla benchmark'ın çalışması ve üçgen bütçesinin korunması kontrol edilir.
 - Yüzey normalinin önceden hesaplanması ve bind-pose mesh cache'i çizim/mesh üretimindeki tekrarları azaltır; ekran dışı culling, uzak NPC LOD ve render verisi cache'i henüz tamamlanmamıştır.
 
@@ -458,7 +458,7 @@ Aşama 2 henüz kabul edilmedi. Sonraki kapı: CI doğrulaması, sekiz yönlü y
 - Bilek ile avuç arasında bağlantılı, iki eklem ağırlıklı el yüzeyi eklendi; avuç hacmi ayrı düşük poligon parça olarak kalıyor. Parmak eklemleri rig'de bulunmadığı için parmak animasyonu kapsam dışı.
 - Ayaklar topuk → tarak → parmak ucu yüzey zinciri olarak tanımlandı.
 - Yüksek, orta ve düşük detay varyantları aynı anatomik landmark ve skinning verisini koruyup halka kenarı/bölüm sayısını azaltıyor.
-- Kesin geometri bütçeleri otomatik testte sabitlendi: high 1.248, medium 744, low 528 üçgen/karakter.
+- Kesin geometri bütçeleri otomatik testte sabitlendi: high 1.280, medium 768, low 552 üçgen/karakter.
 - Renderer'a açık `detail_level` seçimi eklendi. Runtime mesafe/piksel boyutu tabanlı otomatik LOD seçimi henüz yapılmadı.
-- 50 NPC benchmark senaryosunda 5 high + 10 medium + 35 low dağılımı kullanılıyor; toplam teorik geometri 32.160 üçgen/kare. Bu sayı performans/FPS garantisi değildir.
+- 50 NPC benchmark senaryosunda 5 high + 10 medium + 35 low dağılımı kullanılıyor; toplam teorik geometri 33.400 üçgen/kare. Bu sayı performans/FPS garantisi değildir.
 - Aşama 2 kabul edilmedi; GitHub Actions ve hedef makine benchmark sonuçları doğrulanmalıdır.
