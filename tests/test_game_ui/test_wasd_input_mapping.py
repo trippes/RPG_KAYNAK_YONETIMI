@@ -22,24 +22,26 @@ def test_wasd_and_legacy_hex_keys_do_not_trigger_global_actions():
 
     state = mapper.collect(events)
 
+    assert state.pressed("world")
+    assert state.pressed("dialogue_history")
     assert state.actions.isdisjoint({
-        "world", "dialogue_history", "hex_north_west", "hex_south_west",
+        "hex_north_west", "hex_south_west",
     })
 
 
-def test_dialogue_history_has_non_conflicting_shortcut():
+def test_dialogue_history_shortcut_remains_d_outside_wasd_movement():
     mapper = InputMapper(FakeBackend())
     state = mapper.collect([
-        SimpleNamespace(type=1, key="h", unicode="h"),
+        SimpleNamespace(type=1, key="d", unicode="d"),
     ])
 
     assert state.pressed("dialogue_history")
 
 
-def test_world_shortcut_is_moved_off_wasd():
+def test_world_shortcut_is_still_mapped_to_w_for_non_gameplay_screens():
     mapper = InputMapper(FakeBackend())
     state = mapper.collect([
-        SimpleNamespace(type=1, key="m", unicode="m"),
+        SimpleNamespace(type=1, key="w", unicode="w"),
     ])
 
     assert state.pressed("world")
