@@ -2,7 +2,7 @@
 
 **Çalışma dalı:** `experiment/map-cleanup`  
 **Ana plan:** `reports/eldoria-karakter-anatomisi-ve-rig-genel-gelistirme-plani.md`  
-**Durum:** İlk 3B anatomik model uygulandı; yerel ve CI doğrulaması bekleniyor.  
+**Durum:** Statik iskelet önizlemesi kullanıcı tarafından görsel olarak kabul edildi; son CI doğrulaması bekleniyor.  
 **Kullanıcı tasarım kararı:** A-Pose, sağ elli X/Y/Z koordinat sistemi, yardımcı kürek kemiği kontrolü.
 
 ## 1. Uygulanan değişiklik
@@ -72,3 +72,12 @@ Bu rapor yazılırken depo testleri yerel çalışma ortamında çalıştırılm
 6. Kullanıcı görsel kabulü.
 
 Bu rapor, Aşama 1'in tamamlandığı anlamına gelmez. Görsel önizleme, test/CI doğrulaması ve kullanıcı kabulü beklenmektedir.
+
+
+## 6. Görsel kabul güncellemesi — 2026-11-22
+
+Kullanıcı, düzeltilmiş ön/üç çeyrek/yan görünüş önizlemesini kabul etti. Kabul, mevcut iskelet geometrisi ve A-Pose rest pose'un statik görünümüyle sınırlıdır. Kullanıcı oyun içindeki karakter animasyonlarını görmeden animasyon kalitesi hakkında nihai karar vermeyecektir.
+
+Önizleme betiğindeki proje kökü bootstrap'ı doğrudan çalıştırma import sorununu giderdi. Ardından CI Ruff kontrolünün bildirdiği E402 import sırası uyarıları noqa açıklamalarıyla sınırlandırıldı. Bu son düzeltmenin CI sonucu henüz beklenmektedir.
+
+**Kabul durumu:** Statik iskelet görsel kabulü tamamlandı. Son CI başarılı olursa Aşama 1 kapatılabilir. Animasyonun oyun içi görsel kabulü sonraki animasyon/entegrasyon aşamalarında zorunlu kalacaktır.
