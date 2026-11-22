@@ -150,6 +150,27 @@ class TestHumanoidBody3D(unittest.TestCase):
             any(first.vertices != second.vertices for first, second in zip(rest_left_arm, posed_left_arm))
         )
 
+    def test_joint_stress_poses_keep_mesh_finite_and_triangle_count_stable(self):
+        base = DEFAULT_HUMANOID_BODY.build_mesh(DEFAULT_HUMANOID_RIG)
+        poses = (
+            {"shoulder_left": (0.0, 0.7, 0.0), "shoulder_right": (0.0, -0.7, 0.0)},
+            {"elbow_left": (0.0, 0.0, -1.2), "elbow_right": (0.0, 0.0, -1.2)},
+            {"knee_left": (-0.9, 0.0, 0.0), "knee_right": (-0.9, 0.0, 0.0)},
+            {"spine_upper": (0.0, 0.0, 0.45), "chest": (0.0, 0.0, 0.25)},
+        )
+        for pose in poses:
+            with self.subTest(pose=pose):
+                mesh = DEFAULT_HUMANOID_BODY.build_mesh(DEFAULT_HUMANOID_RIG, pose)
+                self.assertEqual(len(mesh), len(base))
+                self.assertTrue(
+                    all(
+                        math.isfinite(value)
+                        for triangle in mesh
+                        for vertex in triangle.vertices
+                        for value in vertex
+                    )
+                )
+
     def test_zero_pose_rotation_preserves_bind_mesh(self):
         rest_mesh = DEFAULT_HUMANOID_BODY.build_mesh(DEFAULT_HUMANOID_RIG)
         zero_pose_mesh = DEFAULT_HUMANOID_BODY.build_mesh(
