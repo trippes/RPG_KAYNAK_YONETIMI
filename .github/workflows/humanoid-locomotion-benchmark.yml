@@ -5,6 +5,7 @@ on:
     branches: [experiment/map-cleanup]
     paths:
       - "scripts/benchmark_humanoid_locomotion_3d.py"
+      - "scripts/preview_humanoid_locomotion_3d.py"
       - "game_ui/world_rendering/humanoid_*.py"
       - "game_ui/world_rendering/hex_gameplay_view.py"
       - ".github/workflows/humanoid-locomotion-benchmark.yml"
@@ -35,11 +36,15 @@ jobs:
             --output humanoid-locomotion-benchmark.json
       - name: Validate benchmark JSON
         run: python -c "import json; json.load(open('humanoid-locomotion-benchmark.json', encoding='utf-8'))"
+      - name: Export eight-direction idle/walk/run preview sheets
+        run: python scripts/preview_humanoid_locomotion_3d.py --output-dir humanoid-preview
       - name: Upload locomotion benchmark report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: humanoid-locomotion-benchmark
-          path: humanoid-locomotion-benchmark.json
+          path: |
+            humanoid-locomotion-benchmark.json
+            humanoid-preview/*.png
           if-no-files-found: warn
           retention-days: 30
