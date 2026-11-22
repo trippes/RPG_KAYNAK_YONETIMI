@@ -590,16 +590,10 @@ def _build_default_body() -> HumanoidBodyModel:
         ),
     ]
     for side in ("left", "right"):
-        parts.extend(
-            (
-                _ellipsoid(
-                    f"{side}_hand_volume", f"hand_{side}",
-                    (0.035, 0.025, 0.050), "skin",
-                ),
-                _ellipsoid(
-                    f"{side}_foot_volume", f"foot_ball_{side}",
-                    (0.050, 0.115, 0.035), "boots",
-                ),
+        parts.append(
+            _ellipsoid(
+                f"{side}_hand_volume", f"hand_{side}",
+                (0.035, 0.025, 0.050), "skin",
             )
         )
     surfaces = [
@@ -636,8 +630,18 @@ def _build_default_body() -> HumanoidBodyModel:
                         (f"knee_{side}", 0.050, 0.052, "trousers"),
                         (f"ankle_{side}", 0.032, 0.032, "trousers"),
                     ),
-                    sides=10,
-                    subdivisions=4,
+                    sides=8,
+                    subdivisions=3,
+                ),
+                BodySurfaceDefinition(
+                    f"connected_foot_{side}",
+                    (
+                        (f"heel_{side}", 0.035, 0.050, "boots"),
+                        (f"foot_ball_{side}", 0.032, 0.054, "boots"),
+                        (f"toe_{side}", 0.025, 0.043, "boots"),
+                    ),
+                    sides=8,
+                    subdivisions=3,
                 ),
             )
         )
