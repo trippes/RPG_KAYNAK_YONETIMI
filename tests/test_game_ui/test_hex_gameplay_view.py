@@ -538,6 +538,29 @@ def test_multiple_fixed_steps_in_one_frame_reuse_one_click_path():
 
 
 
+def test_npcs_use_the_shared_world_aware_humanoid_animator():
+    view = HexGameplayView(FakeService())
+    view._npc_visual_states["npc-1"] = {
+        "current": (10.0, 20.0),
+        "moving": False,
+        "direction": "south",
+    }
+
+    view._advance_npc_body_animations()
+    animator = view._npc_body_animators["npc-1"]
+    assert animator.state == "idle"
+    assert animator.pose
+
+    initial_phase = animator.phase
+    view._npc_visual_states["npc-1"]["current"] = (14.0, 20.0)
+    view._npc_visual_states["npc-1"]["moving"] = True
+    view._advance_npc_body_animations()
+
+    assert animator.state == "walk"
+    assert animator.phase != initial_phase
+    assert "pelvis" in animator.translations
+
+
 def test_player_body_gait_advances_only_by_measured_visual_travel():
     service = FakeService()
 

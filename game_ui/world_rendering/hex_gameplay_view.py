@@ -31,6 +31,12 @@ class HexGameplayView:
     ZOOM_STEP = 0.08
     MOVE_ANIMATION_SECONDS = 0.18
     PHYSICS_STEP_SECONDS = 1.0 / 60.0
+    NPC_BODY_PALETTE = {
+        "skin": (178, 132, 96),
+        "tunic": (105, 83, 59),
+        "trousers": (59, 70, 76),
+        "boots": (57, 43, 34),
+    }
 
     DIRECTIONS = (
         ("right", HexDirection.EAST),
@@ -60,6 +66,9 @@ class HexGameplayView:
         self._last_body_runtime_map_id = None
         self._npc_animators = {}
         self._npc_visual_states = {}
+        self._npc_body_animators = {}
+        self._npc_body_last_positions = {}
+        self._npc_body_triangle_count = 0
         self._player_facing = "south"
         self._character_sprite_cache = {}
         self._last_render_stats = {}
@@ -225,6 +234,45 @@ class HexGameplayView:
         for stale_id in set(self._npc_visual_states) - active_ids:
             self._npc_visual_states.pop(stale_id, None)
 
+    def _advance_npc_body_animations(self):
+        """Drive NPCs through the same world-aware humanoid locomotion core."""
+        active_ids = set()
+        for npc_id, visual in self._npc_visual_states.items():
+            active_ids.add(npc_id)
+            position = tuple(visual["current"])
+            previous = self._npc_body_last_positions.get(npc_id, position)
+            traveled_distance = math.dist(previous, position)
+            self._npc_body_last_positions[npc_id] = position
+
+            animator = self._npc_body_animators.get(npc_id)
+            if animator is None:
+                animator = HumanoidBodyAnimator3D(
+                    direction=visual["direction"], state="idle",
+                )
+                stable_phase = sum(ord(character) for character in str(npc_id))
+                animator.phase = (
+                    stable_phase % animator.PHASE_STEPS
+                ) * math.tau / animator.PHASE_STEPS
+                self._npc_body_animators[npc_id] = animator
+
+            state = (
+                "walk" if visual["moving"] and traveled_distance > 1e-6
+                else "idle"
+            )
+            direction = visual["direction"]
+            animator.select(direction=direction, state=state)
+            animator.advance(
+                traveled_distance,
+                self.elapsed_seconds,
+                world_position=position,
+                yaw=self._humanoid_body_yaw(direction),
+                world_scale=54.0 * self.zoom,
+            )
+
+        for stale_id in set(self._npc_body_animators) - active_ids:
+            self._npc_body_animators.pop(stale_id, None)
+            self._npc_body_last_positions.pop(stale_id, None)
+
     def update(self, elapsed_seconds: float = 0.0) -> None:
         update_started = perf_counter_ns()
         npc_started = perf_counter_ns()
@@ -234,6 +282,7 @@ class HexGameplayView:
         self._sync_continuous_visual()
         self._advance_visual_position(self.elapsed_seconds)
         self._advance_npc_visuals(self.elapsed_seconds)
+        self._advance_npc_body_animations()
         self._last_npc_update_ms = (perf_counter_ns() - npc_started) / 1_000_000.0
 
         # Measure the same presentation position used to draw the player. This
@@ -899,6 +948,7 @@ class HexGameplayView:
                 lambda item: item[2],
             )
             self._player_body_triangle_count = 0
+            self._npc_body_triangle_count = 0
             for _, _, _, item_type, item, foot, moving in ordered_items:
                 if item_type == "scene":
                     if not self._scene_pipeline.draw(
@@ -924,38 +974,48 @@ class HexGameplayView:
                     drawn_actor_count += 1
                     continue
                 if item.kind == "npc":
-                    animator = self._animator_for_actor(
-                        renderer,
-                        item.entity_id,
-                        player=item.kind == "player",
+                    body_animator = self._npc_body_animators.get(item.entity_id)
+                    if body_animator is not None:
+                        npc_visual = self._npc_visual_states.get(item.entity_id)
+                        direction = (
+                            npc_visual["direction"] if npc_visual
+                            else body_animator.direction
+                        )
+                        self._npc_body_triangle_count += self._humanoid_body_renderer.draw(
+                            surface,
+                            DEFAULT_HUMANOID_BODY,
+                            DEFAULT_HUMANOID_RIG,
+                            foot,
+                            54.0 * self.zoom,
+                            yaw=self._humanoid_body_yaw(direction),
+                            local_rotations=body_animator.pose,
+                            local_translations=body_animator.translations,
+                            palette=self.NPC_BODY_PALETTE,
+                            detail_level="low",
+                        )
+                        drawn_actor_count += 1
+                        continue
+
+                    # Compatibility fallback for NPCs without a continuous
+                    # presentation position; normal NPCs use the shared 3D rig.
+                    sprite_animator = self._animator_for_actor(
+                        renderer, item.entity_id, player=False,
                     )
-                    if animator is None:
+                    if sprite_animator is None:
                         self.characters.draw(
                             renderer, foot, max(18.0, radius * 1.25),
                             self.elapsed_seconds, moving=moving,
                         )
-                        continue
-                    npc_visual = (
-                        self._npc_visual_states.get(item.entity_id)
-                        if item.kind == "npc" else None
-                    )
-                    animator.select(
-                        direction=(
-                            self._player_facing if item.kind == "player"
-                            else npc_visual["direction"] if npc_visual
-                            else animator.direction
-                        ),
-                        state=(
-                            self._player_animation_state(moving)
-                            if item.kind == "player"
-                            else "walk" if moving else "idle"
-                        ),
-                    )
-                    self.characters.draw_sprite(
-                        renderer, animator.current_frame, foot,
-                        64.0 * self.zoom, (0.5, 1.0),
-                        self._character_sprite_cache,
-                    )
+                    else:
+                        sprite_animator.select(
+                            direction=sprite_animator.direction,
+                            state="walk" if moving else "idle",
+                        )
+                        self.characters.draw_sprite(
+                            renderer, sprite_animator.current_frame, foot,
+                            64.0 * self.zoom, (0.5, 1.0),
+                            self._character_sprite_cache,
+                        )
                     drawn_actor_count += 1
                 else:
                     renderer.pg.draw.circle(
@@ -1024,6 +1084,12 @@ class HexGameplayView:
                 "world_update_ms": self._last_update_ms,
                 "npc_visual_update_ms": self._last_npc_update_ms,
                 "player_body_triangles": self._player_body_triangle_count,
+                "npc_body_triangles": self._npc_body_triangle_count,
+                "npc_body_animators": len(self._npc_body_animators),
+                "npc_foot_lock": {
+                    npc_id: animator.foot_lock_diagnostics
+                    for npc_id, animator in self._npc_body_animators.items()
+                },
                 "player_body_travel_distance": self._player_body_travel_distance,
                 "player_body_cache": self._humanoid_body_renderer.cache_info(),
                 "player_foot_lock": self._humanoid_body_animator.foot_lock_diagnostics,
