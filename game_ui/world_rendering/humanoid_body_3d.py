@@ -75,6 +75,56 @@ class BodyPartDefinition:
 
 
 @dataclass(frozen=True, slots=True)
+class BodySurfaceDefinition:
+    """A connected anatomical surface lofted through ordered rig landmarks.
+
+    Each station is (joint_name, half_width, half_depth, material).
+    The surface shares rings between stations instead of stacking closed volumes.
+    """
+
+    name: str
+    stations: tuple[tuple[str, float, float, str], ...]
+    sides: int = 12
+    subdivisions: int = 3
+
+    def __post_init__(self) -> None:
+        stations = tuple(tuple(station) for station in self.stations)
+        if not isinstance(self.name, str) or not self.name.strip():
+            raise ValueError("surface name must be a non-empty string.")
+        if len(stations) < 2:
+            raise ValueError("A connected surface requires at least two stations.")
+        for station in stations:
+            if (
+                len(station) != 4
+                or not isinstance(station[0], str)
+                or not station[0].strip()
+                or not isinstance(station[3], str)
+                or not station[3].strip()
+                or any(
+                    isinstance(value, bool)
+                    or not isinstance(value, (int, float))
+                    or not math.isfinite(value)
+                    or value <= 0
+                    for value in station[1:3]
+                )
+            ):
+                raise ValueError("Each surface station needs a joint, positive width/depth, and material.")
+        if isinstance(self.sides, bool) or not isinstance(self.sides, int) or self.sides < 6:
+            raise ValueError("surface sides must be an integer of at least 6.")
+        if (
+            isinstance(self.subdivisions, bool)
+            or not isinstance(self.subdivisions, int)
+            or self.subdivisions < 1
+        ):
+            raise ValueError("surface subdivisions must be a positive integer.")
+        object.__setattr__(
+            self,
+            "stations",
+            tuple((s[0], float(s[1]), float(s[2]), s[3]) for s in stations),
+        )
+
+
+@dataclass(frozen=True, slots=True)
 class MeshTriangle:
     """One rig-local triangle and its material key."""
 
@@ -219,11 +269,77 @@ def _segment_triangles(
     return triangles
 
 
+def _connected_surface_triangles(
+    surface: BodySurfaceDefinition,
+    positions: Mapping[str, Vec3],
+) -> tuple[MeshTriangle, ...]:
+    """Create one shared-ring torso surface with smoothly interpolated sections."""
+    for joint_name, _, _, _ in surface.stations:
+        if joint_name not in positions:
+            raise ValueError(f"Body surface '{surface.name}' references unknown rig joint '{joint_name}'.")
+
+    circle = _unit_circle(surface.sides)
+    rings: list[tuple[list[Vec3], str]] = []
+    stations = surface.stations
+    for index in range(len(stations) - 1):
+        first = stations[index]
+        second = stations[index + 1]
+        start = positions[first[0]]
+        end = positions[second[0]]
+        for step in range(surface.subdivisions):
+            t = step / surface.subdivisions
+            smooth_t = t * t * (3.0 - 2.0 * t)
+            center = tuple(
+                start[axis] + (end[axis] - start[axis]) * smooth_t
+                for axis in range(3)
+            )
+            width = first[1] + (second[1] - first[1]) * smooth_t
+            depth = first[2] + (second[2] - first[2]) * smooth_t
+            ring = [
+                (
+                    center[0] + math.cos(angle) * width,
+                    center[1] + math.sin(angle) * depth,
+                    center[2],
+                )
+                for angle in (math.tau * side / surface.sides for side in range(surface.sides))
+            ]
+            rings.append((ring, first[3]))
+
+    last = stations[-1]
+    last_center = positions[last[0]]
+    rings.append((
+        [
+            (
+                last_center[0] + cosine * last[1],
+                last_center[1] + sine * last[2],
+                last_center[2],
+            )
+            for cosine, sine in circle
+        ],
+        last[3],
+    ))
+
+    triangles: list[MeshTriangle] = []
+    for ring_index in range(len(rings) - 1):
+        first_ring, material = rings[ring_index]
+        second_ring, _ = rings[ring_index + 1]
+        for side in range(surface.sides):
+            next_side = (side + 1) % surface.sides
+            a = first_ring[side]
+            b = first_ring[next_side]
+            c = second_ring[next_side]
+            d = second_ring[side]
+            triangles.append(MeshTriangle((a, b, c), material))
+            triangles.append(MeshTriangle((a, c, d), material))
+    return tuple(triangles)
+
+
 @dataclass(frozen=True, slots=True)
 class HumanoidBodyModel:
     """Low-poly anatomical volumes attached to a HumanoidRig."""
 
     parts: tuple[BodyPartDefinition, ...]
+    surfaces: tuple[BodySurfaceDefinition, ...] = ()
     mesh_sides: int = 12
     mesh_rings: int = 8
 
@@ -231,14 +347,19 @@ class HumanoidBodyModel:
         parts = tuple(self.parts)
         if not parts or any(not isinstance(part, BodyPartDefinition) for part in parts):
             raise ValueError("parts must contain BodyPartDefinition values.")
+        surfaces = tuple(self.surfaces)
+        if any(not isinstance(surface, BodySurfaceDefinition) for surface in surfaces):
+            raise ValueError("surfaces must contain BodySurfaceDefinition values.")
         names = [part.name for part in parts]
-        if len(names) != len(set(names)):
-            raise ValueError("Body part names must be unique.")
+        surface_names = [surface.name for surface in surfaces]
+        if len(names) != len(set(names)) or len(surface_names) != len(set(surface_names)):
+            raise ValueError("Body part and surface names must be unique within their groups.")
         if isinstance(self.mesh_sides, bool) or self.mesh_sides < 6:
             raise ValueError("mesh_sides must be an integer of at least 6.")
         if isinstance(self.mesh_rings, bool) or self.mesh_rings < 4:
             raise ValueError("mesh_rings must be an integer of at least 4.")
         object.__setattr__(self, "parts", parts)
+        object.__setattr__(self, "surfaces", surfaces)
 
     def build_mesh(
         self,
@@ -253,13 +374,14 @@ class HumanoidBodyModel:
             )
         )
         return _build_mesh_cached(
-            self.parts, self.mesh_sides, self.mesh_rings, rig, pose_key
+            self.parts, self.surfaces, self.mesh_sides, self.mesh_rings, rig, pose_key
         )
 
 
 @lru_cache(maxsize=16)
 def _build_mesh_cached(
     parts: tuple[BodyPartDefinition, ...],
+    surfaces: tuple[BodySurfaceDefinition, ...],
     mesh_sides: int,
     mesh_rings: int,
     rig: HumanoidRig,
@@ -268,6 +390,8 @@ def _build_mesh_cached(
     """Reuse immutable local meshes for repeated rigs and animation poses."""
     positions = rig.joint_positions(dict(pose_key))
     mesh: list[MeshTriangle] = []
+    for surface in surfaces:
+        mesh.extend(_connected_surface_triangles(surface, positions))
     for part in parts:
         if part.start_joint not in positions or part.end_joint not in positions:
             raise ValueError(f"Body part '{part.name}' references an unknown rig joint.")
@@ -314,15 +438,9 @@ def _segment(
 
 def _build_default_body() -> HumanoidBodyModel:
     parts = [
-        # Core torso volumes overlap deliberately to form a continuous silhouette.
-        _ellipsoid("pelvis_volume", "pelvis", (0.105, 0.078, 0.105), "trousers"),
-        _ellipsoid("abdomen_volume", "spine_lower", (0.092, 0.073, 0.115), "tunic"),
-        _ellipsoid("waist_volume", "spine_upper", (0.103, 0.078, 0.078), "tunic"),
-        _ellipsoid("chest_volume", "chest", (0.158, 0.103, 0.132), "tunic"),
-        _ellipsoid("upper_back_volume", "chest", (0.145, 0.075, 0.112), "tunic"),
-        _segment("neck_volume", "chest", "neck", (0.043, 0.043, 0.043), "skin"),
+        # Limbs remain independently articulated; the torso is a single connected loft.
         _ellipsoid("head_volume", "head", (0.078, 0.074, 0.105), "skin"),
-        # Shoulder caps bridge clavicles, chest, and upper arms.
+        # Shoulder caps bridge the connected torso surface and upper arms.
         _ellipsoid("shoulder_left_volume", "shoulder_left", (0.064, 0.060, 0.064), "skin"),
         _ellipsoid("shoulder_right_volume", "shoulder_right", (0.064, 0.060, 0.064), "skin"),
         _segment(
@@ -381,7 +499,19 @@ def _build_default_body() -> HumanoidBodyModel:
                 ),
             )
         )
-    return HumanoidBodyModel(tuple(parts))
+    torso = BodySurfaceDefinition(
+        "connected_torso",
+        (
+            ("pelvis", 0.105, 0.078, "trousers"),
+            ("spine_lower", 0.092, 0.073, "tunic"),
+            ("spine_upper", 0.103, 0.078, "tunic"),
+            ("chest", 0.158, 0.103, "tunic"),
+            ("neck", 0.043, 0.043, "skin"),
+        ),
+        sides=12,
+        subdivisions=4,
+    )
+    return HumanoidBodyModel(tuple(parts), (torso,))
 
 
 DEFAULT_HUMANOID_BODY = _build_default_body()
