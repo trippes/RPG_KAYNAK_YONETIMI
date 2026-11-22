@@ -74,6 +74,47 @@ class TestHumanoidBody3D(unittest.TestCase):
         self.assertEqual(first, second)
         self.assertIs(first, second)
 
+    def test_all_mesh_vertices_have_normalized_skin_weights(self):
+        mesh = DEFAULT_HUMANOID_BODY.build_mesh(DEFAULT_HUMANOID_RIG)
+        joint_names = set(DEFAULT_HUMANOID_RIG.joint_names)
+        for triangle in mesh:
+            self.assertEqual(len(triangle.vertex_weights), 3)
+            for influences in triangle.vertex_weights:
+                self.assertGreaterEqual(len(influences), 1)
+                self.assertLessEqual(len(influences), 2)
+                self.assertAlmostEqual(sum(weight for _, weight in influences), 1.0)
+                for joint_name, weight in influences:
+                    self.assertIn(joint_name, joint_names)
+                    self.assertGreaterEqual(weight, 0.0)
+
+    def test_elbow_pose_deforms_the_weighted_arm_surface(self):
+        rest_mesh = DEFAULT_HUMANOID_BODY.build_mesh(DEFAULT_HUMANOID_RIG)
+        posed_mesh = DEFAULT_HUMANOID_BODY.build_mesh(
+            DEFAULT_HUMANOID_RIG,
+            {"elbow_left": (0.0, 0.0, -1.0)},
+        )
+        self.assertNotEqual(rest_mesh, posed_mesh)
+        rest_left_arm = [
+            triangle for triangle in rest_mesh
+            if any(
+                joint_name in {"shoulder_left", "elbow_left", "wrist_left"}
+                for influences in triangle.vertex_weights
+                for joint_name, _ in influences
+            )
+        ]
+        posed_left_arm = [
+            triangle for triangle in posed_mesh
+            if any(
+                joint_name in {"shoulder_left", "elbow_left", "wrist_left"}
+                for influences in triangle.vertex_weights
+                for joint_name, _ in influences
+            )
+        ]
+        self.assertEqual(len(rest_left_arm), len(posed_left_arm))
+        self.assertTrue(
+            any(first.vertices != second.vertices for first, second in zip(rest_left_arm, posed_left_arm))
+        )
+
     def test_mesh_follows_rig_pose_without_mutating_rest_geometry(self):
         rest_positions = DEFAULT_HUMANOID_RIG.joint_positions()
         rest_mesh = DEFAULT_HUMANOID_BODY.build_mesh(DEFAULT_HUMANOID_RIG)
