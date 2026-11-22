@@ -568,6 +568,35 @@ def test_player_body_gait_advances_only_by_measured_visual_travel():
     assert view._player_body_travel_distance == 0.0
 
 
+def test_player_body_gait_tracks_click_move_runtime_even_when_visual_goal_is_active():
+    service = FakeService()
+
+    class MovingRuntime(FakeRuntime):
+        point = WorldPoint(0.0, 0.0)
+
+        def continuous_position(self, _actor_id):
+            return SimpleNamespace(point=self.point)
+
+        def entities(self):
+            return ()
+
+    runtime = MovingRuntime()
+    service.hex_world_runtime = runtime
+    view = HexGameplayView(service)
+    view._move_goal = LocalHexPosition(1, 0)
+    view._move_map_id = "village"
+
+    view.update(1.0 / 60.0)
+    runtime.point = WorldPoint(20.0, 0.0)
+    view.update(1.0 / 60.0)
+
+    assert view._player_body_travel_distance == pytest.approx(20.0)
+    assert view._humanoid_body_animator.state == "walk"
+    assert view._humanoid_body_animator.phase == pytest.approx(
+        math.tau * 20.0 / view._humanoid_body_animator.WALK_CYCLE_DISTANCE
+    )
+
+
 def test_humanoid_body_yaw_uses_inverse_world_projection():
     view = HexGameplayView(FakeService())
     for facing in view._humanoid_body_animator.DIRECTIONS:
