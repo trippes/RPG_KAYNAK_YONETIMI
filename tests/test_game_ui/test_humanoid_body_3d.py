@@ -17,8 +17,8 @@ class TestHumanoidBody3D(unittest.TestCase):
             "head_volume",
             "shoulder_left_volume",
             "shoulder_right_volume",
-            "left_foot_volume",
-            "right_foot_volume",
+            "left_hand_volume",
+            "right_hand_volume",
         ):
             self.assertIn(expected, names)
         self.assertIn("connected_torso", {surface.name for surface in DEFAULT_HUMANOID_BODY.surfaces})
@@ -45,6 +45,8 @@ class TestHumanoidBody3D(unittest.TestCase):
                 "connected_arm_right",
                 "connected_leg_left",
                 "connected_leg_right",
+                "connected_foot_left",
+                "connected_foot_right",
             },
         )
 
@@ -154,10 +156,12 @@ class TestHumanoidBody3D(unittest.TestCase):
         names = {part.name for part in DEFAULT_HUMANOID_BODY.parts}
         self.assertIn("left_hand_volume", names)
         self.assertIn("right_hand_volume", names)
-        self.assertIn("left_foot_volume", names)
-        self.assertIn("right_foot_volume", names)
         surfaces = {surface.name for surface in DEFAULT_HUMANOID_BODY.surfaces}
-        for name in ("connected_arm_left", "connected_arm_right", "connected_leg_left", "connected_leg_right"):
+        for name in (
+            "connected_arm_left", "connected_arm_right",
+            "connected_leg_left", "connected_leg_right",
+            "connected_foot_left", "connected_foot_right",
+        ):
             self.assertIn(name, surfaces)
 
     def test_limb_segments_use_anatomical_taper_profiles(self):
