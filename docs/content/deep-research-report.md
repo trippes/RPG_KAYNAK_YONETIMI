@@ -273,3 +273,21 @@ Otomatik üretilen sekiz yönlü sprite sheet görsel kontrolünde, A-pose omuz 
 ## Gait biyomekaniği ince ayarı
 
 Sekiz yönlü önizlemede omuzların gövdeye yakın durması sağlandı. Ardından yürüyüşte çift destek süresini artırmak için stance oranı %56'ya, yürüyüş döngüsü mesafesi 24 dünya birimine ayarlandı. Koşuda stance %34, döngü mesafesi 34 birim oldu. Koşu uçuş fazında pelvis artık sıfıra aniden dönmek yerine yumuşak bir yükselme eğrisi izler. Kol salınımı ve gövde karşı rotasyonu da güçlendirildi; idle nefes ve ağırlık aktarımı hafifçe belirginleştirildi.
+
+
+## Son benchmark ve görsel inceleme adayı (2026-11-23, commit d3e3133)
+
+Son 1/10/25/50 aktör benchmark'ı (Linux CI, Python 3.12.16; 120 ölçüm karesi + 12 ısınma karesi):
+
+| Aktör | Update p50 | Render p50 | Birleşik p50 |
+|---:|---:|---:|---:|
+| 1 | 0.0458 ms | 0.1259 ms | 0.1717 ms |
+| 10 | 0.4529 ms | 0.6653 ms | 1.1181 ms |
+| 25 | 1.1469 ms | 1.5704 ms | 2.7174 ms |
+| 50 | 2.3434 ms | 3.0903 ms | 5.4337 ms |
+
+50 aktörde cache 2.36 MB, 6,342 hit ve 258 miss verdi. Render p95 sıçramaları 10 aktörde 67.87 ms, 50 aktörde 31.17 ms olduğundan gerçek donanımda ayrıca ölçülmelidir. CI benchmark sonucu performans ölçeklenmesini gösterir; hedef bilgisayardaki FPS garantisi değildir.
+
+Aynı commit için otomatik sekiz yönlü idle, walk ve run sprite sheet'leri üretildi. Önizlemede omuzlar gövdeye yaklaştırılmış, dirsek fleksiyonu düzeltilmiş, walk çift destek süresi artırılmış, run uçuş fazına pelvis yükselmesi eklenmiştir. Bu çıktılar ilk görsel kabul adayıdır; oyun içindeki kamera, zemin, NPC kalabalığı ve gerçek giriş akışıyla kullanıcı kontrolü gereklidir.
+
+CI durumu: Eldoria CI, Core quality ve Humanoid locomotion benchmark başarılı. Aşama görsel kabul tamamlanana kadar açık kalır.
