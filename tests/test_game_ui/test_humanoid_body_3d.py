@@ -1,3 +1,4 @@
+import math
 import unittest
 
 from game_ui.world_rendering.humanoid_body_3d import (
@@ -21,7 +22,10 @@ class TestHumanoidBody3D(unittest.TestCase):
             "right_hand_volume",
         ):
             self.assertIn(expected, names)
-        self.assertIn("connected_torso", {surface.name for surface in DEFAULT_HUMANOID_BODY.surfaces})
+        surface_names = {surface.name for surface in DEFAULT_HUMANOID_BODY.surfaces}
+        self.assertIn("connected_torso", surface_names)
+        self.assertIn("connected_foot_left", surface_names)
+        self.assertIn("connected_foot_right", surface_names)
 
     def test_torso_is_one_connected_surface_with_ordered_anatomical_landmarks(self):
         surfaces = {surface.name: surface for surface in DEFAULT_HUMANOID_BODY.surfaces}
@@ -164,7 +168,7 @@ class TestHumanoidBody3D(unittest.TestCase):
         ):
             self.assertIn(name, surfaces)
 
-    def test_limb_segments_use_anatomical_taper_profiles(self):
+    def test_surface_topology_uses_compact_consistent_rings(self):
         parts = {part.name: part for part in DEFAULT_HUMANOID_BODY.parts}
         self.assertIn("left_clavicle_volume", parts)
         self.assertIn("right_clavicle_volume", parts)
@@ -172,6 +176,13 @@ class TestHumanoidBody3D(unittest.TestCase):
             self.assertGreaterEqual(len(surface.stations), 2)
             self.assertEqual(surface.sides, 8)
             self.assertEqual(surface.subdivisions, 3)
+
+    def test_triangle_normals_are_precomputed_and_finite(self):
+        mesh = DEFAULT_HUMANOID_BODY.build_mesh(DEFAULT_HUMANOID_RIG)
+        for triangle in mesh:
+            self.assertEqual(len(triangle.normal), 3)
+            self.assertTrue(all(math.isfinite(value) for value in triangle.normal))
+            self.assertLessEqual(math.sqrt(sum(value * value for value in triangle.normal)), 1.0000001)
 
     def test_unit_mesh_samples_are_cached(self):
         from game_ui.world_rendering.humanoid_body_3d import (
