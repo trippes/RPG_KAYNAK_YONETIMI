@@ -494,14 +494,13 @@ class HumanoidBodyModel:
         )
 
 
-@lru_cache(maxsize=16)
-def _build_mesh_cached(
+@lru_cache(maxsize=4)
+def _build_bind_mesh_cached(
     parts: tuple[BodyPartDefinition, ...],
     surfaces: tuple[BodySurfaceDefinition, ...],
     mesh_sides: int,
     mesh_rings: int,
     rig: HumanoidRig,
-    pose_key: tuple[tuple[str, tuple[float, float, float]], ...],
 ) -> tuple[MeshTriangle, ...]:
     """Reuse immutable local meshes for repeated rigs and animation poses."""
     positions = rig.joint_positions()
@@ -537,7 +536,24 @@ def _build_mesh_cached(
                     part.profile,
                 )
             )
-    return _skin_mesh(tuple(mesh), rig, dict(pose_key))
+    return tuple(mesh)
+
+
+
+@lru_cache(maxsize=16)
+def _build_mesh_cached(
+    parts: tuple[BodyPartDefinition, ...],
+    surfaces: tuple[BodySurfaceDefinition, ...],
+    mesh_sides: int,
+    mesh_rings: int,
+    rig: HumanoidRig,
+    pose_key: tuple[tuple[str, tuple[float, float, float]], ...],
+) -> tuple[MeshTriangle, ...]:
+    """Reuse bind geometry, then cache each immutable skinned pose."""
+    bind_mesh = _build_bind_mesh_cached(
+        parts, surfaces, mesh_sides, mesh_rings, rig
+    )
+    return _skin_mesh(bind_mesh, rig, dict(pose_key))
 
 
 def _ellipsoid(name: str, joint: str, radii: Vec3, material: str) -> BodyPartDefinition:
