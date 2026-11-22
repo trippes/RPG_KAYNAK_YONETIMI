@@ -457,7 +457,7 @@ class HumanoidBodyModel:
     parts: tuple[BodyPartDefinition, ...]
     surfaces: tuple[BodySurfaceDefinition, ...] = ()
     mesh_sides: int = 8
-    mesh_rings: int = 5
+    mesh_rings: int = 4
 
     def __post_init__(self) -> None:
         parts = tuple(self.parts)
@@ -502,7 +502,7 @@ def _build_bind_mesh_cached(
     mesh_rings: int,
     rig: HumanoidRig,
 ) -> tuple[MeshTriangle, ...]:
-    """Reuse immutable local meshes for repeated rigs and animation poses."""
+    """Build immutable bind geometry once for all animation poses."""
     positions = rig.joint_positions()
     mesh: list[MeshTriangle] = []
     for surface in surfaces:
