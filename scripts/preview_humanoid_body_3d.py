@@ -1,4 +1,4 @@
-"""Show front, three-quarter, and side views of the Stage 2 body volumes."""
+"""Show an eight-direction turnaround of the Stage 2 humanoid body."""
 
 from __future__ import annotations
 
