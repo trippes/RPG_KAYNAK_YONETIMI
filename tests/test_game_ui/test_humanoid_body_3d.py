@@ -3,6 +3,7 @@ import unittest
 from game_ui.world_rendering.humanoid_body_3d import (
     DEFAULT_HUMANOID_BODY,
     BodyPartDefinition,
+    BodySurfaceDefinition,
 )
 from game_ui.world_rendering.humanoid_rig_3d import DEFAULT_HUMANOID_RIG
 
@@ -11,11 +12,7 @@ class TestHumanoidBody3D(unittest.TestCase):
     def test_default_body_contains_anatomical_core_and_bilateral_limbs(self):
         names = {part.name for part in DEFAULT_HUMANOID_BODY.parts}
         for expected in (
-            "pelvis_volume",
-            "abdomen_volume",
-            "waist_volume",
-            "chest_volume",
-            "upper_back_volume",
+            "connected_torso",
             "left_clavicle_volume",
             "right_clavicle_volume",
             "neck_volume",
@@ -30,6 +27,32 @@ class TestHumanoidBody3D(unittest.TestCase):
             "right_foot_volume",
         ):
             self.assertIn(expected, names)
+
+    def test_torso_is_one_connected_surface_with_ordered_anatomical_landmarks(self):
+        self.assertEqual(len(DEFAULT_HUMANOID_BODY.surfaces), 1)
+        torso = DEFAULT_HUMANOID_BODY.surfaces[0]
+        self.assertEqual(torso.name, "connected_torso")
+        self.assertEqual(
+            tuple(station[0] for station in torso.stations),
+            ("pelvis", "spine_lower", "spine_upper", "chest", "neck"),
+        )
+        self.assertEqual(torso.sides, 12)
+        self.assertGreaterEqual(torso.subdivisions, 3)
+
+    def test_connected_torso_surface_has_shared_ring_topology(self):
+        mesh = DEFAULT_HUMANOID_BODY.build_mesh(DEFAULT_HUMANOID_RIG)
+        torso = DEFAULT_HUMANOID_BODY.surfaces[0]
+        expected_torso_triangles = (
+            (len(torso.stations) - 1) * torso.subdivisions * torso.sides * 2
+        )
+        self.assertGreaterEqual(len(mesh), expected_torso_triangles)
+
+    def test_surface_rejects_invalid_station_width(self):
+        with self.assertRaisesRegex(ValueError, "positive"):
+            BodySurfaceDefinition(
+                "invalid",
+                (("pelvis", 0.1, 0.1, "skin"), ("chest", 0.0, 0.1, "skin")),
+            )
 
     def test_mesh_is_deterministic_and_has_triangles(self):
         first = DEFAULT_HUMANOID_BODY.build_mesh(DEFAULT_HUMANOID_RIG)
