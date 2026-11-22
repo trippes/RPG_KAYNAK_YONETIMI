@@ -19,8 +19,8 @@ from game_ui.world_rendering.humanoid_body_renderer_3d import (  # noqa: E402
 from game_ui.world_rendering.humanoid_rig_3d import DEFAULT_HUMANOID_RIG  # noqa: E402
 
 
-WIDTH = 1120
-HEIGHT = 620
+WIDTH = 1440
+HEIGHT = 900
 BACKGROUND = (25, 27, 32)
 
 
@@ -34,10 +34,18 @@ def main() -> None:
         clock = pygame.time.Clock()
         body_renderer = HumanoidBodyRenderer3D()
         views = (
-            ("FRONT", 0.0, 190),
-            ("THREE-QUARTER", math.pi / 4.0, 560),
-            ("SIDE", math.pi / 2.0, 930),
+            ("N", 0.0),
+            ("NE", math.pi / 4.0),
+            ("E", math.pi / 2.0),
+            ("SE", 3.0 * math.pi / 4.0),
+            ("S", math.pi),
+            ("SW", 5.0 * math.pi / 4.0),
+            ("W", 3.0 * math.pi / 2.0),
+            ("NW", 7.0 * math.pi / 4.0),
         )
+        columns = 4
+        cell_width = WIDTH // columns
+        row_height = HEIGHT // 2
         running = True
         while running:
             for event in pygame.event.get():
@@ -47,28 +55,37 @@ def main() -> None:
                     running = False
 
             screen.fill(BACKGROUND)
-            for title, yaw, center_x in views:
+            for index, (title, yaw) in enumerate(views):
+                row, column = divmod(index, columns)
+                center_x = column * cell_width + cell_width // 2
+                baseline = row * row_height + 350
                 pygame.draw.line(
-                    screen, (90, 96, 105),
-                    (center_x - 170, 520), (center_x + 170, 520), 1,
+                    screen,
+                    (90, 96, 105),
+                    (center_x - 135, baseline),
+                    (center_x + 135, baseline),
+                    1,
                 )
                 body_renderer.draw(
                     screen,
                     DEFAULT_HUMANOID_BODY,
                     DEFAULT_HUMANOID_RIG,
-                    (center_x, 520),
-                    300.0,
+                    (center_x, baseline),
+                    190.0,
                     yaw=yaw,
                 )
                 label = font.render(title, True, (235, 235, 235))
-                screen.blit(label, label.get_rect(center=(center_x, 54)))
+                screen.blit(
+                    label,
+                    label.get_rect(center=(center_x, row * row_height + 38)),
+                )
 
             note = note_font.render(
-                "Stage 2 | Parametric low-poly body volumes | ESC: close",
+                "Stage 2 | Eight-direction anatomical turnaround | ESC: close",
                 True,
                 (180, 185, 194),
             )
-            screen.blit(note, note.get_rect(center=(WIDTH // 2, 585)))
+            screen.blit(note, note.get_rect(center=(WIDTH // 2, HEIGHT - 24)))
             pygame.display.flip()
             clock.tick(60)
     finally:
