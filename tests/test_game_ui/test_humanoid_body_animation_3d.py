@@ -20,6 +20,9 @@ class HumanoidBodyAnimator3DTests(unittest.TestCase):
         self.assertIn("clavicle_right", pose)
         self.assertIn("toe_right", pose)
         self.assertIn("hip_left", pose)
+        self.assertLess(pose["shoulder_left"][1], 0.0)
+        self.assertGreater(pose["shoulder_right"][1], 0.0)
+        self.assertLess(pose["elbow_left"][2], 0.0)
         self.assertNotEqual(pose, {})
 
     def test_walk_phase_advances_from_traveled_distance(self):

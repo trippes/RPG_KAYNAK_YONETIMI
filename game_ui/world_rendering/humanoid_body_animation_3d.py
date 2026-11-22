@@ -200,6 +200,7 @@ class HumanoidBodyAnimator3D:
 
         left_toe = toe_roll(left_leg_phase)
         right_toe = toe_roll(right_leg_phase)
+        shoulder_tuck = 0.62 if running else 0.56
         return {
             "pelvis": (0.0, 0.0, torso_twist * 0.45),
             "spine_lower": (-lean * 0.35, 0.0, -torso_twist * 0.35),
@@ -223,10 +224,10 @@ class HumanoidBodyAnimator3D:
             "foot_ball_right": (right_toe, 0.0, 0.0),
             "toe_left": (-left_toe * 0.25, 0.0, 0.0),
             "toe_right": (-right_toe * 0.25, 0.0, 0.0),
-            "shoulder_left": (left_shoulder, 0.0, 0.0),
-            "shoulder_right": (right_shoulder, 0.0, 0.0),
-            "elbow_left": (0.0, 0.0, -0.14 - max(0.0, left_shoulder) * 0.16),
-            "elbow_right": (0.0, 0.0, -0.14 - max(0.0, right_shoulder) * 0.16),
+            "shoulder_left": (left_shoulder, -shoulder_tuck, 0.0),
+            "shoulder_right": (right_shoulder, shoulder_tuck, 0.0),
+            "elbow_left": (0.0, 0.0, -0.24 - max(0.0, left_shoulder) * 0.12),
+            "elbow_right": (0.0, 0.0, -0.24 - max(0.0, right_shoulder) * 0.12),
             "wrist_left": (0.025 * math.sin(phase), 0.0, 0.0),
             "wrist_right": (-0.025 * math.sin(phase), 0.0, 0.0),
             "hand_left": (0.015 * math.sin(phase), 0.0, 0.0),
@@ -251,10 +252,10 @@ class HumanoidBodyAnimator3D:
             "clavicle_right": (breath * 0.18, 0.0, -sway * 0.12),
             "scapula_left_control": (breath * 0.12, 0.0, 0.0),
             "scapula_right_control": (breath * 0.12, 0.0, 0.0),
-            "shoulder_left": (breath * 0.20, 0.0, sway * 0.20),
-            "shoulder_right": (breath * 0.20, 0.0, -sway * 0.20),
-            "elbow_left": (0.0, 0.0, -0.08),
-            "elbow_right": (0.0, 0.0, -0.08),
+            "shoulder_left": (breath * 0.20, -0.70, sway * 0.20),
+            "shoulder_right": (breath * 0.20, 0.70, -sway * 0.20),
+            "elbow_left": (0.0, 0.0, -0.20),
+            "elbow_right": (0.0, 0.0, -0.20),
             "wrist_left": (0.0, 0.0, 0.012 * math.sin(phase)),
             "wrist_right": (0.0, 0.0, -0.012 * math.sin(phase)),
             "hand_left": (0.0, 0.0, 0.008 * math.sin(phase)),

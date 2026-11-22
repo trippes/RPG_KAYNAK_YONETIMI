@@ -263,3 +263,8 @@ Animasyon pozlarına clavicle ve scapula kontrol noktaları, dirsek fleksiyonu (
 50 aktörde cache 3.11 MB seviyesinde kaldı; 6,108 hit ve 492 miss görüldü. Render p95 sıçramaları 198 ms'ye kadar çıktığı için bu sonuç kabul edilebilir kararlılıkta değildir. Bu nedenle IK hedef/eklem açıları cache dostu alt piksel toleransında kuantize edildi ve skinned body mesh LRU kapasitesi 16'dan 64'e yükseltildi. Bu yeni ayarlar yeniden benchmark edilmelidir.
 
 Bu ölçümler CI sanal makinesine aittir; kullanıcının düşük donanımlı bilgisayarındaki performansın yerine geçmez.
+
+
+## Önizleme değerlendirmesi: omuz ve dirsek biyomekaniği
+
+Otomatik üretilen sekiz yönlü sprite sheet görsel kontrolünde, A-pose omuz açıklığının idle ve locomotion pozlarında fazla korunduğu görüldü. Omuzların yerel Y eksenindeki içe/alçalmaya yönelik rotasyonları eklendi; dirsek fleksiyonu da rig limitleriyle uyumlu Z eksenine taşınıp güçlendirildi. Bu düzeltmenin görsel etkisi yeni idle/walk/run önizleme sayfalarında tekrar kontrol edilecek.
