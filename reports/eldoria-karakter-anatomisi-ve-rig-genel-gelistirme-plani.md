@@ -421,7 +421,7 @@ Bu uygulama diliminde bağlantılı yüzey prototipi animasyon pozlarına hazır
 - Her üçgenin yüz normali mesh oluşturulurken bir kez hesaplanıyor; her karede tekrar vektör çarpımı ve karekök yapılmıyor.
 - `build_mesh` ve renderer `detail_level=high|medium|low` seçeneklerini destekliyor. High/medium/low topoloji bütçeleri sırasıyla 1.264 / 756 / 540 üçgen olarak test sözleşmesine sabitlendi.
 - LOD varyantları aynı anatomik landmark ve skinning düzenini koruyup kesit kenarı/bölüm sayısını azaltıyor. Uzaklık veya ekrandaki piksel boyutuna göre LOD seçimi henüz oyun runtime'ına bağlanmadı; çağıran sistem açıkça detail_level seçmelidir.
-- Renderer hâlâ üçgenleri derinliğe göre sıralayıp Pygame polygon çağrılarıyla çiziyor. Bu yüzden 50 NPC için performans garantisi verilmemektedir.
+- İlk renderer sürümü üçgenleri her karede yeniden sıralayıp polygon çağrıları yapıyordu; 17. bölümde bu tekrar işi poz sprite cache'i ile azaltıldı. Performans kabulü hedef bilgisayardaki yeni benchmark'a bağlıdır.
 
 ### Geometri ve performans ölçümü
 
@@ -429,7 +429,7 @@ Bu uygulama diliminde bağlantılı yüzey prototipi animasyon pozlarına hazır
 - Yeni `scripts/benchmark_humanoid_body_3d.py`, 1/10/25/50 karakter senaryolarında kare süresini, eşdeğer FPS'i, LOD dağılımını ve toplam üçgen sayısını raporlar.
 - Benchmark'ın 50 karakterlik karma LOD senaryosu 5 high + 10 medium + 35 low karakter kullanır; geometri bütçesi 32.780 üçgen/kare olur. Aynı 50 karakterin tamamı high olsaydı 63.200 üçgen/kare olurdu. Bu yalnızca geometri sayısı karşılaştırmasıdır, FPS ölçümü değildir.
 - Benchmark sabit FPS eşiği uygulamaz; makine ve Pygame sürümüne bağlı sonuçları ölçer. CI'da bir karelik tanılama çalışmasıyla benchmark'ın çalışması ve üçgen bütçesinin korunması kontrol edilir.
-- Yüzey normalinin önceden hesaplanması ve bind-pose mesh cache'i çizim/mesh üretimindeki tekrarları azaltır; ekran dışı culling, uzak NPC LOD ve render verisi cache'i henüz tamamlanmamıştır.
+- Yüzey normali, bind-pose mesh ve aynı poz/yön/LOD/palet/ölçek için raster sprite cache'i kullanılır. Kamera mesafesine dayalı otomatik LOD seçimi ve ekran dışı culling oyun runtime entegrasyonunda tamamlanacaktır.
 
 ### Yeni otomatik kontroller
 
