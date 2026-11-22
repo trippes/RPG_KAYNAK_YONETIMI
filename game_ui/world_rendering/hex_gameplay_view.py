@@ -37,8 +37,6 @@ class HexGameplayView:
         ("left", HexDirection.WEST),
         ("up", HexDirection.NORTH_EAST),
         ("down", HexDirection.SOUTH_EAST),
-        ("hex_north_west", HexDirection.NORTH_WEST),
-        ("hex_south_west", HexDirection.SOUTH_WEST),
     )
 
     def __init__(self, service) -> None:
@@ -973,7 +971,7 @@ class HexGameplayView:
                 panel.y + 12,
             )
             renderer.text(
-                "Hareket: yön tuşları + Z/X   Yakınlaştırma: fare tekerleği",
+                "Hareket: WASD / yön tuşları   Yakınlaştırma: fare tekerleği",
                 panel.x + 16,
                 panel.bottom - 28,
             )
