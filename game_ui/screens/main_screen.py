@@ -1,6 +1,8 @@
 """Persistent gameplay surface backed by the authoritative axial world."""
 
 from game_ui.world_rendering.hex_gameplay_view import HexGameplayView
+from core.domain.movement import MovementIntent
+from core.domain.physics import Vector2
 
 
 class MainScreen:
@@ -27,6 +29,15 @@ class MainScreen:
         if self._hex_view is None:
             self._hex_view = HexGameplayView(self.service)
         return self._hex_view
+
+    def movement_intent_to_world(self, intent: MovementIntent) -> MovementIntent:
+        """Convert screen-relative keyboard input into canonical world space."""
+        if not isinstance(intent, MovementIntent):
+            raise TypeError("intent must be a MovementIntent")
+        world_x, world_y = self._view().transform.unproject_vector(
+            intent.direction.x, intent.direction.y,
+        )
+        return MovementIntent(Vector2(world_x, world_y), intent.mode)
 
     def update(self, elapsed_seconds=0.0):
         if self._runtime() is not None:
