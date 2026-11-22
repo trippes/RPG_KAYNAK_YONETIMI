@@ -52,8 +52,10 @@ def _draw_view(
     yaw: float,
     center_x: int,
 ) -> None:
-    scale = 410.0
-    origin = (center_x, 299)
+    # Fit the full arm span inside each view while keeping the feet on the
+    # shared ground baseline.
+    scale = 300.0
+    origin = (center_x, 353)
     positions = _screen_positions(yaw, origin, scale)
 
     pygame.draw.line(surface, (90, 96, 105), (center_x - 150, 500), (center_x + 150, 500), 1)
