@@ -27,7 +27,16 @@ class TestHumanoidBodyRenderer3D(unittest.TestCase):
     def test_all_three_reference_yaws_render_without_mutating_rig(self):
         renderer = HumanoidBodyRenderer3D()
         rest = DEFAULT_HUMANOID_RIG.joint_positions()
-        for yaw in (0.0, 0.7853981633974483, 1.5707963267948966):
+        for yaw in (
+            0.0,
+            0.7853981633974483,
+            1.5707963267948966,
+            2.356194490192345,
+            3.141592653589793,
+            3.9269908169872414,
+            4.71238898038469,
+            5.497787143782138,
+        ):
             with self.subTest(yaw=yaw):
                 surface = pygame.Surface((420, 560))
                 count = renderer.draw(
