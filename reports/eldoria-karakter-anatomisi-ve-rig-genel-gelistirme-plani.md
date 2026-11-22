@@ -353,3 +353,39 @@ Kullanıcının kalite kararı: Karakter daha gerçekçi ve anatomik olarak inan
 Bu tur yalnızca bağımsız hacim modeli ve testlerini etkiler. Eski 2B karakter renderer'ı, oyun runtime hareket/konum/çarpışma sistemi ve NPC davranışları değiştirilmemiştir.
 
 Yeni test kapsamı: anatomik kesit profillerinin varlığı ve geçerliliği, trigonometrik örnek önbelleği ve aynı rig/poz için immutable mesh nesnesinin yeniden kullanılması. GitHub Actions doğrulaması tamamlanmadan bu turun teknik kabulü verilmiş sayılmaz; statik önizleme de kullanıcı tarafından yeniden incelenecektir.
+
+
+## 13. Aşama 2 — bağlı gövde yüzeyi ilk mimari uygulaması — 2026-11-22
+
+Kullanıcının bağlayıcı kalite kararı: Anatomik gerçekçilik artırılacak; ancak düşük donanım ve çok sayıda NPC hedefi nedeniyle optimizasyondan ödün verilmeyecek. Küçük ve birbirinden kopuk görsel yamalarla ilerlemek yerine yüzey/topoloji yaklaşımı önce tasarlanıp uygulanacaktır.
+
+### Kod incelemesinden doğrulanan başlangıç sorunu
+
+Önceki `HumanoidBodyModel` gövdeyi pelvis, karın, bel, göğüs, sırt ve boyun için bağımsız ellipsoid/segment parçalarıyla kuruyordu. Renderer bütün üçgenleri tek listede topluyor, üçgen başına ışık hesabı yapıyor ve derinliğe göre sıralıyordu. Bu yöntem eklem/gövde birleşimlerinde üst üste eklenmiş parça görünümüne yol açıyor; anatomik yüzey akışını tanımlamıyordu.
+
+### Uygulanan ilk mimari değişiklik
+
+- `BodySurfaceDefinition` eklendi. Anatomik landmark'lara bağlı, sıralı kesit istasyonları tanımlıyor.
+- `connected_torso` yüzeyi pelvis → alt omurga → üst omurga → göğüs → boyun istasyonları arasında tek bir paylaşılan halka topolojisiyle üretiliyor.
+- Komşu istasyonlar arasında yumuşatılmış interpolasyon ve kontrollü düşük poligon kesitleri kullanılıyor.
+- Gövde artık beş ayrı kapalı hacmin üst üste bindirilmesiyle oluşturulmuyor. Tunik/pantolon/ten malzeme bantları aynı yüzeyin istasyonları üzerinden atanıyor.
+- Daire örnekleri mevcut önbellekten paylaşılıyor; yüzey topolojisi ve üçgenleri aynı rig/poz için mevcut sınırlı mesh cache üzerinden tekrar kullanılabiliyor.
+- Baş, omuz kuşağı, köprücük kemiği, kol ve bacak prototipleri şimdilik ayrı parça olarak duruyor. Bu, bilinçli bir ara adımdır; tüm vücudun tek mesh olduğu veya skinning'in tamamlandığı anlamına gelmez.
+
+### Bu değişikliğin sınırları
+
+- Henüz lineer blend skinning veya dual-quaternion skinning eklenmedi.
+- Omuz, dirsek, kalça ve diz çevresinde deformasyon kalitesi henüz animasyon pozlarıyla doğrulanmadı.
+- Üçgen derinlik sıralaması ve yüzey gölgelendirme mimarisi henüz performans profiliyle ölçülmedi.
+- Gerçek zamanlı oyun entegrasyonu, runtime hareket/konum, çarpışma ve NPC davranışları değiştirilmedi.
+
+### Sonraki uygulama dilimi
+
+1. Omuz kuşağı ve kol zincirleri için eklem çevresinde ortak halka/bağlantı topolojisi.
+2. Kalça, uyluk, diz ve baldır için aynı yaklaşım.
+3. El/avuç ve ayak/topuk geometrisinin anatomik landmark'lara bağlanması.
+4. Rig transformlarıyla uyumlu skinning seçimi ve ağırlıklandırma; CPU maliyetini ölçerek karar verme.
+5. Sekiz yön ve ekstrem pozlarda golden-image/eklem boşluğu testleri.
+6. NPC sayısı arttığında üçgen sayısı, mesh-cache hit rate, çizim süresi ve bellek ölçümleri.
+
+Aşama 2 kabul edilmedi. Bu commit yalnızca gövde topolojisinin ilk mimari düzeltmesidir; görsel önizleme ve CI doğrulaması beklenir.
