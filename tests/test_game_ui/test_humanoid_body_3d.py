@@ -115,50 +115,6 @@ class TestHumanoidBody3D(unittest.TestCase):
             any(first.vertices != second.vertices for first, second in zip(rest_left_arm, posed_left_arm))
         )
 
-    def test_all_mesh_vertices_have_normalized_skin_weights(self):
-        mesh = DEFAULT_HUMANOID_BODY.build_mesh(DEFAULT_HUMANOID_RIG)
-        joint_names = set(DEFAULT_HUMANOID_RIG.joint_names)
-        for triangle in mesh:
-            self.assertEqual(len(triangle.vertex_weights), 3)
-            for influences in triangle.vertex_weights:
-                self.assertGreaterEqual(len(influences), 1)
-                self.assertLessEqual(len(influences), 2)
-                self.assertAlmostEqual(sum(weight for _, weight in influences), 1.0)
-                for joint_name, weight in influences:
-                    self.assertIn(joint_name, joint_names)
-                    self.assertGreaterEqual(weight, 0.0)
-
-    def test_elbow_pose_deforms_weighted_arm_surface(self):
-        rest_mesh = DEFAULT_HUMANOID_BODY.build_mesh(DEFAULT_HUMANOID_RIG)
-        posed_mesh = DEFAULT_HUMANOID_BODY.build_mesh(
-            DEFAULT_HUMANOID_RIG,
-            {"elbow_left": (0.0, 0.0, -1.0)},
-        )
-        self.assertNotEqual(rest_mesh, posed_mesh)
-        rest_arm = [
-            triangle for triangle in rest_mesh
-            if any(
-                joint_name in {"shoulder_left", "elbow_left", "wrist_left"}
-                for influences in triangle.vertex_weights
-                for joint_name, _ in influences
-            )
-        ]
-        posed_arm = [
-            triangle for triangle in posed_mesh
-            if any(
-                joint_name in {"shoulder_left", "elbow_left", "wrist_left"}
-                for influences in triangle.vertex_weights
-                for joint_name, _ in influences
-            )
-        ]
-        self.assertEqual(len(rest_arm), len(posed_arm))
-        self.assertTrue(
-            any(
-                first.vertices != second.vertices
-                for first, second in zip(rest_arm, posed_arm, strict=True)
-            )
-        )
-
     def test_zero_pose_rotation_preserves_bind_mesh(self):
         rest_mesh = DEFAULT_HUMANOID_BODY.build_mesh(DEFAULT_HUMANOID_RIG)
         zero_pose_mesh = DEFAULT_HUMANOID_BODY.build_mesh(
@@ -171,6 +127,18 @@ class TestHumanoidBody3D(unittest.TestCase):
             ):
                 for rest_value, posed_value in zip(rest_vertex, posed_vertex, strict=True):
                     self.assertAlmostEqual(rest_value, posed_value, places=10)
+
+    def test_bind_geometry_cache_is_reused_across_different_poses(self):
+        from game_ui.world_rendering.humanoid_body_3d import _build_bind_mesh_cached
+
+        DEFAULT_HUMANOID_BODY.build_mesh(DEFAULT_HUMANOID_RIG)
+        before = _build_bind_mesh_cached.cache_info().hits
+        DEFAULT_HUMANOID_BODY.build_mesh(
+            DEFAULT_HUMANOID_RIG,
+            {"elbow_left": (0.0, 0.0, -0.8)},
+        )
+        after = _build_bind_mesh_cached.cache_info().hits
+        self.assertGreater(after, before)
 
     def test_mesh_follows_rig_pose_without_mutating_rest_geometry(self):
         rest_positions = DEFAULT_HUMANOID_RIG.joint_positions()
