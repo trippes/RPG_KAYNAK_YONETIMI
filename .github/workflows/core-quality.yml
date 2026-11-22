@@ -53,6 +53,17 @@ jobs:
           game_ui/game_window.py
           game_ui/world_rendering/__init__.py
           game_ui/world_rendering/hex_gameplay_view.py
+          game_ui/world_rendering/humanoid_rig_3d.py
+          game_ui/world_rendering/humanoid_body_3d.py
+          game_ui/world_rendering/humanoid_body_renderer_3d.py
+          game_ui/world_rendering/humanoid_body_animation_3d.py
+          game_ui/world_rendering/humanoid_locomotion_3d.py
+          scripts/benchmark_humanoid_locomotion_3d.py
+          tests/test_game_ui/test_humanoid_rig_3d.py
+          tests/test_game_ui/test_humanoid_body_3d.py
+          tests/test_game_ui/test_humanoid_body_renderer_3d.py
+          tests/test_game_ui/test_humanoid_body_animation_3d.py
+          tests/test_game_ui/test_humanoid_locomotion_3d.py
           application/click_move_route.py
           tests/test_application/test_click_move_route.py
           tests/test_application/test_session_bundle.py

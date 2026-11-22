@@ -17,9 +17,6 @@ import statistics
 from pathlib import Path
 from time import perf_counter_ns
 
-os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
-os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
-
 import pygame
 
 from game_ui.world_rendering.humanoid_body_3d import DEFAULT_HUMANOID_BODY
@@ -130,6 +127,8 @@ def main() -> int:
     ):
         parser.error("frames and actor counts must be positive; warmup cannot be negative")
 
+    os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
+    os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
     pygame.init()
     try:
         results = [
@@ -147,7 +146,7 @@ def main() -> int:
         output = json.dumps(payload, indent=2)
         print(output)
         if args.output is not None:
-            args.output.write_text(output + "\\n", encoding="utf-8")
+            args.output.write_text(output + "\n", encoding="utf-8")
     finally:
         pygame.quit()
     return 0
