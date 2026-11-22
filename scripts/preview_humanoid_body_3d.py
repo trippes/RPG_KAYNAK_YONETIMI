@@ -1,4 +1,4 @@
-"""Show an eight-direction turnaround of the Stage 2 humanoid body."""
+"""Show eight directions and joint stress poses for the Stage 2 humanoid body."""
 
 from __future__ import annotations
 
