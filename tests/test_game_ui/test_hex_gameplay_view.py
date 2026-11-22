@@ -552,6 +552,7 @@ def test_npcs_use_the_shared_world_aware_humanoid_animator():
     assert animator.pose
 
     initial_phase = animator.phase
+    view.elapsed_seconds = 0.1
     view._npc_visual_states["npc-1"]["current"] = (14.0, 20.0)
     view._npc_visual_states["npc-1"]["moving"] = True
     view._advance_npc_body_animations()
