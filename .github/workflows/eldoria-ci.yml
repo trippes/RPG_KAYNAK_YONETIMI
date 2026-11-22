@@ -48,6 +48,7 @@ jobs:
           scripts/benchmark_npc_perception.py
           scripts/preview_humanoid_rig_3d.py
           scripts/preview_humanoid_body_3d.py
+          scripts/benchmark_humanoid_body_3d.py
           tests/test_application/test_npc_simulation_metrics.py
           tests/test_application/test_npc_behavior_system.py
           tests/test_game_ui/test_hex_gameplay_view.py
@@ -76,6 +77,8 @@ jobs:
       - name: Verify Pygame can initialize without a display
         run: |
           python -c "import pygame; pygame.init(); screen = pygame.display.set_mode((1, 1)); assert screen.get_width() == 1; pygame.quit(); print('Pygame headless smoke test passed')"
+      - name: Benchmark humanoid rendering at multiple NPC counts
+        run: python scripts/benchmark_humanoid_body_3d.py --frames 1
       - name: Render the isometric world and actor pipeline
         run: python scripts/pygame_isometric_smoke.py
       - name: Upload isometric visual acceptance artifact
