@@ -53,6 +53,7 @@ jobs:
           tests/test_game_ui/test_hex_gameplay_view.py
           tests/test_game_ui/test_humanoid_rig_3d.py
           tests/test_game_ui/test_humanoid_body_3d.py
+          tests/test_game_ui/test_humanoid_body_renderer_3d.py
 
   pygame-headless-smoke:
     name: Pygame headless smoke test
