@@ -50,6 +50,19 @@ class TestHumanoidBodyRenderer3D(unittest.TestCase):
                 self.assertGreater(count, 300)
         self.assertEqual(rest, DEFAULT_HUMANOID_RIG.joint_positions())
 
+    def test_low_detail_mode_renders_fewer_triangles(self):
+        renderer = HumanoidBodyRenderer3D()
+        high = pygame.Surface((420, 560))
+        low = pygame.Surface((420, 560))
+        high_count = renderer.draw(
+            high, DEFAULT_HUMANOID_BODY, DEFAULT_HUMANOID_RIG, (210, 500), 300.0
+        )
+        low_count = renderer.draw(
+            low, DEFAULT_HUMANOID_BODY, DEFAULT_HUMANOID_RIG, (210, 500), 300.0,
+            detail_level="low",
+        )
+        self.assertGreater(high_count, low_count)
+
     def test_invalid_scale_and_material_are_rejected(self):
         renderer = HumanoidBodyRenderer3D()
         surface = pygame.Surface((20, 20))
