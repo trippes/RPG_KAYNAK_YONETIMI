@@ -416,7 +416,7 @@ Bu uygulama diliminde bağlantılı yüzey prototipi animasyon pozlarına hazır
 
 ### Sekiz yön ve renderer
 
-- Önizleme artık N, NE, E, SE, S, SW, W ve NW olmak üzere sekiz yönü aynı ekranda gösteriyor.
+- Önizleme artık N, NE, E, SE, S, SW, W ve NW olmak üzere sekiz yönü aynı ekranda gösteriyor. İkinci sayfada dirsek fleksiyonu, omuz elevasyonu, diz fleksiyonu ve gövde rotasyonu stres pozları bulunuyor; 1/2 tuşlarıyla sayfalar arasında geçiliyor.
 - Renderer testleri sekiz yaw açısının tamamında çizim yapılmasını kontrol ediyor.
 - Her üçgenin yüz normali mesh oluşturulurken bir kez hesaplanıyor; her karede tekrar vektör çarpımı ve karekök yapılmıyor.
 - `build_mesh` ve renderer `detail_level=high|medium|low` seçeneklerini destekliyor. High/medium/low topoloji bütçeleri sırasıyla 1.248 / 744 / 528 üçgen olarak test sözleşmesine sabitlendi.
@@ -446,7 +446,7 @@ Bu uygulama diliminde bağlantılı yüzey prototipi animasyon pozlarına hazır
 
 - LBS eklenmiş olsa da omuz ve kalça çevresinde gerçek anatomik deformasyon kalitesi statik A-Pose ve testlerle tek başına kanıtlanmış değildir; dirsek hareketi için otomatik geometri testi vardır, görsel ekstrem poz incelemesi beklenir.
 - Gövde, kollar, bacaklar ve ayaklar ayrı bağlantılı yüzey adalarıdır; bütün vücut tek kapalı manifold mesh değildir. Omuz ve kalça birleşimleri görsel önizlemede ayrıca incelenmelidir.
-- El/parmak anatomisi basit tutulmuştur.
+- El/parmak anatomisi basit tutulmuştur; avuç ve bilek bağlantısı var, bağımsız parmak eklemleri yoktur.
 - 8 yönlü statik turnaround ve 1/10/25/50 NPC benchmark çıktısı henüz kullanıcı görsel kabulü veya gerçek hedef makine performans ölçümü değildir.
 - Runtime oyun entegrasyonu, dünya konumu, hareket, çarpışma, kamera ve NPC davranışları değiştirilmemiştir.
 
@@ -462,3 +462,12 @@ Aşama 2 henüz kabul edilmedi. Sonraki kapı: CI doğrulaması, sekiz yönlü y
 - Renderer'a açık `detail_level` seçimi eklendi. Runtime mesafe/piksel boyutu tabanlı otomatik LOD seçimi henüz yapılmadı.
 - 50 NPC benchmark senaryosunda 5 high + 10 medium + 35 low dağılımı kullanılıyor; toplam teorik geometri 33.400 üçgen/kare. Bu sayı performans/FPS garantisi değildir.
 - Aşama 2 kabul edilmedi; GitHub Actions ve hedef makine benchmark sonuçları doğrulanmalıdır.
+
+
+## 16. Aşama 2 — eklem stres pozları ve LOD doğrulama sözleşmesi — 2026-11-22
+
+- Önizleme tek uygulama içinde iki sayfaya ayrıldı: `1` sekiz yönlü A-Pose turnaround, `2` omuz/dirsek/diz/gövde stres pozları. Bu, ayrı ayrı küçük önizleme turları yerine tek görsel kabul oturumu sağlar.
+- Otomatik testler omuz elevasyonu, dirsek fleksiyonu, diz fleksiyonu ve gövde rotasyonunda mesh koordinatlarının sonlu kalmasını ve üçgen sayısının değişmemesini kontrol eder.
+- High/medium/low geometri sayıları sırasıyla 1.280 / 768 / 552 olarak sabitlendi. 50 NPC benchmark karışımı 5 high + 10 medium + 35 low = 33.400 üçgen/kare olarak hesaplanır.
+- LOD seçimi şu an açık API parametresidir; kamera mesafesi/piksel boyutuna göre otomatik seçme ve ekran dışı NPC culling'i oyun entegrasyonunda yapılacaktır.
+- Bu kayıt uygulama/test kapsamını tanımlar; GitHub Actions çalışması ve hedef makinedeki gerçek benchmark sonucu görülmeden CI/performance başarısı iddia edilmez.
