@@ -1,0 +1,43 @@
+name: Humanoid locomotion benchmark
+
+on:
+  push:
+    branches: [experiment/map-cleanup]
+    paths:
+      - "scripts/benchmark_humanoid_locomotion_3d.py"
+      - "game_ui/world_rendering/humanoid_*.py"
+      - "game_ui/world_rendering/hex_gameplay_view.py"
+      - ".github/workflows/humanoid-locomotion-benchmark.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout optimized revision
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install project
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+      - name: Run 1/10/25/50 actor locomotion benchmark
+        run: |
+          python scripts/benchmark_humanoid_locomotion_3d.py \
+            --frames 120 --warmup-frames 12 --counts 1 10 25 50 \
+            --output humanoid-locomotion-benchmark.json
+      - name: Upload locomotion benchmark report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: humanoid-locomotion-benchmark
+          path: humanoid-locomotion-benchmark.json
+          if-no-files-found: warn
+          retention-days: 30

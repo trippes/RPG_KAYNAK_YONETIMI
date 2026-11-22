@@ -105,6 +105,9 @@ class HumanoidBodyRenderer3D:
                 for name, translation in (local_translations or {}).items()
             )
         )
+        target_format = None
+        if isinstance(surface, pygame.Surface):
+            target_format = (surface.get_bitsize(), surface.get_masks())
         palette_key = tuple(sorted(colors.items()))
         cache_key = (
             id(body),
@@ -115,13 +118,14 @@ class HumanoidBodyRenderer3D:
             pose_key,
             translation_key,
             palette_key,
+            target_format,
         )
         cached = self._sprite_cache.get(cache_key)
         if cached is None:
             self._cache_misses += 1
             cached = self._build_sprite(
                 body, rig, float(world_scale), float(yaw), local_rotations,
-                local_translations, colors, detail_level,
+                local_translations, colors, detail_level, surface,
             )
             self._store_sprite(cache_key, cached)
         else:
@@ -146,6 +150,7 @@ class HumanoidBodyRenderer3D:
         local_translations: Mapping[str, tuple[float, float, float]] | None,
         colors: Mapping[str, tuple[int, int, int]],
         detail_level: str,
+        target_surface,
     ) -> tuple[pygame.Surface, tuple[int, int], int]:
         anchor = rig.ground_anchor
         triangles = []
@@ -195,6 +200,8 @@ class HumanoidBodyRenderer3D:
                     for point in points
                 ],
             )
+        if isinstance(target_surface, pygame.Surface):
+            sprite = sprite.convert_alpha(target_surface)
         return sprite, (left, top), len(triangles)
 
     def _store_sprite(

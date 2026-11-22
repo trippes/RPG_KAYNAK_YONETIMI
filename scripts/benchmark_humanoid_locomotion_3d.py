@@ -12,7 +12,9 @@ import argparse
 import json
 import math
 import os
+import platform
 import statistics
+from pathlib import Path
 from time import perf_counter_ns
 
 os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
@@ -42,7 +44,7 @@ def percentile(values: list[float], fraction: float) -> float:
     return ordered[index]
 
 
-def run_scenario(actor_count: int, frames: int) -> dict:
+def run_scenario(actor_count: int, frames: int, warmup_frames: int) -> dict:
     surface = pygame.Surface((1280, 720), pygame.SRCALPHA)
     renderer = HumanoidBodyRenderer3D()
     actors = []
@@ -63,7 +65,7 @@ def run_scenario(actor_count: int, frames: int) -> dict:
 
     update_samples = []
     render_samples = []
-    for frame in range(frames):
+    for frame in range(warmup_frames + frames):
         update_started = perf_counter_ns()
         for actor in actors:
             actor["position"][0] += 1.2 * math.cos(actor["yaw"])
@@ -75,7 +77,7 @@ def run_scenario(actor_count: int, frames: int) -> dict:
                 yaw=actor["yaw"],
                 world_scale=54.0,
             )
-        update_samples.append((perf_counter_ns() - update_started) / 1_000_000.0)
+        update_ms = (perf_counter_ns() - update_started) / 1_000_000.0
 
         render_started = perf_counter_ns()
         surface.fill((0, 0, 0, 0))
@@ -93,7 +95,10 @@ def run_scenario(actor_count: int, frames: int) -> dict:
                 palette=NPC_PALETTE,
                 detail_level="low",
             )
-        render_samples.append((perf_counter_ns() - render_started) / 1_000_000.0)
+        render_ms = (perf_counter_ns() - render_started) / 1_000_000.0
+        if frame >= warmup_frames:
+            update_samples.append(update_ms)
+            render_samples.append(render_ms)
 
     cache = renderer.cache_info()
     return {
@@ -114,14 +119,34 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--frames", type=int, default=120)
     parser.add_argument("--counts", type=int, nargs="+", default=[1, 10, 25, 50])
+    parser.add_argument("--warmup-frames", type=int, default=12)
+    parser.add_argument("--output", type=Path)
     args = parser.parse_args()
-    if args.frames < 1 or any(count < 1 for count in args.counts):
-        parser.error("frames and actor counts must be positive")
+    if (
+        args.frames < 1
+        or args.warmup_frames < 0
+        or any(count < 1 for count in args.counts)
+    ):
+        parser.error("frames and actor counts must be positive; warmup cannot be negative")
 
     pygame.init()
     try:
-        results = [run_scenario(count, args.frames) for count in args.counts]
-        print(json.dumps(results, indent=2))
+        results = [
+            run_scenario(count, args.frames, args.warmup_frames)
+            for count in args.counts
+        ]
+        payload = {
+            "benchmark": "eldoria_humanoid_locomotion",
+            "python_version": platform.python_version(),
+            "platform": platform.platform(),
+            "frames": args.frames,
+            "warmup_frames": args.warmup_frames,
+            "scenarios": results,
+        }
+        output = json.dumps(payload, indent=2)
+        print(output)
+        if args.output is not None:
+            args.output.write_text(output + "\\n", encoding="utf-8")
     finally:
         pygame.quit()
     return 0
