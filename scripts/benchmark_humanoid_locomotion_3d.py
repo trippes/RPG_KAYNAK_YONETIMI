@@ -18,6 +18,7 @@ from pathlib import Path
 from time import perf_counter_ns
 
 os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
+os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 import pygame
 
