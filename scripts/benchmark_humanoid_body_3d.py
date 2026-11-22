@@ -13,10 +13,7 @@ import time
 
 import pygame
 
-from game_ui.world_rendering.humanoid_body_3d import (
-    DEFAULT_HUMANOID_BODY,
-    _build_mesh_cached,
-)
+from game_ui.world_rendering.humanoid_body_3d import DEFAULT_HUMANOID_BODY
 from game_ui.world_rendering.humanoid_body_renderer_3d import HumanoidBodyRenderer3D
 from game_ui.world_rendering.humanoid_rig_3d import DEFAULT_HUMANOID_RIG
 
