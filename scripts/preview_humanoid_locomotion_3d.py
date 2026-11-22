@@ -63,6 +63,12 @@ def build_sheet(state: str, output_path: Path) -> dict:
         row_top = HEADER_HEIGHT + row * CELL_HEIGHT
         label = font.render(LABELS[direction], True, (225, 228, 233))
         surface.blit(label, (12, row_top + 70))
+        animator = HumanoidBodyAnimator3D(direction=direction, state=state)
+        position = (0.0, 0.0)
+        cycle_distance = (
+            animator.RUN_CYCLE_DISTANCE if state == "run"
+            else animator.WALK_CYCLE_DISTANCE
+        )
         for column in range(COLUMNS):
             cell_left = LABEL_WIDTH + column * CELL_WIDTH
             pygame.draw.rect(
@@ -73,29 +79,19 @@ def build_sheet(state: str, output_path: Path) -> dict:
                 surface, (58, 63, 71, 255),
                 (cell_left, row_top, CELL_WIDTH, CELL_HEIGHT), 1,
             )
-            animator = HumanoidBodyAnimator3D(direction=direction, state=state)
-            position = (0.0, 0.0)
+
             if state == "idle":
                 animator._idle_clock = (column % 8) * 3.2 / 8.0
                 traveled = 0.0
                 delta = 0.0
             else:
-                cycle_distance = (
-                    animator.RUN_CYCLE_DISTANCE if state == "run"
-                    else animator.WALK_CYCLE_DISTANCE
-                )
                 traveled = cycle_distance / COLUMNS if column else 0.0
                 delta = 1.0 / 60.0
-                for _ in range(column):
+                if traveled:
                     position = (
-                        position[0] + vector[0] * cycle_distance / COLUMNS,
-                        position[1] + vector[1] * cycle_distance / COLUMNS,
+                        position[0] + vector[0] * traveled,
+                        position[1] + vector[1] * traveled,
                     )
-                # The animator phase is initialized at the exact sample before
-                # drawing; the root position represents the matching distance.
-                animator.phase = math.tau * column / COLUMNS
-                animator._foot_lock.reset()
-                traveled = 0.0
 
             animator.advance(
                 traveled,
