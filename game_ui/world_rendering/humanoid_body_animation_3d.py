@@ -200,7 +200,6 @@ class HumanoidBodyAnimator3D:
 
         left_toe = toe_roll(left_leg_phase)
         right_toe = toe_roll(right_leg_phase)
-        arm_counter = 0.58 if running else 0.50
         return {
             "pelvis": (0.0, 0.0, torso_twist * 0.45),
             "spine_lower": (-lean * 0.35, 0.0, -torso_twist * 0.35),
