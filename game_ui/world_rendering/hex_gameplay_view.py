@@ -707,7 +707,7 @@ class HexGameplayView:
         world_dx, world_dy = self.transform.unproject_vector(
             *screen_vectors[facing],
         )
-        return math.atan2(world_dx, world_dy)
+        return math.atan2(world_dx, world_dy) % math.tau
 
     def _ensure_scene_pipeline(self, renderer):
         """Load validated map-authored presentation props once per gameplay view."""
