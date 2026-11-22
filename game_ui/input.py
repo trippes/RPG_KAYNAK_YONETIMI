@@ -89,10 +89,10 @@ class InputMapper:
                 "c": "character",
                 "i": "inventory",
                 "p": "production",
-                "d": "dialogue_history",
+                "h": "dialogue_history",
                 "b": "combat",
                 "n": "character_creation",
-                "w": "world",
+                "m": "world",
                 "q": "quit",
                 "left": "left",
                 "right": "right",
@@ -109,8 +109,6 @@ class InputMapper:
                 "e": "equip",
                 "t": "lockpick",
                 "f": "force_lock",
-                "z": "hex_north_west",
-                "x": "hex_south_west",
             }
 
             action = actions.get(key)
