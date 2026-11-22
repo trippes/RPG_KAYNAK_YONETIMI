@@ -6,7 +6,7 @@ and never changes the skeleton, pose, or runtime world position.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from functools import lru_cache
 import math
 from typing import Mapping
@@ -492,8 +492,13 @@ class HumanoidBodyModel:
         self,
         rig: HumanoidRig,
         local_rotations: Mapping[str, tuple[float, float, float]] | None = None,
+        *,
+        detail_level: str = "high",
     ) -> tuple[MeshTriangle, ...]:
-        """Build or reuse rig-local low-poly triangles for the supplied pose."""
+        """Build or reuse a skinned mesh at high, medium, or low detail."""
+        if detail_level not in {"high", "medium", "low"}:
+            raise ValueError("detail_level must be 'high', 'medium', or 'low'.")
+        model = self if detail_level == "high" else _lod_variant_cached(self, detail_level)
         pose_key = tuple(
             sorted(
                 (name, tuple(rotation))
@@ -501,8 +506,44 @@ class HumanoidBodyModel:
             )
         )
         return _build_mesh_cached(
-            self.parts, self.surfaces, self.mesh_sides, self.mesh_rings, rig, pose_key
+            model.parts,
+            model.surfaces,
+            model.mesh_sides,
+            model.mesh_rings,
+            rig,
+            pose_key,
         )
+
+
+@lru_cache(maxsize=8)
+def _lod_variant_cached(
+    body: HumanoidBodyModel,
+    detail_level: str,
+) -> HumanoidBodyModel:
+    """Create compact immutable topology variants for distant characters."""
+    if detail_level == "medium":
+        sides = 6
+        subdivisions = 2
+    elif detail_level == "low":
+        sides = 6
+        subdivisions = 1
+    else:
+        raise ValueError("LOD variants support only 'medium' and 'low'.")
+    surfaces = tuple(
+        replace(
+            surface,
+            sides=sides,
+            subdivisions=min(surface.subdivisions, subdivisions),
+        )
+        for surface in body.surfaces
+    )
+    return replace(
+        body,
+        surfaces=surfaces,
+        mesh_sides=6,
+        mesh_rings=4,
+    )
+
 
 
 @lru_cache(maxsize=4)
