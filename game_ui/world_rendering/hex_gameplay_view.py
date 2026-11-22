@@ -37,6 +37,10 @@ class HexGameplayView:
         ("left", HexDirection.WEST),
         ("up", HexDirection.NORTH_EAST),
         ("down", HexDirection.SOUTH_EAST),
+        # Retained as internal action compatibility only. InputMapper no
+        # longer binds Z/X to these actions, so they are not keyboard controls.
+        ("hex_north_west", HexDirection.NORTH_WEST),
+        ("hex_south_west", HexDirection.SOUTH_WEST),
     )
 
     def __init__(self, service) -> None:
