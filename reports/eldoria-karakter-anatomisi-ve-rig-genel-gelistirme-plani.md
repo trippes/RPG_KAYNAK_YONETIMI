@@ -1,7 +1,7 @@
 # Eldoria — Karakter Anatomisi, İskelet ve Rig Sistemi Genel Geliştirme Planı
 
 **Belge türü:** Üst seviye teknik geliştirme planı  
-**Durum:** Aşama 1 statik iskelet görsel kabulü ve CI doğrulaması tamamlandı; Aşama 2 ilk hacim prototipi geliştiriliyor  
+**Durum:** Aşama 1 statik iskelet görsel kabulü ve CI doğrulaması tamamlandı; Aşama 2 hacim modeli ve kontrollü oyuncu animasyon prototipi uygulandı, oyun içi görsel/performance kabulü sürüyor  
 **Hedef dal:** `experiment/map-cleanup`  
 **Korunan dallar:** `main` ve `demo` — bu çalışma kapsamında kesinlikle değiştirilmez  
 **İlgili mevcut belge:** `reports/asama-3-5-karakter-iskeleti-teknik-mimari-plani.md`  
@@ -125,6 +125,15 @@ Anatomik doğruluk hedeflenirken gereksiz kemik sayısı artırılmaz. Her kemik
 - Kullanıcı özellikle omuz-göğüs-pelvis bütünlüğünü ve genel silueti onaylamalı.
 
 **Aşama kabulü:** Statik karakter görünümü sekiz yöne geçmeden önce temel anatomik kaliteyi sağlamalı.
+
+### Aşama 2 için kullanıcı onaylı oyun içi doğrulama dilimi — 2026-11-22
+
+Aşama 2'nin statik hacim kabulüne ek olarak, kullanıcı kararıyla yeni body renderer tek bir oyuncu karakterine kontrollü biçimde bağlanır. Bu dar kapsamlı doğrulama dilimi gerçek oyun ekranında yürüme, durma ve yön değiştirme davranışını incelemek içindir.
+
+- Mevcut runtime dünya konumu ve hareket otoritesi korunur; animator yalnızca salt-okunur hareket mesafesi alır.
+- İlk entegrasyon yalnızca oyuncudadır. NPC'ler eski renderer hattında kalır; eski sistem kaldırılmaz.
+- Mesafe tabanlı gait, görsel kabul ve animasyonlu cache/performance ölçümü Aşama 2 kapanış kapısına eklenmiştir.
+- Bu ek doğrulama, Aşama 4'te tanımlanan tam biyomekanik animasyon/ayak teması kapsamının veya Aşama 6'daki oyuncu+NPC tam entegrasyonunun tamamlandığı anlamına gelmez. IK/ayak kilitleme, uzun süreli hareket regresyonları ve NPC yaygınlaştırması kendi aşamalarında ayrıca doğrulanacaktır.
 
 ## Aşama 3 — Sekiz yön, projeksiyon, derinlik ve çizim sırası
 
