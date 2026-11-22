@@ -20,7 +20,7 @@ from game_ui.world_rendering.humanoid_rig_3d import DEFAULT_HUMANOID_RIG  # noqa
 
 
 WIDTH = 1440
-HEIGHT = 900
+HEIGHT = 1040
 BACKGROUND = (25, 27, 32)
 
 
@@ -103,14 +103,14 @@ def main() -> None:
                     label = font.render(title, True, (235, 235, 235))
                     screen.blit(
                         label,
-                        label.get_rect(center=(center_x, row * 450 + 38)),
+                        label.get_rect(center=(center_x, row * 520 + 38)),
                     )
                 footer = "1: Eight directions | 2: Joint deformation tests | ESC: close"
             else:
                 for index, (title, yaw, pose) in enumerate(stress_poses):
                     row, column = divmod(index, 2)
                     center_x = column * (WIDTH // 2) + WIDTH // 4
-                    baseline = row * 450 + 390
+                    baseline = row * 520 + 420
                     pygame.draw.line(
                         screen,
                         (90, 96, 105),
@@ -123,7 +123,7 @@ def main() -> None:
                         DEFAULT_HUMANOID_BODY,
                         DEFAULT_HUMANOID_RIG,
                         (center_x, baseline),
-                        250.0,
+                        215.0,
                         yaw=yaw,
                         local_rotations=pose,
                     )
