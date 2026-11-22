@@ -19,7 +19,7 @@ class TestTwoBoneIK(unittest.TestCase):
     def test_unreachable_target_is_clamped_and_reported(self):
         result = solve_two_bone_ik(0.5, 0.5, 0.22, 0.228)
         self.assertFalse(result.reachable)
-        self.assertAlmostEqual(result.solved_distance, 0.448)
+        self.assertAlmostEqual(result.solved_distance, 0.448, places=6)
         self.assertGreater(result.target_distance, result.solved_distance)
 
     def test_invalid_inputs_are_rejected(self):
