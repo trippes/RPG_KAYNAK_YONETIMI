@@ -57,7 +57,7 @@ def main() -> None:
             (
                 "KNEE FLEX",
                 0.0,
-                {"knee_left": (0.9, 0.0, 0.0), "knee_right": (0.9, 0.0, 0.0)},
+                {"knee_left": (-0.9, 0.0, 0.0), "knee_right": (-0.9, 0.0, 0.0)},
             ),
             (
                 "TORSO TWIST",
