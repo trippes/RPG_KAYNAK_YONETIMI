@@ -58,6 +58,7 @@ class HumanoidBodyRenderer3D:
         *,
         yaw: float = 0.0,
         local_rotations: Mapping[str, tuple[float, float, float]] | None = None,
+        local_translations: Mapping[str, tuple[float, float, float]] | None = None,
         palette: Mapping[str, tuple[int, int, int]] | None = None,
         detail_level: str = "high",
     ) -> int:
@@ -98,6 +99,12 @@ class HumanoidBodyRenderer3D:
                 for name, rotation in (local_rotations or {}).items()
             )
         )
+        translation_key = tuple(
+            sorted(
+                (name, tuple(round(float(value), 3) for value in translation))
+                for name, translation in (local_translations or {}).items()
+            )
+        )
         palette_key = tuple(sorted(colors.items()))
         cache_key = (
             id(body),
@@ -106,6 +113,7 @@ class HumanoidBodyRenderer3D:
             round(float(world_scale), 4),
             detail_level,
             pose_key,
+            translation_key,
             palette_key,
         )
         cached = self._sprite_cache.get(cache_key)
@@ -113,7 +121,7 @@ class HumanoidBodyRenderer3D:
             self._cache_misses += 1
             cached = self._build_sprite(
                 body, rig, float(world_scale), float(yaw), local_rotations,
-                colors, detail_level,
+                local_translations, colors, detail_level,
             )
             self._store_sprite(cache_key, cached)
         else:
@@ -135,12 +143,16 @@ class HumanoidBodyRenderer3D:
         world_scale: float,
         yaw: float,
         local_rotations: Mapping[str, tuple[float, float, float]] | None,
+        local_translations: Mapping[str, tuple[float, float, float]] | None,
         colors: Mapping[str, tuple[int, int, int]],
         detail_level: str,
     ) -> tuple[pygame.Surface, tuple[int, int], int]:
         anchor = rig.ground_anchor
         triangles = []
-        for triangle in body.build_mesh(rig, local_rotations, detail_level=detail_level):
+        for triangle in body.build_mesh(
+            rig, local_rotations, local_translations=local_translations,
+            detail_level=detail_level,
+        ):
             vertices = tuple(
                 (
                     point[0] - anchor[0],
