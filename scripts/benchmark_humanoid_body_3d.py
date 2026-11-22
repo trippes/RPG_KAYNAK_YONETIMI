@@ -61,11 +61,20 @@ def run_benchmark(frames: int) -> list[dict[str, object]]:
                 )
                 for index in range(actor_count)
             )
-            renderer.draw(
-                target, body, rig, actors[0][0], 110.0,
-                yaw=actors[0][1], local_rotations=actors[0][2],
-                detail_level=actors[0][3],
-            )
+            warmup_start = time.perf_counter()
+            for position, yaw, pose, detail_level in actors:
+                renderer.draw(
+                    target,
+                    body,
+                    rig,
+                    position,
+                    110.0,
+                    yaw=yaw,
+                    local_rotations=pose,
+                    detail_level=detail_level,
+                )
+            warmup_ms = (time.perf_counter() - warmup_start) * 1000.0
+            cache_before_frames = renderer.cache_info()
             start = time.perf_counter()
             for _ in range(frames):
                 target.fill((25, 27, 32))
@@ -90,9 +99,19 @@ def run_benchmark(frames: int) -> list[dict[str, object]]:
                 triangle_counts[detail_level]
                 for _, _, _, detail_level in actors
             )
+            cache_after_frames = renderer.cache_info()
             results.append(
                 {
                     "characters": actor_count,
+                    "sprite_cache_warmup_ms": round(warmup_ms, 3),
+                    "sprite_cache_hits_during_frames": (
+                        cache_after_frames["hits"] - cache_before_frames["hits"]
+                    ),
+                    "sprite_cache_misses_during_frames": (
+                        cache_after_frames["misses"] - cache_before_frames["misses"]
+                    ),
+                    "sprite_cache_entries": cache_after_frames["entries"],
+                    "sprite_cache_bytes": cache_after_frames["bytes"],
                     "triangles_per_character_high": triangle_count,
                     "triangles_per_frame": triangles_per_frame,
                     "lod_distribution": {
