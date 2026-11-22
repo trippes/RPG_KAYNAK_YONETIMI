@@ -1,7 +1,7 @@
 # Eldoria — Karakter Anatomisi, İskelet ve Rig Sistemi Genel Geliştirme Planı
 
 **Belge türü:** Üst seviye teknik geliştirme planı  
-**Durum:** Aşama 1 ilk uygulaması yapıldı; teknik doğrulama ve görsel kabul bekleniyor  
+**Durum:** Aşama 1 statik iskelet görsel kabulü ve CI doğrulaması tamamlandı; Aşama 2 ilk hacim prototipi geliştiriliyor  
 **Hedef dal:** `experiment/map-cleanup`  
 **Korunan dallar:** `main` ve `demo` — bu çalışma kapsamında kesinlikle değiştirilmez  
 **İlgili mevcut belge:** `reports/asama-3-5-karakter-iskeleti-teknik-mimari-plani.md`  
@@ -322,3 +322,16 @@ Kullanıcı, düzeltilmiş üç görünüşlü iskelet önizlemesini inceledi ve
 Önizlemedeki ilk kadraj taşması giderildi; rig anatomik koordinatları değiştirilmedi. Yan görünüşte kolların üst üste düşmesi mevcut ortografik izdüşümün beklenen sonucudur ve tek başına anatomik hata sayılmamıştır.
 
 Aşama 1'in görsel kabul kapısı karşılanmıştır. Son kod değişikliğinden sonra Eldoria CI yeniden çalıştırılmaktadır; teknik doğrulama başarılı olmadan Aşama 1 tamamen kapatılmış ve Aşama 2 başlatılmış sayılmayacaktır. Oyun içi animasyon kabulü Aşama 4 ve Aşama 6 görsel kabul kapılarında yeniden yapılacaktır.
+
+
+## 11. Aşama 1 kabul ve Aşama 2 başlangıç kaydı — 2026-11-22
+
+Aşama 1 statik iskelet önizlemesi kullanıcı tarafından kabul edildi. Kabul, iskelet geometrisi ve A-Pose rest pose'un statik görünümüyle sınırlıdır; oyun içi animasyonların nihai kabulü Aşama 4 ve Aşama 6'da yapılacaktır. Son Aşama 1 kod düzeltmeleri için Eldoria CI ve Core Quality başarılı tamamlanmıştır.
+
+Aşama 2 kapsamında ilk bağımsız 3B hacim prototipi oluşturulmuştur:
+- `humanoid_body_3d.py`: iskelet eklemlerine bağlanan parametrik ellipsoid ve segment hacimleri.
+- `humanoid_body_renderer_3d.py`: üçgen mesh'i derinlik sıralaması ve ortografik projeksiyonla Pygame yüzeyine çizer.
+- `preview_humanoid_body_3d.py`: ön, üç çeyrek ve yan statik görünüş önizlemesi.
+- `test_humanoid_body_3d.py`: hacim envanteri, deterministik mesh, poz takibi ve geçersiz geometri testleri.
+
+Bu ilk prototip, Aşama 2'nin tamamlandığı veya görsel olarak kabul edildiği anlamına gelmez. Kas hacimleri, omuz-göğüs geçişi, eklem örtüşmeleri, siluet, yüzey normalleri ve farklı pozlarda kopma/boşluk kontrolleri görsel ve teknik incelemeyle iyileştirilecektir. Eski 2B karakter renderer'ı ve runtime entegrasyonu değiştirilmemiştir.
