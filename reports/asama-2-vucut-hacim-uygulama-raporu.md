@@ -1,6 +1,6 @@
 # Eldoria — Aşama 2: Vücut Anatomisi ve Hacim Prototipi
 
-**Durum:** İlk parametrik hacim prototipi oluşturuldu; CI ve görsel kabul bekliyor.  
+**Durum:** Parametrik hacim prototipi ve kontrollü oyuncu animasyon entegrasyonu uygulandı; CI başarılı, oyun içi görsel kabul bekliyor.  
 **Hedef dal:** `experiment/map-cleanup`  
 **Bağımlılık:** Aşama 1 statik iskelet ve A-Pose kabulü
 
@@ -42,3 +42,31 @@ Aşama 1'de kabul edilen 3B anatomik iskeletin üzerine, eklem pozlarını takip
 - Kullanıcı önizlemesini al; anatomi oranları ve siluet için geri bildirimleri uygula.
 - Farklı omuz/dirsek/kalça/diz pozları için debug pozları ve eklem birleşimi kontrolleri ekle.
 - Gerekirse gövde hacimlerini daha organik bir yüzey veya örtüşen düşük poligon kabuklarla iyileştir.
+
+
+## 18. Kontrollü oyuncu animasyon prototipi — 2026-11-22
+
+### Uygulama
+
+- `game_ui/world_rendering/humanoid_body_animation_3d.py` içinde `HumanoidBodyAnimator3D` eklendi. Animator, yürüyüş/koşu fazını duvar saatinden değil, ölçülen gerçek dünya hareket mesafesinden ilerletir.
+- Tam gait çevrimi için yürüyüş mesafesi 56 dünya pikseli, koşu mesafesi 84 dünya pikseli olarak tanımlandı. Pozlar sprite cache tekrar kullanımını artırmak amacıyla çevrim başına 8 deterministik örneğe kuantize edilir.
+- Hareket mesafesi sıfır olduğunda gait fazı ilerlemez. Yön değişimi fazı sıfırlamaz; idle durumunda yürüyüş pozu çizilmez.
+- `HexGameplayView`, yeni 3B body renderer'ı yalnızca oyuncu karakterinde kullanır. NPC'ler mevcut sprite renderer hattında kalır; bu aşamada toplu NPC geçişi yapılmamıştır.
+- Oyuncunun katettiği mesafe öncelikle runtime'ın sürekli dünya konumundan salt-okunur biçimde ölçülür. Sürekli konum bulunmayan durumlarda mevcut görsel konum interpolasyonu yedek kaynak olarak kullanılır.
+- Ekran yönü, `WorldTransform.unproject_vector` ile rig'in +Y ileri eksenine çevrilir. Renderer'ın üçgen sayısı, ölçülen hareket mesafesi ve sprite cache sayaçları `render_stats` üzerinden izlenebilir.
+- Runtime dünya konumu, hareket otoritesi, hız/ivme, çarpışma, NPC itişi, ayrışma, rota ve kamera davranışları bu entegrasyon tarafından devralınmaz veya değiştirilmez.
+
+### Otomatik doğrulama
+
+- Mesafe tabanlı faz ilerlemesi, idle duruş, yön değişiminde fazın korunması, yürüyüş/koşu çevrim mesafesi, kuantize pozların tekrarlanabilirliği ve rig eklem sınırları için testler eklendi.
+- Oyun görünüm testleri, oyuncunun 3B body renderer ile çizildiğini, 1.264 üçgenlik high mesh kullanımını, cache kaydını ve hem sürekli runtime hareketinde hem de click-to-move sırasında mesafeye bağlı gait ilerlemesini doğrular.
+- GitHub Actions, commit `d40e89910325de6970259ab5c43e36ee5f03509e` üzerinde başarılı tamamlandı: Ubuntu/Windows, Python 3.11/3.12 test matrisindeki dört test işi ve Pygame headless smoke işi başarılıdır. Unit test, pytest, Ruff, benchmark tanılama ve izometrik render smoke adımları geçti.
+- CI çalışması: https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/45067478077
+
+### Bilinen sınırlar ve sıradaki kapı
+
+- Bu prototip henüz ayak kilitleme/IK, gerçek stance-swing temas çözümü veya animasyon sırasında kayma kabulünü kanıtlamaz.
+- Gait pozları sekiz örneğe kuantize edilmiştir; görsel akıcılık ve cache hit/miss davranışı gerçek oyun ekranında incelenmelidir.
+- NPC'ler henüz yeni 3B renderer'a geçirilmemiştir.
+- Animasyonlu 1/10/25/50 karakter benchmark'ı henüz yapılmamıştır; önce oyuncu üzerinde görsel kabul, ardından animasyon sırasında cache ve kare süresi ölçümü yapılacaktır.
+- Aşama 2 kapatılmamıştır. Kullanıcı oyun ekranında yürüme, durma ve yön değiştirmeyi görsel olarak değerlendirdikten ve animasyonlu performans ölçümü hedefleri karşıladıktan sonra kabul kararı verilecektir.
