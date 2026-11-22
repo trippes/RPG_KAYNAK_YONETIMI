@@ -335,3 +335,21 @@ Aşama 2 kapsamında ilk bağımsız 3B hacim prototipi oluşturulmuştur:
 - `test_humanoid_body_3d.py`: hacim envanteri, deterministik mesh, poz takibi ve geçersiz geometri testleri.
 
 Bu ilk prototip, Aşama 2'nin tamamlandığı veya görsel olarak kabul edildiği anlamına gelmez. Kas hacimleri, omuz-göğüs geçişi, eklem örtüşmeleri, siluet, yüzey normalleri ve farklı pozlarda kopma/boşluk kontrolleri görsel ve teknik incelemeyle iyileştirilecektir. Eski 2B karakter renderer'ı ve runtime entegrasyonu değiştirilmemiştir.
+
+
+## 12. Aşama 2 anatomik hacim ve performans iyileştirmesi — 2026-11-22
+
+Kullanıcının kalite kararı: Karakter daha gerçekçi ve anatomik olarak inandırıcı görünecek; ancak görsel kalite için optimizasyondan ödün verilmeyecek. Düşük poligonlu 2.5D yaklaşımı ve düşük donanım hedefi korunacaktır.
+
+İlk hacim önizlemesinin ardından Aşama 2 prototipinde şu iyileştirmeler yapıldı:
+
+- Göğüs kafesi, bel, karın ve üst sırt hacimleri daha belirgin anatomik kütleler olarak ayrıştırıldı.
+- Köprücük kemiği hacimleri göğüs ve omuz zinciri arasına eklendi.
+- Üst kol, ön kol, uyluk ve baldır için birbirinden farklı, kademeli kesit profilleri tanımlandı; bütün uzuvların aynı kalınlıkta silindir görünmesi azaltıldı.
+- Düşük poligon mesh üretiminde tekrarlanan daire ve enlem trigonometrisi örnekleri LRU önbelleğine alındı.
+- Rig ve poz aynı kaldığında üretilen değişmez yerel üçgen mesh'i 16 girdilik LRU önbelleğinde saklanıyor. Aynı animasyon pozunu paylaşan karakter örnekleri bu geometriyi yeniden kullanabilir.
+- Cache anahtarı rig tanımı ve normalize edilmiş poz girdilerinden oluşur; runtime dünya konumu, kamera açısı veya karakterin oyun içi konumu cache'e dahil edilmez. Renderer'ın projeksiyon ve derinlik sıralaması mevcut sorumluluğunda kalır.
+
+Bu tur yalnızca bağımsız hacim modeli ve testlerini etkiler. Eski 2B karakter renderer'ı, oyun runtime hareket/konum/çarpışma sistemi ve NPC davranışları değiştirilmemiştir.
+
+Yeni test kapsamı: anatomik kesit profillerinin varlığı ve geçerliliği, trigonometrik örnek önbelleği ve aynı rig/poz için immutable mesh nesnesinin yeniden kullanılması. GitHub Actions doğrulaması tamamlanmadan bu turun teknik kabulü verilmiş sayılmaz; statik önizleme de kullanıcı tarafından yeniden incelenecektir.
