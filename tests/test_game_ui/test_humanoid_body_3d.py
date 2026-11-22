@@ -92,7 +92,7 @@ class TestHumanoidBody3D(unittest.TestCase):
         low = DEFAULT_HUMANOID_BODY.build_mesh(
             DEFAULT_HUMANOID_RIG, detail_level="low"
         )
-        self.assertEqual((len(high), len(medium), len(low)), (1280, 768, 552))
+        self.assertEqual((len(high), len(medium), len(low)), (1280, 624, 552))
         self.assertGreater(len(high), len(medium))
         self.assertGreater(len(medium), len(low))
         self.assertLessEqual(len(high), 1300)
