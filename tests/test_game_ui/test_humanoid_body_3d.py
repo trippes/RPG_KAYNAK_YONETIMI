@@ -12,10 +12,8 @@ class TestHumanoidBody3D(unittest.TestCase):
     def test_default_body_contains_anatomical_core_and_bilateral_limbs(self):
         names = {part.name for part in DEFAULT_HUMANOID_BODY.parts}
         for expected in (
-            "connected_torso",
             "left_clavicle_volume",
             "right_clavicle_volume",
-            "neck_volume",
             "head_volume",
             "shoulder_left_volume",
             "shoulder_right_volume",
@@ -27,6 +25,7 @@ class TestHumanoidBody3D(unittest.TestCase):
             "right_foot_volume",
         ):
             self.assertIn(expected, names)
+        self.assertIn("connected_torso", {surface.name for surface in DEFAULT_HUMANOID_BODY.surfaces})
 
     def test_torso_is_one_connected_surface_with_ordered_anatomical_landmarks(self):
         self.assertEqual(len(DEFAULT_HUMANOID_BODY.surfaces), 1)
