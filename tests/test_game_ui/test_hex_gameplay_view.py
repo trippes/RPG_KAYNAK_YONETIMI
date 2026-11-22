@@ -547,6 +547,9 @@ def test_player_body_gait_advances_only_by_measured_visual_travel():
         def continuous_position(self, _actor_id):
             return SimpleNamespace(point=self.point)
 
+        def entities(self):
+            return ()
+
     runtime = MovingRuntime()
     service.hex_world_runtime = runtime
     view = HexGameplayView(service)
