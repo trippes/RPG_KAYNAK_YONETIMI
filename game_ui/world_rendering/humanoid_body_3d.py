@@ -6,7 +6,7 @@ and never changes the skeleton, pose, or runtime world position.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import lru_cache
 import math
 from typing import Mapping
@@ -135,6 +135,17 @@ class MeshTriangle:
         tuple[tuple[str, float], ...],
         tuple[tuple[str, float], ...],
     ] = ()
+    normal: Vec3 = field(init=False, compare=False, hash=False)
+
+    def __post_init__(self) -> None:
+        first, second, third = self.vertices
+        edge_a = _subtract(second, first)
+        edge_b = _subtract(third, first)
+        normal = _cross(edge_a, edge_b)
+        length = math.sqrt(_dot(normal, normal))
+        if length > 1e-10:
+            normal = _scale(normal, 1.0 / length)
+        object.__setattr__(self, "normal", normal)
 
 
 def _add(first: Vec3, second: Vec3) -> Vec3:
