@@ -245,36 +245,56 @@ class HumanoidBodyModel:
         rig: HumanoidRig,
         local_rotations: Mapping[str, tuple[float, float, float]] | None = None,
     ) -> tuple[MeshTriangle, ...]:
-        """Build rig-local low-poly triangles for the supplied pose."""
-        positions = rig.joint_positions(local_rotations)
-        mesh: list[MeshTriangle] = []
-        for part in self.parts:
-            if part.start_joint not in positions or part.end_joint not in positions:
-                raise ValueError(f"Body part '{part.name}' references an unknown rig joint.")
-            if part.shape == "ellipsoid":
-                if part.start_joint != part.end_joint:
-                    raise ValueError("Ellipsoid body parts must attach to one joint.")
-                mesh.extend(
-                    _ellipsoid_triangles(
-                        positions[part.start_joint],
-                        part.radii,
-                        part.material,
-                        self.mesh_sides,
-                        self.mesh_rings,
-                    )
+        """Build or reuse rig-local low-poly triangles for the supplied pose."""
+        pose_key = tuple(
+            sorted(
+                (name, tuple(rotation))
+                for name, rotation in (local_rotations or {}).items()
+            )
+        )
+        return _build_mesh_cached(
+            self.parts, self.mesh_sides, self.mesh_rings, rig, pose_key
+        )
+
+
+@lru_cache(maxsize=16)
+def _build_mesh_cached(
+    parts: tuple[BodyPartDefinition, ...],
+    mesh_sides: int,
+    mesh_rings: int,
+    rig: HumanoidRig,
+    pose_key: tuple[tuple[str, tuple[float, float, float]], ...],
+) -> tuple[MeshTriangle, ...]:
+    """Reuse immutable local meshes for repeated rigs and animation poses."""
+    positions = rig.joint_positions(dict(pose_key))
+    mesh: list[MeshTriangle] = []
+    for part in parts:
+        if part.start_joint not in positions or part.end_joint not in positions:
+            raise ValueError(f"Body part '{part.name}' references an unknown rig joint.")
+        if part.shape == "ellipsoid":
+            if part.start_joint != part.end_joint:
+                raise ValueError("Ellipsoid body parts must attach to one joint.")
+            mesh.extend(
+                _ellipsoid_triangles(
+                    positions[part.start_joint],
+                    part.radii,
+                    part.material,
+                    mesh_sides,
+                    mesh_rings,
                 )
-            else:
-                mesh.extend(
-                    _segment_triangles(
-                        positions[part.start_joint],
-                        positions[part.end_joint],
-                        part.radii,
-                        part.material,
-                        self.mesh_sides,
-                        part.profile,
-                    )
+            )
+        else:
+            mesh.extend(
+                _segment_triangles(
+                    positions[part.start_joint],
+                    positions[part.end_joint],
+                    part.radii,
+                    part.material,
+                    mesh_sides,
+                    part.profile,
                 )
-        return tuple(mesh)
+            )
+    return tuple(mesh)
 
 
 def _ellipsoid(name: str, joint: str, radii: Vec3, material: str) -> BodyPartDefinition:
