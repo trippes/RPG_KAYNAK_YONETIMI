@@ -635,6 +635,15 @@ def _build_default_body() -> HumanoidBodyModel:
                     subdivisions=3,
                 ),
                 BodySurfaceDefinition(
+                    f"connected_hand_{side}",
+                    (
+                        (f"wrist_{side}", 0.024, 0.022, "skin"),
+                        (f"hand_{side}", 0.033, 0.026, "skin"),
+                    ),
+                    sides=8,
+                    subdivisions=2,
+                ),
+                BodySurfaceDefinition(
                     f"connected_leg_{side}",
                     (
                         (f"hip_{side}", 0.074, 0.064, "trousers"),
