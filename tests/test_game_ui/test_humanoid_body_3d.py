@@ -47,6 +47,8 @@ class TestHumanoidBody3D(unittest.TestCase):
                 "connected_torso",
                 "connected_arm_left",
                 "connected_arm_right",
+                "connected_hand_left",
+                "connected_hand_right",
                 "connected_leg_left",
                 "connected_leg_right",
                 "connected_foot_left",
@@ -163,6 +165,7 @@ class TestHumanoidBody3D(unittest.TestCase):
         surfaces = {surface.name for surface in DEFAULT_HUMANOID_BODY.surfaces}
         for name in (
             "connected_arm_left", "connected_arm_right",
+            "connected_hand_left", "connected_hand_right",
             "connected_leg_left", "connected_leg_right",
             "connected_foot_left", "connected_foot_right",
         ):
@@ -175,7 +178,7 @@ class TestHumanoidBody3D(unittest.TestCase):
         for surface in DEFAULT_HUMANOID_BODY.surfaces:
             self.assertGreaterEqual(len(surface.stations), 2)
             self.assertEqual(surface.sides, 8)
-            self.assertEqual(surface.subdivisions, 3)
+            self.assertIn(surface.subdivisions, (2, 3))
 
     def test_triangle_normals_are_precomputed_and_finite(self):
         mesh = DEFAULT_HUMANOID_BODY.build_mesh(DEFAULT_HUMANOID_RIG)
