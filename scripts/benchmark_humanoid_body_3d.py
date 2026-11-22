@@ -9,13 +9,21 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import sys
 import time
+from pathlib import Path
 
-import pygame
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
-from game_ui.world_rendering.humanoid_body_3d import DEFAULT_HUMANOID_BODY
-from game_ui.world_rendering.humanoid_body_renderer_3d import HumanoidBodyRenderer3D
-from game_ui.world_rendering.humanoid_rig_3d import DEFAULT_HUMANOID_RIG
+import pygame  # noqa: E402
+
+from game_ui.world_rendering.humanoid_body_3d import DEFAULT_HUMANOID_BODY  # noqa: E402
+from game_ui.world_rendering.humanoid_body_renderer_3d import (  # noqa: E402
+    HumanoidBodyRenderer3D,
+)
+from game_ui.world_rendering.humanoid_rig_3d import DEFAULT_HUMANOID_RIG  # noqa: E402
 
 
 def run_benchmark(frames: int) -> list[dict[str, float | int]]:
