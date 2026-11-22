@@ -36,6 +36,7 @@ class TestHumanoidBody3D(unittest.TestCase):
         second = DEFAULT_HUMANOID_BODY.build_mesh(DEFAULT_HUMANOID_RIG)
         self.assertGreater(len(first), 300)
         self.assertEqual(first, second)
+        self.assertIs(first, second)
 
     def test_mesh_follows_rig_pose_without_mutating_rest_geometry(self):
         rest_positions = DEFAULT_HUMANOID_RIG.joint_positions()
