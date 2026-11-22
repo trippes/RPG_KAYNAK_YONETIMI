@@ -394,7 +394,7 @@ def _connected_surface_triangles(
             )
             width = first[1] + (second[1] - first[1]) * smooth_t
             depth = first[2] + (second[2] - first[2]) * smooth_t
-            weights = ((first[0], 1.0 - t), (second[0], t))
+            weights = ((first[0], 1.0 - smooth_t), (second[0], smooth_t))
             samples.append((center, width, depth, first[3], weights))
 
     last = stations[-1]
