@@ -243,9 +243,7 @@ class HexGameplayView:
         self._player_body_travel_distance = traveled_distance
         self._humanoid_body_animator.select(
             direction=self._player_facing,
-            state=self._player_animation_state(
-                self._visual_moving and traveled_distance > 1e-6
-            ),
+            state=self._player_animation_state(traveled_distance > 1e-6),
         )
         self._humanoid_body_animator.advance(traveled_distance)
 
