@@ -313,3 +313,12 @@ Eklenen/ güncellenen bileşenler:
 **Doğrulama durumu:** Depo testleri bu işlem ortamında çalıştırılmadı. Son commit için erişilebilen birleşik commit-status ve PR workflow sorguları sonuç döndürmedi; bu nedenle GitHub Actions başarısı iddia edilmemektedir. Yerel test, Ruff ve görsel kabul beklenmektedir.
 
 **Sonraki işlem:** Kullanıcının yerel ortamında hedefli unittest/pytest ve Ruff doğrulaması; ardından üç görünüşlü önizlemenin görsel değerlendirmesi. Aşama 1 kabul edilmeden Aşama 2'ye geçilmez.
+
+
+## 11. Görsel kabul kaydı — 2026-11-22
+
+Kullanıcı, düzeltilmiş üç görünüşlü iskelet önizlemesini inceledi ve mevcut iskelet oranları ile A-Pose duruşunu bu aşama için uygun buldu. Bu karar **statik iskelet/önizleme kabulüdür**; oyun içi karakter animasyonlarının doğal görünümüne ilişkin nihai kabul değildir. Kullanıcı, animasyonları oyun içinde gördükten sonra son değerlendirmeyi yapacağını açıkça belirtti.
+
+Önizlemedeki ilk kadraj taşması giderildi; rig anatomik koordinatları değiştirilmedi. Yan görünüşte kolların üst üste düşmesi mevcut ortografik izdüşümün beklenen sonucudur ve tek başına anatomik hata sayılmamıştır.
+
+Aşama 1'in görsel kabul kapısı karşılanmıştır. Son kod değişikliğinden sonra Eldoria CI yeniden çalıştırılmaktadır; teknik doğrulama başarılı olmadan Aşama 1 tamamen kapatılmış ve Aşama 2 başlatılmış sayılmayacaktır. Oyun içi animasyon kabulü Aşama 4 ve Aşama 6 görsel kabul kapılarında yeniden yapılacaktır.
