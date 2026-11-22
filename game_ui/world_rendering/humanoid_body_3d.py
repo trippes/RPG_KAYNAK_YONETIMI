@@ -273,13 +273,13 @@ def _connected_surface_triangles(
     surface: BodySurfaceDefinition,
     positions: Mapping[str, Vec3],
 ) -> tuple[MeshTriangle, ...]:
-    """Create one shared-ring torso surface with smoothly interpolated sections."""
+    """Create a connected loft whose cross-sections follow a curved landmark chain."""
     for joint_name, _, _, _ in surface.stations:
         if joint_name not in positions:
             raise ValueError(f"Body surface '{surface.name}' references unknown rig joint '{joint_name}'.")
 
     circle = _unit_circle(surface.sides)
-    rings: list[tuple[list[Vec3], str]] = []
+    samples: list[tuple[Vec3, float, float, str]] = []
     stations = surface.stations
     for index in range(len(stations) - 1):
         first = stations[index]
@@ -295,29 +295,32 @@ def _connected_surface_triangles(
             )
             width = first[1] + (second[1] - first[1]) * smooth_t
             depth = first[2] + (second[2] - first[2]) * smooth_t
-            ring = [
-                (
-                    center[0] + cosine * width,
-                    center[1] + sine * depth,
-                    center[2],
-                )
-                for cosine, sine in circle
-            ]
-            rings.append((ring, first[3]))
+            samples.append((center, width, depth, first[3]))
 
     last = stations[-1]
-    last_center = positions[last[0]]
-    rings.append((
-        [
-            (
-                last_center[0] + cosine * last[1],
-                last_center[1] + sine * last[2],
-                last_center[2],
+    samples.append((positions[last[0]], last[1], last[2], last[3]))
+
+    rings: list[tuple[list[Vec3], str]] = []
+    for index, (center, width, depth, material) in enumerate(samples):
+        previous = samples[max(0, index - 1)][0]
+        following = samples[min(len(samples) - 1, index + 1)][0]
+        tangent = _normalize(_subtract(following, previous))
+        reference = (0.0, 1.0, 0.0)
+        if abs(_dot(tangent, reference)) > 0.92:
+            reference = (1.0, 0.0, 0.0)
+        basis_u = _normalize(_cross(tangent, reference))
+        basis_v = _normalize(_cross(tangent, basis_u))
+        ring = [
+            _add(
+                center,
+                _add(
+                    _scale(basis_u, cosine * width),
+                    _scale(basis_v, sine * depth),
+                ),
             )
             for cosine, sine in circle
-        ],
-        last[3],
-    ))
+        ]
+        rings.append((ring, material))
 
     triangles: list[MeshTriangle] = []
     for ring_index in range(len(rings) - 1):
@@ -457,41 +460,9 @@ def _build_default_body() -> HumanoidBodyModel:
     for side in ("left", "right"):
         parts.extend(
             (
-                _segment(
-                    f"{side}_upper_arm_volume", f"shoulder_{side}", f"elbow_{side}",
-                    (0.052, 0.044, 0.044), "skin",
-                    ((-0.10, 0.25), (0.0, 0.72), (0.20, 0.92), (0.43, 1.0),
-                     (0.68, 0.88), (0.88, 0.70), (1.0, 0.55), (1.10, 0.22)),
-                ),
-                _ellipsoid(
-                    f"{side}_elbow_volume", f"elbow_{side}",
-                    (0.043, 0.043, 0.043), "skin",
-                ),
-                _segment(
-                    f"{side}_forearm_volume", f"elbow_{side}", f"wrist_{side}",
-                    (0.043, 0.036, 0.036), "skin",
-                    ((-0.10, 0.22), (0.0, 0.58), (0.18, 0.82), (0.42, 0.92),
-                     (0.68, 0.78), (0.88, 0.62), (1.0, 0.48), (1.10, 0.20)),
-                ),
                 _ellipsoid(
                     f"{side}_hand_volume", f"hand_{side}",
                     (0.035, 0.025, 0.050), "skin",
-                ),
-                _segment(
-                    f"{side}_thigh_volume", f"hip_{side}", f"knee_{side}",
-                    (0.074, 0.064, 0.064), "trousers",
-                    ((-0.10, 0.28), (0.0, 0.72), (0.18, 0.92), (0.38, 1.0),
-                     (0.62, 0.92), (0.82, 0.78), (1.0, 0.62), (1.10, 0.24)),
-                ),
-                _ellipsoid(
-                    f"{side}_knee_volume", f"knee_{side}",
-                    (0.050, 0.052, 0.050), "trousers",
-                ),
-                _segment(
-                    f"{side}_shin_volume", f"knee_{side}", f"ankle_{side}",
-                    (0.050, 0.044, 0.044), "trousers",
-                    ((-0.10, 0.24), (0.0, 0.68), (0.20, 0.82), (0.44, 0.76),
-                     (0.68, 0.66), (0.88, 0.54), (1.0, 0.46), (1.10, 0.20)),
                 ),
                 _ellipsoid(
                     f"{side}_foot_volume", f"foot_ball_{side}",
@@ -499,19 +470,46 @@ def _build_default_body() -> HumanoidBodyModel:
                 ),
             )
         )
-    torso = BodySurfaceDefinition(
-        "connected_torso",
-        (
-            ("pelvis", 0.105, 0.078, "trousers"),
-            ("spine_lower", 0.092, 0.073, "tunic"),
-            ("spine_upper", 0.103, 0.078, "tunic"),
-            ("chest", 0.158, 0.103, "tunic"),
-            ("neck", 0.043, 0.043, "skin"),
+    surfaces = [
+        BodySurfaceDefinition(
+            "connected_torso",
+            (
+                ("pelvis", 0.105, 0.078, "trousers"),
+                ("spine_lower", 0.092, 0.073, "tunic"),
+                ("spine_upper", 0.103, 0.078, "tunic"),
+                ("chest", 0.158, 0.103, "tunic"),
+                ("neck", 0.043, 0.043, "skin"),
+            ),
+            sides=12,
+            subdivisions=4,
         ),
-        sides=12,
-        subdivisions=4,
-    )
-    return HumanoidBodyModel(tuple(parts), (torso,))
+    ]
+    for side in ("left", "right"):
+        surfaces.extend(
+            (
+                BodySurfaceDefinition(
+                    f"connected_arm_{side}",
+                    (
+                        (f"shoulder_{side}", 0.052, 0.044, "skin"),
+                        (f"elbow_{side}", 0.043, 0.038, "skin"),
+                        (f"wrist_{side}", 0.026, 0.024, "skin"),
+                    ),
+                    sides=10,
+                    subdivisions=4,
+                ),
+                BodySurfaceDefinition(
+                    f"connected_leg_{side}",
+                    (
+                        (f"hip_{side}", 0.074, 0.064, "trousers"),
+                        (f"knee_{side}", 0.050, 0.052, "trousers"),
+                        (f"ankle_{side}", 0.032, 0.032, "trousers"),
+                    ),
+                    sides=10,
+                    subdivisions=4,
+                ),
+            )
+        )
+    return HumanoidBodyModel(tuple(parts), tuple(surfaces))
 
 
 DEFAULT_HUMANOID_BODY = _build_default_body()
