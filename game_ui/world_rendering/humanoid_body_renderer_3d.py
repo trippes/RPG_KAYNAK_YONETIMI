@@ -87,7 +87,7 @@ class HumanoidBodyRenderer3D:
                 for point in vertices
             )
             color = colors[triangle.material]
-            shade = self._shade(vertices, color)
+            shade = self._shade(triangle.normal, color)
             triangles.append((depth, projected, shade))
 
         # Camera looks toward the origin from the positive depth side.
@@ -102,20 +102,11 @@ class HumanoidBodyRenderer3D:
         return len(triangles)
 
     @staticmethod
-    def _shade(vertices, base_color):
-        first, second, third = vertices
-        edge_a = tuple(second[index] - first[index] for index in range(3))
-        edge_b = tuple(third[index] - first[index] for index in range(3))
-        normal = (
-            edge_a[1] * edge_b[2] - edge_a[2] * edge_b[1],
-            edge_a[2] * edge_b[0] - edge_a[0] * edge_b[2],
-            edge_a[0] * edge_b[1] - edge_a[1] * edge_b[0],
+    def _shade(normal, base_color):
+        light = (-0.35, -0.45, 0.82)
+        illumination = sum(normal[index] * light[index] for index in range(3))
+        brightness = max(0.62, min(1.12, 0.82 + max(0.0, illumination) * 0.30))
+        return tuple(
+            max(0, min(255, round(channel * brightness)))
+            for channel in base_color
         )
-        length = math.sqrt(sum(component * component for component in normal))
-        if length <= 1e-10:
-            brightness = 0.82
-        else:
-            light = (-0.35, -0.45, 0.82)
-            illumination = sum(normal[i] * light[i] for i in range(3)) / length
-            brightness = max(0.62, min(1.12, 0.82 + max(0.0, illumination) * 0.30))
-        return tuple(max(0, min(255, round(channel * brightness))) for channel in base_color)
