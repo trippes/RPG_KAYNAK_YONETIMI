@@ -826,10 +826,12 @@ class GameWindow:
         )
         if movement_input_active:
             movement_intent = self.movement_input.read_intent()
+            to_world = getattr(current_screen, "movement_intent_to_world", None)
+            if callable(to_world):
+                movement_intent = to_world(movement_intent)
             if movement_intent.is_moving:
                 state.actions.difference_update({
                     "left", "right", "up", "down",
-                    "hex_north_west", "hex_south_west",
                 })
 
         if self.current == "world" and not window_consumed:
