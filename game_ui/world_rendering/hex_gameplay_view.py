@@ -54,6 +54,8 @@ class HexGameplayView:
         self._humanoid_body_animator = HumanoidBodyAnimator3D()
         self._player_body_travel_distance = 0.0
         self._player_body_triangle_count = 0
+        self._last_body_runtime_position = None
+        self._last_body_runtime_map_id = None
         self._npc_animators = {}
         self._npc_visual_states = {}
         self._player_facing = "south"
@@ -235,15 +237,9 @@ class HexGameplayView:
         # Measure the same presentation position used to draw the player. This
         # covers both continuous keyboard motion and click-route interpolation,
         # without writing to the authoritative runtime position.
-        traveled_distance = 0.0
-        if (
-            previous_visual_position is not None
-            and self._visual_position is not None
-            and previous_visual_map_id == self._visual_map_id
-        ):
-            traveled_distance = math.dist(
-                previous_visual_position, self._visual_position,
-            )
+        traveled_distance = self._measure_player_travel_distance(
+            previous_visual_position, previous_visual_map_id,
+        )
         self._player_body_travel_distance = traveled_distance
         self._humanoid_body_animator.select(
             direction=self._player_facing,
@@ -325,6 +321,45 @@ class HexGameplayView:
             )
             self._physics_accumulator -= self.PHYSICS_STEP_SECONDS
             steps += 1
+
+    def _measure_player_travel_distance(
+        self, previous_visual_position, previous_visual_map_id
+    ):
+        """Measure authoritative actor travel, with visual interpolation as fallback."""
+        runtime = getattr(self.service, "hex_world_runtime", None)
+        if runtime is not None:
+            try:
+                entity = runtime.entity(self.service.player_actor_id)
+                continuous = runtime.continuous_position(
+                    self.service.player_actor_id,
+                )
+            except (AttributeError, KeyError, RuntimeError):
+                continuous = None
+                entity = None
+            if continuous is not None and entity is not None:
+                current = (continuous.point.x, continuous.point.y)
+                map_id = entity.position.map_id
+                distance = 0.0
+                if (
+                    self._last_body_runtime_position is not None
+                    and self._last_body_runtime_map_id == map_id
+                ):
+                    distance = math.dist(
+                        self._last_body_runtime_position, current,
+                    )
+                self._last_body_runtime_position = current
+                self._last_body_runtime_map_id = map_id
+                return distance
+
+        self._last_body_runtime_position = None
+        self._last_body_runtime_map_id = None
+        if (
+            previous_visual_position is not None
+            and self._visual_position is not None
+            and previous_visual_map_id == self._visual_map_id
+        ):
+            return math.dist(previous_visual_position, self._visual_position)
+        return 0.0
 
     def _sync_continuous_visual(self):
         """Track fixed-step keyboard motion for facing and walk animation."""
