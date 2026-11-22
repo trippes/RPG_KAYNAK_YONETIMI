@@ -1,4 +1,5 @@
 from types import SimpleNamespace
+import math
 from unittest.mock import patch
 
 import pytest
@@ -220,6 +221,8 @@ def test_hex_gameplay_view_renders_runtime_map_without_mutating_entity_position(
     assert player.position == EntityPosition(
         "village", LocalHexPosition(0, 0),
     )
+    assert view.render_stats["player_body_triangles"] == 1264
+    assert view.render_stats["player_body_cache"]["entries"] == 1
 
 def test_hex_gameplay_view_click_selects_axial_destination():
     service = FakeService()
@@ -532,3 +535,38 @@ def test_multiple_fixed_steps_in_one_frame_reuse_one_click_path():
     metrics = view._click_move_route.metrics_snapshot()
     assert metrics["player_click_path_queries"] == 1
     assert metrics["player_click_route_cache_hits"] == 3
+
+
+
+def test_player_body_gait_advances_only_by_measured_visual_travel():
+    service = FakeService()
+
+    class MovingRuntime(FakeRuntime):
+        point = WorldPoint(0.0, 0.0)
+
+        def continuous_position(self, _actor_id):
+            return SimpleNamespace(point=self.point)
+
+    runtime = MovingRuntime()
+    service.hex_world_runtime = runtime
+    view = HexGameplayView(service)
+
+    view.update(1.0 / 60.0)
+    assert view._humanoid_body_animator.phase == 0.0
+
+    runtime.point = WorldPoint(14.0, 0.0)
+    view.update(1.0 / 60.0)
+    phase_after_motion = view._humanoid_body_animator.phase
+    assert phase_after_motion == pytest.approx(math.pi / 2.0)
+    assert view._player_body_travel_distance == pytest.approx(14.0)
+
+    view.update(1.0 / 60.0)
+    assert view._humanoid_body_animator.phase == phase_after_motion
+    assert view._player_body_travel_distance == 0.0
+
+
+def test_humanoid_body_yaw_uses_inverse_world_projection():
+    view = HexGameplayView(FakeService())
+    for facing in view._humanoid_body_animator.DIRECTIONS:
+        yaw = view._humanoid_body_yaw(facing)
+        assert 0.0 <= yaw < math.tau
