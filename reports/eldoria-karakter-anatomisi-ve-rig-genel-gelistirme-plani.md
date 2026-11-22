@@ -419,7 +419,7 @@ Bu uygulama diliminde bağlantılı yüzey prototipi animasyon pozlarına hazır
 - Önizleme artık N, NE, E, SE, S, SW, W ve NW olmak üzere sekiz yönü aynı ekranda gösteriyor. İkinci sayfada dirsek fleksiyonu, omuz elevasyonu, diz fleksiyonu ve gövde rotasyonu stres pozları bulunuyor; 1/2 tuşlarıyla sayfalar arasında geçiliyor.
 - Renderer testleri sekiz yaw açısının tamamında çizim yapılmasını kontrol ediyor.
 - Her üçgenin yüz normali mesh oluşturulurken bir kez hesaplanıyor; her karede tekrar vektör çarpımı ve karekök yapılmıyor.
-- `build_mesh` ve renderer `detail_level=high|medium|low` seçeneklerini destekliyor. High/medium/low topoloji bütçeleri sırasıyla 1.280 / 624 / 552 üçgen olarak test sözleşmesine sabitlendi.
+- `build_mesh` ve renderer `detail_level=high|medium|low` seçeneklerini destekliyor. High/medium/low topoloji bütçeleri sırasıyla 1.264 / 756 / 540 üçgen olarak test sözleşmesine sabitlendi.
 - LOD varyantları aynı anatomik landmark ve skinning düzenini koruyup kesit kenarı/bölüm sayısını azaltıyor. Uzaklık veya ekrandaki piksel boyutuna göre LOD seçimi henüz oyun runtime'ına bağlanmadı; çağıran sistem açıkça detail_level seçmelidir.
 - Renderer hâlâ üçgenleri derinliğe göre sıralayıp Pygame polygon çağrılarıyla çiziyor. Bu yüzden 50 NPC için performans garantisi verilmemektedir.
 
@@ -427,7 +427,7 @@ Bu uygulama diliminde bağlantılı yüzey prototipi animasyon pozlarına hazır
 
 - Temel modelin otomatik testteki üst sınırı karakter başına 1.300 üçgendir.
 - Yeni `scripts/benchmark_humanoid_body_3d.py`, 1/10/25/50 karakter senaryolarında kare süresini, eşdeğer FPS'i, LOD dağılımını ve toplam üçgen sayısını raporlar.
-- Benchmark'ın 50 karakterlik karma LOD senaryosu 5 high + 10 medium + 35 low karakter kullanır; geometri bütçesi 31.960 üçgen/kare olur. Aynı 50 karakterin tamamı high olsaydı 64.000 üçgen/kare olurdu. Bu yalnızca geometri sayısı karşılaştırmasıdır, FPS ölçümü değildir.
+- Benchmark'ın 50 karakterlik karma LOD senaryosu 5 high + 10 medium + 35 low karakter kullanır; geometri bütçesi 32.780 üçgen/kare olur. Aynı 50 karakterin tamamı high olsaydı 63.200 üçgen/kare olurdu. Bu yalnızca geometri sayısı karşılaştırmasıdır, FPS ölçümü değildir.
 - Benchmark sabit FPS eşiği uygulamaz; makine ve Pygame sürümüne bağlı sonuçları ölçer. CI'da bir karelik tanılama çalışmasıyla benchmark'ın çalışması ve üçgen bütçesinin korunması kontrol edilir.
 - Yüzey normalinin önceden hesaplanması ve bind-pose mesh cache'i çizim/mesh üretimindeki tekrarları azaltır; ekran dışı culling, uzak NPC LOD ve render verisi cache'i henüz tamamlanmamıştır.
 
@@ -458,9 +458,9 @@ Aşama 2 henüz kabul edilmedi. Sonraki kapı: CI doğrulaması, sekiz yönlü y
 - Bilek ile avuç arasında bağlantılı, iki eklem ağırlıklı el yüzeyi eklendi; avuç hacmi ayrı düşük poligon parça olarak kalıyor. Parmak eklemleri rig'de bulunmadığı için parmak animasyonu kapsam dışı.
 - Ayaklar topuk → tarak → parmak ucu yüzey zinciri olarak tanımlandı.
 - Yüksek, orta ve düşük detay varyantları aynı anatomik landmark ve skinning verisini koruyup halka kenarı/bölüm sayısını azaltıyor.
-- Kesin geometri bütçeleri otomatik testte sabitlendi: high 1.280, medium 624, low 552 üçgen/karakter.
+- Kesin geometri bütçeleri otomatik testte sabitlendi: high 1.264, medium 756, low 540 üçgen/karakter.
 - Renderer'a açık `detail_level` seçimi eklendi. Runtime mesafe/piksel boyutu tabanlı otomatik LOD seçimi henüz yapılmadı.
-- 50 NPC benchmark senaryosunda 5 high + 10 medium + 35 low dağılımı kullanılıyor; toplam teorik geometri 31.960 üçgen/kare. Bu sayı performans/FPS garantisi değildir.
+- 50 NPC benchmark senaryosunda 5 high + 10 medium + 35 low dağılımı kullanılıyor; toplam teorik geometri 32.780 üçgen/kare. Bu sayı performans/FPS garantisi değildir.
 - Aşama 2 kabul edilmedi; GitHub Actions ve hedef makine benchmark sonuçları doğrulanmalıdır.
 
 
@@ -468,6 +468,18 @@ Aşama 2 henüz kabul edilmedi. Sonraki kapı: CI doğrulaması, sekiz yönlü y
 
 - Önizleme tek uygulama içinde iki sayfaya ayrıldı: `1` sekiz yönlü A-Pose turnaround, `2` omuz/dirsek/diz/gövde stres pozları. Bu, ayrı ayrı küçük önizleme turları yerine tek görsel kabul oturumu sağlar.
 - Otomatik testler omuz elevasyonu, dirsek fleksiyonu, diz fleksiyonu ve gövde rotasyonunda mesh koordinatlarının sonlu kalmasını ve üçgen sayısının değişmemesini kontrol eder.
-- High/medium/low geometri sayıları sırasıyla 1.280 / 624 / 552 olarak sabitlendi. 50 NPC benchmark karışımı 5 high + 10 medium + 35 low = 31.960 üçgen/kare olarak hesaplanır.
+- High/medium/low geometri sayıları sırasıyla 1.264 / 756 / 540 olarak sabitlendi. 50 NPC benchmark karışımı 5 high + 10 medium + 35 low = 32.780 üçgen/kare olarak hesaplanır.
 - LOD seçimi şu an açık API parametresidir; kamera mesafesi/piksel boyutuna göre otomatik seçme ve ekran dışı NPC culling'i oyun entegrasyonunda yapılacaktır.
 - Bu kayıt uygulama/test kapsamını tanımlar; GitHub Actions çalışması ve hedef makinedeki gerçek benchmark sonucu görülmeden CI/performance başarısı iddia edilmez.
+
+
+## 17. Aşama 2 — raster sprite cache performans düzeltmesi — 2026-11-22
+
+- Kullanıcı benchmark'ı gerçek darboğazı gösterdi: 1 karakter 21,49 ms/kare (46,53 FPS), 10 karakter 238,588 ms/kare (4,19 FPS), 25 karakter 290,447 ms/kare (3,44 FPS), 50 karakter 937,962 ms/kare (1,07 FPS).
+- Renderer'ın önceki sürümü mesh geometrisini önbelleğe alsa da her aktör için her karede projeksiyon, derinlik sıralaması, gölgelendirme ve üçgen başına Pygame polygon çağrısı yapıyordu.
+- Yeni renderer, gövde mesh'ini yön + poz + LOD + palet + ölçek anahtarıyla şeffaf Pygame sprite yüzeyine bir kez rasterize eder; eşleşen karakterler sonraki karelerde sprite'ı blit eder.
+- Sprite önbelleği LRU düzenindedir; en fazla 96 kayıt ve 32 MiB bellek sınırı vardır. `cache_info()` hit/miss, kayıt ve bellek kullanımını raporlar; `clear_cache()` kontrollü boşaltma sağlar.
+- Benchmark her senaryoda benzersiz aktör sprite'larını önce ısıtır, ardından kararlı durum kare süresini ve ısıtma süresini ayrı raporlar. Böylece ilk oluşturma maliyeti ile tekrar kullanılan sprite maliyeti birbirine karıştırılmaz.
+- Kullanıcının benchmark çıktısından gerçek üçgen adetleri hesaplanıp otomatik test sözleşmesiyle eşleştirildi: high 1.264, medium 756, low 540. Önceki rapor/test sayıları hatalıydı; düzeltildi. 50 aktör karma LOD toplamı 32.780 üçgen, tümü high olsaydı 63.200 üçgen olurdu.
+- Sprite cache sürekli değişen ve daha önce görülmemiş pozlarda yeniden rasterizasyon yapar. Animasyon entegrasyonunda tekrar kullanılabilir ayrık animasyon örnekleme kareleri ve sekiz yönlü poz anahtarları kullanılmalıdır; sürekli, her kare benzersiz poz üretimi cache verimini düşürür.
+- Bu değişiklik performans hedefini kanıtlamış sayılmaz. GitHub Actions ve aynı hedef bilgisayarda yeni benchmark sonucu görülmeden FPS kabulü yapılmayacaktır.
