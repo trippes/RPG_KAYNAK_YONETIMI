@@ -200,3 +200,16 @@ Her değişiklik parça parça commit edilecek ve CI onayı beklenecek. Bütünl
 
 **Özet:** Yukarıdaki adımlar, mevcut input mimarisini sadeleştirerek WASD sekiz yön kontrolünü sağlamayı ve yürüyüş animasyonunu biyomekanik temelli olarak iyileştirmeyi hedefliyor. Bu sayede oyuncu karakteri gerçekçi hareket edecek, performans garanti sınırlarından çıkmadan kaliteli bir sonuç vereceğiz. Sistem, yeniden kullanılabilir görünümler ve önbellek sayesinde ağır matematiksel yükten kaçınacak; platformda yüksek FPS hedeflerimiz korunacak. Aşama 2, ancak bu bütünlüklü entegrasyon ve test sürecinden sonra *görsel ve performans kabul* ile kapatılabilir.  
 
+
+
+## Uygulama sırasında doğrulanan mimari düzeltmeler (2026-11-23)
+
+Kaynak kodu incelendiğinde rapordaki bazı varsayımların güncellenmesi gerektiği görüldü:
+
+1. `PygameMovementInput` zaten WASD ve ok tuşlarını okuyordu. Asıl çakışma `InputMapper` içindeki W=`world`, D=`dialogue_history` ve Z/X=eski altıgen yön eylemleriydi. Bu nedenle hareket adaptörünü ikinci kez yazmak yerine global kısayollar ayrıştırıldı: dünya kısayolu M'ye, diyalog geçmişi H'ye taşındı; Z/X hareket eylemleri kaldırıldı.
+2. Proje dünya koordinatlarını y-aşağı düzleminde saklıyor ve izometrik ekran dönüşümünü `WorldTransform` üzerinden yapıyor. Raporun ilk taslağındaki `(dx+dy, dy-dx)` formülü bu projeksiyonun gerçek ters dönüşümü değildir. Doğru dönüşüm, var olan `WorldTransform.unproject_vector()` fonksiyonudur. WASD girdisi önce ekran yönü olarak okunur, sonra bu fonksiyonla dünya vektörüne çevrilir. Böylece kamera konumu, zoom ve harita topolojisi hareket vektörüne karışmaz.
+3. Altıgen `HexDirection` hâlâ harita topolojisi ve hücre geçişleri için gereklidir; kaldırılmamalıdır. Sadece klavyeden Z/X ile tetiklenen iki eski manuel hareket eylemi kaldırılmıştır. Fareyle hedef seçimi, tıklayarak hareket, çarpışma çözümü, harita sınırları ve NPC itiş sistemi korunur.
+4. Animator'ın mevcut sekiz fazı zamanla değil, kat edilen mesafeyle ilerliyor; fakat poz üretimi sekiz örneğe kuantize edildiği için hareket görsel olarak kesikli kalıyor. Ayrıca rig eklem dönüşleri destekliyor, ancak gerçek ayak sabitleme için stance sırasında iki kemikli ters kinematik (IK) ve kök hareketine göre ayak hedefi gerekir. Bu iki özellik aynı şey değildir; yalnızca faz sayısını artırmak ayak kaymasını çözmez.
+5. Performans kabulü yalnızca önceden ölçülen statik sprite-cache değerleriyle verilemez. Yeni gait sistemi, animasyon açıkken 1/10/25/50 aktör senaryolarında yeniden ölçülmeli; önbellek giriş/çıkışları, bellek tavanı ve kare süresi birlikte raporlanmalıdır.
+
+Bu düzeltmeler, mevcut dünya simülasyonunu ve anatomik rig sözleşmesini koruyarak sonraki locomotion uygulamasının doğru koordinat ve performans varsayımlarına dayanmasını sağlar.
