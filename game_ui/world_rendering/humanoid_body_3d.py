@@ -519,6 +519,7 @@ def _build_mesh_cached(
                     positions[part.start_joint],
                     part.radii,
                     part.material,
+                    part.start_joint,
                     mesh_sides,
                     mesh_rings,
                 )
