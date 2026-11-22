@@ -297,11 +297,11 @@ def _connected_surface_triangles(
             depth = first[2] + (second[2] - first[2]) * smooth_t
             ring = [
                 (
-                    center[0] + math.cos(angle) * width,
-                    center[1] + math.sin(angle) * depth,
+                    center[0] + cosine * width,
+                    center[1] + sine * depth,
                     center[2],
                 )
-                for angle in (math.tau * side / surface.sides for side in range(surface.sides))
+                for cosine, sine in circle
             ]
             rings.append((ring, first[3]))
 
