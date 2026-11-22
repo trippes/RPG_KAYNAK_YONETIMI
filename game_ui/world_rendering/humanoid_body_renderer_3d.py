@@ -21,7 +21,7 @@ class HumanoidBodyRenderer3D:
         "trousers": (62, 66, 79),
         "boots": (85, 57, 39),
     }
-    CACHE_MAX_ENTRIES = 96
+    CACHE_MAX_ENTRIES = 192
     CACHE_MAX_BYTES = 32 * 1024 * 1024
 
     def __init__(self) -> None:

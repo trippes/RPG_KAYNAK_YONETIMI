@@ -1,38 +1,39 @@
-"""Distance-driven gait poses for the parametric 3D humanoid body.
-
-The animator consumes presentation-space travel distance only. It never owns
-world position, movement authority, collision, or physics state. Gait poses are
-quantized into reusable samples so the raster sprite cache can serve repeated
-poses across actors instead of rebuilding a unique mesh every frame.
-"""
+"""Distance-driven, world-aware humanoid locomotion and idle animation."""
 
 from __future__ import annotations
 
 import math
 
+from game_ui.world_rendering.humanoid_locomotion_3d import HumanoidFootLockSolver3D
+
 
 class HumanoidBodyAnimator3D:
-    """Produce cached-sample XYZ joint rotations from actual travel distance."""
+    """Produce quantized, cache-friendly rig poses from actual actor movement."""
 
     DIRECTIONS = (
         "east", "south_east", "south", "south_west",
         "west", "north_west", "north", "north_east",
     )
     STATES = ("idle", "walk", "run")
-
-    # WorldTransform uses world-pixel coordinates. These are full gait-cycle
-    # travel distances, not frame durations; animation therefore stops with
-    # movement and is independent of frame-rate fluctuations.
-    WALK_CYCLE_DISTANCE = 56.0
-    RUN_CYCLE_DISTANCE = 84.0
-    PHASE_STEPS = 8
+    WALK_CYCLE_DISTANCE = 32.0
+    RUN_CYCLE_DISTANCE = 44.0
+    PHASE_STEPS = 16
+    IDLE_PHASE_STEPS = 8
+    TRANSITION_SECONDS = 0.18
+    BLEND_STEPS = 8
 
     def __init__(self, direction: str = "south", state: str = "idle") -> None:
         self._validate_selection(direction, state)
         self.direction = direction
         self.state = state
         self.phase = 0.0
-        self._pose = self._build_pose()
+        self._idle_clock = 0.0
+        self._pose: dict[str, tuple[float, float, float]] = {}
+        self._translations: dict[str, tuple[float, float, float]] = {}
+        self._foot_lock = HumanoidFootLockSolver3D()
+        self._blend_pose: dict[str, tuple[float, float, float]] = {}
+        self._blend_translations: dict[str, tuple[float, float, float]] = {}
+        self._transition_elapsed = self.TRANSITION_SECONDS
 
     @classmethod
     def _validate_selection(cls, direction: str, state: str) -> None:
@@ -44,16 +45,27 @@ class HumanoidBodyAnimator3D:
     def select(
         self, *, direction: str | None = None, state: str | None = None
     ) -> None:
-        """Change facing/state without resetting the accumulated gait phase."""
+        """Change state/facing while preserving accumulated gait phase."""
         next_direction = self.direction if direction is None else direction
         next_state = self.state if state is None else state
         self._validate_selection(next_direction, next_state)
+        if next_state != self.state:
+            self._blend_pose = dict(self._pose)
+            self._blend_translations = dict(self._translations)
+            self._transition_elapsed = 0.0
         self.direction = next_direction
         self.state = next_state
-        self._pose = self._build_pose()
 
-    def advance(self, traveled_distance: float) -> dict[str, tuple[float, float, float]]:
-        """Advance gait by measured world travel and return local XYZ rotations."""
+    def advance(
+        self,
+        traveled_distance: float,
+        delta_seconds: float = 1.0 / 60.0,
+        *,
+        world_position: tuple[float, float] | None = None,
+        yaw: float = 0.0,
+        world_scale: float = 54.0,
+    ) -> dict[str, tuple[float, float, float]]:
+        """Advance gait from measured displacement and solve stance feet in world space."""
         if (
             isinstance(traveled_distance, bool)
             or not isinstance(traveled_distance, (int, float))
@@ -61,27 +73,100 @@ class HumanoidBodyAnimator3D:
             or traveled_distance < 0
         ):
             raise ValueError("traveled_distance must be a finite non-negative number.")
+        if (
+            isinstance(delta_seconds, bool)
+            or not isinstance(delta_seconds, (int, float))
+            or not math.isfinite(delta_seconds)
+            or delta_seconds < 0
+        ):
+            raise ValueError("delta_seconds must be a finite non-negative number.")
 
+        delta_seconds = min(float(delta_seconds), 0.1)
         if self.state != "idle" and traveled_distance > 0.0:
             cycle_distance = (
-                self.RUN_CYCLE_DISTANCE
-                if self.state == "run"
+                self.RUN_CYCLE_DISTANCE if self.state == "run"
                 else self.WALK_CYCLE_DISTANCE
             )
             self.phase = (
                 self.phase + math.tau * float(traveled_distance) / cycle_distance
             ) % math.tau
-        self._pose = self._build_pose()
+        else:
+            self._idle_clock += delta_seconds
+
+        target_pose = self._build_pose()
+        foot_rotations, target_translations = self._foot_lock.update(
+            phase=self.phase,
+            state=self.state,
+            world_position=world_position,
+            yaw=float(yaw),
+            world_scale=float(world_scale),
+        )
+        target_pose.update(foot_rotations)
+
+        if self.state == "idle":
+            target_translations = {}
+
+        if self._transition_elapsed < self.TRANSITION_SECONDS:
+            self._transition_elapsed = min(
+                self.TRANSITION_SECONDS,
+                self._transition_elapsed + delta_seconds,
+            )
+            raw_weight = self._transition_elapsed / self.TRANSITION_SECONDS
+            weight = round(raw_weight * self.BLEND_STEPS) / self.BLEND_STEPS
+            target_pose = self._blend_maps(
+                self._blend_pose, target_pose, weight, (0.0, 0.0, 0.0)
+            )
+            target_translations = self._blend_maps(
+                self._blend_translations,
+                target_translations,
+                weight,
+                (0.0, 0.0, 0.0),
+            )
+
+        # Quantization keeps the software-rendered sprite cache bounded while
+        # preserving much finer motion than the original eight gait samples.
+        self._pose = {
+            name: tuple(self._quantize(value, 1.0 / 64.0) for value in rotation)
+            for name, rotation in target_pose.items()
+        }
+        self._translations = {
+            name: tuple(self._quantize(value, 0.01) for value in translation)
+            for name, translation in target_translations.items()
+        }
         return self.pose
+
+    @staticmethod
+    def _quantize(value: float, step: float) -> float:
+        return round(value / step) * step
+
+    @staticmethod
+    def _blend_maps(first, second, weight, default):
+        result = {}
+        for name in set(first) | set(second):
+            a = first.get(name, default)
+            b = second.get(name, default)
+            value = tuple(
+                a[index] + (b[index] - a[index]) * weight
+                for index in range(3)
+            )
+            if any(abs(component) > 1e-8 for component in value):
+                result[name] = value
+        return result
 
     @property
     def pose(self) -> dict[str, tuple[float, float, float]]:
-        """Return a copy of the current sparse local-rotation mapping."""
         return dict(self._pose)
 
     @property
+    def translations(self) -> dict[str, tuple[float, float, float]]:
+        return dict(self._translations)
+
+    @property
+    def foot_lock_diagnostics(self):
+        return self._foot_lock.diagnostics
+
+    @property
     def phase_index(self) -> int:
-        """Return the deterministic raster-cache sample for the current phase."""
         return min(
             self.PHASE_STEPS - 1,
             int((self.phase % math.tau) * self.PHASE_STEPS / math.tau),
@@ -89,37 +174,66 @@ class HumanoidBodyAnimator3D:
 
     def _build_pose(self) -> dict[str, tuple[float, float, float]]:
         if self.state == "idle":
-            return {}
-
+            return self._build_idle_pose()
         phase = self.phase_index * math.tau / self.PHASE_STEPS
-        amplitude = 0.42 if self.state == "walk" else 0.66
-        knee_amplitude = 0.62 if self.state == "walk" else 0.88
-
+        running = self.state == "run"
+        amplitude = 0.46 if running else 0.38
+        knee_amplitude = 0.72 if running else 0.54
         left_hip = math.sin(phase) * amplitude
         right_hip = -left_hip
         left_knee = -max(0.0, math.sin(phase + math.pi * 0.5)) * knee_amplitude
         right_knee = -max(0.0, math.sin(phase - math.pi * 0.5)) * knee_amplitude
-
-        # Counter-swing the arms and ankles against the legs. Axes follow the
-        # rig contract: +Y forward, +Z up, and X as the sagittal swing axis.
-        left_shoulder = -right_hip * 0.48
-        right_shoulder = -left_hip * 0.48
-        left_ankle = -(left_hip + left_knee) * 0.22
-        right_ankle = -(right_hip + right_knee) * 0.22
-        torso_twist = math.sin(phase * 2.0) * 0.018
-
+        left_shoulder = -right_hip * (0.58 if running else 0.50)
+        right_shoulder = -left_hip * (0.58 if running else 0.50)
+        torso_twist = math.sin(phase * 2.0) * (0.035 if running else 0.025)
+        lean = 0.075 if running else 0.015
         return {
             "pelvis": (0.0, 0.0, torso_twist * 0.45),
-            "spine_upper": (0.0, 0.0, torso_twist),
-            "chest": (0.0, 0.0, -torso_twist * 0.65),
+            "spine_lower": (-lean * 0.35, 0.0, -torso_twist * 0.35),
+            "spine_upper": (-lean * 0.65, 0.0, torso_twist),
+            "chest": (-lean * 0.35, 0.0, -torso_twist * 0.65),
+            "neck": (0.0, 0.0, -torso_twist * 0.20),
+            "head": (lean * 0.20, 0.0, -torso_twist * 0.12),
             "hip_left": (left_hip, 0.0, 0.0),
             "hip_right": (right_hip, 0.0, 0.0),
             "knee_left": (left_knee, 0.0, 0.0),
             "knee_right": (right_knee, 0.0, 0.0),
-            "ankle_left": (left_ankle, 0.0, 0.0),
-            "ankle_right": (right_ankle, 0.0, 0.0),
+            "ankle_left": (-(left_hip + left_knee) * 0.18, 0.0, 0.0),
+            "ankle_right": (-(right_hip + right_knee) * 0.18, 0.0, 0.0),
             "shoulder_left": (left_shoulder, 0.0, 0.0),
             "shoulder_right": (right_shoulder, 0.0, 0.0),
+            "elbow_left": (-0.14 - max(0.0, left_shoulder) * 0.16, 0.0, 0.0),
+            "elbow_right": (-0.14 - max(0.0, right_shoulder) * 0.16, 0.0, 0.0),
+            "wrist_left": (0.025 * math.sin(phase), 0.0, 0.0),
+            "wrist_right": (-0.025 * math.sin(phase), 0.0, 0.0),
+        }
+
+    def _build_idle_pose(self) -> dict[str, tuple[float, float, float]]:
+        phase_index = int(
+            (self._idle_clock % 3.2) / 3.2 * self.IDLE_PHASE_STEPS
+        )
+        phase = phase_index * math.tau / self.IDLE_PHASE_STEPS
+        breath = math.sin(phase) * 0.018
+        sway = math.sin(phase * 0.5 + 0.7) * 0.035
+        head_motion = math.sin(phase * 0.5 - 0.4) * 0.025
+        return {
+            "spine_lower": (0.0, 0.0, -breath * 0.25),
+            "spine_upper": (breath * 0.35, 0.0, sway * 0.25),
+            "chest": (breath, 0.0, -sway * 0.20),
+            "neck": (0.0, 0.0, head_motion * 0.35),
+            "head": (head_motion, 0.0, -head_motion),
+            "shoulder_left": (breath * 0.20, 0.0, sway * 0.20),
+            "shoulder_right": (breath * 0.20, 0.0, -sway * 0.20),
+            "elbow_left": (-0.08, 0.0, 0.0),
+            "elbow_right": (-0.08, 0.0, 0.0),
+            "wrist_left": (0.0, 0.0, 0.012 * math.sin(phase)),
+            "wrist_right": (0.0, 0.0, -0.012 * math.sin(phase)),
+            "hip_left": (sway, 0.0, 0.0),
+            "hip_right": (-sway, 0.0, 0.0),
+            "knee_left": (-0.035, 0.0, 0.0),
+            "knee_right": (-0.035, 0.0, 0.0),
+            "ankle_left": (0.015, 0.0, 0.0),
+            "ankle_right": (0.015, 0.0, 0.0),
         }
 
 

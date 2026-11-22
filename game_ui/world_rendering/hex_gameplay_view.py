@@ -247,7 +247,14 @@ class HexGameplayView:
             direction=self._player_facing,
             state=self._player_animation_state(traveled_distance > 1e-6),
         )
-        self._humanoid_body_animator.advance(traveled_distance)
+        body_yaw = self._humanoid_body_yaw(self._player_facing)
+        self._humanoid_body_animator.advance(
+            traveled_distance,
+            self.elapsed_seconds,
+            world_position=self._visual_position,
+            yaw=body_yaw,
+            world_scale=54.0 * self.zoom,
+        )
 
         if self._player_animator is not None:
             state = self._player_animation_state(self._visual_moving)
@@ -911,6 +918,7 @@ class HexGameplayView:
                         54.0 * self.zoom,
                         yaw=self._humanoid_body_yaw(self._player_facing),
                         local_rotations=self._humanoid_body_animator.pose,
+                        local_translations=self._humanoid_body_animator.translations,
                         detail_level="high",
                     )
                     drawn_actor_count += 1
@@ -1018,6 +1026,7 @@ class HexGameplayView:
                 "player_body_triangles": self._player_body_triangle_count,
                 "player_body_travel_distance": self._player_body_travel_distance,
                 "player_body_cache": self._humanoid_body_renderer.cache_info(),
+                "player_foot_lock": self._humanoid_body_animator.foot_lock_diagnostics,
             }
             self._path_query_count = 0
             self._path_query_ms = 0.0

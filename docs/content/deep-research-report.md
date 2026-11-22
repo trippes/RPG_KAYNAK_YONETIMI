@@ -213,3 +213,19 @@ Kaynak kodu incelendiğinde rapordaki bazı varsayımların güncellenmesi gerek
 5. Performans kabulü yalnızca önceden ölçülen statik sprite-cache değerleriyle verilemez. Yeni gait sistemi, animasyon açıkken 1/10/25/50 aktör senaryolarında yeniden ölçülmeli; önbellek giriş/çıkışları, bellek tavanı ve kare süresi birlikte raporlanmalıdır.
 
 Bu düzeltmeler, mevcut dünya simülasyonunu ve anatomik rig sözleşmesini koruyarak sonraki locomotion uygulamasının doğru koordinat ve performans varsayımlarına dayanmasını sağlar.
+
+
+## Uygulama güncellemesi: dünya koordinatlı ayak teması ve IK (2026-11-23)
+
+Bu uygulama diliminde, animasyonun hareket döngüsünden bağımsız bir sprite efekti olmaması için şu altyapı eklendi:
+
+1. `humanoid_locomotion_3d.py`: İki kemikli analitik bacak IK çözücüsü ve stance sırasında dünya koordinatında ayak temas noktası saklayan `HumanoidFootLockSolver3D`.
+2. `HumanoidRig.resolve_pose`: Eklemlere yerel öteleme girdisi eklendi. Böylece pelvis sıkışması gibi hareketler iskeletin geri kalanına hiyerarşik olarak aktarılabilir.
+3. Gövde mesh skinning ve sprite renderer, yerel eklem ötelemelerini destekleyecek şekilde genişletildi. Öteleme cache anahtarına katılır; sprite cache 192 kayıt ve 32 MB sınırlarıyla kalır.
+4. Ana karakter animatörü 16 gait örneğine yükseltildi; idle durumuna nefes, ağırlık aktarımı ve küçük baş/kol hareketleri eklendi. Walk/run/idle geçişleri 8 kademeli kısa bir blend ile yumuşatılır. Kol, dirsek, bilek, göğüs, boyun, baş, kalça, diz ve ayak bileği pozları ortak animasyon çıktısına dahildir.
+5. Foot-lock girdisi ana karakterin çizilen dünya pozisyonu, facing yaw ve render ölçeğinden beslenir. Fizik ve dünya konumu runtime'ın yetkisindedir; rig yalnızca sunum pozunu üretir.
+6. IK hedefi erişim sınırını aştığında çözücü bunu `reachable` ve hata tanılamasında bildirir. Bu, her koşulda kusursuz ayak kilidi iddiası değildir; görsel kabul ve adım uzunluğu kalibrasyonu gerektirir.
+
+Pygame tarafında sprite üretimi yazılım rasterizasyonudur. Tekrarlanan pozların yüzey cache'inden blit edilmesi ve cache sınırının korunması sürdürülür. Kare süresi ölçümleri, `Clock.get_rawtime()` ile frame-cap beklemesinden ayrılmalı; update/render maliyetleri ayrıca `perf_counter_ns` ile profillenmelidir.
+
+**Açık işler:** NPC'lerin ortak 3B animatöre geçirilmesi; 1/10/25/50 aktör benchmark'ı; sekiz yönde, tıklayarak hareket, ani dönüş ve duruş sırasında gerçek oyun içi görsel doğrulama. Bu aşama görsel kabul yapılmadan kapanmış sayılmaz.

@@ -260,13 +260,27 @@ class HumanoidRig:
         return tuple(joint.name for joint in self.joints if joint.is_control)
 
     def resolve_pose(
-        self, local_rotations: Mapping[str, Euler3] | None = None
+        self,
+        local_rotations: Mapping[str, Euler3] | None = None,
+        local_translations: Mapping[str, Vec3] | None = None,
     ) -> dict[str, JointTransform]:
-        """Resolve a pose from local XYZ Euler offsets, clamped by joint limits."""
+        """Resolve local XYZ rotations and translations without mutating the rig."""
         rotations = local_rotations or {}
-        unknown = set(rotations) - set(self.joint_names)
-        if unknown:
-            raise ValueError(f"Rotations reference unknown joints: {', '.join(sorted(unknown))}.")
+        translations = local_translations or {}
+        unknown_rotations = set(rotations) - set(self.joint_names)
+        unknown_translations = set(translations) - set(self.joint_names)
+        if unknown_rotations:
+            raise ValueError(
+                f"Rotations reference unknown joints: {', '.join(sorted(unknown_rotations))}."
+            )
+        if unknown_translations:
+            raise ValueError(
+                f"Translations reference unknown joints: {', '.join(sorted(unknown_translations))}."
+            )
+        offsets = {
+            name: _vec3(value, f"translation[{name}]")
+            for name, value in translations.items()
+        }
 
         by_name = {joint.name: joint for joint in self.joints}
         transforms: dict[str, JointTransform] = {}
@@ -282,14 +296,18 @@ class HumanoidRig:
                 pose_rotation = joint.limit.clamp(pose_rotation)
             local_pose = _quat_from_euler_xyz(pose_rotation)
             local_rotation = _quat_multiply(joint.rest_rotation, local_pose)
+            local_offset = tuple(
+                joint.offset[index] + offsets.get(name, (0.0, 0.0, 0.0))[index]
+                for index in range(3)
+            )
 
             if joint.parent is None:
-                transforms[name] = JointTransform(joint.offset, local_rotation)
+                transforms[name] = JointTransform(local_offset, local_rotation)
                 return
 
             resolve(joint.parent)
             parent = transforms[joint.parent]
-            world_offset = _quat_rotate(parent.rotation, joint.offset)
+            world_offset = _quat_rotate(parent.rotation, local_offset)
             position = tuple(
                 parent.position[index] + world_offset[index] for index in range(3)
             )
@@ -302,12 +320,16 @@ class HumanoidRig:
         return transforms
 
     def joint_positions(
-        self, local_rotations: Mapping[str, Euler3] | None = None
+        self,
+        local_rotations: Mapping[str, Euler3] | None = None,
+        local_translations: Mapping[str, Vec3] | None = None,
     ) -> dict[str, Vec3]:
         """Return resolved rig-local joint positions."""
         return {
             name: transform.position
-            for name, transform in self.resolve_pose(local_rotations).items()
+            for name, transform in self.resolve_pose(
+                local_rotations, local_translations
+            ).items()
         }
 
     def bone_lengths(self) -> dict[str, float]:

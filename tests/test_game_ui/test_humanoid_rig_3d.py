@@ -133,6 +133,21 @@ class TestHumanoidRig3D(unittest.TestCase):
         self.assertTrue(all(length > 0 for length in lengths.values()))
         self.assertEqual(lengths, DEFAULT_HUMANOID_RIG.bone_lengths())
 
+    def test_local_joint_translation_moves_descendants_without_mutating_rest_pose(self):
+        rig = DEFAULT_HUMANOID_RIG
+        rest = rig.joint_positions()
+        posed = rig.joint_positions(local_translations={"pelvis": (0.0, 0.0, -0.08)})
+        self.assertAlmostEqual(posed["pelvis"][2], -0.08)
+        self.assertAlmostEqual(posed["head"][2], rest["head"][2] - 0.08)
+        self.assertAlmostEqual(posed["heel_left"][2], rest["heel_left"][2] - 0.08)
+        self.assertEqual(rig.joint_positions(), rest)
+
+    def test_unknown_joint_translation_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "unknown joints"):
+            DEFAULT_HUMANOID_RIG.joint_positions(
+                local_translations={"tail": (0.0, 0.0, 0.1)}
+            )
+
     def test_pose_does_not_mutate_rest_geometry(self):
         before = DEFAULT_HUMANOID_RIG.joint_positions()
         DEFAULT_HUMANOID_RIG.joint_positions({"hip_left": (0.4, 0.0, 0.0)})

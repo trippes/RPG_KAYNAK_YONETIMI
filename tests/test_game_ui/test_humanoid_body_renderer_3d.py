@@ -95,6 +95,21 @@ class TestHumanoidBodyRenderer3D(unittest.TestCase):
         self.assertEqual(renderer.cache_info()["misses"], len(options))
         self.assertEqual(renderer.cache_info()["entries"], len(options))
 
+    def test_draw_accepts_pelvis_translation_and_caches_it(self):
+        renderer = HumanoidBodyRenderer3D()
+        options = {"local_translations": {"pelvis": (0.0, 0.0, -0.08)}}
+        for x in (180, 240):
+            renderer.draw(
+                pygame.Surface((420, 560), pygame.SRCALPHA),
+                DEFAULT_HUMANOID_BODY,
+                DEFAULT_HUMANOID_RIG,
+                (x, 500),
+                300.0,
+                **options,
+            )
+        self.assertEqual(renderer.cache_info()["misses"], 1)
+        self.assertEqual(renderer.cache_info()["hits"], 1)
+
     def test_low_detail_mode_renders_fewer_triangles(self):
         renderer = HumanoidBodyRenderer3D()
         high = pygame.Surface((420, 560))

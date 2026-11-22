@@ -218,11 +218,11 @@ def _skin_vertex(vertex, weights, rest_transforms, posed_transforms) -> Vec3:
     return result
 
 
-def _skin_mesh(mesh, rig, local_rotations):
-    if not local_rotations:
+def _skin_mesh(mesh, rig, local_rotations, local_translations):
+    if not local_rotations and not local_translations:
         return mesh
     rest_transforms = rig.resolve_pose()
-    posed_transforms = rig.resolve_pose(local_rotations)
+    posed_transforms = rig.resolve_pose(local_rotations, local_translations)
     return tuple(
         MeshTriangle(
             tuple(
@@ -493,6 +493,7 @@ class HumanoidBodyModel:
         rig: HumanoidRig,
         local_rotations: Mapping[str, tuple[float, float, float]] | None = None,
         *,
+        local_translations: Mapping[str, tuple[float, float, float]] | None = None,
         detail_level: str = "high",
     ) -> tuple[MeshTriangle, ...]:
         """Build or reuse a skinned mesh at high, medium, or low detail."""
@@ -505,6 +506,12 @@ class HumanoidBodyModel:
                 for name, rotation in (local_rotations or {}).items()
             )
         )
+        translation_key = tuple(
+            sorted(
+                (name, tuple(translation))
+                for name, translation in (local_translations or {}).items()
+            )
+        )
         return _build_mesh_cached(
             model.parts,
             model.surfaces,
@@ -512,6 +519,7 @@ class HumanoidBodyModel:
             model.mesh_rings,
             rig,
             pose_key,
+            translation_key,
         )
 
 
@@ -600,12 +608,13 @@ def _build_mesh_cached(
     mesh_rings: int,
     rig: HumanoidRig,
     pose_key: tuple[tuple[str, tuple[float, float, float]], ...],
+    translation_key: tuple[tuple[str, tuple[float, float, float]], ...],
 ) -> tuple[MeshTriangle, ...]:
     """Reuse bind geometry, then cache each immutable skinned pose."""
     bind_mesh = _build_bind_mesh_cached(
         parts, surfaces, mesh_sides, mesh_rings, rig
     )
-    return _skin_mesh(bind_mesh, rig, dict(pose_key))
+    return _skin_mesh(bind_mesh, rig, dict(pose_key), dict(translation_key))
 
 
 def _ellipsoid(name: str, joint: str, radii: Vec3, material: str) -> BodyPartDefinition:
