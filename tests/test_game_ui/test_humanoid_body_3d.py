@@ -82,6 +82,32 @@ class TestHumanoidBody3D(unittest.TestCase):
         self.assertEqual(first, second)
         self.assertIs(first, second)
 
+    def test_lod_variants_reduce_geometry_without_changing_rig(self):
+        high = DEFAULT_HUMANOID_BODY.build_mesh(
+            DEFAULT_HUMANOID_RIG, detail_level="high"
+        )
+        medium = DEFAULT_HUMANOID_BODY.build_mesh(
+            DEFAULT_HUMANOID_RIG, detail_level="medium"
+        )
+        low = DEFAULT_HUMANOID_BODY.build_mesh(
+            DEFAULT_HUMANOID_RIG, detail_level="low"
+        )
+        self.assertGreater(len(high), len(medium))
+        self.assertGreater(len(medium), len(low))
+        self.assertLessEqual(len(high), 1300)
+        self.assertLessEqual(len(medium), 800)
+        self.assertLessEqual(len(low), 600)
+        self.assertIs(
+            low,
+            DEFAULT_HUMANOID_BODY.build_mesh(DEFAULT_HUMANOID_RIG, detail_level="low"),
+        )
+
+    def test_invalid_lod_level_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "detail_level"):
+            DEFAULT_HUMANOID_BODY.build_mesh(
+                DEFAULT_HUMANOID_RIG, detail_level="ultra"
+            )
+
     def test_all_mesh_vertices_have_normalized_skin_weights(self):
         mesh = DEFAULT_HUMANOID_BODY.build_mesh(DEFAULT_HUMANOID_RIG)
         joint_names = set(DEFAULT_HUMANOID_RIG.joint_names)
