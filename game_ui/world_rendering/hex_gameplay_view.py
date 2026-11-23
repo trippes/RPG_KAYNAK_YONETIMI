@@ -1049,8 +1049,8 @@ class HexGameplayView:
                     )
 
             if self._move_goal is not None and self._move_map_id == player.position.map_id:
-                goal_screen = self.transform.axial_to_screen(
-                    self._move_goal.to_hex_coord()
+                goal_screen = self.transform.world_point_to_screen(
+                    self._move_goal
                 )
                 renderer.pg.draw.circle(
                     surface,
