@@ -179,6 +179,9 @@ class HumanoidBodyAnimator3D:
             return self._build_idle_pose()
         phase = self.phase
         running = self.state == "run"
+        stance_fraction = (
+            self.RUN_STANCE_FRACTION if running else self.WALK_STANCE_FRACTION
+        )
         knee_amplitude = 0.88 if running else 0.68
         hip_amplitude = 0.48 if running else 0.36
         arm_amplitude = 0.95 if running else 0.82
