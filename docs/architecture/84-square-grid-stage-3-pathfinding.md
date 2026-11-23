@@ -3,7 +3,7 @@
 **Tarih:** 23 Kasım 2026  
 **Hedef dal:** `experiment/map-cleanup`  
 **Aşama:** 3 — Kare navigasyon A*  
-**Durum:** İlk uygulama paketi; gameplay entegrasyonu yapılmadı.
+**Durum:** <span>Doğrulama kapısı başarılı; aşama tamamlandı. Gameplay entegrasyonu sonraki aşamalardadır.</span>
 
 ## 1. Kapsam
 
@@ -54,7 +54,32 @@ Bu aşamada kamera, renderer, çözünürlük modu veya dünya simülasyonu kodu
 
 ## 6. Çözünürlük ve performans
 
-8 ve 16 dünya-birimi grid çözünürlükleri açık tutulur; bu aşamada nihai seçim yapılmaz. Benchmark her iki çözünürlükte coverage üretim süresini, A* p50/p95 arama süresini, erişilebilir rota sayısını ve en uzun rota uzunluğunu raporlar. 1920×1080 kamera hedefi pathfinder graph çözünürlüğünü belirlemez; render görüş alanı ile navigasyon çözünürlüğü ayrı ayarlardır.
+8 ve 16 dünya-birimi grid çözünürlükleri açık tutulur; bu aşamada nihai seçim yapılmaz. 1920×1080 kamera hedefi pathfinder graph çözünürlüğünü belirlemez; render görüş alanı ile navigasyon çözünürlüğü ayrı ayarlardır.
+
+### GitHub benchmark sonucu
+
+**Workflow:** [Square-grid pathfinding benchmark](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/45181510945)  
+**Commit:** `738d5aeda3bf218fa4b0d5a46a63ee5d48506b3c`  
+**Harita:** `starting_valley` — 61 geçerli hex hücresi  
+**Örneklem:** Başlangıç hücresinden en uzak 20 geçilebilir hedef; collider yarıçapı 4 dünya birimi.
+
+| Ölçüm | 16 birim | 8 birim |
+|---|---:|---:|
+| Coverage hücresi | 957 | 3.591 |
+| Geçilebilir hücre | 513 | 2.218 |
+| Erişilebilir rota | 17/20 | 20/20 |
+| Coverage üretimi | 20,206 ms | 65,384 ms |
+| A* p50 | 4,079 ms | 14,989 ms |
+| A* p95 | 32,777 ms | 35,629 ms |
+
+Bu benchmark aramalarında collider-clearance prefilter etkindir; ancak `edge_validator` parametresi verilmediğinden gerçek fizik snapshot kenar doğrulamasının maliyeti bu sürelerde yer almaz. Fizik edge validator ayrıca otomatik testlerle doğrulanmıştır.
+
+**Değerlendirme:**
+- 8 birimlik grid, bu 20 hedeflik örneklemde bütün rotaları buldu; 16 birimlik grid 17 rotaya ulaştı.
+- 8 birimlik grid yaklaşık 3,75 kat fazla coverage hücresi üretir; A* medyan süresi de yaklaşık 3,7 kat yüksektir.
+- Bu sonuç, 8 birimlik gridin rota ayrıntısı/erişilebilirlik; 16 birimlik gridin ise hesaplama maliyeti açısından avantajını gösterir.
+- Ölçümler GitHub-hosted Ubuntu runner üzerinde alınmıştır. Kullanıcının düşük donanımlı yerel bilgisayarında ölçüm yapılmadan cihaz performansı hakkında kabul kararı verilemez.
+- **Nihai grid çözünürlüğü seçilmemiştir.** İki çözünürlük de yapılandırılabilir tutulacak; yerel donanım, gerçek fizik doğrulaması ve oyuncu/NPC entegrasyonundaki rota kalitesi birlikte değerlendirilecektir.
 
 Komut:
 
@@ -62,9 +87,9 @@ Komut:
 python scripts/benchmark_square_grid_pathfinding.py
 ```
 
-GitHub Actions ayrıca aynı benchmark'ı Ubuntu/Python 3.12 üzerinde çalıştırıp JSON artifact olarak saklar. Hosted runner ölçümleri yalnızca karşılaştırma içindir; son kabul hedef düşük donanımlı yerel bilgisayarda yapılmalıdır.
+GitHub Actions aynı benchmark'ı Ubuntu/Python 3.12 üzerinde çalıştırıp JSON artifact olarak saklar. Hosted runner ölçümleri yalnızca karşılaştırma içindir; son kabul hedef düşük donanımlı yerel bilgisayarda yapılmalıdır.
 
-## 7. Test kapısı
+## 7. Test kapısı ve sonuç
 
 - cardinal ve diagonal rota;
 - corner-cutting engeli ve iki ortogonal hücre şartı;
@@ -79,4 +104,6 @@ GitHub Actions ayrıca aynı benchmark'ı Ubuntu/Python 3.12 üzerinde çalışt
 - 8/16 grid benchmark;
 - mevcut hex movement, physics, persistence ve cache regresyon testleri.
 
-**Çıkış kuralı:** Kare A* doğru ve deterministik çalışmalı; fizik edge validator mevcut snapshot'a bağlanabilmeli. Player/NPC entegrasyonu sonraki aşamalardadır.
+**Çıkış sonucu:** 23 Kasım 2026 itibarıyla `6a1d2ad` commit'inde Eldoria CI ve Core Quality iş akışları başarılıdır. Eldoria CI içindeki Windows/Linux Python testleri (3.11/3.12) ve Pygame headless smoke testi tamamlanmıştır; Core Quality Windows ve genel doğrulama işleri de başarılıdır. Pathfinding benchmark workflow'u da başarılıdır.
+
+Bu nedenle Aşama 3'ün kod ve otomatik doğrulama kapısı tamamlanmıştır. Bu, oyuncu/NPC entegrasyonunun veya hedef bilgisayardaki performans kabulünün tamamlandığı anlamına gelmez. Bunlar sırasıyla Aşama 4–5 ve Aşama 7 kapsamındadır.
