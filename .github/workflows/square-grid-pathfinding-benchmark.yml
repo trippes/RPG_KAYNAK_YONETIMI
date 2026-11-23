@@ -1,0 +1,39 @@
+name: Square-grid pathfinding benchmark
+
+on:
+  push:
+    branches: [experiment/map-cleanup]
+    paths:
+      - "application/square_grid_pathfinding.py"
+      - "application/square_grid_coverage.py"
+      - "core/domain/spatial/square_grid.py"
+      - "scripts/benchmark_square_grid_pathfinding.py"
+      - "content/demo_eldoria/hex_maps/starting_valley.json"
+      - ".github/workflows/square-grid-pathfinding-benchmark.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: experiment/map-cleanup
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install project
+        run: python -m pip install -e .
+      - name: Run square-grid A* benchmark
+        run: python scripts/benchmark_square_grid_pathfinding.py > square-grid-pathfinding-benchmark.json
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: square-grid-pathfinding-benchmark
+          path: square-grid-pathfinding-benchmark.json
+          if-no-files-found: error
+          retention-days: 30
