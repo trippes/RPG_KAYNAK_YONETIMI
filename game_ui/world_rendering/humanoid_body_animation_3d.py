@@ -15,6 +15,10 @@ class HumanoidBodyAnimator3D:
         "west", "north_west", "north", "north_east",
     )
     STATES = ("idle", "walk", "run")
+    WALK_CADENCE_STEPS_PER_MINUTE = 110.0
+    RUN_CADENCE_STEPS_PER_MINUTE = 170.0
+    WALK_CYCLE_SECONDS = 120.0 / WALK_CADENCE_STEPS_PER_MINUTE
+    RUN_CYCLE_SECONDS = 120.0 / RUN_CADENCE_STEPS_PER_MINUTE
     WALK_CYCLE_DISTANCE = 24.0
     RUN_CYCLE_DISTANCE = 34.0
     WALK_STANCE_FRACTION = HumanoidFootLockSolver3D.WALK_STANCE_FRACTION
@@ -83,17 +87,23 @@ class HumanoidBodyAnimator3D:
         ):
             raise ValueError("delta_seconds must be a finite non-negative number.")
 
-        delta_seconds = min(float(delta_seconds), 0.1)
-        if self.state != "idle" and traveled_distance > 0.0:
-            cycle_distance = (
-                self.RUN_CYCLE_DISTANCE if self.state == "run"
-                else self.WALK_CYCLE_DISTANCE
+        elapsed_seconds = float(delta_seconds)
+        transition_delta = min(elapsed_seconds, 0.1)
+        if self.state != "idle" and traveled_distance > 0.0 and elapsed_seconds > 1e-6:
+            cadence = (
+                self.RUN_CADENCE_STEPS_PER_MINUTE
+                if self.state == "run"
+                else self.WALK_CADENCE_STEPS_PER_MINUTE
             )
-            self.phase = (
-                self.phase + math.tau * float(traveled_distance) / cycle_distance
-            ) % math.tau
+            cycle_seconds = 120.0 / cadence
+            measured_speed = float(traveled_distance) / elapsed_seconds
+            cycle_distance = measured_speed * cycle_seconds
+            if cycle_distance > 1e-9:
+                self.phase = (
+                    self.phase + math.tau * float(traveled_distance) / cycle_distance
+                ) % math.tau
         else:
-            self._idle_clock += delta_seconds
+            self._idle_clock += transition_delta
 
         target_pose = self._build_pose()
         foot_rotations, target_translations = self._foot_lock.update(
@@ -102,6 +112,7 @@ class HumanoidBodyAnimator3D:
             world_position=world_position,
             yaw=float(yaw),
             world_scale=float(world_scale),
+            delta_seconds=transition_delta,
         )
         target_pose.update(foot_rotations)
 
@@ -111,7 +122,7 @@ class HumanoidBodyAnimator3D:
         if self._transition_elapsed < self.TRANSITION_SECONDS:
             self._transition_elapsed = min(
                 self.TRANSITION_SECONDS,
-                self._transition_elapsed + delta_seconds,
+                self._transition_elapsed + transition_delta,
             )
             raw_weight = self._transition_elapsed / self.TRANSITION_SECONDS
             weight = raw_weight * raw_weight * (3.0 - 2.0 * raw_weight)
