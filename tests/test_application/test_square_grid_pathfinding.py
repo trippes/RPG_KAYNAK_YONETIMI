@@ -100,7 +100,7 @@ def test_blocked_and_outside_cells_are_not_route_nodes():
     ) is None
 
 
-def test_weighted_terrain_prefers_a_longer_but_cheaper_route():
+def test_weighted_terrain_avoids_a_high_cost_cell():
     coverage = _coverage([
         ["grass", "grass", "grass"],
         ["grass", "mud", "grass"],
@@ -114,7 +114,7 @@ def test_weighted_terrain_prefers_a_longer_but_cheaper_route():
     )
     assert path is not None
     assert SquareGridCoord(1, 1) not in path
-    assert len(path) > 3
+    assert _cost(path) < 3.0 * 20.0
 
 
 def test_allowed_terrain_profile_rejects_disallowed_terrain():
