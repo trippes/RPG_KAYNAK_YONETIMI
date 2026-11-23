@@ -224,7 +224,7 @@ def test_hex_gameplay_view_renders_runtime_map_without_mutating_entity_position(
     assert view.render_stats["player_body_triangles"] == 1264
     assert view.render_stats["player_body_cache"]["entries"] == 1
 
-def test_hex_gameplay_view_click_selects_axial_destination():
+def test_hex_gameplay_view_click_selects_continuous_world_destination():
     service = FakeService()
     view = HexGameplayView(service)
     view._panel = pygame.Rect(24, 96, 752, 480)
@@ -237,20 +237,20 @@ def test_hex_gameplay_view_click_selects_axial_destination():
 
     view.handle(InputState(mouse_clicked=True, mouse_pos=view.transform.axial_to_screen(LocalHexPosition(1, 0).to_hex_coord())))
 
-    assert view._move_goal == LocalHexPosition(1, 0)
+    assert view._move_goal == view.transform.screen_to_world_point(*view.mouse_position)
+    assert isinstance(view._move_goal, WorldPoint)
     assert service.hex_actor_binding.toward == []
 
 
-def test_hex_gameplay_view_exposes_click_goal_as_a_movement_intent():
+def test_hex_gameplay_view_requires_square_grid_runtime_for_click_route():
     service = FakeService()
     view = HexGameplayView(service)
-    view._move_goal = LocalHexPosition(2, 0)
+    view._move_goal = WorldPoint(64.0, 0.0)
     view._move_map_id = "village"
 
     intent = view.click_move_intent()
 
-    assert intent.is_moving
-    assert intent.direction.x > 0
+    assert not intent.is_moving
     assert service.continuous_toward == []
 
 

@@ -6,7 +6,8 @@ import math
 from time import perf_counter_ns
 
 from core.domain.movement import MovementIntent
-from application.click_move_route import ClickMoveRouteController
+from application.square_grid_cache import SquareGridChunkCache
+from application.square_grid_click_move_route import SquareGridClickMoveRouteController
 from core.domain.spatial import HexDirection, LocalHexPosition, WorldPoint, world_point_to_hex
 from game_ui.world_transform import WorldTransform
 
@@ -30,6 +31,8 @@ class HexGameplayView:
     MAX_ZOOM = 1.8
     ZOOM_STEP = 0.08
     MOVE_ANIMATION_SECONDS = 0.18
+    # Temporary integration default; final grid resolution remains undecided.
+    SQUARE_GRID_CELL_SIZE = 16.0
     PHYSICS_STEP_SECONDS = 1.0 / 60.0
     NPC_RUN_SPEED_THRESHOLD = 95.0
     NPC_BODY_PALETTE = {
@@ -84,7 +87,13 @@ class HexGameplayView:
         self._panel = None
         self._move_goal = None
         self._move_map_id = None
-        self._click_move_route = ClickMoveRouteController()
+        self._square_grid_cache = SquareGridChunkCache()
+        self._click_move_route = SquareGridClickMoveRouteController(
+            self._square_grid_cache,
+            cell_size=getattr(
+                service, "square_grid_cell_size", self.SQUARE_GRID_CELL_SIZE,
+            ),
+        )
         self._physics_accumulator = 0.0
         self._manual_directions = ()
         self._visual_map_id = None
@@ -467,7 +476,7 @@ class HexGameplayView:
         self._move_goal = None
         self._move_map_id = None
 
-    def _set_move_goal(self, goal: LocalHexPosition, map_id: str) -> None:
+    def _set_move_goal(self, goal: WorldPoint, map_id: str) -> None:
         if self._move_goal == goal and self._move_map_id == map_id:
             return
         self._clear_move_goal("new_goal")
@@ -704,11 +713,17 @@ class HexGameplayView:
                     self.selected_scene_object_id = scene_object.object_id
                     return "inspect"
             self.selected_scene_object_id = None
+            world_point = self.transform.screen_to_world_point(*state.mouse_pos)
+            binding = self.service.hex_actor_binding
+            snapshot = binding.physics_snapshot
+            hex_size = getattr(snapshot, "hex_size", getattr(runtime, "HEX_SIZE", 32.0))
+            origin = getattr(snapshot, "origin", WorldPoint(0.0, 0.0))
+            goal_hex = LocalHexPosition.from_hex_coord(
+                world_point_to_hex(world_point, hex_size, origin=origin)
+            )
             map_definition = runtime.map_definition(entity.position.map_id)
-            q = self.transform.screen_to_axial(*state.mouse_pos)
-            goal = LocalHexPosition.from_hex_coord(q)
-            if map_definition.has_cell(goal):
-                self._set_move_goal(goal, entity.position.map_id)
+            if map_definition.has_cell(goal_hex):
+                self._set_move_goal(world_point, entity.position.map_id)
                 self._physics_accumulator = 0.0
 
     def _ensure_character_animators(self, renderer):
