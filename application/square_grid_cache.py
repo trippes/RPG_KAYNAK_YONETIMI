@@ -287,6 +287,55 @@ class SquareGridChunkCache:
             return built
 
 
+    def get_coverage_map(
+        self,
+        map_definition: HexMapDefinition,
+        *,
+        cell_size: int | float,
+        hex_size: int | float = 32.0,
+        grid_origin: WorldPoint = WorldPoint(0.0, 0.0),
+        hex_origin: WorldPoint = WorldPoint(0.0, 0.0),
+    ) -> SquareGridCoverageMap:
+        """Assemble the map-wide coverage from cached immutable chunks.
+
+        The pathfinder currently consumes a complete coverage map. This method
+        reuses the chunk cache as the source of each region, while returning a
+        single read-only map for route planning. It does not cache actor state.
+        """
+        if not isinstance(map_definition, HexMapDefinition):
+            raise TypeError("map_definition must be a HexMapDefinition.")
+        size = _positive_finite(cell_size, "cell_size")
+        radius = _positive_finite(hex_size, "hex_size")
+        _validate_origin(grid_origin, "grid_origin")
+        _validate_origin(hex_origin, "hex_origin")
+
+        cells = {}
+        for chunk_coord in self.chunk_coords(
+            map_definition,
+            cell_size=size,
+            hex_size=radius,
+            grid_origin=grid_origin,
+            hex_origin=hex_origin,
+        ):
+            chunk = self.get_chunk(
+                map_definition,
+                chunk_coord,
+                cell_size=size,
+                hex_size=radius,
+                grid_origin=grid_origin,
+                hex_origin=hex_origin,
+            )
+            cells.update(chunk.cells)
+
+        return SquareGridCoverageMap(
+            map_definition.map_id,
+            size,
+            grid_origin,
+            hex_origin,
+            cells,
+        )
+
+
 __all__ = [
     "SquareGridChunkCoord",
     "SquareGridCacheStats",

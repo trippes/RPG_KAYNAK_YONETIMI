@@ -81,6 +81,21 @@ class HexPhysicsSnapshot:
         return self._map_definition.map_id
 
     @property
+    def map_definition(self) -> HexMapDefinition:
+        """Return the immutable canonical map used to build this snapshot."""
+        return self._map_definition
+
+    @property
+    def hex_size(self) -> float:
+        """Return the canonical hex geometry scale in world units."""
+        return self._hex_size
+
+    @property
+    def origin(self) -> WorldPoint:
+        """Return the canonical world-space origin shared with map physics."""
+        return self._origin
+
+    @property
     def geometry(self):
         return self._geometry
 

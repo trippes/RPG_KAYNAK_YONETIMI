@@ -102,6 +102,22 @@ def test_snapshot_preserves_canonical_y_down_world_origin():
     assert snapshot.cell_center(LocalHexPosition(1, 0)) == expected
 
 
+
+def test_snapshot_exposes_immutable_geometry_inputs_for_derived_navigation():
+    map_definition = make_map(valid_cells=((0, 0), (1, 0)))
+    origin = WorldPoint(125.0, 275.0)
+    snapshot = build_hex_physics_snapshot(
+        WorldId("eldoria"),
+        map_definition,
+        24.0,
+        origin=origin,
+    )
+
+    assert snapshot.map_definition is map_definition
+    assert snapshot.hex_size == 24.0
+    assert snapshot.origin == origin
+
+
 def test_open_boundary_policy_does_not_create_perimeter_collision_walls():
     snapshot = build_hex_physics_snapshot(
         WorldId("eldoria"),

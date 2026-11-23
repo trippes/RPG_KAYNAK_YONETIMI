@@ -7,6 +7,7 @@ from application.square_grid_cache import (
     square_grid_geometry_fingerprint,
 )
 from application.square_grid_coverage import build_square_grid_coverage
+from core.domain.spatial import WorldPoint
 
 
 def _make_map(*, blocked=False):
@@ -44,6 +45,41 @@ class TestSquareGridChunkCache(unittest.TestCase):
                 self.assertNotIn(coord, reconstructed)
                 reconstructed[coord] = cell
         self.assertEqual(reconstructed, dict(full.cells))
+
+
+    def test_get_coverage_map_reconstructs_full_map_through_chunk_cache(self):
+        definition = _make_map()
+        expected = build_square_grid_coverage(definition, 8)
+        cache = SquareGridChunkCache(chunk_size=8, max_chunks=64)
+
+        actual = cache.get_coverage_map(definition, cell_size=8)
+
+        self.assertEqual(actual, expected)
+        self.assertEqual(dict(actual.cells), dict(expected.cells))
+        self.assertGreater(cache.stats.misses, 0)
+
+    def test_get_coverage_map_preserves_non_default_geometry_origins(self):
+        definition = _make_map()
+        grid_origin = WorldPoint(12.0, -7.0)
+        hex_origin = WorldPoint(100.0, 45.0)
+        cache = SquareGridChunkCache(chunk_size=8, max_chunks=64)
+
+        actual = cache.get_coverage_map(
+            definition,
+            cell_size=8,
+            grid_origin=grid_origin,
+            hex_origin=hex_origin,
+        )
+        expected = build_square_grid_coverage(
+            definition,
+            8,
+            grid_origin=grid_origin,
+            hex_origin=hex_origin,
+        )
+
+        self.assertEqual(actual, expected)
+        self.assertEqual(actual.grid_origin, grid_origin)
+        self.assertEqual(actual.hex_origin, hex_origin)
 
     def test_repeated_chunk_request_is_a_cache_hit_and_returns_same_value(self):
         definition = _make_map()
