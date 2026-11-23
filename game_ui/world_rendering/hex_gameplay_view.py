@@ -10,6 +10,7 @@ from application.square_grid_cache import SquareGridChunkCache
 from application.square_grid_click_move_route import SquareGridClickMoveRouteController
 from core.domain.spatial import HexDirection, LocalHexPosition, WorldPoint, world_point_to_hex
 from game_ui.world_transform import WorldTransform
+from game_ui.click_move_diagnostics import record_click_move_event
 
 from .camera import HexCamera
 from .character_renderer import HexCharacterRenderer
@@ -372,6 +373,14 @@ class HexGameplayView:
             snapshot,
             body,
         )
+        record_click_move_event(
+            "view.route_result",
+            goal=self._move_goal,
+            intent=intent,
+            route_active=self._click_move_route.active,
+            route_status=self._click_move_route.status,
+            movement_target=self._click_move_route.movement_target,
+        )
         if not self._click_move_route.active:
             self._move_goal = None
             self._move_map_id = None
@@ -637,6 +646,12 @@ class HexGameplayView:
         if manual_move:
             self._clear_move_goal("manual_keyboard_override")
         elif state.mouse_clicked and state.mouse_pos is not None:
+            record_click_move_event(
+                "view.click_received",
+                mouse_pos=state.mouse_pos,
+                panel=self._panel,
+                inside_panel=(self._panel.collidepoint(state.mouse_pos) if self._panel is not None else None),
+            )
             if (
                 self.context_menu_target_kind is not None
                 and self.context_menu_target_id is not None
@@ -700,6 +715,10 @@ class HexGameplayView:
                 self.context_menu_position = None
                 return "dialogue"
             if self._panel is None or not self._panel.collidepoint(state.mouse_pos):
+                record_click_move_event(
+                    "view.click_rejected", reason="outside_gameplay_panel",
+                    mouse_pos=state.mouse_pos, panel=self._panel,
+                )
                 return None
             actor_id = self.service.player_actor_id
             entity = runtime.entity(actor_id)
@@ -725,6 +744,17 @@ class HexGameplayView:
             if map_definition.has_cell(goal_hex):
                 self._set_move_goal(world_point, entity.position.map_id)
                 self._physics_accumulator = 0.0
+                record_click_move_event(
+                    "view.goal_accepted", mouse_pos=state.mouse_pos,
+                    world_point=world_point, goal_hex=goal_hex,
+                    map_id=entity.position.map_id,
+                )
+            else:
+                record_click_move_event(
+                    "view.goal_rejected", reason="target_outside_map",
+                    mouse_pos=state.mouse_pos, world_point=world_point,
+                    goal_hex=goal_hex, map_id=entity.position.map_id,
+                )
 
     def _ensure_character_animators(self, renderer):
         """Create directional sprite sets lazily after Pygame is initialized."""

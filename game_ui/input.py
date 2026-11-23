@@ -1,6 +1,8 @@
 
 """Input mapping for the playable slice."""
 
+from game_ui.click_move_diagnostics import record_click_move_event
+
 from dataclasses import dataclass, field
 
 
@@ -31,6 +33,7 @@ class InputMapper:
 
     def collect(self, events) -> InputState:
         state = InputState()
+        click_event_pos = None
 
         for event in events:
             event_type = getattr(event, "type", None)
@@ -49,6 +52,7 @@ class InputMapper:
                 state.mouse_clicked = True
                 state.mouse_button_down = True
                 state.mouse_pos = getattr(event, "pos", None)
+                click_event_pos = state.mouse_pos
                 continue
 
             if event_type == mouse_down_type and getattr(event, "button", None) == 3:
@@ -130,8 +134,16 @@ class InputMapper:
         # not only on frames that receive a mouse event.
         mouse = getattr(self.backend, "mouse", None)
         get_pos = getattr(mouse, "get_pos", None)
-        if get_pos is not None:
-            state.mouse_pos = get_pos()
+        sampled_mouse_pos = get_pos() if get_pos is not None else None
+        if sampled_mouse_pos is not None:
+            state.mouse_pos = sampled_mouse_pos
+        if state.mouse_clicked:
+            record_click_move_event(
+                "input.left_click",
+                event_pos=click_event_pos,
+                sampled_mouse_pos=sampled_mouse_pos,
+                final_mouse_pos=state.mouse_pos,
+            )
 
         return state
 

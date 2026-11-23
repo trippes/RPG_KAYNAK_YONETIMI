@@ -2,6 +2,8 @@
 
 from pathlib import Path
 from time import perf_counter_ns
+
+from game_ui.click_move_diagnostics import record_click_move_event
 import json
 
 from .input import InputMapper
@@ -339,12 +341,25 @@ class GameWindow:
                     # owned by the live keyboard adapter for this fixed step.
                     step_intent = MovementIntent(click_intent.direction, intent.mode)
             step_kwargs = {"target": step_target} if step_target is not None else {}
-            controller.step(
+            movement_step = controller.step(
                 actor_id,
                 step_intent,
                 self._movement_clock.step_seconds,
                 **step_kwargs,
             )
+            if click_to_move:
+                try:
+                    committed_position = binding.continuous_position(actor_id).point
+                except (AttributeError, KeyError, RuntimeError, ValueError):
+                    committed_position = None
+                record_click_move_event(
+                    "game_window.physics_step",
+                    target=step_target,
+                    intent=step_intent,
+                    movement_result=movement_step.movement,
+                    controller_position=movement_step.state.position,
+                    committed_position=committed_position,
+                )
             self.service._player_movement_mode = step_intent.mode
 
     def _advance_npc_simulation(self, elapsed_seconds, *, active):
@@ -1002,6 +1017,23 @@ class GameWindow:
                 self.screens[self.gameplay_screen], "has_click_move_goal", False,
             ))
         )
+        if state.mouse_clicked or click_to_move or getattr(
+            self.screens[self.gameplay_screen], "has_click_move_goal", False,
+        ):
+            record_click_move_event(
+                "game_window.click_gate",
+                mouse_pos=state.mouse_pos,
+                movement_intent_present=movement_intent is not None,
+                manual_movement=manual_movement,
+                movement_active=movement_active,
+                click_to_move=click_to_move,
+                input_focused=(self.movement_input.focused if self.movement_input else None),
+                movement_configured=movement_configured,
+                window_consumed=window_consumed,
+                open_windows=tuple(self.window_manager.open_ids),
+                current_screen=self.current,
+                gameplay_screen=self.gameplay_screen,
+            )
         phase_started = perf_counter_ns()
         self._advance_continuous_player_movement(
             elapsed_seconds,
