@@ -386,7 +386,7 @@ def test_main_screen_forwards_selected_npc_to_dialogue_navigation():
     assert screen.selected_npc_id == "guard_eren"
 
 
-def test_player_click_to_move_produces_intent_for_the_shared_fixed_step_controller():
+def test_player_click_to_move_stores_world_target_for_square_grid_routing():
     service = FakeService()
     view = HexGameplayView(service)
     view._panel = pygame.Rect(24, 96, 752, 480)
@@ -396,10 +396,10 @@ def test_player_click_to_move_produces_intent_for_the_shared_fixed_step_controll
     goal = LocalHexPosition(1, 0)
     view.handle(InputState(mouse_clicked=True, mouse_pos=view.transform.axial_to_screen(goal.to_hex_coord())))
 
-    assert view._move_goal == goal
-    intent = view.click_move_intent()
-    assert intent.is_moving
-    assert intent.direction.x > 0
+    assert view._move_goal == view.transform.screen_to_world_point(
+        *view.transform.axial_to_screen(goal.to_hex_coord())
+    )
+    assert isinstance(view._move_goal, WorldPoint)
 
 
 def test_player_keyboard_input_uses_fixed_step_continuous_physics():
@@ -460,7 +460,7 @@ def test_manual_keyboard_action_cancels_click_goal_and_ignores_same_frame_click(
     service = FakeService()
     view = HexGameplayView(service)
     _configure_interaction_view(view)
-    view._move_goal = LocalHexPosition(2, 0)
+    view._move_goal = WorldPoint(100.0, 0.0)
     view._move_map_id = "village"
     clicked_cell = LocalHexPosition(1, 0)
 
@@ -477,27 +477,59 @@ def test_manual_keyboard_action_cancels_click_goal_and_ignores_same_frame_click(
 def test_click_move_route_is_cached_across_repeated_fixed_step_intents():
     service = FakeService()
     view = HexGameplayView(service)
-    view._move_goal = LocalHexPosition(2, 0)
+    class RouteStub:
+        active = True
+
+        def __init__(self):
+            self.goals = []
+
+        def intent(self, _runtime, _actor_id, goal, _snapshot, _body):
+            self.goals.append(goal)
+            return MovementIntent(Vector2(1.0, 0.0))
+
+        def consume_movement_target(self):
+            return None
+
+        def cancel(self, _reason="cancelled"):
+            self.active = False
+
+    view._click_move_route = RouteStub()
+    view._move_goal = WorldPoint(64.0, 0.0)
     view._move_map_id = "village"
 
     first = view.click_move_intent()
     second = view.click_move_intent()
 
-    assert first.is_moving
-    assert second.is_moving
-    assert service.hex_world_runtime.path_queries == 1
-    metrics = view._click_move_route.metrics_snapshot()
-    assert metrics["player_click_path_queries"] == 1
-    assert metrics["player_click_route_cache_hits"] == 1
+    assert first.is_moving and second.is_moving
+    assert view._click_move_route.goals == [WorldPoint(64.0, 0.0)] * 2
 
 
 def test_multiple_fixed_steps_in_one_frame_reuse_one_click_path():
     service = FakeService()
     service.npc_physics_bodies = {}
     view = HexGameplayView(service)
-    view._move_goal = LocalHexPosition(2, 0)
+    view._move_goal = WorldPoint(64.0, 0.0)
     view._move_map_id = "village"
     calls = []
+
+    class RouteStub:
+        active = True
+
+        def __init__(self):
+            self.intent_calls = 0
+
+        def intent(self, *_args, **_kwargs):
+            self.intent_calls += 1
+            return MovementIntent(Vector2(1.0, 0.0))
+
+        def consume_movement_target(self):
+            return None
+
+        def cancel(self, _reason="cancelled"):
+            self.active = False
+
+    route_stub = RouteStub()
+    view._click_move_route = route_stub
 
     class Clock:
         step_seconds = 1.0 / 60.0
@@ -531,10 +563,7 @@ def test_multiple_fixed_steps_in_one_frame_reuse_one_click_path():
         )
 
     assert len(calls) == 4
-    assert service.hex_world_runtime.path_queries == 1
-    metrics = view._click_move_route.metrics_snapshot()
-    assert metrics["player_click_path_queries"] == 1
-    assert metrics["player_click_route_cache_hits"] == 3
+    assert route_stub.intent_calls == 4
 
 
 
@@ -648,7 +677,7 @@ def test_player_body_gait_tracks_click_move_runtime_even_when_visual_goal_is_act
     runtime = MovingRuntime()
     service.hex_world_runtime = runtime
     view = HexGameplayView(service)
-    view._move_goal = LocalHexPosition(1, 0)
+    view._move_goal = WorldPoint(55.0, 0.0)
     view._move_map_id = "village"
 
     view.update(1.0 / 60.0)

@@ -72,6 +72,11 @@ def test_square_grid_click_route_produces_world_waypoint_and_keeps_runtime_autho
     assert controller.movement_target is not None
     assert isinstance(controller.movement_target.position, WorldPoint)
     assert runtime.continuous_position("hero").point == WorldPoint(0.0, 0.0)
+
+    repeated = controller.intent(
+        runtime, "hero", goal, snapshot, body, mode=MovementMode.RUNNING,
+    )
+    assert repeated.is_moving
     assert controller.metrics_snapshot()["player_square_grid_path_queries"] == 1
 
 
