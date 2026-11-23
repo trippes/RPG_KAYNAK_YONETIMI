@@ -377,9 +377,11 @@ class HexGameplayView:
             "view.route_result",
             goal=self._move_goal,
             intent=intent,
-            route_active=self._click_move_route.active,
-            route_status=self._click_move_route.status,
-            movement_target=self._click_move_route.movement_target,
+            route_active=getattr(self._click_move_route, "active", None),
+            route_status=getattr(self._click_move_route, "status", None),
+            movement_target=getattr(
+                self._click_move_route, "movement_target", None,
+            ),
         )
         if not self._click_move_route.active:
             self._move_goal = None
