@@ -95,10 +95,10 @@ class HumanoidBodyAnimator3DTests(unittest.TestCase):
 
     def test_walk_pose_interpolates_between_phase_samples(self):
         animator = HumanoidBodyAnimator3D(state="walk")
-        animator.advance(0.1)
+        animator.advance(0.5)
         first_index = animator.phase_index
         first_pose = animator.pose
-        animator.advance(0.1)
+        animator.advance(0.5)
         self.assertEqual(animator.phase_index, first_index)
         self.assertNotEqual(animator.pose, first_pose)
         self.assertLess(
