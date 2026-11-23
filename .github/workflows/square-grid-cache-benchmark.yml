@@ -1,0 +1,41 @@
+name: Square-grid cache benchmark
+
+on:
+  push:
+    branches: [experiment/map-cleanup]
+    paths:
+      - "application/square_grid_coverage.py"
+      - "application/square_grid_cache.py"
+      - "scripts/benchmark_square_grid_cache.py"
+      - "content/demo_eldoria/hex_maps/starting_valley.json"
+      - ".github/workflows/square-grid-cache-benchmark.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    name: Benchmark square-grid coverage cache
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout measured revision
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install project
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+      - name: Measure 16 and 8 world-unit grid resolutions
+        run: python scripts/benchmark_square_grid_cache.py > square-grid-cache-benchmark.json
+      - name: Publish benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: square-grid-cache-benchmark
+          path: square-grid-cache-benchmark.json
+          if-no-files-found: error
+          retention-days: 30
