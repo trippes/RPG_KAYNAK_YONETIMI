@@ -1,10 +1,10 @@
 """Pygame application shell for the playable vertical slice."""
 
+import json
 from pathlib import Path
 from time import perf_counter_ns
 
 from game_ui.click_move_diagnostics import record_click_move_event
-import json
 
 from .input import InputMapper
 from .movement_input import PygameMovementInput

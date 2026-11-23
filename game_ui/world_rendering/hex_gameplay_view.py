@@ -9,8 +9,8 @@ from core.domain.movement import MovementIntent
 from application.square_grid_cache import SquareGridChunkCache
 from application.square_grid_click_move_route import SquareGridClickMoveRouteController
 from core.domain.spatial import HexDirection, LocalHexPosition, WorldPoint, world_point_to_hex
-from game_ui.world_transform import WorldTransform
 from game_ui.click_move_diagnostics import record_click_move_event
+from game_ui.world_transform import WorldTransform
 
 from .camera import HexCamera
 from .character_renderer import HexCharacterRenderer
