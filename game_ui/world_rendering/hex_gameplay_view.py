@@ -447,8 +447,6 @@ class HexGameplayView:
 
     def _sync_continuous_visual(self):
         """Track fixed-step keyboard motion for facing and walk animation."""
-        if self._move_goal is not None:
-            return
         if self._visual_moving and self._visual_target != self._visual_start:
             return
         runtime = getattr(self.service, "hex_world_runtime", None)

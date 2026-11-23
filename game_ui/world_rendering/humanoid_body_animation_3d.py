@@ -175,7 +175,7 @@ class HumanoidBodyAnimator3D:
     def _build_pose(self) -> dict[str, tuple[float, float, float]]:
         if self.state == "idle":
             return self._build_idle_pose()
-        phase = self.phase_index * math.tau / self.PHASE_STEPS
+        phase = self.phase
         running = self.state == "run"
         amplitude = 0.46 if running else 0.38
         knee_amplitude = 0.72 if running else 0.54

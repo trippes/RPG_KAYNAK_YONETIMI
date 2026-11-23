@@ -93,14 +93,22 @@ class HumanoidBodyAnimator3DTests(unittest.TestCase):
         self.assertIn("left", animator.foot_lock_diagnostics)
         self.assertIn("pelvis", animator.translations)
 
-    def test_phase_is_quantized_for_sprite_cache_reuse(self):
+    def test_walk_pose_interpolates_between_phase_samples(self):
         animator = HumanoidBodyAnimator3D(state="walk")
         animator.advance(0.1)
         first_index = animator.phase_index
         first_pose = animator.pose
         animator.advance(0.1)
         self.assertEqual(animator.phase_index, first_index)
-        self.assertEqual(animator.pose, first_pose)
+        self.assertNotEqual(animator.pose, first_pose)
+        self.assertLess(
+            max(
+                abs(animator.pose[name][axis] - first_pose[name][axis])
+                for name in first_pose
+                for axis in range(3)
+            ),
+            0.1,
+        )
 
     def test_invalid_distance_and_delta_are_rejected(self):
         animator = HumanoidBodyAnimator3D(state="walk")

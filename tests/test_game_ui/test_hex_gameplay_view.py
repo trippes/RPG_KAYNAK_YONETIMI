@@ -143,6 +143,22 @@ def test_hex_gameplay_view_maps_six_keyboard_actions_to_axial_directions():
     assert service.hex_actor_binding.moves == []
 
 
+def test_click_route_keeps_facing_synced_to_authoritative_motion():
+    service = FakeService()
+    view = HexGameplayView(service)
+    view._move_goal = WorldPoint(100.0, 0.0)
+    view._last_runtime_position = WorldPoint(0.0, 0.0)
+    service.hex_world_runtime.continuous_position = lambda _actor_id: SimpleNamespace(
+        point=WorldPoint(10.0, 0.0)
+    )
+
+    view._sync_continuous_visual()
+
+    assert view._visual_position == (10.0, 0.0)
+    assert view._visual_moving is True
+    assert view._player_facing != "south"
+
+
 def test_hex_gameplay_view_mouse_wheel_changes_only_presentation_zoom():
     service = FakeService()
     view = HexGameplayView(service)
