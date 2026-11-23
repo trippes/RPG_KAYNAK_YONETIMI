@@ -356,8 +356,12 @@ class GameWindow:
                     "game_window.physics_step",
                     target=step_target,
                     intent=step_intent,
-                    movement_result=movement_step.movement,
-                    controller_position=movement_step.state.position,
+                    movement_result=getattr(movement_step, "movement", None),
+                    controller_position=getattr(
+                        getattr(movement_step, "state", None),
+                        "position",
+                        None,
+                    ),
                     committed_position=committed_position,
                 )
             self.service._player_movement_mode = step_intent.mode
@@ -1017,9 +1021,13 @@ class GameWindow:
                 self.screens[self.gameplay_screen], "has_click_move_goal", False,
             ))
         )
-        if state.mouse_clicked or click_to_move or getattr(
-            self.screens[self.gameplay_screen], "has_click_move_goal", False,
-        ):
+        gameplay_view = self.screens.get(
+            getattr(self, "gameplay_screen", "main")
+        )
+        has_click_move_goal = bool(
+            getattr(gameplay_view, "has_click_move_goal", False)
+        )
+        if state.mouse_clicked or click_to_move or has_click_move_goal:
             record_click_move_event(
                 "game_window.click_gate",
                 mouse_pos=state.mouse_pos,
