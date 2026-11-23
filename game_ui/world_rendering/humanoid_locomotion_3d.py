@@ -63,6 +63,7 @@ class HumanoidFootLockSolver3D:
         self._last_results = {}
         self._smoothed_rotations = {}
         self._smoothed_translations = {}
+        self._last_state = None
 
     @property
     def anchors(self):
@@ -87,6 +88,7 @@ class HumanoidFootLockSolver3D:
         self._last_results.clear()
         self._smoothed_rotations.clear()
         self._smoothed_translations.clear()
+        self._last_state = None
 
     def update(
         self, *, phase, state, world_position, yaw, world_scale,
@@ -107,6 +109,11 @@ class HumanoidFootLockSolver3D:
         if world_scale <= 0.0 or delta_seconds < 0.0:
             raise ValueError("world_scale must be positive and delta_seconds non-negative.")
 
+        if state != self._last_state:
+            for side in self.SIDES:
+                self._anchors[side] = None
+                self._was_stance[side] = False
+            self._last_state = state
         stance_fraction = (
             self.RUN_STANCE_FRACTION if state == "run" else self.WALK_STANCE_FRACTION
         )
