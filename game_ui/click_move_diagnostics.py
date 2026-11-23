@@ -22,7 +22,7 @@ def record_click_move_event(stage: str, **values) -> None:
     try:
         destination.parent.mkdir(parents=True, exist_ok=True)
         with destination.open("a", encoding="utf-8") as stream:
-            stream.write(json.dumps(event, ensure_ascii=False, default=repr) + "\\n")
+            stream.write(json.dumps(event, ensure_ascii=False, default=repr) + "\n")
     except OSError:
         # Diagnostics must never interrupt or alter the game loop.
         return

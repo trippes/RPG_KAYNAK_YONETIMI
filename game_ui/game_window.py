@@ -349,7 +349,7 @@ class GameWindow:
             )
             if click_to_move:
                 try:
-                    committed_position = binding.continuous_position(actor_id).point
+                    committed_position = self.service.hex_world_runtime.continuous_position(actor_id).point
                 except (AttributeError, KeyError, RuntimeError, ValueError):
                     committed_position = None
                 record_click_move_event(
