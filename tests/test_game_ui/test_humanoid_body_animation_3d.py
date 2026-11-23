@@ -28,14 +28,13 @@ class HumanoidBodyAnimator3DTests(unittest.TestCase):
 
     def test_walk_phase_advances_from_traveled_distance(self):
         animator = HumanoidBodyAnimator3D(state="walk")
-        quarter_cycle = animator.WALK_CYCLE_SECONDS / 4.0
-        animator.advance(animator.WALK_CYCLE_DISTANCE / 4.0, quarter_cycle)
+        animator.advance(animator.WALK_CYCLE_DISTANCE / 4.0)
         self.assertAlmostEqual(animator.phase, math.pi / 2.0)
         self.assertEqual(animator.phase_index, 4)
 
     def test_full_walk_cycle_returns_to_same_phase(self):
         animator = HumanoidBodyAnimator3D(state="walk")
-        animator.advance(animator.WALK_CYCLE_DISTANCE, animator.WALK_CYCLE_SECONDS)
+        animator.advance(animator.WALK_CYCLE_DISTANCE)
         self.assertAlmostEqual(animator.phase, 0.0)
 
     def test_run_uses_longer_distance_per_cycle_than_walk(self):
