@@ -62,6 +62,10 @@ class SquareGridClickMoveRouteController:
     def status(self) -> str:
         return self._status
 
+    @property
+    def movement_target(self) -> MovementTarget | None:
+        return self._target
+
     def consume_movement_target(self) -> MovementTarget | None:
         target, self._target = self._target, None
         return target
