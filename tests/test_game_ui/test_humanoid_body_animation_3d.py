@@ -124,6 +124,58 @@ class HumanoidBodyAnimator3DTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             HumanoidBodyAnimator3D(state="jump")
 
+    def test_walk_and_run_share_locomotion_stance_contract(self):
+        self.assertAlmostEqual(HumanoidBodyAnimator3D.WALK_STANCE_FRACTION,
+                               HumanoidFootLockSolver3D.WALK_STANCE_FRACTION)
+        self.assertAlmostEqual(HumanoidBodyAnimator3D.RUN_STANCE_FRACTION,
+                               HumanoidFootLockSolver3D.RUN_STANCE_FRACTION)
+
+    def test_zero_distance_does_not_advance_walk_or_run_phase(self):
+        for state in ("walk", "run"):
+            animator = HumanoidBodyAnimator3D(state=state)
+            animator.advance(3.25)
+            phase = animator.phase
+            animator.advance(0.0, 0.25)
+            self.assertEqual(animator.phase, phase)
+
+    def test_run_phase_is_distance_driven_and_distinct_from_walk(self):
+        walk = HumanoidBodyAnimator3D(state="walk")
+        run = HumanoidBodyAnimator3D(state="run")
+        walk.advance(5.0)
+        run.advance(5.0)
+        self.assertNotAlmostEqual(walk.phase, run.phase)
+
+    def test_foot_lock_solves_stance_and_swing_legs(self):
+        solver = HumanoidFootLockSolver3D()
+        rotations, translations = solver.update(
+            phase=math.pi * 0.5, state="walk",
+            world_position=(0.0, 0.0), yaw=0.0, world_scale=54.0,
+        )
+        self.assertEqual(set(rotations), {
+            "hip_left", "knee_left", "ankle_left",
+            "hip_right", "knee_right", "ankle_right",
+        })
+        self.assertIn("pelvis", translations)
+        self.assertTrue(all(math.isfinite(value)
+                            for rotation in rotations.values() for value in rotation))
+
+    def test_transition_blending_is_continuous_not_quantized_in_steps(self):
+        animator = HumanoidBodyAnimator3D(state="walk")
+        animator.advance(3.0)
+        animator.select(state="run")
+        previous = animator.pose
+        deltas = []
+        for _ in range(5):
+            animator.advance(0.0, 1.0 / 60.0)
+            current = animator.pose
+            deltas.append(max(
+                abs(current[name][axis] - previous[name][axis])
+                for name in current.keys() & previous.keys()
+                for axis in range(3)
+            ))
+            previous = current
+        self.assertTrue(all(delta < 0.2 for delta in deltas))
+
 
 if __name__ == "__main__":
     unittest.main()

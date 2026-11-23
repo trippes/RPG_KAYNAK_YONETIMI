@@ -17,6 +17,8 @@ class HumanoidBodyAnimator3D:
     STATES = ("idle", "walk", "run")
     WALK_CYCLE_DISTANCE = 24.0
     RUN_CYCLE_DISTANCE = 34.0
+    WALK_STANCE_FRACTION = HumanoidFootLockSolver3D.WALK_STANCE_FRACTION
+    RUN_STANCE_FRACTION = HumanoidFootLockSolver3D.RUN_STANCE_FRACTION
     PHASE_STEPS = 16
     IDLE_PHASE_STEPS = 8
     TRANSITION_SECONDS = 0.18
@@ -112,7 +114,7 @@ class HumanoidBodyAnimator3D:
                 self._transition_elapsed + delta_seconds,
             )
             raw_weight = self._transition_elapsed / self.TRANSITION_SECONDS
-            weight = round(raw_weight * self.BLEND_STEPS) / self.BLEND_STEPS
+            weight = raw_weight * raw_weight * (3.0 - 2.0 * raw_weight)
             target_pose = self._blend_maps(
                 self._blend_pose, target_pose, weight, (0.0, 0.0, 0.0)
             )
@@ -126,11 +128,11 @@ class HumanoidBodyAnimator3D:
         # Quantization keeps the software-rendered sprite cache bounded while
         # preserving much finer motion than the original eight gait samples.
         self._pose = {
-            name: tuple(self._quantize(value, 1.0 / 64.0) for value in rotation)
+            name: tuple(self._quantize(value, 1.0 / 1024.0) for value in rotation)
             for name, rotation in target_pose.items()
         }
         self._translations = {
-            name: tuple(self._quantize(value, 0.01) for value in translation)
+            name: tuple(self._quantize(value, 1.0 / 1024.0) for value in translation)
             for name, translation in target_translations.items()
         }
         return self.pose
@@ -177,37 +179,46 @@ class HumanoidBodyAnimator3D:
             return self._build_idle_pose()
         phase = self.phase
         running = self.state == "run"
-        amplitude = 0.46 if running else 0.38
-        knee_amplitude = 0.72 if running else 0.54
-        left_hip = math.sin(phase) * amplitude
-        right_hip = -left_hip
-        left_knee = -max(0.0, math.sin(phase + math.pi * 0.5)) * knee_amplitude
-        right_knee = -max(0.0, math.sin(phase - math.pi * 0.5)) * knee_amplitude
-        left_shoulder = -right_hip * (0.95 if running else 0.82)
-        right_shoulder = -left_hip * (0.95 if running else 0.82)
-        torso_twist = math.sin(phase * 2.0) * (0.085 if running else 0.060)
-        lean = 0.09 if running else 0.02
-        left_leg_phase = phase
-        right_leg_phase = (phase + math.pi) % math.tau
-        stance_fraction = 0.30 if running else 0.42
+        stance_fraction = self.RUN_STANCE_FRACTION if running else self.WALK_STANCE_FRACTION
+        knee_amplitude = 0.88 if running else 0.68
+        hip_amplitude = 0.48 if running else 0.36
+        arm_amplitude = 0.95 if running else 0.82
+        torso_twist_amplitude = 0.085 if running else 0.060
+        lean = 0.12 if running else 0.025
 
-        def toe_roll(leg_phase):
+        def leg_pose(leg_phase):
+            leg_phase %= math.tau
             stance_end = math.tau * stance_fraction
             if leg_phase < stance_end:
-                return 0.18 * (leg_phase / stance_end)
-            swing = (leg_phase - stance_end) / (math.tau - stance_end)
-            return -0.07 * math.sin(math.pi * swing)
+                progress = leg_phase / stance_end
+                hip = hip_amplitude * (1.0 - 2.0 * progress)
+                knee = 0.0
+                toe = 0.18 * progress
+            else:
+                progress = (leg_phase - stance_end) / (math.tau - stance_end)
+                eased = progress * progress * (3.0 - 2.0 * progress)
+                hip = hip_amplitude * (-1.0 + 2.0 * eased)
+                knee = -knee_amplitude * math.sin(math.pi * progress)
+                toe = -0.10 * math.sin(math.pi * progress)
+            return hip, knee, toe
 
-        left_toe = toe_roll(left_leg_phase)
-        right_toe = toe_roll(right_leg_phase)
-        shoulder_tuck = 0.62 if running else 0.56
+        left_hip, left_knee, left_toe = leg_pose(phase)
+        right_hip, right_knee, right_toe = leg_pose(phase + math.pi)
+        left_shoulder = -right_hip * arm_amplitude
+        right_shoulder = -left_hip * arm_amplitude
+        torso_twist = math.sin(phase * 2.0) * torso_twist_amplitude
+        pelvis_roll = math.sin(phase * 2.0) * (0.035 if running else 0.025)
+        pelvis_bob = max(0.0, math.sin(phase * 2.0)) * (0.025 if running else 0.010)
+        left_ankle = -left_hip * 0.20 - left_knee * 0.32
+        right_ankle = -right_hip * 0.20 - right_knee * 0.32
+        shoulder_tuck = 0.66 if running else 0.56
         return {
-            "pelvis": (0.0, 0.0, torso_twist * 0.45),
-            "spine_lower": (-lean * 0.35, 0.0, -torso_twist * 0.35),
-            "spine_upper": (-lean * 0.65, 0.0, torso_twist),
-            "chest": (-lean * 0.35, 0.0, -torso_twist * 0.65),
-            "neck": (0.0, 0.0, -torso_twist * 0.20),
-            "head": (lean * 0.20, 0.0, -torso_twist * 0.12),
+            "pelvis": (0.0, 0.0, torso_twist * 0.35 + pelvis_roll),
+            "spine_lower": (-lean * 0.30 + pelvis_bob, 0.0, -torso_twist * 0.30),
+            "spine_upper": (-lean * 0.70, 0.0, torso_twist),
+            "chest": (-lean * 0.30, 0.0, -torso_twist * 0.60),
+            "neck": (0.0, 0.0, -torso_twist * 0.18),
+            "head": (lean * 0.12, 0.0, -torso_twist * 0.10),
             "clavicle_left": (left_shoulder * 0.16, 0.0, left_shoulder * 0.08),
             "clavicle_right": (right_shoulder * 0.16, 0.0, right_shoulder * 0.08),
             "scapula_left_control": (left_shoulder * 0.10, 0.0, 0.0),
@@ -216,8 +227,8 @@ class HumanoidBodyAnimator3D:
             "hip_right": (right_hip, 0.0, 0.0),
             "knee_left": (left_knee, 0.0, 0.0),
             "knee_right": (right_knee, 0.0, 0.0),
-            "ankle_left": (-(left_hip + left_knee) * 0.18, 0.0, 0.0),
-            "ankle_right": (-(right_hip + right_knee) * 0.18, 0.0, 0.0),
+            "ankle_left": (left_ankle, 0.0, 0.0),
+            "ankle_right": (right_ankle, 0.0, 0.0),
             "heel_left": (0.0, 0.0, 0.0),
             "heel_right": (0.0, 0.0, 0.0),
             "foot_ball_left": (left_toe, 0.0, 0.0),

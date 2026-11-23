@@ -43,22 +43,26 @@ def solve_two_bone_ik(target_forward, target_down, upper_length, lower_length):
 
 class HumanoidFootLockSolver3D:
     """Keep stance-foot anchors fixed in world space and solve both leg chains."""
-    WALK_STANCE_FRACTION = 0.56
-    RUN_STANCE_FRACTION = 0.34
+    WALK_STANCE_FRACTION = 0.42
+    RUN_STANCE_FRACTION = 0.30
     WALK_PELVIS_DROP = 0.07
     RUN_PELVIS_DROP = 0.06
     RUN_FLIGHT_RISE = 0.025
     UPPER_LEG_LENGTH = 0.22
     LOWER_LEG_LENGTH = 0.228
     CONTACT_FORWARD = 0.02
-    TARGET_QUANTIZATION = 1.0 / 64.0
-    ANGLE_QUANTIZATION = 1.0 / 32.0
+    TARGET_QUANTIZATION = 1.0 / 1024.0
+    ANGLE_QUANTIZATION = 1.0 / 1024.0
+    WALK_SWING_LIFT = 0.075
+    RUN_SWING_LIFT = 0.125
     SIDES = ("left", "right")
 
     def __init__(self):
         self._anchors = {side: None for side in self.SIDES}
         self._was_stance = {side: False for side in self.SIDES}
         self._last_results = {}
+        self._smoothed_rotations = {}
+        self._smoothed_translations = {}
 
     @property
     def anchors(self):
@@ -81,27 +85,43 @@ class HumanoidFootLockSolver3D:
             self._anchors[side] = None
             self._was_stance[side] = False
         self._last_results.clear()
+        self._smoothed_rotations.clear()
+        self._smoothed_translations.clear()
 
-    def update(self, *, phase, state, world_position, yaw, world_scale, ground_anchor_z=-0.49):
-        """Return stance IK rotations and pelvis translation for one frame."""
+    def update(
+        self, *, phase, state, world_position, yaw, world_scale,
+        ground_anchor_z=-0.49, delta_seconds=1.0 / 60.0,
+    ):
+        """Solve stance contacts and a lifted swing arc in the same gait phase."""
         if state not in {"walk", "run"} or world_position is None:
             self.reset()
             return {}, {}
-        values = (*world_position, phase, yaw, world_scale, ground_anchor_z)
-        if any(isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v) for v in values):
+        values = (*world_position, phase, yaw, world_scale, ground_anchor_z, delta_seconds)
+        if any(
+            isinstance(value, bool)
+            or not isinstance(value, (int, float))
+            or not math.isfinite(value)
+            for value in values
+        ):
             raise ValueError("Foot-lock inputs must be finite.")
-        if world_scale <= 0.0:
-            raise ValueError("world_scale must be positive.")
+        if world_scale <= 0.0 or delta_seconds < 0.0:
+            raise ValueError("world_scale must be positive and delta_seconds non-negative.")
 
-        stance_fraction = self.RUN_STANCE_FRACTION if state == "run" else self.WALK_STANCE_FRACTION
+        stance_fraction = (
+            self.RUN_STANCE_FRACTION if state == "run" else self.WALK_STANCE_FRACTION
+        )
         pelvis_drop = self.RUN_PELVIS_DROP if state == "run" else self.WALK_PELVIS_DROP
+        swing_lift = self.RUN_SWING_LIFT if state == "run" else self.WALK_SWING_LIFT
         cosine, sine = math.cos(yaw), math.sin(yaw)
         rotations = {}
         self._last_results.clear()
+        base_down = abs(ground_anchor_z + 0.03) - 0.02 - pelvis_drop
+        stance_load = 0.0
 
         for side in self.SIDES:
             leg_phase = (phase + (0.0 if side == "left" else math.pi)) % math.tau
-            in_stance = leg_phase < math.tau * stance_fraction
+            stance_end = math.tau * stance_fraction
+            in_stance = leg_phase < stance_end
             hip_x = -0.075 if side == "left" else 0.075
             if in_stance and not self._was_stance[side]:
                 local_y = self.CONTACT_FORWARD
@@ -112,59 +132,74 @@ class HumanoidFootLockSolver3D:
             elif not in_stance:
                 self._anchors[side] = None
             self._was_stance[side] = in_stance
-            anchor = self._anchors[side]
-            if not in_stance or anchor is None:
-                continue
 
-            world_dx = (anchor[0] - world_position[0]) / world_scale
-            world_dy = (anchor[1] - world_position[1]) / world_scale
-            local_x = world_dx * cosine + world_dy * sine
-            local_y = -world_dx * sine + world_dy * cosine
-            target_lateral = local_x - hip_x
-            target_forward = round(local_y / self.TARGET_QUANTIZATION) * self.TARGET_QUANTIZATION
-            target_lateral = (
-                round(target_lateral / self.TARGET_QUANTIZATION)
-                * self.TARGET_QUANTIZATION
-            )
-            target_down = abs(ground_anchor_z + 0.03) - 0.02 - pelvis_drop
+            if in_stance and self._anchors[side] is not None:
+                anchor = self._anchors[side]
+                world_dx = (anchor[0] - world_position[0]) / world_scale
+                world_dy = (anchor[1] - world_position[1]) / world_scale
+                local_x = world_dx * cosine + world_dy * sine
+                local_y = -world_dx * sine + world_dy * cosine
+                target_lateral = local_x - hip_x
+                target_forward = local_y
+                stance_progress = leg_phase / stance_end
+                stance_load += math.sin(math.pi * stance_progress) ** 2
+                target_down = base_down
+                ankle_angle = 0.10 * stance_progress
+            else:
+                swing_progress = (leg_phase - stance_end) / (math.tau - stance_end)
+                eased = swing_progress * swing_progress * (3.0 - 2.0 * swing_progress)
+                target_forward = -0.16 + 0.32 * eased
+                target_lateral = 0.0
+                target_down = base_down - swing_lift * math.sin(math.pi * swing_progress)
+                ankle_angle = (
+                    -0.18 * math.sin(math.pi * swing_progress)
+                    + 0.08 * (1.0 - swing_progress)
+                )
+
             result = solve_two_bone_ik(
                 target_forward, target_down,
-                self.UPPER_LEG_LENGTH, self.LOWER_LEG_LENGTH
+                self.UPPER_LEG_LENGTH, self.LOWER_LEG_LENGTH,
             )
             self._last_results[side] = result
             lateral_angle = -math.atan2(target_lateral, max(1e-6, target_down))
-            hip_angle = round(result.hip_angle / self.ANGLE_QUANTIZATION) * self.ANGLE_QUANTIZATION
-            knee_angle = round(result.knee_angle / self.ANGLE_QUANTIZATION) * self.ANGLE_QUANTIZATION
-            lateral_angle = round(lateral_angle / self.ANGLE_QUANTIZATION) * self.ANGLE_QUANTIZATION
-            rotations[f"hip_{side}"] = (hip_angle, lateral_angle, 0.0)
-            rotations[f"knee_{side}"] = (knee_angle, 0.0, 0.0)
-            rotations[f"ankle_{side}"] = (0.0, 0.0, 0.0)
+            rotations[f"hip_{side}"] = (result.hip_angle, lateral_angle, 0.0)
+            rotations[f"knee_{side}"] = (result.knee_angle, 0.0, 0.0)
+            rotations[f"ankle_{side}"] = (ankle_angle, 0.0, 0.0)
 
-        if self._last_results:
-            translations = {"pelvis": (0.0, 0.0, -pelvis_drop)}
-        elif state == "run":
+        contact_weight = min(1.0, stance_load)
+        pelvis_height = -pelvis_drop * contact_weight
+        if state == "run":
             phase_position = phase % math.tau
-            stance_end = math.tau * stance_fraction
-            right_stance_start = math.pi
-            right_stance_end = right_stance_start + stance_end
-            if phase_position < right_stance_start:
-                flight_progress = (
-                    (phase_position - stance_end)
-                    / (right_stance_start - stance_end)
-                )
-            else:
-                flight_progress = (
-                    (phase_position - right_stance_end)
-                    / (math.tau - right_stance_end)
-                )
-            flight_progress = max(0.0, min(1.0, flight_progress))
-            pelvis_height = -pelvis_drop + (
-                pelvis_drop + self.RUN_FLIGHT_RISE
-            ) * math.sin(math.pi * flight_progress)
-            translations = {"pelvis": (0.0, 0.0, pelvis_height)}
+            swing_phase = (phase_position - math.tau * stance_fraction) % math.pi
+            pelvis_height += self.RUN_FLIGHT_RISE * max(0.0, math.sin(swing_phase))
+        translations = {"pelvis": (0.0, 0.0, pelvis_height)}
+
+        smoothing_time = 0.055
+        weight = 1.0 - math.exp(-max(0.0, delta_seconds) / smoothing_time)
+        if not self._smoothed_rotations:
+            self._smoothed_rotations = dict(rotations)
+            self._smoothed_translations = dict(translations)
         else:
-            translations = {}
-        return rotations, translations
+            self._smoothed_rotations = self._blend(
+                self._smoothed_rotations, rotations, weight
+            )
+            self._smoothed_translations = self._blend(
+                self._smoothed_translations, translations, weight
+            )
+        return dict(self._smoothed_rotations), dict(self._smoothed_translations)
+
+    @staticmethod
+    def _blend(previous, target, weight):
+        blended = {}
+        for name in set(previous) | set(target):
+            first = previous.get(name, target.get(name, (0.0, 0.0, 0.0)))
+            second = target.get(name, first)
+            blended[name] = tuple(
+                first[index] + (second[index] - first[index]) * weight
+                for index in range(3)
+            )
+        return blended
+
 
 
 __all__ = ["HumanoidFootLockSolver3D", "TwoBoneIKResult", "solve_two_bone_ik"]
