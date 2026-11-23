@@ -3,7 +3,6 @@
 This module classifies geometry only. It does not perform pathfinding, mutate
 actors, or replace the continuous physics/collision authority.
 """
-
 from __future__ import annotations
 
 import math
@@ -188,14 +187,12 @@ def build_square_grid_coverage(
     hex_size: int | float = 32.0,
     grid_origin: WorldPoint = WorldPoint(0.0, 0.0),
     hex_origin: WorldPoint = WorldPoint(0.0, 0.0),
+    grid_bounds: tuple[int, int, int, int] | None = None,
 ) -> SquareGridCoverageMap:
-    """Build a deterministic square-cell coverage map over valid hex polygons.
+    """Build deterministic coverage, optionally restricted to inclusive grid bounds.
 
-    A square is walkable only when its complete area is covered by valid map
-    hexes and none of the intersected hex area is marked blocked. Partial
-    boundary squares and squares outside the valid-hex union are non-walkable.
-    The map includes the full grid-aligned rectangle around the hex-map bounds,
-    so outside cells remain explicit and testable.
+    grid_bounds is (min_x, min_y, max_x, max_y). Supplying it lets the cache
+    generate one chunk without materializing the entire map's square grid.
     """
     if not isinstance(map_definition, HexMapDefinition):
         raise TypeError("map_definition must be a HexMapDefinition.")
@@ -213,6 +210,16 @@ def build_square_grid_coverage(
         raise TypeError("grid_origin must be a WorldPoint.")
     if not isinstance(hex_origin, WorldPoint):
         raise TypeError("hex_origin must be a WorldPoint.")
+    if grid_bounds is not None:
+        if (
+            not isinstance(grid_bounds, tuple)
+            or len(grid_bounds) != 4
+            or any(type(value) is not int for value in grid_bounds)
+        ):
+            raise TypeError("grid_bounds must be a four-integer tuple.")
+        min_grid_x, min_grid_y, max_grid_x, max_grid_y = grid_bounds
+        if min_grid_x > max_grid_x or min_grid_y > max_grid_y:
+            raise ValueError("grid_bounds minimums must not exceed maximums.")
 
     polygons: list[
         tuple[LocalHexPosition, str, bool, tuple[tuple[float, float], ...]]
@@ -240,6 +247,15 @@ def build_square_grid_coverage(
     grid_y_range = _axis_grid_range(
         min_y, max_y, origin=grid_origin.y, cell_size=size,
     )
+    if grid_bounds is not None:
+        grid_x_range = range(
+            max(grid_x_range.start, min_grid_x),
+            min(grid_x_range.stop - 1, max_grid_x) + 1,
+        )
+        grid_y_range = range(
+            max(grid_y_range.start, min_grid_y),
+            min(grid_y_range.stop - 1, max_grid_y) + 1,
+        )
 
     intersections: dict[SquareGridCoord, list[HexCellCoverage]] = {}
     area_epsilon = max(1e-12, size * size * 1e-12)
@@ -255,6 +271,15 @@ def build_square_grid_coverage(
         candidate_y = _axis_grid_range(
             hex_min_y, hex_max_y, origin=grid_origin.y, cell_size=size,
         )
+        if grid_bounds is not None:
+            candidate_x = range(
+                max(candidate_x.start, min_grid_x),
+                min(candidate_x.stop - 1, max_grid_x) + 1,
+            )
+            candidate_y = range(
+                max(candidate_y.start, min_grid_y),
+                min(candidate_y.stop - 1, max_grid_y) + 1,
+            )
         for grid_x in candidate_x:
             for grid_y in candidate_y:
                 coord = SquareGridCoord(grid_x, grid_y)
