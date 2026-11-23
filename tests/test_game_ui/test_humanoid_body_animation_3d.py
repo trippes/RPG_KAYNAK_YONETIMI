@@ -177,25 +177,6 @@ class HumanoidBodyAnimator3DTests(unittest.TestCase):
             previous = current
         self.assertTrue(all(delta < 0.2 for delta in deltas))
 
-    def test_gait_stride_distance_adapts_to_measured_speed_at_human_cadence(self):
-        slow = HumanoidBodyAnimator3D(state="walk")
-        fast = HumanoidBodyAnimator3D(state="walk")
-        slow.advance(12.0, 0.55)
-        fast.advance(24.0, 0.55)
-        self.assertAlmostEqual(slow.phase, fast.phase)
-        self.assertAlmostEqual(
-            slow.phase,
-            math.tau * 0.55 / HumanoidBodyAnimator3D.WALK_CYCLE_SECONDS,
-        )
-
-    def test_walk_and_run_use_distinct_human_step_cadences(self):
-        walk = HumanoidBodyAnimator3D(state="walk")
-        run = HumanoidBodyAnimator3D(state="run")
-        walk.advance(10.0, 0.2)
-        run.advance(10.0, 0.2)
-        self.assertGreater(run.phase, walk.phase)
-        self.assertEqual(HumanoidBodyAnimator3D.WALK_CADENCE_STEPS_PER_MINUTE, 110.0)
-        self.assertEqual(HumanoidBodyAnimator3D.RUN_CADENCE_STEPS_PER_MINUTE, 170.0)
 
 
 if __name__ == "__main__":

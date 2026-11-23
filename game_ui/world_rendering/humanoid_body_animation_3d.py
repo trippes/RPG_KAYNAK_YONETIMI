@@ -15,10 +15,6 @@ class HumanoidBodyAnimator3D:
         "west", "north_west", "north", "north_east",
     )
     STATES = ("idle", "walk", "run")
-    WALK_CADENCE_STEPS_PER_MINUTE = 110.0
-    RUN_CADENCE_STEPS_PER_MINUTE = 170.0
-    WALK_CYCLE_SECONDS = 120.0 / WALK_CADENCE_STEPS_PER_MINUTE
-    RUN_CYCLE_SECONDS = 120.0 / RUN_CADENCE_STEPS_PER_MINUTE
     WALK_CYCLE_DISTANCE = 24.0
     RUN_CYCLE_DISTANCE = 34.0
     WALK_STANCE_FRACTION = HumanoidFootLockSolver3D.WALK_STANCE_FRACTION
@@ -87,21 +83,15 @@ class HumanoidBodyAnimator3D:
         ):
             raise ValueError("delta_seconds must be a finite non-negative number.")
 
-        elapsed_seconds = float(delta_seconds)
-        transition_delta = min(elapsed_seconds, 0.1)
-        if self.state != "idle" and traveled_distance > 0.0 and elapsed_seconds > 1e-6:
-            cadence = (
-                self.RUN_CADENCE_STEPS_PER_MINUTE
-                if self.state == "run"
-                else self.WALK_CADENCE_STEPS_PER_MINUTE
+        transition_delta = min(float(delta_seconds), 0.1)
+        if self.state != "idle" and traveled_distance > 0.0:
+            cycle_distance = (
+                self.RUN_CYCLE_DISTANCE if self.state == "run"
+                else self.WALK_CYCLE_DISTANCE
             )
-            cycle_seconds = 120.0 / cadence
-            measured_speed = float(traveled_distance) / elapsed_seconds
-            cycle_distance = measured_speed * cycle_seconds
-            if cycle_distance > 1e-9:
-                self.phase = (
-                    self.phase + math.tau * float(traveled_distance) / cycle_distance
-                ) % math.tau
+            self.phase = (
+                self.phase + math.tau * float(traveled_distance) / cycle_distance
+            ) % math.tau
         else:
             self._idle_clock += transition_delta
 
@@ -112,7 +102,6 @@ class HumanoidBodyAnimator3D:
             world_position=world_position,
             yaw=float(yaw),
             world_scale=float(world_scale),
-            delta_seconds=transition_delta,
         )
         target_pose.update(foot_rotations)
 
