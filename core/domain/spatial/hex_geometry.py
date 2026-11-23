@@ -102,6 +102,35 @@ def axial_to_world_point(
     return WorldPoint(origin.x + x, origin.y + y)
 
 
+def pointy_top_hex_corners(
+    coord: HexCoord,
+    hex_size: int | float,
+    origin: WorldPoint = WorldPoint(0.0, 0.0),
+) -> tuple[WorldPoint, ...]:
+    """Return the six corners of a pointy-top hex in canonical world coordinates.
+
+    Corners are ordered clockwise, starting at the top vertex. The helper is
+    shared by geometry consumers that need actual hex area rather than only
+    nearest-cell ownership.
+    """
+    center = axial_to_world_point(coord, hex_size, origin)
+    size = _validate_hex_size(hex_size)
+    half_width = math.sqrt(3.0) * size / 2.0
+    half_height = size / 2.0
+    offsets = (
+        (0.0, -size),
+        (half_width, -half_height),
+        (half_width, half_height),
+        (0.0, size),
+        (-half_width, half_height),
+        (-half_width, -half_height),
+    )
+    return tuple(
+        WorldPoint(center.x + dx, center.y + dy)
+        for dx, dy in offsets
+    )
+
+
 def world_point_to_fractional_axial(
     point: WorldPoint,
     hex_size: int | float,

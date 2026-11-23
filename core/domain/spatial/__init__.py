@@ -7,8 +7,16 @@ from .hex_geometry import (
     axial_to_world_point,
     world_point_to_fractional_axial,
     world_point_to_hex,
+    pointy_top_hex_corners,
 )
 from .world_point import WorldPoint
+from .square_grid import (
+    SquareGridCoord,
+    world_point_to_square_grid,
+    square_grid_to_world_point,
+    square_grid_cell_bounds,
+    square_grid_cell_corners,
+)
 from .continuous_position import ContinuousEntityPosition
 from .aabb import AABB
 from .uniform_grid_index import UniformGridIndex
@@ -30,4 +38,6 @@ __all__ = [
     "axial_to_pixel", "fractional_axial_to_hex", "pixel_to_axial",
     "WorldPoint", "ContinuousEntityPosition", "AABB", "UniformGridIndex",
     "axial_to_world_point", "world_point_to_fractional_axial", "world_point_to_hex",
+    "pointy_top_hex_corners", "SquareGridCoord", "world_point_to_square_grid",
+    "square_grid_to_world_point", "square_grid_cell_bounds", "square_grid_cell_corners",
 ]

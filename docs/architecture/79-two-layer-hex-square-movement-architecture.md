@@ -3,13 +3,16 @@
 **Tarih:** 23 Kasım 2026  
 **Hedef dal:** `experiment/map-cleanup`  
 **Durum:** Mimari plan — uygulama başlamadı  
-**Karar:** Altıgen dünya korunur; kare hareket ızgarası türetilmiş navigasyon katmanı olur; aktörlerin fiziksel konumu sürekli dünya koordinatlarında kalır.
+**Karar:** Altıgen dünya kanonik kalır; kare hareket ızgarası oyuncu ve NPC'lerin birincil navigasyon katmanıdır; aktörlerin fiziksel konumu sürekli dünya koordinatlarında kalır.
+
+
+> **Bağlayıcı güncelleme — 23 Kasım 2026:** Bu planın ilk sürümündeki “axial A* dünya ölçeğinde kaba rota/kalıcı fallback, kare grid yerel rota” yorumu geçersizdir. Yeni ve öncelikli karar 81 numaralı mimari karar belgesindedir: kare grid oyuncu ve NPC hareketinin birincil navigasyon uzayıdır; axial A* yalnızca geçiş döneminde karşılaştırma veya geçici fallback olabilir. Kare grid, yalnızca hexlerin içine bölünmüş yerel alt-ızgara değildir.
 
 ---
 
 ## 1. Yönetici özeti
 
-Eldoria'nın altıgen harita sistemi dünya topolojisinin, arazi sahipliğinin, kaynakların, yapıların, bölge kurallarının ve kayıt verisinin tek doğruluk kaynağı olmaya devam edecektir. Bunun üzerine, aynı dünya geometrisini örten daha ince bir kare ızgara eklenecektir. Kare ızgara, hareket alanını örneklemek, yerel navigasyon üretmek ve uzamsal sorguları hızlandırmak için kullanılacaktır.
+Eldoria'nın altıgen harita sistemi dünya topolojisinin, arazi sahipliğinin, kaynakların, yapıların, bölge kurallarının ve kayıt verisinin tek doğruluk kaynağı olmaya devam edecektir. Bunun üzerine, aynı dünya geometrisini örten daha ince bir kare ızgara eklenecektir. Kare ızgara, hareket alanını örneklemek ve oyuncu/NPC için birincil rota graph'ını üretmek için kullanılacaktır.
 
 Oyuncu veya NPC kare hücre merkezlerine taşınmayacaktır. Gerçek aktör konumu kesirli `WorldPoint(x, y)` koordinatlarında tutulacak; hız, ivme, çarpışma ve hareket entegrasyonu sürekli düzlemde çalışacaktır.
 
@@ -31,7 +34,7 @@ Bu plan, `experiment/map-cleanup` dalında incelenen mevcut bileşenleri temel a
 | `HexPhysicsSnapshot` | Altıgen haritadan statik çarpışma geometrisi üretir | Kesin çarpışma doğrulamasının kaynağı |
 | `resolve_continuous_motion` | Süpürmeli sürekli çarpışma çözümü | Son fiziksel hareket doğrulaması |
 | `UniformGridIndex` | Seyrek uzamsal hash / broadphase aday sorgusu | Aktör ve nesne sorguları için korunur |
-| `HexPathfinder` | Axial altıgen graf üzerinde deterministik A* | Dünya ölçeğinde kaba rota ve geri dönüş yolu |
+| `HexPathfinder` | Axial altıgen graf üzerinde deterministik A* | Geçiş döneminde karşılaştırma/geçici fallback; kalıcı ana navigasyon değildir |
 | `DynamicActorCollisionResolver` | Oyuncu-NPC itişi ve aktör çakışmaları | Aynı fizik koordinatlarında çalışmaya devam eder |
 | `NPCAvoidanceSystem` | Mevcut hex tabanlı kaçınma rotası | Aşamalı olarak ince navigasyon katmanına bağlanır |
 | `HexGameplayView` | Pygame sunumu ve input entegrasyonu | Koordinat ve sunum adaptörü; fizik otoritesi olmayacak |
@@ -119,21 +122,21 @@ Bu değerler nihai karar değildir. Benchmark ve dar geçit kabul testleriyle se
 
 Kare ızgara üzerinde A* araması, hücre merkezlerine taşınma anlamına gelmez. Rota noktaları sürekli koordinatlara çevrilir; rota yumuşatma yalnızca fizik snapshot tarafından doğrulanan segmentlerde yapılır.
 
-## 6. Navigasyon stratejisi: hiyerarşik ve fizik doğrulamalı
+## 6. Navigasyon stratejisi: kare grid birincil ve fizik doğrulamalı
 
-İlk sürümde bütün dünya navigasyonunu bir kerede kare A*'a taşımak önerilmez. Mevcut axial A* kararlı bir kaba rota ve geri dönüş yolu olarak korunmalıdır.
+Hedef mimaride kare grid, oyuncu ve NPC'ler için tüm mesafelerde birincil navigasyon graph'ıdır. Yol bulma, hedef hücre, komşuluk, rota maliyeti ve waypoint üretimi kare grid üzerinden yapılır. Hex A* kalıcı bir global koridor veya ana rota katmanı olarak korunmaz.
 
-Önerilen hibrit akış:
+Önerilen akış:
 
-1. Hedef dünya koordinatı önce kanonik harita maskesi ve hex sahipliği açısından doğrulanır.
-2. Mevcut axial A* gerekirse başlangıç hex'i ile hedef hex arasında kaba koridor üretir.
-3. Kare ızgara, bu koridorun çevresindeki yerel chunk'larda daha hassas rota üretir.
-4. Grid rota segmentleri swept-circle fizik çözümüyle doğrulanır.
-5. Rota waypoint'leri sürekli koordinatlarda takip edilir; aktör hız/ivme ile ilerler.
-6. Hedef, harita geçişi veya engel durumu değiştiğinde yalnızca etkilenen rota bölümü yeniden hesaplanır.
-7. Yerel kare rota üretilemezse fizik doğrulamalı axial rota fallback olarak kullanılabilir; aktör geçersiz bir kestirme yapmaz.
+1. Hedef dünya koordinatı kanonik hex harita maskesi ve kare-grid coverage açısından doğrulanır.
+2. Başlangıç ve hedef dünya noktaları kare-grid hücrelerine dönüştürülür; aktörün gerçek sürekli konumu değiştirilmez.
+3. Kare-grid A* tüm rota graph'ını arar. Harita boyutu arttığında chunk/cache optimizasyonu aynı kare-grid topolojisinin üzerinde çalışır; hex A* ile ikinci bir kalıcı rota hiyerarşisi kurulmaz.
+4. Diagonal geçişlerde iki ortogonal komşu hücrenin geçilebilirliği ve gerçek collider genişliği doğrulanır; köşeden kesme engellenir.
+5. Rota waypoint'leri kare hücre merkezlerinden sürekli dünya koordinatlarına çevrilir. Rota yumuşatma yalnızca swept physics tarafından doğrulanan segmentlerde yapılır.
+6. Fizik snapshot ve mevcut swept-circle çözümü her gerçek hareket adımının son güvenlik doğrulamasıdır.
+7. Hedef, harita veya dinamik engel durumu değiştiğinde kare-grid rotası yeniden değerlendirilir.
 
-İlerleyen ölçümlerde doğrudan kare-grid A* ile hiyerarşik rota arasında karar verilebilir. Küçük haritalarda basit çözüm, büyük haritalarda chunk ve kaba hex koridoru tercih edilir.
+Axial A* yalnızca geçiş sırasında eski ve yeni yaklaşımın karşılaştırılması veya geçici güvenli fallback için tutulabilir. Bu geçici kullanım, kare-grid birincil navigasyon hedefini değiştirmez ve nihai mimari sözleşme olarak kalıcılaştırılmaz.
 
 ## 7. Fizik ve çarpışma sözleşmesi
 
@@ -231,7 +234,7 @@ Benchmark senaryoları: 1, 10, 25 ve 50 aktör; 16 ve 8 birim grid; açık arazi
 - 8 komşuluk, diagonal corner-cutting engeli ve gerçek mesafe maliyeti uygulanır.
 - Hareket profili ve arazi maliyetleri graph kenarlarına yansıtılır.
 - Her rota segmenti fizik snapshot ile doğrulanır.
-- Axial A* fallback olarak korunur.
+- Kare-grid A* birincil navigasyon sistemi olur. Axial A* yalnızca geçiş döneminde karşılaştırma veya geçici fallback olabilir; kalıcı global rota katmanı değildir.
 - Rota sürekli WorldPoint waypoint'lerine dönüştürülür.
 
 **Çıkış kapısı:** Dar geçit, köşe, sınır ve engel testlerinde fiziksel olarak geçersiz rota üretilmiyor.
