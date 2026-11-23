@@ -6,7 +6,7 @@ import statistics
 import time
 from pathlib import Path
 
-from application.hex_map_definition import load_hex_map
+from application.hex_map_definition import load_hex_map_definition
 from application.square_grid_coverage import build_square_grid_coverage
 from application.square_grid_pathfinding import (
     SquareGridNavigationProfile,
@@ -86,7 +86,7 @@ def _benchmark_resolution(map_definition, cell_size: int) -> dict[str, object]:
 def main() -> None:
     root = Path(__file__).resolve().parents[1]
     map_path = root / "content" / "demo_eldoria" / "hex_maps" / "starting_valley.json"
-    definition = load_hex_map(map_path)
+    definition = load_hex_map_definition(map_path)
     results = {
         "map_id": definition.map_id,
         "valid_hex_cells": len(definition.valid_cells),
