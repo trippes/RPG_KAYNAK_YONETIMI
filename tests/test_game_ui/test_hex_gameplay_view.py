@@ -6,6 +6,7 @@ import pytest
 import pygame
 
 from core.domain.movement import MovementConfig, MovementIntent
+from core.domain.physics import Vector2
 from application.hex_map_definition import parse_hex_map
 from application.hex_world_runtime import HexMovableEntity
 from core.domain.spatial import EntityPosition, LocalHexPosition, MovementProfile, WorldPoint, world_point_to_hex
