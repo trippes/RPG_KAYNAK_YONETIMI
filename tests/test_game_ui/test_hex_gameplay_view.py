@@ -217,6 +217,9 @@ def test_hex_gameplay_view_renders_runtime_map_without_mutating_entity_position(
         height=600,
         text=lambda *_args, **_kwargs: None,
     )
+    # The click destination is a continuous world point, not an axial cell.
+    view._move_goal = WorldPoint(24.0, 40.0)
+    view._move_map_id = "village"
 
     assert view.render(renderer) is True
     assert player.position == EntityPosition(
