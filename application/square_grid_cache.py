@@ -115,7 +115,8 @@ class SquareGridChunkCache:
     """Thread-safe LRU cache of immutable coverage chunks.
 
     Chunk coordinates use floor-division semantics, including negative cells.
-    The cache stores no actor state and is never serialized.
+    The cache stores no actor state and is never serialized. Geometry metadata
+    is memoized per immutable map instance so cache hits do not rescan the map.
     """
 
     def __init__(self, *, chunk_size: int = 16, max_chunks: int = 64) -> None:
@@ -126,6 +127,10 @@ class SquareGridChunkCache:
         self.chunk_size = chunk_size
         self.max_chunks = max_chunks
         self._entries: OrderedDict[tuple[object, ...], SquareGridCoverageMap] = OrderedDict()
+        self._metadata: OrderedDict[
+            tuple[object, ...],
+            tuple[HexMapDefinition, str, tuple[int, int, int, int]],
+        ] = OrderedDict()
         self._hits = 0
         self._misses = 0
         self._evictions = 0
@@ -141,8 +146,55 @@ class SquareGridChunkCache:
     def clear(self, *, reset_stats: bool = False) -> None:
         with self._lock:
             self._entries.clear()
+            self._metadata.clear()
             if reset_stats:
                 self._hits = self._misses = self._evictions = 0
+
+    def _geometry_metadata(
+        self,
+        map_definition: HexMapDefinition,
+        *,
+        cell_size: float,
+        hex_size: float,
+        grid_origin: WorldPoint,
+        hex_origin: WorldPoint,
+    ) -> tuple[str, tuple[int, int, int, int]]:
+        metadata_key = (
+            id(map_definition),
+            cell_size,
+            hex_size,
+            grid_origin,
+            hex_origin,
+        )
+        with self._lock:
+            cached = self._metadata.get(metadata_key)
+            if cached is not None and cached[0] is map_definition:
+                self._metadata.move_to_end(metadata_key)
+                return cached[1], cached[2]
+
+        fingerprint = square_grid_geometry_fingerprint(
+            map_definition,
+            cell_size=cell_size,
+            hex_size=hex_size,
+            grid_origin=grid_origin,
+            hex_origin=hex_origin,
+        )
+        bounds = _map_grid_bounds(
+            map_definition,
+            cell_size=cell_size,
+            hex_size=hex_size,
+            grid_origin=grid_origin,
+            hex_origin=hex_origin,
+        )
+        with self._lock:
+            existing = self._metadata.get(metadata_key)
+            if existing is not None and existing[0] is map_definition:
+                self._metadata.move_to_end(metadata_key)
+                return existing[1], existing[2]
+            self._metadata[metadata_key] = (map_definition, fingerprint, bounds)
+            while len(self._metadata) > 16:
+                self._metadata.popitem(last=False)
+        return fingerprint, bounds
 
     def chunk_coords(
         self,
@@ -157,13 +209,14 @@ class SquareGridChunkCache:
         radius = _positive_finite(hex_size, "hex_size")
         _validate_origin(grid_origin, "grid_origin")
         _validate_origin(hex_origin, "hex_origin")
-        min_x, min_y, max_x, max_y = _map_grid_bounds(
+        _, bounds = self._geometry_metadata(
             map_definition,
             cell_size=size,
             hex_size=radius,
             grid_origin=grid_origin,
             hex_origin=hex_origin,
         )
+        min_x, min_y, max_x, max_y = bounds
         first_x, last_x = min_x // self.chunk_size, max_x // self.chunk_size
         first_y, last_y = min_y // self.chunk_size, max_y // self.chunk_size
         return tuple(
@@ -190,18 +243,14 @@ class SquareGridChunkCache:
         radius = _positive_finite(hex_size, "hex_size")
         _validate_origin(grid_origin, "grid_origin")
         _validate_origin(hex_origin, "hex_origin")
-        fingerprint = square_grid_geometry_fingerprint(
+        fingerprint, bounds = self._geometry_metadata(
             map_definition,
             cell_size=size,
             hex_size=radius,
             grid_origin=grid_origin,
             hex_origin=hex_origin,
         )
-        key = (
-            fingerprint,
-            self.chunk_size,
-            chunk_coord,
-        )
+        key = (fingerprint, self.chunk_size, chunk_coord)
         with self._lock:
             cached = self._entries.get(key)
             if cached is not None:
@@ -210,13 +259,7 @@ class SquareGridChunkCache:
                 return cached
             self._misses += 1
 
-        min_x, min_y, max_x, max_y = _map_grid_bounds(
-            map_definition,
-            cell_size=size,
-            hex_size=radius,
-            grid_origin=grid_origin,
-            hex_origin=hex_origin,
-        )
+        min_x, min_y, max_x, max_y = bounds
         chunk_min_x = max(min_x, chunk_coord.x * self.chunk_size)
         chunk_min_y = max(min_y, chunk_coord.y * self.chunk_size)
         chunk_max_x = min(max_x, (chunk_coord.x + 1) * self.chunk_size - 1)
