@@ -43,15 +43,15 @@ def solve_two_bone_ik(target_forward, target_down, upper_length, lower_length):
 
 class HumanoidFootLockSolver3D:
     """Keep stance-foot anchors fixed in world space and solve both leg chains."""
-    WALK_STANCE_FRACTION = 0.42
-    RUN_STANCE_FRACTION = 0.30
+    WALK_STANCE_FRACTION = 0.56
+    RUN_STANCE_FRACTION = 0.34
     WALK_PELVIS_DROP = 0.07
     RUN_PELVIS_DROP = 0.06
     RUN_FLIGHT_RISE = 0.025
     UPPER_LEG_LENGTH = 0.22
     LOWER_LEG_LENGTH = 0.228
     CONTACT_FORWARD = 0.02
-    TARGET_QUANTIZATION = 1.0 / 1024.0
+    TARGET_QUANTIZATION = 1.0 / 64.0
     ANGLE_QUANTIZATION = 1.0 / 1024.0
     WALK_SWING_LIFT = 0.075
     RUN_SWING_LIFT = 0.125
@@ -140,7 +140,8 @@ class HumanoidFootLockSolver3D:
                 local_x = world_dx * cosine + world_dy * sine
                 local_y = -world_dx * sine + world_dy * cosine
                 target_lateral = local_x - hip_x
-                target_forward = local_y
+                target_forward = round(local_y / self.TARGET_QUANTIZATION) * self.TARGET_QUANTIZATION
+                target_lateral = round(target_lateral / self.TARGET_QUANTIZATION) * self.TARGET_QUANTIZATION
                 stance_progress = leg_phase / stance_end
                 stance_load += math.sin(math.pi * stance_progress) ** 2
                 target_down = base_down
@@ -170,8 +171,23 @@ class HumanoidFootLockSolver3D:
         pelvis_height = -pelvis_drop * contact_weight
         if state == "run":
             phase_position = phase % math.tau
-            swing_phase = (phase_position - math.tau * stance_fraction) % math.pi
-            pelvis_height += self.RUN_FLIGHT_RISE * max(0.0, math.sin(swing_phase))
+            stance_end = math.tau * stance_fraction
+            opposite_contact = math.pi
+            if phase_position < opposite_contact:
+                flight_progress = (
+                    (phase_position - stance_end)
+                    / (opposite_contact - stance_end)
+                )
+            else:
+                opposite_end = opposite_contact + stance_end
+                flight_progress = (
+                    (phase_position - opposite_end)
+                    / (math.tau - opposite_end)
+                )
+            flight_progress = max(0.0, min(1.0, flight_progress))
+            pelvis_height = -pelvis_drop + (
+                pelvis_drop + self.RUN_FLIGHT_RISE
+            ) * math.sin(math.pi * flight_progress)
         translations = {"pelvis": (0.0, 0.0, pelvis_height)}
 
         smoothing_time = 0.055
