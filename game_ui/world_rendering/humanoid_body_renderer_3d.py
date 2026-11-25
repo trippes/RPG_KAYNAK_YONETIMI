@@ -23,6 +23,8 @@ class HumanoidBodyRenderer3D:
     }
     CACHE_MAX_ENTRIES = 256
     CACHE_MAX_BYTES = 32 * 1024 * 1024
+    POSE_CACHE_QUANTIZATION = 1.0 / 128.0
+    TRANSLATION_CACHE_QUANTIZATION = 1.0 / 128.0
 
     def __init__(self) -> None:
         self._sprite_cache: OrderedDict[tuple, tuple[pygame.Surface, tuple[int, int], int]] = (
@@ -93,16 +95,22 @@ class HumanoidBodyRenderer3D:
                 raise ValueError(f"Unknown body materials: {', '.join(sorted(unknown))}.")
             colors.update(palette)
 
+        render_rotations = self._quantize_map(
+            local_rotations, self.POSE_CACHE_QUANTIZATION,
+        )
+        render_translations = self._quantize_map(
+            local_translations, self.TRANSLATION_CACHE_QUANTIZATION,
+        )
         pose_key = tuple(
             sorted(
-                (name, tuple(round(float(value), 6) for value in rotation))
-                for name, rotation in (local_rotations or {}).items()
+                (name, tuple(rotation))
+                for name, rotation in (render_rotations or {}).items()
             )
         )
         translation_key = tuple(
             sorted(
-                (name, tuple(round(float(value), 3) for value in translation))
-                for name, translation in (local_translations or {}).items()
+                (name, tuple(translation))
+                for name, translation in (render_translations or {}).items()
             )
         )
         target_format = None
@@ -124,8 +132,8 @@ class HumanoidBodyRenderer3D:
         if cached is None:
             self._cache_misses += 1
             cached = self._build_sprite(
-                body, rig, float(world_scale), float(yaw), local_rotations,
-                local_translations, colors, detail_level,
+                body, rig, float(world_scale), float(yaw), render_rotations,
+                render_translations, colors, detail_level,
             )
             self._store_sprite(cache_key, cached)
         else:
@@ -223,6 +231,15 @@ class HumanoidBodyRenderer3D:
         ):
             _, (old_sprite, _, _) = self._sprite_cache.popitem(last=False)
             self._cache_bytes -= old_sprite.get_width() * old_sprite.get_height() * 4
+
+    @staticmethod
+    def _quantize_map(values, step):
+        if not values:
+            return None
+        return {
+            name: tuple(round(float(value) / step) * step for value in vector)
+            for name, vector in values.items()
+        }
 
     @staticmethod
     def _camera_depth(point, yaw):
