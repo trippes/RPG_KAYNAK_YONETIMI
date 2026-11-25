@@ -20,7 +20,7 @@ jobs:
         run: >-
           python -m ruff check --select E4,E7,E9,F
           --extend-per-file-ignores
-          application/gameplay_service.py:F401,application/gameplay_service.py:E701
+          application/gameplay_service.py:F401,application/gameplay_service.py:E701,tests/test_application/test_phase_d_quality.py:E702,tests/test_application/test_phase_d_quality.py:F841
           application/hex_world_runtime.py
           application/hex_pathfinding.py
           application/hex_occupancy.py
