@@ -434,6 +434,16 @@ def _build_default_rig() -> HumanoidRig:
         _joint("chest", "spine_upper", (0.0, 0.0, 0.08)),
         _joint("neck", "chest", (0.0, 0.0, 0.09)),
         _joint("head", "neck", (0.0, 0.0, 0.10)),
+        # Facial landmarks are children of the head so every feature follows head pose.
+        _joint("eye_left", "head", (-0.028, 0.064, 0.020)),
+        _joint("eye_right", "head", (0.028, 0.064, 0.020)),
+        _joint("iris_left", "eye_left", (0.0, 0.009, 0.0)),
+        _joint("iris_right", "eye_right", (0.0, 0.009, 0.0)),
+        _joint("nose", "head", (0.0, 0.078, -0.004)),
+        _joint("mouth", "head", (0.0, 0.071, -0.035)),
+        _joint("ear_left", "head", (-0.075, 0.0, 0.0)),
+        _joint("ear_right", "head", (0.075, 0.0, 0.0)),
+        _joint("hair_top", "head", (0.0, -0.005, 0.055)),
         _joint("clavicle_left", "chest", (-0.075, 0.0, 0.045)),
         _joint("shoulder_left", "clavicle_left", (-0.105, 0.0, 0.005), limit=SHOULDER_LIMIT),
         _joint(
