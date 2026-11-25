@@ -415,6 +415,7 @@ class TestPhaseDQuality(unittest.TestCase):
     def test_inventory_and_market_windows_ignore_legacy_screen_navigation(self):
         inventory = SimpleNamespace(items=(), stocks=(), weight=0)
         service = SimpleNamespace(
+            player_inventory_id="player",
             inventory=lambda _inventory_id: inventory,
             item=lambda _item_id: None,
             actor_activity=lambda _actor_id: None,
