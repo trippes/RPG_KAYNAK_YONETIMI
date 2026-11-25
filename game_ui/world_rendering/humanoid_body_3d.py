@@ -736,7 +736,7 @@ def _build_default_body() -> HumanoidBodyModel:
                         (f"ankle_{side}", 0.032, 0.032, "trousers"),
                     ),
                     sides=8,
-                    subdivisions=3,
+                    subdivisions=2,
                 ),
                 BodySurfaceDefinition(
                     f"connected_foot_{side}",
@@ -746,7 +746,7 @@ def _build_default_body() -> HumanoidBodyModel:
                         (f"toe_{side}", 0.025, 0.043, "boots"),
                     ),
                     sides=8,
-                    subdivisions=3,
+                    subdivisions=2,
                 ),
             )
         )
