@@ -404,7 +404,7 @@ class CharacterCreationScreen:
 
         try:
             self.service.application.customize_character(
-                "hero",
+                self.service.player_character_id,
                 self.name,
                 age,
                 self.scores,
