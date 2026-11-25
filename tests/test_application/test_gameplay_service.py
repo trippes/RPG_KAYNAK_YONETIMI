@@ -166,7 +166,7 @@ class TestGameplayService(unittest.TestCase):
             account_id="bank_account",
         )
 
-        with self.assertRaisesRegex(ValueError, "IDs must be non-empty strings"):
+        with self.assertRaisesRegex(ValueError, "account ID must be a non-empty string"):
             self.service.configure_player_context(
                 actor_id="replacement_actor",
                 inventory_id="replacement_bag",
