@@ -84,6 +84,26 @@ class TestHumanoidBodyRenderer3D(unittest.TestCase):
         self.assertNotEqual(first.get_bounding_rect().size, (0, 0))
         self.assertNotEqual(second.get_bounding_rect().size, (0, 0))
 
+    def test_subpixel_pose_changes_reuse_quantized_sprite_cache(self):
+        renderer = HumanoidBodyRenderer3D()
+        for rotation, translation in (
+            ((0.0, 0.0, 0.1201), (0.0, 0.0, -0.0801)),
+            ((0.0, 0.0, 0.1210), (0.0, 0.0, -0.0810)),
+        ):
+            renderer.draw(
+                pygame.Surface((420, 560), pygame.SRCALPHA),
+                DEFAULT_HUMANOID_BODY,
+                DEFAULT_HUMANOID_RIG,
+                (210, 500),
+                54.0,
+                local_rotations={"shoulder_left": rotation},
+                local_translations={"pelvis": translation},
+                detail_level="low",
+            )
+        self.assertEqual(renderer.cache_info()["misses"], 1)
+        self.assertEqual(renderer.cache_info()["hits"], 1)
+        self.assertEqual(renderer.cache_info()["entries"], 1)
+
     def test_cache_key_changes_for_pose_direction_detail_and_palette(self):
         renderer = HumanoidBodyRenderer3D()
         options = (
