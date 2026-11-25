@@ -419,6 +419,13 @@ class CharacterCreationScreen:
                 appearance=self.appearance,
             )
 
+            if getattr(self.service, "_creation_from_eren", False):
+                self.service.change_relationship(
+                    self.service.player_actor_id,
+                    "warden_lyra",
+                    trust=1,
+                )
+
         except (
             KeyError,
             TypeError,
