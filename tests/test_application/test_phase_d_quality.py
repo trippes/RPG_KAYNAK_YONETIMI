@@ -1559,6 +1559,8 @@ class TestPhaseDQuality(unittest.TestCase):
                 )
 
         class Service:
+            player_inventory_id = "player"
+
             def inventory(self, inventory_id):
                 return type(
                     "InventoryView",
