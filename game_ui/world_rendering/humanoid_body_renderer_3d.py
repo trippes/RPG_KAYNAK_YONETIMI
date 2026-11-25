@@ -21,6 +21,10 @@ class HumanoidBodyRenderer3D:
         "tunic": (68, 112, 79),
         "trousers": (62, 66, 79),
         "boots": (85, 57, 39),
+        "hair": (65, 43, 31),
+        "eye_white": (232, 224, 207),
+        "iris": (68, 91, 76),
+        "mouth": (112, 65, 57),
     }
     CACHE_MAX_ENTRIES = 1024
     CACHE_MAX_BYTES = 32 * 1024 * 1024
