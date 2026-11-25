@@ -20,6 +20,16 @@ class _State:
         return action == "equip"
 
 
+class _Rect:
+    def __init__(self, x, y, width, height):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.right = x + width
+        self.bottom = y + height
+
+
 class _Service:
     player_actor_id = "traveler_actor"
     player_inventory_id = "traveler_bag"
@@ -119,7 +129,7 @@ class TestPlayerEconomyIdentity(unittest.TestCase):
         renderer = Renderer.__new__(Renderer)
         renderer.width = 960
         renderer.height = 640
-        renderer.pg = SimpleNamespace(Rect=Mock(side_effect=lambda *args: args))
+        renderer.pg = SimpleNamespace(Rect=_Rect)
         renderer.panel = Mock()
         renderer.text = Mock()
         renderer.text_width = Mock(side_effect=lambda value: len(str(value)))
