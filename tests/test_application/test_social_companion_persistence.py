@@ -76,3 +76,15 @@ def test_social_snapshot_rejects_companion_references_to_unknown_npcs():
         assert "unknown NPC" in str(error)
     else:
         raise AssertionError("Unknown companion NPC must be rejected.")
+
+
+
+def test_social_snapshot_persists_player_npc_introduction_relationship():
+    social = SocialRuntime()
+    social.change_relationship("traveler_actor", "warden_lyra", trust=1)
+
+    encoded = SocialSnapshot.from_runtime(social).to_dict()
+    restored = SocialSnapshot.from_dict(encoded).restore()
+
+    relationship = restored.relation("traveler_actor", "warden_lyra")
+    assert relationship.trust == 1
