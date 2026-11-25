@@ -1,5 +1,6 @@
 import unittest
 from types import SimpleNamespace
+from unittest.mock import Mock
 
 from game_ui.renderer import Renderer
 from game_ui.screens.currency_exchange_screen import CurrencyExchangeScreen
@@ -104,9 +105,9 @@ class TestPlayerEconomyIdentity(unittest.TestCase):
 
     def test_renderer_wallet_uses_account_id(self):
         renderer = Renderer.__new__(Renderer)
-        renderer.text = lambda *args, **kwargs: None
-        renderer.text_width = lambda value: len(str(value))
-        renderer.coin_icon = lambda *args, **kwargs: None
+        renderer.text = Mock()
+        renderer.text_width = Mock(side_effect=lambda value: len(str(value)))
+        renderer.coin_icon = Mock()
 
         renderer.wallet(self.service)
         self.assertEqual(
@@ -118,31 +119,33 @@ class TestPlayerEconomyIdentity(unittest.TestCase):
         renderer = Renderer.__new__(Renderer)
         renderer.width = 960
         renderer.height = 640
-        renderer.pg = SimpleNamespace(Rect=lambda *args: args)
-        renderer.panel = lambda *args, **kwargs: None
-        renderer.text = lambda *args, **kwargs: None
-        renderer.text_width = lambda value: len(str(value))
-        renderer.resource_icon = lambda *args, **kwargs: None
+        renderer.pg = SimpleNamespace(Rect=Mock(side_effect=lambda *args: args))
+        renderer.panel = Mock()
+        renderer.text = Mock()
+        renderer.text_width = Mock(side_effect=lambda value: len(str(value)))
+        renderer.resource_icon = Mock()
 
         renderer.resource_bar(self.service)
         self.assertEqual(self.service.inventory_calls[-1], "traveler_bag")
 
     def test_renderer_hud_uses_actor_and_account_independently(self):
-        self.service.state = lambda: SimpleNamespace(simulation_tick=0)
-        self.service.actor_stats = lambda actor_id: (
+        self.service.state = Mock(return_value=SimpleNamespace(simulation_tick=0))
+
+        def actor_stats(actor_id):
             self.assertEqual(actor_id, "traveler_actor")
-            or {
+            return {
                 "name": "Traveler",
                 "current_hit_points": 10,
                 "max_hit_points": 10,
             }
-        )
+
+        self.service.actor_stats = actor_stats
         self.service.application = SimpleNamespace(
             holder=SimpleNamespace(
                 current=SimpleNamespace(
                     session=SimpleNamespace(
                         worlds=SimpleNamespace(
-                            get_active=lambda: SimpleNamespace(name="Test world")
+                            get_active=Mock(return_value=SimpleNamespace(name="Test world"))
                         )
                     )
                 )
@@ -151,14 +154,14 @@ class TestPlayerEconomyIdentity(unittest.TestCase):
         renderer = Renderer.__new__(Renderer)
         renderer.width = 960
         renderer.nav_current = None
-        renderer.pg = SimpleNamespace(Rect=lambda *args: args)
-        renderer.fit_text = lambda value, *args, **kwargs: value
-        renderer.text_width = lambda value: len(str(value)) * 8
-        renderer.text = lambda *args, **kwargs: None
-        renderer.panel = lambda *args, **kwargs: None
-        renderer.bar = lambda *args, **kwargs: None
-        renderer.coin_icon = lambda *args, **kwargs: None
-        renderer.calendar = lambda *args, **kwargs: None
+        renderer.pg = SimpleNamespace(Rect=Mock(side_effect=lambda *args: args))
+        renderer.fit_text = Mock(side_effect=lambda value, *args, **kwargs: value)
+        renderer.text_width = Mock(side_effect=lambda value: len(str(value)) * 8)
+        renderer.text = Mock()
+        renderer.panel = Mock()
+        renderer.bar = Mock()
+        renderer.coin_icon = Mock()
+        renderer.calendar = Mock()
 
         renderer.hud(self.service)
         self.assertIn(("traveler_wallet", "gold"), self.service.balance_calls)
