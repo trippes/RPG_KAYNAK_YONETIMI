@@ -8,6 +8,16 @@ from game_ui.world_rendering.humanoid_rig_3d import DEFAULT_HUMANOID_RIG
 
 
 class TestHumanoidBodyRenderer3D(unittest.TestCase):
+    def test_triangle_depth_uses_fixed_isometric_camera_axis(self):
+        renderer = HumanoidBodyRenderer3D()
+        near = renderer._camera_depth((0.0, 0.0, 1.0), 0.0)
+        far = renderer._camera_depth((0.0, 0.0, -1.0), 0.0)
+        self.assertGreater(near, far)
+        self.assertAlmostEqual(
+            renderer._camera_depth((0.0, 1.0, 0.0), 0.0),
+            renderer._camera_depth((1.0, 0.0, 0.0), 0.0),
+        )
+
     def test_draws_mesh_triangles_to_surface(self):
         surface = pygame.Surface((420, 560))
         surface.fill((0, 0, 0))
