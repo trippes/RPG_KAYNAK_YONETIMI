@@ -9,9 +9,11 @@ class ProductionScreen:
 
     RESOURCE_NAMES = RESOURCE_NAMES
 
-    def __init__(self, service, inventory_id="player"):
+    def __init__(self, service, inventory_id=None):
         self.service = service
-        self.inventory_id = inventory_id
+        self.inventory_id = (
+            service.player_inventory_id if inventory_id is None else inventory_id
+        )
         self.selected_index = 0
         self.selected_facility_id = None
         self.message = ""
