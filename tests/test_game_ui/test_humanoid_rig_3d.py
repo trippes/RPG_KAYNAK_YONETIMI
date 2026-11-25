@@ -25,6 +25,26 @@ class TestHumanoidRig3D(unittest.TestCase):
         self.assertIn("heel_left", rig.joint_names)
         self.assertIn("toe_right", rig.joint_names)
 
+    def test_facial_landmarks_are_attached_to_head_and_follow_its_pose(self):
+        rig = DEFAULT_HUMANOID_RIG
+        by_name = {joint.name: joint for joint in rig.joints}
+        facial_names = (
+            "eye_left", "eye_right", "iris_left", "iris_right",
+            "nose", "mouth", "ear_left", "ear_right", "hair_top",
+        )
+        for name in facial_names:
+            self.assertIn(name, by_name)
+        for name in ("eye_left", "eye_right", "nose", "mouth", "ear_left", "ear_right", "hair_top"):
+            self.assertEqual(by_name[name].parent, "head")
+        self.assertEqual(by_name["iris_left"].parent, "eye_left")
+        self.assertEqual(by_name["iris_right"].parent, "eye_right")
+
+        rest = rig.joint_positions()
+        posed = rig.joint_positions({"head": (0.15, 0.0, 0.0)})
+        self.assertNotEqual(rest["eye_left"], posed["eye_left"])
+        self.assertNotEqual(rest["nose"], posed["nose"])
+        self.assertNotEqual(rest["hair_top"], posed["hair_top"])
+
     def test_coordinate_contract_uses_positive_y_forward_and_positive_z_up(self):
         rig = DEFAULT_HUMANOID_RIG
         self.assertEqual(rig.forward_axis, (0.0, 1.0, 0.0))
