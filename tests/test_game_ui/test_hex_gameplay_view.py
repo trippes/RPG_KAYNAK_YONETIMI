@@ -244,6 +244,69 @@ def test_hex_gameplay_view_renders_runtime_map_without_mutating_entity_position(
     assert view.render_stats["player_body_triangles"] == 1264
     assert view.render_stats["player_body_cache"]["entries"] == 1
 
+def test_hex_gameplay_view_renders_player_and_npc_with_shared_3d_humanoid_pipeline():
+    map_definition = parse_hex_map({
+        "schema_version": 2,
+        "map_id": "village",
+        "name": "Village",
+        "geometry": {
+            "type": "hex_axial",
+            "orientation": "pointy_top",
+            "coordinate_system": "axial",
+        },
+        "terrain_ids": ["grass"],
+        "default_terrain": "grass",
+        "valid_cells": [[0, 0], [1, 0], [0, 1]],
+        "cell_overrides": [],
+    })
+    player = HexMovableEntity(
+        "hero",
+        "player",
+        EntityPosition("village", LocalHexPosition(0, 0)),
+        MovementProfile(),
+    )
+    npc = SimpleNamespace(
+        entity_id="npc-1",
+        kind="npc",
+        position=EntityPosition("village", LocalHexPosition(1, 0)),
+        continuous_position=SimpleNamespace(
+            point=WorldPoint(55.42562584220407, 0.0),
+        ),
+    )
+
+    class Runtime:
+        def entity(self, _entity_id):
+            return player
+
+        def entities(self):
+            return player, npc
+
+        def continuous_position(self, entity_id):
+            return npc.continuous_position if entity_id == npc.entity_id else None
+
+        def map_definition(self, _map_id):
+            return map_definition
+
+    service = FakeService()
+    service.hex_world_runtime = Runtime()
+    view = HexGameplayView(service)
+    view.update(1.0 / 60.0)
+    surface = pygame.Surface((800, 600))
+    renderer = SimpleNamespace(
+        pg=pygame,
+        surface=surface,
+        width=800,
+        height=600,
+        text=lambda *_args, **_kwargs: None,
+    )
+
+    assert view.render(renderer) is True
+    assert view.render_stats["drawn_actors"] == 2
+    assert view.render_stats["player_body_triangles"] > 0
+    assert view.render_stats["npc_body_triangles"] > 0
+    assert view.render_stats["npc_body_animators"] == 1
+
+
 def test_hex_gameplay_view_click_selects_continuous_world_destination():
     service = FakeService()
     view = HexGameplayView(service)
