@@ -347,15 +347,17 @@ def project_point_orthographic(
     point: Vec3,
     *,
     yaw: float = 0.0,
-    pitch: float = 0.0,
+    pitch: float = math.atan(1.0 / math.sqrt(2.0)),
     scale: float = 1.0,
     origin: tuple[float, float] = (0.0, 0.0),
 ) -> tuple[float, float]:
-    """Project a rig-local point to a 2D y-down screen plane.
+    """Project a rig-local point through the world's 2:1 isometric basis.
 
-    Yaw rotates the camera around +Z. Pitch tilts the camera around its
-    horizontal view axis. This is a geometric projection primitive, not a
-    camera or runtime-world transform.
+    The rig's +Y axis is forward. Positive yaw rotates that axis toward +X,
+    matching the world-heading convention used by HexGameplayView. The
+    default camera pitch is the canonical 2:1 isometric angle, so the ground
+    plane uses the same (x-y, (x+y)/2) projection as WorldTransform while Z
+    remains screen-vertical. ``pitch`` may be adjusted to tilt the camera.
     """
     x, y, z = _vec3(point, "point")
     yaw = _finite(yaw, "yaw")
@@ -369,15 +371,17 @@ def project_point_orthographic(
     origin_y = _finite(origin[1], "origin.y")
 
     cosine_yaw, sine_yaw = math.cos(yaw), math.sin(yaw)
-    horizontal = x * cosine_yaw - y * sine_yaw
-    depth = x * sine_yaw + y * cosine_yaw
+    world_x = x * cosine_yaw + y * sine_yaw
+    world_y = -x * sine_yaw + y * cosine_yaw
     cosine_pitch, sine_pitch = math.cos(pitch), math.sin(pitch)
+    if abs(cosine_pitch) < 1e-8:
+        raise ValueError("pitch must not be vertical to the ground plane.")
+    depth = (world_x + world_y) / math.sqrt(2.0)
     vertical = z * cosine_pitch - depth * sine_pitch
     return (
-        origin_x + horizontal * scale,
-        origin_y - vertical * scale,
+        origin_x + (world_x - world_y) * scale,
+        origin_y - (vertical / cosine_pitch) * scale,
     )
-
 
 def _joint(
     name: str,
