@@ -934,6 +934,9 @@ class HexGameplayView:
             self._ensure_scene_pipeline(renderer)
             self._ensure_character_animators(renderer)
             draw_items = []
+            culled_actor_count = 0
+            actor_margin_x = 72.0 * self.zoom
+            actor_margin_y = 126.0 * self.zoom
             entities = tuple(
                 entity for entity in runtime.entities()
                 if entity.position.map_id == player.position.map_id
@@ -957,6 +960,12 @@ class HexGameplayView:
                         entity.position.cell.to_hex_coord()
                     )
                     moving = False
+                if not (
+                    panel.left - actor_margin_x <= foot[0] <= panel.right + actor_margin_x
+                    and panel.top - actor_margin_y <= foot[1] <= panel.bottom + actor_margin_y
+                ):
+                    culled_actor_count += 1
+                    continue
                 draw_items.append((
                     1,
                     foot[1],
@@ -1129,6 +1138,7 @@ class HexGameplayView:
                 "total_actors": len(entities),
                 "total_npcs": sum(1 for entity in entities if entity.kind == "npc"),
                 "drawn_actors": drawn_actor_count,
+                "culled_actors": culled_actor_count,
                 "visible_scene_objects": visible_scene_count,
                 "culled_scene_objects": culled_scene_count,
                 "drawn_scene_objects": drawn_scene_count,
