@@ -712,11 +712,16 @@ class GameplayService:
         inventory_id: str,
         account_id: str | None = None,
     ) -> None:
-        resolved_account_id = actor_id if account_id is None else account_id
-        values = (actor_id, inventory_id, resolved_account_id)
-        if any(not isinstance(value, str) or not value.strip() for value in values):
-            raise ValueError("Player actor, inventory and account IDs must be non-empty strings.")
-        self._player_actor_id, self._player_inventory_id, self._player_account_id = values
+        required_values = (actor_id, inventory_id)
+        if any(not isinstance(value, str) or not value.strip() for value in required_values):
+            raise ValueError("Player actor and inventory IDs must be non-empty strings.")
+        if account_id is not None and (
+            not isinstance(account_id, str) or not account_id.strip()
+        ):
+            raise ValueError("Player account ID must be a non-empty string when provided.")
+        self._player_actor_id = actor_id
+        self._player_inventory_id = inventory_id
+        self._player_account_id = account_id
 
     def configure_consumable_effects(self, effects: dict[str, int]) -> None:
         if not isinstance(effects, dict):

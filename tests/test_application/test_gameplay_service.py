@@ -75,7 +75,11 @@ class TestGameplayService(unittest.TestCase):
             simulation=session.simulation,
             production_jobs=ProductionJobManager(session.simulation),
             resource_nodes=nodes,
-            inventories={"main": inventory, "other": Inventory()},
+            inventories={
+                "main": inventory,
+                "other": Inventory(),
+                "traveler_bag": Inventory(),
+            },
             recipes=self.recipes,
             facilities=facilities,
             items={
@@ -86,6 +90,12 @@ class TestGameplayService(unittest.TestCase):
             characters={
                 "hero_character": Character(
                     "hero_character", "Hero", Race("human", "Human"),
+                    CharacterClass("rogue", "Rogue"),
+                    attributes=Attributes({"strength": 10, "dexterity": 1}),
+                    skills=Skills(),
+                ),
+                "character_001": Character(
+                    "character_001", "Traveler", Race("human", "Human"),
                     CharacterClass("rogue", "Rogue"),
                     attributes=Attributes({"strength": 10, "dexterity": 1}),
                     skills=Skills(),
@@ -116,25 +126,38 @@ class TestGameplayService(unittest.TestCase):
 
     def test_player_context_keeps_actor_inventory_account_and_character_ids_distinct(self):
         self.service.configure_player_context(
-            actor_id="avatar_actor",
-            inventory_id="main",
-            account_id="bank_account",
+            actor_id="traveler_actor",
+            inventory_id="traveler_bag",
+            account_id="traveler_wallet",
         )
         self.service.register_actor(
-            "avatar_actor",
+            "traveler_actor",
             "player",
-            character_id="hero_character",
-            inventory_id="main",
+            character_id="character_001",
+            inventory_id="traveler_bag",
         )
 
-        self.assertEqual(self.service.player_actor_id, "avatar_actor")
-        self.assertEqual(self.service.player_inventory_id, "main")
-        self.assertEqual(self.service.player_account_id, "bank_account")
-        self.assertEqual(self.service.player_character_id, "hero_character")
+        self.assertEqual(self.service.player_actor_id, "traveler_actor")
+        self.assertEqual(self.service.player_inventory_id, "traveler_bag")
+        self.assertEqual(self.service.player_account_id, "traveler_wallet")
+        self.assertEqual(self.service.player_character_id, "character_001")
         self.assertEqual(
             self.service.actor_character(self.service.player_actor_id).character_id,
-            "hero_character",
+            "character_001",
         )
+
+    def test_missing_account_id_is_not_inferred_from_actor_id(self):
+        self.service.configure_player_context(
+            actor_id="traveler_actor",
+            inventory_id="traveler_bag",
+        )
+
+        self.assertEqual(self.service.player_actor_id, "traveler_actor")
+        self.assertEqual(self.service.player_inventory_id, "traveler_bag")
+        with self.assertRaisesRegex(
+            GameplayServiceError, "Player account ID has not been configured"
+        ):
+            _ = self.service.player_account_id
 
     def test_empty_account_id_is_rejected_without_replacing_player_context(self):
         self.service.configure_player_context(
