@@ -21,7 +21,7 @@ class HumanoidBodyRenderer3D:
         "trousers": (62, 66, 79),
         "boots": (85, 57, 39),
     }
-    CACHE_MAX_ENTRIES = 256
+    CACHE_MAX_ENTRIES = 1024
     CACHE_MAX_BYTES = 32 * 1024 * 1024
     POSE_CACHE_QUANTIZATION = 1.0 / 128.0
     TRANSLATION_CACHE_QUANTIZATION = 1.0 / 128.0
