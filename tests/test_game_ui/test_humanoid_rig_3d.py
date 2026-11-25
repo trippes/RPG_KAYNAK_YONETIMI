@@ -1,6 +1,8 @@
 import math
 import unittest
 
+from game_ui.world_transform import WorldTransform
+
 from game_ui.world_rendering.humanoid_rig_3d import (
     DEFAULT_HUMANOID_RIG,
     project_point_orthographic,
@@ -154,14 +156,37 @@ class TestHumanoidRig3D(unittest.TestCase):
         after = DEFAULT_HUMANOID_RIG.joint_positions()
         self.assertEqual(before, after)
 
-    def test_orthographic_projection_preserves_front_and_side_geometry(self):
+    def test_isometric_projection_matches_world_transform_basis(self):
         point = (0.25, 0.4, 0.75)
         front = project_point_orthographic(point)
         side = project_point_orthographic(point, yaw=math.pi / 2)
-        self.assertAlmostEqual(front[0], 0.25)
-        self.assertAlmostEqual(front[1], -0.75)
-        self.assertAlmostEqual(side[0], -0.4)
-        self.assertAlmostEqual(side[1], -0.75)
+        self.assertAlmostEqual(front[0], -0.15)
+        self.assertAlmostEqual(front[1], -0.425)
+        self.assertAlmostEqual(side[0], 0.65)
+        self.assertAlmostEqual(side[1], -0.675)
+
+    def test_character_forward_projection_matches_all_world_octants(self):
+        transform = WorldTransform()
+        screen_vectors = (
+            (1.0, 0.0), (math.sqrt(0.5), math.sqrt(0.5)),
+            (0.0, 1.0), (-math.sqrt(0.5), math.sqrt(0.5)),
+            (-1.0, 0.0), (-math.sqrt(0.5), -math.sqrt(0.5)),
+            (0.0, -1.0), (math.sqrt(0.5), -math.sqrt(0.5)),
+        )
+        for screen_vector in screen_vectors:
+            with self.subTest(screen_vector=screen_vector):
+                world_dx, world_dy = transform.unproject_vector(*screen_vector)
+                yaw = math.atan2(world_dx, world_dy)
+                projected_forward = project_point_orthographic(
+                    (0.0, 1.0, 0.0), yaw=yaw,
+                )
+                expected = transform.project_vector(world_dx, world_dy)
+                self.assertAlmostEqual(projected_forward[0], expected[0])
+                self.assertAlmostEqual(projected_forward[1], expected[1])
+
+    def test_projection_rejects_vertical_camera_pitch(self):
+        with self.assertRaisesRegex(ValueError, "pitch must not be vertical"):
+            project_point_orthographic((0.0, 0.0, 0.0), pitch=math.pi / 2)
 
     def test_projection_rejects_invalid_scale_and_coordinates(self):
         with self.assertRaisesRegex(ValueError, "greater than zero"):
