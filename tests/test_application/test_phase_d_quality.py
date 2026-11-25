@@ -1642,6 +1642,7 @@ class TestPhaseDQuality(unittest.TestCase):
         )
         calls = []
         service = SimpleNamespace(
+            player_actor_id="hero",
             actor_character=lambda _actor_id: character,
             improve_skill=lambda actor_id, skill: calls.append((actor_id, skill)) or 4,
             item=lambda item_id: SimpleNamespace(name="Demir Kılıç"),
@@ -1690,7 +1691,10 @@ class TestPhaseDQuality(unittest.TestCase):
         )
 
     def test_character_screen_handles_missing_character_without_crashing(self):
-        screen = CharacterScreen(SimpleNamespace(actor_character=lambda _actor_id: None))
+        screen = CharacterScreen(SimpleNamespace(
+            player_actor_id="hero",
+            actor_character=lambda _actor_id: None,
+        ))
         screen.handle(InputState(actions={"down", "confirm"}))
         self.assertEqual(screen.selected_skill, 0)
 

@@ -73,7 +73,10 @@ class CharacterIdentityTests(unittest.TestCase):
         result = screen._finish()
 
         self.assertEqual(result, "world")
-        self.assertEqual(self.service.actor_character_calls, ["traveler_actor"])
+        self.assertEqual(
+            self.service.actor_character_calls,
+            ["traveler_actor", "traveler_actor"],
+        )
         self.assertEqual(
             self.service.customization_calls[0][0],
             "traveler_character",
