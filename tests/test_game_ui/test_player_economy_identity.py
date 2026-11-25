@@ -124,9 +124,12 @@ class TestPlayerEconomyIdentity(unittest.TestCase):
         renderer.text = Mock()
         renderer.text_width = Mock(side_effect=lambda value: len(str(value)))
         renderer.resource_icon = Mock()
+        self.service.inventory = Mock(
+            return_value=SimpleNamespace(items=(), stocks=()),
+        )
 
         renderer.resource_bar(self.service)
-        self.assertEqual(self.service.inventory_calls[-1], "traveler_bag")
+        self.service.inventory.assert_called_once_with("traveler_bag")
 
     def test_renderer_hud_uses_actor_and_account_independently(self):
         self.service.state = Mock(return_value=SimpleNamespace(simulation_tick=0))
