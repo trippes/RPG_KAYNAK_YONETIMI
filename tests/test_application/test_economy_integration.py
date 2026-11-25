@@ -17,7 +17,9 @@ class TestEconomyIntegration(unittest.TestCase):
         seller = Inventory()
         buyer = Inventory()
         seller.add(ore, Quantity(3, ResourceUnit.ITEM))
-        object.__setattr__(bundle, "inventories", MappingProxyType({"seller": seller, "buyer": buyer}))
+        object.__setattr__(bundle, "inventories", MappingProxyType({
+            "seller": seller, "buyer": buyer, "traveler_bag": buyer,
+        }))
         self.application = application
         self.service = GameplayService(application)
         self.ore = ore
@@ -35,6 +37,28 @@ class TestEconomyIntegration(unittest.TestCase):
         self.assertEqual(self.service.balance("seller", "gold").amount, 10)
         self.assertEqual(self.application.holder.current.inventories["buyer"].get(self.ore).value, 2)
         self.assertIsNone(self.application.holder.current.economy.market.get("ore-offer"))
+
+    def test_trade_separates_buyer_actor_inventory_and_account_ids(self):
+        self.service.credit("traveler_wallet", "gold", 20)
+        self.service.publish_offer(
+            "ore-offer", "seller", "seller", self.ore, 2,
+            Money(5, Currency("gold")),
+        )
+
+        trade = self.service.buy_offer(
+            "ore-offer",
+            "traveler_actor",
+            "traveler_bag",
+            buyer_account_id="traveler_wallet",
+        )
+
+        self.assertEqual(trade.buyer_id, "traveler_wallet")
+        self.assertEqual(self.service.balance("traveler_wallet", "gold").amount, 10)
+        self.assertEqual(self.service.balance("traveler_actor", "gold").amount, 0)
+        self.assertEqual(
+            self.application.holder.current.inventories["traveler_bag"].get(self.ore).value,
+            2,
+        )
 
     def test_failed_trade_preserves_offer_and_state(self):
         self.service.publish_offer(
