@@ -52,7 +52,7 @@ class TestHumanoidBody3D(unittest.TestCase):
             ("pelvis", "spine_lower", "spine_upper", "chest", "neck"),
         )
         self.assertEqual(torso.sides, 8)
-        self.assertEqual(torso.subdivisions, 3)
+        self.assertEqual(torso.subdivisions, 2)
 
     def test_connected_surfaces_cover_torso_arms_and_legs(self):
         names = {surface.name for surface in DEFAULT_HUMANOID_BODY.surfaces}
@@ -107,7 +107,7 @@ class TestHumanoidBody3D(unittest.TestCase):
         low = DEFAULT_HUMANOID_BODY.build_mesh(
             DEFAULT_HUMANOID_RIG, detail_level="low"
         )
-        self.assertEqual((len(high), len(medium), len(low)), (1840, 1188, 972))
+        self.assertEqual((len(high), len(medium), len(low)), (1192, 948, 756))
         self.assertGreater(len(high), len(medium))
         self.assertGreater(len(medium), len(low))
         self.assertLessEqual(len(high), 1900)
@@ -241,7 +241,8 @@ class TestHumanoidBody3D(unittest.TestCase):
         for surface in DEFAULT_HUMANOID_BODY.surfaces:
             self.assertGreaterEqual(len(surface.stations), 2)
             self.assertEqual(surface.sides, 8)
-            self.assertIn(surface.subdivisions, (2, 3))
+            expected_subdivisions = 1 if surface.name.startswith("connected_hand_") else 2
+            self.assertEqual(surface.subdivisions, expected_subdivisions)
 
     def test_triangle_normals_are_precomputed_and_finite(self):
         mesh = DEFAULT_HUMANOID_BODY.build_mesh(DEFAULT_HUMANOID_RIG)
