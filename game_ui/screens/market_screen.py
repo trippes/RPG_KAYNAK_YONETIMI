@@ -33,7 +33,13 @@ class MarketScreen:
     def _buy(self, offers):
         offer = offers[self.selected]
         try:
-            self.service.buy_offer(offer.offer_id, "hero", "player", quantity=1)
+            self.service.buy_offer(
+                offer.offer_id,
+                self.service.player_actor_id,
+                self.service.player_inventory_id,
+                quantity=1,
+                buyer_account_id=self.service.player_account_id,
+            )
             self.message = f"1 {resource_name(offer.resource_type)} satın alındı."
         except (KeyError, ValueError, RuntimeError) as error:
             self.message = f"Satın alma başarısız: {error}"
@@ -116,7 +122,10 @@ class MarketScreen:
                 f"{self.selected + 1}/{len(offers)} teklif",
                 64, 384, MUTED,
             )
-        renderer.wallet(self.service, "hero", 64, 420, label="Cüzdan")
+        renderer.wallet(
+            self.service, self.service.player_account_id,
+            64, 420, label="Cüzdan",
+        )
 
         renderer.action_button(
             renderer.pg.Rect(*self.BUY_RECT),
