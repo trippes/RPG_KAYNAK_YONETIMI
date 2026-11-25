@@ -39,6 +39,19 @@ class FakePlayerService:
         self._player_name_confirmed = False
         self.application = SimpleNamespace(
             customize_character=self.customize_character,
+            holder=SimpleNamespace(
+                current=SimpleNamespace(
+                    social=SimpleNamespace(
+                        npcs=SimpleNamespace(
+                            get=lambda npc_id: (
+                                SimpleNamespace(npc_id=npc_id)
+                                if npc_id == "warden_lyra"
+                                else None
+                            ),
+                        ),
+                    ),
+                ),
+            ),
         )
 
     def actor_character(self, actor_id):
@@ -86,8 +99,7 @@ class CharacterIdentityTests(unittest.TestCase):
             "traveler_character",
         )
 
-    def test_creation_from_eren_persists_player_recognition(self):
-        self.service._creation_from_eren = True
+    def test_creation_persists_eren_recognition_for_normal_new_game(self):
         screen = CharacterCreationScreen(self.service)
         screen.name = "Traveler"
         screen.age = "25"
@@ -99,7 +111,7 @@ class CharacterIdentityTests(unittest.TestCase):
 
         result = screen._finish()
 
-        self.assertEqual(result, "dialogue")
+        self.assertEqual(result, "world")
         self.assertEqual(
             self.service.relationship_changes,
             [("traveler_actor", "warden_lyra", 0, 1)],
