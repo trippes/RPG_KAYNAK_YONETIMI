@@ -238,9 +238,15 @@ class DialogueScreen:
 
         try:
             actor = next(
-                (item for item in actors if item.actor_id == "hero"),
-                actors[0],
+                (
+                    item for item in actors
+                    if item.actor_id == self.service.player_actor_id
+                ),
+                None,
             )
+            if actor is None:
+                self.message = "Oyuncu aktörü etkin dünyada bulunamadı."
+                return
             npc = next(
                 (item for item in npcs if item.npc_id == self.target_npc_id),
                 next(
@@ -273,7 +279,17 @@ class DialogueScreen:
                 dialogue_id,
             )
 
-            self.node = self.service.talk_to_npc(*self.context)
+            relationship = self.service.relationship(
+                actor.actor_id, npc.npc_id
+            )
+            returning_node_id = (
+                "returning"
+                if dialogue_id == "warden_intro" and relationship.trust > 0
+                else None
+            )
+            self.node = self.service.talk_to_npc(
+                *self.context, node_id=returning_node_id
+            )
             self.selected = 0
             self._record_current_node()
 
@@ -354,6 +370,10 @@ class DialogueScreen:
                     else:
                         character.name = name
                         self.service._player_name_confirmed = True
+                        if self.context is not None:
+                            self.service.change_relationship(
+                                self.context[0], self.context[1], trust=1
+                            )
                         self.character_name = name
                         self.name_entry_active = False
                         self.custom_text = (
