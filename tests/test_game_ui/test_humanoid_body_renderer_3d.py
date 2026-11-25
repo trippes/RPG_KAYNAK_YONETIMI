@@ -140,6 +140,16 @@ class TestHumanoidBodyRenderer3D(unittest.TestCase):
         self.assertEqual(renderer.cache_info()["misses"], 1)
         self.assertEqual(renderer.cache_info()["hits"], 1)
 
+    def test_sprite_cache_entry_limit_is_bounded_above_large_actor_working_set(self):
+        renderer = HumanoidBodyRenderer3D()
+        sprite = pygame.Surface((1, 1), pygame.SRCALPHA)
+        for index in range(renderer.CACHE_MAX_ENTRIES + 1):
+            renderer._store_sprite(("pose", index), (sprite, (0, 0), 1))
+        info = renderer.cache_info()
+        self.assertEqual(info["entries"], renderer.CACHE_MAX_ENTRIES)
+        self.assertEqual(info["bytes"], renderer.CACHE_MAX_ENTRIES * 4)
+        self.assertLessEqual(info["bytes"], renderer.CACHE_MAX_BYTES)
+
     def test_low_detail_mode_renders_fewer_triangles(self):
         renderer = HumanoidBodyRenderer3D()
         high = pygame.Surface((420, 560))
