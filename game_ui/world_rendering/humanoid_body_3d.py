@@ -636,6 +636,16 @@ def _build_default_body() -> HumanoidBodyModel:
     parts = [
         # Limbs remain independently articulated; the torso is a single connected loft.
         _ellipsoid("head_volume", "head", (0.078, 0.074, 0.105), "skin"),
+        # Code-generated facial forms, each weighted to a head child joint.
+        _ellipsoid("eye_left_volume", "eye_left", (0.012, 0.008, 0.010), "eye_white"),
+        _ellipsoid("eye_right_volume", "eye_right", (0.012, 0.008, 0.010), "eye_white"),
+        _ellipsoid("iris_left_volume", "iris_left", (0.005, 0.004, 0.006), "iris"),
+        _ellipsoid("iris_right_volume", "iris_right", (0.005, 0.004, 0.006), "iris"),
+        _ellipsoid("nose_volume", "nose", (0.009, 0.014, 0.018), "skin"),
+        _ellipsoid("mouth_volume", "mouth", (0.012, 0.004, 0.004), "mouth"),
+        _ellipsoid("ear_left_volume", "ear_left", (0.012, 0.018, 0.024), "skin"),
+        _ellipsoid("ear_right_volume", "ear_right", (0.012, 0.018, 0.024), "skin"),
+        _ellipsoid("hair_cap_volume", "hair_top", (0.078, 0.076, 0.055), "hair"),
         # Shoulder caps bridge the connected torso surface and upper arms.
         _ellipsoid("shoulder_left_volume", "shoulder_left", (0.064, 0.060, 0.064), "skin"),
         _ellipsoid("shoulder_right_volume", "shoulder_right", (0.064, 0.060, 0.064), "skin"),
