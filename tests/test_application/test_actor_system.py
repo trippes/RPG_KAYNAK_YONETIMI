@@ -74,6 +74,7 @@ class TestActorSystem(unittest.TestCase):
         )
         self.application = GameApplication(SessionHolder(bundle))
         self.service = GameplayService(self.application)
+        self.service.configure_player_context("hero", "main", "hero")
         self.inventory = inventory
 
     def test_registers_world_bound_actor_and_sorted_snapshot(self):

@@ -334,6 +334,7 @@ class TestPhaseDQuality(unittest.TestCase):
 
     def test_ui_screen_smoke_handles_basic_input(self):
         service = GameplayService(GameApplication.create_default())
+        service.configure_player_context("hero", "player", "hero")
         screens = [MarketScreen(service), DialogueScreen(service), CombatScreen(service), CharacterCreationScreen(service)]
         for screen in screens:
             screen.handle(InputState(actions={"confirm"}))

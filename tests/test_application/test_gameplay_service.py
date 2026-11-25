@@ -95,22 +95,24 @@ class TestGameplayService(unittest.TestCase):
         )
         self.application = GameApplication(SessionHolder(bundle))
         self.service = GameplayService(self.application)
+        self.service.configure_player_context("hero", "main", "hero")
         self.inventory = inventory
 
 
     def test_player_context_requires_explicit_configuration(self):
+        unconfigured_service = GameplayService(self.application)
         with self.assertRaisesRegex(
             GameplayServiceError, "Player actor ID has not been configured"
         ):
-            _ = self.service.player_actor_id
+            _ = unconfigured_service.player_actor_id
         with self.assertRaisesRegex(
             GameplayServiceError, "Player inventory ID has not been configured"
         ):
-            _ = self.service.player_inventory_id
+            _ = unconfigured_service.player_inventory_id
         with self.assertRaisesRegex(
             GameplayServiceError, "Player account ID has not been configured"
         ):
-            _ = self.service.player_account_id
+            _ = unconfigured_service.player_account_id
 
     def test_player_context_keeps_actor_inventory_account_and_character_ids_distinct(self):
         self.service.configure_player_context(
