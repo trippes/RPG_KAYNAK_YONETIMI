@@ -42,6 +42,7 @@ def make_service():
         facilities=ProductionFacilityRegistry(),
     )
     service = GameplayService(GameApplication(SessionHolder(bundle)))
+    service.configure_player_context("hero", "main", "hero")
     return service, bundle
 
 

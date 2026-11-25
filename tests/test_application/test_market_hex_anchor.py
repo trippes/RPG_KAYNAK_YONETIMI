@@ -39,6 +39,7 @@ def make_service():
         facilities=ProductionFacilityRegistry(),
     )
     service = GameplayService(GameApplication(SessionHolder(bundle)))
+    service.configure_player_context("hero", "main", "hero")
     runtime = HexWorldRuntime(
         {"field": make_map()},
         world_id=WorldId("market_world"),
