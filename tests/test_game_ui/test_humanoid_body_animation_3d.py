@@ -93,6 +93,22 @@ class HumanoidBodyAnimator3DTests(unittest.TestCase):
         self.assertIn("left", animator.foot_lock_diagnostics)
         self.assertIn("pelvis", animator.translations)
 
+    def test_delta_seconds_is_forwarded_to_world_foot_lock_solver(self):
+        animator = HumanoidBodyAnimator3D(state="walk")
+        original_update = animator._foot_lock.update
+        received = {}
+
+        def recording_update(**kwargs):
+            received["delta_seconds"] = kwargs.get("delta_seconds")
+            return original_update(**kwargs)
+
+        animator._foot_lock.update = recording_update
+        animator.advance(
+            0.0, 0.037, world_position=(10.0, 20.0),
+            yaw=0.0, world_scale=54.0,
+        )
+        self.assertAlmostEqual(received["delta_seconds"], 0.037)
+
     def test_walk_pose_interpolates_between_phase_samples(self):
         animator = HumanoidBodyAnimator3D(state="walk")
         animator.advance(0.5)
