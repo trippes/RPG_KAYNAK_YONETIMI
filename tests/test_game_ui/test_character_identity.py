@@ -33,6 +33,7 @@ class FakePlayerService:
         self.actor_stats_calls = []
         self.skill_calls = []
         self.customization_calls = []
+        self.relationship_changes = []
         self._character_factory = None
         self._creation_from_eren = False
         self._player_name_confirmed = False
@@ -54,6 +55,9 @@ class FakePlayerService:
 
     def customize_character(self, character_id, *args, **kwargs):
         self.customization_calls.append((character_id, args, kwargs))
+
+    def change_relationship(self, source_id, target_id, value=0, trust=0):
+        self.relationship_changes.append((source_id, target_id, value, trust))
 
 
 class CharacterIdentityTests(unittest.TestCase):
@@ -158,6 +162,7 @@ class CharacterIdentityTests(unittest.TestCase):
     def test_dialogue_name_confirmation_uses_player_actor_character(self):
         screen = DialogueScreen(self.service)
         screen.opening_stage = "dialogue"
+        screen.context = ("traveler_actor", "warden_lyra", "warden_intro")
         screen.name_entry_active = True
         screen.character_name = "New Name"
 
@@ -166,7 +171,96 @@ class CharacterIdentityTests(unittest.TestCase):
         self.assertEqual(self.service.actor_character_calls, ["traveler_actor"])
         self.assertEqual(self.service.character.name, "New Name")
         self.assertEqual(screen.opening_stage, "ask_reason")
+        self.assertEqual(
+            self.service.relationship_changes,
+            [("traveler_actor", "warden_lyra", 0, 1)],
+        )
 
+    def test_dialogue_uses_returning_node_after_npc_introduction(self):
+        actor = SimpleNamespace(actor_id="traveler_actor")
+        npc = SimpleNamespace(npc_id="warden_lyra", name="Eren")
+        dialogue = SimpleNamespace(
+            speakers=frozenset({"warden_lyra"}),
+        )
+        bundle = SimpleNamespace(
+            actors=SimpleNamespace(actors=lambda: (actor,)),
+            social=SimpleNamespace(
+                npcs=SimpleNamespace(
+                    all=lambda: (npc,),
+                    get=lambda npc_id: npc if npc_id == "warden_lyra" else None,
+                ),
+                dialogues={"warden_intro": dialogue},
+            ),
+        )
+        self.service.application.holder = SimpleNamespace(
+            current=bundle,
+        )
+        self.service.relationship = Mock(
+            return_value=SimpleNamespace(trust=1),
+        )
+        self.service.talk_to_npc = Mock(
+            return_value=SimpleNamespace(
+                node_id="returning", text="Tekrar hoş geldin.", choices=(),
+            ),
+        )
+        screen = DialogueScreen(self.service)
+        screen.set_target_npc("warden_lyra")
+
+        screen._open_default()
+
+        self.service.talk_to_npc.assert_called_once_with(
+            "traveler_actor", "warden_lyra", "warden_intro",
+            node_id="returning",
+        )
+        self.assertEqual(screen.node.node_id, "returning")
+        self.assertEqual(screen.opening_stage, "dialogue")
+
+    def test_dialogue_keeps_first_meeting_for_unknown_npc(self):
+        actor = SimpleNamespace(actor_id="traveler_actor")
+        npc = SimpleNamespace(npc_id="warden_lyra", name="Eren")
+        dialogue = SimpleNamespace(speakers=frozenset({"warden_lyra"}))
+        bundle = SimpleNamespace(
+            actors=SimpleNamespace(actors=lambda: (actor,)),
+            social=SimpleNamespace(
+                npcs=SimpleNamespace(
+                    all=lambda: (npc,),
+                    get=lambda npc_id: npc if npc_id == "warden_lyra" else None,
+                ),
+                dialogues={"warden_intro": dialogue},
+            ),
+        )
+        self.service.application.holder = SimpleNamespace(current=bundle)
+        self.service.relationship = Mock(return_value=SimpleNamespace(trust=0))
+        self.service.talk_to_npc = Mock(
+            return_value=SimpleNamespace(
+                node_id="start", text="Seni tanımıyorum.", choices=(),
+            ),
+        )
+        screen = DialogueScreen(self.service)
+        screen.set_target_npc("warden_lyra")
+
+        screen._open_default()
+
+        self.service.talk_to_npc.assert_called_once_with(
+            "traveler_actor", "warden_lyra", "warden_intro",
+            node_id=None,
+        )
+        self.assertEqual(screen.opening_stage, "creation")
+
+    def test_dialogue_does_not_treat_first_actor_as_player(self):
+        npc_actor = SimpleNamespace(actor_id="guard_actor")
+        bundle = SimpleNamespace(
+            actors=SimpleNamespace(actors=lambda: (npc_actor,)),
+            social=SimpleNamespace(
+                npcs=SimpleNamespace(all=lambda: (), get=lambda _npc_id: None),
+                dialogues={},
+            ),
+        )
+        self.service.application.holder = SimpleNamespace(current=bundle)
+        screen = DialogueScreen(self.service)
+        screen._open_default()
+
+        self.assertIn("Oyuncu aktörü", screen.message)
 
 if __name__ == "__main__":
     unittest.main()
