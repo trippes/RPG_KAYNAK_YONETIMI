@@ -474,7 +474,7 @@ class TestSaveStorage(unittest.TestCase):
                 mock.patch("game_ui.game_window.SaveSlotsScreen") as save_slots, \
                 mock.patch("game_ui.game_window.CharacterCreationScreen"):
             window = GameWindow(
-                service=object(),
+                service=mock.Mock(player_inventory_id="player"),
                 backend=Backend(),
                 save_storage=FailingStorage(),
                 fullscreen=False,
