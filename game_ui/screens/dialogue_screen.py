@@ -33,6 +33,9 @@ class DialogueScreen:
         self.history_open = False
         self._panel_height = 250
 
+    def _player_character(self):
+        return self.service.actor_character(self.service.player_actor_id)
+
     def _reset_dialogue(self):
         """Prepare a fresh conversation when the screen is opened again."""
         self.target_npc_id = None
@@ -344,8 +347,7 @@ class DialogueScreen:
                 elif len(name) > 40:
                     self.message = "İsim en fazla 40 karakter olabilir."
                 else:
-                    bundle = self.service.application.holder.current
-                    character = bundle.characters.get("hero")
+                    character = self._player_character()
 
                     if character is None:
                         self.message = "Oyuncu karakteri bulunamadı."
@@ -542,7 +544,7 @@ class DialogueScreen:
         return None
 
     def resume_after_creation(self):
-        character = self.service.application.holder.current.characters.get("hero")
+        character = self._player_character()
         self.character_name = character.name if character is not None else ""
         self.custom_text = (
             f"Memnun oldum, {self.character_name}. "

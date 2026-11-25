@@ -71,10 +71,10 @@ class CharacterScreen:
         }
 
     def _character(self):
-        return self.service.actor_character("hero")
+        return self.service.actor_character(self.service.player_actor_id)
 
     def _stats(self):
-        return self.service.actor_stats("hero") or {}
+        return self.service.actor_stats(self.service.player_actor_id) or {}
 
     def _skill_rows(self, character=None):
         character = character or self._character()
@@ -132,7 +132,9 @@ class CharacterScreen:
         if state.pressed("confirm"):
             try:
                 skill = skills[self.selected_skill][0]
-                value = self.service.improve_skill("hero", skill)
+                value = self.service.improve_skill(
+                    self.service.player_actor_id, skill,
+                )
                 self.message = f"{skill} becerisi {value} oldu."
             except (KeyError, ValueError, RuntimeError) as error:
                 self.message = str(error)
@@ -146,13 +148,25 @@ class CharacterScreen:
         renderer.text("KARAKTER", outer.x + 16, outer.y + 9, GOLD)
         renderer.text("Kimlik · nitelikler · gelişim", outer.x + 132, outer.y + 9, MUTED)
 
-        if not snapshot.actors:
-            renderer.text("Karakter kaydı bulunamadı.", outer.x + 20, outer.y + 76, MUTED)
+        player_actor_id = self.service.player_actor_id
+        actor = next(
+            (
+                item for item in snapshot.actors
+                if item.actor_id == player_actor_id
+            ),
+            None,
+        )
+        if actor is None:
+            renderer.text(
+                "Oyuncu aktörü bulunamadı.",
+                outer.x + 20,
+                outer.y + 76,
+                MUTED,
+            )
             return
 
-        actor = snapshot.actors[0]
-        character = self.service.actor_character(actor.actor_id)
-        stats = self.service.actor_stats(actor.actor_id) or {}
+        character = self.service.actor_character(player_actor_id)
+        stats = self.service.actor_stats(player_actor_id) or {}
         if character is None:
             renderer.text("Bu karaktere bağlı bir karakter profili bulunamadı.", outer.x + 20, outer.y + 76, MUTED)
             return
