@@ -692,6 +692,12 @@ class GameplayService:
     def player_account_id(self) -> str:
         return self._player_account_id
 
+    @property
+    def player_character_id(self) -> str | None:
+        """Return the character ID linked to the configured player actor."""
+        actor = self.actor(self.player_actor_id)
+        return actor.character_id if actor is not None else None
+
     def configure_player_context(self, actor_id: str, inventory_id: str, account_id: str | None = None) -> None:
         values = (actor_id, inventory_id, account_id or actor_id)
         if any(not isinstance(value, str) or not value.strip() for value in values):
