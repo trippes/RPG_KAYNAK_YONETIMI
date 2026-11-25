@@ -27,6 +27,21 @@ class TestHumanoidBody3D(unittest.TestCase):
         self.assertIn("connected_foot_left", surface_names)
         self.assertIn("connected_foot_right", surface_names)
 
+    def test_default_body_contains_code_generated_facial_features_and_hair(self):
+        names = {part.name for part in DEFAULT_HUMANOID_BODY.parts}
+        for expected in (
+            "eye_left_volume",
+            "eye_right_volume",
+            "iris_left_volume",
+            "iris_right_volume",
+            "nose_volume",
+            "mouth_volume",
+            "ear_left_volume",
+            "ear_right_volume",
+            "hair_cap_volume",
+        ):
+            self.assertIn(expected, names)
+
     def test_torso_is_one_connected_surface_with_ordered_anatomical_landmarks(self):
         surfaces = {surface.name: surface for surface in DEFAULT_HUMANOID_BODY.surfaces}
         self.assertIn("connected_torso", surfaces)
@@ -78,7 +93,7 @@ class TestHumanoidBody3D(unittest.TestCase):
         first = DEFAULT_HUMANOID_BODY.build_mesh(DEFAULT_HUMANOID_RIG)
         second = DEFAULT_HUMANOID_BODY.build_mesh(DEFAULT_HUMANOID_RIG)
         self.assertGreater(len(first), 300)
-        self.assertLessEqual(len(first), 1300)
+        self.assertLessEqual(len(first), 1900)
         self.assertEqual(first, second)
         self.assertIs(first, second)
 
@@ -92,12 +107,12 @@ class TestHumanoidBody3D(unittest.TestCase):
         low = DEFAULT_HUMANOID_BODY.build_mesh(
             DEFAULT_HUMANOID_RIG, detail_level="low"
         )
-        self.assertEqual((len(high), len(medium), len(low)), (1264, 756, 540))
+        self.assertEqual((len(high), len(medium), len(low)), (1840, 1188, 972))
         self.assertGreater(len(high), len(medium))
         self.assertGreater(len(medium), len(low))
-        self.assertLessEqual(len(high), 1300)
-        self.assertLessEqual(len(medium), 800)
-        self.assertLessEqual(len(low), 600)
+        self.assertLessEqual(len(high), 1900)
+        self.assertLessEqual(len(medium), 1300)
+        self.assertLessEqual(len(low), 1000)
         self.assertIs(
             low,
             DEFAULT_HUMANOID_BODY.build_mesh(DEFAULT_HUMANOID_RIG, detail_level="low"),
