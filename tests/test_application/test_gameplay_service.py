@@ -98,6 +98,38 @@ class TestGameplayService(unittest.TestCase):
         self.inventory = inventory
 
 
+    def test_player_context_keeps_actor_inventory_account_and_character_ids_distinct(self):
+        self.service.configure_player_context(
+            actor_id="avatar_actor",
+            inventory_id="main",
+            account_id="bank_account",
+        )
+        self.service.register_actor(
+            "avatar_actor",
+            "player",
+            character_id="hero_character",
+            inventory_id="main",
+        )
+
+        self.assertEqual(self.service.player_actor_id, "avatar_actor")
+        self.assertEqual(self.service.player_inventory_id, "main")
+        self.assertEqual(self.service.player_account_id, "bank_account")
+        self.assertEqual(self.service.player_character_id, "hero_character")
+        self.assertEqual(
+            self.service.actor_character(self.service.player_actor_id).character_id,
+            "hero_character",
+        )
+
+    def test_player_character_id_is_none_until_player_actor_is_registered(self):
+        self.service.configure_player_context(
+            actor_id="not_registered_yet",
+            inventory_id="main",
+            account_id="bank_account",
+        )
+
+        self.assertIsNone(self.service.player_character_id)
+
+
     def test_locked_container_requires_matching_key_before_opening(self):
         self.service.register_container_definition(ContainerDefinition("locked_chest", "Locked chest"))
         entity = Entity(EntityType.ESYA, "Locked chest", entity_id="locked_chest_entity")
