@@ -273,16 +273,27 @@ def test_hex_gameplay_view_renders_player_and_npc_with_shared_3d_humanoid_pipeli
             point=WorldPoint(55.42562584220407, 0.0),
         ),
     )
+    offscreen_npc = SimpleNamespace(
+        entity_id="npc-offscreen",
+        kind="npc",
+        position=EntityPosition("village", LocalHexPosition(0, 1)),
+        continuous_position=SimpleNamespace(
+            point=WorldPoint(100000.0, 100000.0),
+        ),
+    )
 
     class Runtime:
         def entity(self, _entity_id):
             return player
 
         def entities(self):
-            return player, npc
+            return player, npc, offscreen_npc
 
         def continuous_position(self, entity_id):
-            return npc.continuous_position if entity_id == npc.entity_id else None
+            for actor in (npc, offscreen_npc):
+                if entity_id == actor.entity_id:
+                    return actor.continuous_position
+            return None
 
         def map_definition(self, _map_id):
             return map_definition
@@ -302,9 +313,10 @@ def test_hex_gameplay_view_renders_player_and_npc_with_shared_3d_humanoid_pipeli
 
     assert view.render(renderer) is True
     assert view.render_stats["drawn_actors"] == 2
+    assert view.render_stats["culled_actors"] == 1
     assert view.render_stats["player_body_triangles"] > 0
     assert view.render_stats["npc_body_triangles"] > 0
-    assert view.render_stats["npc_body_animators"] == 1
+    assert view.render_stats["npc_body_animators"] == 2
 
 
 def test_hex_gameplay_view_click_selects_continuous_world_destination():
