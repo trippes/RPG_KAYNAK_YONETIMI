@@ -1,6 +1,7 @@
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest import mock
 
 from application.save_storage import SaveStorage, SaveStorageError
@@ -474,7 +475,7 @@ class TestSaveStorage(unittest.TestCase):
                 mock.patch("game_ui.game_window.SaveSlotsScreen") as save_slots, \
                 mock.patch("game_ui.game_window.CharacterCreationScreen"):
             window = GameWindow(
-                service=mock.Mock(player_inventory_id="player"),
+                service=SimpleNamespace(player_inventory_id="player"),
                 backend=Backend(),
                 save_storage=FailingStorage(),
                 fullscreen=False,
