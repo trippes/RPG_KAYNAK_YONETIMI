@@ -1,7 +1,7 @@
 # A1 + A5 — Oyuncu Kimliği ve Kayıt Uyumluluğu Uygulama Planı
 
 > **Belge türü:** Mimari uygulama planı  
-> **Durum:** Planlandı — uygulama ve kabul testleri henüz yapılmadı  
+> **Durum:** A1.1 tamamlandı; A1.2 kod ve otomatik doğrulama tamamlandı, manuel UI kabulü bekliyor; A1.3–A1.5 ve A5 planlandı  
 > **Çalışma dalı:** `experiment/map-cleanup`  
 > **Planın dayandığı kaynak:** `a961de7b91b6b7fe7d6b3aae48d2defc95fcb966`  
 > **İlişkili yol haritası:** [24 — Legacy Architecture Cleanup Roadmap](24-legacy-architecture-cleanup-roadmap.md)
@@ -163,18 +163,29 @@ Bu kimlikler aynı metin değerine sahip olabilir; fakat mimari olarak eş anlam
 **Dosyalar**
 - `game_ui/screens/character_creation.py`
 - `game_ui/screens/character_screen.py`
+- `game_ui/screens/dialogue_screen.py` — yalnızca oyuncu karakterini bulma/adlandırma erişimleri; diğer diyalog kimliği ve envanter işleri A1.4 kapsamındadır.
 
 **İş**
-1. Karakter oluşturma ekranındaki `"hero"` erişimini servis sözleşmesine geçir.
-2. Karakter özelleştirme çağrısında doğru karakter/aktör bağlantısını kullan.
-3. Karakter ekranındaki karakter, istatistik ve beceri işlemlerini aynı sözleşmeye geçir.
-4. `snapshot.actors[0]` erişimini kaldır.
+1. Karakter oluşturma ekranındaki karakter çözümlemesini servis sözleşmesiyle koru; özelleştirme çağrısında gerçek `player_character_id` kullanıldığını doğrula.
+2. Karakter ekranındaki karakter, istatistik ve beceri işlemlerini `player_actor_id` üzerinden yürüt.
+3. `snapshot.actors[0]` erişimini kaldır; oyuncu aktörünü açık kimliğiyle seç.
+4. Diyalog ekranındaki oyuncu karakteri adlandırma ve oluşturma sonrası devam erişimlerini `service.actor_character(service.player_actor_id)` üzerinden çöz.
 5. Karakter kaydının anahtarını aktör kimliğiyle aynı kabul etme; gerçek `character_id` bağlantısını kullan.
 
 **Kabul ölçütleri**
 - Oyuncu kimliği `hero` olmadığında karakter oluşturma ve görüntüleme çalışır.
-- Oyuncu karakteri başka bir aktörden yanlışlıkla seçilmez.
+- Oyuncu karakteri başka bir aktörden yanlışlıkla seçilmez; NPC koleksiyon sırası sonucu değiştirmez.
 - Karakter kimliği ile aktör kimliği farklı olduğunda bağlantı korunur.
+- Diyalog ekranı alternatif oyuncu aktörü/karakter kimliğiyle doğru karakter adını kullanır.
+
+**Uygulama sonucu — 2026-11-25**
+- `character_creation.py` üzerinde kaynak değişikliği gerekmedi: ekran zaten `player_actor_id` ile karakteri çözüyor ve özelleştirmede `player_character_id` kullanıyordu. Bu davranış farklı aktör/karakter kimlikleriyle test altına alındı.
+- `character_screen.py` artık karakteri, istatistikleri ve beceri geliştirmeyi `player_actor_id` ile çözüyor. Render akışı oyuncu aktörünü snapshot içinden kimliğiyle buluyor; ilk aktör varsayımı kaldırıldı.
+- `dialogue_screen.py` oyuncu karakterini iki noktada servis üzerinden çözüyor. Diyalogdaki `"player"` envanter referansları ve `"hero"` aktör fallback'i A1.4 için bırakıldı.
+- `tests/test_game_ui/test_character_identity.py` içine 6 hedefli test eklendi. Mevcut karakter ekranı test fixture'ları da açık `player_actor_id` sağlayacak şekilde güncellendi.
+- Core Quality Ruff listesine iki ekran ve yeni test dosyası eklendi.
+- Otomatik CI kanıtı: Python 3.11/3.12 × Ubuntu/Windows dört test işi başarılı; her ortamda 1.623 unittest, 2.666 pytest ve 351 subtest başarılı, 59 warning. Pygame headless smoke test ve Core Quality Linux/Windows kontrolleri de başarılı.
+- Kod ve otomatik doğrulama tamamlandı; oyun penceresinde karakter oluşturma, karakter sayfası ve Eren ile diyalog akışı için kullanıcı manuel kabulü bekleniyor.
 
 ### A1.3 — Envanter, üretim ve ekonomi ekranları
 
@@ -208,11 +219,10 @@ Bu kimlikler aynı metin değerine sahip olabilir; fakat mimari olarak eş anlam
 
 **İş**
 1. Diyalog görev/ödül/teslim kontrollerindeki oyuncu envanteri referanslarını servis kimliğine geçir.
-2. Diyalogdaki oyuncu karakteri erişimini yapılandırılmış karakter bağlantısına geçir.
-3. Diyalogda oyuncu aktörü bulunamadığında ilk aktöre geçiş yapan fallback'i kaldır.
-4. Konteyner ekranındaki ilk aktör varsayımını kaldır.
-5. Renderer görev hedefi çözümlemesinde ilk aktör yerine gerçek oyuncu aktörünü kullan.
-6. Bu dosyalardaki doğrudan bundle erişimlerini A3 kapsamında ayrıca işaretle; A1 için gereksiz servis API'si genişletme.
+2. Diyalogda oyuncu aktörü bulunamadığında ilk aktöre geçiş yapan fallback'i kaldır.
+3. Konteyner ekranındaki ilk aktör varsayımını kaldır.
+4. Renderer görev hedefi çözümlemesinde ilk aktör yerine gerçek oyuncu aktörünü kullan.
+5. Bu dosyalardaki doğrudan bundle erişimlerini A3 kapsamında ayrıca işaretle; A1 için gereksiz servis API'si genişletme.
 
 **Kabul ölçütleri**
 - NPC kayıt sırası değiştiğinde diyalog oyuncu kimliği değişmez.
@@ -334,10 +344,12 @@ A1 + A5 ancak aşağıdaki koşulların tamamı sağlandığında tamamlanmış 
 | Tarih | Aşama | Durum | Kanıt / not |
 |---|---|---|---|
 | 2026-11-25 | A0 | Tamamlandı | Kaynak envanteri, mimari bulgular ve CI tabanı önceki incelemede kaydedildi. |
-| 2026-11-25 | A1 + A5 tasarımı | Planlandı | Bu belge oluşturuldu; henüz kod değişikliği veya yeni test yok. |
+| 2026-11-25 | A1 + A5 tasarımı | Tamamlandı | Bu belge uygulama planı olarak oluşturuldu. |
+| 2026-11-25 | A1.1 | Tamamlandı | `e48ac660`; GameplayService oyuncu kimliği sözleşmesi ve A1.1 CI doğrulaması tamamlandı. |
+| 2026-11-25 | A1.2 | Kod ve otomatik testler tamamlandı; manuel kabul bekliyor | `9dbb3e97`–`92b7786e`; 6 yeni UI kimlik testi, dört Python test matrisi işi ve Core Quality kontrolleri başarılı. |
 
 ---
 
 ## 12. Sonraki işlem
 
-İlk kod değişikliği A1.1 kapsamında `GameplayService` kimlik sözleşmesinin ve oyuncu-karakter bağlantısının hedefli testlerle doğrulanmasıdır. Bu doğrulama tamamlanmadan UI ekranlarında toplu değişikliğe başlanmayacaktır.
+Sıradaki işlem, `experiment/map-cleanup` dalındaki oyun penceresinde karakter oluşturma, karakter sayfası ve Eren ile diyalog akışının manuel kabul testidir. Bu doğrulama tamamlandıktan sonra A1.3 envanter/üretim/ekonomi ekranlarına geçilecektir.
