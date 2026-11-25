@@ -419,7 +419,11 @@ class CharacterCreationScreen:
                 appearance=self.appearance,
             )
 
-            if getattr(self.service, "_creation_from_eren", False):
+            # The demo opening expects Eren to recognize a newly created
+            # player on their first conversation, even when character
+            # creation was entered from the main flow rather than dialogue.
+            npc_registry = self.service.application.holder.current.social.npcs
+            if npc_registry.get("warden_lyra") is not None:
                 self.service.change_relationship(
                     self.service.player_actor_id,
                     "warden_lyra",
