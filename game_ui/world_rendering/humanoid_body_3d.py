@@ -28,6 +28,8 @@ class BodyPartDefinition:
     material: str
     shape: str = "ellipsoid"
     profile: tuple[tuple[float, float], ...] | None = None
+    mesh_sides: int | None = None
+    mesh_rings: int | None = None
 
     def __post_init__(self) -> None:
         for field_name in ("name", "start_joint", "end_joint", "material"):
@@ -49,6 +51,18 @@ class BodyPartDefinition:
         ):
             raise ValueError("radii must contain three finite positive values.")
         object.__setattr__(self, "radii", tuple(float(value) for value in self.radii))
+        if self.mesh_sides is not None and (
+            isinstance(self.mesh_sides, bool)
+            or not isinstance(self.mesh_sides, int)
+            or self.mesh_sides < 4
+        ):
+            raise ValueError("mesh_sides must be an integer of at least 4.")
+        if self.mesh_rings is not None and (
+            isinstance(self.mesh_rings, bool)
+            or not isinstance(self.mesh_rings, int)
+            or self.mesh_rings < 1
+        ):
+            raise ValueError("mesh_rings must be a positive integer.")
         if self.profile is not None:
             profile = tuple(tuple(point) for point in self.profile)
             if len(profile) < 3 or any(
@@ -579,8 +593,8 @@ def _build_bind_mesh_cached(
                     part.radii,
                     part.material,
                     part.start_joint,
-                    mesh_sides,
-                    mesh_rings,
+                    part.mesh_sides or mesh_sides,
+                    part.mesh_rings or mesh_rings,
                 )
             )
         else:
@@ -617,8 +631,19 @@ def _build_mesh_cached(
     return _skin_mesh(bind_mesh, rig, dict(pose_key), dict(translation_key))
 
 
-def _ellipsoid(name: str, joint: str, radii: Vec3, material: str) -> BodyPartDefinition:
-    return BodyPartDefinition(name, joint, joint, radii, material)
+def _ellipsoid(
+    name: str,
+    joint: str,
+    radii: Vec3,
+    material: str,
+    *,
+    sides: int | None = None,
+    rings: int | None = None,
+) -> BodyPartDefinition:
+    return BodyPartDefinition(
+        name, joint, joint, radii, material,
+        mesh_sides=sides, mesh_rings=rings,
+    )
 
 
 def _segment(
@@ -637,15 +662,15 @@ def _build_default_body() -> HumanoidBodyModel:
         # Limbs remain independently articulated; the torso is a single connected loft.
         _ellipsoid("head_volume", "head", (0.078, 0.074, 0.105), "skin"),
         # Code-generated facial forms, each weighted to a head child joint.
-        _ellipsoid("eye_left_volume", "eye_left", (0.012, 0.008, 0.010), "eye_white"),
-        _ellipsoid("eye_right_volume", "eye_right", (0.012, 0.008, 0.010), "eye_white"),
-        _ellipsoid("iris_left_volume", "iris_left", (0.005, 0.004, 0.006), "iris"),
-        _ellipsoid("iris_right_volume", "iris_right", (0.005, 0.004, 0.006), "iris"),
-        _ellipsoid("nose_volume", "nose", (0.009, 0.014, 0.018), "skin"),
-        _ellipsoid("mouth_volume", "mouth", (0.012, 0.004, 0.004), "mouth"),
-        _ellipsoid("ear_left_volume", "ear_left", (0.012, 0.018, 0.024), "skin"),
-        _ellipsoid("ear_right_volume", "ear_right", (0.012, 0.018, 0.024), "skin"),
-        _ellipsoid("hair_cap_volume", "hair_top", (0.078, 0.076, 0.055), "hair"),
+        _ellipsoid("eye_left_volume", "eye_left", (0.012, 0.008, 0.010), "eye_white", sides=6, rings=2),
+        _ellipsoid("eye_right_volume", "eye_right", (0.012, 0.008, 0.010), "eye_white", sides=6, rings=2),
+        _ellipsoid("iris_left_volume", "iris_left", (0.005, 0.004, 0.006), "iris", sides=6, rings=2),
+        _ellipsoid("iris_right_volume", "iris_right", (0.005, 0.004, 0.006), "iris", sides=6, rings=2),
+        _ellipsoid("nose_volume", "nose", (0.009, 0.014, 0.018), "skin", sides=6, rings=2),
+        _ellipsoid("mouth_volume", "mouth", (0.012, 0.004, 0.004), "mouth", sides=6, rings=2),
+        _ellipsoid("ear_left_volume", "ear_left", (0.012, 0.018, 0.024), "skin", sides=6, rings=2),
+        _ellipsoid("ear_right_volume", "ear_right", (0.012, 0.018, 0.024), "skin", sides=6, rings=2),
+        _ellipsoid("hair_cap_volume", "hair_top", (0.078, 0.076, 0.055), "hair", sides=6, rings=2),
         # Shoulder caps bridge the connected torso surface and upper arms.
         _ellipsoid("shoulder_left_volume", "shoulder_left", (0.064, 0.060, 0.064), "skin"),
         _ellipsoid("shoulder_right_volume", "shoulder_right", (0.064, 0.060, 0.064), "skin"),
@@ -678,7 +703,7 @@ def _build_default_body() -> HumanoidBodyModel:
                 ("neck", 0.043, 0.043, "skin"),
             ),
             sides=8,
-            subdivisions=3,
+            subdivisions=2,
         ),
     ]
     for side in ("left", "right"):
@@ -692,7 +717,7 @@ def _build_default_body() -> HumanoidBodyModel:
                         (f"wrist_{side}", 0.026, 0.024, "skin"),
                     ),
                     sides=8,
-                    subdivisions=3,
+                    subdivisions=2,
                 ),
                 BodySurfaceDefinition(
                     f"connected_hand_{side}",
@@ -701,7 +726,7 @@ def _build_default_body() -> HumanoidBodyModel:
                         (f"hand_{side}", 0.033, 0.026, "skin"),
                     ),
                     sides=8,
-                    subdivisions=2,
+                    subdivisions=1,
                 ),
                 BodySurfaceDefinition(
                     f"connected_leg_{side}",
