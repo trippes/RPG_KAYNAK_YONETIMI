@@ -241,7 +241,7 @@ def test_hex_gameplay_view_renders_runtime_map_without_mutating_entity_position(
     assert player.position == EntityPosition(
         "village", LocalHexPosition(0, 0),
     )
-    assert view.render_stats["player_body_triangles"] == 1264
+    assert view.render_stats["player_body_triangles"] == 1192
     assert view.render_stats["player_body_cache"]["entries"] == 1
 
 def test_hex_gameplay_view_renders_player_and_npc_with_shared_3d_humanoid_pipeline():
