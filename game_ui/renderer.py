@@ -452,13 +452,14 @@ class Renderer:
             draw_emblem(self.surface, self.pg.draw, 1, motif_shadow, offset, offset)
             draw_emblem(self.surface, self.pg.draw, 1, motif_light)
 
-    def wallet(self, service, actor_id="hero", x=64, y=420, *, label="Cüzdan"):
+    def wallet(self, service, account_id=None, x=64, y=420, *, label="Cüzdan"):
         """Render all three denominations with the shared coin artwork."""
+        account_id = service.player_account_id if account_id is None else account_id
         self.text(label, x, y + 2, TEXT_SOFT)
         cursor = x + self.text_width(label) + 16
         for currency in ("bronze", "silver", "gold"):
             try:
-                amount = service.balance(actor_id, currency).amount
+                amount = service.balance(account_id, currency).amount
             except (KeyError, ValueError, RuntimeError):
                 amount = 0
             self.coin_icon(cursor, y, currency, 22)
@@ -556,14 +557,17 @@ class Renderer:
         self.text(date_text, rect.x + 12, rect.y + 11, MUTED)
         self.text(time_text, rect.x + 116, rect.y + 11, GOLD)
 
-    def hud(self, service, actor_id="hero"):
+    def hud(self, service, actor_id=None, *, account_id=None, inventory_id=None):
         """Status strip shared by gameplay screens (+ resource bar on main ones)."""
+        actor_id = service.player_actor_id if actor_id is None else actor_id
+        account_id = service.player_account_id if account_id is None else account_id
+        inventory_id = service.player_inventory_id if inventory_id is None else inventory_id
         snapshot = service.state()
         stats = service.actor_stats(actor_id)
         active_world = service.application.holder.current.session.worlds.get_active()
         location = active_world.name if active_world is not None else "Eldoria"
         try:
-            gold = service.balance(actor_id, "gold").amount
+            gold = service.balance(account_id, "gold").amount
         except (KeyError, ValueError):
             gold = 0
 
@@ -600,10 +604,11 @@ class Renderer:
         self.calendar(snapshot.simulation_tick, y=74)
 
         if self.nav_current is not None:
-            self.resource_bar(service)
+            self.resource_bar(service, inventory_id)
 
-    def resource_bar(self, service, inventory_id="player"):
+    def resource_bar(self, service, inventory_id=None):
         """Stockpile strip at the bottom of the management screens."""
+        inventory_id = service.player_inventory_id if inventory_id is None else inventory_id
         rect = self.pg.Rect(24, self.height - 74, self.width - 48, 36)
         self.panel(rect, STRIP_FILL, STRIP_BORDER)
         try:
