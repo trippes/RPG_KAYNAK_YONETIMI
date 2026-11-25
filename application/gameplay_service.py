@@ -1691,14 +1691,14 @@ class GameplayService:
     def buy_offer(
         self,
         offer_id: str,
-        buyer_id: str,
+        buyer_actor_id: str,
         buyer_inventory_id: str,
         quantity: int | None = None,
         *,
         buyer_account_id: str | None = None,
     ):
         """Buy as an actor, storing goods in an inventory and charging an account."""
-        buyer_account_id = buyer_id if buyer_account_id is None else buyer_account_id
+        buyer_account_id = buyer_actor_id if buyer_account_id is None else buyer_account_id
         bundle = self._current_bundle()
         offer = bundle.economy.market.get(offer_id)
         if offer is None:
@@ -1707,7 +1707,7 @@ class GameplayService:
             raise GameplayServiceError("Market offer has no seller inventory.")
         profile = bundle.economy.market.profile(offer.market_id)
         if profile is not None:
-            self._require_actor_in_active_world(bundle, buyer_id)
+            self._require_actor_in_active_world(bundle, buyer_actor_id)
         buyer_inventory = self._inventory(bundle, buyer_inventory_id)
         seller_inventory = self._inventory(bundle, offer.inventory_id)
         stock = seller_inventory.get(offer.resource_type)
@@ -1736,11 +1736,11 @@ class GameplayService:
                 ))
             self._advance_quests(
                 "collect", offer.resource_type.value, purchased,
-                buyer_id, buyer_inventory_id,
+                buyer_actor_id, buyer_inventory_id,
             )
             return trade
 
-        return self._complete_timed_action(ActionType.TRADE, buyer_id, execute_trade)
+        return self._complete_timed_action(ActionType.TRADE, buyer_actor_id, execute_trade)
 
     def cancel_offer(self, offer_id: str, seller_id: str) -> MarketOffer:
         bundle = self._current_bundle()
