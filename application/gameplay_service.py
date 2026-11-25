@@ -1924,6 +1924,22 @@ class GameplayService:
     def relationship(self, source_id: str, target_id: str):
         return self._current_bundle().social.relation(source_id, target_id)
 
+    def change_relationship(
+        self,
+        source_id: str,
+        target_id: str,
+        value: int = 0,
+        trust: int = 0,
+    ):
+        """Persist a directed relationship change between an actor and an NPC."""
+        bundle = self._current_bundle()
+        self._require_actor_in_active_world(bundle, source_id)
+        if bundle.social.npcs.get(target_id) is None:
+            raise KeyError(f"NPC not found: {target_id}")
+        return bundle.social.change_relationship(
+            source_id, target_id, value=value, trust=trust
+        )
+
     def register_dialogue(self, dialogue: Dialogue) -> Dialogue:
         return self._current_bundle().social.add_dialogue(dialogue)
     def register_dialogue_action(
