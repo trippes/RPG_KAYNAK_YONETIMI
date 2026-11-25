@@ -16,9 +16,10 @@ class TestEconomyIntegration(unittest.TestCase):
         ore = ResourceType("ore")
         seller = Inventory()
         buyer = Inventory()
+        traveler_bag = Inventory()
         seller.add(ore, Quantity(3, ResourceUnit.ITEM))
         object.__setattr__(bundle, "inventories", MappingProxyType({
-            "seller": seller, "buyer": buyer, "traveler_bag": buyer,
+            "seller": seller, "buyer": buyer, "traveler_bag": traveler_bag,
         }))
         self.application = application
         self.service = GameplayService(application)
