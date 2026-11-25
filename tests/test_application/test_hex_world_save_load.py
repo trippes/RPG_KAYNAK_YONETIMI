@@ -68,6 +68,7 @@ def make_application(tmp_path):
     bundle.session.worlds.set_active(world.world_id)
 
     service = GameplayService(app)
+    service.configure_player_context("hero", "player", "hero")
     service.register_actor("hero", "player")
     service.register_npc(NPC("guard", "Guard"))
     service.register_actor("guard", "npc")

@@ -15,6 +15,7 @@ class TestSocialCombatIntegration(unittest.TestCase):
         factory = CharacterFactory({"human": Race("human", "Human")}, {"fighter": CharacterClass("fighter", "Fighter", 10)})
         self.application.karakter_olustur(factory, "hero", "Hero", "human", "fighter")
         self.service = GameplayService(self.application)
+        self.service.configure_player_context("hero", "player", "hero")
 
     def test_npc_dialogue_and_quest_flow_without_square_map_placement(self):
         self.service.register_npc(NPC("elder", "Elder"))

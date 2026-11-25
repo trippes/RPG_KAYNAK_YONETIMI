@@ -183,9 +183,9 @@ class GameplayService:
         if not isinstance(application, GameApplication):
             raise TypeError("application must be GameApplication.")
         self._application = application
-        self._player_actor_id = "hero"
-        self._player_inventory_id = "player"
-        self._player_account_id = "hero"
+        self._player_actor_id: str | None = None
+        self._player_inventory_id: str | None = None
+        self._player_account_id: str | None = None
         self._consumable_effects: dict[str, int] = {}
         self._chains: dict[str, ProductionChain] = {}
         self._bundle = None
@@ -680,17 +680,25 @@ class GameplayService:
     def register_character_factory(self, factory) -> None:
         self._character_factory = factory
 
+    @staticmethod
+    def _require_player_context_id(value: str | None, kind: str) -> str:
+        if value is None:
+            raise GameplayServiceError(
+                f"Player {kind} ID has not been configured."
+            )
+        return value
+
     @property
     def player_actor_id(self) -> str:
-        return self._player_actor_id
+        return self._require_player_context_id(self._player_actor_id, "actor")
 
     @property
     def player_inventory_id(self) -> str:
-        return self._player_inventory_id
+        return self._require_player_context_id(self._player_inventory_id, "inventory")
 
     @property
     def player_account_id(self) -> str:
-        return self._player_account_id
+        return self._require_player_context_id(self._player_account_id, "account")
 
     @property
     def player_character_id(self) -> str | None:
@@ -698,8 +706,14 @@ class GameplayService:
         actor = self.actor(self.player_actor_id)
         return actor.character_id if actor is not None else None
 
-    def configure_player_context(self, actor_id: str, inventory_id: str, account_id: str | None = None) -> None:
-        values = (actor_id, inventory_id, account_id or actor_id)
+    def configure_player_context(
+        self,
+        actor_id: str,
+        inventory_id: str,
+        account_id: str | None = None,
+    ) -> None:
+        resolved_account_id = actor_id if account_id is None else account_id
+        values = (actor_id, inventory_id, resolved_account_id)
         if any(not isinstance(value, str) or not value.strip() for value in values):
             raise ValueError("Player actor, inventory and account IDs must be non-empty strings.")
         self._player_actor_id, self._player_inventory_id, self._player_account_id = values

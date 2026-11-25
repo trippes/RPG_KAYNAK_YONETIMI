@@ -13,6 +13,7 @@ class TestQuestGraphGameplayIntegration(unittest.TestCase):
     def setUp(self):
         self.application = GameApplication.create_default()
         self.service = GameplayService(self.application)
+        self.service.configure_player_context("hero", "player", "hero")
         self.bundle = self.application.holder.current
 
         self.root = Quest(
@@ -104,6 +105,7 @@ class TestQuestGraphGameplayIntegration(unittest.TestCase):
 
             restored_application = GameApplication.create_default()
             restored_service = GameplayService(restored_application)
+            restored_service.configure_player_context("hero", "player", "hero")
             restored_service.load(path)
             restored_service.register_quest_graph(self.graph)
 

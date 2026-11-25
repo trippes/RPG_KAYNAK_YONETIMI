@@ -98,6 +98,20 @@ class TestGameplayService(unittest.TestCase):
         self.inventory = inventory
 
 
+    def test_player_context_requires_explicit_configuration(self):
+        with self.assertRaisesRegex(
+            GameplayServiceError, "Player actor ID has not been configured"
+        ):
+            _ = self.service.player_actor_id
+        with self.assertRaisesRegex(
+            GameplayServiceError, "Player inventory ID has not been configured"
+        ):
+            _ = self.service.player_inventory_id
+        with self.assertRaisesRegex(
+            GameplayServiceError, "Player account ID has not been configured"
+        ):
+            _ = self.service.player_account_id
+
     def test_player_context_keeps_actor_inventory_account_and_character_ids_distinct(self):
         self.service.configure_player_context(
             actor_id="avatar_actor",
@@ -120,11 +134,35 @@ class TestGameplayService(unittest.TestCase):
             "hero_character",
         )
 
+    def test_empty_account_id_is_rejected_without_replacing_player_context(self):
+        self.service.configure_player_context(
+            actor_id="avatar_actor",
+            inventory_id="main",
+            account_id="bank_account",
+        )
+
+        with self.assertRaisesRegex(ValueError, "IDs must be non-empty strings"):
+            self.service.configure_player_context(
+                actor_id="replacement_actor",
+                inventory_id="replacement_bag",
+                account_id="",
+            )
+
+        self.assertEqual(self.service.player_actor_id, "avatar_actor")
+        self.assertEqual(self.service.player_inventory_id, "main")
+        self.assertEqual(self.service.player_account_id, "bank_account")
+
     def test_player_character_id_is_none_until_player_actor_is_registered(self):
         self.service.configure_player_context(
             actor_id="not_registered_yet",
             inventory_id="main",
             account_id="bank_account",
+        )
+
+        self.service.register_actor(
+            "npc_guard",
+            "npc",
+            character_id="hero_character",
         )
 
         self.assertIsNone(self.service.player_character_id)
