@@ -127,9 +127,8 @@ class CharacterCreationScreen:
     # ---------------------------------------------------------
 
     def _character(self):
-        return (
-            self.service.application
-            .holder.current.characters.get("hero")
+        return self.service.actor_character(
+            self.service.player_actor_id
         )
 
     def _factory_options(self):
