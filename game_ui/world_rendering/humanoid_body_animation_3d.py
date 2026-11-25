@@ -102,6 +102,7 @@ class HumanoidBodyAnimator3D:
             world_position=world_position,
             yaw=float(yaw),
             world_scale=float(world_scale),
+            delta_seconds=transition_delta,
         )
         target_pose.update(foot_rotations)
 
