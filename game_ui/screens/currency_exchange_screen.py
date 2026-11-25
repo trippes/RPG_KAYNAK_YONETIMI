@@ -72,7 +72,7 @@ class CurrencyExchangeScreen:
 
     def _balance(self, currency):
         try:
-            return self.service.balance("hero", currency).amount
+            return self.service.balance(self.service.player_account_id, currency).amount
         except (KeyError, TypeError, ValueError, RuntimeError):
             return 0
 
@@ -104,7 +104,9 @@ class CurrencyExchangeScreen:
         if self._balance(source) < amount:
             return
         try:
-            self.service.exchange_currency("hero", source, target, amount)
+            self.service.exchange_currency(
+                self.service.player_account_id, source, target, amount,
+            )
         except (KeyError, TypeError, ValueError, RuntimeError):
             return
 
