@@ -44,6 +44,18 @@
         "speaker": "warden_lyra",
         "text": "Burası Başlangıç Vadisi. Ormanın içindeki patikaları ve göletin çevresini keşfedebilirsin. Yollarda dikkatli ol.",
         "choices": []
+      },
+      {
+        "id": "returning",
+        "speaker": "warden_lyra",
+        "text": "Tekrar hoş geldin. Köyümüzle ilgili öğrenmek istediğin bir şey var mı?",
+        "choices": [
+          {
+            "id": "ask_village",
+            "text": "Bu köy hakkında bilgi verir misin?",
+            "next": "village_info"
+          }
+        ]
       }
     ]
   },
