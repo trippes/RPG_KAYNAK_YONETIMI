@@ -180,7 +180,10 @@ class TestHumanoidRig3D(unittest.TestCase):
                 projected_forward = project_point_orthographic(
                     (0.0, 1.0, 0.0), yaw=yaw,
                 )
-                expected = transform.project_vector(world_dx, world_dy)
+                world_length = math.hypot(world_dx, world_dy)
+                expected = transform.project_vector(
+                    world_dx / world_length, world_dy / world_length,
+                )
                 self.assertAlmostEqual(projected_forward[0], expected[0])
                 self.assertAlmostEqual(projected_forward[1], expected[1])
 
