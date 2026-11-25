@@ -25,6 +25,8 @@ class HumanoidBodyRenderer3D:
     CACHE_MAX_BYTES = 32 * 1024 * 1024
     POSE_CACHE_QUANTIZATION = 1.0 / 128.0
     TRANSLATION_CACHE_QUANTIZATION = 1.0 / 128.0
+    LOW_DETAIL_POSE_CACHE_QUANTIZATION = 1.0 / 64.0
+    LOW_DETAIL_TRANSLATION_CACHE_QUANTIZATION = 1.0 / 64.0
 
     def __init__(self) -> None:
         self._sprite_cache: OrderedDict[tuple, tuple[pygame.Surface, tuple[int, int], int]] = (
@@ -95,11 +97,19 @@ class HumanoidBodyRenderer3D:
                 raise ValueError(f"Unknown body materials: {', '.join(sorted(unknown))}.")
             colors.update(palette)
 
+        pose_quantization = (
+            self.LOW_DETAIL_POSE_CACHE_QUANTIZATION
+            if detail_level == "low" else self.POSE_CACHE_QUANTIZATION
+        )
+        translation_quantization = (
+            self.LOW_DETAIL_TRANSLATION_CACHE_QUANTIZATION
+            if detail_level == "low" else self.TRANSLATION_CACHE_QUANTIZATION
+        )
         render_rotations = self._quantize_map(
-            local_rotations, self.POSE_CACHE_QUANTIZATION,
+            local_rotations, pose_quantization,
         )
         render_translations = self._quantize_map(
-            local_translations, self.TRANSLATION_CACHE_QUANTIZATION,
+            local_translations, translation_quantization,
         )
         pose_key = tuple(
             sorted(
