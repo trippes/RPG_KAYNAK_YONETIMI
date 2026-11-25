@@ -1,7 +1,7 @@
 """Character sheet rendered inside the movable gameplay window."""
 
 from ..renderer import (
-    GOOD, GOLD, HIGHLIGHT, MUTED, PANEL_BORDER, TEXT, TEXT_SOFT,
+    GOOD, GOLD, HIGHLIGHT, MUTED, PANEL_BORDER, TEXT_SOFT,
     BUTTON_HOVER, BUTTON_SELECTED, ResponsiveLayout,
 )
 
