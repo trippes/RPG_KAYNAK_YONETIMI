@@ -86,6 +86,27 @@ class CharacterIdentityTests(unittest.TestCase):
             "traveler_character",
         )
 
+    def test_creation_from_eren_persists_player_recognition(self):
+        self.service._creation_from_eren = True
+        screen = CharacterCreationScreen(self.service)
+        screen.name = "Traveler"
+        screen.age = "25"
+        screen.scores.update({
+            screen.ATTRIBUTES[0][0]: 15,
+            screen.ATTRIBUTES[1][0]: 15,
+            screen.ATTRIBUTES[2][0]: 12,
+        })
+
+        result = screen._finish()
+
+        self.assertEqual(result, "dialogue")
+        self.assertEqual(
+            self.service.relationship_changes,
+            [("traveler_actor", "warden_lyra", 0, 1)],
+        )
+        self.assertTrue(self.service._player_name_confirmed)
+        self.assertFalse(self.service._creation_from_eren)
+
     def test_character_screen_reads_character_and_stats_by_player_actor_id(self):
         screen = CharacterScreen(self.service)
 
