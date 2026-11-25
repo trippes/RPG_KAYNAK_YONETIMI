@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import math
 from collections import OrderedDict
+from functools import lru_cache
 from collections.abc import Mapping
 
 import pygame
 
 from game_ui.world_rendering.humanoid_body_3d import HumanoidBodyModel
-from game_ui.world_rendering.humanoid_rig_3d import HumanoidRig, project_point_orthographic
+from game_ui.world_rendering.humanoid_rig_3d import HumanoidRig
 
 
 class HumanoidBodyRenderer3D:
@@ -171,6 +172,10 @@ class HumanoidBodyRenderer3D:
     ) -> tuple[pygame.Surface, tuple[int, int], int]:
         anchor = rig.ground_anchor
         triangles = []
+        (
+            cosine_yaw, sine_yaw, cosine_pitch, sine_pitch,
+            inverse_cosine_pitch, inverse_sqrt_two,
+        ) = self._projection_basis(yaw)
         for triangle in body.build_mesh(
             rig, local_rotations, local_translations=local_translations,
             detail_level=detail_level,
@@ -183,18 +188,23 @@ class HumanoidBodyRenderer3D:
                 )
                 for point in triangle.vertices
             )
-            depth = sum(
-                self._camera_depth(point, yaw)
-                for point in vertices
-            ) / 3.0
-            projected = tuple(
-                project_point_orthographic(
-                    point, yaw=yaw, scale=world_scale, origin=(0.0, 0.0)
+            projected = []
+            depths = []
+            for x, y, z in vertices:
+                world_x = x * cosine_yaw + y * sine_yaw
+                world_y = -x * sine_yaw + y * cosine_yaw
+                ground_depth = (world_x + world_y) * inverse_sqrt_two
+                vertical = z * cosine_pitch - ground_depth * sine_pitch
+                projected.append((
+                    (world_x - world_y) * world_scale,
+                    -(vertical * inverse_cosine_pitch) * world_scale,
+                ))
+                depths.append(
+                    ground_depth * cosine_pitch + z * sine_pitch
                 )
-                for point in vertices
-            )
+            depth = sum(depths) / 3.0
             shade = self._shade(triangle.normal, colors[triangle.material])
-            triangles.append((depth, projected, shade))
+            triangles.append((depth, tuple(projected), shade))
 
         triangles.sort(key=lambda item: item[0])
         all_points = [point for _, points, _ in triangles for point in points]
@@ -252,16 +262,32 @@ class HumanoidBodyRenderer3D:
         }
 
     @staticmethod
-    def _camera_depth(point, yaw):
+    @lru_cache(maxsize=64)
+    def _projection_basis(yaw):
+        """Precompute the isometric camera matrix once per actor heading."""
+        pitch = math.atan(1.0 / math.sqrt(2.0))
+        cosine_pitch, sine_pitch = math.cos(pitch), math.sin(pitch)
+        return (
+            math.cos(yaw),
+            math.sin(yaw),
+            cosine_pitch,
+            sine_pitch,
+            1.0 / cosine_pitch,
+            1.0 / math.sqrt(2.0),
+        )
+
+    @classmethod
+    def _camera_depth(cls, point, yaw):
         """Return view-space depth in the canonical isometric camera basis."""
         x, y, z = point
-        cosine_yaw, sine_yaw = math.cos(yaw), math.sin(yaw)
+        cosine_yaw, sine_yaw, cosine_pitch, sine_pitch, _, inverse_sqrt_two = (
+            cls._projection_basis(yaw)
+        )
         world_x = x * cosine_yaw + y * sine_yaw
         world_y = -x * sine_yaw + y * cosine_yaw
-        pitch = math.atan(1.0 / math.sqrt(2.0))
         return (
-            (world_x + world_y) / math.sqrt(2.0) * math.cos(pitch)
-            + z * math.sin(pitch)
+            (world_x + world_y) * inverse_sqrt_two * cosine_pitch
+            + z * sine_pitch
         )
 
     @staticmethod
