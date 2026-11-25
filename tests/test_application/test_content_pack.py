@@ -53,6 +53,17 @@ class TestContentPack(unittest.TestCase):
         self.assertNotIn("trade_partners", starter)
         self.assertNotIn("faction", starter)
 
+    def test_demo_package_loads_player_movement_profile(self):
+        configs = load_movement_configs(package_path=PACKAGE)
+
+        self.assertEqual(set(configs), {"hero"})
+        self.assertEqual(configs["hero"].max_speed, 200.0)
+        self.assertEqual(configs["hero"].running_speed_multiplier, 1.5)
+        self.assertEqual(configs["hero"].stealth_speed_multiplier, 0.5)
+        self.assertEqual(configs["hero"].acceleration, 300.0)
+        self.assertEqual(configs["hero"].deceleration, 360.0)
+        self.assertEqual(configs["hero"].braking_deceleration, 480.0)
+
     def test_movement_test_package_loads_acceleration_and_braking_profiles(self):
         package = ROOT / "content" / "movement_test"
         configs = load_movement_configs(package_path=package)
