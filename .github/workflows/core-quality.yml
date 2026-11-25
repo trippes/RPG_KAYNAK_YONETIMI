@@ -124,6 +124,9 @@ jobs:
           tests/test_application/test_quest_graph_integration.py
           tests/test_application/test_social_combat_integration.py
           tests/test_application/test_phase_d_quality.py
+          game_ui/screens/character_screen.py
+          game_ui/screens/dialogue_screen.py
+          tests/test_game_ui/test_character_identity.py
       - name: Verify legacy map cleanup boundary
         run: python scripts/check_map_cleanup.py
       - name: Report legacy API usage

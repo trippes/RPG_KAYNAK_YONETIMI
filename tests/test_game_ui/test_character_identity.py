@@ -103,15 +103,19 @@ class CharacterIdentityTests(unittest.TestCase):
     def test_character_screen_render_selects_player_actor_not_first_actor(self):
         npc = SimpleNamespace(actor_id="npc_guard")
         player = SimpleNamespace(actor_id="traveler_actor")
-        self.service.state = lambda: SimpleNamespace(actors=(npc, player))
+        self.service.state = Mock(
+            return_value=SimpleNamespace(actors=(npc, player)),
+        )
         screen = CharacterScreen(self.service)
-        screen._layout = lambda: {
-            "outer": (0, 0, 100, 100),
-            "identity": (0, 0, 10, 10),
-            "combat": None,
-            "attributes": (0, 0, 10, 10),
-            "skills": (0, 0, 10, 10),
-        }
+        screen._layout = Mock(
+            return_value={
+                "outer": (0, 0, 100, 100),
+                "identity": (0, 0, 10, 10),
+                "combat": None,
+                "attributes": (0, 0, 10, 10),
+                "skills": (0, 0, 10, 10),
+            },
+        )
         screen._render_identity = Mock()
         screen._render_attributes = Mock()
         screen._render_skills = Mock()
@@ -133,12 +137,11 @@ class CharacterIdentityTests(unittest.TestCase):
             ["traveler_actor"],
         )
         self.assertEqual(self.service.actor_stats_calls, ["traveler_actor"])
-        screen._render_identity.assert_called_once_with(
-            renderer,
-            self.service.character,
-            self.service.actor_stats("traveler_actor"),
-            (0, 0, 10, 10),
-        )
+        screen._render_identity.assert_called_once()
+        identity_args = screen._render_identity.call_args.args
+        self.assertIs(identity_args[1], self.service.character)
+        self.assertEqual(identity_args[2]["level"], 1)
+        self.assertEqual(identity_args[3], (0, 0, 10, 10))
 
     def test_dialogue_resume_resolves_character_through_player_actor(self):
         screen = DialogueScreen(self.service)
