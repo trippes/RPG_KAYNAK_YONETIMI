@@ -17,5 +17,17 @@
       "resource_id": "water",
       "healing": 1
     }
-  ]
+  ],
+  "movement": {
+    "actors": {
+      "hero": {
+        "max_speed": 200,
+        "running_speed_multiplier": 1.5,
+        "stealth_speed_multiplier": 0.5,
+        "acceleration": 300,
+        "deceleration": 360,
+        "braking_deceleration": 480
+      }
+    }
+  }
 }
