@@ -232,8 +232,8 @@ class DialogueScreen:
         npcs = bundle.social.npcs.all()
         dialogues = tuple(sorted(bundle.social.dialogues))
 
-        if not actors or not npcs or not dialogues:
-            self.message = "Konuşulacak NPC veya diyalog bulunamadı."
+        if not actors:
+            self.message = "Etkin dünyada oyuncu aktörü bulunamadı."
             return
 
         try:
@@ -246,6 +246,9 @@ class DialogueScreen:
             )
             if actor is None:
                 self.message = "Oyuncu aktörü etkin dünyada bulunamadı."
+                return
+            if not npcs or not dialogues:
+                self.message = "Konuşulacak NPC veya diyalog bulunamadı."
                 return
             npc = next(
                 (item for item in npcs if item.npc_id == self.target_npc_id),
