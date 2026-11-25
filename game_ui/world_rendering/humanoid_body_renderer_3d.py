@@ -166,7 +166,7 @@ class HumanoidBodyRenderer3D:
                 for point in triangle.vertices
             )
             depth = sum(
-                point[0] * math.sin(yaw) + point[1] * math.cos(yaw)
+                self._camera_depth(point, yaw)
                 for point in vertices
             ) / 3.0
             projected = tuple(
@@ -223,6 +223,19 @@ class HumanoidBodyRenderer3D:
         ):
             _, (old_sprite, _, _) = self._sprite_cache.popitem(last=False)
             self._cache_bytes -= old_sprite.get_width() * old_sprite.get_height() * 4
+
+    @staticmethod
+    def _camera_depth(point, yaw):
+        """Return view-space depth in the canonical isometric camera basis."""
+        x, y, z = point
+        cosine_yaw, sine_yaw = math.cos(yaw), math.sin(yaw)
+        world_x = x * cosine_yaw + y * sine_yaw
+        world_y = -x * sine_yaw + y * cosine_yaw
+        pitch = math.atan(1.0 / math.sqrt(2.0))
+        return (
+            (world_x + world_y) / math.sqrt(2.0) * math.cos(pitch)
+            + z * math.sin(pitch)
+        )
 
     @staticmethod
     def _shade(normal, base_color):
