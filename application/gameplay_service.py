@@ -1688,7 +1688,17 @@ class GameplayService:
     def register_merchant(self, merchant: Merchant) -> Merchant:
         return self._current_bundle().economy.register_merchant(merchant)
 
-    def buy_offer(self, offer_id: str, buyer_id: str, buyer_inventory_id: str, quantity: int | None = None):
+    def buy_offer(
+        self,
+        offer_id: str,
+        buyer_id: str,
+        buyer_inventory_id: str,
+        quantity: int | None = None,
+        *,
+        buyer_account_id: str | None = None,
+    ):
+        """Buy as an actor, storing goods in an inventory and charging an account."""
+        buyer_account_id = buyer_id if buyer_account_id is None else buyer_account_id
         bundle = self._current_bundle()
         offer = bundle.economy.market.get(offer_id)
         if offer is None:
@@ -1708,7 +1718,7 @@ class GameplayService:
             raise GameplayServiceError("Purchase quantity is invalid for this offer.")
         def execute_trade():
             trade = TradeService(bundle.economy.ledger).execute(
-                buyer_id, offer.seller_id, buyer_inventory, seller_inventory,
+                buyer_account_id, offer.seller_id, buyer_inventory, seller_inventory,
                 offer.resource_type,
                 Quantity(purchased, stock.unit),
                 offer.unit_price,
