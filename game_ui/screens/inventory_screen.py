@@ -19,9 +19,11 @@ class InventoryScreen:
         ("off_hand", "Yan El"), ("accessory", "Aksesuar"),
     )
 
-    def __init__(self, service, inventory_id="player"):
+    def __init__(self, service, inventory_id=None):
         self.service = service
-        self.inventory_id = inventory_id
+        self.inventory_id = (
+            service.player_inventory_id if inventory_id is None else inventory_id
+        )
         self.tab = 0
         self.selected = 0
         self.message = "Bir eşya seçin. E: Kuşan | Enter: Kullan"
@@ -216,7 +218,7 @@ class InventoryScreen:
         item = self._selected_item()
         if state.pressed("equip") and item is not None:
             try:
-                self.service.equip_item("hero", self.inventory_id, item.item_id)
+                self.service.equip_item(self.service.player_actor_id, self.inventory_id, item.item_id)
                 self.message = f"{item.name} kuşanıldı."
             except (KeyError, ValueError, RuntimeError) as error:
                 self.message = f"Kuşanılamadı: {error}"
@@ -231,7 +233,7 @@ class InventoryScreen:
                 self.message = "Seçili eşya kuşanılabilir veya kullanılamaz."
             else:
                 try:
-                    hp = self.service.consume_item("hero", self.inventory_id, consumable)
+                    hp = self.service.consume_item(self.service.player_actor_id, self.inventory_id, consumable)
                     self.message = f"{resource_name(consumable)} tüketildi. Can: {hp}"
                 except (KeyError, ValueError, RuntimeError) as error:
                     self.message = f"Tüketilemedi: {error}"
@@ -239,8 +241,8 @@ class InventoryScreen:
 
     def render(self, renderer):
         snapshot = self.service.inventory(self.inventory_id)
-        stats = self.service.actor_stats("hero") or {}
-        equipment = self.service.equipment("hero")
+        stats = self.service.actor_stats(self.service.player_actor_id) or {}
+        equipment = self.service.equipment(self.service.player_actor_id)
         entries = self._entries()
         slot_entries = self._slot_entries()
         layout = self._layout()
@@ -387,7 +389,7 @@ class InventoryScreen:
             renderer.pg.Rect(grid_rect.x + 8, footer_y + 22, bar_width, 8),
             min(1.0, snapshot.weight / 80.0), GOLD,
         )
-        activity = self.service.actor_activity("hero")
+        activity = self.service.actor_activity(self.service.player_actor_id)
         if activity is not None and activity.state == "running" and activity.end_tick is not None:
             remaining = max(0, activity.end_tick - self.service.state().simulation_tick)
             renderer.text(
