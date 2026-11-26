@@ -1898,7 +1898,16 @@ class TestA13PlayerIdentity(unittest.TestCase):
         renderer = object.__new__(Renderer)
         renderer.height = 720
         renderer.width = 1280
-        renderer.pg = SimpleNamespace(Rect=lambda *args: args)
+        renderer.pg = SimpleNamespace(
+            Rect=lambda x, y, width, height: SimpleNamespace(
+                x=x,
+                y=y,
+                width=width,
+                height=height,
+                right=x + width,
+                bottom=y + height,
+            )
+        )
         renderer.surface = object()
         renderer.text = lambda *_args, **_kwargs: None
         renderer.text_width = lambda value, *_args, **_kwargs: len(value) * 8
