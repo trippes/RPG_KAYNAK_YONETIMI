@@ -312,5 +312,71 @@ class TestContentPack(unittest.TestCase):
                     _resolve_content_package_path()
 
 
+    def test_npc_definitions_reject_duplicate_dialogue_ids(self):
+        with tempfile.TemporaryDirectory() as directory:
+            package = Path(directory) / "demo_eldoria"
+            shutil.copytree(PACKAGE, package)
+            npcs_path = package / "npcs.json"
+            payload = json.loads(npcs_path.read_text(encoding="utf-8"))
+            duplicate = dict(payload["npcs"][0])
+            duplicate["id"] = "second_guard"
+            duplicate["name"] = "Second Guard"
+            payload["npcs"].append(duplicate)
+            npcs_path.write_text(json.dumps(payload), encoding="utf-8")
+
+            with self.assertRaisesRegex(
+                ContentDefinitionError, "Duplicate NPC dialogue id: warden_intro"
+            ):
+                load_npc_definitions(package_path=package)
+
+    def test_npc_definitions_reject_invalid_dialogue_id(self):
+        with tempfile.TemporaryDirectory() as directory:
+            package = Path(directory) / "demo_eldoria"
+            shutil.copytree(PACKAGE, package)
+            npcs_path = package / "npcs.json"
+            payload = json.loads(npcs_path.read_text(encoding="utf-8"))
+            payload["npcs"][0]["dialogue_id"] = ""
+            npcs_path.write_text(json.dumps(payload), encoding="utf-8")
+
+            with self.assertRaisesRegex(
+                ContentDefinitionError, "NPC 'warden_lyra' has an invalid dialogue_id"
+            ):
+                load_npc_definitions(package_path=package)
+
+    def test_opening_dialogue_rejects_npc_loaded_in_gameplay_phase(self):
+        with tempfile.TemporaryDirectory() as directory:
+            package = Path(directory) / "demo_eldoria"
+            shutil.copytree(PACKAGE, package)
+            npcs_path = package / "npcs.json"
+            payload = json.loads(npcs_path.read_text(encoding="utf-8"))
+            payload["npcs"][0]["load_phase"] = "gameplay"
+            npcs_path.write_text(json.dumps(payload), encoding="utf-8")
+
+            with self.assertRaisesRegex(
+                ContentDefinitionError, "outside the opening load phase"
+            ):
+                populate_opening_content(
+                    GameApplication.create_default(),
+                    content_package_path=package,
+                )
+
+    def test_dialogue_rejects_node_speaker_different_from_owning_npc(self):
+        with tempfile.TemporaryDirectory() as directory:
+            package = Path(directory) / "demo_eldoria"
+            shutil.copytree(PACKAGE, package)
+            starter_path = package / "starter_content.json"
+            payload = json.loads(starter_path.read_text(encoding="utf-8"))
+            payload["dialogue"]["nodes"][0]["speaker"] = "different_npc"
+            starter_path.write_text(json.dumps(payload), encoding="utf-8")
+
+            with self.assertRaisesRegex(
+                ContentDefinitionError, "but its owning NPC is 'warden_lyra'"
+            ):
+                populate_opening_content(
+                    GameApplication.create_default(),
+                    content_package_path=package,
+                )
+
+
 if __name__ == "__main__":
     unittest.main()
