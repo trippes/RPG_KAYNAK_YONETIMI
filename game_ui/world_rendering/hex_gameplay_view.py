@@ -842,11 +842,13 @@ class HexGameplayView:
             return False
 
         map_definition = runtime.map_definition(player.position.map_id)
+        # Keep the world viewport between the persistent top HUD and the
+        # bottom resource strip so neither overlay obscures terrain or hints.
         panel = renderer.pg.Rect(
             24,
-            96,
+            124,
             max(1, renderer.width - 48),
-            max(1, renderer.height - 120),
+            max(1, renderer.height - 212),
         )
         surface = renderer.surface
         get_clip = getattr(surface, "get_clip", None)
