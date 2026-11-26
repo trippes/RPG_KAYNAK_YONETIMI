@@ -213,7 +213,7 @@ def test_hex_gameplay_view_renders_runtime_map_without_mutating_entity_position(
     )
     container = SimpleNamespace(
         entity_id="village_chest_entity",
-        kind="container",
+        kind="object",
         position=EntityPosition("village", LocalHexPosition(1, 0)),
         continuous_position=None,
     )
@@ -230,6 +230,9 @@ def test_hex_gameplay_view_renders_runtime_map_without_mutating_entity_position(
 
     service = FakeService()
     service.hex_world_runtime = Runtime()
+    service.container_for_entity = lambda entity_id: (
+        "village_chest" if entity_id == "village_chest_entity" else None
+    )
     view = HexGameplayView(service)
     surface = pygame.Surface((800, 600))
     renderer = SimpleNamespace(
