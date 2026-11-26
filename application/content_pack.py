@@ -191,13 +191,143 @@ def load_starter_content(path: str | Path | None = None, *, package_path: str | 
     if not isinstance(production, dict):
         raise ContentDefinitionError("Starter production content must be an object.")
 
-    for section in ("markets", "trade_partners"):
-        records = definition.get(section, [])
-        if not isinstance(records, list) or any(
-            not isinstance(record, dict) for record in records
+    markets = definition.get("markets", [])
+    if not isinstance(markets, list) or any(
+        not isinstance(record, dict) for record in markets
+    ):
+        raise ContentDefinitionError(
+            "Starter markets must be a list of objects when provided."
+        )
+    market_ids = set()
+    for index, market in enumerate(markets):
+        for key in (
+            "market_id", "location_id", "npc_id",
+            "merchant_id", "inventory_id",
+        ):
+            value = market.get(key)
+            if not isinstance(value, str) or not value.strip():
+                raise ContentDefinitionError(
+                    f"Market record at index {index} has an invalid {key}."
+                )
+        if market["market_id"] in market_ids:
+            raise ContentDefinitionError(
+                f"Duplicate market id: {market['market_id']}"
+            )
+        market_ids.add(market["market_id"])
+        restock_interval = market.get("restock_interval")
+        if (
+            isinstance(restock_interval, bool)
+            or not isinstance(restock_interval, int)
+            or restock_interval <= 0
         ):
             raise ContentDefinitionError(
-                f"Starter {section} must be a list of objects when provided."
+                f"Market '{market['market_id']}' restock_interval must be positive."
+            )
+        visible_products = market.get("visible_products", 4)
+        if (
+            isinstance(visible_products, bool)
+            or not isinstance(visible_products, int)
+            or visible_products <= 0
+        ):
+            raise ContentDefinitionError(
+                f"Market '{market['market_id']}' visible_products must be positive."
+            )
+        dialogue = market.get("dialogue")
+        if not isinstance(dialogue, dict):
+            raise ContentDefinitionError(
+                f"Market '{market['market_id']}' must define a dialogue object."
+            )
+        catalog = market.get("catalog")
+        if not isinstance(catalog, list) or not catalog:
+            raise ContentDefinitionError(
+                f"Market '{market['market_id']}' catalog must be a non-empty list."
+            )
+        catalog_resources = set()
+        for entry_index, entry in enumerate(catalog):
+            if not isinstance(entry, dict):
+                raise ContentDefinitionError(
+                    f"Market '{market['market_id']}' catalog entry {entry_index} must be an object."
+                )
+            for key in ("resource_type", "currency"):
+                value = entry.get(key, "gold") if key == "currency" else entry.get(key)
+                if not isinstance(value, str) or not value.strip():
+                    raise ContentDefinitionError(
+                        f"Market '{market['market_id']}' catalog entry {entry_index} has an invalid {key}."
+                    )
+            resource_type = entry["resource_type"]
+            if resource_type in catalog_resources:
+                raise ContentDefinitionError(
+                    f"Market '{market['market_id']}' has duplicate catalog resource '{resource_type}'."
+                )
+            catalog_resources.add(resource_type)
+            base_price = entry.get("base_price")
+            if isinstance(base_price, bool) or not isinstance(base_price, int) or base_price < 0:
+                raise ContentDefinitionError(
+                    f"Market '{market['market_id']}' catalog entry {entry_index} has an invalid base_price."
+                )
+            for key in ("min_quantity", "max_quantity"):
+                value = entry.get(key)
+                if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+                    raise ContentDefinitionError(
+                        f"Market '{market['market_id']}' catalog entry {entry_index} has an invalid {key}."
+                    )
+            if entry["max_quantity"] < entry["min_quantity"]:
+                raise ContentDefinitionError(
+                    f"Market '{market['market_id']}' catalog entry {entry_index} has reversed quantity bounds."
+                )
+
+    trade_partners = definition.get("trade_partners", [])
+    if not isinstance(trade_partners, list) or any(
+        not isinstance(record, dict) for record in trade_partners
+    ):
+        raise ContentDefinitionError(
+            "Starter trade_partners must be a list of objects when provided."
+        )
+    for index, partner in enumerate(trade_partners):
+        for key in ("npc_id", "merchant_id", "inventory_id"):
+            value = partner.get(key)
+            if not isinstance(value, str) or not value.strip():
+                raise ContentDefinitionError(
+                    f"Trade partner record at index {index} has an invalid {key}."
+                )
+        if not isinstance(partner.get("dialogue"), dict):
+            raise ContentDefinitionError(
+                f"Trade partner '{partner['npc_id']}' must define a dialogue object."
+            )
+        accepted_resources = partner.get("accepted_resources")
+        if not isinstance(accepted_resources, list) or any(
+            not isinstance(value, str) or not value.strip()
+            for value in accepted_resources
+        ):
+            raise ContentDefinitionError(
+                f"Trade partner '{partner['npc_id']}' accepted_resources must be a list of strings."
+            )
+        if len(accepted_resources) != len(set(accepted_resources)):
+            raise ContentDefinitionError(
+                f"Trade partner '{partner['npc_id']}' accepted_resources must be unique."
+            )
+        initial_gold = partner.get("initial_gold")
+        if isinstance(initial_gold, bool) or not isinstance(initial_gold, int) or initial_gold < 0:
+            raise ContentDefinitionError(
+                f"Trade partner '{partner['npc_id']}' initial_gold must be non-negative."
+            )
+        buyback_rate = partner.get("buyback_rate", 50)
+        if (
+            isinstance(buyback_rate, bool)
+            or not isinstance(buyback_rate, int)
+            or not 1 <= buyback_rate <= 100
+        ):
+            raise ContentDefinitionError(
+                f"Trade partner '{partner['npc_id']}' buyback_rate must be between 1 and 100."
+            )
+        unit_prices = partner.get("unit_prices", {})
+        if not isinstance(unit_prices, dict) or any(
+            not isinstance(resource_id, str) or not resource_id.strip()
+            or isinstance(amount, bool) or not isinstance(amount, int) or amount <= 0
+            for resource_id, amount in unit_prices.items()
+        ):
+            raise ContentDefinitionError(
+                f"Trade partner '{partner['npc_id']}' unit_prices must map resource IDs to positive integers."
             )
 
     faction = definition.get("faction")
