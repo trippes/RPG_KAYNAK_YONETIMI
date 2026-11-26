@@ -596,6 +596,49 @@ def _validate_content_references(
     npc_ids = {record["id"] for record in npc_definitions}
     resource_ids = {record["id"] for record in resource_definitions}
     item_ids = {item.item_id for item in item_definitions}
+
+    opening_dialogue = definition.get("dialogue")
+    opening_dialogue_id = (
+        opening_dialogue.get("id")
+        if isinstance(opening_dialogue, dict)
+        else None
+    )
+    for npc in npc_definitions:
+        dialogue_id = npc.get("dialogue_id")
+        if dialogue_id is not None and dialogue_id != opening_dialogue_id:
+            raise ContentDefinitionError(
+                f"NPC '{npc['id']}' references unknown opening dialogue "
+                f"'{dialogue_id}'."
+            )
+
+    dialogue_definitions = []
+    if opening_dialogue is not None:
+        dialogue_definitions.append(("opening content", opening_dialogue))
+    for quest in quest_definitions:
+        if quest.get("dialogue") is not None:
+            dialogue_definitions.append((f"quest '{quest['id']}'", quest["dialogue"]))
+    for market in definition.get("markets", ()):
+        if market.get("dialogue") is not None:
+            dialogue_definitions.append((f"market '{market.get('market_id')}'", market["dialogue"]))
+    for partner in definition.get("trade_partners", ()):
+        if partner.get("dialogue") is not None:
+            dialogue_definitions.append((f"trade partner '{partner.get('npc_id')}'", partner["dialogue"]))
+
+    dialogue_owners = {}
+    for owner, dialogue in dialogue_definitions:
+        if not isinstance(dialogue, dict):
+            continue
+        dialogue_id = dialogue.get("id")
+        if not isinstance(dialogue_id, str) or not dialogue_id.strip():
+            continue
+        previous_owner = dialogue_owners.get(dialogue_id)
+        if previous_owner is not None:
+            raise ContentDefinitionError(
+                f"Duplicate dialogue id '{dialogue_id}' is used by "
+                f"{previous_owner} and {owner}."
+            )
+        dialogue_owners[dialogue_id] = owner
+
     for quest in quest_definitions:
         if quest["giver_npc_id"] not in npc_ids:
             raise ContentDefinitionError(
