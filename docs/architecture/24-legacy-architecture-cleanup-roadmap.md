@@ -1,6 +1,6 @@
 # Eldoria — Eski Mimari Bağımlılıklarını Temizleme Roadmap'i
 
-**Durum:** Planlama / uygulamaya hazırlık  
+**Durum:** Uygulama sürüyor — Aşama 2 (A2.2 içerik referans denetimi)  
 **Hedef dal:** `experiment/map-cleanup`  
 **Kapsam:** Eski mimariden kalan sabit kimlikler, örtük varsayımlar, yinelenen durum ve servis erişimleri, içerik paketi sözleşmeleri, arayüz entegrasyonu ve kayıt uyumluluğu.
 
@@ -209,6 +209,7 @@ Roadmap onaylandıktan sonra ilk çalışma paketi şu sırayla yürütülür:
 |---|---|---|---|
 | 2026-11-26 | A2.1 — Şema sürümü tür doğrulaması | Kod ve CI doğrulaması tamamlandı | `application/content_pack.py` içindeki aktif paket yapılandırması ve sekiz içerik tanımı yükleyicisi artık `schema_version` alanının boolean değil gerçek integer olmasını şart koşuyor. `tests/test_application/test_content_pack.py` sekiz tanım yükleyicisi ve aktif paket yapılandırması için `true` değerini reddeden regresyon testleri içeriyor. Kod commit `fb0409029a166b02808b8af18a1a1591509d1506`, test commit `6f8775ba1f9d4bc5d94b99cb9493dd5082d95386`. Eldoria CI run `45887625332` ve Core Quality run `45887625379` başarılı. |
 | 2026-11-26 | A2 — Hareket profili envanteri | İnceleme tamamlandı | Güncel demo paketi `hero` hareket profilini içeriyor; önceki “demo paketinde movement bölümü eksik” notu geçersiz olarak düzeltildi. Hareket davranışı değiştirilmedi. |
+| 2026-11-26 | A2.2 — Item referans bütünlüğü | Bu alt kontrol tamamlandı; A2.2 denetimi sürüyor | İncelemede `_validate_content_references` görev veren NPC, `collect` kaynak düğümü, `talk` NPC, pazar ve ticaret ortağı referanslarını zaten doğruluyordu. Ancak görev ödüllerindeki item ID'leri ve konteyner başlangıç içeriklerindeki item ID'leri paket item kataloğuna karşı doğrulanmıyordu. `populate_opening_content` artık item ve konteyner tanımlarını da önceden yükleyip bu iki ilişkiyi kayıt/oyun kurulumu öncesinde doğruluyor. Eksik item referansları için iki entegrasyon regresyon testi eklendi. Kod commit `078e3475568452802040743fd592b9b5699c3e58`, test commit `ee5ea5227392329a174f6923598ef2b5d0e22767`. Eldoria CI run `45893116927` ve Core Quality run `45893116972` başarılı; Python 3.11/3.12 × Ubuntu/Windows test matrisinde 2.700 pytest testi ve 359 subtest geçti. Demo ve movement_test paketlerinin mevcut içerik referansları incelendi; item/container kataloğu olmayan movement_test paketi bu tanımları kullanmadığı ve görev listesi boş olduğu için geçerli kaldı. A2.2'nin NPC/diyalog, starter-map, kaynak, üretim ve placement ilişkilerinin kalan denetimi devam ediyor. |
 
 ## 8. Tamamlanma tanımı
 
