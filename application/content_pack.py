@@ -120,6 +120,61 @@ def load_starter_content(path: str | Path | None = None, *, package_path: str | 
         raise ContentDefinitionError(
             f"Content definition is missing sections: {', '.join(missing)}"
         )
+
+    configured_ids = definition["ids"]
+    expected_id_fields = {field.name for field in fields(StarterContentIds)}
+    if (
+        not isinstance(configured_ids, dict)
+        or set(configured_ids) != expected_id_fields
+    ):
+        raise ContentDefinitionError(
+            "Content ids must match StarterContentIds fields."
+        )
+    for key, value in configured_ids.items():
+        if not isinstance(value, str) or not value.strip():
+            raise ContentDefinitionError(
+                f"Content id '{key}' must be a non-empty string."
+            )
+
+    world = definition["world"]
+    if not isinstance(world, dict):
+        raise ContentDefinitionError("Starter world must be an object.")
+    if not isinstance(world.get("name"), str) or not world["name"].strip():
+        raise ContentDefinitionError("Starter world name must be a non-empty string.")
+    for dimension in ("width", "height"):
+        value = world.get(dimension)
+        if value is not None and (type(value) is not int or value <= 0):
+            raise ContentDefinitionError(
+                f"Starter world {dimension} must be a positive integer when provided."
+            )
+
+    character = definition["character"]
+    if not isinstance(character, dict):
+        raise ContentDefinitionError("Starter character must be an object.")
+    if not isinstance(character.get("name"), str) or not character["name"].strip():
+        raise ContentDefinitionError(
+            "Starter character name must be a non-empty string."
+        )
+    for reference in ("race", "class"):
+        value = character.get(reference)
+        if (
+            not isinstance(value, dict)
+            or not isinstance(value.get("id"), str)
+            or not value["id"].strip()
+        ):
+            raise ContentDefinitionError(
+                f"Starter character {reference} must reference a non-empty id."
+            )
+
+    faction = definition.get("faction")
+    if faction is not None and (
+        not isinstance(faction, dict)
+        or not isinstance(faction.get("name"), str)
+        or not faction["name"].strip()
+    ):
+        raise ContentDefinitionError(
+            "Starter faction must define a non-empty name when provided."
+        )
     return definition
 
 
