@@ -16,6 +16,12 @@
       "container_tags": [
         "wooden",
         "storage"
+      ],
+      "contents": [
+        {
+          "item_id": "old_copper_ring",
+          "quantity": 1
+        }
       ]
     }
   ]
