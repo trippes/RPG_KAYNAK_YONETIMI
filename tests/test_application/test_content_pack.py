@@ -694,5 +694,34 @@ class TestContentPack(unittest.TestCase):
             self.assertEqual(loaded["trade_partners"][0]["merchant_id"], "village_trader")
 
 
+    def test_quest_item_reward_quantity_must_be_positive(self):
+        with tempfile.TemporaryDirectory() as directory:
+            package = Path(directory) / "demo_eldoria"
+            shutil.copytree(PACKAGE, package)
+            quests_path = package / "quests.json"
+            quests_path.write_text(json.dumps({
+                "schema_version": 1,
+                "quests": [{
+                    "id": "zero_item_reward",
+                    "title": "Zero quantity reward",
+                    "giver_npc_id": "warden_lyra",
+                    "objectives": [{
+                        "id": "talk",
+                        "description": "Talk to the guard",
+                        "type": "talk",
+                        "target_id": "warden_lyra",
+                    }],
+                    "reward": {
+                        "items": [{"id": "old_copper_ring", "quantity": 0}],
+                    },
+                }],
+            }), encoding="utf-8")
+
+            with self.assertRaisesRegex(
+                ContentDefinitionError, "invalid 'items' reward amount"
+            ):
+                load_quest_definitions(package_path=package)
+
+
 if __name__ == "__main__":
     unittest.main()
