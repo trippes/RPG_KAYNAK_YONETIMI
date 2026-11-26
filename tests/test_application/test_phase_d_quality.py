@@ -17,6 +17,9 @@ from game_ui.screens.dialogue_screen import DialogueScreen
 from game_ui.screens.market_screen import MarketScreen
 from game_ui.screens.main_menu import MainMenu
 from game_ui.screens.inventory_screen import InventoryScreen
+from game_ui.screens.production_screen import ProductionScreen
+from game_ui.screens.currency_exchange_screen import CurrencyExchangeScreen
+from game_ui.renderer import Renderer
 from game_ui.screens.quest_log_screen import QuestLogScreen
 from game_ui.screens.save_slots_screen import SaveSlotsScreen
 from quests import Objective, ObjectiveType, Quest, QuestLog, QuestState, Reward
@@ -1700,6 +1703,221 @@ class TestPhaseDQuality(unittest.TestCase):
         ))
         screen.handle(InputState(actions={"down", "confirm"}))
         self.assertEqual(screen.selected_skill, 0)
+
+
+class TestA13PlayerIdentity(unittest.TestCase):
+    def test_inventory_screen_uses_configured_and_explicit_inventory_ids(self):
+        requested = []
+
+        class Service:
+            player_inventory_id = "inventory_custom"
+
+            def inventory(self, inventory_id):
+                requested.append(inventory_id)
+                return SimpleNamespace(items=(("iron_sword", 1),), stocks=())
+
+        service = Service()
+        screen = InventoryScreen(service)
+        self.assertEqual(screen.inventory_id, "inventory_custom")
+        self.assertEqual(screen._items(), [("iron_sword", 1)])
+
+        explicit = InventoryScreen(service, inventory_id="inventory_external")
+        self.assertEqual(explicit.inventory_id, "inventory_external")
+        explicit._items()
+
+        self.assertEqual(
+            requested,
+            ["inventory_custom", "inventory_external"],
+        )
+
+    def test_production_reads_and_consumes_the_configured_inventory(self):
+        requested = []
+        started = []
+        facility = SimpleNamespace(facility_id="facility_custom")
+
+        class Service:
+            player_inventory_id = "inventory_custom"
+
+            def inventory(self, inventory_id):
+                requested.append(inventory_id)
+                return SimpleNamespace(stocks=(("wood", 5, "item"),))
+
+            def start_production(self, recipe_id, inventory_id, facility_id):
+                started.append((recipe_id, inventory_id, facility_id))
+
+        screen = ProductionScreen(Service())
+        self.assertEqual(screen.inventory_id, "inventory_custom")
+        self.assertEqual(
+            screen._inventory_stocks(),
+            {"wood": (5, "item")},
+        )
+        screen._can_start = lambda _recipe: (True, "")
+        screen._get_facility = lambda _recipe: facility
+        screen._start_production(
+            SimpleNamespace(recipe_id="recipe_custom", name="Custom Recipe")
+        )
+
+        self.assertEqual(requested, ["inventory_custom"])
+        self.assertEqual(
+            started,
+            [("recipe_custom", "inventory_custom", "facility_custom")],
+        )
+
+        explicit = ProductionScreen(Service(), inventory_id="inventory_external")
+        self.assertEqual(explicit.inventory_id, "inventory_external")
+        self.assertEqual(
+            explicit._inventory_stocks(),
+            {"wood": (5, "item")},
+        )
+        self.assertEqual(requested[-1], "inventory_external")
+
+    def test_market_purchase_passes_actor_inventory_and_account_separately(self):
+        calls = []
+
+        class Service:
+            player_actor_id = "actor_custom"
+            player_inventory_id = "inventory_custom"
+            player_account_id = "account_custom"
+
+            def buy_offer(self, *args, **kwargs):
+                calls.append((args, kwargs))
+
+        screen = MarketScreen(Service())
+        offer = SimpleNamespace(offer_id="offer_custom", resource_type="wood")
+        screen._buy([offer])
+
+        self.assertEqual(
+            calls,
+            [(
+                ("offer_custom", "actor_custom", "inventory_custom"),
+                {"quantity": 1, "buyer_account_id": "account_custom"},
+            )],
+        )
+
+    def test_currency_exchange_uses_configured_player_account(self):
+        balance_calls = []
+        exchange_calls = []
+
+        class Service:
+            player_account_id = "account_custom"
+
+            def balance(self, account_id, currency):
+                balance_calls.append((account_id, currency))
+                return SimpleNamespace(amount=10**9)
+
+            def exchange_currency(
+                self, account_id, source_currency, target_currency, amount
+            ):
+                exchange_calls.append(
+                    (account_id, source_currency, target_currency, amount)
+                )
+
+        screen = CurrencyExchangeScreen(Service())
+        amount, source, target = screen.OPTIONS[0]
+        screen._exchange(0)
+
+        self.assertEqual(balance_calls, [("account_custom", source)])
+        self.assertEqual(
+            exchange_calls,
+            [("account_custom", source, target, amount)],
+        )
+
+    def test_hud_uses_configured_actor_account_and_inventory_ids(self):
+        actor_calls = []
+        balance_calls = []
+        resource_calls = []
+        current = SimpleNamespace(
+            session=SimpleNamespace(
+                worlds=SimpleNamespace(
+                    get_active=lambda: SimpleNamespace(name="Eldoria")
+                )
+            )
+        )
+
+        class Service:
+            player_actor_id = "actor_custom"
+            player_inventory_id = "inventory_custom"
+            player_account_id = "account_custom"
+            application = SimpleNamespace(
+                holder=SimpleNamespace(current=current)
+            )
+
+            def state(self):
+                return SimpleNamespace(simulation_tick=0)
+
+            def actor_stats(self, actor_id):
+                actor_calls.append(actor_id)
+                return {
+                    "name": "Custom Hero",
+                    "current_hit_points": 8,
+                    "max_hit_points": 10,
+                }
+
+            def balance(self, account_id, currency):
+                balance_calls.append((account_id, currency))
+                return SimpleNamespace(amount=17)
+
+        renderer = object.__new__(Renderer)
+        renderer.pg = SimpleNamespace(Rect=lambda *args: args)
+        renderer.width = 1280
+        renderer.height = 720
+        renderer.nav_current = "world"
+        renderer.panel = lambda *_args, **_kwargs: None
+        renderer.fit_text = lambda value, *_args, **_kwargs: value
+        renderer.text_width = lambda value, *_args, **_kwargs: len(value) * 8
+        renderer.text = lambda *_args, **_kwargs: None
+        renderer.bar = lambda *_args, **_kwargs: None
+        renderer.coin_icon = lambda *_args, **_kwargs: None
+        renderer.calendar = lambda *_args, **_kwargs: None
+        renderer.resource_bar = (
+            lambda service, inventory_id: resource_calls.append(inventory_id)
+        )
+
+        renderer.hud(Service())
+
+        self.assertEqual(actor_calls, ["actor_custom"])
+        self.assertEqual(balance_calls, [("account_custom", "gold")])
+        self.assertEqual(resource_calls, ["inventory_custom"])
+
+    def test_wallet_and_resource_bar_use_configured_ids(self):
+        balance_calls = []
+        inventory_calls = []
+
+        class Service:
+            player_account_id = "account_custom"
+            player_inventory_id = "inventory_custom"
+
+            def balance(self, account_id, currency):
+                balance_calls.append((account_id, currency))
+                return SimpleNamespace(amount=3)
+
+            def inventory(self, inventory_id):
+                inventory_calls.append(inventory_id)
+                return SimpleNamespace(stocks=())
+
+        renderer = object.__new__(Renderer)
+        renderer.height = 720
+        renderer.width = 1280
+        renderer.pg = SimpleNamespace(Rect=lambda *args: args)
+        renderer.surface = object()
+        renderer.text = lambda *_args, **_kwargs: None
+        renderer.text_width = lambda value, *_args, **_kwargs: len(value) * 8
+        renderer.coin_icon = lambda *_args, **_kwargs: None
+        renderer.panel = lambda *_args, **_kwargs: None
+
+        renderer.wallet(Service(), x=10, y=10)
+        renderer.resource_bar(Service())
+
+        self.assertEqual(
+            balance_calls,
+            [
+                ("account_custom", "bronze"),
+                ("account_custom", "silver"),
+                ("account_custom", "gold"),
+            ],
+        )
+        self.assertEqual(inventory_calls, ["inventory_custom"])
+
 
 if __name__ == "__main__":
     unittest.main()
