@@ -1,7 +1,7 @@
 # A1 + A5 — Oyuncu Kimliği ve Kayıt Uyumluluğu Uygulama Planı
 
 > **Belge türü:** Mimari uygulama planı  
-> **Durum:** A1.1–A1.3 tamamlandı; A1.4 kod ve CI doğrulaması tamamlandı, manuel kabul bekliyor; A1.5 kaynak taraması tamamlandı; A5 planlandı  
+> **Durum:** A1.1–A1.3 tamamlandı; A1.4 kod ve CI doğrulaması tamamlandı, sandık manuel testi başarılı, görev/diyalog manuel kabulü görev veren NPC bulunmadığı için beklemede; A1.5 kaynak taraması tamamlandı; A5 incelemesi başlatıldı  
 > **Çalışma dalı:** `experiment/map-cleanup`  
 > **Planın dayandığı kaynak:** `a961de7b91b6b7fe7d6b3aae48d2defc95fcb966`  
 > **İlişkili yol haritası:** [24 — Legacy Architecture Cleanup Roadmap](24-legacy-architecture-cleanup-roadmap.md)
@@ -360,8 +360,9 @@ A1 + A5 ancak aşağıdaki koşulların tamamı sağlandığında tamamlanmış 
 | 2026-11-25 | A1.1 | Tamamlandı | `e48ac660`; GameplayService oyuncu kimliği sözleşmesi ve A1.1 CI doğrulaması tamamlandı. |
 | 2026-11-25 | A1.2 | Tamamlandı | `9dbb3e97`–`92b7786e`; 6 yeni UI kimlik testi ve CI başarılı; kullanıcı oyun penceresinde karakter oluşturma, karakter sayfası ve Eren diyaloğunu kabul etti. |
 | 2026-11-26 | A1.3 | Tamamlandı | `d71820aa` ve test düzeneği düzeltmesi `326d8524`; alternatif kimlik testleri eklendi, Eldoria CI ve Core Quality başarılı. Item çizim tutarsızlığı ayrı görsel iş olarak takip edilecek. |
-| 2026-11-26 | A1.4 | Kod ve CI doğrulaması tamamlandı; manuel kabul bekliyor | Son düzeltme HEAD `a100aee57fc337b95f93128a130f2985a0056076`; Eldoria CI run `45880916965` ve Core Quality run `45880917005` başarılı. Diyalog görevlerinde sabit player envanteri kaldırıldı; konteyner oyuncu aktörü servis kimliğinden seçiliyor; görev hedefinin dünyası yapılandırılmış oyuncu aktöründen çözülüyor. Hedefli regresyon testleri eklendi. Kullanıcıdan oyun penceresinde sandık ve diyalog akışını doğrulaması istenecek. |
+| 2026-11-26 | A1.4 | Kod ve CI doğrulaması tamamlandı; sandık manuel testi başarılı; görev/diyalog manuel kabulü beklemede | Son düzeltme HEAD `a100aee57fc337b95f93128a130f2985a0056076`; Eldoria CI run `45880916965` ve Core Quality run `45880917005` başarılı. Kullanıcı sandığı açma ve eşya aktarma testini başarılı doğruladı. Görev alma/eşya teslim akışı, görev veren NPC bulunmadığından henüz test edilemedi; bu akış başarılı kabul edilmeyecek. |
 | 2026-11-26 | A1.5 | Kaynak taraması tamamlandı | `game_ui/` altındaki 58 Python dosyası `a100aee5` üzerinde tarandı. Oyuncu kimliği olarak kullanılan sabit `hero/player` bulunmadı; bulunan sözcükler görsel palet, sprite değişkeni, entity türü veya açıklama metni. Üretim kodu değişikliği gerekmedi. |
+| 2026-11-26 | A1.4 manuel kabul | Kısmi kabul | Sandık açma ve eşya aktarımı kullanıcı tarafından başarılı doğrulandı. Görev alma/teslim akışı görev veren NPC olmadığı için test edilemedi; bu kabul maddesi açık kalacak. Bu eksik oyun içeriği A1/A5 kapsamına eklenmeyecek. |
 
 ---
 
