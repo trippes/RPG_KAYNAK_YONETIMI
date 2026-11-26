@@ -1,3 +1,4 @@
+from dataclasses import FrozenInstanceError
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -10,6 +11,7 @@ from locks import ForceProfile, KeyDefinition, LockDefinition, LockInstance, Loc
 from resources import ResourceDefinition
 
 from application import (
+    Combatant,
     GameApplication,
     GameplayChainStage,
     GameplayService,
@@ -563,6 +565,33 @@ class TestGameplayService(unittest.TestCase):
             self.service.save(path)
             self.service.load(path)
             self.assertEqual(self.service.state().chains, ())
+
+
+    def test_combat_state_returns_detached_immutable_views(self):
+        hero = Combatant("hero", 20)
+        goblin = Combatant("goblin", 12)
+        self.service.add_combatant(hero)
+        self.service.add_combatant(goblin)
+        self.service.create_combat_encounter(
+            "opening_encounter",
+            ("hero", "goblin"),
+            initiative_scores={"hero": 10, "goblin": 5},
+        )
+
+        snapshot = self.service.combat_state()
+
+        self.assertEqual(
+            tuple(item.combatant_id for item in snapshot.combatants),
+            ("goblin", "hero"),
+        )
+        self.assertEqual(snapshot.encounters[0].active_combatant_id, "hero")
+        self.assertEqual(snapshot.encounters[0].round_number, 1)
+        goblin.add_status("poison", 2)
+        goblin.hit_points = 4
+        self.assertEqual(snapshot.combatants[0].hit_points, 12)
+        self.assertEqual(snapshot.combatants[0].statuses, ())
+        with self.assertRaises(FrozenInstanceError):
+            snapshot.combatants[0].hit_points = 4
 
 
 if __name__ == "__main__":
