@@ -378,5 +378,61 @@ class TestContentPack(unittest.TestCase):
                 )
 
 
+    def test_opening_content_rejects_npc_reference_to_undefined_dialogue(self):
+        with tempfile.TemporaryDirectory() as directory:
+            package = Path(directory) / "demo_eldoria"
+            shutil.copytree(PACKAGE, package)
+            starter_path = package / "starter_content.json"
+            payload = json.loads(starter_path.read_text(encoding="utf-8"))
+            payload["dialogue"]["id"] = "different_dialogue"
+            starter_path.write_text(json.dumps(payload), encoding="utf-8")
+
+            with self.assertRaisesRegex(
+                ContentDefinitionError,
+                "NPC 'warden_lyra' references unknown opening dialogue 'warden_intro'",
+            ):
+                populate_opening_content(
+                    GameApplication.create_default(),
+                    content_package_path=package,
+                )
+
+    def test_opening_content_rejects_dialogue_id_collision_with_quest_dialogue(self):
+        with tempfile.TemporaryDirectory() as directory:
+            package = Path(directory) / "demo_eldoria"
+            shutil.copytree(PACKAGE, package)
+            quests_path = package / "quests.json"
+            quests_path.write_text(json.dumps({
+                "schema_version": 1,
+                "quests": [{
+                    "id": "duplicate_dialogue_quest",
+                    "title": "Diyalog kimliği çakışması",
+                    "giver_npc_id": "warden_lyra",
+                    "objectives": [{
+                        "id": "speak_to_guard",
+                        "description": "Muhafızla konuş",
+                        "type": "talk",
+                        "target_id": "warden_lyra",
+                    }],
+                    "dialogue": {
+                        "id": "warden_intro",
+                        "start_node": "start",
+                        "nodes": [{
+                            "id": "start",
+                            "text": "Bu diyalog kimliği başka bir içerikte kullanılıyor.",
+                            "choices": [],
+                        }],
+                    },
+                }],
+            }), encoding="utf-8")
+
+            with self.assertRaisesRegex(
+                ContentDefinitionError, "Duplicate dialogue id 'warden_intro'"
+            ):
+                populate_opening_content(
+                    GameApplication.create_default(),
+                    content_package_path=package,
+                )
+
+
 if __name__ == "__main__":
     unittest.main()
