@@ -211,13 +211,19 @@ def test_hex_gameplay_view_renders_runtime_map_without_mutating_entity_position(
         EntityPosition("village", LocalHexPosition(0, 0)),
         MovementProfile(),
     )
+    container = SimpleNamespace(
+        entity_id="village_chest_entity",
+        kind="container",
+        position=EntityPosition("village", LocalHexPosition(1, 0)),
+        continuous_position=None,
+    )
 
     class Runtime:
         def entity(self, _entity_id):
             return player
 
         def entities(self):
-            return (player,)
+            return (player, container)
 
         def map_definition(self, _map_id):
             return map_definition
@@ -243,6 +249,8 @@ def test_hex_gameplay_view_renders_runtime_map_without_mutating_entity_position(
     )
     assert view.render_stats["player_body_triangles"] == 1192
     assert view.render_stats["player_body_cache"]["entries"] == 1
+    assert view.render_stats["total_containers"] == 1
+    assert view.render_stats["drawn_containers"] == 1
 
 def test_hex_gameplay_view_renders_player_and_npc_with_shared_3d_humanoid_pipeline():
     map_definition = parse_hex_map({

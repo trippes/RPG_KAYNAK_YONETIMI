@@ -121,6 +121,96 @@ class HexGameplayView:
         """Return the latest deterministic renderer counters."""
         return dict(self._last_render_stats)
 
+    def _draw_container(self, renderer, foot):
+        """Draw a compact isometric wooden chest at its world-depth position."""
+        pg = renderer.pg
+        surface = renderer.surface
+        cx, cy = round(foot[0]), round(foot[1])
+        scale = self.zoom
+        half_width = max(9, round(20 * scale))
+        half_depth = max(5, round(10 * scale))
+        body_height = max(7, round(12 * scale))
+        lid_height = max(6, round(10 * scale))
+
+        left = (cx - half_width, cy - body_height - half_depth)
+        front = (cx, cy - body_height)
+        right = (cx + half_width, cy - body_height - half_depth)
+        back = (cx, cy - body_height - 2 * half_depth)
+
+        pg.draw.ellipse(
+            surface,
+            (28, 31, 25),
+            pg.Rect(
+                cx - half_width - 3,
+                cy - 4,
+                2 * half_width + 6,
+                max(5, round(9 * scale)),
+            ),
+        )
+        # Lower chest body: two visible faces and their dark outlines.
+        left_bottom = (cx - half_width, cy - 2)
+        front_bottom = (cx, cy + half_depth - 2)
+        right_bottom = (cx + half_width, cy - 2)
+        pg.draw.polygon(
+            surface, (91, 53, 29),
+            (left, front, front_bottom, left_bottom),
+        )
+        pg.draw.polygon(
+            surface, (119, 72, 35),
+            (front, right, right_bottom, front_bottom),
+        )
+        pg.draw.polygon(
+            surface, (43, 29, 22),
+            (left, front, front_bottom, left_bottom), 2,
+        )
+        pg.draw.polygon(
+            surface, (43, 29, 22),
+            (front, right, right_bottom, front_bottom), 2,
+        )
+
+        # Closed domed lid, rendered as a separate isometric volume.
+        lid_front = (cx, cy - body_height - 2)
+        lid_left = (cx - half_width, cy - body_height - half_depth - 2)
+        lid_right = (cx + half_width, cy - body_height - half_depth - 2)
+        lid_back = (cx, cy - body_height - 2 * half_depth - lid_height)
+        pg.draw.polygon(
+            surface, (151, 94, 45),
+            (lid_left, lid_front, lid_back, lid_right),
+        )
+        pg.draw.polygon(
+            surface, (190, 129, 65),
+            (lid_left, lid_front, lid_back, lid_right), 2,
+        )
+        pg.draw.line(
+            surface, (91, 55, 30), lid_left, lid_front, max(1, round(2 * scale)),
+        )
+        pg.draw.line(
+            surface, (91, 55, 30), lid_front, lid_right, max(1, round(2 * scale)),
+        )
+
+        # Iron reinforcing straps and a central brass latch make it read as a chest.
+        strap_width = max(1, round(3 * scale))
+        pg.draw.line(
+            surface, (67, 70, 68),
+            (cx - round(half_width * 0.58), cy - body_height - half_depth // 2),
+            (cx - round(half_width * 0.58), cy - 4),
+            strap_width,
+        )
+        pg.draw.line(
+            surface, (67, 70, 68),
+            (cx + round(half_width * 0.58), cy - body_height - half_depth // 2),
+            (cx + round(half_width * 0.58), cy - 4),
+            strap_width,
+        )
+        latch = pg.Rect(
+            cx - max(2, round(3 * scale)),
+            cy - max(7, round(8 * scale)),
+            max(4, round(6 * scale)),
+            max(6, round(8 * scale)),
+        )
+        pg.draw.rect(surface, (190, 151, 73), latch, border_radius=2)
+        pg.draw.rect(surface, (72, 51, 31), latch, 1, border_radius=2)
+
     def _npc_at_screen_position(self, runtime, position, map_id):
         if position is None or self._panel is None or not self._panel.collidepoint(position):
             return None
@@ -909,6 +999,7 @@ class HexGameplayView:
             culled_scene_count = 0
             drawn_scene_count = 0
             drawn_actor_count = 0
+            drawn_container_count = 0
             cells = sorted(
                 map_definition.valid_cells,
                 key=lambda position: (position.r, position.q),
@@ -1022,6 +1113,10 @@ class HexGameplayView:
                             renderer, item, foot, self.zoom,
                         )
                     drawn_scene_count += 1
+                    continue
+                if item.kind == "container":
+                    self._draw_container(renderer, foot)
+                    drawn_container_count += 1
                     continue
                 if item.kind == "player":
                     self._player_body_triangle_count = self._humanoid_body_renderer.draw(
@@ -1140,6 +1235,8 @@ class HexGameplayView:
                 "total_actors": len(entities),
                 "total_npcs": sum(1 for entity in entities if entity.kind == "npc"),
                 "drawn_actors": drawn_actor_count,
+                "drawn_containers": drawn_container_count,
+                "total_containers": sum(1 for entity in entities if entity.kind == "container"),
                 "culled_actors": culled_actor_count,
                 "visible_scene_objects": visible_scene_count,
                 "culled_scene_objects": culled_scene_count,
