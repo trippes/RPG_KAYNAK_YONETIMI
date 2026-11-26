@@ -17,7 +17,10 @@ from .production_facility import ProductionFacility
 from core.domain.physics import CircleShape, PhysicsBodyDefinition
 from core.domain.spatial import LocalHexPosition
 from application.content_loader import ContentPackageError, load_content_package
-from character import Ability, Attribute, CharacterClass, CharacterFactory, Race
+from character import (
+    Ability, Attribute, CharacterClass, CharacterFactory, Race,
+    EquipmentSlot, ItemDefinition,
+)
 from npc import BehaviorController, BehaviorState, Faction, NPC
 from economy import Currency, Money, MarketProfile, MarketCatalogEntry
 from quests import Dialogue, DialogueChoice, DialogueNode, Objective, ObjectiveType, Quest, Reward
@@ -729,6 +732,20 @@ def populate_gameplay_resources(service, definition_path=None, resource_definiti
     load_content_package(_resolve_content_package_path(active_package_path))
     _register_quest_content(service, load_quest_definitions(package_path=active_package_path))
     bundle = service.application.holder.current
+    item_catalog = dict(bundle.items)
+    for item_definition in load_item_definitions(package_path=active_package_path):
+        existing_item = item_catalog.get(item_definition.item_id)
+        if existing_item is not None and existing_item != item_definition:
+            raise ContentDefinitionError(
+                f"Existing item '{item_definition.item_id}' conflicts with package configuration."
+            )
+        item_catalog[item_definition.item_id] = item_definition
+    if item_catalog != dict(bundle.items):
+        object.__setattr__(bundle, "items", MappingProxyType(item_catalog))
+        for character in bundle.characters.values():
+            character.bind_item_catalog(bundle.items)
+    bundle.containers.bind_catalogs(bundle.items, bundle.resource_definitions)
+
     for record in load_resource_definitions(
         resource_definitions_path,
         package_path=active_package_path,
@@ -815,6 +832,12 @@ def populate_gameplay_resources(service, definition_path=None, resource_definiti
                 record["entity_id"],
                 record["definition_id"],
             ))
+            for content in record.get("contents", ()):
+                bundle.containers.add_item(
+                    record["container_id"],
+                    content["item_id"],
+                    content.get("quantity", 1),
+                )
         elif (
             existing_instance.entity_id != record["entity_id"]
             or existing_instance.definition_id != record["definition_id"]
@@ -1016,6 +1039,61 @@ def load_movement_configs(
     return MappingProxyType(configs)
 
 
+def load_item_definitions(
+    path: str | Path | None = None,
+    *,
+    package_path: str | Path | None = None,
+) -> tuple[ItemDefinition, ...]:
+    """Load physical item metadata from an optional content-package catalog."""
+    if path is None:
+        package = load_content_package(_resolve_content_package_path(package_path))
+        definition = package.files.get("items")
+        if definition is None:
+            return ()
+    else:
+        definition = _read_json_definition(Path(path), "Item definition")
+    if definition.get("schema_version") != CONTENT_SCHEMA_VERSION:
+        raise ContentDefinitionError("Unsupported item definition schema version.")
+    records = definition.get("items")
+    if not isinstance(records, list):
+        raise ContentDefinitionError("Item definitions must contain an 'items' list.")
+    result = []
+    seen_ids: set[str] = set()
+    for index, record in enumerate(records):
+        if not isinstance(record, dict):
+            raise ContentDefinitionError(f"Item record at index {index} must be an object.")
+        item_id, name = record.get("item_id"), record.get("name")
+        if not isinstance(item_id, str) or not item_id.strip():
+            raise ContentDefinitionError(f"Item record at index {index} has an invalid item_id.")
+        if not isinstance(name, str) or not name.strip():
+            raise ContentDefinitionError(f"Item '{item_id}' has an invalid name.")
+        if item_id in seen_ids:
+            raise ContentDefinitionError(f"Duplicate item id: {item_id}")
+        seen_ids.add(item_id)
+        try:
+            slot = record.get("slot")
+            result.append(ItemDefinition(
+                item_id=item_id,
+                name=name,
+                slot=EquipmentSlot(slot) if slot else None,
+                weight=record.get("weight", 0.0),
+                attack=record.get("attack", 0),
+                defense=record.get("defense", 0),
+                damage=record.get("damage", 0),
+                max_hit_points=record.get("max_hit_points", 0),
+                attribute_bonuses=record.get("attribute_bonuses", {}),
+                description=record.get("description", ""),
+                volume_liters=record.get("volume_liters", 0.0),
+                category=record.get("category", "misc"),
+                tags=tuple(record.get("tags", ())),
+            ))
+        except (TypeError, ValueError) as error:
+            raise ContentDefinitionError(
+                f"Item '{item_id}' definition is invalid: {error}"
+            ) from error
+    return tuple(result)
+
+
 def load_container_definitions(
     path: str | Path | None = None,
     *,
@@ -1050,6 +1128,23 @@ def load_container_definitions(
             raise ContentDefinitionError(f"Duplicate container entity id: {record['entity_id']}")
         container_ids.add(record["container_id"])
         entity_ids.add(record["entity_id"])
+        contents = record.get("contents", [])
+        if not isinstance(contents, list):
+            raise ContentDefinitionError(
+                f"Container '{record['container_id']}' contents must be a list."
+            )
+        for content_index, content in enumerate(contents):
+            if (
+                not isinstance(content, dict)
+                or not isinstance(content.get("item_id"), str)
+                or not content["item_id"].strip()
+                or isinstance(content.get("quantity", 1), bool)
+                or not isinstance(content.get("quantity", 1), int)
+                or content.get("quantity", 1) < 1
+            ):
+                raise ContentDefinitionError(
+                    f"Container '{record['container_id']}' has invalid contents[{content_index}]."
+                )
         try:
             ContainerDefinition(
                 definition_id=record["definition_id"],
