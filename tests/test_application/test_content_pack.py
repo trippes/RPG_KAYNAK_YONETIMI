@@ -517,5 +517,26 @@ class TestContentPack(unittest.TestCase):
                     loader(package_path=package)
 
 
+    def test_starter_content_rejects_invalid_optional_section_shapes(self):
+        mutations = (
+            ("hex_start", lambda data: data["world"].update({"hex_start": []})),
+            ("dialogue", lambda data: data.update({"dialogue": []})),
+            ("production", lambda data: data.update({"production": []})),
+            ("markets", lambda data: data.update({"markets": {}})),
+            ("trade_partners", lambda data: data.update({"trade_partners": "invalid"})),
+        )
+        for label, mutate in mutations:
+            with self.subTest(label=label), tempfile.TemporaryDirectory() as directory:
+                package = Path(directory) / "demo_eldoria"
+                shutil.copytree(PACKAGE, package)
+                starter_path = package / "starter_content.json"
+                payload = json.loads(starter_path.read_text(encoding="utf-8"))
+                mutate(payload)
+                starter_path.write_text(json.dumps(payload), encoding="utf-8")
+
+                with self.assertRaises(ContentDefinitionError):
+                    load_starter_content(package_path=package)
+
+
 if __name__ == "__main__":
     unittest.main()
