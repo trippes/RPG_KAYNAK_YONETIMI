@@ -249,7 +249,7 @@ class TestGameApplicationSave(unittest.TestCase):
             races={"race_custom": Race("race_custom", "Human")},
             classes={"class_custom": CharacterClass("class_custom", "Warrior")},
         )
-        character = application.karakter_olustur(
+        application.karakter_olustur(
             factory, "character_custom", "Test Hero",
             "race_custom", "class_custom", actor_id="actor_custom",
         )
