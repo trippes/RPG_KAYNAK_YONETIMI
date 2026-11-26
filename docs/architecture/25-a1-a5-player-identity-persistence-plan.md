@@ -1,7 +1,7 @@
 # A1 + A5 — Oyuncu Kimliği ve Kayıt Uyumluluğu Uygulama Planı
 
 > **Belge türü:** Mimari uygulama planı  
-> **Durum:** A1.1 tamamlandı; A1.2 kod ve otomatik doğrulama tamamlandı, manuel UI kabulü bekliyor; A1.3–A1.5 ve A5 planlandı  
+> **Durum:** A1.1–A1.3 tamamlandı; A1.4 uygulanıyor; A1.5 ve A5 planlandı  
 > **Çalışma dalı:** `experiment/map-cleanup`  
 > **Planın dayandığı kaynak:** `a961de7b91b6b7fe7d6b3aae48d2defc95fcb966`  
 > **İlişkili yol haritası:** [24 — Legacy Architecture Cleanup Roadmap](24-legacy-architecture-cleanup-roadmap.md)
@@ -185,7 +185,7 @@ Bu kimlikler aynı metin değerine sahip olabilir; fakat mimari olarak eş anlam
 - `tests/test_game_ui/test_character_identity.py` içine 6 hedefli test eklendi. Mevcut karakter ekranı test fixture'ları da açık `player_actor_id` sağlayacak şekilde güncellendi.
 - Core Quality Ruff listesine iki ekran ve yeni test dosyası eklendi.
 - Otomatik CI kanıtı: Python 3.11/3.12 × Ubuntu/Windows dört test işi başarılı; her ortamda 1.623 unittest, 2.666 pytest ve 351 subtest başarılı, 59 warning. Pygame headless smoke test ve Core Quality Linux/Windows kontrolleri de başarılı.
-- Kod ve otomatik doğrulama tamamlandı; oyun penceresinde karakter oluşturma, karakter sayfası ve Eren ile diyalog akışı için kullanıcı manuel kabulü bekleniyor.
+- Kullanıcı 2026-11-26 tarihinde oyun penceresinde karakter oluşturma, karakter sayfası ve Eren ile diyalog akışını doğruladı; A1.2 manuel kabul edildi.
 
 ### A1.3 — Envanter, üretim ve ekonomi ekranları
 
@@ -209,6 +209,12 @@ Bu kimlikler aynı metin değerine sahip olabilir; fakat mimari olarak eş anlam
 - Alışverişte para doğru hesaptan düşer, ürün doğru envantere eklenir.
 - Üretim girdileri doğru oyuncu envanterinden tüketilir.
 - Mevcut demo paketindeki davranış değişmez.
+
+**Uygulama sonucu — 2026-11-26**
+- Ekranların servis kimliklerini kullandığı kaynak incelemesiyle doğrulandı; alternatif aktör/envanter/hesap kimlikleriyle altı regresyon testi eklendi.
+- İlk CI turunda testin pygame.Rect taklidi tuple döndürdüğü için tek test hatası oluştu. Yalnızca test düzeneği düzeltildi; üretim koduna dokunulmadı.
+- Son doğrulama commit'i 326d8524; Eldoria CI ve Core Quality başarılı: [Eldoria CI](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/45879427448), [Core Quality](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/45879427512).
+- A1.3 kimlik sözleşmesi ve otomatik doğrulaması tamamlandı. Item çizimlerinin envanter/sandık/üretim pencerelerinde farklı görünmesi ayrı görsel tutarlılık işi olarak izlenecek; A1.3 kapsamına alınmadı.
 
 ### A1.4 — Diyalog ve dünya aktör seçimi
 
@@ -346,10 +352,12 @@ A1 + A5 ancak aşağıdaki koşulların tamamı sağlandığında tamamlanmış 
 | 2026-11-25 | A0 | Tamamlandı | Kaynak envanteri, mimari bulgular ve CI tabanı önceki incelemede kaydedildi. |
 | 2026-11-25 | A1 + A5 tasarımı | Tamamlandı | Bu belge uygulama planı olarak oluşturuldu. |
 | 2026-11-25 | A1.1 | Tamamlandı | `e48ac660`; GameplayService oyuncu kimliği sözleşmesi ve A1.1 CI doğrulaması tamamlandı. |
-| 2026-11-25 | A1.2 | Kod ve otomatik testler tamamlandı; manuel kabul bekliyor | `9dbb3e97`–`92b7786e`; 6 yeni UI kimlik testi, dört Python test matrisi işi ve Core Quality kontrolleri başarılı. |
+| 2026-11-25 | A1.2 | Tamamlandı | `9dbb3e97`–`92b7786e`; 6 yeni UI kimlik testi ve CI başarılı; kullanıcı oyun penceresinde karakter oluşturma, karakter sayfası ve Eren diyaloğunu kabul etti. |
+| 2026-11-26 | A1.3 | Tamamlandı | `d71820aa` ve test düzeneği düzeltmesi `326d8524`; alternatif kimlik testleri eklendi, Eldoria CI ve Core Quality başarılı. Item çizim tutarsızlığı ayrı görsel iş olarak takip edilecek. |
+| 2026-11-26 | A1.4 | Uygulandı; CI doğrulaması bekliyor | Diyalog görevlerinde sabit player envanteri kaldırıldı; konteyner oyuncu aktörü servis kimliğinden seçiliyor; görev hedefinin dünyası yapılandırılmış oyuncu aktöründen çözülüyor. Hedefli regresyon testleri eklendi. |
 
 ---
 
 ## 12. Sonraki işlem
 
-Sıradaki işlem, `experiment/map-cleanup` dalındaki oyun penceresinde karakter oluşturma, karakter sayfası ve Eren ile diyalog akışının manuel kabul testidir. Bu doğrulama tamamlandıktan sonra A1.3 envanter/üretim/ekonomi ekranlarına geçilecektir.
+A1.4 değişikliklerinin GitHub Actions doğrulaması yapılacaktır. Başarılı CI sonrasında A1.5 kapsamında `game_ui/` genelinde kalan `hero` / `player` sabitleri bağlamlarına göre sınıflandırılacaktır.
