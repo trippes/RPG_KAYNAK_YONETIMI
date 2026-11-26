@@ -1254,6 +1254,37 @@ def populate_gameplay_placements(service, *, content_package_path=None):
     return service.register_gameplay_placements(package.gameplay_placements)
 
 
+_MOVEMENT_CONFIG_OPTIONAL_FIELDS = (
+    "running_speed_multiplier",
+    "stealth_speed_multiplier",
+    "acceleration",
+    "deceleration",
+    "braking_deceleration",
+)
+
+
+def _movement_config_from_profile(profile: dict, actor_id: str) -> MovementConfig:
+    """Build a movement config using MovementConfig as the sole defaults source."""
+    try:
+        config = MovementConfig(
+            max_speed=profile["max_speed"],
+            **{
+                field_name: profile[field_name]
+                for field_name in _MOVEMENT_CONFIG_OPTIONAL_FIELDS
+                if field_name in profile
+            },
+        )
+    except (TypeError, ValueError) as error:
+        raise ContentDefinitionError(
+            f"Movement profile for '{actor_id}' is invalid: {error}"
+        ) from error
+    if config.max_speed <= 0:
+        raise ContentDefinitionError(
+            f"Movement profile for '{actor_id}' max_speed must be greater than zero."
+        )
+    return config
+
+
 def load_gameplay_rules(path: str | Path | None = None, *, package_path: str | Path | None = None) -> dict:
     """Load configurable player identity, starting economy and consumable effects."""
     definition = _load_package_file("gameplay_rules", package_path) if path is None else _read_json_definition(Path(path), "Gameplay rules")
@@ -1289,23 +1320,7 @@ def load_gameplay_rules(path: str | Path | None = None, *, package_path: str | P
                 raise ContentDefinitionError(f"Movement profile for '{actor_id}' has unsupported fields.")
             if "max_speed" not in profile:
                 raise ContentDefinitionError(f"Movement profile for '{actor_id}' must define max_speed.")
-            try:
-                config = MovementConfig(
-                    max_speed=profile["max_speed"],
-                    running_speed_multiplier=profile.get("running_speed_multiplier", 1.5),
-                    stealth_speed_multiplier=profile.get("stealth_speed_multiplier", 0.5),
-                    acceleration=profile.get("acceleration", 180.0),
-                    deceleration=profile.get("deceleration", 240.0),
-                    braking_deceleration=profile.get("braking_deceleration", 360.0),
-                )
-            except (TypeError, ValueError) as error:
-                raise ContentDefinitionError(
-                    f"Movement profile for '{actor_id}' is invalid: {error}"
-                ) from error
-            if config.max_speed <= 0:
-                raise ContentDefinitionError(
-                    f"Movement profile for '{actor_id}' max_speed must be greater than zero."
-                )
+            _movement_config_from_profile(profile, actor_id)
     seen: set[str] = set()
     for item in consumables:
         if not isinstance(item, dict) or not isinstance(item.get("resource_id"), str) or not item["resource_id"].strip():
@@ -1334,14 +1349,7 @@ def load_movement_configs(
         return MappingProxyType({})
     profiles = movement["actors"]
     configs = {
-        actor_id: MovementConfig(
-            max_speed=profile["max_speed"],
-            running_speed_multiplier=profile.get("running_speed_multiplier", 1.5),
-            stealth_speed_multiplier=profile.get("stealth_speed_multiplier", 0.5),
-            acceleration=profile.get("acceleration", 180.0),
-            deceleration=profile.get("deceleration", 240.0),
-            braking_deceleration=profile.get("braking_deceleration", 360.0),
-        )
+        actor_id: _movement_config_from_profile(profile, actor_id)
         for actor_id, profile in profiles.items()
     }
     return MappingProxyType(configs)
