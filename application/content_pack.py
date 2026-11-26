@@ -142,6 +142,7 @@ def load_npc_definitions(path: str | Path | None = None, *, package_path: str | 
         raise ContentDefinitionError("NPC definitions must contain an 'npcs' list.")
 
     npc_ids: set[str] = set()
+    dialogue_ids: set[str] = set()
     allowed_phases = {"opening", "gameplay"}
     required_fields = {"id", "name", "role", "load_phase"}
     for index, record in enumerate(records):
@@ -158,6 +159,17 @@ def load_npc_definitions(path: str | Path | None = None, *, package_path: str | 
         if npc_id in npc_ids:
             raise ContentDefinitionError(f"Duplicate NPC id: {npc_id}")
         npc_ids.add(npc_id)
+        dialogue_id = record.get("dialogue_id")
+        if dialogue_id is not None:
+            if not isinstance(dialogue_id, str) or not dialogue_id.strip():
+                raise ContentDefinitionError(
+                    f"NPC '{npc_id}' has an invalid dialogue_id."
+                )
+            if dialogue_id in dialogue_ids:
+                raise ContentDefinitionError(
+                    f"Duplicate NPC dialogue id: {dialogue_id}"
+                )
+            dialogue_ids.add(dialogue_id)
         for field in ("name", "role"):
             if not isinstance(record[field], str) or not record[field].strip():
                 raise ContentDefinitionError(f"NPC '{npc_id}' has an invalid {field}.")
@@ -331,6 +343,7 @@ def _build_dialogue_from_definition(dialogue_data: dict, speaker_id: str) -> Dia
             )
         node_id = node_data.get("id")
         text = node_data.get("text")
+        node_speaker_id = node_data.get("speaker")
         raw_choices = node_data.get("choices", [])
         if not isinstance(node_id, str) or not node_id.strip():
             raise ContentDefinitionError(
@@ -340,6 +353,11 @@ def _build_dialogue_from_definition(dialogue_data: dict, speaker_id: str) -> Dia
             raise ContentDefinitionError(f"Duplicate dialogue node id: {node_id}")
         if not isinstance(text, str) or not text.strip():
             raise ContentDefinitionError(f"Dialogue node {node_id} has no text.")
+        if node_speaker_id is not None and node_speaker_id != speaker_id:
+            raise ContentDefinitionError(
+                f"Dialogue node {node_id} references speaker '{node_speaker_id}' "
+                f"but its owning NPC is '{speaker_id}'."
+            )
         if not isinstance(raw_choices, list):
             raise ContentDefinitionError(
                 f"Dialogue choices for node {node_id} must be a list."
@@ -665,6 +683,11 @@ def _register_opening_content(application, definition: dict, npc_definitions, ch
         if speaker_record is None:
             raise ContentDefinitionError(
                 f"No NPC references opening dialogue '{opening_dialogue_data.get('id')}'."
+            )
+        if speaker_record["load_phase"] != "opening":
+            raise ContentDefinitionError(
+                f"Opening dialogue '{opening_dialogue_data.get('id')}' is assigned "
+                f"to NPC '{speaker_record['id']}' outside the opening load phase."
             )
         dialogue = _build_dialogue_from_definition(
             opening_dialogue_data,
