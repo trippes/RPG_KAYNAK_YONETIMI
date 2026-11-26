@@ -12,6 +12,9 @@ from application import (
     WorldActor,
 )
 from application.save_file_adapter import SaveFileWriteError
+from character import CharacterFactory, Race, CharacterClass
+from economy import Currency, Money
+from application import GameplayService
 from core.application import GameSession
 from npc import NPC
 from core.time import Tick
@@ -224,6 +227,108 @@ class TestGameApplicationSave(unittest.TestCase):
 
         self.assertIs(application.holder.current, active)
         self.assertIs(application.holder.current.simulation, runtime)
+
+
+    def test_save_load_round_trip_preserves_alternate_player_identity_links(self):
+        session = GameSession()
+        session.worlds.create("Main", world_id="world_main")
+        session.worlds.set_active("world_main")
+        inventory = Inventory()
+        inventory.add(self.wood, Quantity(7, ResourceUnit.ITEM))
+        jobs = ProductionJobManager(session.simulation)
+        bundle = SessionBundle(
+            session=session,
+            simulation=session.simulation,
+            production_jobs=jobs,
+            resource_nodes=WorldResourceNodeManager(),
+            inventories={"inventory_custom": inventory},
+            recipes={self.recipe.recipe_id: self.recipe},
+        )
+        application = GameApplication(SessionHolder(bundle))
+        factory = CharacterFactory(
+            races={"race_custom": Race("race_custom", "Human")},
+            classes={"class_custom": CharacterClass("class_custom", "Warrior")},
+        )
+        character = application.karakter_olustur(
+            factory, "character_custom", "Test Hero",
+            "race_custom", "class_custom", actor_id="actor_custom",
+        )
+        bundle.actors.bind_inventory("actor_custom", "inventory_custom")
+        currency = Currency("gold")
+        bundle.economy.ledger.credit(
+            "account_custom", Money(125, currency), "test seed",
+        )
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "alternate-player.json"
+            application.save(path)
+            application.load(path)
+
+        restored = application.holder.current
+        restored_service = GameplayService(application)
+        restored_service.configure_player_context(
+            "actor_custom", "inventory_custom", "account_custom",
+        )
+
+        self.assertEqual(restored_service.player_actor_id, "actor_custom")
+        self.assertEqual(restored_service.player_inventory_id, "inventory_custom")
+        self.assertEqual(restored_service.player_account_id, "account_custom")
+        self.assertEqual(
+            restored_service.actor_character("actor_custom").character_id,
+            "character_custom",
+        )
+        self.assertEqual(
+            restored.actors.get("actor_custom").character_id,
+            "character_custom",
+        )
+        self.assertEqual(
+            restored.actors.get("actor_custom").inventory_id,
+            "inventory_custom",
+        )
+        self.assertEqual(
+            restored.inventories["inventory_custom"].get(self.wood),
+            Quantity(7, ResourceUnit.ITEM),
+        )
+        self.assertEqual(
+            restored.economy.ledger.balance("account_custom", currency),
+            Money(125, currency),
+        )
+        self.assertNotIn("player", restored.inventories)
+        self.assertNotIn("actor_custom", restored.characters)
+
+    def test_load_rejects_alternate_actor_with_unknown_inventory_reference(self):
+        session = GameSession()
+        session.worlds.create("Main", world_id="world_main")
+        session.worlds.set_active("world_main")
+        inventory = Inventory()
+        jobs = ProductionJobManager(session.simulation)
+        bundle = SessionBundle(
+            session=session,
+            simulation=session.simulation,
+            production_jobs=jobs,
+            resource_nodes=WorldResourceNodeManager(),
+            inventories={"inventory_custom": inventory},
+            recipes={},
+        )
+        application = GameApplication(SessionHolder(bundle))
+        bundle.actors.add(
+            WorldActor(
+                "actor_custom", "world_main", "player",
+                inventory_id="inventory_custom",
+            )
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "broken-player-reference.json"
+            application.save(path)
+            data = json.loads(path.read_text(encoding="utf-8"))
+            data["actors"]["actors"][0]["inventory_id"] = "missing_inventory"
+            path.write_text(json.dumps(data), encoding="utf-8")
+            active_before_load = application.holder.current
+
+            with self.assertRaises(ValueError):
+                application.load(path)
+
+        self.assertIs(application.holder.current, active_before_load)
 
 
 if __name__ == "__main__":
