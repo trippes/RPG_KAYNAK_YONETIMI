@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "items": [
+    {
+      "item_id": "old_copper_ring",
+      "name": "Eski Bakır Yüzük",
+      "slot": null,
+      "weight": 0.1,
+      "volume_liters": 0.05,
+      "category": "misc",
+      "description": "Köy sandığının dibinde unutulmuş eski bir bakır yüzük.",
+      "tags": ["jewelry", "misc"]
+    }
+  ]
+}
