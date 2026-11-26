@@ -135,7 +135,6 @@ class HexGameplayView:
         left = (cx - half_width, cy - body_height - half_depth)
         front = (cx, cy - body_height)
         right = (cx + half_width, cy - body_height - half_depth)
-        back = (cx, cy - body_height - 2 * half_depth)
 
         pg.draw.ellipse(
             surface,
