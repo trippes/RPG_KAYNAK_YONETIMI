@@ -94,6 +94,19 @@ def _read_json_definition(source: Path, label: str) -> dict:
     return definition
 
 
+def _string_list_field(record: dict, field_name: str, owner: str) -> tuple[str, ...]:
+    """Read an optional JSON list whose entries must be non-empty strings."""
+    values = record.get(field_name, [])
+    if not isinstance(values, list) or any(
+        not isinstance(value, str) or not value.strip()
+        for value in values
+    ):
+        raise ContentDefinitionError(
+            f"{owner} {field_name} must be a list of non-empty strings."
+        )
+    return tuple(values)
+
+
 def _load_package_file(key: str, package_path: str | Path | None = None) -> dict:
     package_root = _resolve_content_package_path(package_path)
     try:
@@ -1224,7 +1237,7 @@ def load_item_definitions(
                 description=record.get("description", ""),
                 volume_liters=record.get("volume_liters", 0.0),
                 category=record.get("category", "misc"),
-                tags=tuple(record.get("tags", ())),
+                tags=_string_list_field(record, "tags", f"Item '{item_id}'"),
             ))
         except (TypeError, ValueError) as error:
             raise ContentDefinitionError(
@@ -1285,6 +1298,18 @@ def load_container_definitions(
                     f"Container '{record['container_id']}' has invalid contents[{content_index}]."
                 )
         try:
+            tag_fields = (
+                "allowed_item_tags", "denied_item_tags",
+                "allowed_resource_tags", "denied_resource_tags",
+                "allowed_container_tags", "denied_container_tags",
+                "container_tags",
+            )
+            tags = {
+                field_name: _string_list_field(
+                    record, field_name, f"Container '{record['container_id']}'"
+                )
+                for field_name in tag_fields
+            }
             ContainerDefinition(
                 definition_id=record["definition_id"],
                 name=record["name"],
@@ -1295,13 +1320,13 @@ def load_container_definitions(
                 max_contents_volume_liters=record.get("max_contents_volume_liters"),
                 nesting_enabled=record.get("nesting_enabled", True),
                 max_nesting_depth=record.get("max_nesting_depth", 1),
-                allowed_item_tags=tuple(record.get("allowed_item_tags", ())),
-                denied_item_tags=tuple(record.get("denied_item_tags", ())),
-                allowed_resource_tags=tuple(record.get("allowed_resource_tags", ())),
-                denied_resource_tags=tuple(record.get("denied_resource_tags", ())),
-                allowed_container_tags=tuple(record.get("allowed_container_tags", ())),
-                denied_container_tags=tuple(record.get("denied_container_tags", ())),
-                container_tags=tuple(record.get("container_tags", ())),
+                allowed_item_tags=tags["allowed_item_tags"],
+                denied_item_tags=tags["denied_item_tags"],
+                allowed_resource_tags=tags["allowed_resource_tags"],
+                denied_resource_tags=tags["denied_resource_tags"],
+                allowed_container_tags=tags["allowed_container_tags"],
+                denied_container_tags=tags["denied_container_tags"],
+                container_tags=tags["container_tags"],
                 break_profile_id=record.get("break_profile_id"),
             )
         except (TypeError, ValueError) as error:
@@ -1341,7 +1366,10 @@ def load_production_definitions(
                 record["facility_id"],
                 record["facility_type"],
                 record["capacity"],
-                tuple(record.get("capabilities", ())),
+                _string_list_field(
+                    record, "capabilities",
+                    f"Production facility '{record.get('facility_id', '<unknown>')}'",
+                ),
                 record.get("active", True),
             )
         except (KeyError, TypeError, ValueError) as error:
@@ -1392,7 +1420,10 @@ def load_production_definitions(
                 components(record["outputs"], "outputs"),
                 record.get("processing_time_ticks", 1),
                 record.get("facility_type"),
-                tuple(record.get("required_capabilities", ())),
+                _string_list_field(
+                    record, "required_capabilities",
+                    f"Recipe '{record.get('recipe_id', '<unknown>')}'",
+                ),
             )
         except (KeyError, TypeError, ValueError) as error:
             raise ContentDefinitionError(
