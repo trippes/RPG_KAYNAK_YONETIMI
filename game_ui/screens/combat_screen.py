@@ -4,8 +4,9 @@ class CombatScreen:
         self.message = "Enter ile ilk combatant ikinciye saldırır."
 
     def handle(self, state):
+        snapshot = self.service.combat_state()
         if state.pressed("confirm"):
-            combatants = self.service.application.holder.current.combat.all()
+            combatants = snapshot.combatants
             if len(combatants) >= 2:
                 try:
                     attacker, defender = combatants[0], combatants[1]
@@ -14,7 +15,7 @@ class CombatScreen:
                 except (KeyError, ValueError) as error:
                     self.message = str(error)
         if state.pressed("wait"):
-            encounters = self.service.application.holder.current.combat.encounters()
+            encounters = snapshot.encounters
             if encounters:
                 active = self.service.next_combat_turn(encounters[0].encounter_id)
                 self.message = f"Sıra {active} karakterine geçti."
@@ -30,13 +31,14 @@ class CombatScreen:
         renderer.hud(self.service)
         renderer.panel(renderer.pg.Rect(70, 130, 820, 350))
         renderer.text("Karşılaşma", 100, 160, title=True)
-        combatants = self.service.application.holder.current.combat.all()
+        snapshot = self.service.combat_state()
+        combatants = snapshot.combatants
         if not combatants:
             renderer.text("Aktif combatant yok.", 100, 190)
         for index, combatant in enumerate(combatants):
             status = ", ".join(combatant.statuses) or "status yok"
             renderer.text(f"{combatant.combatant_id} — HP {combatant.hit_points}/{combatant.max_hit_points} — {status}", 100, 220 + index * 56, title=index == 0)
-        encounters = self.service.application.holder.current.combat.encounters()
+        encounters = snapshot.encounters
         if encounters:
             encounter = encounters[0]
             renderer.text(f"Tur {encounter.round_number} — Sıra: {encounter.active_combatant_id}", 100, 360, (190, 202, 220))
