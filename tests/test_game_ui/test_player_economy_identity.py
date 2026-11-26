@@ -4,6 +4,7 @@ from unittest.mock import Mock
 
 from game_ui.renderer import Renderer
 from game_ui.screens.currency_exchange_screen import CurrencyExchangeScreen
+from game_ui.screens.dialogue_screen import DialogueScreen
 from game_ui.screens.inventory_screen import InventoryScreen
 from game_ui.screens.market_screen import MarketScreen
 from game_ui.screens.main_screen import MainScreen
@@ -113,6 +114,73 @@ class TestPlayerEconomyIdentity(unittest.TestCase):
             self.service.exchange_calls,
             [("traveler_wallet", "bronze", "silver", 60)],
         )
+
+    def test_dialogue_quest_checks_use_configured_player_inventory(self):
+        self.service.inventory = Mock(return_value=SimpleNamespace(stocks=()))
+        self.service.carpenter_quest = SimpleNamespace(
+            state=SimpleNamespace(value="active"),
+            objectives=(),
+        )
+        self.service.inn_quest = SimpleNamespace(state=SimpleNamespace(value="inactive"))
+        self.service.application = SimpleNamespace(
+            holder=SimpleNamespace(
+                current=SimpleNamespace(
+                    social=SimpleNamespace(dialogues={})
+                )
+            )
+        )
+        screen = DialogueScreen.__new__(DialogueScreen)
+        screen.service = self.service
+        screen.context = ("traveler_actor", "village_carpenter", "carpenter_dialogue")
+        screen.node = SimpleNamespace(choices=())
+
+        self.assertEqual(screen._visible_choices(), ())
+        self.service.inventory.assert_called_once_with("traveler_bag")
+
+    def test_quest_panel_resolves_target_world_from_configured_player_actor(self):
+        target_location = SimpleNamespace(name="Player world target")
+        world = SimpleNamespace(get=Mock(return_value=target_location))
+        quest = SimpleNamespace(
+            title="Test quest",
+            objectives=(
+                SimpleNamespace(
+                    target_id="target_node",
+                    completed=False,
+                    description="Reach the target",
+                    progress=0,
+                    required=1,
+                ),
+            ),
+            reward=SimpleNamespace(currency=10, experience=0),
+            state=SimpleNamespace(value="active"),
+        )
+        bundle = SimpleNamespace(
+            quest_log=SimpleNamespace(active=Mock(return_value=(quest,))),
+            movement=SimpleNamespace(map_for=Mock(return_value=world)),
+            social=SimpleNamespace(npcs=SimpleNamespace(get=Mock(return_value=None))),
+        )
+        self.service.application = SimpleNamespace(
+            holder=SimpleNamespace(current=bundle)
+        )
+        self.service.actor = Mock(return_value=SimpleNamespace(world_id="traveler_world"))
+        self.service.state = Mock(
+            return_value=SimpleNamespace(
+                actors=(SimpleNamespace(actor_id="npc_first", world_id="npc_world"),)
+            )
+        )
+        renderer = Renderer.__new__(Renderer)
+        renderer.panel = Mock()
+        renderer.text = Mock()
+        renderer.fit_text = Mock(side_effect=lambda value, *_args, **_kwargs: value)
+        renderer.wrapped_text = Mock()
+
+        renderer.quest_panel(
+            self.service,
+            SimpleNamespace(x=0, y=0, width=400, height=260, bottom=260),
+        )
+
+        self.service.actor.assert_called_once_with("traveler_actor")
+        bundle.movement.map_for.assert_called_once_with("traveler_world")
 
     def test_renderer_wallet_uses_account_id(self):
         renderer = Renderer.__new__(Renderer)
