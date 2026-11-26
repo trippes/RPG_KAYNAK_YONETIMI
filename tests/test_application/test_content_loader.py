@@ -469,5 +469,50 @@ class TestContentPackageLoader(unittest.TestCase):
 
 
 
+    def test_package_without_world_map_rejects_active_transition_to_missing_map(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = self._copy_demo_package(directory)
+            map_path = root / "hex_maps" / "starting_valley.json"
+            payload = json.loads(map_path.read_text(encoding="utf-8"))
+            payload["transitions"] = [{
+                "id": "missing_exit",
+                "source_cells": [[0, 0]],
+                "exit_direction": "east",
+                "target_map_id": "missing_map",
+                "target_entry_direction": "west",
+                "target_cells": [[0, 0]],
+                "active": True,
+                "traversal_mode": "one_way",
+            }]
+            map_path.write_text(json.dumps(payload), encoding="utf-8")
+
+            with self.assertRaisesRegex(
+                ContentPackageError, "references missing target hex map 'missing_map'"
+            ):
+                load_content_package(root)
+
+    def test_package_without_world_map_rejects_active_transition_target_outside_map(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = self._copy_demo_package(directory)
+            map_path = root / "hex_maps" / "starting_valley.json"
+            payload = json.loads(map_path.read_text(encoding="utf-8"))
+            payload["transitions"] = [{
+                "id": "invalid_target_exit",
+                "source_cells": [[0, 0]],
+                "exit_direction": "east",
+                "target_map_id": "starting_valley",
+                "target_entry_direction": "west",
+                "target_cells": [[99, 99]],
+                "active": True,
+                "traversal_mode": "one_way",
+            }]
+            map_path.write_text(json.dumps(payload), encoding="utf-8")
+
+            with self.assertRaisesRegex(
+                ContentPackageError, "targets a cell outside map 'starting_valley'"
+            ):
+                load_content_package(root)
+
+
 if __name__ == "__main__":
     unittest.main()
