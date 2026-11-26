@@ -1243,6 +1243,23 @@ def load_item_definitions(
         if item_id in seen_ids:
             raise ContentDefinitionError(f"Duplicate item id: {item_id}")
         seen_ids.add(item_id)
+        attribute_bonuses = record.get("attribute_bonuses", {})
+        if not isinstance(attribute_bonuses, dict):
+            raise ContentDefinitionError(
+                f"Item '{item_id}' attribute_bonuses must be an object."
+            )
+        for attribute in attribute_bonuses:
+            try:
+                Attribute(attribute)
+            except ValueError as error:
+                raise ContentDefinitionError(
+                    f"Item '{item_id}' has an unknown attribute bonus: {attribute}"
+                ) from error
+        description = record.get("description", "")
+        if not isinstance(description, str):
+            raise ContentDefinitionError(
+                f"Item '{item_id}' description must be a string."
+            )
         try:
             slot = record.get("slot")
             result.append(ItemDefinition(
