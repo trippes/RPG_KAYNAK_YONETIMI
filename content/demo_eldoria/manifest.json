@@ -9,6 +9,7 @@
     "resources": "resources.json",
     "characters": "characters.json",
     "gameplay_rules": "gameplay_rules.json",
+    "items": "items.json",
     "containers": "containers.json"
   },
   "maps": "hex_maps",
