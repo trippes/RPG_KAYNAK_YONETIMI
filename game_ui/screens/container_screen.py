@@ -62,10 +62,10 @@ class ContainerScreen:
         self.message = "Sandık incelenmeye hazır."
 
     def _actor_context(self):
-        actors = self.service.state().actors
-        if not actors:
-            raise GameplayServiceError("Aktif bir karakter bulunamadı.")
-        actor = actors[0]
+        actor_id = self.service.player_actor_id
+        actor = self.service.actor(actor_id)
+        if actor is None:
+            raise GameplayServiceError("Oyuncu aktörü etkin dünyada bulunamadı.")
         if actor.inventory_id is None:
             raise GameplayServiceError("Karakterin envanteri henüz bağlanmamış.")
         return actor.actor_id, actor.inventory_id
