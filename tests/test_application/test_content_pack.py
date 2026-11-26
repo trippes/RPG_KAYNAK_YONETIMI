@@ -434,5 +434,48 @@ class TestContentPack(unittest.TestCase):
                 )
 
 
+    def test_starter_content_rejects_invalid_required_section_fields(self):
+        mutations = (
+            ("ids section type", lambda data: data.update({"ids": []})),
+            ("missing configured ID", lambda data: data["ids"].pop("hero_id")),
+            ("empty configured ID", lambda data: data["ids"].update({"hero_id": ""})),
+            ("world section type", lambda data: data.update({"world": []})),
+            ("empty world name", lambda data: data["world"].update({"name": ""})),
+            ("boolean world width", lambda data: data["world"].update({"width": True})),
+            ("zero world height", lambda data: data["world"].update({"height": 0})),
+            ("character section type", lambda data: data.update({"character": []})),
+            ("empty character name", lambda data: data["character"].update({"name": ""})),
+            ("empty race reference", lambda data: data["character"]["race"].update({"id": ""})),
+            ("missing class reference", lambda data: data["character"].update({"class": {}})),
+            ("invalid optional faction", lambda data: data.update({"faction": {"name": ""}})),
+        )
+        for label, mutate in mutations:
+            with self.subTest(label=label), tempfile.TemporaryDirectory() as directory:
+                package = Path(directory) / "demo_eldoria"
+                shutil.copytree(PACKAGE, package)
+                starter_path = package / "starter_content.json"
+                payload = json.loads(starter_path.read_text(encoding="utf-8"))
+                mutate(payload)
+                starter_path.write_text(json.dumps(payload), encoding="utf-8")
+
+                with self.assertRaises(ContentDefinitionError):
+                    load_starter_content(package_path=package)
+
+    def test_starter_world_dimensions_remain_optional(self):
+        with tempfile.TemporaryDirectory() as directory:
+            package = Path(directory) / "demo_eldoria"
+            shutil.copytree(PACKAGE, package)
+            starter_path = package / "starter_content.json"
+            payload = json.loads(starter_path.read_text(encoding="utf-8"))
+            payload["world"].pop("width")
+            payload["world"].pop("height")
+            starter_path.write_text(json.dumps(payload), encoding="utf-8")
+
+            loaded = load_starter_content(package_path=package)
+
+            self.assertNotIn("width", loaded["world"])
+            self.assertNotIn("height", loaded["world"])
+
+
 if __name__ == "__main__":
     unittest.main()
