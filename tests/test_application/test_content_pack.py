@@ -538,5 +538,37 @@ class TestContentPack(unittest.TestCase):
                     load_starter_content(package_path=package)
 
 
+    def test_item_optional_metadata_requires_mapping_and_text_types(self):
+        mutations = (
+            (
+                "attribute bonuses object",
+                lambda data: data["items"][0].update({
+                    "attribute_bonuses": [["strength", 1]]
+                }),
+            ),
+            (
+                "known attribute bonus",
+                lambda data: data["items"][0].update({
+                    "attribute_bonuses": {"not_an_attribute": 1}
+                }),
+            ),
+            (
+                "description text",
+                lambda data: data["items"][0].update({"description": 123}),
+            ),
+        )
+        for label, mutate in mutations:
+            with self.subTest(label=label), tempfile.TemporaryDirectory() as directory:
+                package = Path(directory) / "demo_eldoria"
+                shutil.copytree(PACKAGE, package)
+                items_path = package / "items.json"
+                payload = json.loads(items_path.read_text(encoding="utf-8"))
+                mutate(payload)
+                items_path.write_text(json.dumps(payload), encoding="utf-8")
+
+                with self.assertRaises(ContentDefinitionError):
+                    load_item_definitions(package_path=package)
+
+
 if __name__ == "__main__":
     unittest.main()
