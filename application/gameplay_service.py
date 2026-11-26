@@ -164,6 +164,27 @@ class ChainView:
 
 
 @dataclass(frozen=True)
+class CombatantView:
+    combatant_id: str
+    hit_points: int
+    max_hit_points: int
+    statuses: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class CombatEncounterView:
+    encounter_id: str
+    round_number: int
+    active_combatant_id: str
+
+
+@dataclass(frozen=True)
+class CombatSnapshotView:
+    combatants: tuple[CombatantView, ...]
+    encounters: tuple[CombatEncounterView, ...]
+
+
+@dataclass(frozen=True)
 class GameplaySnapshotView:
     world_id: str | None
     simulation_tick: int
@@ -2302,6 +2323,29 @@ class GameplayService:
     def add_combatant(self, combatant: Combatant) -> Combatant:
         self._current_bundle().combat.add(combatant)
         return combatant
+
+    def combat_state(self) -> CombatSnapshotView:
+        """Return immutable combatant and encounter views for UI consumers."""
+        combat = self._current_bundle().combat
+        return CombatSnapshotView(
+            tuple(
+                CombatantView(
+                    combatant.combatant_id,
+                    int(combatant.hit_points),
+                    combatant.max_hit_points,
+                    tuple(sorted(combatant.statuses)),
+                )
+                for combatant in combat.all()
+            ),
+            tuple(
+                CombatEncounterView(
+                    encounter.encounter_id,
+                    encounter.round_number,
+                    encounter.active_combatant_id,
+                )
+                for encounter in combat.encounters()
+            ),
+        )
 
     def create_combat_encounter(self, encounter_id: str, combatant_ids, initiative_scores=None):
         return self._current_bundle().combat.create_encounter(encounter_id, combatant_ids, initiative_scores)
