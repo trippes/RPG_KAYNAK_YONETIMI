@@ -59,7 +59,7 @@ def _resolve_content_package_path(package_path: str | Path | None = None) -> Pat
             config = json.loads(config_path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as error:
             raise ContentDefinitionError("Active content package configuration could not be loaded.") from error
-        if not isinstance(config, dict) or config.get("schema_version") != CONTENT_SCHEMA_VERSION:
+        if not isinstance(config, dict) or type(config.get("schema_version")) is not int or config.get("schema_version") != CONTENT_SCHEMA_VERSION:
             raise ContentDefinitionError("Active content package configuration has an unsupported schema.")
         relative = config.get("package_path")
         if not isinstance(relative, str) or not relative.strip():
@@ -112,7 +112,7 @@ def load_starter_content(path: str | Path | None = None, *, package_path: str | 
         if path is None
         else _read_json_definition(Path(path), "Content definition")
     )
-    if definition.get("schema_version") != CONTENT_SCHEMA_VERSION:
+    if type(definition.get("schema_version")) is not int or definition.get("schema_version") != CONTENT_SCHEMA_VERSION:
         raise ContentDefinitionError("Unsupported content definition schema version.")
     required = {"ids", "world", "character"}
     missing = sorted(required - definition.keys())
@@ -135,7 +135,7 @@ def load_npc_definitions(path: str | Path | None = None, *, package_path: str | 
         if path is None
         else _read_json_definition(Path(path), "NPC definition")
     )
-    if definition.get("schema_version") != CONTENT_SCHEMA_VERSION:
+    if type(definition.get("schema_version")) is not int or definition.get("schema_version") != CONTENT_SCHEMA_VERSION:
         raise ContentDefinitionError("Unsupported NPC definition schema version.")
     records = definition.get("npcs")
     if not isinstance(records, list):
@@ -232,7 +232,7 @@ def _id_resolver(definition: dict, ids: StarterContentIds):
 def load_character_definitions(path: str | Path | None = None, *, package_path: str | Path | None = None) -> dict:
     """Load and validate reusable race, class and ability definitions."""
     definition = _load_package_file("characters", package_path) if path is None else _read_json_definition(Path(path), "Character definition")
-    if definition.get("schema_version") != CONTENT_SCHEMA_VERSION:
+    if type(definition.get("schema_version")) is not int or definition.get("schema_version") != CONTENT_SCHEMA_VERSION:
         raise ContentDefinitionError("Unsupported character definition schema version.")
     for section in ("races", "classes"):
         records = definition.get(section)
@@ -419,7 +419,7 @@ def _build_dialogue_from_definition(dialogue_data: dict, speaker_id: str) -> Dia
 def load_quest_definitions(path: str | Path | None = None, *, package_path: str | Path | None = None) -> tuple[dict, ...]:
     """Load and validate declarative quest and dialogue records."""
     definition = _load_package_file("quests", package_path) if path is None else _read_json_definition(Path(path), "Quest definition")
-    if definition.get("schema_version") != CONTENT_SCHEMA_VERSION:
+    if type(definition.get("schema_version")) is not int or definition.get("schema_version") != CONTENT_SCHEMA_VERSION:
         raise ContentDefinitionError("Unsupported quest definition schema version.")
     records = definition.get("quests")
     if not isinstance(records, list):
@@ -949,7 +949,7 @@ def populate_gameplay_placements(service, *, content_package_path=None):
 def load_gameplay_rules(path: str | Path | None = None, *, package_path: str | Path | None = None) -> dict:
     """Load configurable player identity, starting economy and consumable effects."""
     definition = _load_package_file("gameplay_rules", package_path) if path is None else _read_json_definition(Path(path), "Gameplay rules")
-    if definition.get("schema_version") != CONTENT_SCHEMA_VERSION:
+    if type(definition.get("schema_version")) is not int or definition.get("schema_version") != CONTENT_SCHEMA_VERSION:
         raise ContentDefinitionError("Unsupported gameplay rules schema version.")
     player = definition.get("player")
     economy = definition.get("economy")
@@ -1052,7 +1052,7 @@ def load_item_definitions(
             return ()
     else:
         definition = _read_json_definition(Path(path), "Item definition")
-    if definition.get("schema_version") != CONTENT_SCHEMA_VERSION:
+    if type(definition.get("schema_version")) is not int or definition.get("schema_version") != CONTENT_SCHEMA_VERSION:
         raise ContentDefinitionError("Unsupported item definition schema version.")
     records = definition.get("items")
     if not isinstance(records, list):
@@ -1107,7 +1107,7 @@ def load_container_definitions(
             return ()
     else:
         definition = _read_json_definition(Path(path), "Container definition")
-    if definition.get("schema_version") != CONTENT_SCHEMA_VERSION:
+    if type(definition.get("schema_version")) is not int or definition.get("schema_version") != CONTENT_SCHEMA_VERSION:
         raise ContentDefinitionError("Unsupported container definition schema version.")
     records = definition.get("containers")
     if not isinstance(records, list):
@@ -1276,7 +1276,7 @@ def load_production_definitions(
 def load_resource_definitions(path: str | Path | None = None, *, package_path: str | Path | None = None) -> tuple[dict, ...]:
     """Load and validate explicit world resource-node definitions."""
     definition = _load_package_file("resources", package_path) if path is None else _read_json_definition(Path(path), "Resource definition")
-    if definition.get("schema_version") != CONTENT_SCHEMA_VERSION:
+    if type(definition.get("schema_version")) is not int or definition.get("schema_version") != CONTENT_SCHEMA_VERSION:
         raise ContentDefinitionError("Unsupported resource definition schema version.")
     records = definition.get("nodes")
     if not isinstance(records, list):
