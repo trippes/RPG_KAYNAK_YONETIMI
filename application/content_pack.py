@@ -572,10 +572,12 @@ def _register_npcs_for_phase(service, npc_definitions, phase: str, resolve_id):
 
 def _validate_content_references(
     definition, npc_definitions, quest_definitions, resource_definitions,
+    item_definitions=(), container_definitions=(),
 ):
     """Validate references among domain content records without map coupling."""
     npc_ids = {record["id"] for record in npc_definitions}
     resource_ids = {record["id"] for record in resource_definitions}
+    item_ids = {item.item_id for item in item_definitions}
     for quest in quest_definitions:
         if quest["giver_npc_id"] not in npc_ids:
             raise ContentDefinitionError(
@@ -593,6 +595,19 @@ def _validate_content_references(
                 raise ContentDefinitionError(
                     f"Quest '{quest['id']}' objective '{objective['id']}' "
                     f"references missing NPC '{target_id}'."
+                )
+        for reward_item in quest.get("reward", {}).get("items", ()):
+            if reward_item["id"] not in item_ids:
+                raise ContentDefinitionError(
+                    f"Quest '{quest['id']}' reward references missing item "
+                    f"'{reward_item['id']}'."
+                )
+    for container in container_definitions:
+        for content in container.get("contents", ()):
+            if content["item_id"] not in item_ids:
+                raise ContentDefinitionError(
+                    f"Container '{container['container_id']}' references missing item "
+                    f"'{content['item_id']}'."
                 )
     for market in definition.get("markets", ()):
         if market["npc_id"] not in npc_ids:
@@ -677,8 +692,11 @@ def populate_opening_content(
     load_content_package(resolved_package_path)
     quest_definitions = load_quest_definitions(package_path=resolved_package_path)
     resource_definitions = load_resource_definitions(package_path=resolved_package_path)
+    item_definitions = load_item_definitions(package_path=resolved_package_path)
+    container_definitions = load_container_definitions(package_path=resolved_package_path)
     _validate_content_references(
         definition, npc_definitions, quest_definitions, resource_definitions,
+        item_definitions, container_definitions,
     )
     service, resolved_ids = _register_opening_content(
         application,
