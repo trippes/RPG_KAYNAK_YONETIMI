@@ -25,7 +25,7 @@ class FakeContainerService:
         return SimpleNamespace(actors=self.actors)
 
     def actor(self, actor_id):
-        return self.player_actor if actor_id == self.player_actor_id else None
+        return self.player_actor if actor_id == self.player_actor.actor_id else None
 
     def container_lock_state(self, _container_id):
         return self.lock
