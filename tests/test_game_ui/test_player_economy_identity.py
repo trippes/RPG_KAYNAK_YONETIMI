@@ -6,6 +6,7 @@ from game_ui.renderer import Renderer
 from game_ui.screens.currency_exchange_screen import CurrencyExchangeScreen
 from game_ui.screens.inventory_screen import InventoryScreen
 from game_ui.screens.market_screen import MarketScreen
+from game_ui.screens.main_screen import MainScreen
 from game_ui.screens.production_screen import ProductionScreen
 
 
@@ -140,6 +141,18 @@ class TestPlayerEconomyIdentity(unittest.TestCase):
 
         renderer.resource_bar(self.service)
         self.service.inventory.assert_called_once_with("traveler_bag")
+
+    def test_main_screen_renders_player_hud_and_resource_bar(self):
+        self.service.hex_world_runtime = object()
+        screen = MainScreen(self.service)
+        screen._hex_view = Mock()
+        screen._hex_view.render.return_value = True
+        renderer = SimpleNamespace(hud=Mock(), resource_bar=Mock())
+
+        screen.render(renderer)
+
+        renderer.hud.assert_called_once_with(self.service)
+        renderer.resource_bar.assert_called_once_with(self.service)
 
     def test_renderer_hud_uses_actor_and_account_independently(self):
         self.service.state = Mock(return_value=SimpleNamespace(simulation_tick=0))
