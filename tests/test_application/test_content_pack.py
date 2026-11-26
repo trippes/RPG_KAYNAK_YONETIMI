@@ -14,6 +14,7 @@ from application.content_pack import (
     load_character_definitions,
     load_container_definitions,
     load_gameplay_rules,
+    load_item_definitions,
     load_movement_configs,
     load_npc_definitions,
     load_production_definitions,
@@ -38,6 +39,9 @@ class TestContentPack(unittest.TestCase):
         self.assertEqual(npcs[0]["patrol_route"], [[1, 0], [2, 0], [2, 1], [1, 1]])
         containers = load_container_definitions(package_path=PACKAGE)
         self.assertEqual(tuple(item["container_id"] for item in containers), ("village_chest",))
+        self.assertEqual(containers[0]["contents"], [{"item_id": "old_copper_ring", "quantity": 1}])
+        items = load_item_definitions(package_path=PACKAGE)
+        self.assertEqual(tuple(item.item_id for item in items), ("old_copper_ring",))
         facilities, recipes = load_production_definitions(package_path=PACKAGE)
         self.assertEqual(tuple(facility.facility_id for facility in facilities), ("village-workbench",))
         self.assertEqual(tuple(recipe.recipe_id for recipe in recipes), ("wooden_plank",))
@@ -141,6 +145,21 @@ class TestContentPack(unittest.TestCase):
             ids.hero_id, "player", "village_chest",
         )
         self.assertEqual(opened.container_id, "village_chest")
+        self.assertEqual(opened.items, (("old_copper_ring", 1),))
+        self.assertIsNone(service.container_lock_state("village_chest"))
+        service.transfer_actor_item_from_container(
+            ids.hero_id, "player", "village_chest", "old_copper_ring", 1,
+        )
+        self.assertEqual(
+            service.inventory("player").item_snapshot(),
+            (("old_copper_ring", 1),),
+        )
+        populate_gameplay_resources(service, content_package_path=PACKAGE)
+        self.assertEqual(
+            service.container_state("village_chest").items,
+            (),
+            "reloading gameplay content must not respawn an already-looted item",
+        )
         activity = service.start_gathering_one(
             ids.hero_id, "herb_patch_01", "player",
         )
