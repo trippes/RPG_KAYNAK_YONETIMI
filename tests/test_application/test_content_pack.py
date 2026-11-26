@@ -570,5 +570,92 @@ class TestContentPack(unittest.TestCase):
                     load_item_definitions(package_path=package)
 
 
+    def test_optional_market_and_trade_partner_fields_are_validated(self):
+        def market_record():
+            return {
+                "market_id": "village_market",
+                "location_id": "village_square",
+                "npc_id": "warden_lyra",
+                "merchant_id": "village_merchant",
+                "inventory_id": "market_inventory",
+                "restock_interval": 1,
+                "catalog": [{
+                    "resource_type": "wood",
+                    "base_price": 2,
+                    "min_quantity": 1,
+                    "max_quantity": 5,
+                }],
+                "dialogue": {"id": "market_dialogue"},
+            }
+
+        def trade_record():
+            return {
+                "npc_id": "warden_lyra",
+                "merchant_id": "village_trader",
+                "inventory_id": "trade_inventory",
+                "accepted_resources": ["wood"],
+                "initial_gold": 10,
+                "dialogue": {"id": "trade_dialogue"},
+            }
+
+        cases = (
+            (
+                "market dialogue required",
+                "markets",
+                market_record,
+                lambda record: record.pop("dialogue"),
+            ),
+            (
+                "market catalog list required",
+                "markets",
+                market_record,
+                lambda record: record.update({"catalog": "wood"}),
+            ),
+            (
+                "market price must be integer",
+                "markets",
+                market_record,
+                lambda record: record["catalog"][0].update({"base_price": True}),
+            ),
+            (
+                "trade accepted resources list required",
+                "trade_partners",
+                trade_record,
+                lambda record: record.update({"accepted_resources": "wood"}),
+            ),
+            (
+                "trade unit prices object required",
+                "trade_partners",
+                trade_record,
+                lambda record: record.update({"unit_prices": []}),
+            ),
+            (
+                "trade buyback rate range",
+                "trade_partners",
+                trade_record,
+                lambda record: record.update({"buyback_rate": 0}),
+            ),
+            (
+                "trade initial gold integer",
+                "trade_partners",
+                trade_record,
+                lambda record: record.update({"initial_gold": True}),
+            ),
+        )
+        for label, section, factory, mutate in cases:
+            with self.subTest(label=label), tempfile.TemporaryDirectory() as directory:
+                package = Path(directory) / "demo_eldoria"
+                shutil.copytree(PACKAGE, package)
+                starter_path = package / "starter_content.json"
+                payload = json.loads(starter_path.read_text(encoding="utf-8"))
+                record = factory()
+                mutate(record)
+                payload[section] = [record]
+                starter_path.write_text(json.dumps(payload), encoding="utf-8")
+
+                with self.assertRaises(ContentDefinitionError):
+                    load_starter_content(package_path=package)
+
+
 if __name__ == "__main__":
     unittest.main()
