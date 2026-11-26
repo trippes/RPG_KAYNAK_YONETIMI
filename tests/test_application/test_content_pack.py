@@ -657,5 +657,42 @@ class TestContentPack(unittest.TestCase):
                     load_starter_content(package_path=package)
 
 
+    def test_starter_content_accepts_valid_optional_market_and_trade_records(self):
+        with tempfile.TemporaryDirectory() as directory:
+            package = Path(directory) / "demo_eldoria"
+            shutil.copytree(PACKAGE, package)
+            starter_path = package / "starter_content.json"
+            payload = json.loads(starter_path.read_text(encoding="utf-8"))
+            payload["markets"] = [{
+                "market_id": "village_market",
+                "location_id": "village_square",
+                "npc_id": "warden_lyra",
+                "merchant_id": "village_merchant",
+                "inventory_id": "market_inventory",
+                "restock_interval": 1,
+                "catalog": [{
+                    "resource_type": "wood",
+                    "base_price": 2,
+                    "min_quantity": 1,
+                    "max_quantity": 5,
+                }],
+                "dialogue": {"id": "market_dialogue"},
+            }]
+            payload["trade_partners"] = [{
+                "npc_id": "warden_lyra",
+                "merchant_id": "village_trader",
+                "inventory_id": "trade_inventory",
+                "accepted_resources": ["wood"],
+                "initial_gold": 10,
+                "dialogue": {"id": "trade_dialogue"},
+            }]
+            starter_path.write_text(json.dumps(payload), encoding="utf-8")
+
+            loaded = load_starter_content(package_path=package)
+
+            self.assertEqual(loaded["markets"][0]["market_id"], "village_market")
+            self.assertEqual(loaded["trade_partners"][0]["merchant_id"], "village_trader")
+
+
 if __name__ == "__main__":
     unittest.main()
