@@ -159,6 +159,32 @@ def load_content_package(package_dir: str | Path) -> ContentPackage:
         try:
             hexes = _load_hex_maps(maps_root)
             world_map_path = manifest.get("world_map")
+            if world_map_path is None:
+                for source_map_id, source_map in hexes.items():
+                    for transition in source_map.transitions:
+                        if not transition.active:
+                            continue
+                        target_map = hexes.get(transition.target_map_id)
+                        if target_map is None:
+                            raise ValueError(
+                                f"Map '{source_map_id}' transition "
+                                f"'{transition.transition_id}' references missing "
+                                f"target hex map '{transition.target_map_id}'."
+                            )
+                        if not transition.target_cells:
+                            raise ValueError(
+                                f"Map '{source_map_id}' transition "
+                                f"'{transition.transition_id}' must define target_cells."
+                            )
+                        if any(
+                            cell not in target_map.valid_cells
+                            for cell in transition.target_cells
+                        ):
+                            raise ValueError(
+                                f"Map '{source_map_id}' transition "
+                                f"'{transition.transition_id}' targets a cell outside "
+                                f"map '{transition.target_map_id}'."
+                            )
             if world_map_path is not None:
                 if not isinstance(world_map_path, str) or not world_map_path.strip():
                     raise ContentPackageError(
