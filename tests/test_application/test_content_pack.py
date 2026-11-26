@@ -477,5 +477,45 @@ class TestContentPack(unittest.TestCase):
             self.assertNotIn("height", loaded["world"])
 
 
+    def test_optional_string_list_fields_reject_scalar_strings(self):
+        cases = (
+            (
+                "item tags",
+                "items.json",
+                lambda data: data["items"][0].update({"tags": "abc"}),
+                load_item_definitions,
+            ),
+            (
+                "container tag filters",
+                "containers.json",
+                lambda data: data["containers"][0].update({"allowed_item_tags": "abc"}),
+                load_container_definitions,
+            ),
+            (
+                "production facility capabilities",
+                "starter_content.json",
+                lambda data: data["production"]["facilities"][0].update({"capabilities": "abc"}),
+                load_production_definitions,
+            ),
+            (
+                "recipe required capabilities",
+                "starter_content.json",
+                lambda data: data["production"]["recipes"][0].update({"required_capabilities": "abc"}),
+                load_production_definitions,
+            ),
+        )
+        for label, filename, mutate, loader in cases:
+            with self.subTest(label=label), tempfile.TemporaryDirectory() as directory:
+                package = Path(directory) / "demo_eldoria"
+                shutil.copytree(PACKAGE, package)
+                source = package / filename
+                payload = json.loads(source.read_text(encoding="utf-8"))
+                mutate(payload)
+                source.write_text(json.dumps(payload), encoding="utf-8")
+
+                with self.assertRaises(ContentDefinitionError):
+                    loader(package_path=package)
+
+
 if __name__ == "__main__":
     unittest.main()
