@@ -179,6 +179,27 @@ def load_starter_content(path: str | Path | None = None, *, package_path: str | 
                 f"Starter character {reference} must reference a non-empty id."
             )
 
+    hex_start = world.get("hex_start")
+    if hex_start is not None and not isinstance(hex_start, dict):
+        raise ContentDefinitionError("Starter world hex_start must be an object when provided.")
+
+    dialogue = definition.get("dialogue")
+    if dialogue is not None and not isinstance(dialogue, dict):
+        raise ContentDefinitionError("Starter dialogue must be an object when provided.")
+
+    production = definition.get("production", {})
+    if not isinstance(production, dict):
+        raise ContentDefinitionError("Starter production content must be an object.")
+
+    for section in ("markets", "trade_partners"):
+        records = definition.get(section, [])
+        if not isinstance(records, list) or any(
+            not isinstance(record, dict) for record in records
+        ):
+            raise ContentDefinitionError(
+                f"Starter {section} must be a list of objects when provided."
+            )
+
     faction = definition.get("faction")
     if faction is not None and (
         not isinstance(faction, dict)
