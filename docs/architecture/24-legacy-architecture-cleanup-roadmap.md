@@ -69,7 +69,7 @@ Bu çalışma yeni özellik geliştirme çalışması değildir. Öncelik mevcut
 - Paketler arasında kopyalanmış değerleri ortak şemaya veya ortak tanımlara taşı.
 - İçerik kimliklerinin uygulama içi teknik kimliklerle ilişkisini açıklaştır.
 
-**Bilinen ayrı hata adayı:** `content/demo_eldoria/gameplay_rules.json` dosyasında movement bölümü bulunmadığı, `movement_test` paketinde ise `hero` için hareket profili bulunduğu daha önce tespit edildi. `game_window.py` hareket profili bulamadığında klavye ve tıklamayla hareket etkinleşmiyor. Loader'ın eksik movement alanında boş mapping döndürmesi mevcut testlerle korunan davranış olduğundan, düzeltme loader varsayılanını gelişigüzel değiştirmek yerine demo paketinin açıkça doğru hareket profilini tanımlaması üzerinden ele alınmalı. Bu konu kimlik refaktöründen ayrı izlenmeli.
+**Hareket yapılandırması — güncel durum (2026-11-26):** Önceki incelemede `demo_eldoria/gameplay_rules.json` içinde movement bölümü olmadığı not edilmişti. `experiment/map-cleanup` dalının güncel içeriği yeniden kontrol edildiğinde bu notun artık geçerli olmadığı görüldü: demo paketi `movement.actors.hero` profilini açıkça tanımlıyor (`max_speed: 200`, koşu/gizlilik çarpanları ve ivmelenme/frenleme değerleri); `tests/test_application/test_content_pack.py` bu değerleri doğruluyor. `movement_test` paketi de oyuncu ve test NPC profillerini tanımlıyor. Loader'ın movement bölümünü isteğe bağlı kabul etmesi ve profil yoksa hız uydurmaması mevcut testlerle korunan bilinçli davranıştır. Bu nedenle hareket değerlerinde veya loader varsayılanlarında değişiklik yapılmadı. Oyuncu aktörü için profil bulunmaması durumunda `GameWindow` hareketi devre dışı bırakıp hata bildirimi gösterir; içerik sözleşmesi incelemesinde bu davranış ayrıca değerlendirilebilir.
 
 **Kabul ölçütü:** Her paket kendi gerektirdiği sözleşmeyi karşılar; eksik zorunlu veri erken ve açıklayıcı biçimde raporlanır; mevcut test paketlerinin amaçlı farklılıkları korunur.
 
@@ -199,9 +199,16 @@ Roadmap onaylandıktan sonra ilk çalışma paketi şu sırayla yürütülür:
 
 1. Aşama 0 envanterini tamamla; tüm runtime ve test kapsamını dosya bazında raporla.
 2. Kimlik ve kayıt sözleşmelerini birlikte inceleyip Aşama 1 tasarımını kesinleştir.
-3. Demo paketindeki eksik movement konfigürasyonunu kimlik refaktöründen ayrı, küçük bir düzeltme olarak ele al.
+3. Demo paketindeki movement konfigürasyonunun güncel varlığını ve actor-ID eşleşmesini doğrula; eksik profil varsa loader varsayılanı uydurmak yerine paket sözleşmesi kapsamında ele al.
 4. Kimlik geçişini küçük adımlarla uygula; UI ve persistence regresyonlarını test et.
 5. Her aşama sonunda kullanıcıya değişen dosyaları, test sonuçlarını ve manuel kabul adımlarını sun.
+
+## 7.1. Aşama 2 uygulama günlüğü
+
+| Tarih | Alt iş | Durum | Kanıt / not |
+|---|---|---|---|
+| 2026-11-26 | A2.1 — Şema sürümü tür doğrulaması | Kod ve CI doğrulaması tamamlandı | `application/content_pack.py` içindeki aktif paket yapılandırması ve sekiz içerik tanımı yükleyicisi artık `schema_version` alanının boolean değil gerçek integer olmasını şart koşuyor. `tests/test_application/test_content_pack.py` sekiz tanım yükleyicisi ve aktif paket yapılandırması için `true` değerini reddeden regresyon testleri içeriyor. Kod commit `fb0409029a166b02808b8af18a1a1591509d1506`, test commit `6f8775ba1f9d4bc5d94b99cb9493dd5082d95386`. Eldoria CI run `45887625332` ve Core Quality run `45887625379` başarılı. |
+| 2026-11-26 | A2 — Hareket profili envanteri | İnceleme tamamlandı | Güncel demo paketi `hero` hareket profilini içeriyor; önceki “demo paketinde movement bölümü eksik” notu geçersiz olarak düzeltildi. Hareket davranışı değiştirilmedi. |
 
 ## 8. Tamamlanma tanımı
 
