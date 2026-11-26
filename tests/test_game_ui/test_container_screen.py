@@ -9,10 +9,10 @@ from game_ui.screens.container_screen import ContainerScreen
 class FakeContainerService:
     def __init__(self):
         self.player_actor_id = "hero"
-        self.actor = SimpleNamespace(actor_id="hero", inventory_id="player")
+        self.player_actor = SimpleNamespace(actor_id="hero", inventory_id="player")
         self.actors = (
             SimpleNamespace(actor_id="npc_first", inventory_id="npc_bag"),
-            self.actor,
+            self.player_actor,
         )
         self.lock = None
         self.transfers = []
@@ -25,7 +25,7 @@ class FakeContainerService:
         return SimpleNamespace(actors=self.actors)
 
     def actor(self, actor_id):
-        return self.actor if actor_id == self.player_actor_id else None
+        return self.player_actor if actor_id == self.player_actor_id else None
 
     def container_lock_state(self, _container_id):
         return self.lock
@@ -139,7 +139,7 @@ class ContainerScreenTests(unittest.TestCase):
 
     def test_container_uses_configured_player_actor_not_first_actor(self):
         self.service.player_actor_id = "traveler_actor"
-        self.service.actor = SimpleNamespace(
+        self.service.player_actor = SimpleNamespace(
             actor_id="traveler_actor",
             inventory_id="traveler_bag",
         )
@@ -156,7 +156,7 @@ class ContainerScreenTests(unittest.TestCase):
         self.assertIn("oyuncu aktörü", self.screen.message.lower())
 
     def test_missing_actor_inventory_prevents_transfer(self):
-        self.service.actor.inventory_id = None
+        self.service.player_actor.inventory_id = None
         self.screen.handle(InputState(actions={"confirm"}))
         self.assertEqual(self.service.transfers, [])
         self.assertIn("envanteri", self.screen.message.lower())
