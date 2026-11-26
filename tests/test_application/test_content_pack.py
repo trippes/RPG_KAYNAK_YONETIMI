@@ -224,6 +224,55 @@ class TestContentPack(unittest.TestCase):
 
 
 
+    def test_opening_content_rejects_container_contents_with_unknown_item(self):
+        with tempfile.TemporaryDirectory() as directory:
+            package = Path(directory) / "demo_eldoria"
+            shutil.copytree(PACKAGE, package)
+            containers_path = package / "containers.json"
+            containers = json.loads(containers_path.read_text(encoding="utf-8"))
+            containers["containers"][0]["contents"][0]["item_id"] = "missing_item"
+            containers_path.write_text(json.dumps(containers), encoding="utf-8")
+
+            with self.assertRaisesRegex(
+                ContentDefinitionError, "Container 'village_chest' references missing item 'missing_item'"
+            ):
+                populate_opening_content(
+                    GameApplication.create_default(),
+                    content_package_path=package,
+                )
+
+    def test_opening_content_rejects_quest_rewards_with_unknown_item(self):
+        with tempfile.TemporaryDirectory() as directory:
+            package = Path(directory) / "demo_eldoria"
+            shutil.copytree(PACKAGE, package)
+            quests_path = package / "quests.json"
+            quests = {
+                "schema_version": 1,
+                "quests": [{
+                    "id": "guard_report",
+                    "title": "Muhafıza haber ver",
+                    "giver_npc_id": "warden_lyra",
+                    "objectives": [{
+                        "id": "speak_to_guard",
+                        "description": "Muhafızla konuş",
+                        "type": "talk",
+                        "target_id": "warden_lyra",
+                    }],
+                    "reward": {
+                        "items": [{"id": "missing_item", "quantity": 1}],
+                    },
+                }],
+            }
+            quests_path.write_text(json.dumps(quests), encoding="utf-8")
+
+            with self.assertRaisesRegex(
+                ContentDefinitionError, "Quest 'guard_report' reward references missing item 'missing_item'"
+            ):
+                populate_opening_content(
+                    GameApplication.create_default(),
+                    content_package_path=package,
+                )
+
     def test_content_definition_loaders_reject_boolean_schema_versions(self):
         loaders = (
             ("starter_content.json", load_starter_content),
