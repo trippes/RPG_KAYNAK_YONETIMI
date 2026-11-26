@@ -61,6 +61,18 @@ class MovementConfigContentTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             configs["new_actor"] = configs["hero"]
 
+    def test_optional_profile_fields_use_movement_config_defaults(self):
+        package = self._package_with_rules(self._rules({
+            "actors": {"hero": {"max_speed": 83.5}},
+        }))
+        config = load_movement_configs(package_path=package)["hero"]
+
+        self.assertEqual(config.running_speed_multiplier, 1.5)
+        self.assertEqual(config.stealth_speed_multiplier, 0.5)
+        self.assertEqual(config.acceleration, 180.0)
+        self.assertEqual(config.deceleration, 240.0)
+        self.assertEqual(config.braking_deceleration, 360.0)
+
     def test_invalid_or_missing_speed_is_rejected(self):
         for profile in ({}, {"max_speed": 0}, {"max_speed": -1}, {"max_speed": True}):
             with self.subTest(profile=profile):
