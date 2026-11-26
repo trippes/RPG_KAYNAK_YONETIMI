@@ -159,7 +159,7 @@ class DialogueScreen:
             if self.context is not None and self.context[1] == "village_blacksmith":
                 quest = getattr(self.service, "blacksmith_quest", None)
                 state = self._quest_state(quest)
-                inventory = self.service.inventory("player")
+                inventory = self.service.inventory(self.service.player_inventory_id)
                 ore_amount = next(
                     (
                         amount for resource, amount, _unit in inventory.stocks
@@ -184,7 +184,7 @@ class DialogueScreen:
         inn_quest = getattr(self.service, "inn_quest", None)
         state = getattr(getattr(quest, "state", None), "value", None)
         inn_state = self._quest_state(inn_quest)
-        inventory = self.service.inventory("player")
+        inventory = self.service.inventory(self.service.player_inventory_id)
         wood_amount = next(
             (amount for resource, amount, _unit in inventory.stocks if str(resource) == "wood"),
             0,
@@ -476,7 +476,7 @@ class DialogueScreen:
                         npc_id == "village_carpenter"
                         and choice.choice_id == "accept_carpenter_quest"
                     ):
-                        self.service.accept_carpenter_quest(actor_id, "player")
+                        self.service.accept_carpenter_quest(actor_id, self.service.player_inventory_id)
                         self.custom_text = (
                             "Harika. Kuzey Ormanı'ndaki ağaçlardan 3 odun "
                             "topla ve bana geri getir."
@@ -489,7 +489,7 @@ class DialogueScreen:
                         and choice.choice_id == "deliver_carpenter_wood"
                     ):
                         self.service.deliver_carpenter_wood(
-                            actor_id, npc_id, "player",
+                            actor_id, npc_id, self.service.player_inventory_id,
                         )
                         self.custom_text = (
                             "İşte böyle! Bu odunlarla köyün çatısını "
@@ -502,7 +502,7 @@ class DialogueScreen:
                         npc_id == "village_carpenter"
                         and choice.choice_id == "accept_inn_quest"
                     ):
-                        self.service.accept_inn_quest(actor_id, "player")
+                        self.service.accept_inn_quest(actor_id, self.service.player_inventory_id)
                         self.custom_text = (
                             "Köy hanına gidip bir ekmek ve bir su al. "
                             "Bunları bana getirirsen işimiz tamamlanır."
@@ -515,7 +515,7 @@ class DialogueScreen:
                         and choice.choice_id == "deliver_inn_supplies"
                     ):
                         self.service.deliver_inn_supplies(
-                            actor_id, npc_id, "player",
+                            actor_id, npc_id, self.service.player_inventory_id,
                         )
                         self.custom_text = (
                             "Harika iş çıkardın. Ekmek ve su tam zamanında "
