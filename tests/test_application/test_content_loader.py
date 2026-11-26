@@ -514,5 +514,26 @@ class TestContentPackageLoader(unittest.TestCase):
                 load_content_package(root)
 
 
+    def test_package_rejects_landmark_with_unknown_resource_node(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = self._copy_demo_package(directory)
+            map_path = root / "hex_maps" / "starting_valley.json"
+            payload = json.loads(map_path.read_text(encoding="utf-8"))
+            payload["landmarks"] = [{
+                "id": "herb_gathering_spot",
+                "name": "Herb Gathering Spot",
+                "position": [0, 0],
+                "resource_node_id": "missing_resource_node",
+            }]
+            map_path.write_text(json.dumps(payload), encoding="utf-8")
+
+            with self.assertRaisesRegex(
+                ContentPackageError,
+                "landmark 'herb_gathering_spot' references unknown resource node "
+                "'missing_resource_node'",
+            ):
+                load_content_package(root)
+
+
 if __name__ == "__main__":
     unittest.main()
