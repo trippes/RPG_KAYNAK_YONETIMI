@@ -159,7 +159,7 @@ class MainScreen:
             return
 
         panel = renderer.pg.Rect(
-            24, 96, max(1, renderer.width - 48), max(1, renderer.height - 120)
+            24, 124, max(1, renderer.width - 48), max(1, renderer.height - 212)
         )
         renderer.panel(panel, (19, 26, 38), (62, 78, 101))
         renderer.text("ELDORIA", 48, 140)
