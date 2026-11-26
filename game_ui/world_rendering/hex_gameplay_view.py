@@ -920,6 +920,20 @@ class HexGameplayView:
             package_path, renderer.pg, self.HEX_SIZE,
         )
 
+    def _is_container_entity(self, entity) -> bool:
+        """Resolve container presentation from its capability, not runtime kind.
+
+        Containers are registered in HexWorldRuntime as generic object
+        entities; GameplayService retains the authoritative entity-to-container
+        association.
+        """
+        if entity.kind == "container":
+            return True
+        if entity.kind != "object":
+            return False
+        lookup = getattr(self.service, "container_for_entity", None)
+        return callable(lookup) and lookup(entity.entity_id) is not None
+
     def render(self, renderer) -> bool:
         frame_started = perf_counter_ns()
         runtime = self.service.hex_world_runtime
@@ -1113,7 +1127,7 @@ class HexGameplayView:
                         )
                     drawn_scene_count += 1
                     continue
-                if item.kind == "container":
+                if self._is_container_entity(item):
                     self._draw_container(renderer, foot)
                     drawn_container_count += 1
                     continue
@@ -1235,7 +1249,9 @@ class HexGameplayView:
                 "total_npcs": sum(1 for entity in entities if entity.kind == "npc"),
                 "drawn_actors": drawn_actor_count,
                 "drawn_containers": drawn_container_count,
-                "total_containers": sum(1 for entity in entities if entity.kind == "container"),
+                "total_containers": sum(
+                    1 for entity in entities if self._is_container_entity(entity)
+                ),
                 "culled_actors": culled_actor_count,
                 "visible_scene_objects": visible_scene_count,
                 "culled_scene_objects": culled_scene_count,
