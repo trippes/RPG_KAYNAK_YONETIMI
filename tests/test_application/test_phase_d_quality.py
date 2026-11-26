@@ -404,6 +404,7 @@ class TestPhaseDQuality(unittest.TestCase):
         service = SimpleNamespace(
             application=SimpleNamespace(holder=SimpleNamespace(current=bundle)),
             blacksmith_quest=malformed_quest,
+            player_inventory_id="player",
             inventory=lambda _inventory_id: SimpleNamespace(
                 stocks=(("iron_ore", 3, "item"),)
             ),
