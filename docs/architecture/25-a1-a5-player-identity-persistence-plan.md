@@ -1,7 +1,7 @@
 # A1 + A5 — Oyuncu Kimliği ve Kayıt Uyumluluğu Uygulama Planı
 
 > **Belge türü:** Mimari uygulama planı  
-> **Durum:** A1.1–A1.3 tamamlandı; A1.4 kod ve CI doğrulaması tamamlandı, sandık manuel testi başarılı, görev/diyalog manuel kabulü görev veren NPC bulunmadığı için beklemede; A1.5 kaynak taraması tamamlandı; A5 incelemesi başlatıldı  
+> **Durum:** A1.1–A1.3 tamamlandı; A1.4 kod ve CI doğrulaması tamamlandı, sandık manuel testi başarılı, görev/diyalog manuel kabulü görev veren NPC bulunmadığı için beklemede; A1.5 kaynak taraması tamamlandı; A5 alternatif kimlikli kayıt/yükleme testi eklendi ve CI doğrulandı; geriye dönük uyumluluk ek kontrolleri sürüyor  
 > **Çalışma dalı:** `experiment/map-cleanup`  
 > **Planın dayandığı kaynak:** `a961de7b91b6b7fe7d6b3aae48d2defc95fcb966`  
 > **İlişkili yol haritası:** [24 — Legacy Architecture Cleanup Roadmap](24-legacy-architecture-cleanup-roadmap.md)
@@ -368,4 +368,10 @@ A1 + A5 ancak aşağıdaki koşulların tamamı sağlandığında tamamlanmış 
 
 ## 12. Sonraki işlem
 
-A1.4 için otomatik CI başarılıdır; kullanıcı oyun penceresinde sandık ve diyalog akışını manuel olarak doğrulamalıdır. A1.5 kaynak taraması tamamlandı ve oyuncu kimliği olarak kullanılan sabit `hero/player` bulunmadı. A1.4 manuel kabulünden sonra A5 kayıt/yükleme round-trip testlerine geçilecektir.
+A1.4 için otomatik CI başarılıdır; sandık manuel testi kullanıcı tarafından kabul edilmiştir. Görev alma/eşya teslim akışı görev veren NPC bulunmadığından açık kalacaktır. A1.5 kaynak taraması tamamlandı ve oyuncu kimliği olarak kullanılan sabit `hero/player` bulunmadı.
+
+A5 kapsamında `tests/test_application/test_game_application_save.py` dosyasına alternatif dört kimlikli kayıt/yükleme round-trip testi ve bozuk aktör-envanter referansını reddetme testi eklendi. Kod üretim katmanında değiştirilmedi. İlk CI turunda Ruff'ın kullanılmayan yerel değişken bulgusu yalnızca test dosyasında düzeltildi.
+
+Son doğrulama commit'i `14f1114f4f5e16b92c89218020770f5f3946c180`: Eldoria CI run `45884597663` ve Core Quality run `45884599636` başarılı. Eldoria CI'de Pygame headless smoke test ve Python 3.11/3.12 × Ubuntu/Windows testlerinin tamamı başarılı; Core Quality Linux/Windows kontrolleri de başarılı.
+
+Sonraki A5 işi: migrasyonun kaynak belgeyi değiştirmediğini ve bozuk/eksik karakter, envanter ve ekonomi referanslarının sessiz fallback oluşturmadığını hedefli testlerle doğrula; mevcut v0/v1/v2→v3 migrasyon testlerinin kapsamını koru. Yeni migrasyon ekleme ve kayıt kimliklerini yeniden adlandırma yok.
