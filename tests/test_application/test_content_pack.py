@@ -2,6 +2,7 @@ import json
 import shutil
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 from core.domain.spatial import LocalHexPosition, axial_to_world_point
@@ -10,7 +11,10 @@ from resources import Quantity, ResourceType, ResourceUnit
 from application import GameApplication
 from application.content_loader import load_content_package
 from application.hex_world_initializer import initialize_hex_world
+from application import content_pack as content_pack_module
 from application.content_pack import (
+    ContentDefinitionError,
+    _resolve_content_package_path,
     load_character_definitions,
     load_container_definitions,
     load_gameplay_rules,
@@ -20,6 +24,7 @@ from application.content_pack import (
     load_production_definitions,
     load_quest_definitions,
     load_resource_definitions,
+    load_starter_content,
     populate_gameplay_resources,
     populate_opening_content,
 )
@@ -217,6 +222,45 @@ class TestContentPack(unittest.TestCase):
             self.assertEqual(node.resource_type.value, "wood")
             self.assertEqual(node.gathering_duration_ticks.value, 60)
 
+
+
+    def test_content_definition_loaders_reject_boolean_schema_versions(self):
+        loaders = (
+            ("starter_content.json", load_starter_content),
+            ("npcs.json", load_npc_definitions),
+            ("characters.json", load_character_definitions),
+            ("quests.json", load_quest_definitions),
+            ("gameplay_rules.json", load_gameplay_rules),
+            ("items.json", load_item_definitions),
+            ("containers.json", load_container_definitions),
+            ("resources.json", load_resource_definitions),
+        )
+        for filename, loader in loaders:
+            with self.subTest(filename=filename):
+                with tempfile.TemporaryDirectory() as directory:
+                    package = Path(directory) / "demo_eldoria"
+                    shutil.copytree(PACKAGE, package)
+                    source = package / filename
+                    payload = json.loads(source.read_text(encoding="utf-8"))
+                    payload["schema_version"] = True
+                    source.write_text(json.dumps(payload), encoding="utf-8")
+
+                    with self.assertRaises(ContentDefinitionError):
+                        loader(package_path=package)
+
+    def test_active_package_config_rejects_boolean_schema_version(self):
+        with tempfile.TemporaryDirectory() as directory:
+            content_root = Path(directory)
+            (content_root / "active_package.json").write_text(
+                json.dumps({
+                    "schema_version": True,
+                    "package_path": "demo_eldoria",
+                }),
+                encoding="utf-8",
+            )
+            with patch.object(content_pack_module, "CONTENT_ROOT", content_root):
+                with self.assertRaises(ContentDefinitionError):
+                    _resolve_content_package_path()
 
 
 if __name__ == "__main__":
