@@ -1,7 +1,7 @@
 # A1 + A5 — Oyuncu Kimliği ve Kayıt Uyumluluğu Uygulama Planı
 
 > **Belge türü:** Mimari uygulama planı  
-> **Durum:** A1.1–A1.3 tamamlandı; A1.4 kod ve CI doğrulaması tamamlandı, sandık manuel testi başarılı, görev/diyalog manuel kabulü görev veren NPC bulunmadığı için beklemede; A1.5 kaynak taraması tamamlandı; A5 alternatif kimlikli kayıt/yükleme testi eklendi ve CI doğrulandı; geriye dönük uyumluluk ek kontrolleri sürüyor  
+> **Durum:** A1.1–A1.3 tamamlandı; A1.4 kod ve CI doğrulaması tamamlandı, sandık manuel testi başarılı, görev alma/teslim manuel kabulü görev veren NPC bulunmadığı için beklemede; A1.5 kaynak taraması tamamlandı; A5 alternatif kimlikli kayıt/yükleme ve referans bütünlüğü testleri ile mevcut migrasyon uyumluluğu CI üzerinde doğrulandı  
 > **Çalışma dalı:** `experiment/map-cleanup`  
 > **Planın dayandığı kaynak:** `a961de7b91b6b7fe7d6b3aae48d2defc95fcb966`  
 > **İlişkili yol haritası:** [24 — Legacy Architecture Cleanup Roadmap](24-legacy-architecture-cleanup-roadmap.md)
@@ -363,15 +363,14 @@ A1 + A5 ancak aşağıdaki koşulların tamamı sağlandığında tamamlanmış 
 | 2026-11-26 | A1.4 | Kod ve CI doğrulaması tamamlandı; sandık manuel testi başarılı; görev/diyalog manuel kabulü beklemede | Son düzeltme HEAD `a100aee57fc337b95f93128a130f2985a0056076`; Eldoria CI run `45880916965` ve Core Quality run `45880917005` başarılı. Kullanıcı sandığı açma ve eşya aktarma testini başarılı doğruladı. Görev alma/eşya teslim akışı, görev veren NPC bulunmadığından henüz test edilemedi; bu akış başarılı kabul edilmeyecek. |
 | 2026-11-26 | A1.5 | Kaynak taraması tamamlandı | `game_ui/` altındaki 58 Python dosyası `a100aee5` üzerinde tarandı. Oyuncu kimliği olarak kullanılan sabit `hero/player` bulunmadı; bulunan sözcükler görsel palet, sprite değişkeni, entity türü veya açıklama metni. Üretim kodu değişikliği gerekmedi. |
 | 2026-11-26 | A1.4 manuel kabul | Kısmi kabul | Sandık açma ve eşya aktarımı kullanıcı tarafından başarılı doğrulandı. Görev alma/teslim akışı görev veren NPC olmadığı için test edilemedi; bu kabul maddesi açık kalacak. Bu eksik oyun içeriği A1/A5 kapsamına eklenmeyecek. |
+| 2026-11-26 | A5 | Otomatik doğrulama tamamlandı | `tests/test_application/test_game_application_save.py` içinde `actor_custom`, `character_custom`, `inventory_custom`, `account_custom` kimlikleriyle kayıt/yükleme round-trip testi; bozuk aktör-envanter ve aktör-karakter referanslarını reddetme testleri eklendi. `tests/test_application/test_unified_save_document.py` içindeki v0 migrasyon kaynak-belge değişmezliği testi mevcut kapsamı sağlıyor. Son commit `70d9705cb47d0381345751e8f31ced97c08f0e9a`; Eldoria CI run `45886106774` ve Core Quality run `45886106806` tüm işlerde başarılı. Üretim kodu ve migrasyon şeması değiştirilmedi. |
 
 ---
 
 ## 12. Sonraki işlem
 
-A1.4 için otomatik CI başarılıdır; sandık manuel testi kullanıcı tarafından kabul edilmiştir. Görev alma/eşya teslim akışı görev veren NPC bulunmadığından açık kalacaktır. A1.5 kaynak taraması tamamlandı ve oyuncu kimliği olarak kullanılan sabit `hero/player` bulunmadı.
+A5'in otomatik kabul ölçütleri tamamlandı. Alternatif kimlikli kayıt/yükleme round-trip testi dört kimliğin birbirinden bağımsız korunduğunu doğruluyor. Bozuk aktör-envanter ve aktör-karakter bağlantıları yükleme sırasında reddediliyor; hatalı yüklemede etkin oturum korunuyor. Mevcut v0/v1/v2→v3 migrasyon testleri korunuyor ve v0 migrasyonunun kaynak belgeyi değiştirmediği mevcut testle doğrulanıyor. Yeni migrasyon eklenmedi.
 
-A5 kapsamında `tests/test_application/test_game_application_save.py` dosyasına alternatif dört kimlikli kayıt/yükleme round-trip testi ve bozuk aktör-envanter referansını reddetme testi eklendi. Kod üretim katmanında değiştirilmedi. İlk CI turunda Ruff'ın kullanılmayan yerel değişken bulgusu yalnızca test dosyasında düzeltildi.
+Son A5 doğrulama commit'i `70d9705cb47d0381345751e8f31ced97c08f0e9a`: Eldoria CI run `45886106774` ve Core Quality run `45886106806` başarılı. Eldoria CI'nin Python 3.11/3.12 × Ubuntu/Windows işleri ve Pygame headless smoke testi; Core Quality Linux/Windows işleri tamamı başarılı.
 
-Son doğrulama commit'i `14f1114f4f5e16b92c89218020770f5f3946c180`: Eldoria CI run `45884597663` ve Core Quality run `45884599636` başarılı. Eldoria CI'de Pygame headless smoke test ve Python 3.11/3.12 × Ubuntu/Windows testlerinin tamamı başarılı; Core Quality Linux/Windows kontrolleri de başarılı.
-
-Sonraki A5 işi: migrasyonun kaynak belgeyi değiştirmediğini ve bozuk/eksik karakter, envanter ve ekonomi referanslarının sessiz fallback oluşturmadığını hedefli testlerle doğrula; mevcut v0/v1/v2→v3 migrasyon testlerinin kapsamını koru. Yeni migrasyon ekleme ve kayıt kimliklerini yeniden adlandırma yok.
+A1.4'ün görev alma/eşya teslim manuel kabulü görev veren NPC bulunmadığı için açık kalacaktır. Bu nedenle A1+A5 çalışma başlığı bütünüyle kapatılmayacak; A5 tamamlandı, A1.4 manuel kabulü kısmi olarak kaydedilecektir. Görev veren NPC oluşturmak bu kapsamın dışında kalır.
