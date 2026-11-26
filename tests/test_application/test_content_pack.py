@@ -151,7 +151,7 @@ class TestContentPack(unittest.TestCase):
             ids.hero_id, "player", "village_chest", "old_copper_ring", 1,
         )
         self.assertEqual(
-            service.inventory("player").item_snapshot(),
+            service.inventory("player").items,
             (("old_copper_ring", 1),),
         )
         populate_gameplay_resources(service, content_package_path=PACKAGE)
