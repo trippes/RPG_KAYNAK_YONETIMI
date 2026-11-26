@@ -1,7 +1,7 @@
 # A1 + A5 — Oyuncu Kimliği ve Kayıt Uyumluluğu Uygulama Planı
 
 > **Belge türü:** Mimari uygulama planı  
-> **Durum:** A1.1–A1.3 tamamlandı; A1.4 uygulanıyor; A1.5 ve A5 planlandı  
+> **Durum:** A1.1–A1.3 tamamlandı; A1.4 kod ve CI doğrulaması tamamlandı, manuel kabul bekliyor; A1.5 kaynak taraması tamamlandı; A5 planlandı  
 > **Çalışma dalı:** `experiment/map-cleanup`  
 > **Planın dayandığı kaynak:** `a961de7b91b6b7fe7d6b3aae48d2defc95fcb966`  
 > **İlişkili yol haritası:** [24 — Legacy Architecture Cleanup Roadmap](24-legacy-architecture-cleanup-roadmap.md)
@@ -237,6 +237,12 @@ Bu kimlikler aynı metin değerine sahip olabilir; fakat mimari olarak eş anlam
 
 ### A1.5 — Kalan sabit kimlik taraması
 
+**Uygulama sonucu — 2026-11-26**
+- `experiment/map-cleanup` HEAD `a100aee57fc337b95f93128a130f2985a0056076` üzerinden `game_ui/` altındaki 58 Python dosyasının tamamı tarandı.
+- Oyuncu aktörü/karakteri/envanteri/hesabı için kullanılan sabit `"hero"` veya `"player"` kimlik eşleşmesi bulunmadı; bu nedenle üretim kodunda değişiklik yapılmadı.
+- Bulunan sözcükler bağlamına göre ayrıştırıldı: `game_ui/screens/character_creation.py` içindeki `hero` yerel değişkeni ve `hero.png` görsel varlığıdır; `character_sprite_factory.py` içindeki `"player"` varsayılanı karakter çizim paletidir; `hex_gameplay_view.py` içindeki `player` değişkenleri `service.player_actor_id` ile çözümlenen oyuncu entity'sini, `entity.kind == "player"` ise entity türünü belirtir. Diğer eşleşmeler oyuncuyu anlatan yorum/docstring veya görsel sunum terimleridir.
+- Bu eşleşmeler kimlik sabiti olmadığından değiştirilmedi. A1.5 kaynak taraması tamamlandı; kod değişikliği gerektirmedi.
+
 **İş**
 - `game_ui/` altında oyuncu aktörü, karakter, envanter veya hesap için kullanılan sabit `"hero"` / `"player"` değerlerini tekrar tara.
 - Her eşleşmeyi bağlamına göre sınıflandır: oyuncu kimliği mi, içerik/NPC/quest kimliği mi, test fixture mı?
@@ -354,10 +360,11 @@ A1 + A5 ancak aşağıdaki koşulların tamamı sağlandığında tamamlanmış 
 | 2026-11-25 | A1.1 | Tamamlandı | `e48ac660`; GameplayService oyuncu kimliği sözleşmesi ve A1.1 CI doğrulaması tamamlandı. |
 | 2026-11-25 | A1.2 | Tamamlandı | `9dbb3e97`–`92b7786e`; 6 yeni UI kimlik testi ve CI başarılı; kullanıcı oyun penceresinde karakter oluşturma, karakter sayfası ve Eren diyaloğunu kabul etti. |
 | 2026-11-26 | A1.3 | Tamamlandı | `d71820aa` ve test düzeneği düzeltmesi `326d8524`; alternatif kimlik testleri eklendi, Eldoria CI ve Core Quality başarılı. Item çizim tutarsızlığı ayrı görsel iş olarak takip edilecek. |
-| 2026-11-26 | A1.4 | Uygulandı; CI doğrulaması bekliyor | Diyalog görevlerinde sabit player envanteri kaldırıldı; konteyner oyuncu aktörü servis kimliğinden seçiliyor; görev hedefinin dünyası yapılandırılmış oyuncu aktöründen çözülüyor. Hedefli regresyon testleri eklendi. |
+| 2026-11-26 | A1.4 | Kod ve CI doğrulaması tamamlandı; manuel kabul bekliyor | Son düzeltme HEAD `a100aee57fc337b95f93128a130f2985a0056076`; Eldoria CI run `45880916965` ve Core Quality run `45880917005` başarılı. Diyalog görevlerinde sabit player envanteri kaldırıldı; konteyner oyuncu aktörü servis kimliğinden seçiliyor; görev hedefinin dünyası yapılandırılmış oyuncu aktöründen çözülüyor. Hedefli regresyon testleri eklendi. Kullanıcıdan oyun penceresinde sandık ve diyalog akışını doğrulaması istenecek. |
+| 2026-11-26 | A1.5 | Kaynak taraması tamamlandı | `game_ui/` altındaki 58 Python dosyası `a100aee5` üzerinde tarandı. Oyuncu kimliği olarak kullanılan sabit `hero/player` bulunmadı; bulunan sözcükler görsel palet, sprite değişkeni, entity türü veya açıklama metni. Üretim kodu değişikliği gerekmedi. |
 
 ---
 
 ## 12. Sonraki işlem
 
-A1.4 değişikliklerinin GitHub Actions doğrulaması yapılacaktır. Başarılı CI sonrasında A1.5 kapsamında `game_ui/` genelinde kalan `hero` / `player` sabitleri bağlamlarına göre sınıflandırılacaktır.
+A1.4 için otomatik CI başarılıdır; kullanıcı oyun penceresinde sandık ve diyalog akışını manuel olarak doğrulamalıdır. A1.5 kaynak taraması tamamlandı ve oyuncu kimliği olarak kullanılan sabit `hero/player` bulunmadı. A1.4 manuel kabulünden sonra A5 kayıt/yükleme round-trip testlerine geçilecektir.
