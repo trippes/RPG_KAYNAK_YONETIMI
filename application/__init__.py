@@ -21,6 +21,9 @@ from .production_persistence import (
     ProductionSnapshot,
 )
 from .gameplay_service import (
+    CombatEncounterView,
+    CombatSnapshotView,
+    CombatantView,
     ContainerView,
     LockView,
     LockAttemptResult,
@@ -137,6 +140,9 @@ __all__ = [
     "ProductionPersistenceError",
     "FacilityRecord",
     "FacilityJobRecord",
+    "CombatEncounterView",
+    "CombatSnapshotView",
+    "CombatantView",
     "ContainerView",
     "LockView",
     "LockAttemptResult",
