@@ -657,9 +657,9 @@ class Renderer:
         if target:
             target_name = target
             bundle = service.application.holder.current
-            actors = service.state().actors
-            if actors:
-                world = bundle.movement.map_for(actors[0].world_id)
+            actor = service.actor(service.player_actor_id)
+            if actor is not None:
+                world = bundle.movement.map_for(actor.world_id)
                 location = world.get(target) if world is not None else None
                 if location is not None:
                     target_name = location.name
