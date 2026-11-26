@@ -121,6 +121,10 @@ class MainScreen:
 
     def render(self, renderer):
         if self._runtime() is not None and self._view().render(renderer):
+            # The hex gameplay view owns the world scene; MainScreen owns the
+            # persistent player-facing chrome drawn above and below that scene.
+            renderer.hud(self.service)
+            renderer.resource_bar(self.service)
             if self.selected_scene_object_id is not None:
                 renderer.text(
                     f"Seçili çevre nesnesi: {self.selected_scene_object_id}",
