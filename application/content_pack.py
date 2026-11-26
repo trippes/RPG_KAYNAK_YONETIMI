@@ -107,6 +107,40 @@ def _string_list_field(record: dict, field_name: str, owner: str) -> tuple[str, 
     return tuple(values)
 
 
+def _container_definition_from_record(record: dict) -> ContainerDefinition:
+    tag_fields = (
+        "allowed_item_tags", "denied_item_tags",
+        "allowed_resource_tags", "denied_resource_tags",
+        "allowed_container_tags", "denied_container_tags",
+        "container_tags",
+    )
+    tags = {
+        field_name: _string_list_field(
+            record, field_name, f"Container '{record['container_id']}'"
+        )
+        for field_name in tag_fields
+    }
+    return ContainerDefinition(
+        definition_id=record["definition_id"],
+        name=record["name"],
+        empty_weight_kg=record.get("empty_weight_kg", 0.0),
+        outer_volume_liters=record.get("outer_volume_liters", 0.0),
+        max_contents_weight_kg=record.get("max_contents_weight_kg"),
+        max_slots=record.get("max_slots"),
+        max_contents_volume_liters=record.get("max_contents_volume_liters"),
+        nesting_enabled=record.get("nesting_enabled", True),
+        max_nesting_depth=record.get("max_nesting_depth", 1),
+        allowed_item_tags=tags["allowed_item_tags"],
+        denied_item_tags=tags["denied_item_tags"],
+        allowed_resource_tags=tags["allowed_resource_tags"],
+        denied_resource_tags=tags["denied_resource_tags"],
+        allowed_container_tags=tags["allowed_container_tags"],
+        denied_container_tags=tags["denied_container_tags"],
+        container_tags=tags["container_tags"],
+        break_profile_id=record.get("break_profile_id"),
+    )
+
+
 def _load_package_file(key: str, package_path: str | Path | None = None) -> dict:
     package_root = _resolve_content_package_path(package_path)
     try:
@@ -1094,25 +1128,7 @@ def populate_gameplay_resources(service, definition_path=None, resource_definiti
             record["gathering_duration_ticks"],
         ))
     for record in load_container_definitions(package_path=active_package_path):
-        container_definition = ContainerDefinition(
-            definition_id=record["definition_id"],
-            name=record["name"],
-            empty_weight_kg=record.get("empty_weight_kg", 0.0),
-            outer_volume_liters=record.get("outer_volume_liters", 0.0),
-            max_contents_weight_kg=record.get("max_contents_weight_kg"),
-            max_slots=record.get("max_slots"),
-            max_contents_volume_liters=record.get("max_contents_volume_liters"),
-            nesting_enabled=record.get("nesting_enabled", True),
-            max_nesting_depth=record.get("max_nesting_depth", 1),
-            allowed_item_tags=tuple(record.get("allowed_item_tags", ())),
-            denied_item_tags=tuple(record.get("denied_item_tags", ())),
-            allowed_resource_tags=tuple(record.get("allowed_resource_tags", ())),
-            denied_resource_tags=tuple(record.get("denied_resource_tags", ())),
-            allowed_container_tags=tuple(record.get("allowed_container_tags", ())),
-            denied_container_tags=tuple(record.get("denied_container_tags", ())),
-            container_tags=tuple(record.get("container_tags", ())),
-            break_profile_id=record.get("break_profile_id"),
-        )
+        container_definition = _container_definition_from_record(record)
         existing_definition = bundle.containers.definition(
             container_definition.definition_id,
         )
@@ -1479,37 +1495,7 @@ def load_container_definitions(
                     f"Container '{record['container_id']}' has invalid contents[{content_index}]."
                 )
         try:
-            tag_fields = (
-                "allowed_item_tags", "denied_item_tags",
-                "allowed_resource_tags", "denied_resource_tags",
-                "allowed_container_tags", "denied_container_tags",
-                "container_tags",
-            )
-            tags = {
-                field_name: _string_list_field(
-                    record, field_name, f"Container '{record['container_id']}'"
-                )
-                for field_name in tag_fields
-            }
-            ContainerDefinition(
-                definition_id=record["definition_id"],
-                name=record["name"],
-                empty_weight_kg=record.get("empty_weight_kg", 0.0),
-                outer_volume_liters=record.get("outer_volume_liters", 0.0),
-                max_contents_weight_kg=record.get("max_contents_weight_kg"),
-                max_slots=record.get("max_slots"),
-                max_contents_volume_liters=record.get("max_contents_volume_liters"),
-                nesting_enabled=record.get("nesting_enabled", True),
-                max_nesting_depth=record.get("max_nesting_depth", 1),
-                allowed_item_tags=tags["allowed_item_tags"],
-                denied_item_tags=tags["denied_item_tags"],
-                allowed_resource_tags=tags["allowed_resource_tags"],
-                denied_resource_tags=tags["denied_resource_tags"],
-                allowed_container_tags=tags["allowed_container_tags"],
-                denied_container_tags=tags["denied_container_tags"],
-                container_tags=tags["container_tags"],
-                break_profile_id=record.get("break_profile_id"),
-            )
+            _container_definition_from_record(record)
         except (TypeError, ValueError) as error:
             raise ContentDefinitionError(
                 f"Container '{record['container_id']}' definition is invalid: {error}"
