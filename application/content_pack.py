@@ -710,7 +710,12 @@ def load_quest_definitions(path: str | Path | None = None, *, package_path: str 
                 if not isinstance(entry, dict) or not isinstance(entry.get(id_key), str) or not entry[id_key].strip():
                     raise ContentDefinitionError(f"Quest '{quest_id}' has an invalid '{key}' reward entry.")
                 amount = entry.get(amount_key)
-                if isinstance(amount, bool) or not isinstance(amount, int) or amount < 0:
+                minimum_amount = 1 if key == "items" else 0
+                if (
+                    isinstance(amount, bool)
+                    or not isinstance(amount, int)
+                    or amount < minimum_amount
+                ):
                     raise ContentDefinitionError(f"Quest '{quest_id}' has an invalid '{key}' reward amount.")
         dialogue = record.get("dialogue")
         if dialogue is not None and not isinstance(dialogue, dict):
