@@ -331,5 +331,41 @@ class TestGameApplicationSave(unittest.TestCase):
         self.assertIs(application.holder.current, active_before_load)
 
 
+    def test_load_rejects_alternate_actor_with_unknown_character_reference(self):
+        session = GameSession()
+        session.worlds.create("Main", world_id="world_main")
+        session.worlds.set_active("world_main")
+        bundle = SessionBundle(
+            session=session,
+            simulation=session.simulation,
+            production_jobs=ProductionJobManager(session.simulation),
+            resource_nodes=WorldResourceNodeManager(),
+            inventories={"inventory_custom": Inventory()},
+            recipes={},
+        )
+        application = GameApplication(SessionHolder(bundle))
+        factory = CharacterFactory(
+            races={"race_custom": Race("race_custom", "Human")},
+            classes={"class_custom": CharacterClass("class_custom", "Warrior")},
+        )
+        application.karakter_olustur(
+            factory, "character_custom", "Test Hero",
+            "race_custom", "class_custom", actor_id="actor_custom",
+        )
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "broken-character-reference.json"
+            application.save(path)
+            data = json.loads(path.read_text(encoding="utf-8"))
+            data["actors"]["actors"][0]["character_id"] = "missing_character"
+            path.write_text(json.dumps(data), encoding="utf-8")
+            active_before_load = application.holder.current
+
+            with self.assertRaises(ValueError):
+                application.load(path)
+
+        self.assertIs(application.holder.current, active_before_load)
+
+
 if __name__ == "__main__":
     unittest.main()
