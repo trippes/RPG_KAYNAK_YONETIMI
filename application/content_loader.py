@@ -210,6 +210,25 @@ def load_content_package(package_dir: str | Path) -> ContentPackage:
     elif manifest.get("world_map") is not None:
         raise ContentPackageError("Content package world_map requires a maps directory.")
 
+    if hexes:
+        resource_records = files.get("resources", {}).get("nodes", [])
+        resource_ids = {
+            record.get("id")
+            for record in resource_records
+            if isinstance(record, dict) and isinstance(record.get("id"), str)
+        } if isinstance(resource_records, list) else set()
+        for map_id, map_definition in hexes.items():
+            for landmark in map_definition.landmarks:
+                resource_node_id = landmark.resource_node_id
+                if (
+                    resource_node_id is not None
+                    and resource_node_id not in resource_ids
+                ):
+                    raise ContentPackageError(
+                        f"Map '{map_id}' landmark '{landmark.landmark_id}' "
+                        f"references unknown resource node '{resource_node_id}'."
+                    )
+
     presentation_assets_path = None
     presentation_assets_relative = manifest.get("presentation_assets")
     if presentation_assets_relative is not None:
