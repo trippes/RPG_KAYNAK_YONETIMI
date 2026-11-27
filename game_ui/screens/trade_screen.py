@@ -19,7 +19,7 @@ class TradeScreen:
         self.message = "Satmak istediğin kaynağı seç."
 
     def set_npc(self, npc_id):
-        if self.service.trade_partner_for_npc(npc_id) is None:
+        if self.service.trade_partner_state(npc_id) is None:
             raise ValueError("Bu NPC ile ticaret yapılamıyor.")
         self.npc_id = npc_id
         self.selected = 0
@@ -68,10 +68,8 @@ class TradeScreen:
 
     def render(self, renderer):
         renderer.panel(renderer.pg.Rect(36, 136, 888, 402))
-        bundle = self.service.application.holder.current
-        npc = bundle.social.npcs.get(self.npc_id) if self.npc_id else None
-        merchant = self.service.trade_partner_for_npc(self.npc_id) if self.npc_id else None
-        npc_name = npc.name if npc is not None else "NPC"
+        merchant = self.service.trade_partner_state(self.npc_id) if self.npc_id else None
+        npc_name = self.service.dialogue_npc_name(self.npc_id) or "NPC"
         renderer.text(f"{npc_name} ile Ticaret", 60, 154, title=True)
         if merchant is not None:
             renderer.wallet(
