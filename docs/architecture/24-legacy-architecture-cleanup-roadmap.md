@@ -314,6 +314,26 @@ Roadmap onaylandıktan sonra ilk çalışma paketi şu sırayla yürütülür:
 
 **Aşama 3 kapanışı (2026-11-27):** A3.1–A3.5 alt aşamalarının tamamı kapatıldı. GameplayService sorumluluk ve tüketici envanteri çıkarıldı; immutable read-model sözleşmeleri oluşturuldu; üretim, görev, diyalog, HUD, karakter oluşturma ve ticaret ekranlarının servis sınırları düzenlendi; `GameplayService.application` kaçış noktası kaldırıldı; oturum değişiminde session-bound runtime cache temizliği güvenceye alındı. Mimari sınır regresyon testleri eklendi. Son kod/test commit'i `6a259efce1d61c25a06384f836c8011dd2c8e56e` için Eldoria CI run `45980434458` (5/5) ve Core Quality run `45980434434` (2/2) başarılıdır. HUD/görev paneli ve karakter oluşturma manuel kontrolleri kullanıcı tarafından başarılı olarak doğrulandı. Hancı NPC eklenmeyecek; ticaret ekranının manuel kabulü tüm geliştirme aşamalarından sonraki genel oyun kabulüne ertelendi. Görev veren NPC bulunmadığından gerçek görev alma/teslim etme akışı da manuel olarak doğrulanmış sayılmaz; bu, A3 servis sınırı/otomatik doğrulamasını geçersiz kılmaz ve içerik hazır olduğunda genel oyun kabulünde ayrıca test edilir. A3.6 veya başka bir A3 alt aşaması açılmayacaktır. Aşama 4 ayrı kapsam ve kabul ölçütleriyle başlatılacaktır.
 
+### 7.7. Aşama 4 — Uygulama günlüğü (devam ediyor, 2026-11-27)
+
+**Çalışma sınırı:** `docs/architecture/85-stage-4-ui-architecture-plan.md` belgesindeki tek ve bütünleşik Aşama 4 planı izleniyor. Alt aşama oluşturulmadı. Çalışma yalnızca `experiment/map-cleanup` dalında yürütülüyor.
+
+**İlk inceleme bulguları:** Aşama 3 sonunda ekranların GameplayService erişim sınırları merkezi servis API'lerine taşınmıştı. Aşama 4 başlangıç taramasında karakter, envanter, pazar, para değişimi, diyalog, görev günlüğü, üretim, konteyner, ticaret, savaş ve karakter oluşturma ekranlarında doğrudan private servis/Application kaçışı tespit edilmedi. Pencere yöneticisinde ise pencere kapanırken ekranın pointer capture/sürükleme durumunu serbest bırakmayı garanti eden ortak bir yaşam döngüsü çağrısı bulunmuyordu.
+
+**Uygulanan ilk düzeltmeler:**
+
+1. `GameWindow.step()` içindeki ESC işlemi artık duraklatma menüsünü açar; menü zaten açıksa kapatmaz. `_open_pause_menu()` tekrar çağrıldığında seçili menü öğesi korunur. Duraklatma menüsünde geri/ESC girdisi oyuna dönme eylemi üretmez.
+2. ESC'nin açık oyun paneli varken de menüyü açtığını, zaten açık menüyü açık tuttuğunu ve panel listesini değiştirmediğini doğrulayan testler eklendi.
+3. `WindowManager.close()`, kapanan ekranın public `cancel_drag()` yaşam döngüsü kancasını varsa çağırarak pointer capture durumunu bırakır.
+4. `ContainerScreen.cancel_drag()` eklendi; konteyner penceresi kapanırken ve `set_container()` ile hedef konteyner değişirken sürüklenen eşya kimliği temizlenir.
+5. Pencere kapanışında pointer capture'ın bırakılması ve konteyner hedefi değişiminde sürükleme durumunun sıfırlanması için regresyon testleri eklendi.
+
+**İlgili commitler:** `d2bba5defc3fae95523335eb007d7d1cb0f08b91`, `0711566533d627ffe1bea5f9c281fa88042973cc`, `d7883a9933d2e77f1763169f5313b95f53802ae5`, `08a503d4d90389e2f0f136765925561c2043ef20`, `9610e3c053417500709e2ac4ef47773e01dc4ce6`, `707b8fbad9d2d491d43e3ecf1e107e2e50c08c5e`, `cb4f517b71b934f815a7d6ba04f86a3471dee9f7`.
+
+**Doğrulama durumu:** İlk kod commit'inden sonra çalışan Eldoria CI, eski `test_escape_opens_and_closes_central_pause_menu` testinin artık geçersiz olan “ESC menüyü kapatır” beklentisi nedeniyle başarısız oldu. Test, yeni ESC sözleşmesini doğrulayacak şekilde değiştirildi. Bu günlük güncellenirken son kod/test commitleri için Eldoria CI ve Core Quality sonuçları henüz bekleniyor; başarılı oldukları iddia edilmemektedir. Gerçek oyun penceresinde manuel kabul henüz yapılmadı.
+
+**Kalan Aşama 4 kapsamı:** Tüm ekranların yaşam döngüsü ve servis/kimlik sözleşmelerinin ayrıntılı kontrolü; pencere odak/z-sırası, çoklu pencere, sürükleme-boyutlandırma ve klavye/fare yönlendirmesinin bütünleşik regresyon kapsamı; ESC ve duraklatma menüsünün manuel kabulü; tam test/kalite kapıları ve teknik dokümantasyonun kapanışı. Aşama 4 tamamlanmış değildir.
+
 ## 8. Tamamlanma tanımı
 
 Bu program ancak aşağıdaki koşulların tümü sağlandığında tamamlanmış sayılır:
