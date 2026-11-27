@@ -44,6 +44,12 @@ class _Service:
         self.exchange_calls = []
         self.buy_calls = []
 
+    def active_world_state(self):
+        return SimpleNamespace(name="Eldoria")
+
+    def quest_panel_state(self):
+        return None
+
     def inventory(self, inventory_id):
         self.inventory_calls.append(inventory_id)
         return SimpleNamespace(
@@ -133,37 +139,18 @@ class TestPlayerEconomyIdentity(unittest.TestCase):
             "traveler_actor", "village_carpenter", "carpenter_dialogue", "start",
         )
 
-    def test_quest_panel_resolves_target_world_from_configured_player_actor(self):
-        target_location = SimpleNamespace(name="Player world target")
-        world = SimpleNamespace(get=Mock(return_value=target_location))
+    def test_quest_panel_uses_service_owned_quest_view(self):
+        objective = SimpleNamespace(
+            completed=False, description="Reach the target", progress=0, required=1,
+        )
         quest = SimpleNamespace(
             title="Test quest",
-            objectives=(
-                SimpleNamespace(
-                    target_id="target_node",
-                    completed=False,
-                    description="Reach the target",
-                    progress=0,
-                    required=1,
-                ),
-            ),
+            objectives=(objective,),
+            target_name="Player world target",
             reward=SimpleNamespace(currency=10, experience=0),
-            state=SimpleNamespace(value="active"),
+            state="active",
         )
-        bundle = SimpleNamespace(
-            quest_log=SimpleNamespace(active=Mock(return_value=(quest,))),
-            movement=SimpleNamespace(map_for=Mock(return_value=world)),
-            social=SimpleNamespace(npcs=SimpleNamespace(get=Mock(return_value=None))),
-        )
-        self.service.application = SimpleNamespace(
-            holder=SimpleNamespace(current=bundle)
-        )
-        self.service.actor = Mock(return_value=SimpleNamespace(world_id="traveler_world"))
-        self.service.state = Mock(
-            return_value=SimpleNamespace(
-                actors=(SimpleNamespace(actor_id="npc_first", world_id="npc_world"),)
-            )
-        )
+        self.service.quest_panel_state = Mock(return_value=quest)
         renderer = Renderer.__new__(Renderer)
         renderer.panel = Mock()
         renderer.text = Mock()
@@ -175,8 +162,10 @@ class TestPlayerEconomyIdentity(unittest.TestCase):
             SimpleNamespace(x=0, y=0, width=400, height=260, bottom=260),
         )
 
-        self.service.actor.assert_called_once_with("traveler_actor")
-        bundle.movement.map_for.assert_called_once_with("traveler_world")
+        self.service.quest_panel_state.assert_called_once_with()
+        self.assertTrue(
+            any("Test quest" in str(call.args[0]) for call in renderer.text.call_args_list)
+        )
 
     def test_renderer_wallet_uses_account_id(self):
         renderer = Renderer.__new__(Renderer)
@@ -230,16 +219,8 @@ class TestPlayerEconomyIdentity(unittest.TestCase):
             }
 
         self.service.actor_stats = actor_stats
-        self.service.application = SimpleNamespace(
-            holder=SimpleNamespace(
-                current=SimpleNamespace(
-                    session=SimpleNamespace(
-                        worlds=SimpleNamespace(
-                            get_active=Mock(return_value=SimpleNamespace(name="Test world"))
-                        )
-                    )
-                )
-            )
+        self.service.active_world_state = Mock(
+            return_value=SimpleNamespace(name="Test world")
         )
         renderer = Renderer.__new__(Renderer)
         renderer.width = 960
