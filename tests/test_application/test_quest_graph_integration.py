@@ -84,7 +84,9 @@ class TestQuestGraphGameplayIntegration(unittest.TestCase):
         self.service.update_quest_objective("root", "finish_root")
         screen = QuestLogScreen(self.service)
 
-        groups = screen._branch_groups(self.root)
+        screen.category = 1
+        quest_view = screen._quests()[0]
+        groups = screen._branch_groups(quest_view)
 
         self.assertEqual(len(groups), 1)
         self.assertEqual(groups[0][0], "route")
@@ -92,7 +94,7 @@ class TestQuestGraphGameplayIntegration(unittest.TestCase):
         self.assertIsNone(groups[0][2])
 
         self.service.choose_quest_branch("root", "route", "left")
-        self.assertEqual(screen._branch_groups(self.root)[0][2], "left")
+        self.assertEqual(screen._branch_groups(screen._quests()[0])[0][2], "left")
 
     def test_branch_choice_survives_game_save_and_load(self):
         self.service.start_quest(self.root, owner_id="hero")
