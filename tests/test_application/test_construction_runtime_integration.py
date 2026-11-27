@@ -2,6 +2,7 @@ import unittest
 
 from application.construction_placement import (
     ConstructionPlacementRequest,
+    ConstructionPlacementService,
     ConstructionPlacementValidator,
     PlacementFailureReason,
 )
