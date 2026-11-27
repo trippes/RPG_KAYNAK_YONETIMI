@@ -268,6 +268,11 @@ class HexWorldRuntime:
         actor = self.entity(request.actor_id)
         if actor.position.map_id != map_id:
             return False
+        from application.construction_placement import ConstructionPlacementValidator
+        current_snapshot = self.construction_snapshot(map_id)
+        recomputed = ConstructionPlacementValidator.validate(request, current_snapshot)
+        if recomputed.footprint_cells != result.footprint_cells:
+            return False
         footprint = tuple(result.footprint_cells)
         if len(footprint) != len(set(footprint)):
             return False
