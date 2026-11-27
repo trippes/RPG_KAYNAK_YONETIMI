@@ -179,3 +179,28 @@ Bu inceleme kaydından sonra `HexWorldRuntime` içine ilk gerçek runtime entegr
 - Gerçek oyun akışından placement service çağrısı ve manuel kabul henüz yapılmadı.
 
 Bu nedenle runtime entegrasyonunun temel storage/snapshot/commit yolu uygulanmış olsa da Aşama 2 tamamlanmış değildir. CI sonuçları ve sonraki entegrasyon kontrolleri beklenir.
+
+
+## 11. Gerçek zemin desteği entegrasyonu (2026-11-28)
+
+İlk support entegrasyonunda elle verilen `supported_cells` girdisi kaldırıldı. Destek kanıtının kaynağı artık map içeriğinin açık terrain capability tanımıdır:
+
+- `HexMapDefinition.foundation_supporting_terrain_ids`, temel taşıyabilen terrain kimliklerini immutable olarak tutar.
+- Map JSON şemasında `foundation_supporting_terrain_ids` alanı tanımlanmıştır. Bilinmeyen terrain ID'leri ve tekrarlar yükleme sırasında reddedilir.
+- Alanın bulunmadığı eski/test haritaları güvenli biçimde boş destek kümesi üretir; varsayılan olarak hiçbir terrain taşıyıcı sayılmaz.
+- `application/construction_support.py` içindeki `ConstructionSupportService`, map hücrelerinin gerçek `terrain_id` değerlerini okuyarak desteklenen axial hücreleri üretir.
+- `HexWorldRuntime.construction_snapshot` bu servisi kullanır. Çağıran artık destek hücresi enjekte edemez.
+- `commit_if_revision` aynı runtime snapshot'ını yeniden ürettiği için preview sırasında sağlanan destek kanıtı commit anında da aynı authoritative map verisinden tekrar doğrulanır.
+- Geçilebilirlik (`blocked`) ile taşıma kabiliyeti birbirinden ayrıdır. Support servisi blocked flag'ini kullanmaz; yerleştirme validator'ı kendi blocked-terrain kuralını ayrıca uygular.
+
+İçerik verileri:
+- `content/movement_test/hex_maps/movement_test_arena.json`: grass, stone ve dirt temel taşıyabilir; water taşıyamaz.
+- `content/demo_eldoria/hex_maps/starting_valley.json`: grass, forest_floor, clearing_floor ve rock temel taşıyabilir; water taşıyamaz. Rock'ın blocked olması yerleştirmeyi ayrıca engeller; bu, taşıma kabiliyetiyle geçilebilirliğin farklı kavramlar olduğunu korur.
+
+Test kapsamına runtime'ın destek hücrelerini terrain metadata'dan üretmesi ve metadata bulunmadığında `UNSUPPORTED` ile güvenli ret eklenmiştir. Runtime placement entegrasyon testleri artık `requires_support=True` ile çalışır.
+
+### Kapsam sınırı
+
+Bu, zemin/temel seviyesinde ikili taşıma kabiliyeti kontrolüdür; mühendislik anlamında yük kapasitesi, zemin basıncı, eğim/zemin deformasyonu veya jeoteknik simülasyon değildir. Duvar/kolon/kiriş/kat/çatı üzerinden yük aktarımı, destek zinciri ve yapı stabilitesi ayrıca tasarlanmalıdır. Bunlar Aşama 6 ve ilgili yapı-fizik entegrasyonu kapsamındadır. Mevcut yapı parçalarının destek gereksinimi henüz parça tanımlarından otomatik türetilmiyor; request `requires_support` bayrağıyla açıkça ister.
+
+Bu entegrasyon Aşama 2'yi kapatmaz. CI ve kullanıcı kabulü beklenir.
