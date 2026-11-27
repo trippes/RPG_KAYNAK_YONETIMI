@@ -101,7 +101,7 @@ class CharacterCreationScreen:
                 index
                 for index, item in enumerate(races)
                 if character is not None
-                and item.race_id == character.race.race_id
+                and item.race_id == character.race_id
             ),
             0,
         )
@@ -112,7 +112,7 @@ class CharacterCreationScreen:
                 for index, item in enumerate(classes)
                 if character is not None
                 and item.class_id
-                == character.character_class.class_id
+                == character.class_id
             ),
             0,
         )
@@ -127,20 +127,10 @@ class CharacterCreationScreen:
     # ---------------------------------------------------------
 
     def _character(self):
-        return self.service.actor_character(
-            self.service.player_actor_id
-        )
+        return self.service.character_creation_state()
 
     def _factory_options(self):
-        factory = self.service._character_factory
-
-        if factory is None:
-            return (), ()
-
-        return (
-            tuple(factory.races.values()),
-            tuple(factory.classes.values()),
-        )
+        return self.service.character_creation_options()
 
     def _remaining_points(self):
         return self.POINTS - sum(
@@ -183,11 +173,7 @@ class CharacterCreationScreen:
                 )[:3]
 
         if state.pressed("back"):
-            if getattr(
-                self.service,
-                "_creation_from_eren",
-                False,
-            ):
+            if self.service.character_creation_from_dialogue:
                 self.message = (
                     "Eren'e cevap vermeden önce "
                     "karakterini oluşturmalısın."
@@ -363,7 +349,7 @@ class CharacterCreationScreen:
         if self._hit_rects.get("finish") is not None and self._hit_rects["finish"].collidepoint(position):
             return self._finish()
         if self._hit_rects.get("back") is not None and self._hit_rects["back"].collidepoint(position):
-            return "world" if not getattr(self.service, "_creation_from_eren", False) else None
+            return "world" if not self.service.character_creation_from_dialogue else None
         return None
 
     # ---------------------------------------------------------
@@ -377,11 +363,6 @@ class CharacterCreationScreen:
             self.message = "Oyuncu karakteri bulunamadı."
             return None
 
-        if not self.name.strip():
-            self.message = "İsim alanı boş bırakılamaz."
-            self.focus = 0
-            return None
-
         try:
             age = int(self.age)
         except ValueError:
@@ -389,70 +370,36 @@ class CharacterCreationScreen:
             self.focus = 1
             return None
 
-        if not 13 <= age <= 120:
-            self.message = "Yaş 13 ile 120 arasında olmalı."
-            self.focus = 1
-            return None
-
-        if self._remaining_points() != 0:
-            self.message = (
-                f"Dağıtılmamış "
-                f"{self._remaining_points()} puanın var."
-            )
-            self.focus = 4
-            return None
-
         try:
-            self.service.application.customize_character(
-                self.service.player_character_id,
+            from_dialogue = self.service.customize_player_character(
                 self.name,
                 age,
                 self.scores,
-                race=(
-                    self.races[self.race_index]
+                race_id=(
+                    self.races[self.race_index].race_id
                     if self.races else None
                 ),
-                character_class=(
-                    self.classes[self.class_index]
+                class_id=(
+                    self.classes[self.class_index].class_id
                     if self.classes else None
                 ),
                 appearance=self.appearance,
             )
-
-            # The demo opening expects Eren to recognize a newly created
-            # player on their first conversation, even when character
-            # creation was entered from the main flow rather than dialogue.
-            npc_registry = self.service.application.holder.current.social.npcs
-            if npc_registry.get("warden_lyra") is not None:
-                self.service.change_relationship(
-                    self.service.player_actor_id,
-                    "warden_lyra",
-                    trust=1,
-                )
-
-        except (
-            KeyError,
-            TypeError,
-            ValueError,
-            RuntimeError,
-        ) as error:
+        except (KeyError, TypeError, ValueError, RuntimeError) as error:
             self.message = str(error)
+            if "isim" in self.message.lower():
+                self.focus = 0
+            elif "yaş" in self.message.lower():
+                self.focus = 1
+            else:
+                self.focus = 4
             return None
-
-        from_eren = getattr(
-            self.service,
-            "_creation_from_eren",
-            False,
-        )
-
-        self.service._player_name_confirmed = True
-        self.service._creation_from_eren = False
 
         self.message = (
             f"{self.name}, Eldoria'ya hoş geldin."
         )
 
-        return "dialogue" if from_eren else "world"
+        return "dialogue" if from_dialogue else "world"
 
     # ---------------------------------------------------------
     # ASSET LOADING
