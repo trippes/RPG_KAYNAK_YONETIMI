@@ -118,9 +118,7 @@ class CharacterCreationScreen:
         )
 
         if character is not None:
-            self.appearance.update(
-                getattr(character, "appearance", {})
-            )
+            self.appearance.update(dict(character.appearance))
 
     # ---------------------------------------------------------
     # CHARACTER DATA
