@@ -54,6 +54,26 @@ class FakePlayerService:
             ),
         )
 
+    @property
+    def character_creation_from_dialogue(self):
+        return self._creation_from_eren
+
+    def character_creation_options(self):
+        return (
+            (SimpleNamespace(race_id="human", name="Human"),),
+            (SimpleNamespace(class_id="fighter", name="Fighter"),),
+        )
+
+    def customize_player_character(self, name, age, attributes, **kwargs):
+        self.customize_character(
+            self.player_character_id, name, age, attributes, **kwargs,
+        )
+        self.change_relationship(self.player_actor_id, "warden_lyra", trust=1)
+        from_dialogue = self._creation_from_eren
+        self._player_name_confirmed = True
+        self._creation_from_eren = False
+        return from_dialogue
+
     def actor_character(self, actor_id):
         self.actor_character_calls.append(actor_id)
         return self.character if actor_id == self.player_actor_id else None
