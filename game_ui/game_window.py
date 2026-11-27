@@ -605,15 +605,15 @@ class GameWindow:
         )
 
     def _open_pause_menu(self):
+        if not self.pause_menu_open:
+            self.pause_menu_selected = 0
         self.pause_menu_open = True
-        self.pause_menu_selected = 0
 
     def _close_pause_menu(self):
         self.pause_menu_open = False
 
     def _handle_pause_menu(self, state):
         if state.pressed("back"):
-            self._close_pause_menu()
             return
         if state.pressed("up"):
             self.pause_menu_selected = (self.pause_menu_selected - 1) % len(PAUSE_MENU_OPTIONS)
@@ -767,10 +767,7 @@ class GameWindow:
             return
 
         if self.gameplay_active and state.pressed("back"):
-            if self.pause_menu_open:
-                self._close_pause_menu()
-            else:
-                self._open_pause_menu()
+            self._open_pause_menu()
             self._render_current()
             if self.pause_menu_open:
                 self._render_pause_menu()
