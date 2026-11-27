@@ -1,7 +1,7 @@
 # Eldoria — Modüler Yapı ve İnşa Sistemi
 ## Aşama 2: İnşa Koordinatları ve Yerleştirme Sistemi — Teknik İnceleme Kaydı
 
-- **Durum:** Devam ediyor; koordinat ve saf yerleştirme doğrulama dilimi uygulanmış, gerçek runtime entegrasyonu ve kullanıcı kabulü bekliyor
+- **Durum:** Devam ediyor; runtime yerleştirme ve terrain tabanlı temel desteği entegrasyonu uygulanmış, tam oyun akışı ve kullanıcı kabulü bekliyor
 - **Hedef dal:** `experiment/map-cleanup`
 - **Kapsam referansı:** `docs/architecture/90-modular-building-construction-system-roadmap.md`
 - **İncelenen kaynak HEAD:** `a8a0332c94fdbaea996399c88c75c12fae4d6b1e`
@@ -122,14 +122,14 @@ Bu CI sonuçları ilgili HEAD'deki mevcut kodun workflow kontrollerini geçtiği
 | Hex ↔ construction dönüşümü | Uygulandı | ConstructionSpaceTransform testleri |
 | Snap ve rotation kuralları | Uygulandı | Coordinate testleri |
 | Preview request/result sözleşmesi | Uygulandı | construction_placement.py |
-| Map boundary ve blocked terrain doğrulaması | Saf snapshot doğrulayıcıda uygulandı | Gerçek runtime snapshot bağlantısı yok |
+| Map boundary ve blocked terrain doğrulaması | Runtime snapshot ve commit'te uygulandı | Map maskesi ve blocked terrain hem preview hem commit sınırında doğrulanıyor |
 | Footprint geometry bağlantısı | Kısmen uygulandı | Explicit sample points aktarılıyor; polygon rasterization yok |
-| Actor + structure overlap | Bekliyor | Runtime actor occupancy snapshot'a bağlanmadı; structure kayıtları yok |
-| Support/permission owner entegrasyonu | Bekliyor | Şu an boolean request girdileri |
-| Authoritative runtime snapshot provider | Bekliyor | HexWorldRuntime adaptörü yok |
-| Runtime state revision ve atomik CAS commit | Bekliyor | Runtime revision/structure mutation API'si yok |
-| Sınır/hassasiyet/çakışma testlerinin genişletilmesi | Kısmen | Saf validator testleri var; runtime ve edge-case testleri eksik |
-| CI | Başarılı | İki workflow da aynı incelenen HEAD'de başarılı |
+| Actor + structure overlap | Runtime'da uygulandı | Actor occupancy ve yapı footprint'i ortak snapshot'ta; ayrı sahiplik korunuyor |
+| Support/permission owner entegrasyonu | Kısmen uygulandı | Zemin desteği map terrain capability metadata'sından; authorization owner bekliyor |
+| Authoritative runtime snapshot provider | Uygulandı | HexWorldRuntime.construction_snapshot |
+| Runtime state revision ve atomik CAS commit | Uygulandı | Runtime revision, kilitli commit ve commit anında tekrar doğrulama |
+| Sınır/hassasiyet/çakışma testlerinin genişletilmesi | Kısmen | Runtime overlap, stale revision, support ve forged-result ret testleri; ek geometri edge-case'leri bekliyor |
+| CI | Bekliyor | Güncel kod HEAD'i için GitHub Actions tamamlanmadı |
 | Oyun içi manuel kabul | Bekliyor | Gerçek oyun akışında yapı yerleştirme yok |
 
 ## 11. Sonuç ve devam sırası
