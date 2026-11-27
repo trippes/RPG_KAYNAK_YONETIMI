@@ -1,7 +1,8 @@
 # Eldoria — Modüler Yapı ve İnşa Sistemi
 ## Aşama 1: Genel Yapı ve Yapı Parçası Veri Sözleşmeleri
 
-- **Durum:** Uygulama ve CI doğrulaması başarılı; kullanıcı kabulü bekleniyor
+- **Durum:** Resmen kapatıldı — kullanıcı kabulü alındı
+- **Kapanış tarihi:** 27.11.2026
 - **Hedef dal:** `experiment/map-cleanup`
 - **Kapsam referansı:** `docs/architecture/90-modular-building-construction-system-roadmap.md`
 - **Aşama:** 1 — Genel yapı ve yapı parçası veri sözleşmeleri
@@ -95,4 +96,8 @@ Aşama 1 değişikliklerini içeren dal HEAD'i `58b67dd70f482fc901083dfb79a0227e
 - [Eldoria CI — run 46051331616](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/46051331616): Ubuntu ve Windows üzerinde Python 3.11/3.12 test işleri ile Pygame headless smoke test başarılı.
 - [Core quality — run 46051331553](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/46051331553): `verify` ve `verify-windows` işleri başarılı.
 
-**Aşama 1'in resmî kapanışı kullanıcının bu raporu kabul etmesine bağlıdır.**
+## 10. Resmî kapanış
+
+Kullanıcı 27.11.2026 tarihinde Aşama 1'in resmen kapatılmasını açıkça talep etmiştir. Bu talimat, aşama kabulü ve kapanış onayı olarak kaydedilmiştir.
+
+**Sonuç:** Aşama 1 resmen kapatılmıştır. Teknik uygulama ve CI doğrulaması başarılıdır. Aşama 2, ayrı kapsam ve aşama kapısı kurallarına uygun olarak ayrıca yürütülecektir; bu kapanış tek başına Aşama 2 uygulamasına başlama veya kapsam genişletme onayı değildir.
