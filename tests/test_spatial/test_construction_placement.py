@@ -69,7 +69,7 @@ class ConstructionPlacementTests(unittest.TestCase):
             "wall",
             StructureGeometryDefinition(
                 "custom", 2.0, 0.25, 3.0,
-                footprint_local_points=(WorldPoint(-20, 0), WorldPoint(20, 0)),
+                footprint_local_points=(WorldPoint(-40, 0), WorldPoint(40, 0)),
             ),
         )
         placement = ConstructionPlacementRequest.from_part_definition(
