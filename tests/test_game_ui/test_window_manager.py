@@ -180,6 +180,30 @@ class QuestWindowManagerTests(unittest.TestCase):
         self.assertTrue(source.cancelled)
         self.assertEqual(manager.focused_id, "quest_log")
 
+    def test_display_viewport_resize_clamps_windows_and_refreshes_layout(self):
+        class ResponsiveScreen(DummyScreen):
+            responsive_layout = True
+
+            def __init__(self):
+                super().__init__()
+                self.viewport_calls = []
+
+            def set_viewport(self, width, height):
+                self.viewport_calls.append((width, height))
+
+        screen = ResponsiveScreen()
+        manager = WindowManager(self.backend, 1200, 900)
+        manager.register("inventory", screen, (900, 650, 500, 300))
+        manager.set_viewport(800, 600)
+
+        window = manager.windows["inventory"]
+        self.assertEqual((manager.width, manager.height), (800, 600))
+        self.assertEqual(
+            (window.bounds.x, window.bounds.y, window.bounds.width, window.bounds.height),
+            (300, 300, 500, 300),
+        )
+        self.assertEqual(screen.viewport_calls[-1], (500, 268))
+
     def test_j_shortcut_opens_and_closes_quest_window(self):
         self.assertTrue(
             self.manager.handle_input(InputState(actions={"quest_log"}))
