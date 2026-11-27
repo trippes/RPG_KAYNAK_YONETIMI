@@ -9,7 +9,7 @@ from character import Attributes, Character, CharacterClass, ItemDefinition, Rac
 from containers import ContainerDefinition, ContainerInstance
 from locks import ForceProfile, KeyDefinition, LockDefinition, LockInstance, LockpickProfile
 from resources import ResourceDefinition
-from quests import Objective, ObjectiveType, Quest, Reward
+from quests import Dialogue, DialogueChoice, DialogueNode, Objective, ObjectiveType, Quest, Reward
 
 from application import (
     Combatant,
@@ -579,6 +579,31 @@ class TestGameplayService(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.service.quest_log_state("unknown")
         self.assertEqual(self.service.quest_log_counts(), (1, 1, 0))
+        self.assertEqual(self.service.state().simulation_tick, before_tick)
+
+    def test_dialogue_choice_query_is_service_owned_and_read_only(self):
+        dialogue = Dialogue(
+            "service_dialogue",
+            (DialogueNode(
+                "start", "test_npc", "Hello",
+                (DialogueChoice("greet", "Greetings"),),
+            ),),
+            "start",
+        )
+        self.service.register_dialogue(dialogue)
+        before_tick = self.service.state().simulation_tick
+
+        first = self.service.dialogue_choices(
+            "hero", "test_npc", "service_dialogue", "start",
+        )
+        repeated = self.service.dialogue_choices(
+            "hero", "test_npc", "service_dialogue", "start",
+        )
+
+        self.assertEqual(first, repeated)
+        self.assertEqual(tuple(choice.choice_id for choice in first), ("greet",))
+        with self.assertRaises(FrozenInstanceError):
+            first[0].text = "Changed"
         self.assertEqual(self.service.state().simulation_tick, before_tick)
 
     def test_production_catalog_queries_are_immutable_and_service_owned(self):
