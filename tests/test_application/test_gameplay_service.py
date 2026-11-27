@@ -539,6 +539,40 @@ class TestGameplayService(unittest.TestCase):
         self.service.advance_to(5)
         self.assertEqual(self.inventory.get(self.tool), Quantity(1, ResourceUnit.ITEM))
 
+    def test_gameplay_state_returns_detached_immutable_value_views(self):
+        self.service.register_actor("z_worker", "worker", inventory_id="other")
+        self.service.register_actor("a_worker", "worker", inventory_id="main")
+
+        before = self.service.state()
+        repeated = self.service.state()
+
+        self.assertEqual(before, repeated)
+        self.assertEqual(
+            tuple(item.inventory_id for item in before.inventories),
+            ("main", "other", "traveler_bag"),
+        )
+        self.assertEqual(
+            tuple(actor.actor_id for actor in before.actors),
+            ("a_worker", "z_worker"),
+        )
+        self.assertEqual(before.nodes[0].quantity, (6, "item"))
+
+        with self.assertRaises(FrozenInstanceError):
+            before.inventories[0].inventory_id = "changed"
+        with self.assertRaises(FrozenInstanceError):
+            before.nodes[0].quantity = (0, "item")
+        with self.assertRaises(FrozenInstanceError):
+            before.actors[0].active = False
+
+        self.service.collect("ore-node", "main", Quantity(1, ResourceUnit.ITEM))
+        after = self.service.state()
+
+        self.assertEqual(before.nodes[0].quantity, (6, "item"))
+        self.assertEqual(after.nodes[0].quantity, (5, "item"))
+        self.assertEqual(before.inventories[0].stocks, ())
+        self.assertEqual(after.inventories[0].stocks, (("ore", 1, "item"),))
+        self.assertEqual(before.simulation_tick, after.simulation_tick)
+
     def test_state_is_read_only_and_save_load_preserves_active_job(self):
         self.service.collect("ore-node", "main", Quantity(2, ResourceUnit.ITEM))
         self.service.start_production("smelt", "main", "smelter-1")
