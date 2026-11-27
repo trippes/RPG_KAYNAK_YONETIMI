@@ -316,23 +316,26 @@ Roadmap onaylandıktan sonra ilk çalışma paketi şu sırayla yürütülür:
 
 ### 7.7. Aşama 4 — Uygulama günlüğü (devam ediyor, 2026-11-27)
 
-**Çalışma sınırı:** `docs/architecture/85-stage-4-ui-architecture-plan.md` belgesindeki tek ve bütünleşik Aşama 4 planı izleniyor. Alt aşama oluşturulmadı. Çalışma yalnızca `experiment/map-cleanup` dalında yürütülüyor.
+**Çalışma sınırı:** `docs/architecture/85-stage-4-ui-architecture-plan.md` belgesindeki tek ve bütünleşik Aşama 4 planı izleniyor. A4.1/A4.2 gibi alt aşamalar oluşturulmadı. Tüm değişiklikler yalnızca `experiment/map-cleanup` dalında yapıldı.
 
-**İlk inceleme bulguları:** Aşama 3 sonunda ekranların GameplayService erişim sınırları merkezi servis API'lerine taşınmıştı. Aşama 4 başlangıç taramasında karakter, envanter, pazar, para değişimi, diyalog, görev günlüğü, üretim, konteyner, ticaret, savaş ve karakter oluşturma ekranlarında doğrudan private servis/Application kaçışı tespit edilmedi. Pencere yöneticisinde ise pencere kapanırken ekranın pointer capture/sürükleme durumunu serbest bırakmayı garanti eden ortak bir yaşam döngüsü çağrısı bulunmuyordu.
+**İnceleme bulguları:** Karakter, envanter, pazar, para değişimi, diyalog, görev günlüğü, üretim, konteyner, ticaret, savaş ve karakter oluşturma ekranlarının servis erişimleri tarandı. Bu ekranlarda doğrudan `service.application`, private GameplayService alanı veya `application.holder` kaçışı tespit edilmedi. Buna karşılık GameWindow'ın pazar/ticaret geçişlerinde DialogueScreen'in `context` iç durumunu okuduğu ve `_reset_dialogue()` private metodunu çağırdığı görüldü; bu kullanım açık ekran API'sine taşındı.
 
-**Uygulanan ilk düzeltmeler:**
+**Uygulanan değişiklikler:**
 
-1. `GameWindow.step()` içindeki ESC işlemi artık duraklatma menüsünü açar; menü zaten açıksa kapatmaz. `_open_pause_menu()` tekrar çağrıldığında seçili menü öğesi korunur. Duraklatma menüsünde geri/ESC girdisi oyuna dönme eylemi üretmez.
-2. ESC'nin açık oyun paneli varken de menüyü açtığını, zaten açık menüyü açık tuttuğunu ve panel listesini değiştirmediğini doğrulayan testler eklendi.
-3. `WindowManager.close()`, kapanan ekranın public `cancel_drag()` yaşam döngüsü kancasını varsa çağırarak pointer capture durumunu bırakır.
-4. `ContainerScreen.cancel_drag()` eklendi; konteyner penceresi kapanırken ve `set_container()` ile hedef konteyner değişirken sürüklenen eşya kimliği temizlenir.
-5. Pencere kapanışında pointer capture'ın bırakılması ve konteyner hedefi değişiminde sürükleme durumunun sıfırlanması için regresyon testleri eklendi.
+1. **ESC/duraklatma menüsü:** ESC, oyun aktifken açık panel olsun veya olmasın duraklatma menüsünü açar. Menü zaten açıksa kapanmaz; seçili öğe korunur. ESC genel pencere kapatma işlevi görmez. Duraklatma menüsündeki geri girdisi oyuna dönme eylemi üretmez; devam etme menünün açık eylemiyle yapılır.
+2. **Pencere/pointer yaşam döngüsü:** `WindowManager.close()` kapanan ekranın `cancel_drag()` kancasını çağırır. Odak başka pencereye geçtiğinde eski pencerenin pointer capture durumu bırakılır. Ekran çözünürlüğü değiştiğinde sürükleme, boyutlandırma ve eşya taşıma işlemleri iptal edilir.
+3. **Konteyner sürükleme:** `ContainerScreen.cancel_drag()` eklendi. Pencere kapanırken veya `set_container()` ile başka konteynere geçerken sürüklenen eşya kimliği temizlenir.
+4. **Diyalog geçiş sözleşmesi:** `DialogueScreen.active_npc_id` ve `complete_external_transition()` public girişleri eklendi. GameWindow artık diyalog ekranının `context` alanını veya private sıfırlama metodunu kullanarak pazar/ticaret geçişi yapmaz.
+5. **Kayıt/yükleme sonrası UI yaşam döngüsü:** Başarılı kayıt yüklemelerinde oyun ekranları mevcut servis/oturum bağlamıyla yeniden oluşturulur; açık pencereler kapatılır, WindowManager ekran referansları yeniden bağlanır, diyalog durumu sıfırlanır ve oyuncu/NPC hareket zamanlayıcıları temizlenir. Yeni oyun başlangıcı da aynı ekran yeniden kurma yolunu kullanır.
+6. **Ekran çözünürlüğü:** `WindowManager.set_viewport()` eklendi. Tam ekran değişiminde GameWindow bu API'yi çağırır; pencereler yeni görüntü alanına sığacak şekilde yeniden konumlandırılır/boyutlandırılır ve responsive ekranların viewport ölçüleri yenilenir.
 
-**İlgili commitler:** `d2bba5defc3fae95523335eb007d7d1cb0f08b91`, `0711566533d627ffe1bea5f9c281fa88042973cc`, `d7883a9933d2e77f1763169f5313b95f53802ae5`, `08a503d4d90389e2f0f136765925561c2043ef20`, `9610e3c053417500709e2ac4ef47773e01dc4ce6`, `707b8fbad9d2d491d43e3ecf1e107e2e50c08c5e`, `cb4f517b71b934f815a7d6ba04f86a3471dee9f7`.
+**Regresyon testleri:** ESC'nin açık panel varken ve menü zaten açıkken davranışı; pointer capture'ın pencere kapatma, odak değiştirme ve çözünürlük değişiminde bırakılması; konteyner hedef değişiminde sürüklemenin sıfırlanması; diyalog dış ekran geçiş API'si; kayıt/oturum yenilemesinde ekranların yeniden bağlanması; tam ekran değişiminde WindowManager viewport senkronizasyonu testlerle kapsandı.
 
-**Doğrulama durumu:** İlk kod commit'inden sonra çalışan Eldoria CI, eski `test_escape_opens_and_closes_central_pause_menu` testinin artık geçersiz olan “ESC menüyü kapatır” beklentisi nedeniyle başarısız oldu. Test, yeni ESC sözleşmesini doğrulayacak şekilde değiştirildi. Bu günlük güncellenirken son kod/test commitleri için Eldoria CI ve Core Quality sonuçları henüz bekleniyor; başarılı oldukları iddia edilmemektedir. Gerçek oyun penceresinde manuel kabul henüz yapılmadı.
+**CI kanıtı:** Son kod/test commit'i `2546145bcf4bb28bf4c6b2b274ad6464a558f2e3` üzerinde Eldoria CI run `45984068247` 5/5 iş ile başarılıdır: Pygame headless smoke ve Python 3.11/3.12 × Ubuntu/Windows test işleri. Dört Python matris işinin her birinde 1.695 unittest testi ve 2.741 pytest testi geçti (59 uyarı, hata yok). Core Quality run `45984068205` Linux/Windows doğrulamalarında 2/2 başarılıdır. İlk denemelerde eski ESC kapanma beklentisi ve yeni ekran yeniden kurma test düzeneğindeki eksik `gameplay_screen` niteliği tespit edildi; test sözleşmesi güncellendi ve test düzeneği için güvenli varsayılan eklendi. Son doğrulama sonuçları bu düzeltmeleri içerir.
 
-**Kalan Aşama 4 kapsamı:** Tüm ekranların yaşam döngüsü ve servis/kimlik sözleşmelerinin ayrıntılı kontrolü; pencere odak/z-sırası, çoklu pencere, sürükleme-boyutlandırma ve klavye/fare yönlendirmesinin bütünleşik regresyon kapsamı; ESC ve duraklatma menüsünün manuel kabulü; tam test/kalite kapıları ve teknik dokümantasyonun kapanışı. Aşama 4 tamamlanmış değildir.
+**Değişikliklerin başlıca commitleri:** `d2bba5defc3fae95523335eb007d7d1cb0f08b91`, `d7883a9933d2e77f1763169f5313b95f53802ae5`, `8618f50b69e5b570ab6076acacf2065cb9d878b0`, `4fdfc5b9acb074e6cf06f6fcbd2b5d515669ee22`, `4b91ddd3e464bb8d21e30a2a8e3f0ef4a90f72ea`, `38ae1fcf611c1e1036c869d95d168b28e6a935e2`, `1649693ecd266e47a682302c83d5c67e76465b36`, `93a78b8677429902a61bf6ee9ed148d337f3ba68`, `2546145bcf4bb28bf4c6b2b274ad6464a558f2e3`.
+
+**Henüz tamamlanmayanlar:** Gerçek Pygame oyun penceresinde manuel kabul yapılmadı. Tüm ekranların açma/kapama/yeniden açma, birlikte kullanım, odak/z-sırası, klavye/fare yönlendirmesi, sürükleme-boyutlandırma, ESC/duraklatma ve yükleme sonrası UI davranışları kullanıcı tarafından doğrulanmalıdır. Görev veren NPC bulunmadığından gerçek görev alma/teslim etme manuel kabulü ertelenmiştir; bu aşamada NPC veya görev içeriği eklenmeyecektir. Ticaret ekranının manuel kabulü hancı NPC eklemeden tüm geliştirme aşamalarının sonundaki genel oyun kabulüne bırakılmıştır. Aşama 4 tamamlanmış değildir.
 
 ## 8. Tamamlanma tanımı
 
