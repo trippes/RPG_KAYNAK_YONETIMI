@@ -518,6 +518,22 @@ class TestPhaseDQuality(unittest.TestCase):
         self.assertTrue(window.pause_menu_open)
         self.assertEqual(window.pause_menu_selected, 1)
 
+    def test_dialogue_exposes_public_external_transition_lifecycle(self):
+        dialogue = DialogueScreen(SimpleNamespace(
+            dialogue_npc_name=lambda npc_id: f"NPC {npc_id}",
+        ))
+        dialogue.set_target_npc("npc_market")
+        dialogue.context = ("player_actor", "npc_market", "market_dialogue")
+
+        self.assertEqual(dialogue.active_npc_id, "npc_market")
+
+        dialogue.complete_external_transition()
+
+        self.assertIsNone(dialogue.active_npc_id)
+        self.assertFalse(dialogue.is_active())
+        self.assertIsNone(dialogue.context)
+        self.assertEqual(dialogue.opening_stage, "start")
+
     def test_pause_menu_actions_do_not_dispatch_to_gameplay_windows(self):
         dispatched = []
         window = object.__new__(GameWindow)
