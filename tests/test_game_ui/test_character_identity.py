@@ -165,10 +165,9 @@ class CharacterIdentityTests(unittest.TestCase):
         result = screen._finish()
 
         self.assertEqual(result, "world")
-        self.assertEqual(
-            self.service.actor_character_calls,
-            ["traveler_actor", "traveler_actor"],
-        )
+        # Character creation now reads the player through its immutable
+        # character_creation_state() service view, not actor_character().
+        self.assertEqual(self.service.actor_character_calls, [])
         self.assertEqual(
             self.service.customization_calls[0][0],
             "traveler_character",

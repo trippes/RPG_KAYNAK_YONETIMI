@@ -2944,6 +2944,10 @@ class GameplayService:
             return None
         return WorldView(world.world_id, world.name)
 
+    def validate_session(self) -> None:
+        """Validate the currently bound session through the service boundary."""
+        self._current_bundle().validate()
+
     def state(self) -> GameplaySnapshotView:
         """Return a deterministic read-only view without mutating the session."""
         bundle = self._current_bundle()

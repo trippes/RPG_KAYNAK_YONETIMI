@@ -68,7 +68,7 @@ def initialize_hex_world(service, *, content_package_path=None):
             "Multiple axial maps require an explicit world_map definition."
         )
 
-    active_world = service.application.aktif_dunya()
+    active_world = service.active_world_state()
     if active_world is None:
         raise HexWorldInitializationError(
             "An active Core world is required before Hex initialization."
@@ -135,7 +135,7 @@ def initialize_hex_world(service, *, content_package_path=None):
             service.register_gameplay_placements(catalog)
             placements_registered = True
 
-        service.application.holder.current.validate()
+        service.validate_session()
         return runtime
     except Exception:
         if placements_registered and catalog is not None:

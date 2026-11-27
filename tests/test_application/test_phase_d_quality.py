@@ -658,12 +658,11 @@ class TestPhaseDQuality(unittest.TestCase):
 
     def test_new_game_rebuilds_session_and_opens_creation_flow(self):
         old_service, _ = populate_opening_content(GameApplication.create_default())
-        old_service.application.customize_character(
-            "hero",
+        old_service.customize_player_character(
             "Eski Kahraman",
             30,
             {
-                attribute: 10
+                attribute: 12
                 for attribute, _label, _help in CharacterCreationScreen.ATTRIBUTES
             },
         )
@@ -705,7 +704,7 @@ class TestPhaseDQuality(unittest.TestCase):
         self.assertIsNone(window.selected_slot)
         self.assertEqual(window.screens["character_creation"].name, "")
         self.assertNotEqual(
-            window.service.application.holder.current.characters.get("hero").name,
+            window.service.actor_character(window.service.player_actor_id).name,
             "Eski Kahraman",
         )
         self.assertIs(
@@ -1850,21 +1849,12 @@ class TestA13PlayerIdentity(unittest.TestCase):
         actor_calls = []
         balance_calls = []
         resource_calls = []
-        current = SimpleNamespace(
-            session=SimpleNamespace(
-                worlds=SimpleNamespace(
-                    get_active=lambda: SimpleNamespace(name="Eldoria")
-                )
-            )
-        )
-
         class Service:
             player_actor_id = "actor_custom"
             player_inventory_id = "inventory_custom"
             player_account_id = "account_custom"
-            application = SimpleNamespace(
-                holder=SimpleNamespace(current=current)
-            )
+            def active_world_state(self):
+                return SimpleNamespace(name="Eldoria")
 
             def state(self):
                 return SimpleNamespace(simulation_tick=0)
