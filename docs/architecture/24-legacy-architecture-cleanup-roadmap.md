@@ -1,6 +1,6 @@
 # Eldoria — Eski Mimari Bağımlılıklarını Temizleme Roadmap'i
 
-**Durum:** Aşama 3 sürüyor — A3.1 ve A3.2 tamamlandı; A3.3 üretim sorgu sınırı CI doğrulamasında
+**Durum:** Aşama 3 sürüyor — A3.1, A3.2 ve A3.3 tamamlandı
 **Hedef dal:** `experiment/map-cleanup`  
 **Kapsam:** Eski mimariden kalan sabit kimlikler, örtük varsayımlar, yinelenen durum ve servis erişimleri, içerik paketi sözleşmeleri, arayüz entegrasyonu ve kayıt uyumluluğu.
 
@@ -249,7 +249,7 @@ Roadmap onaylandıktan sonra ilk çalışma paketi şu sırayla yürütülür:
 
 **Değişiklik sınırı:** Runtime kodu, UI dosyaları, GameApplication composition root, persistence biçimi ve mevcut oyun davranışı değiştirilmedi. Tek kod deposu değişikliği hedefli regresyon testidir; bu nedenle A3.2 bir servis read-model sözleşmesi/kalite kapısı alt işi olarak kapatılır. A3.1'de sayılan doğrudan Application/private erişimler bu alt iş sonunda hâlâ mevcuttur; kaldırıldıkları iddia edilmez. Bunların güvenli servis sorgularına taşınması A3'ün sonraki alt işidir.
 
-| 2026-11-27 | A3.3 — Üretim kataloğu ve tesis sorgu sınırı | **Kod ve hedefli test eklendi; CI doğrulaması bekleniyor** | Kapsam yalnızca production_screen.py içindeki iki doğrudan service.application sorgusudur. Tarif kataloğu GameplayService.recipes_state() ile immutable RecipeView olarak; uygun tesis çözümlemesi production_facility_for_recipe() ile immutable FacilityView olarak sunulur. Tesis uyumluluğu/otomatik seçim kuralı UI'den servise taşındı. test_production_catalog_queries_are_immutable_and_service_owned sıralama, tekrar sorgu kararlılığı, değişmezlik, uyumlu/uyumsuz tesis seçimi ve tick'in değişmemesini doğrular. Başka UI ekranları, özel servis alanları, genel application property'si ve A4 kapsamı değiştirilmedi. |
+| 2026-11-27 | A3.3 — Üretim kataloğu ve tesis sorgu sınırı | **Tamamlandı; CI başarılı** | Kapsam yalnızca production_screen.py içindeki iki doğrudan service.application sorgusudur. Tarif kataloğu GameplayService.recipes_state() ile immutable RecipeView olarak; uygun tesis çözümlemesi production_facility_for_recipe() ile immutable FacilityView olarak sunulur. Tesis uyumluluğu/otomatik seçim kuralı UI'den servise taşındı. test_production_catalog_queries_are_immutable_and_service_owned sıralama, tekrar sorgu kararlılığı, değişmezlik, uyumlu/uyumsuz tesis seçimi ve tick'in değişmemesini doğrular. Eldoria CI run `45972943220` içindeki beş işin tamamı (Python 3.11/3.12 × Ubuntu/Windows ve Pygame headless smoke) başarılı; Core Quality run `45972943211` içindeki `verify` ve `verify-windows` işleri başarılı. Her iki run `a527135ef5dfe7ac16466962a3bdcb5f9324fa0b` kod/test commit'ini doğruladı. Başka UI ekranları, özel servis alanları, genel application property'si ve A4 kapsamı değiştirilmedi. |
 
 ### 7.4. A3.3 — Üretim kataloğu ve tesis sorgu sınırı (2026-11-27)
 
@@ -263,7 +263,7 @@ Roadmap onaylandıktan sonra ilk çalışma paketi şu sırayla yürütülür:
 4. ProductionScreen artık service.application üzerinden tarif/tesis deposuna erişmez; yalnızca servis sorgularını kullanır.
 5. Üretimi başlatan mevcut start_production komutu ve ekranın görünüm/etkileşim davranışı değiştirilmez.
 
-**Test kanıtı:** test_production_catalog_queries_are_immutable_and_service_owned; tarif sıralaması, tekrarlı sorgu eşitliği, frozen view, uygun/uyumsuz tesis çözümlemesi ve sorgular arasında simulation tick'in sabit kalmasını doğrular. CI doğrulaması bu kayıt oluşturulurken beklenmektedir.
+**Test kanıtı:** test_production_catalog_queries_are_immutable_and_service_owned; tarif sıralaması, tekrarlı sorgu eşitliği, frozen view, uygun/uyumsuz tesis çözümlemesi ve sorgular arasında simulation tick'in sabit kalmasını doğrular. Eldoria CI run `45972943220` içindeki beş işin tamamı ve Core Quality run `45972943211` içindeki iki işin tamamı başarılıdır; her iki workflow da kod/test commit'i `a527135ef5dfe7ac16466962a3bdcb5f9324fa0b` üzerinde yeşildir.
 
 **Hariç tutulanlar:** Diyalog, görev günlüğü, renderer, karakter oluşturma ve ticaret ekranlarındaki Application erişimleri; servis private alanlarına erişimler; GameplayService.application property'sinin kaldırılması; A4 ekran/pencere uyumu. Bunlar bu alt aşamanın kapsamına alınmamıştır.
 
