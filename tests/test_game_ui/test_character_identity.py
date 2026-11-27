@@ -58,6 +58,14 @@ class FakePlayerService:
     def character_creation_from_dialogue(self):
         return self._creation_from_eren
 
+    def character_creation_state(self):
+        return SimpleNamespace(
+            character_id=self.player_character_id,
+            race_id=self.character.race.race_id,
+            class_id=self.character.character_class.class_id,
+            appearance=tuple(sorted(self.character.appearance.items())),
+        )
+
     def character_creation_options(self):
         return (
             (SimpleNamespace(race_id="human", name="Human"),),
