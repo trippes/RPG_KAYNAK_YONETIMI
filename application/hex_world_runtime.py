@@ -22,6 +22,7 @@ from core.domain.spatial import (
 from .hex_movement_rules import MovementRules
 from .hex_occupancy import HexOccupant, HexOccupancyRegistry
 from .hex_pathfinding import HexPathfinder
+from .construction_support import ConstructionSupportService
 
 
 @dataclass(frozen=True, slots=True)
@@ -179,6 +180,7 @@ class HexWorldRuntime:
         self._structure_placements: dict[str, HexWorldStructurePlacement] = {}
         self._structure_cells: dict[tuple[str, HexCoord], str] = {}
         self._next_structure_id = 1
+        self._construction_support = ConstructionSupportService()
 
     @property
     def world_id(self) -> WorldId | None:
@@ -215,11 +217,11 @@ class HexWorldRuntime:
         )
 
     @_runtime_state_locked
-    def construction_snapshot(self, map_id: str, *, supported_cells=()):
+    def construction_snapshot(self, map_id: str):
         """Build placement evidence from this runtime's authoritative map and occupants.
 
-        Support evidence is supplied by its future owning subsystem; this runtime
-        deliberately does not infer structural support from terrain walkability.
+        Foundation support is derived from explicit terrain capabilities in the
+        map definition. Walkability and blocked flags are not support evidence.
         """
         from application.construction_placement import ConstructionPlacementSnapshot
 
