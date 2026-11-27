@@ -8,9 +8,9 @@
       "name": "Köy Sandığı",
       "empty_weight_kg": 2,
       "outer_volume_liters": 18,
-      "max_contents_weight_kg": 25,
+      "max_contents_weight_kg": 50,
       "max_slots": 12,
-      "max_contents_volume_liters": 16,
+      "max_contents_volume_liters": 60,
       "nesting_enabled": true,
       "max_nesting_depth": 1,
       "container_tags": [
@@ -21,6 +21,18 @@
         {
           "item_id": "old_copper_ring",
           "quantity": 1
+        },
+        {
+          "item_id": "wooden_plank",
+          "quantity": 22
+        },
+        {
+          "item_id": "nail",
+          "quantity": 22
+        },
+        {
+          "item_id": "hinge",
+          "quantity": 2
         }
       ]
     }
