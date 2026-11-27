@@ -144,6 +144,23 @@ class QuestWindowManagerTests(unittest.TestCase):
         self.assertTrue(source.cancelled)
         self.assertEqual(manager.focused_id, "container")
 
+    def test_closing_window_releases_its_pointer_capture(self):
+        source = DragSourceScreen()
+        manager = WindowManager(self.backend, 960, 640)
+        manager.register("inventory", source, (24, 110, 240, 300))
+        manager.open("inventory")
+
+        manager.handle_input(InputState(
+            mouse_pos=(100, 170), mouse_clicked=True, mouse_button_down=True,
+        ))
+        self.assertTrue(source.pointer_capture)
+
+        manager.close("inventory")
+
+        self.assertFalse(source.pointer_capture)
+        self.assertTrue(source.cancelled)
+        self.assertEqual(manager.open_ids, ())
+
     def test_j_shortcut_opens_and_closes_quest_window(self):
         self.assertTrue(
             self.manager.handle_input(InputState(actions={"quest_log"}))
