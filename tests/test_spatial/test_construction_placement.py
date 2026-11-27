@@ -102,6 +102,44 @@ class ConstructionPlacementTests(unittest.TestCase):
         second = ConstructionPlacementValidator.validate(req, snapshot())
         self.assertEqual(first, second)
 
+
+    def test_commit_revalidates_and_uses_atomic_revision_guard(self):
+        class AtomicPort:
+            def __init__(self, current_revision):
+                self.current_revision = current_revision
+                self.committed = False
+
+            def commit_if_revision(self, expected_revision, placement_request, result):
+                if self.current_revision != expected_revision:
+                    return False
+                self.committed = True
+                self.current_revision += 1
+                return True
+
+        current = snapshot(revision=8)
+        port = AtomicPort(8)
+        service = ConstructionPlacementService(lambda: current, port)
+        preview = service.preview(request())
+        self.assertTrue(preview.valid)
+        committed = service.try_commit(request())
+        self.assertTrue(committed.valid)
+        self.assertTrue(port.committed)
+
+    def test_commit_port_rejects_stale_revision_without_mutation(self):
+        class StalePort:
+            def __init__(self):
+                self.committed = False
+
+            def commit_if_revision(self, expected_revision, placement_request, result):
+                return False
+
+        port = StalePort()
+        service = ConstructionPlacementService(lambda: snapshot(revision=8), port)
+        result = service.try_commit(request())
+        self.assertFalse(result.valid)
+        self.assertIn(PlacementFailureReason.STALE_STATE, result.reasons)
+        self.assertFalse(port.committed)
+
     def test_stale_preview_is_rejected_and_current_revision_is_preserved(self):
         result = ConstructionPlacementValidator.validate(request(), snapshot())
         self.assertTrue(check_placement_revision(result, 4).valid)
