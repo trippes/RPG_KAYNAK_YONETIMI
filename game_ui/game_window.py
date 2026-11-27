@@ -625,6 +625,7 @@ class GameWindow:
 
     def _handle_pause_menu(self, state):
         if state.pressed("back"):
+            self._close_pause_menu()
             return
         if state.pressed("up"):
             self.pause_menu_selected = (self.pause_menu_selected - 1) % len(PAUSE_MENU_OPTIONS)
