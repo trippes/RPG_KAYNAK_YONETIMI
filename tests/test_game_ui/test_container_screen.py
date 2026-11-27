@@ -64,6 +64,17 @@ class ContainerScreenTests(unittest.TestCase):
         self.screen = ContainerScreen(self.service)
         self.screen.set_container("chest_01")
 
+    def test_container_change_and_close_release_item_drag(self):
+        self.screen._drag_item_id = "apple"
+        self.assertTrue(self.screen.pointer_capture)
+
+        self.screen.set_container("chest_02")
+
+        self.assertFalse(self.screen.pointer_capture)
+        self.screen._drag_item_id = "potion"
+        self.screen.cancel_drag()
+        self.assertFalse(self.screen.pointer_capture)
+
     def test_external_inventory_drop_transfers_stack_into_container(self):
         self.assertTrue(self.screen.receive_external_item("health_potion", 3))
         self.assertEqual(
