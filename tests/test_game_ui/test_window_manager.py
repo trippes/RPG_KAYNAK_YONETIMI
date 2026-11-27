@@ -204,6 +204,23 @@ class QuestWindowManagerTests(unittest.TestCase):
         )
         self.assertEqual(screen.viewport_calls[-1], (500, 268))
 
+    def test_display_resize_cancels_active_window_interactions(self):
+        source = DragSourceScreen()
+        manager = WindowManager(self.backend, 960, 640)
+        manager.register("inventory", source, (24, 110, 240, 300))
+        manager.open("inventory")
+        manager.handle_input(InputState(
+            mouse_pos=(100, 170), mouse_clicked=True, mouse_button_down=True,
+        ))
+        self.assertTrue(source.pointer_capture)
+
+        manager.set_viewport(800, 600)
+
+        self.assertFalse(source.pointer_capture)
+        self.assertTrue(source.cancelled)
+        self.assertFalse(manager.windows["inventory"].dragging)
+        self.assertFalse(manager.windows["inventory"].resizing)
+
     def test_j_shortcut_opens_and_closes_quest_window(self):
         self.assertTrue(
             self.manager.handle_input(InputState(actions={"quest_log"}))
