@@ -49,10 +49,10 @@ WindowManager ve GameWindow birlikte ele alınacak.
 ### 2.3. Klavye, fare ve menü sözleşmesi
 
 **ESC davranışı — kesin karar:**
-- ESC tuşuna her basıldığında duraklatma menüsü açılır.
-- Açık envanter, karakter, görev günlüğü veya başka bir oyun paneli ESC nedeniyle önce kapatılmaz. ESC'nin görevi duraklatma menüsünü açmaktır.
+- ESC tuşuna basıldığında duraklatma menüsü açılır.
+- Açık envanter, karakter, görev günlüğü veya başka bir oyun paneli ESC nedeniyle önce kapatılmaz.
 - Bu kural, açık panel bulunup bulunmamasından bağımsızdır.
-- Duraklatma menüsü zaten açıkken ESC'ye tekrar basılması menüyü kapatmaz, oyunu devam ettirmez ve seçili menü öğesini değiştirmez.
+- Duraklatma menüsü açıkken ESC'ye tekrar basıldığında menü kapanır ve oyun devam eder; açık oyun panelleri korunur.
 - Pencere kapatma, ilgili pencerenin kendi kapatma düğmesi/kontrolüyle yapılır; ESC genel pencere kapatma kısayolu değildir.
 
 Diğer girdi kuralları:
@@ -125,7 +125,7 @@ Manuel kabul gerçek Pygame oyun penceresinde, kullanıcının mevcut oyun kayd�
 
 - Hiçbir oyun penceresi açık değilken ESC'ye bas; duraklatma menüsü açılmalı.
 - Envanter veya karakter gibi bir pencere açıkken ESC'ye bas; pencere kapanmadan duraklatma menüsü açılmalı.
-- Duraklatma menüsü açıkken seçimi başka bir öğeye taşı ve ESC'ye tekrar bas; menü açık ve seçim aynı kalmalı.
+- Duraklatma menüsü açıkken seçimi başka bir öğeye taşı ve ESC'ye tekrar bas; menü kapanmalı, oyun panelleri açık kalmalı.
 - Devam et seçeneğini kullan; oyun ve açık pencereler beklenen durumla devam etmeli.
 - Kaydet ve ana menüye dön seçeneklerini mevcut kayıtla doğrula.
 
@@ -156,7 +156,7 @@ Aşama 4 ancak aşağıdaki koşullar birlikte sağlandığında tamamlanır:
 
 1. Kapsamdaki ekranlar merkezi oyuncu kimliği ve GameplayService public API sözleşmelerine uygundur.
 2. Pencere açma-kapama, yeniden açma, odak, z-sırası ve fare yönlendirmesi tutarlıdır.
-3. ESC her durumda duraklatma menüsünü açar; açık panelleri kapatma davranışına dönüşmez.
+3. ESC duraklatma menüsünü açıp kapatır; kapatma sırasında açık oyun panelleri korunur.
 4. Hedefli regresyon testleri, tam test paketi ve kalite kapıları başarılıdır.
 5. Gerçek oyun penceresindeki manuel kabul akışları kullanıcı tarafından doğrulanmıştır.
 6. Ertelenmiş görev ve ticaret kabul maddeleri tamamlanmış gibi gösterilmez.
