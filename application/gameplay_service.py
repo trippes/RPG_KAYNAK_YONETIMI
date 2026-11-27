@@ -158,6 +158,50 @@ class RecipeView:
 
 
 @dataclass(frozen=True)
+class QuestObjectiveView:
+    objective_id: str
+    description: str
+    completed: bool
+    optional: bool
+    progress: int
+    required: int
+
+
+@dataclass(frozen=True)
+class QuestRewardView:
+    experience: int
+    currency: int
+    items: tuple[tuple[str, int], ...]
+    reputation: tuple[tuple[str, int], ...]
+
+
+@dataclass(frozen=True)
+class QuestBranchView:
+    group: str
+    options: tuple[tuple[str, str], ...]
+    selected_quest_id: str | None
+
+
+@dataclass(frozen=True)
+class QuestView:
+    quest_id: str
+    title: str
+    state: str
+    giver_name: str | None
+    objectives: tuple[QuestObjectiveView, ...]
+    reward: QuestRewardView
+    branches: tuple[QuestBranchView, ...]
+
+
+@dataclass(frozen=True)
+class DialogueSessionView:
+    actor_id: str
+    npc_id: str
+    npc_name: str
+    dialogue_id: str
+
+
+@dataclass(frozen=True)
 class JobView:
     job_id: str
     recipe_id: str
@@ -2060,6 +2104,148 @@ class GameplayService:
             source_id, target_id, value=value, trust=trust
         )
 
+    def dialogue_npc_name(self, npc_id: str | None) -> str | None:
+        """Return an NPC display name without exposing the active session bundle."""
+        if not npc_id:
+            return None
+        npc = self._current_bundle().social.npcs.get(npc_id)
+        return npc.name if npc is not None else None
+
+    def dialogue_session_for_npc(self, target_npc_id: str | None) -> DialogueSessionView:
+        """Resolve the player, NPC and content-owned dialogue for a new conversation."""
+        bundle = self._current_bundle()
+        actors = bundle.actors.actors()
+        if not actors:
+            raise GameplayServiceError("Etkin dünyada oyuncu aktörü bulunamadı.")
+        actor = next(
+            (item for item in actors if item.actor_id == self.player_actor_id),
+            None,
+        )
+        if actor is None:
+            raise GameplayServiceError("Oyuncu aktörü etkin dünyada bulunamadı.")
+        npcs = bundle.social.npcs.all()
+        dialogues = tuple(sorted(bundle.social.dialogues))
+        if not npcs or not dialogues:
+            raise GameplayServiceError("Konuşulacak NPC veya diyalog bulunamadı.")
+        npc = next(
+            (item for item in npcs if item.npc_id == target_npc_id),
+            next(
+                (item for item in npcs if item.npc_id == "warden_lyra"),
+                npcs[0],
+            ),
+        )
+        preferred_dialogues = {
+            "village_carpenter": "carpenter_dialogue",
+            "caravan_merchant": "caravan_merchant_dialogue",
+        }
+        preferred = preferred_dialogues.get(npc.npc_id)
+        dialogue_id = (
+            preferred
+            if preferred in bundle.social.dialogues
+            else next(
+                (
+                    item_id for item_id in dialogues
+                    if npc.npc_id in bundle.social.dialogues[item_id].speakers
+                ),
+                dialogues[0],
+            )
+        )
+        return DialogueSessionView(
+            actor.actor_id, npc.npc_id, npc.name, dialogue_id,
+        )
+
+    @staticmethod
+    def _quest_state_value(quest) -> str | None:
+        try:
+            return getattr(getattr(quest, "state", None), "value", None)
+        except (AttributeError, TypeError, ValueError, RuntimeError):
+            return None
+
+    @staticmethod
+    def _quest_objective_is_completed(quest, objective_id: str) -> bool:
+        try:
+            return any(
+                objective.objective_id == objective_id and objective.completed
+                for objective in (getattr(quest, "objectives", ()) or ())
+            )
+        except (AttributeError, TypeError, ValueError, RuntimeError):
+            return False
+
+    def dialogue_choices(
+        self, actor_id: str, npc_id: str, dialogue_id: str, node_id: str,
+    ):
+        """Return only currently valid choices, including legacy quest hand-off rules."""
+        bundle = self._current_bundle()
+        dialogue = bundle.social.dialogues.get(dialogue_id)
+        if dialogue is None:
+            return ()
+        choices = dialogue.available_choices(
+            node_id, self._dialogue_context(actor_id, npc_id),
+        )
+        if npc_id == "caravan_merchant":
+            quest = getattr(self, "caravan_quest", None)
+            if self._quest_state_value(quest) == "completed":
+                return tuple(item for item in choices if item.choice_id == "caravan_report")
+            choices = tuple(item for item in choices if item.choice_id != "caravan_report")
+        if npc_id == "village_blacksmith":
+            quest = getattr(self, "blacksmith_quest", None)
+            state = self._quest_state_value(quest)
+            inventory = self.inventory(self.player_inventory_id)
+            ore_amount = next(
+                (amount for resource, amount, _unit in inventory.stocks
+                 if str(resource) == "iron_ore"),
+                0,
+            )
+            return tuple(
+                choice for choice in choices
+                if not (
+                    choice.choice_id == "accept_blacksmith_quest"
+                    and state != "available"
+                )
+                and not (
+                    choice.choice_id == "deliver_blacksmith_ore"
+                    and (
+                        state != "active"
+                        or not self._quest_objective_is_completed(quest, "collect_iron_ore")
+                        or ore_amount < 3
+                    )
+                )
+            )
+        if npc_id != "village_carpenter":
+            return choices
+        quest = getattr(self, "carpenter_quest", None)
+        inn_quest = getattr(self, "inn_quest", None)
+        state = self._quest_state_value(quest)
+        inn_state = self._quest_state_value(inn_quest)
+        inventory = self.inventory(self.player_inventory_id)
+        amounts = {
+            str(resource): amount for resource, amount, _unit in inventory.stocks
+        }
+        visible = []
+        for choice in choices:
+            if choice.choice_id in {"accept_carpenter_quest", "decline_carpenter_quest"} and state != "available":
+                continue
+            if choice.choice_id == "deliver_carpenter_wood" and (
+                state != "active"
+                or not self._quest_objective_is_completed(quest, "collect_wood")
+                or amounts.get("wood", 0) < 3
+            ):
+                continue
+            if choice.choice_id == "accept_inn_quest" and (
+                state != "completed" or inn_state != "available"
+            ):
+                continue
+            if choice.choice_id == "deliver_inn_supplies" and (
+                inn_state != "active"
+                or amounts.get("bread", 0) < 1
+                or amounts.get("water", 0) < 1
+                or not self._quest_objective_is_completed(inn_quest, "buy_bread")
+                or not self._quest_objective_is_completed(inn_quest, "buy_water")
+            ):
+                continue
+            visible.append(choice)
+        return tuple(visible)
+
     def register_dialogue(self, dialogue: Dialogue) -> Dialogue:
         return self._current_bundle().social.add_dialogue(dialogue)
     def register_dialogue_action(
@@ -2253,6 +2439,85 @@ class GameplayService:
             quest,
             owner_id=owner_id,
             reward_inventory_id=inventory_id,
+        )
+
+    def quest_log_state(self, category: str) -> tuple[QuestView, ...]:
+        """Return detached immutable quest-journal entries for one status category."""
+        categories = {
+            "active": "active",
+            "completed": "completed",
+            "failed": "failed",
+        }
+        if category not in categories:
+            raise ValueError(f"Unsupported quest category: {category}")
+        bundle = self._current_bundle()
+        log = bundle.quest_log
+        graph = getattr(bundle, "quest_graph", None)
+        progress = getattr(bundle, "quest_graph_progress", None)
+        result = []
+        for quest in getattr(log, categories[category])():
+            giver = (
+                bundle.social.npcs.get(quest.giver_npc_id)
+                if quest.giver_npc_id else None
+            )
+            objectives = tuple(
+                QuestObjectiveView(
+                    objective.objective_id,
+                    objective.description,
+                    bool(objective.completed),
+                    bool(objective.optional),
+                    int(objective.progress),
+                    int(objective.required),
+                )
+                for objective in quest.objectives
+            )
+            reward = quest.reward
+            branches = []
+            if (
+                quest.state.value == "completed"
+                and graph is not None
+                and progress is not None
+                and quest.quest_id in graph.quest_ids()
+            ):
+                grouped = {}
+                for link in graph.outgoing(quest.quest_id):
+                    if getattr(link.link_type, "value", link.link_type) == "alternative":
+                        grouped.setdefault(link.branch_group, set()).add(link.target_quest_id)
+                for group, target_ids in sorted(grouped.items()):
+                    targets = tuple(sorted(target_ids))
+                    if len(targets) < 2:
+                        continue
+                    options = tuple(
+                        (
+                            target_id,
+                            (log.get(target_id).title if log.get(target_id) is not None else target_id),
+                        )
+                        for target_id in targets
+                    )
+                    branches.append(QuestBranchView(
+                        group, options, progress.selected_branch(quest.quest_id, group),
+                    ))
+            result.append(QuestView(
+                quest.quest_id,
+                quest.title,
+                quest.state.value,
+                getattr(giver, "name", None) or (
+                    "Bilinmeyen görev veren" if quest.giver_npc_id else None
+                ),
+                objectives,
+                QuestRewardView(
+                    reward.experience, reward.currency,
+                    tuple(reward.items), tuple(reward.reputation),
+                ),
+                tuple(branches),
+            ))
+        return tuple(result)
+
+    def quest_log_counts(self) -> tuple[int, int, int]:
+        """Return active, completed and failed quest counts."""
+        return tuple(
+            len(self.quest_log_state(category))
+            for category in ("active", "completed", "failed")
         )
 
     def quest_states(self) -> dict[str, str]:
