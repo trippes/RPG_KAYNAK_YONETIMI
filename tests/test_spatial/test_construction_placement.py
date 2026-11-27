@@ -7,6 +7,7 @@ from core.domain.spatial.placement import (
     ConstructionPlacementRequest,
     ConstructionPlacementSnapshot,
     ConstructionPlacementValidator,
+    ConstructionPlacementService,
     PlacementFailureReason,
     check_placement_revision,
 )
