@@ -1056,16 +1056,16 @@ class GameplayService:
                 if boundary is None or boundary > target
                 else boundary
             )
-            if next_tick < current:
-                next_tick = current
-            emitted.extend(self.advance_to(next_tick))
-            if next_tick == current:
-                # A zero-duration/overdue activity must not trap the driver.
+            if next_tick <= current:
+                # Process zero-duration/overdue work at the current boundary.
+                emitted.extend(self.advance_to(current))
+                manager.advance_to(current)
                 if manager.has_running_activities:
                     raise GameplayServiceError(
                         "A running activity has no future completion progress."
                     )
                 break
+            emitted.extend(self.advance_to(next_tick))
             if next_tick == target or not manager.has_running_activities:
                 break
         return tuple(emitted)
