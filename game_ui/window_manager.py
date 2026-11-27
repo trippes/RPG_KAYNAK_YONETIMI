@@ -57,7 +57,12 @@ class WindowManager:
         """Update display bounds and keep registered windows inside the viewport."""
         self.width = max(1, int(width))
         self.height = max(1, int(height))
+        self._drag_origin = None
         for window in self.windows.values():
+            window.dragging = False
+            window.resizing = False
+            window.resize_edges = ()
+            self._release_pointer_capture(window)
             window.bounds.width = min(window.bounds.width, self.width)
             window.bounds.height = min(window.bounds.height, self.height)
             window.bounds.topleft = (
