@@ -401,3 +401,24 @@ Ayrıca `dialogue_screen.py` ve `character_creation.py`, servis private alanlar�
 - Mevcut architecture testleri Core/domain sınırlarını koruyor; game_ui katmanının `GameplayService.application` veya private servis alanlarına erişmesini engelleyen özel bir mimari koruma testi envanterde bulunmadı.
 
 **A3.1 çıktısı ve karar:** Servis sorumlulukları, API yüzeyi, UI tüketicileri, doğrudan erişimlerin sayısı/amacı ve read-model boşlukları belgelenmiştir. Önceki nottaki 7 dosyada 21 `service.application` erişimi ifadesi güncel kaynakta doğrulanmadığı için kaldırılmış; güncel sayım 7 bilinen UI tüketicisinde 6 dosyada 17 erişim olarak düzeltilmiştir. A3.1 tamamlandı. Bu aşamada hiçbir UI erişimi taşınmadı, yeni read model eklenmedi, mimari test veya runtime kodu değiştirilmedi. Bunlar A3.2 ve devamındaki ayrı, sınırlandırılmış işlerin konusu olarak bırakıldı.
+
+
+### 7.8. Aşama 4 — bütünleşik ekran/pencere denetimi ve manuel kabul hazırlığı (2026-11-27)
+
+**İnceleme sınırı:** Yalnızca `experiment/map-cleanup` dalındaki mevcut A4 uygulaması incelendi. `game_ui/screens/` altındaki karakter oluşturma, karakter, savaş, konteyner, para değişimi, diyalog, envanter, ana menü, ana oyun, pazar, açılış, üretim, görev günlüğü, kayıt yuvaları ve ticaret ekranları; ayrıca `game_ui/game_window.py`, `game_ui/window_manager.py` ve ilgili UI/regresyon testleri gözden geçirildi. Bu denetim sırasında runtime koduna müdahale edilmedi.
+
+**Bütünleşik davranış bulguları:**
+
+1. GameWindow, ESC girdisini pencere yöneticisine göndermeden önce ele alıyor. Oyun aktifken ESC duraklatma menüsünü açıyor; menü açıkken tekrar ESC geldiğinde menü işleyicisi çalışıyor ve oyun devam ettirilmiyor. Önceki uygulama/test sözleşmesi seçimin korunmasını da kapsıyor.
+2. WindowManager açık pencereleri z-sırasıyla çiziyor; fare tıklamasını en üstteki pencereye, klavye/metin girdisini odaktaki pencereye iletiyor. Odak değişiminde önceki ekranın pointer capture/sürükleme durumu bırakılıyor.
+3. Pencere kapatma, kapanan ekranın sürükleme durumunu iptal ediyor. Görüntü alanı değişiminde aktif sürükleme/boyutlandırma işlemleri iptal ediliyor ve responsive ekranların viewport ölçüleri yenileniyor.
+4. Envanterden konteynere bırakma, sürükleme kaynağını takip ediyor; hedef pencere uygunsa eşya aktarımı yapılıyor ve kaynak sürüklemesi temizleniyor. Hedef uygun değilse kaynak ekranın normal bırakma davranışı korunuyor.
+5. Pazar ekranının para değişimi sonucu ayrı `currency_exchange` penceresini açıyor; pazar penceresini otomatik kapatmıyor. Savaş ekranının `world` dönüş sonucu ise yalnızca ilgili savaş penceresini kapatıyor.
+6. NPC diyalogundan pazar/ticaret geçişi DialogueScreen'in public NPC kimliği ve geçiş API'lerini kullanıyor. Başarılı kayıt yüklemesi ve yeni oyun başlangıcı ekran nesnelerini yeniden kurup WindowManager kayıtlarını güncelliyor.
+7. Ekran modüllerinde A3.5 sonrasında doğrudan GameplayService Application/private alan kaçışı tespit edilmedi. Mevcut testler çoklu pencere, odak, z-sırası, pencere kapatma, pointer capture, sürükle-bırak, responsive hitbox, ESC, kayıt yükleme ve ekran yeniden bağlama davranışlarının önemli bölümünü kapsıyor.
+
+**Denetim sonucu:** İncelenen kaynaklarda bu denetim kapsamında ek bir runtime kusuru doğrulanmadı; bu nedenle sırf değişiklik üretmek için kod değişikliği yapılmadı. Bu sonuç gerçek oyun penceresinde tüm davranışların manuel olarak geçtiği anlamına gelmez. Gerçek fare/klavye, pencere yeniden boyutlandırma, tam ekran ve kayıt yükleme etkileşimleri kullanıcı tarafından doğrulanmalıdır.
+
+**Manuel kabul hazırlığı:** `docs/architecture/85-stage-4-ui-architecture-plan.md` güncellendi. Belge başındaki eski “uygulama henüz başlamadı” ifadesi düzeltildi; ESC tekrar basımının menüyü kapatmaması ve seçimi koruması açık sözleşme hâline getirildi. Manuel kabul; ekran/odak, pazar-para değişimi, üretim/tesis, konteyner sürükle-bırak, diyalog/görev/savaş, ESC/duraklatma ve ekran boyutu/kayıt yükleme akışlarına ayrıldı. Her kontrol Geçti / Başarısız / Uygulanamadı olarak kaydedilecek.
+
+**Açık kalan kabul:** Gerçek Pygame penceresinde kullanıcı manuel kabulü henüz yapılmadı. Görev veren NPC bulunmadığından görev alma/teslim etme ertelidir. Ticaret ekranının gerçek oyun içi manuel kabulü, hancı/NPC eklemeden genel oyun kabulüne bırakılmıştır. Aşama 4 açıktır; alt aşama oluşturulmamıştır.
