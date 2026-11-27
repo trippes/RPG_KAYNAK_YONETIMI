@@ -36,8 +36,12 @@ class SimulationTimeDriverTests(unittest.TestCase):
         self.assertEqual(driver.advance(0.025), 1)
         self.assertEqual(driver.advance(1.0), 20)
 
-    def test_zero_elapsed_time_does_not_advance(self):
-        self.assertEqual(SimulationTimeDriver().advance(0.0), 0)
+    def test_zero_elapsed_time_does_not_advance_or_discard_fraction(self):
+        driver = SimulationTimeDriver(ticks_per_real_second=10)
+        self.assertEqual(driver.advance(0.05), 0)
+        self.assertEqual(driver.advance(0.0), 0)
+        self.assertAlmostEqual(driver.fractional_ticks, 0.5)
+        self.assertEqual(driver.advance(0.05), 1)
 
     def test_invalid_rate_is_rejected(self):
         for value in (0, -1):
