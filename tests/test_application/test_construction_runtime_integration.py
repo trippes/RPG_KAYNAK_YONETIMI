@@ -11,6 +11,7 @@ from core.domain.spatial import (
     ConstructionPosition,
     EntityPosition,
     HexCoord,
+    HexDirection,
     LocalHexPosition,
     WorldPoint,
     axial_to_world_point,
@@ -90,9 +91,7 @@ class TestConstructionRuntimeIntegration(unittest.TestCase):
         snapshot, result = self.preview()
         self.assertTrue(result.valid)
 
-        moved = self.runtime.move("player", __import__(
-            "core.domain.spatial", fromlist=["HexDirection"]
-        ).HexDirection.EAST)
+        moved = self.runtime.move("player", HexDirection.EAST)
         self.assertTrue(moved.success)
         self.assertGreater(self.runtime.state_revision, snapshot.state_revision)
 
