@@ -75,6 +75,10 @@ class ActivityView:
     job_id: str | None
     reason: str | None
     quantity: Quantity | None = None
+    duration_ticks: int = 0
+    elapsed_ticks: int = 0
+    remaining_ticks: int = 0
+    progress: float = 0.0
 
 
 class WorldActor:
@@ -332,14 +336,30 @@ class ActorActivity:
         self.reason = _text(reason, "reason")
         self.state = ActivityState.CANCELLED
 
-    def view(self) -> ActivityView:
+    def view(self, current_tick: Tick | None = None) -> ActivityView:
+        duration = (
+            max(0, self.end_tick.value - self.start_tick.value)
+            if self.end_tick is not None else 0
+        )
+        if self.state == ActivityState.COMPLETED:
+            elapsed = duration
+        elif self.state == ActivityState.RUNNING and current_tick is not None:
+            elapsed = min(duration, max(0, current_tick.value - self.start_tick.value))
+        elif self.end_tick is not None and self.state == ActivityState.CANCELLED:
+            elapsed = min(duration, max(0, self.end_tick.value - self.start_tick.value))
+        else:
+            elapsed = 0
+        remaining = max(0, duration - elapsed)
+        progress = (elapsed / duration) if duration > 0 else (
+            1.0 if self.state == ActivityState.COMPLETED else 0.0
+        )
         return ActivityView(
             self.activity_id, self.actor_id, self.activity_type, self.state.value,
             self.start_tick.value,
             None if self.end_tick is None else self.end_tick.value,
             self.target_id, self.inventory_id, self.facility_id,
             self.job_id, self.reason,
-            self.quantity,
+            self.quantity, duration, elapsed, remaining, progress,
         )
 
 
@@ -385,12 +405,22 @@ class ActorActivityManager:
     def count(self) -> int:
         return len(self._activities)
 
+    @property
+    def has_running_activities(self) -> bool:
+        return any(
+            activity.state == ActivityState.RUNNING
+            for activity in self._activities.values()
+        )
+
     def get(self, activity_id: str) -> ActivityView | None:
         activity = self._activities.get(activity_id)
-        return None if activity is None else activity.view()
+        return None if activity is None else activity.view(self.runtime.current_tick)
 
     def activities(self) -> tuple[ActivityView, ...]:
-        return tuple(self._activities[key].view() for key in sorted(self._activities))
+        now = self.runtime.current_tick
+        return tuple(
+            self._activities[key].view(now) for key in sorted(self._activities)
+        )
 
     def start_gathering(self, activity_id, actor_id, node_id, inventory_id, quantity, gameplay_service):
         activity = self._create(
@@ -446,6 +476,7 @@ class ActorActivityManager:
         if activity.job_id is not None:
             self._jobs.cancel(activity.job_id, reason)
         activity.cancel(reason)
+        activity.end_tick = self.runtime.current_tick
         actor.clear_activity(activity.activity_id)
         return activity.view()
 
@@ -468,6 +499,7 @@ class ActorActivityManager:
             activity.complete(event.simulation_tick)
             actor.clear_activity(activity.activity_id)
         elif event.event_type == CanonicalEventType.ACTION_CANCELLED:
+            activity.end_tick = event.simulation_tick
             activity.cancel("production job cancelled")
             actor.clear_activity(activity.activity_id)
         elif event.event_type == CanonicalEventType.ACTION_FAILED:
@@ -545,7 +577,7 @@ class ActorActivityManager:
                 activity.gameplay_service.collect(
                     activity.target_id, activity.inventory_id, activity.quantity,
                 )
-                activity.complete(target)
+                activity.complete(activity.end_tick)
             except Exception as error:
                 activity.fail(str(error))
             finally:
