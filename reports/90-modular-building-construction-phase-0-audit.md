@@ -1,7 +1,7 @@
 # Eldoria — Modüler Yapı ve İnşa Sistemi
 ## Aşama 0: Mevcut Mimari Envanteri ve Sınır Doğrulaması
 
-- **Durum:** İnceleme raporu
+- **Durum:** Kullanıcı tarafından kabul edildi; Aşama 0 kapatıldı
 - **Hedef dal:** `experiment/map-cleanup`
 - **Kapsam referansı:** `docs/architecture/90-modular-building-construction-system-roadmap.md`
 - **İnceleme türü:** Salt okunur kaynak kodu ve test envanteri
@@ -230,7 +230,9 @@ Bu CI kayıtları ilgili commit'in doğrulamasıdır; bu raporun eklenmesinden s
 | İlgili test dosyalarının belirlenmesi | Belirlendi |
 | Gelecekteki entegrasyon noktalarının kaydedilmesi | Kaydedildi |
 | Mevcut gameplay davranışının değiştirilmemesi | Bu çalışma kapsamında kod değişikliği yapılmadı |
-| Aşama 1'e geçiş | Kullanıcı kabulü olmadan yapılmaz |
+| Aşama 0 raporunun kullanıcı tarafından kabulü | 27.11.2026 tarihinde kabul edildi |
+| Aşama 0'ın resmî kapanışı | Tamamlandı |
+| Aşama 1'e geçiş | Ayrı ve açık kullanıcı talimatı bekleniyor |
 
 ## 7. Kapsam ve değişiklik kaydı
 
@@ -238,4 +240,4 @@ Bu rapor dışında hiçbir kaynak kod, test, içerik dosyası, yapılandırma v
 
 Bu belge yalnızca `docs/architecture/90-modular-building-construction-system-roadmap.md` yol haritasının Aşama 0 çalışmasını kayıt altına alır. Yol haritasının kapsamı genişletilmemiştir. Çalışma yalnızca `experiment/map-cleanup` dalına aittir.
 
-**Aşama 0'ın resmî kapanışı ve Aşama 1'e geçiş, raporun kullanıcı tarafından incelenip kabul edilmesine bağlıdır.**
+**Kapanış kaydı (27.11.2026):** Kullanıcı raporu incelediğini ve kabul ettiğini açıkça bildirmiştir. Bu onayla Aşama 0 resmen kapatılmıştır. Aşama 1 otomatik olarak başlatılmamıştır; yalnızca kullanıcının ayrı ve açık talimatıyla başlayacaktır.
