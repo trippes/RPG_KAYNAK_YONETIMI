@@ -88,6 +88,9 @@ class WindowManager:
         window.dragging = False
         window.resizing = False
         window.resize_edges = ()
+        cancel_drag = getattr(window.screen, "cancel_drag", None)
+        if callable(cancel_drag):
+            cancel_drag()
         if self.focused_id == window_id:
             self.focused_id = next(reversed(self.open_ids), None)
 
