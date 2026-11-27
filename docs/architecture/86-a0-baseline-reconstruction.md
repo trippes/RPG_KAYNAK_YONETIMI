@@ -130,12 +130,15 @@ Aşağıdaki satır incelemeleri doğrudan `f9e4914e` commit'indeki Git blob'lar
 | UI / sıra varsayımı | `game_ui/screens/character_screen.py:153` | `snapshot.actors[0]` | İlk aktörün oyuncu olduğu varsayılıyor. |
 | UI / sıra varsayımı | `game_ui/screens/container_screen.py:68` | `actors[0]` | Konteyner etkileşiminde ilk aktör seçiliyor. |
 | UI / servis sınırı | `game_ui/screens/dialogue_screen.py:57,96,144,227,347,524,545,571` | `service.application.holder.current` | Diyalog ekranı servis arkasındaki Application/SessionBundle verisine doğrudan erişiyor. |
-| UI / kimlik ve sıra | `game_ui/screens/dialogue_screen.py:159,184,238-239,348,454,467,480,493` | `player` / `hero` sabitleri ve ilk aktöre geri dönüş | Envanter, görev ve diyalog akışlarında oyuncu kimliği sabit; aktör seçimi ilk elemana düşebiliyor. |
+| UI / kimlik ve sıra | `game_ui/screens/dialogue_screen.py:159,184,238-239,245,348,454,467,480,493` | `player` / `hero` sabitleri ve ilk aktöre geri dönüş | Envanter, görev ve diyalog akışlarında oyuncu kimliği sabit; aktör seçimi ilk elemana düşebiliyor. |
 | UI / kimlik | `game_ui/screens/inventory_screen.py:22,219,234,242-243,390` | Varsayılan `inventory_id="player"`; `hero` ile eşya/istatistik işlemleri | Envanter kimliği ile aktör kimliği sabit varsayımlara bağlı. |
 | UI / kimlik | `game_ui/screens/market_screen.py:36,119` | Satın alma ve cüzdan için `hero` / `player` | Pazar işlemleri sabit oyuncu kimliğine bağlı. |
 | UI / servis sınırı | `game_ui/screens/production_screen.py:12,39,46` | `inventory_id="player"` ve doğrudan `service.application.holder.current` | Üretim ekranı hem sabit envanter kimliği hem Application erişimi kullanıyor. |
 | UI / kimlik | `game_ui/screens/currency_exchange_screen.py:75,107` | Bakiye ve döviz işlemlerinde `hero` | Döviz ekranı sabit oyuncu kimliğine bağlı. |
 | UI / servis sınırı | `game_ui/renderer.py:563,634,654` | HUD/quest/map çiziminde `service.application.holder.current` | Renderer UI dışı oturum verisini servis sınırı arkasından doğrudan okuyor. |
+| UI / servis sınırı | `game_ui/screens/combat_screen.py:8,17,33,39` | `service.application.holder.current.combat` | Savaş ekranı doğrudan Application oturumundaki savaş durumunu okuyor. |
+| UI / servis sınırı | `game_ui/screens/quest_log_screen.py:251,366,423` | `service.application.holder.current` | Görev günlüğü ekranı quest log ve NPC verisini doğrudan okuyor. |
+| UI / servis sınırı | `game_ui/screens/trade_screen.py:71` | `service.application.holder.current` | Ticaret ekranı partner/oturum verisine servis sınırını aşarak erişiyor. |
 | UI / sıra varsayımı | `game_ui/renderer.py:657` | `actors[0].world_id` | Harita seçimi ilk aktörün dünyasına bağlanmış. |
 | UI / varsayılan kimlik | `game_ui/renderer.py:455,559,605` | `actor_id="hero"`, `inventory_id="player"` | Render API'leri varsayılan oyuncu/çanta kimliği varsayıyor. |
 
@@ -158,7 +161,7 @@ Kod arama servisi bu incelemede `ref=f9e4914e` parametresini dikkate almayıp va
 
 ## 11. Güncel A0 kararı
 
-Tarihsel kodda A0'ın hedeflediği legacy kalıpların somut örnekleri artık dosya/satır/kullanım amacıyla kanıtlanmıştır. Bununla birlikte tam kapsamlı kategori taraması ve tarihsel test/lint başlangıç çıktısı hâlâ eksiktir. A0 bu nedenle **kısmen doğrulanmış ve açık** durumundadır; kapanış onayı verilmemiştir.
+Bu bölüm, ilk aşamadaki kısmi incelemenin ara kararını kaydeder. 15. bölümde tamamlanan kapsamlı pattern taraması ve tarihsel CI kanıtı bu ara kararı güncellemiştir; nihai kapanış kararı 16. bölümde verilmiştir.
 
 
 ## 12. Tarihsel persistence / save-load incelemesi
@@ -220,19 +223,7 @@ Bu bölümde yalnızca `f9e4914e` tarihsel ağacındaki persistence dosyaları i
 
 ## 14. Bu turun kapsamı ve A0 kararı
 
-Bu turda:
-- Tarihsel tree'deki save/persistence ile ilişkili 42 yol listelendi; ana kayıt zarfı, migration, storage, Core restore, hex-world restore ve seçilmiş domain snapshot dosyaları doğrudan incelendi.
-- İki içerik manifesti ve bunların dosya referansları kontrol edildi.
-- Etkin paket seçimi, paket yükleyici, oyuncu kuralları, paketleme/test yapılandırması ve iki MovementConfig tanımı incelendi.
-- Hiçbir runtime dosyası değiştirilmedi ve tarihsel testler çalıştırılmadı.
-
-Henüz:
-- 42 persistence yolunun tamamı satır satır incelenmedi.
-- 301 test dosyasının tamamı ve testlerin ilgili eski kayıt/varsayılan davranışlarını kapsayıp kapsamadığı incelenmedi.
-- Runtime, content, tests ve tooling/docs kategorilerinin tamamı tek bir ortak legacy pattern listesiyle taranmadı.
-- Tarihsel A0 test/lint çalıştırma çıktısı veya A0'a ait doğrulanmış CI run kimliği bulunmadı.
-
-Bu bölümdeki ilk inceleme aşamasında A0 açık bırakılmıştı. 15. bölümde tamamlanan kaynak/test taraması ve tarihsel CI kanıtı bu kararı günceller: A0 **tamamlandı**.
+Bu bölüm, persistence ve content/config incelemesinin ilk turundaki kapsam sınırlarını kaydeder. Daha sonra 15. bölümde tüm ilgili Python dosyalarına pattern taraması uygulanmış ve başlangıç commit'ine ait CI kayıtları bulunmuştur. Nihai karar 16. bölümde verilmiştir.
 
 ## 15. Tamamlanan tarihsel kaynak ve test taraması
 
