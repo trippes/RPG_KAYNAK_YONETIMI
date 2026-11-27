@@ -58,6 +58,7 @@ class TestConstructionRuntimeIntegration(unittest.TestCase):
             self.target,
             (WorldPoint(0.0, 0.0),),
             "player",
+            requires_support=True,
         )
 
     def preview(self):
