@@ -136,8 +136,10 @@ class HexWorldRuntimeOwner:
         """Discard only the exact owned runtime when failed initialization left it empty."""
         if runtime is not self._runtime:
             return False
-        if runtime.entities():
-            raise RuntimeError("Cannot discard a HexWorldRuntime that still has entities.")
+        if runtime.entities() or runtime.structure_placements():
+            raise RuntimeError(
+                "Cannot discard a HexWorldRuntime that still has entities or structures."
+            )
         self._runtime = None
         return True
 
