@@ -85,9 +85,25 @@ class QuestJournalWindowTests(unittest.TestCase):
                 )
             )
         self.log = QuestLog(quests)
+        for quest in quests:
+            quest.giver_name = None
+            quest.branches = ()
         self.service = SimpleNamespace(
-            application=SimpleNamespace(
-                holder=SimpleNamespace(current=SimpleNamespace(quest_log=self.log))
+            quest_log_state=lambda category: tuple(
+                SimpleNamespace(
+                    quest_id=quest.quest_id,
+                    title=quest.title,
+                    state=quest.state.value,
+                    giver_name=quest.giver_name,
+                    objectives=quest.objectives,
+                    reward=quest.reward,
+                    branches=quest.branches,
+                )
+                for quest in getattr(self.log, category)()
+            ),
+            quest_log_counts=lambda: tuple(
+                len(getattr(self.log, category)())
+                for category in ("active", "completed", "failed")
             ),
             item=lambda _item_id: None,
         )
