@@ -2,6 +2,7 @@ import unittest
 
 from application.construction_placement import (
     ConstructionPlacementRequest,
+    ConstructionPlacementResult,
     ConstructionPlacementService,
     ConstructionPlacementValidator,
     PlacementFailureReason,
@@ -140,6 +141,15 @@ class TestConstructionRuntimeIntegration(unittest.TestCase):
 
         self.assertFalse(result.valid)
         self.assertIn(PlacementFailureReason.UNSUPPORTED, result.reasons)
+        forged_valid_result = ConstructionPlacementResult(
+            True, (HexCoord(1, 0),), (), runtime.state_revision
+        )
+        self.assertFalse(
+            runtime.commit_if_revision(
+                runtime.state_revision, request, forged_valid_result
+            )
+        )
+        self.assertEqual(runtime.structure_placements(), ())
 
     def test_actor_movement_invalidates_previous_placement_revision(self):
         snapshot, result = self.preview()
