@@ -1,6 +1,6 @@
 # Eldoria — Eski Mimari Bağımlılıklarını Temizleme Roadmap'i
 
-**Durum:** Aşama 3 tamamlandı (2026-11-27) — A3.1–A3.5 kapatıldı; servis sınırları, otomatik CI ve A3.5 manuel kabulü başarılı
+**Durum:** Aşama 3 ve Aşama 4 tamamlandı (2026-11-27) — A3.1–A3.5 ve bütünleşik A4 kapatıldı; otomatik CI ve kullanıcı tarafından bildirilen manuel kabul başarılı
 **Hedef dal:** `experiment/map-cleanup`  
 **Kapsam:** Eski mimariden kalan sabit kimlikler, örtük varsayımlar, yinelenen durum ve servis erişimleri, içerik paketi sözleşmeleri, arayüz entegrasyonu ve kayıt uyumluluğu.
 
@@ -314,7 +314,7 @@ Roadmap onaylandıktan sonra ilk çalışma paketi şu sırayla yürütülür:
 
 **Aşama 3 kapanışı (2026-11-27):** A3.1–A3.5 alt aşamalarının tamamı kapatıldı. GameplayService sorumluluk ve tüketici envanteri çıkarıldı; immutable read-model sözleşmeleri oluşturuldu; üretim, görev, diyalog, HUD, karakter oluşturma ve ticaret ekranlarının servis sınırları düzenlendi; `GameplayService.application` kaçış noktası kaldırıldı; oturum değişiminde session-bound runtime cache temizliği güvenceye alındı. Mimari sınır regresyon testleri eklendi. Son kod/test commit'i `6a259efce1d61c25a06384f836c8011dd2c8e56e` için Eldoria CI run `45980434458` (5/5) ve Core Quality run `45980434434` (2/2) başarılıdır. HUD/görev paneli ve karakter oluşturma manuel kontrolleri kullanıcı tarafından başarılı olarak doğrulandı. Hancı NPC eklenmeyecek; ticaret ekranının manuel kabulü tüm geliştirme aşamalarından sonraki genel oyun kabulüne ertelendi. Görev veren NPC bulunmadığından gerçek görev alma/teslim etme akışı da manuel olarak doğrulanmış sayılmaz; bu, A3 servis sınırı/otomatik doğrulamasını geçersiz kılmaz ve içerik hazır olduğunda genel oyun kabulünde ayrıca test edilir. A3.6 veya başka bir A3 alt aşaması açılmayacaktır. Aşama 4 ayrı kapsam ve kabul ölçütleriyle başlatılacaktır.
 
-### 7.7. Aşama 4 — Uygulama günlüğü (devam ediyor, 2026-11-27)
+### 7.7. Aşama 4 — Uygulama ve kapanış kaydı (2026-11-27)
 
 **Çalışma sınırı:** `docs/architecture/85-stage-4-ui-architecture-plan.md` belgesindeki tek ve bütünleşik Aşama 4 planı izleniyor. A4.1/A4.2 gibi alt aşamalar oluşturulmadı. Tüm değişiklikler yalnızca `experiment/map-cleanup` dalında yapıldı.
 
@@ -322,7 +322,7 @@ Roadmap onaylandıktan sonra ilk çalışma paketi şu sırayla yürütülür:
 
 **Uygulanan değişiklikler:**
 
-1. **ESC/duraklatma menüsü:** ESC, oyun aktifken açık panel olsun veya olmasın duraklatma menüsünü açar. Menü zaten açıksa kapanmaz; seçili öğe korunur. ESC genel pencere kapatma işlevi görmez. Duraklatma menüsündeki geri girdisi oyuna dönme eylemi üretmez; devam etme menünün açık eylemiyle yapılır.
+1. **ESC/duraklatma menüsü:** ESC, oyun aktifken açık panel olsun veya olmasın duraklatma menüsünü açar. Menü açıkken ESC'ye tekrar basılması menüyü kapatır ve oyuna döndürür; açık oyun panelleri korunur. ESC genel pencere kapatma işlevi görmez.
 2. **Pencere/pointer yaşam döngüsü:** `WindowManager.close()` kapanan ekranın `cancel_drag()` kancasını çağırır. Odak başka pencereye geçtiğinde eski pencerenin pointer capture durumu bırakılır. Ekran çözünürlüğü değiştiğinde sürükleme, boyutlandırma ve eşya taşıma işlemleri iptal edilir.
 3. **Konteyner sürükleme:** `ContainerScreen.cancel_drag()` eklendi. Pencere kapanırken veya `set_container()` ile başka konteynere geçerken sürüklenen eşya kimliği temizlenir.
 4. **Diyalog geçiş sözleşmesi:** `DialogueScreen.active_npc_id` ve `complete_external_transition()` public girişleri eklendi. GameWindow artık diyalog ekranının `context` alanını veya private sıfırlama metodunu kullanarak pazar/ticaret geçişi yapmaz.
@@ -331,11 +331,11 @@ Roadmap onaylandıktan sonra ilk çalışma paketi şu sırayla yürütülür:
 
 **Regresyon testleri:** ESC'nin açık panel varken ve menü zaten açıkken davranışı; pointer capture'ın pencere kapatma, odak değiştirme ve çözünürlük değişiminde bırakılması; konteyner hedef değişiminde sürüklemenin sıfırlanması; diyalog dış ekran geçiş API'si; kayıt/oturum yenilemesinde ekranların yeniden bağlanması; tam ekran değişiminde WindowManager viewport senkronizasyonu testlerle kapsandı.
 
-**CI kanıtı:** Son kod/test commit'i `2546145bcf4bb28bf4c6b2b274ad6464a558f2e3` üzerinde Eldoria CI run `45984068247` 5/5 iş ile başarılıdır: Pygame headless smoke ve Python 3.11/3.12 × Ubuntu/Windows test işleri. Dört Python matris işinin her birinde 1.695 unittest testi ve 2.741 pytest testi geçti (59 uyarı, hata yok). Core Quality run `45984068205` Linux/Windows doğrulamalarında 2/2 başarılıdır. İlk denemelerde eski ESC kapanma beklentisi ve yeni ekran yeniden kurma test düzeneğindeki eksik `gameplay_screen` niteliği tespit edildi; test sözleşmesi güncellendi ve test düzeneği için güvenli varsayılan eklendi. Son doğrulama sonuçları bu düzeltmeleri içerir.
+**CI kanıtı:** Aşama 4'ün son commit'i `578556d01aab34f33af3b3516599dd191e3bd3a3` için Eldoria CI run `45988005961` 5/5 iş ile başarılıdır (Pygame headless smoke ve Python 3.11/3.12 × Ubuntu/Windows test işleri). Core Quality run `45988005662` Linux/Windows doğrulamalarında 2/2 başarılıdır. Daha önceki ara commitlerde görülen başarısız kontroller sonraki düzeltmelerle giderilmiş; son commit üzerindeki iki iş akışı da tamamen başarılı sonuçlanmıştır.
 
 **Değişikliklerin başlıca commitleri:** `d2bba5defc3fae95523335eb007d7d1cb0f08b91`, `d7883a9933d2e77f1763169f5313b95f53802ae5`, `8618f50b69e5b570ab6076acacf2065cb9d878b0`, `4fdfc5b9acb074e6cf06f6fcbd2b5d515669ee22`, `4b91ddd3e464bb8d21e30a2a8e3f0ef4a90f72ea`, `38ae1fcf611c1e1036c869d95d168b28e6a935e2`, `1649693ecd266e47a682302c83d5c67e76465b36`, `93a78b8677429902a61bf6ee9ed148d337f3ba68`, `2546145bcf4bb28bf4c6b2b274ad6464a558f2e3`.
 
-**Henüz tamamlanmayanlar:** Gerçek Pygame oyun penceresinde manuel kabul yapılmadı. Tüm ekranların açma/kapama/yeniden açma, birlikte kullanım, odak/z-sırası, klavye/fare yönlendirmesi, sürükleme-boyutlandırma, ESC/duraklatma ve yükleme sonrası UI davranışları kullanıcı tarafından doğrulanmalıdır. Görev veren NPC bulunmadığından gerçek görev alma/teslim etme manuel kabulü ertelenmiştir; bu aşamada NPC veya görev içeriği eklenmeyecektir. Ticaret ekranının manuel kabulü hancı NPC eklemeden tüm geliştirme aşamalarının sonundaki genel oyun kabulüne bırakılmıştır. Aşama 4 tamamlanmış değildir.
+**Manuel kabul ve kapanış:** Kullanıcı, gerçek oyun penceresindeki Aşama 4 manuel testlerinin başarılı olduğunu bildirdi. Böylece ekran/pencere yaşam döngüsü, birlikte kullanım, odak ve girdi yönlendirmesi, sürükleme-boyutlandırma, ESC/duraklatma ve kayıt yükleme dâhil Aşama 4 manuel kabulü tamamlandı. Otomatik doğrulamalar da son commit üzerinde başarılı olduğundan Aşama 4, 2026-11-27 tarihinde kapatılmıştır. Görev veren NPC bulunmadığından gerçek görev alma/teslim etme akışı ertelenmiştir; bu aşamada NPC veya görev içeriği eklenmemiştir. Ticaret ekranının gerçek oyun içi manuel kabulü, hancı NPC eklemeden tüm geliştirme aşamalarının sonundaki genel oyun kabulüne bırakılmıştır. Bu iki ertelenmiş madde Aşama 4'te test edilmiş veya başarılı sayılmaz.
 
 ## 8. Tamamlanma tanımı
 
