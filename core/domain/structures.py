@@ -11,6 +11,8 @@ import math
 from types import MappingProxyType
 from typing import Mapping
 
+from core.domain.spatial import WorldPoint
+
 
 STRUCTURE_DEFINITION_SCHEMA_VERSION = 1
 STRUCTURE_PART_DEFINITION_SCHEMA_VERSION = 1
@@ -57,6 +59,7 @@ class StructureGeometryDefinition:
     width: float
     depth: float
     height: float
+    footprint_local_points: tuple[WorldPoint, ...] = ()
 
     def __post_init__(self) -> None:
         _require_text(self.shape_kind, "shape_kind")
@@ -64,6 +67,12 @@ class StructureGeometryDefinition:
             object.__setattr__(
                 self, name, _require_positive_finite(getattr(self, name), name)
             )
+        points = tuple(self.footprint_local_points)
+        if any(not isinstance(point, WorldPoint) for point in points):
+            raise TypeError("footprint_local_points must contain WorldPoint values.")
+        if len(set(points)) != len(points):
+            raise ValueError("footprint_local_points cannot contain duplicates.")
+        object.__setattr__(self, "footprint_local_points", points)
 
 
 @dataclass(frozen=True, slots=True)
