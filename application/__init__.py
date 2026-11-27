@@ -1,6 +1,7 @@
 """Application composition boundaries outside the canonical Core package."""
 
 from .game_application import GameApplication
+from .simulation_time_driver import SimulationTimeDriver
 from .save_document import GameSaveDocument
 from .save_codec import SaveJsonCodec
 from .save_file_adapter import GameSaveFileAdapter
@@ -129,6 +130,7 @@ from .presentation_content_service import (
 
 __all__ = [
     "GameApplication",
+    "SimulationTimeDriver",
     "GameSaveDocument",
     "GameSaveFileAdapter",
     "SaveJsonCodec",
