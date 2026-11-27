@@ -201,6 +201,6 @@ Test kapsamına runtime'ın destek hücrelerini terrain metadata'dan üretmesi, 
 
 ### Kapsam sınırı
 
-Bu, zemin/temel seviyesinde ikili taşıma kabiliyeti kontrolüdür; mühendislik anlamında yük kapasitesi, zemin basıncı, eğim/zemin deformasyonu veya jeoteknik simülasyon değildir. Duvar/kolon/kiriş/kat/çatı üzerinden yük aktarımı, destek zinciri ve yapı stabilitesi ayrıca tasarlanmalıdır. Bunlar Aşama 6 ve ilgili yapı-fizik entegrasyonu kapsamındadır. Mevcut yapı parçalarının destek gereksinimi henüz parça tanımlarından otomatik türetilmiyor; request `requires_support` bayrağıyla açıkça ister.
+Bu, zemin/temel seviyesinde ikili taşıma kabiliyeti kontrolüdür; mühendislik anlamında yük kapasitesi, zemin basıncı, eğim/zemin deformasyonu veya jeoteknik simülasyon değildir. Duvar/kolon/kiriş/kat/çatı üzerinden yük aktarımı, destek zinciri ve yapı stabilitesi ayrıca tasarlanmalıdır. Bunlar Aşama 6 ve ilgili yapı-fizik entegrasyonu kapsamındadır. `ConstructionPlacementRequest.from_part_definition`, `vertical_policy == "ground"` olan parçalar için temel desteğini varsayılan olarak zorunlu kılar; çağıran açıkça override edebilir. Stackable/elevated parçaların gerçek yapıdan-yapıya taşıyıcı desteği henüz bu zemin servisine dahil değildir.
 
 Bu entegrasyon Aşama 2'yi kapatmaz. CI ve kullanıcı kabulü beklenir.
