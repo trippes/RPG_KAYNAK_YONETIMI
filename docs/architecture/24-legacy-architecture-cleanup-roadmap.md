@@ -1,6 +1,6 @@
 # Eldoria — Eski Mimari Bağımlılıklarını Temizleme Roadmap'i
 
-**Durum:** Aşama 3 sürüyor — A3.1 GameplayService API ve UI tüketici envanteri tamamlandı
+**Durum:** Aşama 3 sürüyor — A3.1 ve A3.2 tamamlandı; A3.3 üretim sorgu sınırı CI doğrulamasında
 **Hedef dal:** `experiment/map-cleanup`  
 **Kapsam:** Eski mimariden kalan sabit kimlikler, örtük varsayımlar, yinelenen durum ve servis erişimleri, içerik paketi sözleşmeleri, arayüz entegrasyonu ve kayıt uyumluluğu.
 
@@ -248,6 +248,24 @@ Roadmap onaylandıktan sonra ilk çalışma paketi şu sırayla yürütülür:
 **Test ve CI kanıtı:** `tests/test_application/test_gameplay_service.py` içine `test_gameplay_state_returns_detached_immutable_value_views` eklendi. Test; inventory sıralamasını, actor sıralamasını, aynı state için tekrarlanan snapshot eşitliğini, frozen view alanlarının değiştirilememesini, kaynak inventory/node değiştikten sonra eski snapshot'ın korunmasını ve sorgular arasında simulation tick'in sabit kalmasını doğrular. Aynı dosyadaki `test_combat_state_returns_detached_immutable_views` combatant/encounter read-model'inin detached ve immutable davranışını zaten doğruladığından tekrar yazılmadı. Eldoria CI run `45971100509` içindeki beş işin tamamı başarılı; Core Quality run `45971100516` içindeki `verify` ve `verify-windows` işleri de başarılı. Her iki run `experiment/map-cleanup` dalındaki `e94aa181770461c6125954271ed6c9421c5d35bb` commit'ini doğruladı.
 
 **Değişiklik sınırı:** Runtime kodu, UI dosyaları, GameApplication composition root, persistence biçimi ve mevcut oyun davranışı değiştirilmedi. Tek kod deposu değişikliği hedefli regresyon testidir; bu nedenle A3.2 bir servis read-model sözleşmesi/kalite kapısı alt işi olarak kapatılır. A3.1'de sayılan doğrudan Application/private erişimler bu alt iş sonunda hâlâ mevcuttur; kaldırıldıkları iddia edilmez. Bunların güvenli servis sorgularına taşınması A3'ün sonraki alt işidir.
+
+| 2026-11-27 | A3.3 — Üretim kataloğu ve tesis sorgu sınırı | **Kod ve hedefli test eklendi; CI doğrulaması bekleniyor** | Kapsam yalnızca production_screen.py içindeki iki doğrudan service.application sorgusudur. Tarif kataloğu GameplayService.recipes_state() ile immutable RecipeView olarak; uygun tesis çözümlemesi production_facility_for_recipe() ile immutable FacilityView olarak sunulur. Tesis uyumluluğu/otomatik seçim kuralı UI'den servise taşındı. test_production_catalog_queries_are_immutable_and_service_owned sıralama, tekrar sorgu kararlılığı, değişmezlik, uyumlu/uyumsuz tesis seçimi ve tick'in değişmemesini doğrular. Başka UI ekranları, özel servis alanları, genel application property'si ve A4 kapsamı değiştirilmedi. |
+
+### 7.4. A3.3 — Üretim kataloğu ve tesis sorgu sınırı (2026-11-27)
+
+**Amaç ve sınır:** A3.1 envanterinde belirlenen doğrudan Application erişimlerinden yalnızca game_ui/screens/production_screen.py dosyasındaki tarif kataloğu ve üretim tesisi sorgularını servis sınırına almak. Bu alt aşama üretim ekranının tamamını yeniden tasarlamaz; üretim mekaniğini, UI düzenini, pencere yaşam döngüsünü veya diğer ekranları değiştirmez.
+
+**Uygulanan sözleşme:**
+
+1. GameplayService.recipes_state() tarifleri kimliklerine göre sıralı, frozen RecipeView tuple'ı olarak döndürür. Tarif girdileri/çıktıları ve süreleri immutable değer nesneleri olarak korunur.
+2. GameplayService.production_facility_for_recipe(recipe_id, facility_id=None) tesis uyumluluğunu ve otomatik tesis seçimini servis katmanında çözer; UI'ye mutable tesis aggregate'ı yerine FacilityView döndürür.
+3. Açıkça seçilmiş tesis için önceki davranış korunur: tesis mevcut, aktif ve tarifi destekli olmalıdır. Otomatik seçimde bunlara ek olarak kapasite boş olmalıdır. Adaylar tesis kimliğine göre deterministik sıralanır.
+4. ProductionScreen artık service.application üzerinden tarif/tesis deposuna erişmez; yalnızca servis sorgularını kullanır.
+5. Üretimi başlatan mevcut start_production komutu ve ekranın görünüm/etkileşim davranışı değiştirilmez.
+
+**Test kanıtı:** test_production_catalog_queries_are_immutable_and_service_owned; tarif sıralaması, tekrarlı sorgu eşitliği, frozen view, uygun/uyumsuz tesis çözümlemesi ve sorgular arasında simulation tick'in sabit kalmasını doğrular. CI doğrulaması bu kayıt oluşturulurken beklenmektedir.
+
+**Hariç tutulanlar:** Diyalog, görev günlüğü, renderer, karakter oluşturma ve ticaret ekranlarındaki Application erişimleri; servis private alanlarına erişimler; GameplayService.application property'sinin kaldırılması; A4 ekran/pencere uyumu. Bunlar bu alt aşamanın kapsamına alınmamıştır.
 
 ## 8. Tamamlanma tanımı
 
