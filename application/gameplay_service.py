@@ -1031,6 +1031,45 @@ class GameplayService:
         self._require_active_world(bundle)
         return bundle.production_jobs.advance_by(delta)
 
+    def advance_game_time(self, delta: Tick | int):
+        """Advance shared game time only while at least one timed activity remains."""
+        bundle = self._current_bundle()
+        self._require_active_world(bundle)
+        amount = delta if isinstance(delta, Tick) else Tick(delta)
+        if amount.value < 0:
+            raise ValueError("Game-time delta cannot be negative.")
+
+        manager = bundle.actor_activities
+        if amount.value == 0 or not manager.has_running_activities:
+            return ()
+
+        target = bundle.simulation.current_tick + amount
+        emitted = []
+        while (
+            manager.has_running_activities
+            and bundle.simulation.current_tick < target
+        ):
+            current = bundle.simulation.current_tick
+            boundary = manager.next_completion_tick
+            next_tick = (
+                target
+                if boundary is None or boundary > target
+                else boundary
+            )
+            if next_tick < current:
+                next_tick = current
+            emitted.extend(self.advance_to(next_tick))
+            if next_tick == current:
+                # A zero-duration/overdue activity must not trap the driver.
+                if manager.has_running_activities:
+                    raise GameplayServiceError(
+                        "A running activity has no future completion progress."
+                    )
+                break
+            if next_tick == target or not manager.has_running_activities:
+                break
+        return tuple(emitted)
+
     def save(self, path):
         return self._application.save(path)
 
