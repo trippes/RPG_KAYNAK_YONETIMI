@@ -74,7 +74,7 @@ class ConstructionPlacementTests(unittest.TestCase):
         )
         self.assertIn(PlacementFailureReason.OUTSIDE_WORLD, outside.reasons)
         blocked = ConstructionPlacementValidator.validate(
-            request(point=WorldPoint(27.7128129, 16)), snapshot(blocked=((1, 0),))
+            request(point=WorldPoint(55.42562584220407, 0)), snapshot(blocked=((1, 0),))
         )
         self.assertIn(PlacementFailureReason.BLOCKED_TERRAIN, blocked.reasons)
 
@@ -111,5 +111,5 @@ class ConstructionPlacementTests(unittest.TestCase):
         self.assertEqual(stale.snapshot_revision, 4)
 
 
-if __.main__ == "__main__":
+if __name__ == "__main__":
     unittest.main()
