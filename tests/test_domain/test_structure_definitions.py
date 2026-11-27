@@ -1,6 +1,7 @@
 """Contract tests for modular structure catalog definitions."""
 import unittest
 
+from core.domain.spatial import WorldPoint
 from core.domain.structures import (
     StructureConnectionPort,
     StructureDefinition,
@@ -30,6 +31,22 @@ class StructureGeometryDefinitionTests(unittest.TestCase):
                 StructureGeometryDefinition("box", *dimensions)
         with self.assertRaises(TypeError):
             StructureGeometryDefinition("box", True, 1, 1)
+
+    def test_geometry_accepts_explicit_unique_local_footprint_points(self):
+        footprint = (WorldPoint(-1.0, 0.0), WorldPoint(1.0, 0.0))
+        geometry = StructureGeometryDefinition(
+            "custom", 2.0, 1.0, 3.0, footprint_local_points=footprint,
+        )
+        self.assertEqual(geometry.footprint_local_points, footprint)
+        with self.assertRaisesRegex(ValueError, "duplicates"):
+            StructureGeometryDefinition(
+                "custom", 2.0, 1.0, 3.0,
+                footprint_local_points=(WorldPoint(0, 0), WorldPoint(0, 0)),
+            )
+        with self.assertRaises(TypeError):
+            StructureGeometryDefinition(
+                "custom", 2.0, 1.0, 3.0, footprint_local_points=((0, 0),),
+            )
 
     def test_connection_ports_require_valid_identity_and_capacity(self):
         with self.assertRaises(ValueError):
