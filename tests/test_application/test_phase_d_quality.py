@@ -466,19 +466,57 @@ class TestPhaseDQuality(unittest.TestCase):
         self.assertEqual(screen.selected_skill, 1 % len(skills))
         self.assertIsNone(screen.handle(InputState(actions={"back"})))
 
-    def test_escape_opens_and_closes_central_pause_menu(self):
+    def test_escape_opens_pause_menu_without_closing_gameplay_windows(self):
         window = object.__new__(GameWindow)
+        window.input = InputMapper()
         window.gameplay_active = True
         window.pause_menu_open = False
-        window.pause_menu_selected = 0
+        window.pause_menu_selected = 2
         window.running = True
+        window.current = "main"
+        window.screens = {"main": SimpleNamespace(name_entry_active=False)}
+        window.renderer = SimpleNamespace(mouse_pos=None)
+        window.window_manager = SimpleNamespace(open_ids=("inventory",))
         window._render_current = lambda: None
+        window._render_pause_menu = lambda: None
 
-        window.step = lambda events=(): None
-        window._open_pause_menu()
+        escape = type("Event", (), {"type": "KEYDOWN", "key": "escape"})()
+        window.step([escape])
+
         self.assertTrue(window.pause_menu_open)
+        self.assertEqual(window.window_manager.open_ids, ("inventory",))
+        self.assertEqual(window.pause_menu_selected, 0)
+
+    def test_escape_keeps_pause_menu_open_and_preserves_selection(self):
+        window = object.__new__(GameWindow)
+        window.input = InputMapper()
+        window.gameplay_active = True
+        window.pause_menu_open = True
+        window.pause_menu_selected = 2
+        window.running = True
+        window.current = "main"
+        window.screens = {"main": SimpleNamespace(name_entry_active=False)}
+        window.renderer = SimpleNamespace(mouse_pos=None)
+        window.window_manager = SimpleNamespace(open_ids=("inventory",))
+        window._render_current = lambda: None
+        window._render_pause_menu = lambda: None
+
+        escape = type("Event", (), {"type": "KEYDOWN", "key": "escape"})()
+        window.step([escape])
+
+        self.assertTrue(window.pause_menu_open)
+        self.assertEqual(window.pause_menu_selected, 2)
+        self.assertEqual(window.window_manager.open_ids, ("inventory",))
+
+    def test_pause_menu_back_action_does_not_resume_gameplay(self):
+        window = object.__new__(GameWindow)
+        window.pause_menu_open = True
+        window.pause_menu_selected = 1
+
         window._handle_pause_menu(InputState(actions={"back"}))
-        self.assertFalse(window.pause_menu_open)
+
+        self.assertTrue(window.pause_menu_open)
+        self.assertEqual(window.pause_menu_selected, 1)
 
     def test_pause_menu_actions_do_not_dispatch_to_gameplay_windows(self):
         dispatched = []
