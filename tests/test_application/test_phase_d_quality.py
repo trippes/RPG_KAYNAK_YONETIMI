@@ -175,8 +175,26 @@ class TestPhaseDQuality(unittest.TestCase):
             Quest("failed", "Başarısız Görev", (Objective("d", "Başarısız", ObjectiveType.CUSTOM),),
                state=QuestState.FAILED),
         ))
+        for quest in quests.all():
+            quest.giver_name = None
+            quest.branches = ()
         service = SimpleNamespace(
-            application=SimpleNamespace(holder=SimpleNamespace(current=SimpleNamespace(quest_log=quests))),
+            quest_log_state=lambda category: tuple(
+                SimpleNamespace(
+                    quest_id=quest.quest_id,
+                    title=quest.title,
+                    state=quest.state.value,
+                    giver_name=quest.giver_name,
+                    objectives=quest.objectives,
+                    reward=quest.reward,
+                    branches=quest.branches,
+                )
+                for quest in getattr(quests, category)()
+            ),
+            quest_log_counts=lambda: tuple(
+                len(getattr(quests, category)())
+                for category in ("active", "completed", "failed")
+            ),
             item=lambda item_id: SimpleNamespace(name="Demir Kılıç") if item_id == "iron_sword" else None,
         )
         return QuestLogScreen(service)
@@ -207,10 +225,23 @@ class TestPhaseDQuality(unittest.TestCase):
             for index in range(10)
         )
         quest = Quest("long", "Uzun Görev", objectives, state=QuestState.ACTIVE)
+        quest.giver_name = None
+        quest.branches = ()
+        log = QuestLog((quest,))
         screen = QuestLogScreen(SimpleNamespace(
-            application=SimpleNamespace(
-                holder=SimpleNamespace(current=SimpleNamespace(quest_log=QuestLog((quest,))))
+            quest_log_state=lambda category: tuple(
+                SimpleNamespace(
+                    quest_id=item.quest_id,
+                    title=item.title,
+                    state=item.state.value,
+                    giver_name=None,
+                    objectives=item.objectives,
+                    reward=item.reward,
+                    branches=(),
+                )
+                for item in getattr(log, category)()
             ),
+            quest_log_counts=lambda: (len(log.active()), len(log.completed()), len(log.failed())),
             item=lambda _item_id: None,
         ))
 
@@ -383,13 +414,12 @@ class TestPhaseDQuality(unittest.TestCase):
         self.assertEqual(notices, [])
 
     def test_dialogue_objective_helpers_tolerate_missing_and_malformed_data(self):
-        self.assertIsNone(DialogueScreen._find_objective(None, "missing"))
-        self.assertFalse(DialogueScreen._objective_completed(None, "missing"))
-        self.assertFalse(DialogueScreen._objective_completed(
+        self.assertFalse(GameplayService._quest_objective_is_completed(None, "missing"))
+        self.assertFalse(GameplayService._quest_objective_is_completed(
             SimpleNamespace(objectives=(SimpleNamespace(objective_id="collect"),)),
             "collect",
         ))
-        self.assertFalse(DialogueScreen._objective_completed(
+        self.assertFalse(GameplayService._quest_objective_is_completed(
             SimpleNamespace(objectives=None), "collect",
         ))
 
@@ -400,15 +430,8 @@ class TestPhaseDQuality(unittest.TestCase):
             state=SimpleNamespace(value="active"),
             objectives=(SimpleNamespace(objective_id="collect_iron_ore"),),
         )
-        bundle = SimpleNamespace(social=SimpleNamespace(dialogues={}))
         service = SimpleNamespace(
-            application=SimpleNamespace(holder=SimpleNamespace(current=bundle)),
-            blacksmith_quest=malformed_quest,
-            player_inventory_id="player",
-            inventory=lambda _inventory_id: SimpleNamespace(
-                stocks=(("iron_ore", 3, "item"),)
-            ),
-            _dialogue_context=lambda *_args: {},
+            dialogue_choices=lambda *_args: (ordinary,),
         )
         screen = DialogueScreen(service)
         screen.context = ("hero", "village_blacksmith", "missing_dialogue")
