@@ -317,5 +317,10 @@
     }
   ],
   "landmarks": [],
-  "transitions": []
+  "transitions": [],
+  "foundation_supporting_terrain_ids": [
+    "grass",
+    "stone",
+    "dirt"
+  ]
 }
