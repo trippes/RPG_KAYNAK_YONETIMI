@@ -162,12 +162,12 @@ class ConstructionPlacementValidator:
         valid_cells = [
             cell for cell in footprint
             if snapshot.map_definition.has_cell(
-                type(next(iter(snapshot.map_definition.valid_cells)))(cell.q, cell.r)
+                LocalHexPosition.from_hex_coord(cell)
             )
         ]
         if any(
             snapshot.map_definition.is_blocked(
-                type(next(iter(snapshot.map_definition.valid_cells)))(cell.q, cell.r)
+                LocalHexPosition.from_hex_coord(cell)
             )
             for cell in valid_cells
         ):
