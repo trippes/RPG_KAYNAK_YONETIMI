@@ -757,6 +757,16 @@ def load_quest_definitions(path: str | Path | None = None, *, package_path: str 
     return tuple(records)
 
 
+def _content_application(service):
+    """Resolve the application for trusted content-composition code only."""
+    application = getattr(service, "_application", None)
+    if application is None:
+        application = getattr(service, "application", None)
+    if application is None:
+        raise ContentDefinitionError("Gameplay application is unavailable during content composition.")
+    return application
+
+
 def _register_quest_content(service, records) -> None:
     """Create generic quest aggregates and dialogue graphs from package data."""
     for record in records:
@@ -780,11 +790,11 @@ def _register_quest_content(service, records) -> None:
             sequential_objectives=record.get("sequential_objectives", False),
             giver_npc_id=record["giver_npc_id"],
         )
-        existing = service.application.holder.current.quest_log.get(quest.quest_id)
+        existing = _content_application(service).holder.current.quest_log.get(quest.quest_id)
         if existing is None:
             service.register_quest_definition(quest)
         dialogue_data = record.get("dialogue")
-        if dialogue_data is not None and service.application.holder.current.social.dialogues.get(dialogue_data.get("id")) is None:
+        if dialogue_data is not None and _content_application(service).holder.current.social.dialogues.get(dialogue_data.get("id")) is None:
             service.register_dialogue(_build_dialogue_from_definition(dialogue_data, record["giver_npc_id"]))
 
 
@@ -802,8 +812,8 @@ def _build_npc_physics_body(npc_data: dict) -> PhysicsBodyDefinition | None:
 
 def _register_npcs_for_phase(service, npc_definitions, phase: str, resolve_id):
     """Register NPC domain records and their matching world-actor identities."""
-    bundle = service.application.holder.current
-    world = service.application.aktif_dunya()
+    bundle = _content_application(service).holder.current
+    world = _content_application(service).aktif_dunya()
     if world is None:
         raise ContentDefinitionError(
             "An active world is required before registering NPC content."
@@ -1047,7 +1057,7 @@ def populate_opening_content(
 
 def populate_gameplay_resources(service, definition_path=None, resource_definitions_path=None, content_package_path=None, gameplay_rules_path=None):
     """Create gameplay inventory and resource nodes after character creation."""
-    world = service.application.aktif_dunya()
+    world = _content_application(service).aktif_dunya()
     if world is None:
         raise RuntimeError("An active world is required for gameplay resources.")
     ids = getattr(service, "_starter_content_ids", StarterContentIds())
@@ -1073,7 +1083,7 @@ def populate_gameplay_resources(service, definition_path=None, resource_definiti
     _register_npcs_for_phase(service, npc_definitions, "gameplay", resolve_id)
     load_content_package(_resolve_content_package_path(active_package_path))
     _register_quest_content(service, load_quest_definitions(package_path=active_package_path))
-    bundle = service.application.holder.current
+    bundle = _content_application(service).holder.current
     item_catalog = dict(bundle.items)
     for item_definition in load_item_definitions(package_path=active_package_path):
         existing_item = item_catalog.get(item_definition.item_id)
@@ -1146,7 +1156,7 @@ def populate_gameplay_resources(service, definition_path=None, resource_definiti
                     EntityType.ESYA, record["name"],
                     entity_id=record["entity_id"],
                 )
-                service.application.varlik_ekle(entity, world_id=world.world_id)
+                _content_application(service).varlik_ekle(entity, world_id=world.world_id)
             elif entity.entity_type is not EntityType.ESYA:
                 raise ContentDefinitionError(
                     f"Container entity '{record['entity_id']}' must be an ESYA entity."
@@ -1172,7 +1182,7 @@ def populate_gameplay_resources(service, definition_path=None, resource_definiti
     inventories = dict(bundle.inventories)
     inventories.setdefault(player_rules["inventory_id"], Inventory())
     object.__setattr__(bundle, "inventories", MappingProxyType(inventories))
-    bundle = service.application.holder.current
+    bundle = _content_application(service).holder.current
     # The player inventory is created here, after the opening actor exists.
     # Bind it at the domain boundary so possession checks never infer ownership
     # from a caller-supplied inventory ID.
@@ -1191,7 +1201,7 @@ def populate_gameplay_resources(service, definition_path=None, resource_definiti
             f"Player actor '{service.player_actor_id}' is bound to inventory "
             f"'{player_actor.inventory_id}', expected '{expected_inventory_id}'."
         )
-    bundle = service.application.holder.current
+    bundle = _content_application(service).holder.current
     production_facilities, production_recipes = load_production_definitions(
         package_path=active_package_path,
     )
