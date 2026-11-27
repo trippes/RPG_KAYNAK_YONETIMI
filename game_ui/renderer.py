@@ -564,7 +564,7 @@ class Renderer:
         inventory_id = service.player_inventory_id if inventory_id is None else inventory_id
         snapshot = service.state()
         stats = service.actor_stats(actor_id)
-        active_world = service.application.holder.current.session.worlds.get_active()
+        active_world = service.active_world_state()
         location = active_world.name if active_world is not None else "Eldoria"
         try:
             gold = service.balance(account_id, "gold").amount
@@ -636,12 +636,11 @@ class Renderer:
 
     def quest_panel(self, service, rect):
         self.panel(rect, (27, 35, 50), (86, 105, 135))
-        quests = service.application.holder.current.quest_log.active()
+        quest = service.quest_panel_state()
         self.text("Görev Takibi", rect.x + 16, rect.y + 14, GOLD)
-        if not quests:
+        if quest is None:
             self.text("Aktif görev yok.", rect.x + 16, rect.y + 54, MUTED)
             return
-        quest = quests[0]
         self.text(self.fit_text(quest.title, rect.width - 32), rect.x + 16, rect.y + 52, TEXT)
         y = rect.y + 82
         max_objectives = 4 if rect.height >= 250 else 2
@@ -653,21 +652,11 @@ class Renderer:
                 line_height=20, max_lines=1,
             )
             y += 24
-        target = next((item.target_id for item in quest.objectives if item.target_id), None)
-        if target:
-            target_name = target
-            bundle = service.application.holder.current
-            actor = service.actor(service.player_actor_id)
-            if actor is not None:
-                world = bundle.movement.map_for(actor.world_id)
-                location = world.get(target) if world is not None else None
-                if location is not None:
-                    target_name = location.name
-            if target_name == target:
-                npc = bundle.social.npcs.get(target)
-                if npc is not None:
-                    target_name = npc.name
-            self.text(self.fit_text(f"Hedef: {target_name}", rect.width - 32), rect.x + 16, y + 4, MUTED)
+        if quest.target_name:
+            self.text(
+                self.fit_text(f"Hedef: {quest.target_name}", rect.width - 32),
+                rect.x + 16, y + 4, MUTED,
+            )
             y += 26
         reward = quest.reward
         reward_text = f"Ödül: {reward.currency} altın"
@@ -675,7 +664,7 @@ class Renderer:
             reward_text += f", {reward.experience} XP"
         self.text(reward_text, rect.x + 16, y + 4, GOLD, max_width=rect.width - 32)
         self.text(
-            f"Durum: {quest.state.value}", rect.x + 16, rect.bottom - 28, GOOD,
+            f"Durum: {quest.state}", rect.x + 16, rect.bottom - 28, GOOD,
             max_width=rect.width - 32,
         )
 
