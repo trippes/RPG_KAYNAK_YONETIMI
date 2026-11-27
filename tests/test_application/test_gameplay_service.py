@@ -714,14 +714,48 @@ class TestGameplayService(unittest.TestCase):
             self.service.advance_to(2)
             self.assertEqual(self.service.inventory("main").stocks, (("ingot", 1, "item"),))
 
-    def test_load_switch_discards_runtime_only_chain_registry(self):
+    def test_load_switch_discards_session_bound_runtime_caches(self):
         self.service.collect("ore-node", "main", Quantity(2, ResourceUnit.ITEM))
         self.service.start_chain("chain", (("smelt", "main", "smelter-1"),))
+        self.service._hex_physics_snapshots["stale"] = object()
+        self.service._companion_command_service = object()
+        self.service._npc_behavior_system = object()
+        self.service._npc_behavior_system_key = ("old",)
+        self.service._npc_avoidance_system = object()
+        self.service._npc_avoidance_system_key = ("old",)
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "chain-save.json"
             self.service.save(path)
             self.service.load(path)
             self.assertEqual(self.service.state().chains, ())
+            self.assertEqual(self.service._hex_physics_snapshots, {})
+            self.assertIsNone(self.service._companion_command_service)
+            self.assertIsNone(self.service._npc_behavior_system)
+            self.assertIsNone(self.service._npc_behavior_system_key)
+            self.assertIsNone(self.service._npc_avoidance_system)
+            self.assertIsNone(self.service._npc_avoidance_system_key)
+
+    def test_active_world_and_quest_panel_queries_are_read_only_views(self):
+        before_tick = self.service.state().simulation_tick
+        first_world = self.service.active_world_state()
+        second_world = self.service.active_world_state()
+        self.assertEqual(first_world, second_world)
+        self.assertEqual(first_world.world_id, "world_playable")
+        self.assertEqual(first_world.name, "Playable")
+        with self.assertRaises(FrozenInstanceError):
+            first_world.name = "Changed"
+        self.assertIsNone(self.service.quest_panel_state())
+        self.assertEqual(self.service.state().simulation_tick, before_tick)
+
+    def test_character_creation_service_owns_validation(self):
+        with self.assertRaisesRegex(ValueError, "İsim alanı boş bırakılamaz"):
+            self.service.customize_player_character(
+                "", 25, {"strength": 12}, appearance={}
+            )
+        with self.assertRaisesRegex(ValueError, "Yaş 13 ile 120"):
+            self.service.customize_player_character(
+                "Arin", 12, {"strength": 12}, appearance={}
+            )
 
 
     def test_combat_state_returns_detached_immutable_views(self):
