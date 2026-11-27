@@ -3,7 +3,7 @@ import unittest
 
 from application.hex_map_definition import parse_hex_map
 from core.domain.spatial import ConstructionPosition, HexCoord, WorldPoint
-from core.domain.spatial.placement import (
+from application.construction_placement import (
     ConstructionPlacementRequest,
     ConstructionPlacementSnapshot,
     ConstructionPlacementValidator,
