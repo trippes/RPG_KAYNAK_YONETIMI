@@ -742,7 +742,6 @@ class GameWindow:
         active = (
             self.gameplay_active
             and not self.pause_menu_open
-            and elapsed_seconds > 0
             and self._has_running_timed_activity()
         )
         driver = getattr(self, "_simulation_time_driver", None)
