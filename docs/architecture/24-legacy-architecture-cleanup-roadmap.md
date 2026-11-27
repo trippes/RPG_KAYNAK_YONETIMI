@@ -1,6 +1,6 @@
 # Eldoria — Eski Mimari Bağımlılıklarını Temizleme Roadmap'i
 
-**Durum:** Aşama 3 sürüyor — A3.1, A3.2 ve A3.3 tamamlandı
+**Durum:** Aşama 3 sürüyor — A3.1, A3.2, A3.3 ve A3.4 tamamlandı
 **Hedef dal:** `experiment/map-cleanup`  
 **Kapsam:** Eski mimariden kalan sabit kimlikler, örtük varsayımlar, yinelenen durum ve servis erişimleri, içerik paketi sözleşmeleri, arayüz entegrasyonu ve kayıt uyumluluğu.
 
@@ -250,6 +250,7 @@ Roadmap onaylandıktan sonra ilk çalışma paketi şu sırayla yürütülür:
 **Değişiklik sınırı:** Runtime kodu, UI dosyaları, GameApplication composition root, persistence biçimi ve mevcut oyun davranışı değiştirilmedi. Tek kod deposu değişikliği hedefli regresyon testidir; bu nedenle A3.2 bir servis read-model sözleşmesi/kalite kapısı alt işi olarak kapatılır. A3.1'de sayılan doğrudan Application/private erişimler bu alt iş sonunda hâlâ mevcuttur; kaldırıldıkları iddia edilmez. Bunların güvenli servis sorgularına taşınması A3'ün sonraki alt işidir.
 
 | 2026-11-27 | A3.3 — Üretim kataloğu ve tesis sorgu sınırı | **Tamamlandı; CI başarılı** | Kapsam yalnızca production_screen.py içindeki iki doğrudan service.application sorgusudur. Tarif kataloğu GameplayService.recipes_state() ile immutable RecipeView olarak; uygun tesis çözümlemesi production_facility_for_recipe() ile immutable FacilityView olarak sunulur. Tesis uyumluluğu/otomatik seçim kuralı UI'den servise taşındı. test_production_catalog_queries_are_immutable_and_service_owned sıralama, tekrar sorgu kararlılığı, değişmezlik, uyumlu/uyumsuz tesis seçimi ve tick'in değişmemesini doğrular. Eldoria CI run `45972943220` içindeki beş işin tamamı (Python 3.11/3.12 × Ubuntu/Windows ve Pygame headless smoke) başarılı; Core Quality run `45972943211` içindeki `verify` ve `verify-windows` işleri başarılı. Her iki run `a527135ef5dfe7ac16466962a3bdcb5f9324fa0b` kod/test commit'ini doğruladı. Başka UI ekranları, özel servis alanları, genel application property'si ve A4 kapsamı değiştirilmedi. |
+| 2026-11-27 | A3.4 — Görev ve diyalog sorgu sınırı | **Tamamlandı; CI başarılı** | GameplayService artık immutable QuestView, QuestObjectiveView, QuestRewardView, QuestBranchView ve DialogueSessionView read-model'lerini sunuyor. quest_log_state() / quest_log_counts() görev günlüğünü; dialogue_session_for_npc(), dialogue_npc_name() ve dialogue_choices() NPC/diyalog sorgularını servis sınırına taşıyor. Diyalog seçeneklerinin mevcut marangoz, demirci, kervancı ve han görev koşulları servis katmanına alındı; mevcut görev kabul/teslim komutları ve diyalog ilerletme davranışı korunuyor. dialogue_screen.py ile quest_log_screen.py artık service.application veya application.holder okumuyor; diyalog ekranı _dialogue_context, _player_name_confirmed ve _creation_from_eren private erişimlerini kullanmıyor. Yeni read-model değişmezliği, tekrarlı sorgu tutarlılığı, tick'in değişmemesi, diyalog seçeneği filtrelemesi ve görev grafiği görünümü test edildi. Kod/test doğrulaması commit 0545dae2f22f2dbfe97f057f2ecce799b8a6d49e üzerinde Eldoria CI run 45975606001 (5/5 iş başarılı) ve Core Quality run 45975606008 (2/2 iş başarılı) ile tamamlandı. Görev veren NPC/içerik eksikliği nedeniyle oyun içi görev kabul/teslim manuel kabulü bu alt aşamanın CI doğrulamasından ayrı olarak beklemede kalır. |
 
 ### 7.4. A3.3 — Üretim kataloğu ve tesis sorgu sınırı (2026-11-27)
 
@@ -266,6 +267,24 @@ Roadmap onaylandıktan sonra ilk çalışma paketi şu sırayla yürütülür:
 **Test kanıtı:** test_production_catalog_queries_are_immutable_and_service_owned; tarif sıralaması, tekrarlı sorgu eşitliği, frozen view, uygun/uyumsuz tesis çözümlemesi ve sorgular arasında simulation tick'in sabit kalmasını doğrular. Eldoria CI run `45972943220` içindeki beş işin tamamı ve Core Quality run `45972943211` içindeki iki işin tamamı başarılıdır; her iki workflow da kod/test commit'i `a527135ef5dfe7ac16466962a3bdcb5f9324fa0b` üzerinde yeşildir.
 
 **Hariç tutulanlar:** Diyalog, görev günlüğü, renderer, karakter oluşturma ve ticaret ekranlarındaki Application erişimleri; servis private alanlarına erişimler; GameplayService.application property'sinin kaldırılması; A4 ekran/pencere uyumu. Bunlar bu alt aşamanın kapsamına alınmamıştır.
+
+
+### 7.5. A3.4 — Görev ve diyalog sorgu sınırı (2026-11-27)
+
+**Amaç ve sınır:** A3.1 envanterinde belirlenen dialogue_screen.py ve quest_log_screen.py içindeki doğrudan Application/SessionBundle okumalarını, görev/graph verisi okumalarını ve diyalog ekranının servis private erişimlerini yalnızca bu iki ekran kapsamında servis sözleşmesine taşımak. Başka ekranlar, renderer, karakter oluşturma ekranının kendi private erişimleri, A4 pencere/yaşam döngüsü çalışmaları ve yeni görev/NPC/diyalog içeriği bu alt aşamaya dahil değildir.
+
+**Uygulanan sözleşme:**
+
+1. quest_log_state(category) aktif/tamamlanmış/başarısız görevleri kimlik sıralı, detached ve frozen QuestView tuple'ı olarak döndürür. Her görünüm immutable objective, reward ve graph branch bilgilerini; görev verenin görünen adını taşır. quest_log_counts() üç kategori için sayıları sunar.
+2. dialogue_session_for_npc(target_npc_id) oyuncu aktörünü merkezi player context üzerinden çözer; NPC ve uygun diyalog kimliğini servis katmanında seçerek frozen DialogueSessionView döndürür. dialogue_npc_name() NPC adını registry erişimini UI'den saklayarak sunar.
+3. dialogue_choices(actor_id, npc_id, dialogue_id, node_id) diyalog koşullarını ve mevcut kervancı/demirci/marangoz/han görev koşullarını servis içinde değerlendirir. UI yalnızca sunulacak immutable DialogueChoice kayıtlarını alır.
+4. Açılış diyaloğunun isim onayı ve karakter oluşturma yönlendirmesi için player_name_confirmed, confirm_player_name() ve begin_character_creation_from_dialogue() public servis girişleri eklendi. Diyalog ekranı ilgili private alanlara doğrudan erişmez.
+5. DialogueScreen ve QuestLogScreen doğrudan service.application / application.holder erişimlerini kaldırıp yalnızca servis sorgu/komutlarını kullanır. Görev branch seçimi mevcut choose_quest_branch() komutundan yürür; mevcut görev kabul/teslim komutları değiştirilmez.
+6. Görev kabulü, teslimi, ödül, diyalog seçimi veya oyun içeriği için yeni özellik eklenmedi; UI düzeni ve pencere davranışı değiştirilmedi.
+
+**Test ve CI kanıtı:** test_quest_journal_read_models_are_immutable_and_read_only, test_dialogue_choice_query_is_service_owned_and_read_only ve test_dialogue_choice_query_hides_blacksmith_delivery_for_incomplete_objective testleri read-model kararlılığı/değişmezliği, salt okunurluk, tick sabitliği ve görev koşullarını doğrular. Quest graph integration ve UI testleri yeni view sözleşmesine göre güncellendi. Eldoria CI run 45975606001 içindeki Python 3.11/3.12 × Ubuntu/Windows test işleri ile Pygame headless smoke işi (5/5) başarılıdır. Core Quality run 45975606008 içindeki Linux/Windows verify işleri (2/2) başarılıdır. İki run da kod/test commit'i 0545dae2f22f2dbfe97f057f2ecce799b8a6d49e üzerinde tamamlandı.
+
+**Değişiklik sınırı ve kalan manuel kontrol:** Runtime değişiklikleri yalnızca application/gameplay_service.py, game_ui/screens/dialogue_screen.py ve game_ui/screens/quest_log_screen.py dosyalarındadır. İlgili servis/UI testleri güncellendi. Diğer UI ekranları ve A4 kapsamı değiştirilmedi. Diyalog/görev servis sözleşmesi CI ile doğrulanmıştır; ancak mevcut içerikte görev veren NPC bulunmadığından gerçek oyun içi görev alma/teslim etme manuel kabulü yapılmış sayılmaz. character_creation.py içindeki ayrı private alan erişimleri A3.4 kapsamına alınmamıştır.
 
 ## 8. Tamamlanma tanımı
 
