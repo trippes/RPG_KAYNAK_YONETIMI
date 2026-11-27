@@ -88,11 +88,15 @@ class WindowManager:
         window.dragging = False
         window.resizing = False
         window.resize_edges = ()
+        self._release_pointer_capture(window)
+        if self.focused_id == window_id:
+            self.focused_id = next(reversed(self.open_ids), None)
+
+    @staticmethod
+    def _release_pointer_capture(window):
         cancel_drag = getattr(window.screen, "cancel_drag", None)
         if callable(cancel_drag):
             cancel_drag()
-        if self.focused_id == window_id:
-            self.focused_id = next(reversed(self.open_ids), None)
 
     def toggle(self, window_id):
         window = self._get(window_id)
@@ -104,6 +108,9 @@ class WindowManager:
 
     def focus(self, window_id):
         window = self._get(window_id)
+        previous_id = self.focused_id
+        if previous_id is not None and previous_id != window_id:
+            self._release_pointer_capture(self.windows[previous_id])
         if not window.visible:
             window.visible = True
         self.z_order = [item for item in self.z_order if item != window_id]
