@@ -727,6 +727,9 @@ class GameWindow:
     def _has_running_timed_activity(self):
         """Return whether any actor activity still requires simulation time."""
         try:
+            query = getattr(self.service, "has_running_timed_activities", None)
+            if callable(query):
+                return query()
             return any(
                 activity.state == "running"
                 for activity in self.service.activities_state()
