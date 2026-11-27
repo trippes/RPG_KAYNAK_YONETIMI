@@ -2055,5 +2055,78 @@ class TestA13PlayerIdentity(unittest.TestCase):
         self.assertEqual(inventory_calls, ["inventory_custom"])
 
 
+    def test_pause_menu_uses_translucent_panel_without_fullscreen_overlay(self):
+        draw_calls = []
+        button_calls = []
+        blits = []
+
+        class Rect:
+            def __init__(self, x, y, width, height):
+                self.x, self.y = x, y
+                self.width, self.height = width, height
+
+            @property
+            def centerx(self):
+                return self.x + self.width // 2
+
+            @property
+            def topleft(self):
+                return self.x, self.y
+
+        class PanelSurface:
+            def __init__(self, size, flags):
+                self.width, self.height = size
+                self.flags = flags
+                self.fill_color = None
+
+            def fill(self, color):
+                self.fill_color = color
+
+            def get_rect(self):
+                return Rect(0, 0, self.width, self.height)
+
+        class Draw:
+            @staticmethod
+            def rect(surface, color, rect, *args, **kwargs):
+                draw_calls.append((surface, color, rect, args, kwargs))
+
+        class Backend:
+            SRCALPHA = 1
+            Rect = Rect
+            draw = Draw()
+
+            @staticmethod
+            def Surface(size, flags):
+                return PanelSurface(size, flags)
+
+        window = object.__new__(GameWindow)
+        window.pg = Backend()
+        window.width, window.height = 960, 640
+        window.screen = SimpleNamespace(
+            blit=lambda surface, position: blits.append((surface, position))
+        )
+        window.pause_menu_selected = 0
+        window.renderer = SimpleNamespace(
+            text_width=lambda value, **_kwargs: len(value) * 8,
+            text=lambda *_args, **_kwargs: None,
+            button=lambda *args, **kwargs: button_calls.append((args, kwargs)),
+        )
+
+        window._render_pause_menu()
+
+        self.assertEqual(len(blits), 1)
+        panel_surface, position = blits[0]
+        self.assertEqual(panel_surface.fill_color, (23, 29, 43, 176))
+        self.assertLess(panel_surface.fill_color[3], 255)
+        self.assertEqual(
+            (panel_surface.width, panel_surface.height),
+            (420, len(("resume", "save", "main_menu", "quit")) * 58 + 110),
+        )
+        self.assertEqual(len(draw_calls), 1)
+        self.assertIs(draw_calls[0][0], panel_surface)
+        self.assertEqual(len(button_calls), 4)
+        self.assertEqual(position, ((960 - 420) // 2, (640 - (4 * 58 + 110)) // 2))
+
+
 if __name__ == "__main__":
     unittest.main()
