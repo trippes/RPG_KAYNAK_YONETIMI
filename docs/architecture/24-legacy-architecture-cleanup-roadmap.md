@@ -303,6 +303,7 @@ Roadmap onaylandıktan sonra ilk çalışma paketi şu sırayla yürütülür:
 **Test kapsamı eklendi/güncellendi:**
 
 - `test_active_world_and_quest_panel_queries_are_read_only_views`: aktif dünya view değişmezliği, tekrarlı sorgu ve tick'in sabitliği.
+- `test_quest_panel_state_returns_populated_immutable_snapshot`: HUD görev panelinin dolu görev, hedef/amaç ilerlemesi ve ödül alanlarını tekrarlanabilir/değişmez sorgu olarak sunması.
 - `test_character_creation_service_owns_validation`: karakter oluşturma iş kurallarının servis tarafından reddedilmesi.
 - `test_character_creation_and_trade_queries_return_immutable_views`: karakter seçenekleri ve ticaret ortağı view değişmezliği.
 - `test_load_switch_discards_session_bound_runtime_caches`: kayıt yükleme sırasında chain dispose/temizliği ve oturuma bağlı runtime cache invalidation.
