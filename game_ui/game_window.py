@@ -449,6 +449,7 @@ class GameWindow:
             except (OSError, KeyError, ValueError, RuntimeError) as error:
                 self._set_notice(f"Kayıt yüklenemedi: {error}", "error")
                 return "save_slots"
+            self._recreate_gameplay_screens()
             return "main"
         return "opening"
 
@@ -506,6 +507,7 @@ class GameWindow:
         except (OSError, KeyError, ValueError, RuntimeError) as error:
             self._set_notice(f"Kayıt yüklenemedi: {error}", "error")
             return None
+        self._recreate_gameplay_screens()
         self.save_path = path
         self.selected_slot = (
             int(path.stem.removeprefix("slot_")) - 1
@@ -519,6 +521,42 @@ class GameWindow:
         self.notice_level = level
         self._notice_frames = NOTICE_FRAMES
 
+    def _recreate_gameplay_screens(self):
+        """Rebind every gameplay panel to the current session after a load/reset."""
+        self._ensure_movement_runtime()
+        for window_id in tuple(self.window_manager.open_ids):
+            self.window_manager.close(window_id)
+
+        self.screens.update({
+            "opening": OpeningScreen(),
+            "main": MainScreen(self.service),
+            "inventory": InventoryScreen(self.service),
+            "production": ProductionScreen(self.service),
+            "character": CharacterScreen(self.service),
+            "quest_log": QuestLogScreen(self.service),
+            "market": MarketScreen(self.service),
+            "currency_exchange": CurrencyExchangeScreen(self.service),
+            "trade": TradeScreen(self.service),
+            "dialogue": DialogueScreen(self.service),
+            "combat": CombatScreen(self.service),
+            "character_creation": CharacterCreationScreen(self.service),
+            "container": ContainerScreen(self.service),
+        })
+        for window_id in GAMEPLAY_WINDOW_IDS:
+            managed = self.window_manager.windows.get(window_id)
+            if managed is not None:
+                managed.screen = self.screens[window_id]
+
+        self._movement_clock.reset()
+        npc_clock = getattr(self, "_npc_simulation_clock", None)
+        if npc_clock is not None:
+            npc_clock.reset()
+        self._player_movement_controller = None
+        self._player_movement_controller_key = None
+        self.pause_menu_open = False
+        self.current = self.gameplay_screen
+        self.gameplay_active = True
+
     def _start_new_game(self):
         self._ensure_movement_runtime()
         from application.content_pack import populate_opening_content
@@ -531,35 +569,7 @@ class GameWindow:
         self.service = service
         self._movement_clock.reset()
         self._load_movement_profiles()
-        self.screens.update({
-            "opening": OpeningScreen(),
-            "main": MainScreen(service),
-            "inventory": InventoryScreen(service),
-            "production": ProductionScreen(service),
-            "character": CharacterScreen(service),
-            "quest_log": QuestLogScreen(service),
-            "market": MarketScreen(service),
-            "currency_exchange": CurrencyExchangeScreen(service),
-            "trade": TradeScreen(service),
-            "dialogue": DialogueScreen(service),
-            "combat": CombatScreen(service),
-            "character_creation": CharacterCreationScreen(service),
-            "container": ContainerScreen(service),
-        })
-        self.window_manager.windows["inventory"].screen = self.screens["inventory"]
-        self.window_manager.windows["character"].screen = self.screens["character"]
-        self.window_manager.windows["quest_log"].screen = self.screens["quest_log"]
-        self.window_manager.windows["production"].screen = self.screens["production"]
-        self.window_manager.windows["market"].screen = self.screens["market"]
-        if "currency_exchange" in self.window_manager.windows:
-            self.window_manager.windows["currency_exchange"].screen = self.screens["currency_exchange"]
-        if "trade" in self.window_manager.windows:
-            self.window_manager.windows["trade"].screen = self.screens["trade"]
-        if "container" in self.window_manager.windows:
-            self.window_manager.windows["container"].screen = self.screens["container"]
-        for window_id in tuple(self.window_manager.open_ids):
-            self.window_manager.close(window_id)
-        self.pause_menu_open = False
+        self._recreate_gameplay_screens()
         self.current = "opening"
         self.gameplay_active = False
         self.selected_slot = None
@@ -788,6 +798,7 @@ class GameWindow:
             try:
                 self._ensure_save_storage()
                 self.service.load(self.save_path)
+                self._recreate_gameplay_screens()
                 self._set_notice(f"Oyun yüklendi: {self.save_path}", "ok")
             except (OSError, KeyError, ValueError, RuntimeError) as error:
                 self._set_notice(f"Oyun yüklenemedi: {error}", "error")
