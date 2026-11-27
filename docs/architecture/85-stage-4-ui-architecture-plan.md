@@ -1,6 +1,6 @@
 # Aşama 4 — Arayüzün Yeni Mimariye Tam Uyumu
 
-**Durum:** Uygulama ve otomatik doğrulama sürüyor; gerçek oyun penceresi manuel kabulü bekliyor (2026-11-27)  
+**Durum:** Tamamlandı (2026-11-27) — otomatik CI ve gerçek oyun penceresi manuel kabulü kullanıcı tarafından başarılı olarak doğrulandı  
 **Hedef dal:** `experiment/map-cleanup`  
 **Çalışma biçimi:** Tek ve bütünleşik aşama. A4.1, A4.2 veya benzeri alt aşamalar oluşturulmayacak.
 
@@ -158,7 +158,7 @@ Aşama 4 ancak aşağıdaki koşullar birlikte sağlandığında tamamlanır:
 2. Pencere açma-kapama, yeniden açma, odak, z-sırası ve fare yönlendirmesi tutarlıdır.
 3. ESC duraklatma menüsünü açıp kapatır; kapatma sırasında açık oyun panelleri korunur.
 4. Hedefli regresyon testleri, tam test paketi ve kalite kapıları başarılıdır.
-5. Gerçek oyun penceresindeki manuel kabul akışları kullanıcı tarafından doğrulanmıştır.
+5. Gerçek oyun penceresindeki Aşama 4 kapsamındaki manuel kabul akışları kullanıcı tarafından başarılı olarak doğrulanmıştır.
 6. Ertelenmiş görev ve ticaret kabul maddeleri tamamlanmış gibi gösterilmez.
 7. Değişiklikler yalnızca bu aşamanın kapsamındadır; roadmap ve teknik notlar kanıtlarla güncellenmiştir.
 
@@ -166,4 +166,4 @@ Aşama 4 ancak aşağıdaki koşullar birlikte sağlandığında tamamlanır:
 
 Önce mevcut ekran, pencere yöneticisi, GameWindow ve test davranışları ayrıntılı incelenecek; ardından tek bütünleşik Aşama 4 kapsamında gerekli değişiklikler yapılacaktır. İç çalışma sırasında mantıksal commit'ler kullanılabilse de alt aşama tanımlanmayacak ve aşama tamamlanmadan ara alt-aşama kapanışları ilan edilmeyecektir.
 
-Bu belge uygulama ve otomatik doğrulama çalışmalarının sürdüğünü, gerçek oyun penceresi manuel kabulünün ise henüz yapılmadığını belirtir. Manuel kabul sonuçları kullanıcı tarafından doğrulanmadan Aşama 4 kapatılmayacaktır.
+**Kapanış kaydı (2026-11-27):** Aşama 4 kapsamındaki otomatik doğrulamalar son commit `578556d01aab34f33af3b3516599dd191e3bd3a3` üzerinde Eldoria CI (`45988005961`, 5/5 iş) ve Core Quality (`45988005662`, 2/2 iş) ile başarılıdır. Gerçek oyun penceresindeki manuel testlerin de başarılı olduğu kullanıcı tarafından doğrulanmıştır. Böylece Aşama 4 tamamlanmıştır. Görev alma/teslim etme, görev veren NPC bulunmadığı için; ticaret ekranının gerçek oyun içi kabulü ise hancı/NPC eklenmeden genel oyun kabulüne ertelenmiştir. Bu iki ertelenmiş madde Aşama 4 kapsamında test edilmiş veya başarılı sayılmamıştır.
