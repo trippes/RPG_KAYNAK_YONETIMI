@@ -355,7 +355,7 @@ A1 + A5 ancak aşağıdaki koşulların tamamı sağlandığında tamamlanmış 
 
 | Tarih | Aşama | Durum | Kanıt / not |
 |---|---|---|---|
-| 2026-11-25 | A0 | Tamamlandı | Kaynak envanteri, mimari bulgular ve CI tabanı önceki incelemede kaydedildi. |
+| 2026-11-27 | A0 | **Tamamlandı; tarihsel kanıtlar yeniden doğrulandı** | `docs/architecture/86-a0-baseline-reconstruction.md` raporu, `f9e4914edb25fd0d8943934de8dd41d67cfab813` tarihsel commit'inde ana üretim kaynakları, scriptler, Hex World Lab ve 301 test dosyasına uygulanan pattern taramasını; altı kategoriye ayrılmış bulguları ve 8/8 başarılı tarihsel CI check-run sonucunu kaydeder. Önceki kısa A0 notu bu raporla ayrıntılandırılmıştır. |
 | 2026-11-25 | A1 + A5 tasarımı | Tamamlandı | Bu belge uygulama planı olarak oluşturuldu. |
 | 2026-11-25 | A1.1 | Tamamlandı | `e48ac660`; GameplayService oyuncu kimliği sözleşmesi ve A1.1 CI doğrulaması tamamlandı. |
 | 2026-11-25 | A1.2 | Tamamlandı | `9dbb3e97`–`92b7786e`; 6 yeni UI kimlik testi ve CI başarılı; kullanıcı oyun penceresinde karakter oluşturma, karakter sayfası ve Eren diyaloğunu kabul etti. |
