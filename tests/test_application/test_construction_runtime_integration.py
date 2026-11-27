@@ -29,8 +29,12 @@ def make_map():
             "orientation": "pointy_top",
             "coordinate_system": "axial",
         },
-        "terrain_ids": ["grass"],
+        "terrain_ids": ["grass", "water"],
         "default_terrain": "grass",
+        "foundation_supporting_terrain_ids": ["grass"],
+        "cell_overrides": [
+            {"q": 0, "r": 1, "terrain": "water", "blocked": True},
+        ],
         "valid_cells": [
             [0, 0], [1, 0], [0, 1], [-1, 1], [-1, 0], [0, -1], [1, -1],
         ],
@@ -55,24 +59,16 @@ class TestConstructionRuntimeIntegration(unittest.TestCase):
             (WorldPoint(0.0, 0.0),),
             "player",
         )
-        self.support = frozenset(
-            position.to_hex_coord()
-            for position in self.runtime.map_definition("forest").valid_cells
-        )
 
     def preview(self):
-        snapshot = self.runtime.construction_snapshot(
-            "forest", supported_cells=self.support
-        )
+        snapshot = self.runtime.construction_snapshot("forest")
         return snapshot, ConstructionPlacementValidator.validate(
             self.request, snapshot
         )
 
     def test_placement_service_uses_hex_runtime_as_snapshot_and_commit_owner(self):
         service = ConstructionPlacementService(
-            lambda: self.runtime.construction_snapshot(
-                "forest", supported_cells=self.support
-            ),
+            lambda: self.runtime.construction_snapshot("forest"),
             self.runtime,
         )
 
@@ -97,13 +93,52 @@ class TestConstructionRuntimeIntegration(unittest.TestCase):
                 snapshot.state_revision, self.request, result
             )
         )
-        updated = self.runtime.construction_snapshot(
-            "forest", supported_cells=self.support
-        )
+        updated = self.runtime.construction_snapshot("forest")
         self.assertIn(HexCoord(1, 0), updated.occupied_cells)
         self.assertEqual(
             len(self.runtime.structure_placements("forest")), 1
         )
+
+
+    def test_runtime_derives_foundation_support_from_terrain_capabilities(self):
+        snapshot = self.runtime.construction_snapshot("forest")
+
+        self.assertIn(HexCoord(0, 0), snapshot.supported_cells)
+        self.assertNotIn(HexCoord(0, 1), snapshot.supported_cells)
+
+    def test_runtime_fails_closed_when_map_has_no_foundation_support_metadata(self):
+        unsupported_map = parse_hex_map({
+            "schema_version": 2,
+            "map_id": "unsupported",
+            "name": "Unsupported",
+            "geometry": {
+                "type": "hex_axial",
+                "orientation": "pointy_top",
+                "coordinate_system": "axial",
+            },
+            "terrain_ids": ["grass"],
+            "default_terrain": "grass",
+            "valid_cells": [[0, 0], [1, 0]],
+        })
+        runtime = HexWorldRuntime({"unsupported": unsupported_map})
+        runtime.register_entity(
+            "player", "player", EntityPosition("unsupported", LocalHexPosition(0, 0))
+        )
+        target = ConstructionPosition(
+            "unsupported",
+            axial_to_world_point(HexCoord(1, 0), runtime.HEX_SIZE),
+        )
+        request = ConstructionPlacementRequest(
+            "stone_wall", target, (WorldPoint(0.0, 0.0),), "player",
+            requires_support=True,
+        )
+
+        result = ConstructionPlacementValidator.validate(
+            request, runtime.construction_snapshot("unsupported")
+        )
+
+        self.assertFalse(result.valid)
+        self.assertIn(PlacementFailureReason.UNSUPPORTED, result.reasons)
 
     def test_actor_movement_invalidates_previous_placement_revision(self):
         snapshot, result = self.preview()
@@ -128,9 +163,7 @@ class TestConstructionRuntimeIntegration(unittest.TestCase):
             )
         )
 
-        second_snapshot = self.runtime.construction_snapshot(
-            "forest", supported_cells=self.support
-        )
+        second_snapshot = self.runtime.construction_snapshot("forest")
         second_result = ConstructionPlacementValidator.validate(
             self.request, second_snapshot
         )
@@ -153,9 +186,7 @@ class TestConstructionRuntimeIntegration(unittest.TestCase):
         self.assertIs(owner.runtime, self.runtime)
 
     def test_runtime_rejects_placement_by_unregistered_actor(self):
-        snapshot = self.runtime.construction_snapshot(
-            "forest", supported_cells=self.support
-        )
+        snapshot = self.runtime.construction_snapshot("forest")
         request = ConstructionPlacementRequest(
             "stone_wall",
             self.target,
