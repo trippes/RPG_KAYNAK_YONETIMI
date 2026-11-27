@@ -754,6 +754,40 @@ class TestGameplayService(unittest.TestCase):
         self.assertIsNone(self.service.quest_panel_state())
         self.assertEqual(self.service.state().simulation_tick, before_tick)
 
+    def test_quest_panel_state_returns_populated_immutable_snapshot(self):
+        quest = Quest(
+            "hud-quest",
+            "HUD Görevi",
+            (
+                Objective(
+                    "collect-ore",
+                    "Cevher topla",
+                    ObjectiveType.COLLECT,
+                    "ore-node",
+                    required=3,
+                    progress=1,
+                ),
+            ),
+            Reward(experience=25, currency=8),
+        )
+        self.service.start_quest(quest, owner_id="hero")
+        before_tick = self.service.state().simulation_tick
+
+        first = self.service.quest_panel_state()
+        second = self.service.quest_panel_state()
+
+        self.assertEqual(first, second)
+        self.assertEqual(first.quest_id, "hud-quest")
+        self.assertEqual(first.title, "HUD Görevi")
+        self.assertEqual(first.objectives[0].description, "Cevher topla")
+        self.assertEqual(first.objectives[0].progress, 1)
+        self.assertEqual(first.objectives[0].required, 3)
+        self.assertEqual(first.reward.experience, 25)
+        self.assertEqual(first.reward.currency, 8)
+        self.assertEqual(self.service.state().simulation_tick, before_tick)
+        with self.assertRaises(FrozenInstanceError):
+            first.title = "Changed"
+
     def test_character_creation_service_owns_validation(self):
         with self.assertRaisesRegex(ValueError, "İsim alanı boş bırakılamaz"):
             self.service.customize_player_character(
