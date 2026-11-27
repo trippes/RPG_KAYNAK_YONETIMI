@@ -57,10 +57,9 @@ class DialogueScreen:
 
     def set_target_npc(self, npc_id):
         self.target_npc_id = npc_id
-        bundle = self.service.application.holder.current
-        npc = bundle.social.npcs.get(npc_id) if npc_id else None
-        if npc is not None:
-            self.message = f"{npc.name} ile konuşmak için Enter tuşuna bas."
+        npc_name = self.service.dialogue_npc_name(npc_id)
+        if npc_name is not None:
+            self.message = f"{npc_name} ile konuşmak için Enter tuşuna bas."
 
     def is_active(self):
         return self.target_npc_id is not None
@@ -96,8 +95,7 @@ class DialogueScreen:
     def _npc_name(self):
         if self.context is None:
             return "NPC"
-        npc = self.service.application.holder.current.social.npcs.get(self.context[1])
-        return npc.name if npc is not None else "NPC"
+        return self.service.dialogue_npc_name(self.context[1]) or "NPC"
 
     def _record_current_node(self):
         if self.node is not None:
@@ -107,216 +105,51 @@ class DialogueScreen:
         self._reset_dialogue()
         return "main"
 
-    @staticmethod
-    def _quest_state(quest):
-        """Return a quest state value without assuming the quest is well-formed."""
-        try:
-            return getattr(getattr(quest, "state", None), "value", None)
-        except (AttributeError, TypeError, ValueError, RuntimeError):
-            return None
-
-    @staticmethod
-    def _find_objective(quest, objective_id):
-        """Find an objective safely; incomplete save/content data is treated as absent."""
-        try:
-            objectives = getattr(quest, "objectives", ()) or ()
-            for objective in objectives:
-                if getattr(objective, "objective_id", None) == objective_id:
-                    return objective
-        except (AttributeError, TypeError, ValueError, RuntimeError):
-            return None
-        return None
-
-    @classmethod
-    def _objective_completed(cls, quest, objective_id):
-        objective = cls._find_objective(quest, objective_id)
-        if objective is None:
-            return False
-        try:
-            return bool(getattr(objective, "completed", False))
-        except (AttributeError, TypeError, ValueError, RuntimeError):
-            return False
-
     def _visible_choices(self):
-        """Only show Hilmi actions that match the current quest state."""
         if self.node is None:
             return ()
-        choices = tuple(self.node.choices)
-        if self.context is not None:
-            actor_id, npc_id, dialogue_id = self.context
-            dialogue = self.service.application.holder.current.social.dialogues.get(dialogue_id)
-            if dialogue is not None:
-                choices = dialogue.available_choices(
-                    self.node.node_id,
-                    self.service._dialogue_context(actor_id, npc_id),
-                )
-        if self.context is not None and self.context[1] == "caravan_merchant":
-            caravan_quest = getattr(self.service, "caravan_quest", None)
-            if self._quest_state(caravan_quest) == "completed":
-                return tuple(choice for choice in choices if choice.choice_id == "caravan_report")
-            choices = tuple(choice for choice in choices if choice.choice_id != "caravan_report")
-        if self.context is None or self.context[1] != "village_carpenter":
-            if self.context is not None and self.context[1] == "village_blacksmith":
-                quest = getattr(self.service, "blacksmith_quest", None)
-                state = self._quest_state(quest)
-                inventory = self.service.inventory(self.service.player_inventory_id)
-                ore_amount = next(
-                    (
-                        amount for resource, amount, _unit in inventory.stocks
-                        if str(resource) == "iron_ore"
-                    ),
-                    0,
-                )
-                visible = []
-                for choice in choices:
-                    if choice.choice_id == "accept_blacksmith_quest" and state != "available":
-                        continue
-                    if choice.choice_id == "deliver_blacksmith_ore" and (
-                        state != "active"
-                        or not self._objective_completed(quest, "collect_iron_ore")
-                        or ore_amount < 3
-                    ):
-                        continue
-                    visible.append(choice)
-                return tuple(visible)
-            return choices
-        quest = getattr(self.service, "carpenter_quest", None)
-        inn_quest = getattr(self.service, "inn_quest", None)
-        state = getattr(getattr(quest, "state", None), "value", None)
-        inn_state = self._quest_state(inn_quest)
-        inventory = self.service.inventory(self.service.player_inventory_id)
-        wood_amount = next(
-            (amount for resource, amount, _unit in inventory.stocks if str(resource) == "wood"),
-            0,
+        if self.context is None:
+            return tuple(self.node.choices)
+        actor_id, npc_id, dialogue_id = self.context
+        return self.service.dialogue_choices(
+            actor_id, npc_id, dialogue_id, self.node.node_id,
         )
-        visible = []
-        for choice in choices:
-            if choice.choice_id == "accept_carpenter_quest" and state != "available":
-                continue
-            if choice.choice_id == "decline_carpenter_quest" and state != "available":
-                continue
-            if choice.choice_id == "deliver_carpenter_wood":
-                if (
-                    state != "active"
-                    or not self._objective_completed(quest, "collect_wood")
-                    or wood_amount < 3
-                ):
-                    continue
-            if choice.choice_id == "accept_inn_quest" and (
-                state != "completed" or inn_state != "available"
-            ):
-                continue
-            if choice.choice_id == "deliver_inn_supplies":
-                bread_amount = next(
-                    (amount for resource, amount, _unit in inventory.stocks if str(resource) == "bread"),
-                    0,
-                )
-                water_amount = next(
-                    (amount for resource, amount, _unit in inventory.stocks if str(resource) == "water"),
-                    0,
-                )
-                if (
-                    inn_state != "active"
-                    or bread_amount < 1
-                    or water_amount < 1
-                    or not self._objective_completed(inn_quest, "buy_bread")
-                    or not self._objective_completed(inn_quest, "buy_water")
-                ):
-                    continue
-            visible.append(choice)
-        return tuple(visible)
 
     def _open_default(self):
-        bundle = self.service.application.holder.current
-        actors = bundle.actors.actors()
-        npcs = bundle.social.npcs.all()
-        dialogues = tuple(sorted(bundle.social.dialogues))
-
-        if not actors:
-            self.message = "Etkin dünyada oyuncu aktörü bulunamadı."
-            return
-
         try:
-            actor = next(
-                (
-                    item for item in actors
-                    if item.actor_id == self.service.player_actor_id
-                ),
-                None,
-            )
-            if actor is None:
-                self.message = "Oyuncu aktörü etkin dünyada bulunamadı."
-                return
-            if not npcs or not dialogues:
-                self.message = "Konuşulacak NPC veya diyalog bulunamadı."
-                return
-            npc = next(
-                (item for item in npcs if item.npc_id == self.target_npc_id),
-                next(
-                    (item for item in npcs if item.npc_id == "warden_lyra"),
-                    npcs[0],
-                ),
-            )
-
-            preferred_dialogues = {
-                "village_carpenter": "carpenter_dialogue",
-                "caravan_merchant": "caravan_merchant_dialogue",
-            }
-            preferred = preferred_dialogues.get(npc.npc_id)
-            dialogue_id = (
-                preferred
-                if preferred in bundle.social.dialogues
-                else next(
-                    (
-                        dialogue_id
-                        for dialogue_id in dialogues
-                        if npc.npc_id in bundle.social.dialogues[dialogue_id].speakers
-                    ),
-                    dialogues[0],
-                )
-            )
-
+            session = self.service.dialogue_session_for_npc(self.target_npc_id)
             self.context = (
-                actor.actor_id,
-                npc.npc_id,
-                dialogue_id,
+                session.actor_id, session.npc_id, session.dialogue_id,
             )
-
             relationship = self.service.relationship(
-                actor.actor_id, npc.npc_id
+                session.actor_id, session.npc_id,
             )
             returning_node_id = (
                 "returning"
-                if dialogue_id == "warden_intro" and relationship.trust > 0
+                if session.dialogue_id == "warden_intro" and relationship.trust > 0
                 else None
             )
             self.node = self.service.talk_to_npc(
-                *self.context, node_id=returning_node_id
+                *self.context, node_id=returning_node_id,
             )
             self.selected = 0
             self._record_current_node()
 
             if (
                 self.node is not None
-                and dialogue_id == "warden_intro"
+                and session.dialogue_id == "warden_intro"
                 and self.node.node_id == "start"
-                and not getattr(
-                    self.service,
-                    "_player_name_confirmed",
-                    False,
-                )
+                and not self.service.player_name_confirmed
             ):
                 self.opening_stage = "creation"
-                self.service._creation_from_eren = True
+                self.service.begin_character_creation_from_dialogue()
                 self.message = (
                     "Bir dakika! Seni bu köyde daha önce görmedim. "
                     "Sen kimsin? Kendini tanıt."
                 )
             else:
                 self.opening_stage = "dialogue"
-                npc_name = npc.name
-                self.message = f"{npc_name} ile konuşuyorsun."
-
+                self.message = f"{session.npc_name} ile konuşuyorsun."
         except (KeyError, ValueError, RuntimeError) as error:
             self.message = str(error)
 
@@ -546,11 +379,7 @@ class DialogueScreen:
         elif self.node is not None and self.node.choices and state.pressed("confirm"):
             npc_name = "NPC"
             if self.context is not None:
-                npc = self.service.application.holder.current.social.npcs.get(
-                    self.context[1],
-                )
-                if npc is not None:
-                    npc_name = npc.name
+                npc_name = self.service.dialogue_npc_name(self.context[1]) or npc_name
             self.message = f"{npc_name} şu anda yeni bir görev vermiyor."
             return self._close_dialogue()
 
@@ -593,11 +422,7 @@ class DialogueScreen:
 
         npc_name = "Eren"
         if self.context is not None:
-            npc = self.service.application.holder.current.social.npcs.get(
-                self.context[1],
-            )
-            if npc is not None:
-                npc_name = npc.name
+            npc_name = self.service.dialogue_npc_name(self.context[1]) or npc_name
 
         if self.opening_stage == "name":
             renderer.text(npc_name, panel.x + 140, panel.y + 24, title=True)
