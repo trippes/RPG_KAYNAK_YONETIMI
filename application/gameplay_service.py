@@ -2193,6 +2193,8 @@ class GameplayService:
         if not isinstance(attributes, dict):
             raise TypeError("Karakter özellikleri geçerli bir eşleme olmalı.")
         values = tuple(attributes.values())
+        if len(values) != 6:
+            raise ValueError("Altı temel özellik için puan dağıtılmalı.")
         if any(isinstance(value, bool) or not isinstance(value, int) or not 8 <= value <= 15 for value in values):
             raise ValueError("Özellik puanları 8 ile 15 arasında olmalı.")
         if sum(value - 10 for value in values) != 12:
@@ -2640,8 +2642,8 @@ class GameplayService:
 
     def _target_display_name(self, bundle, target_id: str) -> str:
         try:
-            actor = bundle.actors.get(self.player_actor_id)
-        except GameplayServiceError:
+            actor = self.actor(self.player_actor_id)
+        except (GameplayServiceError, KeyError):
             actor = None
         if actor is not None:
             world = bundle.movement.map_for(actor.world_id)
