@@ -122,20 +122,16 @@ class TestPlayerEconomyIdentity(unittest.TestCase):
             objectives=(),
         )
         self.service.inn_quest = SimpleNamespace(state=SimpleNamespace(value="inactive"))
-        self.service.application = SimpleNamespace(
-            holder=SimpleNamespace(
-                current=SimpleNamespace(
-                    social=SimpleNamespace(dialogues={})
-                )
-            )
-        )
+        self.service.dialogue_choices = Mock(return_value=())
         screen = DialogueScreen.__new__(DialogueScreen)
         screen.service = self.service
         screen.context = ("traveler_actor", "village_carpenter", "carpenter_dialogue")
         screen.node = SimpleNamespace(choices=())
 
         self.assertEqual(screen._visible_choices(), ())
-        self.service.inventory.assert_called_once_with("traveler_bag")
+        self.service.dialogue_choices.assert_called_once_with(
+            "traveler_actor", "village_carpenter", "carpenter_dialogue", "start",
+        )
 
     def test_quest_panel_resolves_target_world_from_configured_player_actor(self):
         target_location = SimpleNamespace(name="Player world target")
