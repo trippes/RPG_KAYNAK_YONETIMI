@@ -180,6 +180,7 @@ class CharacterCreationStateView:
     character_id: str
     race_id: str
     class_id: str
+    appearance: tuple[tuple[str, str], ...]
 
 
 @dataclass(frozen=True)
@@ -2169,6 +2170,7 @@ class GameplayService:
             character.character_id,
             character.race.race_id,
             character.character_class.class_id,
+            tuple(sorted(getattr(character, "appearance", {}).items())),
         )
 
     def character_creation_options(self):
@@ -2197,8 +2199,9 @@ class GameplayService:
             raise ValueError("Altı temel özellik için puan dağıtılmalı.")
         if any(isinstance(value, bool) or not isinstance(value, int) or not 8 <= value <= 15 for value in values):
             raise ValueError("Özellik puanları 8 ile 15 arasında olmalı.")
-        if sum(value - 10 for value in values) != 12:
-            raise ValueError("Dağıtılmamış özellik puanların var.")
+        remaining_points = 12 - sum(value - 10 for value in values)
+        if remaining_points != 0:
+            raise ValueError(f"Dağıtılmamış {remaining_points} puanın var.")
         character_id = self.player_character_id
         if character_id is None:
             raise GameplayServiceError("Oyuncu karakteri bulunamadı.")
