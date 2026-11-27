@@ -3,6 +3,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 from pathlib import Path
+from types import SimpleNamespace
 
 from core.entity import Entity, EntityType
 from character import Attributes, Character, CharacterClass, ItemDefinition, Race, Skills
@@ -762,6 +763,28 @@ class TestGameplayService(unittest.TestCase):
             self.service.customize_player_character(
                 "Arin", 12, {"strength": 12}, appearance={}
             )
+
+    def test_character_creation_and_trade_queries_return_immutable_views(self):
+        self.service.register_character_factory(SimpleNamespace(
+            races={"human": SimpleNamespace(race_id="human", name="Human")},
+            classes={"rogue": SimpleNamespace(class_id="rogue", name="Rogue")},
+        ))
+        races, classes = self.service.character_creation_options()
+        self.assertEqual((races[0].race_id, races[0].name), ("human", "Human"))
+        self.assertEqual((classes[0].class_id, classes[0].name), ("rogue", "Rogue"))
+        with self.assertRaises(FrozenInstanceError):
+            races[0].name = "Changed"
+
+        with patch.object(
+            self.service,
+            "trade_partner_for_npc",
+            return_value=SimpleNamespace(account_id="merchant_account"),
+        ):
+            partner = self.service.trade_partner_state("merchant_npc")
+        self.assertEqual(partner.npc_id, "merchant_npc")
+        self.assertEqual(partner.account_id, "merchant_account")
+        with self.assertRaises(FrozenInstanceError):
+            partner.account_id = "changed"
 
 
     def test_combat_state_returns_detached_immutable_views(self):
