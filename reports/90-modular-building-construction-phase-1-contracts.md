@@ -1,7 +1,7 @@
 # Eldoria — Modüler Yapı ve İnşa Sistemi
 ## Aşama 1: Genel Yapı ve Yapı Parçası Veri Sözleşmeleri
 
-- **Durum:** Uygulama ve otomatik testler eklendi; kullanıcı kabulü bekleniyor
+- **Durum:** Uygulama ve CI doğrulaması başarılı; kullanıcı kabulü bekleniyor
 - **Hedef dal:** `experiment/map-cleanup`
 - **Kapsam referansı:** `docs/architecture/90-modular-building-construction-system-roadmap.md`
 - **Aşama:** 1 — Genel yapı ve yapı parçası veri sözleşmeleri
@@ -77,7 +77,7 @@ Yol haritası sırasına bağlı kalınarak aşağıdakiler bu aşamada yapılma
 | Schema sürümleme ve kimlik benzersizliği | Uygulandı |
 | Eksik parça referanslarının deterministik reddi | Uygulandı |
 | Bağlantı portu uyumluluğunun deterministik değerlendirilmesi | Uygulandı |
-| Otomatik testler | Eklendi; CI sonucu bekleniyor |
+| Otomatik testler | Eldoria CI ve Core quality başarılı |
 | Oyun davranışının değişmemesi | Bu aşamada gameplay/runtime entegrasyonu yapılmadı |
 
 ## 8. Değişiklik kaydı
@@ -88,4 +88,11 @@ Yol haritası sırasına bağlı kalınarak aşağıdakiler bu aşamada yapılma
 
 Çalışma yalnızca `experiment/map-cleanup` dalına aittir. Yol haritası değiştirilmemiş, sonraki aşamalar başlatılmamıştır.
 
-**Aşama 1'in resmî kapanışı, CI doğrulaması ve kullanıcının bu raporu kabul etmesine bağlıdır.**
+## 9. CI doğrulama kaydı
+
+Aşama 1 değişikliklerini içeren dal HEAD'i `58b67dd70f482fc901083dfb79a0227ece69377b` üzerinde aşağıdaki GitHub Actions çalışmaları tamamlanmış ve başarılı sonuçlanmıştır:
+
+- [Eldoria CI — run 46051331616](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/46051331616): Ubuntu ve Windows üzerinde Python 3.11/3.12 test işleri ile Pygame headless smoke test başarılı.
+- [Core quality — run 46051331553](https://github.com/trippes/RPG_KAYNAK_YONETIMI/actions/runs/46051331553): `verify` ve `verify-windows` işleri başarılı.
+
+**Aşama 1'in resmî kapanışı kullanıcının bu raporu kabul etmesine bağlıdır.**
