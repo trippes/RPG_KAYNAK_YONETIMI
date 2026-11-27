@@ -130,6 +130,20 @@
         "construction",
         "crafting"
       ]
+    },
+    {
+      "item_id": "iron",
+      "name": "Demir",
+      "slot": null,
+      "weight": 0.5,
+      "volume_liters": 0.25,
+      "category": "material",
+      "description": "Demir işçiliği ve yapı malzemesi üretiminde kullanılan ham madde.",
+      "tags": [
+        "material",
+        "crafting",
+        "metal"
+      ]
     }
   ]
 }
