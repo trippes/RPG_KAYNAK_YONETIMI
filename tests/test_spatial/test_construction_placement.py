@@ -74,10 +74,25 @@ class ConstructionPlacementTests(unittest.TestCase):
         )
         placement = ConstructionPlacementRequest.from_part_definition(
             part, ConstructionPosition("village", WorldPoint(0, 0)), "player",
+            requires_support=False,
         )
         result = ConstructionPlacementValidator.validate(placement, snapshot())
         self.assertTrue(result.valid)
         self.assertEqual(result.footprint_cells, (HexCoord(-1, 0), HexCoord(1, 0)))
+
+    def test_ground_part_requires_foundation_support_by_default(self):
+        part = StructurePartDefinition(
+            "wall.basic",
+            "wall",
+            StructureGeometryDefinition(
+                "box", 2.0, 0.25, 3.0,
+                footprint_local_points=(WorldPoint(0, 0),),
+            ),
+        )
+        placement = ConstructionPlacementRequest.from_part_definition(
+            part, ConstructionPosition("village", WorldPoint(0, 0)), "player",
+        )
+        self.assertTrue(placement.requires_support)
 
     def test_request_rejects_part_without_explicit_footprint(self):
         part = StructurePartDefinition(
