@@ -265,6 +265,64 @@ class TestActorSystem(unittest.TestCase):
         self.assertEqual(after.progress, cancelled.progress)
         self.assertIsNone(self.service.actor("worker").activity_id)
 
+    def test_shared_game_time_stops_at_last_actor_completion_boundary(self):
+        self.service.register_actor("first_worker", "worker")
+        self.service.register_actor("second_worker", "worker")
+        self.application.holder.current.resource_nodes.add(WorldResourceNode(
+            "short-task", "world_actors", self.ore,
+            Quantity(2, ResourceUnit.ITEM), Quantity(2, ResourceUnit.ITEM),
+            Quantity(0, ResourceUnit.ITEM), gathering_duration_ticks=20,
+        ))
+        self.application.holder.current.resource_nodes.add(WorldResourceNode(
+            "long-task", "world_actors", self.ore,
+            Quantity(2, ResourceUnit.ITEM), Quantity(2, ResourceUnit.ITEM),
+            Quantity(0, ResourceUnit.ITEM), gathering_duration_ticks=40,
+        ))
+
+        self.service.start_gathering(
+            "first_worker", "short-task", "main",
+            Quantity(1, ResourceUnit.ITEM), "short-activity",
+        )
+        self.service.start_gathering(
+            "second_worker", "long-task", "main",
+            Quantity(1, ResourceUnit.ITEM), "long-activity",
+        )
+
+        self.service.advance_game_time(100)
+
+        self.assertEqual(self.service.state().simulation_tick, 40)
+        self.assertEqual(
+            self.service.activity("short-activity").state,
+            ActivityState.COMPLETED.value,
+        )
+        self.assertEqual(
+            self.service.activity("long-activity").state,
+            ActivityState.COMPLETED.value,
+        )
+        self.assertEqual(self.inventory.get(self.ore), Quantity(2, ResourceUnit.ITEM))
+        self.assertIsNone(self.service.actor("first_worker").activity_id)
+        self.assertIsNone(self.service.actor("second_worker").activity_id)
+
+    def test_shared_game_time_stops_at_single_activity_completion(self):
+        self.service.register_actor("worker", "worker")
+        self.application.holder.current.resource_nodes.add(WorldResourceNode(
+            "single-task", "world_actors", self.ore,
+            Quantity(2, ResourceUnit.ITEM), Quantity(2, ResourceUnit.ITEM),
+            Quantity(0, ResourceUnit.ITEM), gathering_duration_ticks=15,
+        ))
+        self.service.start_gathering(
+            "worker", "single-task", "main",
+            Quantity(1, ResourceUnit.ITEM), "single-activity",
+        )
+
+        self.service.advance_game_time(90)
+
+        self.assertEqual(self.service.state().simulation_tick, 15)
+        self.assertEqual(
+            self.service.activity("single-activity").state,
+            ActivityState.COMPLETED.value,
+        )
+
     def test_invalid_actor_save_does_not_replace_active_bundle(self):
         self.service.register_actor("worker", "worker")
         active = self.application.holder.current
