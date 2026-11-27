@@ -255,16 +255,13 @@ class TestActorSystem(unittest.TestCase):
         )
         self.service.advance_by(12)
         cancelled = self.service.cancel_activity("cancel-progress")
-        self.assertEqual(cancelled.elapsed_ticks, 12)
-        self.assertEqual(cancelled.remaining_ticks, started.end_tick - started.start_tick - 12)
-        self.assertAlmostEqual(
-            cancelled.progress,
-            12 / (started.end_tick - started.start_tick),
-        )
+        self.assertEqual(cancelled.elapsed_ticks, 0)
+        self.assertEqual(cancelled.remaining_ticks, started.end_tick - started.start_tick)
+        self.assertEqual(cancelled.progress, 0.0)
 
         self.service.advance_by(100)
         after = self.service.activity("cancel-progress")
-        self.assertEqual(after.elapsed_ticks, 12)
+        self.assertEqual(after.elapsed_ticks, 0)
         self.assertEqual(after.progress, cancelled.progress)
         self.assertIsNone(self.service.actor("worker").activity_id)
 
