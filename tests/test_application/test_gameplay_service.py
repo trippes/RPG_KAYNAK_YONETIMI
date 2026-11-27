@@ -9,6 +9,7 @@ from character import Attributes, Character, CharacterClass, ItemDefinition, Rac
 from containers import ContainerDefinition, ContainerInstance
 from locks import ForceProfile, KeyDefinition, LockDefinition, LockInstance, LockpickProfile
 from resources import ResourceDefinition
+from quests import Objective, ObjectiveType, Quest, Reward
 
 from application import (
     Combatant,
@@ -538,6 +539,47 @@ class TestGameplayService(unittest.TestCase):
         self.assertEqual(self.inventory.get(self.tool), Quantity(1, ResourceUnit.ITEM))
         self.service.advance_to(5)
         self.assertEqual(self.inventory.get(self.tool), Quantity(1, ResourceUnit.ITEM))
+
+    def test_quest_journal_read_models_are_immutable_and_read_only(self):
+        active = Quest(
+            "active_quest", "Active quest",
+            (Objective("collect_wood", "Collect wood", ObjectiveType.COLLECT, required=2),),
+            Reward(experience=10, items=(("bread", 1),)),
+            giver_npc_id="missing_giver",
+        )
+        active.start()
+        active.objectives[0].advance(1)
+        completed = Quest(
+            "completed_quest", "Completed quest",
+            (Objective("finish", "Finish task", ObjectiveType.CUSTOM),),
+        )
+        completed.start()
+        completed.update("finish", 1)
+        self.application.holder.current.quest_log.add(active)
+        self.application.holder.current.quest_log.add(completed)
+
+        before_tick = self.service.state().simulation_tick
+        first = self.service.quest_log_state("active")
+        repeated = self.service.quest_log_state("active")
+        completed_views = self.service.quest_log_state("completed")
+
+        self.assertEqual(first, repeated)
+        self.assertEqual(len(first), 1)
+        self.assertEqual(first[0].quest_id, "active_quest")
+        self.assertEqual(first[0].state, "active")
+        self.assertEqual(first[0].giver_name, "Bilinmeyen görev veren")
+        self.assertEqual(first[0].objectives[0].progress, 1)
+        self.assertEqual(first[0].reward.experience, 10)
+        self.assertEqual(first[0].reward.items, (("bread", 1),))
+        self.assertEqual(tuple(item.quest_id for item in completed_views), ("completed_quest",))
+        with self.assertRaises(FrozenInstanceError):
+            first[0].title = "Changed"
+        with self.assertRaises(FrozenInstanceError):
+            first[0].objectives[0].progress = 2
+        with self.assertRaises(ValueError):
+            self.service.quest_log_state("unknown")
+        self.assertEqual(self.service.quest_log_counts(), (1, 1, 0))
+        self.assertEqual(self.service.state().simulation_tick, before_tick)
 
     def test_production_catalog_queries_are_immutable_and_service_owned(self):
         before_tick = self.service.state().simulation_tick
