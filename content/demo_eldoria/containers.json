@@ -33,6 +33,10 @@
         {
           "item_id": "hinge",
           "quantity": 2
+        },
+        {
+          "item_id": "iron",
+          "quantity": 20
         }
       ]
     }
