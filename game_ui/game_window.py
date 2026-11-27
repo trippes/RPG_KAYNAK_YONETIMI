@@ -548,6 +548,9 @@ class GameWindow:
                 managed.screen = self.screens[window_id]
 
         self._movement_clock.reset()
+        time_driver = getattr(self, "_simulation_time_driver", None)
+        if time_driver is not None:
+            time_driver.reset()
         npc_clock = getattr(self, "_npc_simulation_clock", None)
         if npc_clock is not None:
             npc_clock.reset()
@@ -618,6 +621,9 @@ class GameWindow:
     def _open_pause_menu(self):
         if not self.pause_menu_open:
             self.pause_menu_selected = 0
+        time_driver = getattr(self, "_simulation_time_driver", None)
+        if time_driver is not None:
+            time_driver.reset()
         self.pause_menu_open = True
 
     def _close_pause_menu(self):
@@ -755,9 +761,16 @@ class GameWindow:
             return
 
         try:
-            # SimulationRuntime/ActionProcessor process scheduled event
-            # boundaries internally; do not loop once per individual tick.
-            self.service.advance_by(ticks_to_advance)
+            # GameplayService stops at the final active-activity boundary;
+            # SimulationRuntime processes each scheduled event boundary.
+            advance_game_time = getattr(self.service, "advance_game_time", None)
+            if callable(advance_game_time):
+                advance_game_time(ticks_to_advance)
+            else:
+                self.service.advance_by(ticks_to_advance)
+            if not self._has_running_timed_activity():
+                # Discard real-time debt after the final activity completes.
+                driver.reset()
         except (KeyError, RuntimeError, ValueError) as error:
             driver.reset()
             self._set_notice(f"Süreli eylem durduruldu: {error}", "error")
