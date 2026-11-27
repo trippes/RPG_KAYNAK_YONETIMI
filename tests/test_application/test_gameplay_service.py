@@ -148,6 +148,12 @@ class TestGameplayService(unittest.TestCase):
             self.service.actor_character(self.service.player_actor_id).character_id,
             "character_001",
         )
+        creation_state = self.service.character_creation_state()
+        self.assertEqual(creation_state.character_id, "character_001")
+        self.assertEqual(creation_state.race_id, "human")
+        self.assertEqual(creation_state.class_id, "rogue")
+        with self.assertRaises(FrozenInstanceError):
+            creation_state.race_id = "elf"
 
     def test_missing_account_id_is_not_inferred_from_actor_id(self):
         self.service.configure_player_context(
