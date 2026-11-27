@@ -554,7 +554,7 @@ class GameWindow:
         self._player_movement_controller = None
         self._player_movement_controller_key = None
         self.pause_menu_open = False
-        self.current = self.gameplay_screen
+        self.current = getattr(self, "gameplay_screen", "main")
         self.gameplay_active = True
 
     def _start_new_game(self):
