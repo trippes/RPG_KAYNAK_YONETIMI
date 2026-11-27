@@ -72,6 +72,53 @@ class FakePlayerService:
     def change_relationship(self, source_id, target_id, value=0, trust=0):
         self.relationship_changes.append((source_id, target_id, value, trust))
 
+    @property
+    def player_name_confirmed(self):
+        return self._player_name_confirmed
+
+    def confirm_player_name(self):
+        self._player_name_confirmed = True
+
+    def begin_character_creation_from_dialogue(self):
+        self._creation_from_eren = True
+
+    def dialogue_npc_name(self, npc_id):
+        npc = self.application.holder.current.social.npcs.get(npc_id)
+        return getattr(npc, "name", None) if npc is not None else None
+
+    def dialogue_session_for_npc(self, target_npc_id):
+        bundle = self.application.holder.current
+        actors = bundle.actors.actors()
+        actor = next(
+            (item for item in actors if item.actor_id == self.player_actor_id),
+            None,
+        )
+        if actor is None:
+            raise RuntimeError("Oyuncu aktörü etkin dünyada bulunamadı.")
+        npcs = bundle.social.npcs.all()
+        dialogue_ids = tuple(sorted(bundle.social.dialogues))
+        if not npcs or not dialogue_ids:
+            raise RuntimeError("Konuşulacak NPC veya diyalog bulunamadı.")
+        npc = next((item for item in npcs if item.npc_id == target_npc_id), npcs[0])
+        preferred = {
+            "village_carpenter": "carpenter_dialogue",
+            "caravan_merchant": "caravan_merchant_dialogue",
+        }.get(npc.npc_id)
+        dialogue_id = (
+            preferred if preferred in bundle.social.dialogues
+            else next(
+                (item for item in dialogue_ids
+                 if npc.npc_id in bundle.social.dialogues[item].speakers),
+                dialogue_ids[0],
+            )
+        )
+        return SimpleNamespace(
+            actor_id=actor.actor_id,
+            npc_id=npc.npc_id,
+            npc_name=npc.name,
+            dialogue_id=dialogue_id,
+        )
+
 
 class CharacterIdentityTests(unittest.TestCase):
     def setUp(self):
