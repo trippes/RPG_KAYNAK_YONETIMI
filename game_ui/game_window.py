@@ -791,7 +791,10 @@ class GameWindow:
             return
 
         if self.gameplay_active and state.pressed("back"):
-            self._open_pause_menu()
+            if self.pause_menu_open:
+                self._close_pause_menu()
+            else:
+                self._open_pause_menu()
             self._render_current()
             if self.pause_menu_open:
                 self._render_pause_menu()
