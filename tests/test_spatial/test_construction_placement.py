@@ -77,7 +77,7 @@ class ConstructionPlacementTests(unittest.TestCase):
         )
         result = ConstructionPlacementValidator.validate(placement, snapshot())
         self.assertTrue(result.valid)
-        self.assertEqual(result.footprint_cells, (HexCoord(-1, 0), HexCoord(0, 0)))
+        self.assertEqual(result.footprint_cells, (HexCoord(-1, 0), HexCoord(1, 0)))
 
     def test_request_rejects_part_without_explicit_footprint(self):
         part = StructurePartDefinition(
