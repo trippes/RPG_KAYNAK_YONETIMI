@@ -666,8 +666,6 @@ class GameWindow:
         self.current = self._open_save_slots("save", "main")
 
     def _render_pause_menu(self):
-        overlay = self.pg.Rect(0, 0, self.width, self.height)
-        self.pg.draw.rect(self.screen, (5, 8, 14), overlay)
         panel_width = 420
         panel_height = len(PAUSE_MENU_OPTIONS) * 58 + 110
         panel = self.pg.Rect(
@@ -676,7 +674,22 @@ class GameWindow:
             panel_width,
             panel_height,
         )
-        self.renderer.panel(panel, (23, 29, 43), (145, 118, 70))
+
+        # Keep the world and gameplay windows visible beneath the pause menu.
+        # Only the menu panel itself is composited with partial transparency.
+        panel_surface = self.pg.Surface(
+            (panel.width, panel.height),
+            self.pg.SRCALPHA,
+        )
+        panel_surface.fill((23, 29, 43, 176))
+        self.pg.draw.rect(
+            panel_surface,
+            (145, 118, 70, 230),
+            panel_surface.get_rect(),
+            2,
+            border_radius=8,
+        )
+        self.screen.blit(panel_surface, panel.topleft)
         self.renderer.text(
             "Oyun Menüsü",
             panel.centerx - self.renderer.text_width("Oyun Menüsü", title=True) // 2,
