@@ -226,6 +226,48 @@ class TestActorSystem(unittest.TestCase):
             )
             self.assertIn(("ore", 1, "item"), self.service.inventory("main").stocks)
 
+    def test_activity_progress_is_derived_from_canonical_simulation_tick(self):
+        self.service.register_actor("worker", "worker")
+        started = self.service.start_gathering(
+            "worker", "node", "main", Quantity(1, ResourceUnit.ITEM), "progress",
+        )
+        duration = started.end_tick - started.start_tick
+
+        half = duration // 2
+        self.service.advance_by(half)
+        progress = self.service.activity("progress")
+        self.assertEqual(progress.duration_ticks, duration)
+        self.assertEqual(progress.elapsed_ticks, half)
+        self.assertEqual(progress.remaining_ticks, duration - half)
+        self.assertAlmostEqual(progress.progress, half / duration)
+
+        self.service.advance_by(duration - half)
+        completed = self.service.activity("progress")
+        self.assertEqual(completed.state, ActivityState.COMPLETED.value)
+        self.assertEqual(completed.elapsed_ticks, duration)
+        self.assertEqual(completed.remaining_ticks, 0)
+        self.assertEqual(completed.progress, 1.0)
+
+    def test_cancelled_activity_progress_freezes_at_cancellation_tick(self):
+        self.service.register_actor("worker", "worker")
+        started = self.service.start_gathering(
+            "worker", "node", "main", Quantity(1, ResourceUnit.ITEM), "cancel-progress",
+        )
+        self.service.advance_by(12)
+        cancelled = self.service.cancel_activity("cancel-progress")
+        self.assertEqual(cancelled.elapsed_ticks, 12)
+        self.assertEqual(cancelled.remaining_ticks, started.end_tick - started.start_tick - 12)
+        self.assertAlmostEqual(
+            cancelled.progress,
+            12 / (started.end_tick - started.start_tick),
+        )
+
+        self.service.advance_by(100)
+        after = self.service.activity("cancel-progress")
+        self.assertEqual(after.elapsed_ticks, 12)
+        self.assertEqual(after.progress, cancelled.progress)
+        self.assertIsNone(self.service.actor("worker").activity_id)
+
     def test_invalid_actor_save_does_not_replace_active_bundle(self):
         self.service.register_actor("worker", "worker")
         active = self.application.holder.current
