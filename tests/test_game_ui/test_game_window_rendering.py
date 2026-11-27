@@ -172,6 +172,30 @@ class TestGameWindowRendering(unittest.TestCase):
         self.assertEqual(calls, [])
         self.assertEqual(clock.accumulated_seconds, 0.0)
 
+    def test_fullscreen_toggle_updates_window_manager_viewport(self):
+        viewport_calls = []
+        display = SimpleNamespace(get_size=lambda: (1280, 720))
+        window = SimpleNamespace(
+            fullscreen=False,
+            width=960,
+            height=640,
+            _create_display=lambda _width, _height, fullscreen: display,
+            renderer=SimpleNamespace(surface=None, width=960, height=640),
+            window_manager=SimpleNamespace(
+                set_viewport=lambda width, height: viewport_calls.append((width, height)),
+            ),
+        )
+
+        GameWindow._toggle_fullscreen(window)
+
+        self.assertTrue(window.fullscreen)
+        self.assertEqual((window.width, window.height), (1280, 720))
+        self.assertEqual(
+            (window.renderer.width, window.renderer.height),
+            (1280, 720),
+        )
+        self.assertEqual(viewport_calls, [(1280, 720)])
+
     def test_non_gameplay_screen_clears_before_rendering_screen(self):
         calls = []
         window = SimpleNamespace(
