@@ -428,6 +428,7 @@ class GameWindow:
         self.renderer.surface = self.screen
         self.renderer.width = self.width
         self.renderer.height = self.height
+        self.window_manager.set_viewport(self.width, self.height)
 
     def _select_save_slot(self, index, path, exists):
         self.selected_slot = index
