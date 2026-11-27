@@ -1,6 +1,6 @@
 # Aşama 4 — Arayüzün Yeni Mimariye Tam Uyumu
 
-**Durum:** Plan revize edildi; uygulama henüz başlamadı  
+**Durum:** Uygulama ve otomatik doğrulama sürüyor; gerçek oyun penceresi manuel kabulü bekliyor (2026-11-27)  
 **Hedef dal:** `experiment/map-cleanup`  
 **Çalışma biçimi:** Tek ve bütünleşik aşama. A4.1, A4.2 veya benzeri alt aşamalar oluşturulmayacak.
 
@@ -52,7 +52,7 @@ WindowManager ve GameWindow birlikte ele alınacak.
 - ESC tuşuna her basıldığında duraklatma menüsü açılır.
 - Açık envanter, karakter, görev günlüğü veya başka bir oyun paneli ESC nedeniyle önce kapatılmaz. ESC'nin görevi duraklatma menüsünü açmaktır.
 - Bu kural, açık panel bulunup bulunmamasından bağımsızdır.
-- Duraklatma menüsü zaten açıkken ESC'ye tekrar basılmasının mevcut menü durumuyla etkileşimi incelenir; oyun yanlışlıkla devam ettirilmez ve menü beklenmedik biçimde kapatılmaz. Nihai tekrar-basım davranışı mevcut menü sözleşmesi ve testlerle açıkça tanımlanır.
+- Duraklatma menüsü zaten açıkken ESC'ye tekrar basılması menüyü kapatmaz, oyunu devam ettirmez ve seçili menü öğesini değiştirmez.
 - Pencere kapatma, ilgili pencerenin kendi kapatma düğmesi/kontrolüyle yapılır; ESC genel pencere kapatma kısayolu değildir.
 
 Diğer girdi kuralları:
@@ -80,15 +80,60 @@ Testler mevcut davranışı kanıtlamalı; yapılmayan manuel kabul veya çalı�
 
 ## 4. Manuel kabul
 
-Mevcut oyun penceresinde en az şu akışlar doğrulanacak:
-- Karakter ve envanter ekranları.
-- Pazar, para değişimi ve üretim ekranları.
-- Diyalog ve görev günlüğü ekranları.
-- Konteyner açma ve eşya aktarımı.
-- Mevcut savaş ekranı akışı.
-- Birden fazla pencerenin birlikte kullanımı, odak ve pencere yaşam döngüsü.
-- ESC'nin açık panel olsun veya olmasın duraklatma menüsünü açması.
-- Duraklatma menüsünden devam etme ve ana menüye dönüş.
+Manuel kabul gerçek Pygame oyun penceresinde, kullanıcının mevcut oyun kaydı ve mevcut içerikle yapılacaktır. Her kontrol sonucu **Geçti / Başarısız / Uygulanamadı** olarak kaydedilecek; uygulanamayan akışlar başarılı sayılmayacaktır.
+
+### 4.1. Ekran açma, kapatma ve odak
+
+- Karakter (C), envanter (I) ve görev günlüğü (J) pencerelerini ayrı ayrı açıp kapat.
+- İki veya daha fazla pencereyi aynı anda açık tut; her birine tıklayarak odağı değiştir.
+- Pencere başlığından sürükle; uygun kenar/köşelerden boyutlandır.
+- Bir pencerenin kapatma düğmesine bas. Yalnızca hedef pencerenin kapandığını, diğer pencerelerin açık kaldığını doğrula.
+- Kapatılan pencereyi yeniden aç. İçerik, seçili öğe ve servis verisinin tutarlı olduğunu kontrol et.
+
+### 4.2. Pazar ve para değişimi
+
+- Mevcut diyalog akışından pazar ekranını aç.
+- Pazar penceresindeki para değişimi kontrolünü kullan.
+- Para değişimi penceresinin açıldığını, pazar penceresinin beklenmedik biçimde kapanmadığını doğrula.
+- Para değişimi penceresini kapat; pazar penceresinin kullanılabilir kaldığını kontrol et.
+- Mevcut bakiyelerle izin verilen bir dönüşüm yap ve bakiyelerin güncellendiğini doğrula.
+
+### 4.3. Üretim ve tesis bağlamı
+
+- Üretim kısayoluyla üretim ekranını aç.
+- Mevcut bir tesis etkileşiminden üretim ekranına geçişi dene.
+- Tarif seçimi, uygun tesis ve kaynak durumunun doğru gösterildiğini kontrol et.
+- Pencereyi kapatıp yeniden aç; geçerli tesis bağlamının bozulmadığını doğrula.
+
+### 4.4. Konteyner ve sürükle-bırak
+
+- Mevcut dünyadaki bir konteyneri aç.
+- Envanter penceresini de aç ve bir eşyayı diğer pencereye sürükleyerek aktar.
+- Aktarımın doğru miktar ve doğru envanterler arasında gerçekleştiğini kontrol et.
+- Sürükleme sürerken kaynak pencereyi kapat; takılı kalan sürükleme imleci veya sonraki fare girdilerinde kilitlenme olmadığını doğrula.
+- Konteyneri kapatıp yeniden aç; içerik ve pencere durumu tutarlılığını kontrol et.
+
+### 4.5. Diyalog, görev günlüğü ve savaş
+
+- Mevcut NPC ile diyalog başlat; geçmiş panelini aç/kapat ve seçenek seçimini dene.
+- Mevcut içerik izin veriyorsa diyalogdan pazar geçişini doğrula.
+- Görev günlüğünde kategori değiştirme, liste kaydırma ve ayrıntı görüntülemeyi dene.
+- Mevcut savaş akışını açıp ekrandaki mevcut komutların çalıştığını doğrula; savaş mekaniğini değiştirme.
+- Görev veren NPC bulunmadığından gerçek görev alma/teslim etme akışı bu manuel kabulde ertelenmiş olarak kalır.
+
+### 4.6. ESC ve duraklatma menüsü
+
+- Hiçbir oyun penceresi açık değilken ESC'ye bas; duraklatma menüsü açılmalı.
+- Envanter veya karakter gibi bir pencere açıkken ESC'ye bas; pencere kapanmadan duraklatma menüsü açılmalı.
+- Duraklatma menüsü açıkken seçimi başka bir öğeye taşı ve ESC'ye tekrar bas; menü açık ve seçim aynı kalmalı.
+- Devam et seçeneğini kullan; oyun ve açık pencereler beklenen durumla devam etmeli.
+- Kaydet ve ana menüye dön seçeneklerini mevcut kayıtla doğrula.
+
+### 4.7. Ekran boyutu ve kayıt yükleme
+
+- Pencere boyutunu değiştir veya tam ekranı aç/kapat; pencerelerin görünür alan içinde kaldığını ve fare hedeflerinin doğru çalıştığını kontrol et.
+- Birden fazla pencere açıkken kayıt yükle; eski oturuma ait pencere/drag durumu kalmadığını ve yeni ekranların güncel servis bağlamını kullandığını doğrula.
+- Oyun dünyasının pencere panellerinin arkasında görünür kaldığını kontrol et.
 
 **Ertelenmiş genel oyun kabul maddeleri:**
 - Görev veren NPC bulunmadığından gerçek görev alma/teslim etme akışı, uygun içerik mevcut olduğunda doğrulanacaktır. Bu aşama için yeni NPC veya görev içeriği eklenmeyecektir.
@@ -121,4 +166,4 @@ Aşama 4 ancak aşağıdaki koşullar birlikte sağlandığında tamamlanır:
 
 Önce mevcut ekran, pencere yöneticisi, GameWindow ve test davranışları ayrıntılı incelenecek; ardından tek bütünleşik Aşama 4 kapsamında gerekli değişiklikler yapılacaktır. İç çalışma sırasında mantıksal commit'ler kullanılabilse de alt aşama tanımlanmayacak ve aşama tamamlanmadan ara alt-aşama kapanışları ilan edilmeyecektir.
 
-Bu belge planı tanımlar; kod değişikliği, test çalıştırması veya manuel kabul yapıldığı anlamına gelmez.
+Bu belge uygulama ve otomatik doğrulama çalışmalarının sürdüğünü, gerçek oyun penceresi manuel kabulünün ise henüz yapılmadığını belirtir. Manuel kabul sonuçları kullanıcı tarafından doğrulanmadan Aşama 4 kapatılmayacaktır.
