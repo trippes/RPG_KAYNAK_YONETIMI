@@ -1,6 +1,6 @@
 # Eldoria — Eski Mimari Bağımlılıklarını Temizleme Roadmap'i
 
-**Durum:** Uygulama sürüyor — Aşama 3 (A3.1 GameplayService API ve UI tüketici envanteri)
+**Durum:** Aşama 3 sürüyor — A3.1 GameplayService API ve UI tüketici envanteri tamamlandı
 **Hedef dal:** `experiment/map-cleanup`  
 **Kapsam:** Eski mimariden kalan sabit kimlikler, örtük varsayımlar, yinelenen durum ve servis erişimleri, içerik paketi sözleşmeleri, arayüz entegrasyonu ve kayıt uyumluluğu.
 
@@ -217,7 +217,7 @@ Roadmap onaylandıktan sonra ilk çalışma paketi şu sırayla yürütülür:
 
 **Aşama 2 kapanışı (2026-11-26):** A2.1 şema sürümü tür doğrulaması, A2.2 kimlik/referans ilişkileri ve A2.3 zorunlu/isteğe bağlı/varsayılan sözleşmeleri tamamlandı. Aşama 3'e geçiş için içerik paketleri ve yapılandırma sözleşmeleri kabul ölçütleri karşılandı.
 
-| 2026-11-26 | A3.1 — GameplayService sorumluluk/API ve UI tüketici envanteri | Salt okunur denetim sürüyor; henüz kod değişikliği yok | `GameplayService` yaklaşık 2.500 satır ve 151 class method/property içeriyor; 132'si public isimli API. Tek facade altında movement/NPC spatial, actor identity, inventory/container/lock/equipment, gathering/production, economy/market/trade, social/dialogue, quests/progression, combat, persistence ve snapshot sorumlulukları bulunuyor. UI'da 7 dosyada toplam 21 `service.application` erişimi tespit edildi: combat_screen, dialogue_screen, renderer, production_screen, quest_log_screen, character_creation ve trade_screen. Bu erişimler `application.holder.current` üzerinden combat, NPC/dialogue registry, actor listesi, quest log/graph/progress, recipes/facilities ve active world verisini doğrudan okuyor; character_creation ayrıca `application.customize_character` çağırıyor. dialogue_screen, private `service._dialogue_context` metodunu da çağırıyor. `GameplaySnapshotView` şu an world_id/tick, inventory, resource node, facility, job, chain, actor ve activity alanlarını içeriyor; NPC/dialogue, quest/graph, combat, recipe ve active-world-name read model'leri yok. Mevcut read API'lerden `actor`, `inventory`, `container_state`, `lock_state`, `activity` immutable view döndürürken `actor_character`, `market_for_npc`, `trade_partner_for_npc` ve `available_quests` domain aggregate döndürüyor; bunların UI sınırında nasıl kullanılacağı ayrıca değerlendirilecek. `game_window.py` içindeki GameApplication oluşturma noktası composition root olarak kabul edildi; doğrudan erişim sorunu değil. Mevcut architecture testleri Core/domain sınırlarını denetliyor, fakat game_ui→GameplayService/Application sınırı için koruma testi yok. Sonraki adım: read-only query/view sözleşmelerini tasarlamak, sonra ekranları tek tek servis API'sine geçirmek ve mimari regresyon testi eklemek. |
+| 2026-11-27 | A3.1 — GameplayService sorumluluk/API ve UI tüketici envanteri | **Tamamlandı (salt okunur envanter; kod değişikliği yok)** | Güncel dal kaynakları üzerinden servis ve bilinen UI tüketicileri yeniden incelendi; önceki yaklaşık sayılar güncellendi. Kesin bulgular ve dosya bazlı erişim listesi Bölüm 7.2'de kayıtlı. A3.1'in çıktısı servis sorumluluk haritası, public/private API envanteri, UI tüketici haritası, doğrudan Application erişimlerinin sınıflandırması ve read-model sözleşme boşluklarıdır. Bu kapanış A3.2 veya sonraki işlerin başladığı anlamına gelmez. |
 
 ## 8. Tamamlanma tanımı
 
@@ -236,3 +236,50 @@ Bu program ancak aşağıdaki koşulların tümü sağlandığında tamamlanmı�
 ---
 
 **Not:** Bu belge bir uygulama planıdır; aşamaların tamamlandığı anlamına gelmez. Her aşamanın durumu, gerçek kod değişikliği ve test kanıtı geldikçe güncellenecektir.
+
+
+### 7.2. A3.1 — GameplayService ve UI tüketici envanteri (2026-11-27)
+
+**İnceleme sınırı:** Yalnızca `experiment/map-cleanup` dalındaki `application/gameplay_service.py` ve A3.1 önceki taramasında belirlenen yedi UI tüketicisi incelendi. Bu çalışma salt okunur keşif ve dokümantasyondur; runtime/UI kodu değiştirilmedi. Kaynak dosya anlık görüntüleri: `application/gameplay_service.py` blob `ead3443856219f7f27310d89295dfb5389589f40`; UI dosyaları: `combat_screen.py` `f20946bdf1203330dc04a5b1c4e7f934392f5b7e`, `dialogue_screen.py` `d27bf3041c4d2fd0b0e463ab3bbb9512e4dd5378`, `renderer.py` `f2ade0ea2b8d2bd72b2c761a7c052d84a0dfd384`, `production_screen.py` `7c59b491d0388d562ea55cdd010f6c4854329ff1`, `quest_log_screen.py` `e027b60158fbab80ed8052f4c361ce47f8f6d875`, `character_creation.py` `7cac72f625336ba21cee35fcf1284c363728c812`, `trade_screen.py` `ecbdf4ca050725293787d6ed0d00bfd7c995d9f1`.
+
+**Servis büyüklüğü ve API envanteri:** Dosya 2.571 satırdır. `__init__` hariç 151 metot tanımı vardır: 133 public isim (property erişimleri dâhil) ve 18 private metot. Public yüzeyin ana sorumluluk kümeleri:
+
+- Oturum/kimlik/yaşam döngüsü: `application`, `player_actor_id`, `player_character_id`, `player_inventory_id`, `player_account_id`, `configure_player_context`, `save`, `load`, `state`.
+- Hareket ve mekânsal etkileşim: sürekli/yönlü/hedefe hareket, hex actor binding, NPC spatial binding ve patrol/avoidance, companion komutları, dünya noktası hedef/transition çözümleme.
+- Aktör, envanter, ekipman ve faaliyet: actor kaydı/bağları, `actor`, `actor_character`, `actor_stats`, inventory/item/equipment sorguları, equip/unequip, gathering, activity ve tüketim.
+- Konteyner/kilit: konteyner ve kilit tanımları/kayıtları, durum sorguları, anahtar/lockpick/force denemeleri, taşıma/custody ve item/resource transferleri.
+- Üretim/kaynak: collect, action cost, production başlatma, chain başlatma/ilerletme, zaman ilerletme.
+- Ekonomi/ticaret: balance/credit/exchange, market offer ve merchant, market profile, NPC trade partner, satılabilir teklif ve satış.
+- Sosyal/diyalog: NPC/faction kaydı, reputation/relationship, dialogue kaydı/eylemi, talk ve dialogue choice.
+- Görev/ilerleme: quest graph/definition kaydı, kabul, durumlar, branch seçimi, objective ilerletme, teslim, experience ve skill.
+- Savaş: combatant ekleme, combat snapshot, encounter oluşturma/tur ilerletme, attack ve round ilerletme.
+- Okuma/raporlama: `state`, `actors_state`, `activities_state` ve alan bazlı read API'leri.
+
+Bu kümeler tek bir facade üzerinde toplanmıştır. Servis canonical world state'in sahibi olduğunu söylemiyor; her işlemde güncel SessionBundle'ı çözüp mevcut alan sahiplerine delege ediyor. Bununla birlikte servis içinde chain/dialogue/quest kayıtları, consumable etkileri, hex physics snapshot'ları ve NPC behavior/avoidance sistemlerine ait cache/yardımcı durumlar tutuluyor. Bu nedenle servis yalnızca ince bir yönlendirme katmanı değildir; orchestration ve bazı oturum kapsamlı yardımcı durumları da taşır.
+
+**UI tüketici haritası ve doğrudan Application erişimleri:**
+
+| UI dosyası | `service.application` kullanımı | Gözlenen amaç |
+|---|---:|---|
+| `game_ui/screens/combat_screen.py` | 0 | Combat işlemleri `combat_state`, `combat_attack`, `next_combat_turn`, `advance_combat_round` servis API'leri üzerinden. |
+| `game_ui/screens/dialogue_screen.py` | 6 | SessionBundle, NPC ve dialogue registry okumaları; ayrıca aşağıdaki private erişimler. |
+| `game_ui/renderer.py` | 3 | Aktif dünya, aktif quest log ve SessionBundle okuması. |
+| `game_ui/screens/production_screen.py` | 2 | Recipe ve facility verilerine erişim. |
+| `game_ui/screens/quest_log_screen.py` | 3 | Quest log ve NPC/giver verilerine erişim. |
+| `game_ui/screens/character_creation.py` | 2 | Karakter özelleştirme komutu ve NPC registry erişimi. |
+| `game_ui/screens/trade_screen.py` | 1 | NPC kaydı/ismi erişimi. |
+| **Toplam** | **17** | 6 dosyada 17 `service.application` ifadesi; 16 veri/registry okuması ve 1 doğrudan `application.customize_character` komutu. |
+
+Ayrıca `dialogue_screen.py` ve `character_creation.py`, servis private alanlarına toplam 6 yerde erişiyor: `_dialogue_context` private metot çağrısı; `_character_factory`, `_creation_from_eren` ve `_player_name_confirmed` private durumlarına doğrudan erişim/değişiklik. Bu alanların bazıları iki ekran arasında ortak kullanılıyor. Dolayısıyla UI sınırındaki sorun yalnızca Application nesnesinin açığa çıkması değil, servis iç durumunun da UI tarafından tüketilmesidir.
+
+**Read-model ve API sözleşmesi bulguları:**
+
+- `GameplaySnapshotView` immutable bir görünüm olarak world_id/tick, inventories, resource nodes, facilities, jobs, chains, actors ve activities alanlarını kapsıyor.
+- Combat için ayrı `CombatSnapshotView` / `combat_state` mevcut.
+- UI'nin doğrudan okuduğu NPC/dialogue registry, quest log/graph/progress, recipes/facilities kataloğu ve aktif dünya adı için ortak snapshot/read-model yüzeyi bulunmuyor. Bu eksiklikler doğrudan Application erişimlerinin nedenlerinden bazılarıdır; A3.1'de yalnızca kayda geçirildi.
+- `actor`, `inventory`, `container_state`, `lock_state` ve `activity` gibi API'ler immutable view döndürürken `actor_character`, `market_for_npc`, `trade_partner_for_npc` ve `available_quests` domain nesneleri/aggregate'ları döndürür. UI sınırında view ile domain aggregate ayrımı tutarlı değildir.
+- Public `application` property'si tüm GameApplication'a erişim sağlıyor. Bu, servis API sınırını dışarıdan dolaşmayı mümkün kılan ana kaçış noktasıdır.
+- `game_window.py` içindeki GameApplication oluşturma noktası composition root olarak sınıflandırıldı; tek başına UI tüketici ihlali sayılmadı.
+- Mevcut architecture testleri Core/domain sınırlarını koruyor; game_ui katmanının `GameplayService.application` veya private servis alanlarına erişmesini engelleyen özel bir mimari koruma testi envanterde bulunmadı.
+
+**A3.1 çıktısı ve karar:** Servis sorumlulukları, API yüzeyi, UI tüketicileri, doğrudan erişimlerin sayısı/amacı ve read-model boşlukları belgelenmiştir. Önceki nottaki 7 dosyada 21 `service.application` erişimi ifadesi güncel kaynakta doğrulanmadığı için kaldırılmış; güncel sayım 7 bilinen UI tüketicisinde 6 dosyada 17 erişim olarak düzeltilmiştir. A3.1 tamamlandı. Bu aşamada hiçbir UI erişimi taşınmadı, yeni read model eklenmedi, mimari test veya runtime kodu değiştirilmedi. Bunlar A3.2 ve devamındaki ayrı, sınırlandırılmış işlerin konusu olarak bırakıldı.
