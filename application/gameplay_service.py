@@ -3022,6 +3022,10 @@ class GameplayService:
     def activities_state(self) -> tuple[ActivityView, ...]:
         return self._current_bundle().actor_activities.activities()
 
+    def has_running_timed_activities(self) -> bool:
+        """Return whether any actor requires the shared simulation timeline."""
+        return self._current_bundle().actor_activities.has_running_activities
+
     def _reset_session_runtime_state(self) -> None:
         """Dispose runtime objects whose identity is bound to the previous session."""
         for chain in self._chains.values():
