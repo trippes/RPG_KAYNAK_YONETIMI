@@ -67,6 +67,23 @@ class TestConstructionRuntimeIntegration(unittest.TestCase):
             self.request, snapshot
         )
 
+    def test_placement_service_uses_hex_runtime_as_snapshot_and_commit_owner(self):
+        service = ConstructionPlacementService(
+            lambda: self.runtime.construction_snapshot(
+                "forest", supported_cells=self.support
+            ),
+            self.runtime,
+        )
+
+        result = service.try_commit(self.request)
+
+        self.assertTrue(result.valid)
+        self.assertEqual(len(self.runtime.structure_placements("forest")), 1)
+        self.assertEqual(
+            self.runtime.structure_placements("forest")[0].created_by_actor_id,
+            "player",
+        )
+
     def test_runtime_snapshot_combines_actor_and_structure_occupancy(self):
         snapshot, result = self.preview()
 
