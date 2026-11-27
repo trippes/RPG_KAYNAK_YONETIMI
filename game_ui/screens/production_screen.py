@@ -38,53 +38,13 @@ class ProductionScreen:
         return str(title).replace("_", " ").capitalize()
 
     def _get_recipes(self):
-        bundle = self.service.application.holder.current
-        return sorted(
-            bundle.recipes.values(),
-            key=lambda recipe: recipe.recipe_id,
-        )
+        return self.service.recipes_state()
 
     def _get_facility(self, recipe):
-        bundle = self.service.application.holder.current
-
-        if self.selected_facility_id is not None:
-            facility = bundle.facilities.get(self.selected_facility_id)
-            if (
-                facility is None or not facility.active
-                or not facility.supports(recipe)
-            ):
-                return None
-            return facility
-
-        facilities = sorted(
-            bundle.facilities.facilities(),
-            key=lambda facility: facility.facility_id,
+        return self.service.production_facility_for_recipe(
+            recipe.recipe_id,
+            self.selected_facility_id,
         )
-
-        for facility in facilities:
-            if not facility.active:
-                continue
-
-            if (
-                recipe.facility_type is not None
-                and recipe.facility_type != facility.facility_type
-            ):
-                continue
-
-            if not set(recipe.required_capabilities).issubset(
-                set(facility.capabilities)
-            ):
-                continue
-
-            if (
-                facility.capacity.reserved
-                >= facility.capacity.capacity
-            ):
-                continue
-
-            return facility
-
-        return None
 
     # Real job states: planned -> running -> completed/cancelled/failed.
     # "planned" counts as active, otherwise a freshly started job (still
