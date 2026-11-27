@@ -1,7 +1,7 @@
 # Eldoria — Modüler Yapı ve İnşa Sistemi
 ## Aşama 2: İnşa Koordinatları ve Yerleştirme Sistemi — Çalışma Kaydı
 
-- **Durum:** Başlatıldı; koordinat sözleşmelerinin ilk dilimi uygulandı; CI doğrulaması bekleniyor
+- **Durum:** Devam ediyor; koordinat, footprint tabanlı önizleme/doğrulama ve atomik commit sınırı sözleşmeleri uygulandı; güncel CI doğrulaması bekleniyor
 - **Hedef dal:** `experiment/map-cleanup`
 - **Kapsam referansı:** `docs/architecture/90-modular-building-construction-system-roadmap.md`
 - **Aşama:** 2 — İnşa koordinatları ve yerleştirme sistemi
@@ -56,7 +56,22 @@ Test: `tests/test_spatial/test_construction_coordinates.py`
 - Farklı map ID ile dönüşüm reddi
 - Geçersiz hex size/origin reddi
 
-## 6. Henüz tamamlanmayan Aşama 2 çıkış ölçütleri
+## 6. İkinci uygulama dilimi — yerleştirme önizleme ve doğrulama
+
+Yeni kaynak: `core/domain/spatial/placement.py`
+
+- `ConstructionPlacementRequest`: Parça kimliği, map-scoped konum, yerel footprint noktaları, aktör kimliği, destek ihtiyacı ve yetki kararını taşır.
+- `ConstructionPlacementSnapshot`: Değişmez map tanımı, hex ölçüsü/orijini, dolu hücreler, desteklenen hücreler ve state revision girdisini taşır.
+- `ConstructionPlacementValidator`: Footprint noktalarını yönelime göre döndürür, world point → axial hücre dönüşümünü deterministik yapar ve dünya sınırı, blocked terrain, overlap, support ve permission kontrollerini ayrı ret nedenleriyle raporlar.
+- `ConstructionPlacementResult`: Ghost/preview tüketicisinin kullanabileceği kararlı geçerli/geçersiz sonuç, footprint hücreleri, ret nedenleri ve snapshot revision bilgisini taşır.
+- `ConstructionPlacementService`: Preview üretir; commit denemesinde güncel snapshot alıp doğrulamayı yeniden yapar.
+- `ConstructionPlacementCommitPort`: Var olan authoritative dünya state'ine bağlanacak adaptör için compare-and-swap sözleşmesidir. Adaptör, revision karşılaştırması ile yerleştirmeyi tek transaction içinde yapmalı; revision uyuşmazlığında hiçbir mutation yapmadan başarısız dönmelidir. Gerçek dünya/runtime adaptörü bu aşamada bağlanmamıştır.
+
+Test: `tests/test_spatial/test_construction_placement.py`
+
+Test kapsamı: geçerli footprint, map uyuşmazlığı, dünya dışı konum, blocked terrain, overlap, support, permission, deterministik yönelim, stale preview ve CAS commit portu davranışı.
+
+## 7. Henüz tamamlanmayan Aşama 2 çıkış ölçütleri
 
 - Footprint-aware map boundary / valid-cell mask validation
 - World-outside ve blocked-terrain ret nedenleri
@@ -68,10 +83,10 @@ Test: `tests/test_spatial/test_construction_coordinates.py`
 
 Bu nedenle Aşama 2 tamamlanmış veya kabul için hazır sayılmaz. İlk dilim için CI sonuçları geldikten sonra kalan kapsam aynı aşama içinde sürdürülecektir.
 
-## 7. Değişiklik kaydı
+## 8. Değişiklik kaydı
 
 - `core/domain/spatial/construction.py` — construction coordinate value objects
 - `core/domain/spatial/__init__.py` — public exports
-- `tests/test_spatial/test_construction_coordinates.py` — coordinate/snap tests
+- `tests/test_spatial/test_construction_coordinates.py` — coordinate/snap tests\n- `core/domain/spatial/placement.py` — pure preview/validation and CAS commit boundary\n- `tests/test_spatial/test_construction_placement.py` — placement validation/CAS tests
 
-Bütün değişiklikler yalnızca `experiment/map-cleanup` dalında yapılmıştır.
+Bütün değişiklikler yalnızca `experiment/map-cleanup` dalında yapılmıştır. CI doğrulaması tamamlanmadan bu kayıt teknik kabul anlamına gelmez.
