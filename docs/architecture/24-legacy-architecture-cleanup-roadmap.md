@@ -1,6 +1,6 @@
 # Eldoria — Eski Mimari Bağımlılıklarını Temizleme Roadmap'i
 
-**Durum:** Aşama 3 sürüyor — A3.1, A3.2, A3.3 ve A3.4 tamamlandı
+**Durum:** Aşama 3 sürüyor — A3.1–A3.4 tamamlandı; A3.5 uygulandı, otomatik CI ve manuel kabul doğrulaması bekleniyor
 **Hedef dal:** `experiment/map-cleanup`  
 **Kapsam:** Eski mimariden kalan sabit kimlikler, örtük varsayımlar, yinelenen durum ve servis erişimleri, içerik paketi sözleşmeleri, arayüz entegrasyonu ve kayıt uyumluluğu.
 
@@ -285,6 +285,31 @@ Roadmap onaylandıktan sonra ilk çalışma paketi şu sırayla yürütülür:
 **Test ve CI kanıtı:** test_quest_journal_read_models_are_immutable_and_read_only, test_dialogue_choice_query_is_service_owned_and_read_only ve test_dialogue_choice_query_hides_blacksmith_delivery_for_incomplete_objective testleri read-model kararlılığı/değişmezliği, salt okunurluk, tick sabitliği ve görev koşullarını doğrular. Quest graph integration ve UI testleri yeni view sözleşmesine göre güncellendi. Eldoria CI run 45975606001 içindeki Python 3.11/3.12 × Ubuntu/Windows test işleri ile Pygame headless smoke işi (5/5) başarılıdır. Core Quality run 45975606008 içindeki Linux/Windows verify işleri (2/2) başarılıdır. İki run da kod/test commit'i 0545dae2f22f2dbfe97f057f2ecce799b8a6d49e üzerinde tamamlandı.
 
 **Değişiklik sınırı ve kalan manuel kontrol:** Runtime değişiklikleri yalnızca application/gameplay_service.py, game_ui/screens/dialogue_screen.py ve game_ui/screens/quest_log_screen.py dosyalarındadır. İlgili servis/UI testleri güncellendi. Diğer UI ekranları ve A4 kapsamı değiştirilmedi. Diyalog/görev servis sözleşmesi CI ile doğrulanmıştır; ancak mevcut içerikte görev veren NPC bulunmadığından gerçek oyun içi görev alma/teslim etme manuel kabulü yapılmış sayılmaz. character_creation.py içindeki ayrı private alan erişimleri A3.4 kapsamına alınmamıştır.
+
+### 7.6. A3.5 — UI/servis sınırlarının kapanışı (2026-11-27)
+
+**Amaç ve sınır:** A3.5, Aşama 3'ün son alt aşamasıdır. A3.1–A3.4 sonrasında kalan UI iç depo erişimlerini, servis private alan kaçışlarını ve oturum kapsamlı runtime cache yaşam döngüsünü kapatır. Yeni A3.6/A3.7/A3.8 alt aşamaları oluşturulmaz. A4 pencere yöneticisi/ekran yaşam döngüsü, savaş, hareket, harita, animasyon ve görsel değişiklikler kapsam dışıdır.
+
+**Uygulanan servis sözleşmeleri:**
+
+1. Renderer için `active_world_state()` immutable `WorldView` döndürür; `quest_panel_state()` aktif görev özetini mevcut immutable `QuestView` sözleşmesiyle sunar. Görev hedefinin konum/NPC görünen adı servis içinde çözülür.
+2. Ticaret ekranı `trade_partner_state()` ile immutable `TradePartnerView`, `dialogue_npc_name()` ile NPC görünen adını alır.
+3. Karakter oluşturma ekranı `character_creation_state()`, `character_creation_options()` ve `customize_player_character()` girişlerini kullanır. Irk/sınıf seçenekleri immutable view olarak sunulur; yaş, isim, özellik puanı ve seçilen içerik kimliklerinin doğrulanması ile mevcut NPC ilişki davranışı servis katmanında yürütülür.
+4. `GameplayService.application` genel kaçış noktası kaldırıldı. UI'nin `_character_factory`, `_creation_from_eren`, `_player_name_confirmed` veya `_dialogue_context` gibi private servis alanlarına erişimi kaldırıldı.
+5. SessionBundle değiştiğinde zincirler dispose edilip session-bound hex physics, companion, NPC behavior ve NPC avoidance cache'leri temizlenir. `load()` ve lazy bundle değişimi aynı reset yolunu kullanır. İçerik tanımları, oyuncu bağlamı ve diyalog action kayıtları session geçişinde korunur; yeniden bağlama davranışı korunur.
+
+**UI sınırı:** `renderer.py`, `character_creation.py` ve `trade_screen.py` artık `service.application` veya `application.holder` okumaz. Önceki A3 alt aşamalarında taşınmış production, dialogue ve quest log ekranlarıyla birlikte bilinen UI tüketicilerinde doğrudan GameplayService Application erişimi kalmamıştır. `tests/test_application/test_gameplay_service_boundaries.py` tüm `game_ui` Python dosyalarını tarayarak Application/private-service kaçışlarını regresyon testiyle yasaklar ve servis üzerindeki public `application` property'sinin bulunmadığını doğrular.
+
+**Test kapsamı eklendi/güncellendi:**
+
+- `test_active_world_and_quest_panel_queries_are_read_only_views`: aktif dünya view değişmezliği, tekrarlı sorgu ve tick'in sabitliği.
+- `test_character_creation_service_owns_validation`: karakter oluşturma iş kurallarının servis tarafından reddedilmesi.
+- `test_character_creation_and_trade_queries_return_immutable_views`: karakter seçenekleri ve ticaret ortağı view değişmezliği.
+- `test_load_switch_discards_session_bound_runtime_caches`: kayıt yükleme sırasında chain dispose/temizliği ve oturuma bağlı runtime cache invalidation.
+- `test_game_ui_does_not_reach_gameplay_service_internals` ve `test_gameplay_service_does_not_publish_application_escape_hatch`: mimari sınır regresyonları.
+- Önceden var olan servis, görev/diyalog, üretim, UI ve save/load testleri korunmuştur.
+
+**Doğrulama durumu:** Değişiklikler yalnızca `experiment/map-cleanup` dalına işlendi. GitHub Actions push workflow sonuçları bu doğrulama oturumunda alınamadı; commit status endpoint'i kontrol çalışması döndürmedi. Bu nedenle CI yeşil olduğu iddia edilmez. Ayrıca oyun penceresinde renderer HUD/görev paneli, karakter oluşturma ve ticaret ekranı manuel kabulü henüz yapılmış sayılmaz. Bu iki doğrulama tamamlanmadan Aşama 3 kapatılmış kabul edilmeyecektir.
 
 ## 8. Tamamlanma tanımı
 
