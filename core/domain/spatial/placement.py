@@ -264,5 +264,7 @@ __all__ = [
     "ConstructionPlacementSnapshot",
     "ConstructionPlacementResult",
     "ConstructionPlacementValidator",
+    "ConstructionPlacementCommitPort",
+    "ConstructionPlacementService",
     "check_placement_revision",
 ]
