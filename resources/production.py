@@ -1,124 +1,119 @@
-"""Atomic resource consumption and instantaneous recipe production."""
-
+"""Atomic production over resource stocks and item stacks."""
 from typing import Iterable
-
 from .inventory import Inventory
-from .recipe import Recipe, RecipeComponent, RecipeError
+from .recipe import Recipe, RecipeComponent
 from .resource import Quantity, ResourceType
-
 from core.errors import RPGError
 
 class ResourceOperationError(ValueError, RPGError):
     """Invalid resource consumption or production operation."""
-
-
 class InsufficientStockError(ResourceOperationError):
     """Required resource stock is unavailable or insufficient."""
-
-
+class InsufficientItemStockError(ResourceOperationError):
+    """Required item stack quantity is unavailable or insufficient."""
 class ResourceUnitMismatchError(ResourceOperationError):
     """A resource operation uses an incompatible unit."""
 
+def _restore(inventory, resources, items):
+    inventory._restore_snapshot(resources)
+    inventory._restore_item_snapshot(items)
 
-def consume_resources(
-    inventory: Inventory,
-    requirements: Iterable[RecipeComponent],
-) -> None:
-    """Atomically consume all positive resource requirements from an inventory."""
+def consume_resources(inventory: Inventory, requirements: Iterable[RecipeComponent]) -> None:
     _validate_inventory(inventory)
     components = _normalize_requirements(requirements)
-    _validate_available_stock(inventory, components)
-
+    _validate_resources(inventory, components)
     before = inventory.snapshot()
     try:
-        for resource_type, quantity in components:
-            inventory.remove(resource_type, quantity)
+        for resource, quantity in components:
+            inventory.remove(resource, quantity)
     except Exception:
         inventory._restore_snapshot(before)
         raise
 
-
-def produce(inventory: Inventory, recipe: Recipe) -> None:
-    """Atomically consume a recipe's inputs and add all of its outputs."""
+def consume_recipe_inputs(inventory: Inventory, recipe: Recipe) -> None:
+    """Consume all recipe inputs atomically across resource and item inventories."""
     _validate_inventory(inventory)
     if not isinstance(recipe, Recipe):
         raise TypeError("recipe must be Recipe.")
-
     _validate_recipe_units(recipe)
-    _validate_available_stock(inventory, recipe.inputs)
-    _validate_output_units(inventory, recipe.outputs)
-
-    before = inventory.snapshot()
+    _validate_resources(inventory, recipe.inputs)
+    _validate_items(inventory, recipe.item_inputs)
+    before_resources, before_items = inventory.snapshot(), inventory.item_snapshot()
     try:
-        for resource_type, quantity in recipe.inputs:
-            inventory.remove(resource_type, quantity)
-        for resource_type, quantity in recipe.outputs:
-            inventory.add(resource_type, quantity)
+        for resource, quantity in recipe.inputs:
+            inventory.remove(resource, quantity)
+        for item_id, quantity in recipe.item_inputs:
+            inventory.remove_item(item_id, quantity)
     except Exception:
-        inventory._restore_snapshot(before)
+        _restore(inventory, before_resources, before_items)
         raise
 
+def produce(inventory: Inventory, recipe: Recipe) -> None:
+    """Atomically consume all inputs and create every resource/item output."""
+    _validate_inventory(inventory)
+    if not isinstance(recipe, Recipe):
+        raise TypeError("recipe must be Recipe.")
+    _validate_recipe_units(recipe)
+    _validate_resources(inventory, recipe.inputs)
+    _validate_items(inventory, recipe.item_inputs)
+    for resource, quantity in recipe.outputs:
+        current = inventory.get(resource)
+        if current is not None and current.unit != quantity.unit:
+            raise ResourceUnitMismatchError(f"Output unit mismatch for resource: {resource}.")
+    before_resources, before_items = inventory.snapshot(), inventory.item_snapshot()
+    try:
+        for resource, quantity in recipe.inputs:
+            inventory.remove(resource, quantity)
+        for item_id, quantity in recipe.item_inputs:
+            inventory.remove_item(item_id, quantity)
+        for resource, quantity in recipe.outputs:
+            inventory.add(resource, quantity)
+        for item_id, quantity in recipe.item_outputs:
+            inventory.add_item(item_id, quantity)
+    except Exception:
+        _restore(inventory, before_resources, before_items)
+        raise
 
-def _validate_inventory(inventory: Inventory) -> None:
+def _validate_inventory(inventory):
     if not isinstance(inventory, Inventory):
         raise TypeError("inventory must be Inventory.")
 
-
-def _normalize_requirements(requirements: Iterable[RecipeComponent]) -> tuple[RecipeComponent, ...]:
+def _normalize_requirements(requirements):
     try:
         components = tuple(requirements)
     except TypeError as error:
         raise TypeError("requirements must be an iterable of resource components.") from error
-
     if not components:
         raise ResourceOperationError("requirements cannot be empty.")
-
-    normalized: list[RecipeComponent] = []
-    seen: set[ResourceType] = set()
-    for component in components:
-        if not isinstance(component, (tuple, list)) or len(component) != 2:
+    result, seen = [], set()
+    for pair in components:
+        if not isinstance(pair, (tuple, list)) or len(pair) != 2:
             raise TypeError("requirements must contain (ResourceType, Quantity) pairs.")
-        resource_type, quantity = component
-        if not isinstance(resource_type, ResourceType):
-            raise TypeError("requirement resource must be ResourceType.")
-        if not isinstance(quantity, Quantity):
-            raise TypeError("requirement amount must be Quantity.")
-        if quantity.value <= 0:
-            raise ResourceOperationError("requirement quantities must be positive.")
-        if resource_type in seen:
-            raise ResourceOperationError(f"Duplicate requirement resource type: {resource_type}.")
-        seen.add(resource_type)
-        normalized.append((resource_type, quantity))
-    return tuple(sorted(normalized, key=lambda item: item[0].value))
+        resource, quantity = pair
+        if not isinstance(resource, ResourceType) or not isinstance(quantity, Quantity):
+            raise TypeError("requirements must contain ResourceType and Quantity values.")
+        if quantity.value <= 0 or resource in seen:
+            raise ResourceOperationError("Requirements must be positive and unique.")
+        seen.add(resource)
+        result.append((resource, quantity))
+    return tuple(sorted(result, key=lambda pair: pair[0].value))
 
-
-def _validate_available_stock(
-    inventory: Inventory,
-    components: tuple[RecipeComponent, ...],
-) -> None:
-    for resource_type, quantity in components:
-        current = inventory.get(resource_type)
+def _validate_resources(inventory, components):
+    for resource, quantity in components:
+        current = inventory.get(resource)
         if current is None or current.value < quantity.value:
-            raise InsufficientStockError(f"Insufficient stock for resource: {resource_type}.")
+            raise InsufficientStockError(f"Insufficient stock for resource: {resource}.")
         if current.unit != quantity.unit:
-            raise ResourceUnitMismatchError(f"Stock unit mismatch for resource: {resource_type}.")
+            raise ResourceUnitMismatchError(f"Stock unit mismatch for resource: {resource}.")
 
+def _validate_items(inventory, components):
+    for item_id, quantity in components:
+        if inventory.item_quantity(item_id) < quantity:
+            raise InsufficientItemStockError(f"Insufficient item stock for: {item_id}.")
 
-def _validate_output_units(
-    inventory: Inventory,
-    outputs: tuple[RecipeComponent, ...],
-) -> None:
-    for resource_type, quantity in outputs:
-        current = inventory.get(resource_type)
-        if current is not None and current.unit != quantity.unit:
-            raise ResourceUnitMismatchError(f"Output unit mismatch for resource: {resource_type}.")
-
-
-def _validate_recipe_units(recipe: Recipe) -> None:
+def _validate_recipe_units(recipe):
     inputs = dict(recipe.inputs)
-    for resource_type, output_quantity in recipe.outputs:
-        input_quantity = inputs.get(resource_type)
-        if input_quantity is not None and input_quantity.unit != output_quantity.unit:
-            raise ResourceUnitMismatchError(
-                f"Recipe input/output unit mismatch for resource: {resource_type}."
-            )
+    for resource, output in recipe.outputs:
+        source = inputs.get(resource)
+        if source is not None and source.unit != output.unit:
+            raise ResourceUnitMismatchError(f"Recipe input/output unit mismatch for resource: {resource}.")

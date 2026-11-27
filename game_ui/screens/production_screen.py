@@ -83,6 +83,7 @@ class ProductionScreen:
 
     def _missing_inputs(self, recipe):
         stocks = self._inventory_stocks()
+        item_stacks = dict(self.service.inventory(self.inventory_id).items)
         missing = []
 
         for resource, quantity in recipe.inputs:
@@ -95,6 +96,11 @@ class ProductionScreen:
                     f"(gerekli: {quantity.value}, mevcut: {amount})"
                 )
 
+        for item_id, quantity in recipe.item_inputs:
+            available = item_stacks.get(item_id, 0)
+            if available < quantity:
+                missing.append(f"{item_id.replace('_', ' ')} (gerekli: {quantity}, mevcut: {available})")
+
         return missing
 
     def _can_start(self, recipe):
@@ -103,7 +109,7 @@ class ProductionScreen:
 
         missing = self._missing_inputs(recipe)
         if missing:
-            return False, "Eksik kaynak: " + ", ".join(missing)
+            return False, "Eksik malzeme/kaynak: " + ", ".join(missing)
 
         if self._get_facility(recipe) is None:
             return False, "Uygun ve boş bir tesis bulunamadı."
@@ -286,6 +292,15 @@ class ProductionScreen:
             )
             y += 28
 
+        for item_id, quantity in recipe.item_inputs:
+            available = dict(self.service.inventory(self.inventory_id).items).get(item_id, 0)
+            enough = available >= quantity
+            renderer.text(
+                f"{item_id.replace('_', ' ')}: {quantity} (envanter: {available})",
+                391, y, (140, 220, 160) if enough else (230, 130, 120),
+            )
+            y += 28
+
         renderer.text("Çıktılar", 364, y + 5, (170, 195, 230))
         y += 35
         for resource, quantity in recipe.outputs:
@@ -295,6 +310,10 @@ class ProductionScreen:
                 f"{quantity.value} {unit_label(quantity.unit)}",
                 391, y,
             )
+            y += 28
+
+        for item_id, quantity in recipe.item_outputs:
+            renderer.text(f"{item_id.replace('_', ' ')}: {quantity}", 391, y)
             y += 28
 
         renderer.text(

@@ -25,6 +25,14 @@
       "r": 1,
       "blocks_movement": true,
       "blocks_occupancy": true
+    },
+    {
+      "domain_id": "iron_vein_01",
+      "kind": "resource_node",
+      "q": -2,
+      "r": 0,
+      "blocks_movement": false,
+      "blocks_occupancy": false
     }
   ]
 }

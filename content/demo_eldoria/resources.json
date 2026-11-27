@@ -9,6 +9,15 @@
       "capacity": 20,
       "regeneration_rate": 1,
       "gathering_duration_ticks": 60
+    },
+    {
+      "id": "iron_vein_01",
+      "resource_type": "iron",
+      "unit": "item",
+      "initial_quantity": 8,
+      "capacity": 16,
+      "regeneration_rate": 0,
+      "gathering_duration_ticks": 90
     }
   ]
 }

@@ -10,7 +10,8 @@
     "characters": "characters.json",
     "gameplay_rules": "gameplay_rules.json",
     "items": "items.json",
-    "containers": "containers.json"
+    "containers": "containers.json",
+    "structure_parts": "structure_parts.json"
   },
   "maps": "hex_maps",
   "asset_catalog": "asset_catalog.json",

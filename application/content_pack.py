@@ -16,6 +16,7 @@ from containers import ContainerDefinition, ContainerInstance
 from .production_facility import ProductionFacility
 from core.domain.physics import CircleShape, PhysicsBodyDefinition
 from core.domain.spatial import LocalHexPosition
+from core.domain import StructureDefinitionCatalog, StructurePartDefinition, StructureGeometryDefinition, StructureConnectionPort
 from application.content_loader import ContentPackageError, load_content_package
 from character import (
     Ability, Attribute, CharacterClass, CharacterFactory, Race,
@@ -1513,108 +1514,144 @@ def load_container_definitions(
     return tuple(records)
 
 
-def load_production_definitions(
-    path: str | Path | None = None,
-    *,
-    package_path: str | Path | None = None,
-) -> tuple[tuple[ProductionFacility, ...], tuple[Recipe, ...]]:
-    """Load typed facility and recipe definitions from starter content."""
-    starter = (
-        load_starter_content(package_path=package_path)
-        if path is None
-        else _read_json_definition(Path(path), "Starter content")
-    )
+def load_structure_part_catalog(path: str | Path | None = None, *, package_path: str | Path | None = None) -> StructureDefinitionCatalog:
+    """Load the package's canonical modular construction-part catalog."""
+    if path is None:
+        package = load_content_package(_resolve_content_package_path(package_path))
+        definition = package.files.get("structure_parts")
+        if definition is None:
+            return StructureDefinitionCatalog()
+    else:
+        definition = _read_json_definition(Path(path), "Structure part definition")
+    if type(definition.get("schema_version")) is not int or definition.get("schema_version") != 1:
+        raise ContentDefinitionError("Unsupported structure-part schema version.")
+    records = definition.get("parts")
+    if not isinstance(records, list):
+        raise ContentDefinitionError("Structure-part definitions must contain a parts list.")
+    parts = []
+    for index, record in enumerate(records):
+        if not isinstance(record, dict) or not isinstance(record.get("geometry"), dict):
+            raise ContentDefinitionError(f"Structure part at index {index} requires a geometry object.")
+        geometry, ports = record["geometry"], record.get("connection_ports", [])
+        if not isinstance(ports, list):
+            raise ContentDefinitionError("Structure-part connection_ports must be a list.")
+        try:
+            part = StructurePartDefinition(
+                part_definition_id=record["part_definition_id"],
+                category=record["category"],
+                geometry=StructureGeometryDefinition(geometry["shape_kind"], geometry["width"], geometry["depth"], geometry["height"]),
+                connection_ports=tuple(StructureConnectionPort(p["port_id"], p["connection_kind"], p["compatibility_key"], p.get("max_connections", 1), p.get("required", False)) for p in ports),
+                orientation_policy=record.get("orientation_policy", "quarter_turn"),
+                vertical_policy=record.get("vertical_policy", "ground"),
+                material_profile_id=record.get("material_profile_id"),
+                durability=record.get("durability", 100.0),
+                placement_rule_ids=_string_list_field(record, "placement_rule_ids", "Structure part"),
+                visual_asset_id=record.get("visual_asset_id"),
+            )
+        except (KeyError, TypeError, ValueError) as error:
+            raise ContentDefinitionError(f"Invalid structure part at index {index}: {error}") from error
+        parts.append(part)
+    try:
+        return StructureDefinitionCatalog(parts=tuple(parts))
+    except (TypeError, ValueError) as error:
+        raise ContentDefinitionError(f"Invalid structure-part catalog: {error}") from error
+
+
+def load_production_definitions(path: str | Path | None = None, *, package_path: str | Path | None = None) -> tuple[tuple[ProductionFacility, ...], tuple[Recipe, ...]]:
+    """Load resource/item recipes and validate every item/part cross-reference."""
+    starter = load_starter_content(package_path=package_path) if path is None else _read_json_definition(Path(path), "Starter content")
     production = starter.get("production", {})
     if not isinstance(production, dict):
         raise ContentDefinitionError("Starter production content must be an object.")
-    facility_records = production.get("facilities", [])
-    recipe_records = production.get("recipes", [])
+    facility_records, recipe_records = production.get("facilities", []), production.get("recipes", [])
     if not isinstance(facility_records, list) or not isinstance(recipe_records, list):
         raise ContentDefinitionError("Production facilities and recipes must be lists.")
-
-    facilities = []
-    facility_ids = set()
-    facility_types = set()
+    facilities, facility_ids, facility_types = [], set(), set()
     for record in facility_records:
         if not isinstance(record, dict):
             raise ContentDefinitionError("Production facility records must be objects.")
         try:
-            facility = ProductionFacility(
-                record["facility_id"],
-                record["facility_type"],
-                record["capacity"],
-                _string_list_field(
-                    record, "capabilities",
-                    f"Production facility '{record.get('facility_id', '<unknown>')}'",
-                ),
-                record.get("active", True),
-            )
+            facility = ProductionFacility(record["facility_id"], record["facility_type"], record["capacity"], _string_list_field(record, "capabilities", f"Production facility '{record.get('facility_id', '<unknown>')}'"), record.get("active", True))
         except (KeyError, TypeError, ValueError) as error:
-            raise ContentDefinitionError(
-                f"Invalid production facility definition: {error}"
-            ) from error
+            raise ContentDefinitionError(f"Invalid production facility definition: {error}") from error
         if facility.facility_id in facility_ids:
-            raise ContentDefinitionError(
-                f"Duplicate production facility id: {facility.facility_id}"
-            )
+            raise ContentDefinitionError(f"Duplicate production facility id: {facility.facility_id}")
         facility_ids.add(facility.facility_id)
         facility_types.add(facility.facility_type)
         facilities.append(facility)
 
-    def components(raw, label):
-        if not isinstance(raw, list) or not raw:
-            raise ContentDefinitionError(
-                f"Production recipe {label} must be a non-empty list."
-            )
+    validate_refs = path is None or package_path is not None
+    item_ids = {item.item_id for item in load_item_definitions(package_path=package_path)} if validate_refs else set()
+    part_catalog = load_structure_part_catalog(package_path=package_path) if validate_refs else StructureDefinitionCatalog()
+
+    def resources(raw, label):
+        if not isinstance(raw, list):
+            raise ContentDefinitionError(f"Production recipe {label} must be a list.")
         result = []
-        for component in raw:
-            if not isinstance(component, dict):
-                raise ContentDefinitionError(
-                    f"Production recipe {label} entries must be objects."
-                )
+        for entry in raw:
+            if not isinstance(entry, dict):
+                raise ContentDefinitionError(f"Production recipe {label} entries must be objects.")
             try:
-                resource = ResourceType(component["resource_type"])
-                amount = component["quantity"]
+                resource, amount, unit = ResourceType(entry["resource_type"]), entry["quantity"], ResourceUnit(entry["unit"])
                 if type(amount) is not int or amount <= 0:
                     raise ValueError("quantity must be a positive integer.")
-                unit = ResourceUnit(component["unit"])
                 result.append((resource, Quantity(amount, unit)))
             except (KeyError, TypeError, ValueError) as error:
-                raise ContentDefinitionError(
-                    f"Invalid production recipe {label} component: {error}"
-                ) from error
+                raise ContentDefinitionError(f"Invalid production recipe {label} component: {error}") from error
         return tuple(result)
 
-    recipes = []
-    recipe_ids = set()
+    def items(raw, label):
+        if not isinstance(raw, list):
+            raise ContentDefinitionError(f"Production recipe {label} must be a list.")
+        result, seen = [], set()
+        for entry in raw:
+            if not isinstance(entry, dict):
+                raise ContentDefinitionError(f"Production recipe {label} entries must be objects.")
+            item_id, amount = entry.get("item_id"), entry.get("quantity")
+            if not isinstance(item_id, str) or not item_id.strip() or type(amount) is not int or amount <= 0:
+                raise ContentDefinitionError(f"Invalid item component in production recipe {label}.")
+            if item_id in seen:
+                raise ContentDefinitionError(f"Duplicate item '{item_id}' in recipe {label}.")
+            if validate_refs and item_id not in item_ids:
+                raise ContentDefinitionError(f"Recipe {label} references unknown item '{item_id}'.")
+            seen.add(item_id)
+            result.append((item_id, amount))
+        return tuple(result)
+
+    recipes, recipe_ids = [], set()
     for record in recipe_records:
         if not isinstance(record, dict):
             raise ContentDefinitionError("Production recipe records must be objects.")
+        recipe_id = record.get("recipe_id", "<unknown>")
         try:
+            item_inputs = items(record.get("item_inputs", []), f"'{recipe_id}' item_inputs")
+            item_outputs = items(record.get("item_outputs", []), f"'{recipe_id}' item_outputs")
+            raw_bindings = record.get("structure_part_bindings", [])
+            if not isinstance(raw_bindings, list):
+                raise ValueError("structure_part_bindings must be a list.")
+            bindings = []
+            for binding in raw_bindings:
+                if not isinstance(binding, dict):
+                    raise ValueError("structure-part binding must be an object.")
+                item_id, part_id = binding.get("item_id"), binding.get("part_definition_id")
+                if item_id not in {key for key, _ in item_outputs}:
+                    raise ValueError(f"Binding item '{item_id}' is not a recipe output.")
+                if validate_refs and part_catalog.part(part_id) is None:
+                    raise ValueError(f"Recipe '{recipe_id}' references unknown structure part '{part_id}'.")
+                bindings.append((item_id, part_id))
             recipe = Recipe(
-                record["recipe_id"],
-                components(record["inputs"], "inputs"),
-                components(record["outputs"], "outputs"),
-                record.get("processing_time_ticks", 1),
-                record.get("facility_type"),
-                _string_list_field(
-                    record, "required_capabilities",
-                    f"Recipe '{record.get('recipe_id', '<unknown>')}'",
-                ),
+                record["recipe_id"], resources(record.get("inputs", []), "inputs"),
+                resources(record.get("outputs", []), "outputs"),
+                record.get("processing_time_ticks", 1), record.get("facility_type"),
+                _string_list_field(record, "required_capabilities", f"Recipe '{recipe_id}'"),
+                item_inputs=item_inputs, item_outputs=item_outputs, structure_part_bindings=tuple(bindings),
             )
         except (KeyError, TypeError, ValueError) as error:
-            raise ContentDefinitionError(
-                f"Invalid production recipe definition: {error}"
-            ) from error
+            raise ContentDefinitionError(f"Invalid production recipe definition: {error}") from error
         if recipe.recipe_id in recipe_ids:
-            raise ContentDefinitionError(
-                f"Duplicate production recipe id: {recipe.recipe_id}"
-            )
+            raise ContentDefinitionError(f"Duplicate production recipe id: {recipe.recipe_id}")
         if recipe.facility_type is not None and recipe.facility_type not in facility_types:
-            raise ContentDefinitionError(
-                f"Recipe '{recipe.recipe_id}' references unknown facility type: "
-                f"{recipe.facility_type}"
-            )
+            raise ContentDefinitionError(f"Recipe '{recipe.recipe_id}' references unknown facility type: {recipe.facility_type}")
         recipe_ids.add(recipe.recipe_id)
         recipes.append(recipe)
     return tuple(facilities), tuple(recipes)
@@ -1672,6 +1709,7 @@ __all__ = [
     "load_character_definitions",
     "load_quest_definitions",
     "load_resource_definitions",
+    "load_structure_part_catalog",
     "load_gameplay_rules",
     "load_movement_configs",
     "populate_opening_content",

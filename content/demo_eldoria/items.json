@@ -9,7 +9,127 @@
       "volume_liters": 0.05,
       "category": "misc",
       "description": "Köy sandığının dibinde unutulmuş eski bir bakır yüzük.",
-      "tags": ["jewelry", "misc"]
+      "tags": [
+        "jewelry",
+        "misc"
+      ]
+    },
+    {
+      "item_id": "wooden_plank",
+      "name": "Tahta Kalas",
+      "slot": null,
+      "weight": 1.5,
+      "volume_liters": 2,
+      "category": "construction",
+      "description": "Tahta Kalas yapı üretiminde kullanılan bir parçadır.",
+      "tags": [
+        "construction",
+        "crafting"
+      ]
+    },
+    {
+      "item_id": "nail",
+      "name": "Demir Çivi",
+      "slot": null,
+      "weight": 0.05,
+      "volume_liters": 0.01,
+      "category": "construction",
+      "description": "Demir Çivi yapı üretiminde kullanılan bir parçadır.",
+      "tags": [
+        "construction",
+        "crafting"
+      ]
+    },
+    {
+      "item_id": "hinge",
+      "name": "Menteşe",
+      "slot": null,
+      "weight": 0.2,
+      "volume_liters": 0.05,
+      "category": "construction",
+      "description": "Menteşe yapı üretiminde kullanılan bir parçadır.",
+      "tags": [
+        "construction",
+        "crafting"
+      ]
+    },
+    {
+      "item_id": "wooden_floor_panel",
+      "name": "Ahşap Zemin Paneli",
+      "slot": null,
+      "weight": 8,
+      "volume_liters": 12,
+      "category": "construction",
+      "description": "Ahşap Zemin Paneli yapı üretiminde kullanılan bir parçadır.",
+      "tags": [
+        "construction",
+        "crafting"
+      ]
+    },
+    {
+      "item_id": "wooden_wall_panel",
+      "name": "Ahşap Duvar Paneli",
+      "slot": null,
+      "weight": 10,
+      "volume_liters": 15,
+      "category": "construction",
+      "description": "Ahşap Duvar Paneli yapı üretiminde kullanılan bir parçadır.",
+      "tags": [
+        "construction",
+        "crafting"
+      ]
+    },
+    {
+      "item_id": "wooden_post",
+      "name": "Ahşap Direk",
+      "slot": null,
+      "weight": 5,
+      "volume_liters": 8,
+      "category": "construction",
+      "description": "Ahşap Direk yapı üretiminde kullanılan bir parçadır.",
+      "tags": [
+        "construction",
+        "crafting"
+      ]
+    },
+    {
+      "item_id": "wooden_door",
+      "name": "Ahşap Kapı",
+      "slot": null,
+      "weight": 12,
+      "volume_liters": 18,
+      "category": "construction",
+      "description": "Ahşap Kapı yapı üretiminde kullanılan bir parçadır.",
+      "tags": [
+        "construction",
+        "crafting"
+      ]
+    },
+    {
+      "item_id": "wooden_window",
+      "name": "Ahşap Pencere",
+      "slot": null,
+      "weight": 8,
+      "volume_liters": 12,
+      "category": "construction",
+      "description": "Ahşap Pencere yapı üretiminde kullanılan bir parçadır.",
+      "tags": [
+        "construction",
+        "crafting"
+      ]
+    },
+    {
+      "item_id": "wooden_roof_panel",
+      "name": "Ahşap Çatı Paneli",
+      "slot": null,
+      "weight": 9,
+      "volume_liters": 14,
+      "category": "construction",
+      "description": "Ahşap Çatı Paneli yapı üretiminde kullanılan bir parçadır.",
+      "tags": [
+        "construction",
+        "crafting"
+      ]
     }
   ]
 }

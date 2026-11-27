@@ -9,7 +9,7 @@ from core.simulation.events import SimulationEvent
 from core.time import Tick
 
 from .inventory import Inventory
-from .production import consume_resources
+from .production import consume_recipe_inputs, _restore
 from .recipe import Recipe
 
 
@@ -239,9 +239,9 @@ class ProductionJobManager:
         if job_id in self._jobs:
             raise ValueError(f"Production job ID already exists: {job_id}")
 
-        inventory_before = inventory.snapshot()
+        inventory_before = (inventory.snapshot(), inventory.item_snapshot())
         action_id = production_action_id(job_id)
-        consume_resources(inventory, recipe.inputs)
+        consume_recipe_inputs(inventory, recipe)
         action = None
         try:
             action = self._runtime.actions.create(
@@ -257,7 +257,7 @@ class ProductionJobManager:
                     self._runtime.actions.cancel(action.action_id, "production scheduling failed")
                 except Exception:
                     pass
-            inventory._restore_snapshot(inventory_before)
+            _restore(inventory, *inventory_before)
             raise
 
         job = ProductionJob(
@@ -276,12 +276,13 @@ class ProductionJobManager:
         if job.state not in {ProductionJobState.PLANNED, ProductionJobState.RUNNING}:
             raise ValueError("Production job cannot be cancelled in its current state.")
 
-        before_refund = job.inventory.snapshot()
+        before_refund = (job.inventory.snapshot(), job.inventory.item_snapshot())
         self._refund_inputs(job)
         try:
             self._runtime.actions.cancel(job.action_id, cancellation)
         except Exception:
-            job.inventory._restore_snapshot(before_refund)
+            _restore(job.inventory, *before_refund)
+            job._restore_runtime_state(job.state, False)
             raise
         job._mark_cancelled()
         return job
@@ -320,13 +321,15 @@ class ProductionJobManager:
     def _complete(self, job: ProductionJob) -> None:
         if job.state != ProductionJobState.RUNNING:
             return
-        before_outputs = job.inventory.snapshot()
+        before_outputs = (job.inventory.snapshot(), job.inventory.item_snapshot())
         try:
             for resource_type, quantity in job.recipe.outputs:
                 job.inventory.add(resource_type, quantity)
+            for item_id, quantity in job.recipe.item_outputs:
+                job.inventory.add_item(item_id, quantity)
             job._mark_completed()
         except Exception:
-            job.inventory._restore_snapshot(before_outputs)
+            _restore(job.inventory, *before_outputs)
             # Make the job terminal before attempting compensation. If refund
             # itself fails, a repeated completion event must not retry output or
             # refund and the false state "inputs refunded" must not be recorded.
@@ -338,12 +341,14 @@ class ProductionJobManager:
     def _refund_inputs(job: ProductionJob) -> None:
         if job.inputs_refunded:
             return
-        before = job.inventory.snapshot()
+        before = (job.inventory.snapshot(), job.inventory.item_snapshot())
         try:
             for resource_type, quantity in job.recipe.inputs:
                 job.inventory.add(resource_type, quantity)
+            for item_id, quantity in job.recipe.item_inputs:
+                job.inventory.add_item(item_id, quantity)
         except Exception:
-            job.inventory._restore_snapshot(before)
+            _restore(job.inventory, *before)
             raise
         job._mark_inputs_refunded()
 

@@ -155,6 +155,9 @@ class RecipeView:
     processing_time: Tick
     facility_type: str | None
     required_capabilities: tuple[str, ...]
+    item_inputs: tuple[tuple[str, int], ...] = ()
+    item_outputs: tuple[tuple[str, int], ...] = ()
+    structure_part_bindings: tuple[tuple[str, str], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -894,6 +897,9 @@ class GameplayService:
                 recipe.processing_time,
                 recipe.facility_type,
                 recipe.required_capabilities,
+                recipe.item_inputs,
+                recipe.item_outputs,
+                recipe.structure_part_bindings,
             )
             for recipe in sorted(recipes, key=lambda item: item.recipe_id)
         )

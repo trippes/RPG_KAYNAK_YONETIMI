@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "parts": [
+    {
+      "part_definition_id": "wooden_floor_panel",
+      "category": "floor",
+      "geometry": {
+        "shape_kind": "rectangle",
+        "width": 2,
+        "depth": 2,
+        "height": 0.2
+      },
+      "orientation_policy": "quarter_turn",
+      "vertical_policy": "ground",
+      "material_profile_id": "wood",
+      "durability": 100,
+      "placement_rule_ids": [
+        "floor"
+      ]
+    },
+    {
+      "part_definition_id": "wooden_wall_panel",
+      "category": "wall",
+      "geometry": {
+        "shape_kind": "rectangle",
+        "width": 2,
+        "depth": 0.2,
+        "height": 2
+      },
+      "orientation_policy": "quarter_turn",
+      "vertical_policy": "stackable",
+      "material_profile_id": "wood",
+      "durability": 100,
+      "placement_rule_ids": [
+        "wall"
+      ]
+    },
+    {
+      "part_definition_id": "wooden_post",
+      "category": "support",
+      "geometry": {
+        "shape_kind": "box",
+        "width": 0.3,
+        "depth": 0.3,
+        "height": 2.5
+      },
+      "orientation_policy": "quarter_turn",
+      "vertical_policy": "stackable",
+      "material_profile_id": "wood",
+      "durability": 100,
+      "placement_rule_ids": [
+        "support"
+      ]
+    },
+    {
+      "part_definition_id": "wooden_door",
+      "category": "door",
+      "geometry": {
+        "shape_kind": "rectangle",
+        "width": 1,
+        "depth": 0.2,
+        "height": 2
+      },
+      "orientation_policy": "quarter_turn",
+      "vertical_policy": "stackable",
+      "material_profile_id": "wood",
+      "durability": 100,
+      "placement_rule_ids": [
+        "door"
+      ]
+    },
+    {
+      "part_definition_id": "wooden_window",
+      "category": "window",
+      "geometry": {
+        "shape_kind": "rectangle",
+        "width": 1,
+        "depth": 0.2,
+        "height": 1
+      },
+      "orientation_policy": "quarter_turn",
+      "vertical_policy": "stackable",
+      "material_profile_id": "wood",
+      "durability": 100,
+      "placement_rule_ids": [
+        "window"
+      ]
+    },
+    {
+      "part_definition_id": "wooden_roof_panel",
+      "category": "roof",
+      "geometry": {
+        "shape_kind": "rectangle",
+        "width": 2,
+        "depth": 2,
+        "height": 0.2
+      },
+      "orientation_policy": "quarter_turn",
+      "vertical_policy": "elevated",
+      "material_profile_id": "wood",
+      "durability": 100,
+      "placement_rule_ids": [
+        "roof"
+      ]
+    }
+  ]
+}

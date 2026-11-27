@@ -62,6 +62,9 @@ class RecipeRecord:
     processing_time: int = 1
     facility_type: str | None = None
     required_capabilities: tuple[str, ...] = ()
+    item_inputs: tuple[tuple[str, int], ...] = ()
+    item_outputs: tuple[tuple[str, int], ...] = ()
+    structure_part_bindings: tuple[tuple[str, str], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -334,6 +337,9 @@ class GameplaySnapshot:
                 processing_time=Tick(record.processing_time),
                 facility_type=record.facility_type,
                 required_capabilities=record.required_capabilities,
+                item_inputs=record.item_inputs,
+                item_outputs=record.item_outputs,
+                structure_part_bindings=record.structure_part_bindings,
             )
             for record in self.recipes
         }
@@ -459,6 +465,9 @@ def _recipe_record(recipe: Recipe) -> RecipeRecord:
         recipe.processing_time.value,
         recipe.facility_type,
         recipe.required_capabilities,
+        recipe.item_inputs,
+        recipe.item_outputs,
+        recipe.structure_part_bindings,
     )
 
 
@@ -523,11 +532,14 @@ def _recipe_record_from_dict(data) -> RecipeRecord:
         raise GameplayPersistenceError("Duplicate required capability.")
     return RecipeRecord(
         _validate_id(data.get("recipe_id"), "recipe_id"),
-        _components_from_dict(data.get("inputs")),
-        _components_from_dict(data.get("outputs")),
+        _components_from_dict(data.get("inputs", []), allow_empty=True),
+        _components_from_dict(data.get("outputs", []), allow_empty=True),
         processing_time,
         facility_type,
         tuple(sorted(capabilities)),
+        _item_components_from_dict(data.get("item_inputs", []), "item_inputs"),
+        _item_components_from_dict(data.get("item_outputs", []), "item_outputs"),
+        _bindings_from_dict(data.get("structure_part_bindings", [])),
     )
 
 
@@ -547,14 +559,14 @@ def _job_record(data) -> JobRecord:
     )
 
 
-def _components_from_dict(data) -> tuple[tuple[str, int, str], ...]:
+def _components_from_dict(data, allow_empty=False) -> tuple[tuple[str, int, str], ...]:
     if not isinstance(data, list):
         raise GameplayPersistenceError("Recipe components must be a list.")
     result = tuple((_validate_id(item.get("resource_type"), "resource_type"), _positive_int(item.get("value"), "value"), _unit(item.get("unit"))) for item in data if isinstance(item, Mapping))
     if len(result) != len(data):
         raise GameplayPersistenceError("Recipe component must be an object.")
     _unique((resource for resource, _, _ in result), "recipe resource")
-    if not result:
+    if not result and not allow_empty:
         raise GameplayPersistenceError("Recipe components cannot be empty.")
     return result
 
@@ -583,6 +595,12 @@ def _recipe_dict(record: RecipeRecord) -> dict[str, object]:
         "inputs": _components_dict(record.inputs),
         "outputs": _components_dict(record.outputs),
     }
+    if record.item_inputs:
+        result["item_inputs"] = _item_components_dict(record.item_inputs)
+    if record.item_outputs:
+        result["item_outputs"] = _item_components_dict(record.item_outputs)
+    if record.structure_part_bindings:
+        result["structure_part_bindings"] = [{"item_id": item_id, "part_definition_id": part_id} for item_id, part_id in record.structure_part_bindings]
     if record.processing_time != 1:
         result["processing_time"] = record.processing_time
     if record.facility_type is not None:
@@ -594,6 +612,34 @@ def _recipe_dict(record: RecipeRecord) -> dict[str, object]:
 
 def _components_dict(components):
     return [{"resource_type": resource, "value": value, "unit": unit} for resource, value, unit in components]
+
+
+def _item_components_dict(components):
+    return [{"item_id": item_id, "quantity": quantity} for item_id, quantity in components]
+
+
+def _item_components_from_dict(data, name):
+    if not isinstance(data, list):
+        raise GameplayPersistenceError(f"{name} must be a list.")
+    result = []
+    for item in data:
+        if not isinstance(item, Mapping):
+            raise GameplayPersistenceError(f"{name} entries must be objects.")
+        result.append((_validate_id(item.get("item_id"), "item_id"), _positive_int(item.get("quantity"), "item quantity")))
+    _unique((item_id for item_id, _ in result), name)
+    return tuple(sorted(result))
+
+
+def _bindings_from_dict(data):
+    if not isinstance(data, list):
+        raise GameplayPersistenceError("structure_part_bindings must be a list.")
+    result = []
+    for item in data:
+        if not isinstance(item, Mapping):
+            raise GameplayPersistenceError("Structure-part binding must be an object.")
+        result.append((_validate_id(item.get("item_id"), "item_id"), _validate_id(item.get("part_definition_id"), "part_definition_id")))
+    _unique((item_id for item_id, _ in result), "structure-part binding")
+    return tuple(sorted(result))
 
 
 def _list(data, key):
