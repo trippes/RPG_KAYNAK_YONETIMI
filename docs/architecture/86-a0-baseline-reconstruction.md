@@ -4,7 +4,7 @@
 **Tarihsel temel çizgisi:** `f9e4914edb25fd0d8943934de8dd41d67cfab813`  
 **Temel çizginin üst commit'i:** `a961de7b91b6b7fe7d6b3aae48d2defc95fcb966` — `docs: add legacy architecture cleanup roadmap`  
 **Rapor durumu:** A0 tamamlandı (2026-11-27); tarihsel tarama ve CI kanıtları kaydedildi.  
-**Kapsam:** Yalnızca GitHub üzerinden erişilebilen commit ağacı, belgeler, yapılandırmalar ve CI tanımları. Bu rapor yerel test çalıştırma çıktısı veya tamamlanmış statik kod taraması iddiasında bulunmaz.
+**Kapsam:** GitHub üzerinden erişilebilen tarihsel commit ağacı, kaynak blob'ları, içerik, yapılandırma, testler, belgeler ve CI kayıtları. Yerel test çalıştırması yapılmadı; statik pattern taraması tarihsel Git blob'ları üzerinden tamamlandı.
 
 ## 1. Sonuç
 
@@ -144,21 +144,15 @@ Aşağıdaki satır incelemeleri doğrudan `f9e4914e` commit'indeki Git blob'lar
 
 ### 10.1 Sınıflandırma
 
-Bu somut bulguların tamamı esas olarak **UI** kategorisindedir. Bir kısmı aynı zamanda **kimlik/servis sınırı** riskidir; ancak rapordaki altı ana kategoriye göre tek birincil kategori seçildiğinde UI altında tutulmuştur. Bu örnekler runtime, content, persistence, tests ve tooling/docs kategorilerinin tamamının tarandığı anlamına gelmez.
+Bu somut bulguların tamamı esas olarak **UI** kategorisindedir. Bir kısmı aynı zamanda **kimlik/servis sınırı** riskidir; ancak rapordaki altı ana kategoriye göre tek birincil kategori seçildiğinde UI altında tutulmuştur. Bu bölüm, UI bulgularını eklediğimiz ilk ara taramanın kapsamını anlatır; diğer kategorilerin nihai tarama sonucu 12–15. bölümlerde ayrıca kaydedilmiştir.
 
-### 10.2 Tarama kapsamı sınırı
+### 10.2 İlk UI taramasının kapsamı ve sonraki tamamlanma
 
-Bu turda tarihsel commit ağacı ve ilgili 13 UI/Application dosyasının bir bölümü incelendi. Özellikle karakter, konteyner, diyalog, envanter, pazar, üretim, döviz, renderer ve Application kodundan somut satırlar doğrulandı. `application/game_application.py` içindeki `holder.current` kullanımlarının önemli bölümü Application katmanının kendi içidir; bunlar UI servis sınırı ihlaliyle aynı risk olarak sınıflandırılmamalıdır.
+Bu alt bölüm ilk UI bulguları yazıldığında incelenen 13 UI/Application dosyasının ara kapsamını kaydeder. O aşamada tüm üretim ve test ağacı henüz taranmamıştı. Daha sonra 15. bölümde aynı tarihsel commit'in 290 ana üretim Python dosyası, 14 script, 123 Hex World Lab Python dosyası ve 301 test Python dosyası tanımlı pattern setiyle tarandı. Bu nedenle bu alt bölümdeki “henüz taranmamış” ifadesi ara durumdur; nihai kapsam için 15.1'e bakılmalıdır.
 
-Bu nedenle henüz:
-- 290 üretim Python dosyasının tamamı,
-- 301 test dosyasının tamamı,
-- `hex_world_lab/` altındaki 123 Python dosyası,
-- bütün persistence/save-load ve content/config dosyaları
-aynı pattern setiyle satır satır taranmış değildir. Bu sayılar tarama kapsamının büyüklüğünü belirtir; taranmış dosya sayısı değildir.
+`application/game_application.py` içindeki `holder.current` kullanımlarının önemli bölümü Application katmanının kendi içidir; bunlar UI servis sınırı ihlaliyle aynı risk olarak sınıflandırılmamalıdır.
 
-Kod arama servisi bu incelemede `ref=f9e4914e` parametresini dikkate almayıp varsayılan dal sonuçlarını döndürdüğü için, güncel kod arama sonuçları tarihsel bulgu kanıtı olarak kullanılmadı. Yukarıdaki bulgular yalnızca tarihsel commit ağacından elde edilen blob SHA'ları okunarak doğrulandı.
-
+Kod arama servisi bu incelemede `ref=f9e4914e` parametresini dikkate almayıp varsayılan dal sonuçlarını döndürdüğü için, güncel kod arama sonuçları tarihsel bulgu kanıtı olarak kullanılmadı. Bulgular yalnızca tarihsel commit ağacından elde edilen blob SHA'ları okunarak doğrulandı.
 ## 11. Güncel A0 kararı
 
 Bu bölüm, ilk aşamadaki kısmi incelemenin ara kararını kaydeder. 15. bölümde tamamlanan kapsamlı pattern taraması ve tarihsel CI kanıtı bu ara kararı güncellemiştir; nihai kapanış kararı 16. bölümde verilmiştir.
