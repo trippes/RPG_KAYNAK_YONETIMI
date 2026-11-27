@@ -1,6 +1,6 @@
 # Eldoria — Eski Mimari Bağımlılıklarını Temizleme Roadmap'i
 
-**Durum:** Aşama 3 ve Aşama 4 tamamlandı (2026-11-27) — A3.1–A3.5 ve bütünleşik A4 kapatıldı; otomatik CI ve kullanıcı tarafından bildirilen manuel kabul başarılı
+**Durum:** Aşama 0, Aşama 3 ve Aşama 4 tamamlandı (2026-11-27) — A0 tarihsel envanter/CI temel çizgisi; A3.1–A3.5 ve bütünleşik A4 kapatıldı
 **Hedef dal:** `experiment/map-cleanup`  
 **Kapsam:** Eski mimariden kalan sabit kimlikler, örtük varsayımlar, yinelenen durum ve servis erişimleri, içerik paketi sözleşmeleri, arayüz entegrasyonu ve kayıt uyumluluğu.
 
@@ -25,6 +25,8 @@ Bu çalışma yeni özellik geliştirme çalışması değildir. Öncelik mevcut
 ## 3. Çalışma aşamaları
 
 ### Aşama 0 — Başlangıç envanteri ve güvenli temel çizgi
+
+**Durum:** **Tamamlandı (2026-11-27).** Tarihsel kaynak taraması, altı kategoriye göre bulgular ve başlangıç CI kanıtları `docs/architecture/86-a0-baseline-reconstruction.md` içinde kayıtlıdır.
 
 **Hedef:** Refaktör öncesi mevcut durumu kayıt altına almak.
 
@@ -197,11 +199,22 @@ Aşamalar katı biçimde birbirinden kopuk değildir. Özellikle kayıt uyumlulu
 
 Roadmap onaylandıktan sonra ilk çalışma paketi şu sırayla yürütülür:
 
-1. Aşama 0 envanterini tamamla; tüm runtime ve test kapsamını dosya bazında raporla.
+1. **Tamamlandı (2026-11-27):** Aşama 0 envanteri ve test temel çizgisi `docs/architecture/86-a0-baseline-reconstruction.md` raporunda dosya/kategori bazında kaydedildi.
 2. Kimlik ve kayıt sözleşmelerini birlikte inceleyip Aşama 1 tasarımını kesinleştir.
 3. Demo paketindeki movement konfigürasyonunun güncel varlığını ve actor-ID eşleşmesini doğrula; eksik profil varsa loader varsayılanı uydurmak yerine paket sözleşmesi kapsamında ele al.
 4. Kimlik geçişini küçük adımlarla uygula; UI ve persistence regresyonlarını test et.
 5. Her aşama sonunda kullanıcıya değişen dosyaları, test sonuçlarını ve manuel kabul adımlarını sun.
+
+## 7.0. Aşama 0 — başlangıç envanteri ve temel çizgi kapanışı (2026-11-27)
+
+**Kanıt:** `docs/architecture/86-a0-baseline-reconstruction.md`.
+
+- Tarihsel temel commit: `f9e4914edb25fd0d8943934de8dd41d67cfab813`.
+- 290 ana üretim Python dosyası, 14 script, 123 Hex World Lab Python dosyası ve 301 test Python dosyası tanımlı legacy pattern setiyle tarandı.
+- Content, persistence, configuration, tests, tooling ve docs envanteri çıkarıldı; bulgular runtime/content/persistence/UI/tests/tooling-docs kategorilerine ayrıldı.
+- Başlangıç commit'ine bağlı Eldoria CI run `45582449692` (5/5), Core Quality run `45582449472` (2/2) ve Humanoid locomotion benchmark run `45582449722` (1/1) başarılıdır; toplam 8/8 check-run.
+- Ruff doğrulaması workflow'ların seçtiği dosya kümeleriyle sınırlıdır; tüm repo Ruff taraması yapıldığı iddia edilmez.
+- A0 sırasında runtime kodu değiştirilmedi. Bulunan risklerin çözümü A1 ve sonraki aşamalara aittir.
 
 ## 7.1. Aşama 2 uygulama günlüğü
 
