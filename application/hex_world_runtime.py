@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import math
 from time import perf_counter
+from functools import wraps
+from threading import RLock
 
 from dataclasses import dataclass, replace
 from types import MappingProxyType
@@ -12,7 +14,8 @@ from application.hex_map_definition import HexMapDefinition
 from application.world_map_definition import WorldMapDefinition, validate_world_map
 from core.foundation import WorldId
 from core.domain.spatial import (
-    AABB, ContinuousEntityPosition, EntityPosition, HexDirection, LocalHexPosition,
+    AABB, ConstructionPosition, ContinuousEntityPosition, EntityPosition, HexCoord,
+    HexDirection, LocalHexPosition,
     MovementFailureReason, MovementProfile, MovementRequest, MovementResult,
     UniformGridIndex, WorldPoint, axial_to_world_point, world_point_to_hex,
 )
@@ -72,6 +75,40 @@ class HexMovableEntity:
                 raise TypeError("continuous_position must be a ContinuousEntityPosition or None.")
             if self.continuous_position.map_id != self.position.map_id:
                 raise ValueError("continuous position belongs to a different map.")
+
+
+def _runtime_state_locked(method):
+    """Serialize authoritative runtime mutations and construction commits."""
+    @wraps(method)
+    def locked(self, *args, **kwargs):
+        with self._state_lock:
+            return method(self, *args, **kwargs)
+    return locked
+
+
+@dataclass(frozen=True, slots=True)
+class HexWorldStructurePlacement:
+    """One live structure placement owned by the authoritative hex runtime."""
+
+    structure_id: str
+    part_definition_id: str
+    position: ConstructionPosition
+    footprint_cells: tuple[HexCoord, ...]
+    created_by_actor_id: str
+
+    def __post_init__(self):
+        for name in ("structure_id", "part_definition_id", "created_by_actor_id"):
+            value = getattr(self, name)
+            if not isinstance(value, str) or not value.strip():
+                raise ValueError(f"{name} must be a non-empty string.")
+        if not isinstance(self.position, ConstructionPosition):
+            raise TypeError("position must be a ConstructionPosition.")
+        cells = tuple(self.footprint_cells)
+        if not cells or any(not isinstance(cell, HexCoord) for cell in cells):
+            raise ValueError("footprint_cells must contain HexCoord values.")
+        if len(cells) != len(set(cells)):
+            raise ValueError("footprint_cells cannot contain duplicates.")
+        object.__setattr__(self, "footprint_cells", tuple(sorted(cells, key=lambda c: (c.q, c.r))))
 
 
 class HexWorldRuntimeOwner:
@@ -135,6 +172,11 @@ class HexWorldRuntime:
         self._continuous_positions: dict[str, ContinuousEntityPosition] = {}
         self._spatial_index = UniformGridIndex()
         self._patrol_indices: dict[str, int] = {}
+        self._state_lock = RLock()
+        self._state_revision = 0
+        self._structure_placements: dict[str, HexWorldStructurePlacement] = {}
+        self._structure_cells: dict[tuple[str, HexCoord], str] = {}
+        self._next_structure_id = 1
 
     @property
     def world_id(self) -> WorldId | None:
@@ -155,12 +197,112 @@ class HexWorldRuntime:
     def occupancy(self) -> HexOccupancyRegistry:
         return self._occupancy
 
+    @property
+    def state_revision(self) -> int:
+        """Monotonic revision for authoritative spatial/runtime state."""
+        return self._state_revision
+
+    def structure_placements(self, map_id: str | None = None) -> tuple[HexWorldStructurePlacement, ...]:
+        """Return immutable structure placement views in stable ID order."""
+        if map_id is not None:
+            self.map_definition(map_id)
+        return tuple(
+            self._structure_placements[key]
+            for key in sorted(self._structure_placements)
+            if map_id is None or self._structure_placements[key].position.map_id == map_id
+        )
+
+    def construction_snapshot(self, map_id: str, *, supported_cells=()):
+        """Build placement evidence from this runtime's authoritative map and occupants.
+
+        Support evidence is supplied by its future owning subsystem; this runtime
+        deliberately does not infer structural support from terrain walkability.
+        """
+        from application.construction_placement import ConstructionPlacementSnapshot
+
+        map_definition = self.map_definition(map_id)
+        supported = frozenset(supported_cells)
+        if any(not isinstance(cell, HexCoord) for cell in supported):
+            raise TypeError("supported_cells must contain HexCoord values.")
+        occupied: dict[HexCoord, str] = {}
+        for occupant in self._occupancy.snapshot():
+            if occupant.position.map_id == map_id:
+                occupied.setdefault(occupant.position.cell.to_hex_coord(), occupant.entity_id)
+        for (placed_map_id, cell), structure_id in self._structure_cells.items():
+            if placed_map_id == map_id:
+                occupied[cell] = structure_id
+        return ConstructionPlacementSnapshot(
+            map_definition=map_definition,
+            hex_size=self.HEX_SIZE,
+            origin=WorldPoint(0.0, 0.0),
+            occupied_cells=occupied,
+            supported_cells=supported,
+            state_revision=self._state_revision,
+        )
+
+    @_runtime_state_locked
+    def commit_if_revision(self, expected_revision, request, result) -> bool:
+        """Commit one placement against the same live state revision.
+
+        The runtime is the single owner of actor occupancy and placed structures.
+        The revision check, final overlap/bounds checks, and insertion are kept in
+        one serialized operation; a rejected commit never mutates world state.
+        """
+        from application.construction_placement import ConstructionPlacementRequest, ConstructionPlacementResult
+
+        if type(expected_revision) is not int or expected_revision < 0:
+            raise ValueError("expected_revision must be a non-negative integer.")
+        if not isinstance(request, ConstructionPlacementRequest):
+            raise TypeError("request must be a ConstructionPlacementRequest.")
+        if not isinstance(result, ConstructionPlacementResult):
+            raise TypeError("result must be a ConstructionPlacementResult.")
+        if expected_revision != self._state_revision or result.snapshot_revision != expected_revision:
+            return False
+        if not result.valid or not result.footprint_cells:
+            return False
+        map_id = request.position.map_id
+        map_definition = self.map_definition(map_id)
+        if request.actor_id not in self._entities:
+            return False
+        actor = self.entity(request.actor_id)
+        if actor.position.map_id != map_id:
+            return False
+        footprint = tuple(result.footprint_cells)
+        if len(footprint) != len(set(footprint)):
+            return False
+        for cell in footprint:
+            local = LocalHexPosition.from_hex_coord(cell)
+            if not map_definition.has_cell(local) or map_definition.is_blocked(local):
+                return False
+            if any(
+                occupant.position.map_id == map_id and occupant.position.cell == local
+                for occupant in self._occupancy.snapshot()
+            ):
+                return False
+            if (map_id, cell) in self._structure_cells:
+                return False
+        structure_id = f"structure-{self._next_structure_id:08d}"
+        placement = HexWorldStructurePlacement(
+            structure_id,
+            request.part_definition_id,
+            request.position,
+            footprint,
+            request.actor_id,
+        )
+        self._structure_placements[structure_id] = placement
+        for cell in footprint:
+            self._structure_cells[(map_id, cell)] = structure_id
+        self._next_structure_id += 1
+        self._state_revision += 1
+        return True
+
     def map_definition(self, map_id: str) -> HexMapDefinition:
         try:
             return self._maps[map_id]
         except KeyError as error:
             raise KeyError(f"Unknown hex map: {map_id}") from error
 
+    @_runtime_state_locked
     def register_entity(
         self, entity_id: str, kind: str, position: EntityPosition,
         profile: MovementProfile | None = None, *, active: bool = True,
@@ -219,6 +361,7 @@ class HexWorldRuntime:
             raise
         self._entities[entity_id] = state
         self._continuous_positions[entity_id] = continuous_position
+        self._state_revision += 1
         return self.entity(entity_id)
 
     def _entity_state(self, entity_id: str) -> _HexEntityState:
@@ -279,6 +422,7 @@ class HexWorldRuntime:
     def entities(self) -> tuple[HexMovableEntity, ...]:
         return tuple(self.entity(key) for key in sorted(self._entities))
 
+    @_runtime_state_locked
     def remove_entity(self, entity_id: str) -> HexMovableEntity:
         """Remove one spatial registration and its authoritative occupancy."""
         previous = self.entity(entity_id)
@@ -287,13 +431,16 @@ class HexWorldRuntime:
         del self._entities[entity_id]
         del self._continuous_positions[entity_id]
         self._patrol_indices.pop(entity_id, None)
+        self._state_revision += 1
         return previous
 
+    @_runtime_state_locked
     def set_active(self, entity_id: str, active: bool) -> HexMovableEntity:
         if not isinstance(active, bool):
             raise TypeError("active must be boolean.")
         state = self._entity_state(entity_id)
         self._entities[entity_id] = replace(state, active=active)
+        self._state_revision += 1
         return self.entity(entity_id)
 
     def move(self, entity_id: str, direction: HexDirection) -> MovementResult:
@@ -346,6 +493,7 @@ class HexWorldRuntime:
             )
         return MovementResult(True, destination)
 
+    @_runtime_state_locked
     def _commit_position(
         self,
         entity_id: str,
@@ -382,6 +530,7 @@ class HexWorldRuntime:
             )
             raise
         self._continuous_positions[entity_id] = continuous_position
+        self._state_revision += 1
 
     def move_to(self, entity_id: str, target: LocalHexPosition) -> MovementResult:
         """Validate then atomically commit one map-local cell movement."""
@@ -398,6 +547,7 @@ class HexWorldRuntime:
         self.entity(entity_id)
         return self._continuous_positions[entity_id]
 
+    @_runtime_state_locked
     def set_continuous_position(self, entity_id: str, point: WorldPoint) -> MovementResult:
         """Apply one continuous update and atomically refresh occupancy and broadphase."""
         if not isinstance(point, WorldPoint):
@@ -428,6 +578,7 @@ class HexWorldRuntime:
                 self._bounds_at(state, next_position.point),
             )
             self._continuous_positions[entity_id] = next_position
+            self._state_revision += 1
             return MovementResult(True, entity.position)
         request = MovementRequest(entity_id, entity.position, target, entity.profile)
         validation = MovementRules.evaluate(request, map_definition)
@@ -608,4 +759,4 @@ class HexWorldRuntime:
         return HexMapTransitionService(self, self._world_map).transition(entity_id, transition_id)
 
 
-__all__ = ["HexMovableEntity", "HexWorldRuntime", "HexWorldRuntimeOwner"]
+__all__ = ["HexMovableEntity", "HexWorldStructurePlacement", "HexWorldRuntime", "HexWorldRuntimeOwner"]
