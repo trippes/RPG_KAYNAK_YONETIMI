@@ -50,18 +50,24 @@ class ConstructionPlacementRequest:
         position: ConstructionPosition,
         actor_id: str,
         *,
-        requires_support: bool = False,
+        requires_support: bool | None = None,
         has_permission: bool = True,
     ) -> ConstructionPlacementRequest:
         """Build placement input from the part's explicit geometry footprint."""
         if not isinstance(part_definition, StructurePartDefinition):
             raise TypeError("part_definition must be a StructurePartDefinition.")
+        foundation_required = (
+            part_definition.vertical_policy == "ground"
+            if requires_support is None else requires_support
+        )
+        if not isinstance(foundation_required, bool):
+            raise TypeError("requires_support must be boolean or None.")
         return cls(
             part_definition.part_definition_id,
             position,
             part_definition.geometry.footprint_local_points,
             actor_id,
-            requires_support,
+            foundation_required,
             has_permission,
         )
 
