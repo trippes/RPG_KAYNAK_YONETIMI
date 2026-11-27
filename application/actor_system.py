@@ -411,6 +411,17 @@ class ActorActivityManager:
             for activity in self._activities.values()
         )
 
+    @property
+    def next_completion_tick(self) -> Tick | None:
+        """Return the earliest completion boundary among running activities."""
+        pending = (
+            activity.end_tick
+            for activity in self._activities.values()
+            if activity.state == ActivityState.RUNNING
+            and activity.end_tick is not None
+        )
+        return min(pending, default=None)
+
     def get(self, activity_id: str) -> ActivityView | None:
         activity = self._activities.get(activity_id)
         return None if activity is None else activity.view(self.runtime.current_tick)
