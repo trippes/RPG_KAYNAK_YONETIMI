@@ -183,6 +183,12 @@ class CharacterCreationStateView:
 
 
 @dataclass(frozen=True)
+class TradePartnerView:
+    npc_id: str
+    account_id: str
+
+
+@dataclass(frozen=True)
 class QuestObjectiveView:
     objective_id: str
     description: str
@@ -2030,6 +2036,13 @@ class GameplayService:
              if merchant.npc_id == npc_id and merchant.accepted_resources),
             None,
         )
+
+    def trade_partner_state(self, npc_id: str) -> TradePartnerView | None:
+        """Return immutable NPC trade-partner data for UI consumers."""
+        merchant = self.trade_partner_for_npc(npc_id)
+        if merchant is None:
+            return None
+        return TradePartnerView(npc_id, merchant.account_id)
 
     def trade_sellable_items(self, npc_id: str, inventory_id: str | None = None):
         inventory_id = inventory_id or self.player_inventory_id
