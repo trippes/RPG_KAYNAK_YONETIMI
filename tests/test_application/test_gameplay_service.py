@@ -581,6 +581,34 @@ class TestGameplayService(unittest.TestCase):
         self.assertEqual(self.service.quest_log_counts(), (1, 1, 0))
         self.assertEqual(self.service.state().simulation_tick, before_tick)
 
+    def test_dialogue_choice_query_hides_blacksmith_delivery_for_incomplete_objective(self):
+        from types import SimpleNamespace
+        from quests import Dialogue, DialogueChoice, DialogueNode
+
+        self.inventory.add(ResourceType("iron_ore"), Quantity(3, ResourceUnit.ITEM))
+        self.service.blacksmith_quest = SimpleNamespace(
+            state=SimpleNamespace(value="active"),
+            objectives=(SimpleNamespace(objective_id="collect_iron_ore"),),
+        )
+        dialogue = Dialogue(
+            "blacksmith_test",
+            (DialogueNode(
+                "start", "village_blacksmith", "Need ore",
+                (
+                    DialogueChoice("deliver_blacksmith_ore", "Deliver ore"),
+                    DialogueChoice("ask_question", "Ask a question"),
+                ),
+            ),),
+            "start",
+        )
+        self.service.register_dialogue(dialogue)
+
+        choices = self.service.dialogue_choices(
+            "hero", "village_blacksmith", "blacksmith_test", "start",
+        )
+
+        self.assertEqual(tuple(choice.choice_id for choice in choices), ("ask_question",))
+
     def test_dialogue_choice_query_is_service_owned_and_read_only(self):
         dialogue = Dialogue(
             "service_dialogue",
