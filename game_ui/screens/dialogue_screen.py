@@ -205,7 +205,7 @@ class DialogueScreen:
                         self.message = "Oyuncu karakteri bulunamadı."
                     else:
                         character.name = name
-                        self.service._player_name_confirmed = True
+                        self.service.confirm_player_name()
                         if self.context is not None:
                             self.service.change_relationship(
                                 self.context[0], self.context[1], trust=1
