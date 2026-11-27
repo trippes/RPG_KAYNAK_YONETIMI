@@ -163,3 +163,77 @@ Kod arama servisi bu incelemede `ref=f9e4914e` parametresini dikkate almayıp va
 ## 11. Güncel A0 kararı
 
 Tarihsel kodda A0'ın hedeflediği legacy kalıpların somut örnekleri artık dosya/satır/kullanım amacıyla kanıtlanmıştır. Bununla birlikte tam kapsamlı kategori taraması ve tarihsel test/lint başlangıç çıktısı hâlâ eksiktir. A0 bu nedenle **kısmen doğrulanmış ve açık** durumundadır; kapanış onayı verilmemiştir.
+
+
+## 12. Tarihsel persistence / save-load incelemesi
+
+Bu bölümde yalnızca `f9e4914e` tarihsel ağacındaki persistence dosyaları incelendi. Recursive tree'de save/persistence ile ilişkili 42 dosya yolu bulundu; aşağıdaki satır bulguları bunların tamamının değil, seçilmiş ana sözleşme ve adaptörlerin doğrudan okunmasına dayanır.
+
+### 12.1 Yapısal olarak doğrulanan kayıt mimarisi
+
+- `application/save_document.py:24-25,57-67,129-154`: Uygulama kaydı `rpg-game-save` şeması ve sürüm 3 ile tanımlanmış. Bilinmeyen şema, geçersiz sürüm ve desteklenmeyen gelecek sürüm açık hata ile reddediliyor.
+- `application/migrations.py:9-33`: Uygulama zarfında v0→v1, v1→v2 ve v2→v3 geçişleri açıkça uygulanıyor. Eski kayıtlara `containers` ve `hex_world` alanları ekleniyor; kare koordinatların otomatik altıgen dönüşümü yapılmadığı yorumda da belirtilmiş.
+- `application/save_codec.py:10-31`: JSON kodlama deterministik; anahtarlar sıralanıyor, NaN/Infinity gibi standart dışı sayılar reddediliyor.
+- `application/save_storage.py:70-95,97-175`: On kayıt yuvası ve kullanıcı Belgelerim dizinindeki Eldoria kayıt klasörü tanımlı. Eski `save/` dizininden slot kayıtları ve `eldoria_save.json` kontrollü biçimde taşınıyor; geçersiz kaynaklar ve çakışmalar raporlanıyor, mevcut hedef kayıt korunuyor.
+- `core/persistence/contracts.py:17-24,76-100,141-157`: Core kaydı ayrı `rpg-core` şeması/sürümüyle tanımlı; durum verisi kopyalanıp üst düzeyde salt okunur hale getiriliyor. Bilinmeyen alanlar Core belgesinde ileriye dönük uyumluluk için tolere ediliyor.
+- `application/hex_world_persistence.py:18-19,227-255,325-359,398-423`: Hex-world kaydı kendi sürümlü sözleşmesine sahip; entity kimliği, dünya sahipliği, harita hücresi ve NPC registry gereksinimleri restore öncesinde doğrulanıyor.
+- `resources/persistence.py:24-25,229-285`, `character/persistence.py:14-15,70-78`, `economy/persistence.py` ve `quests/persistence.py`: Gameplay, karakter, ekonomi ve görev verileri ayrı snapshot/şema sınırlarıyla ayrıştırılmış.
+
+### 12.2 Doğrulanan risk adayları ve dikkat noktaları
+
+| Kategori | Dosya ve satır | Gözlenen durum | A0 değerlendirmesi |
+|---|---|---|---|
+| Persistence / sürüm geçişi | `core/persistence/restore.py:167-185` | Core `PersistenceMigrationBoundary` sürüm kontrolü yapıyor; v1→v2 dönüşümünün bilerek ertelendiği açıklanıyor ve mevcut sürüm dışı belge reddediliyor. | Açık bir uyumluluk sınırı; tarihsel eski Core kayıtlarının ayrıca dönüştürülmediği bir risk/ürün kararıdır, tek başına hata kanıtı değildir. |
+| Persistence / geriye uyumluluk | `application/migrations.py:12-33` | Uygulama zarfı için üç aşamalı geçiş var; kare dünya konumlarını yeni altıgen koordinatlara dönüştürmüyor. | Dönüşümün yapılmaması bilinçli ve belgelenmiş. Eski kayıtların konumsal verilerinin nasıl ele alındığı ayrı kabul ölçütü gerektirir. |
+| Persistence / varsayılan alanlar | `application/extended_persistence.py:130-187,288-311,351-406` | Sosyal snapshot sürüm 1/2 kabul ediyor; bazı eksik alanları boş liste, `idle`, `civilian`, `active=True`, varsayılan hız/istatistik gibi değerlere tamamlıyor. | Geriye uyumluluk amacı taşıyor olabilir. Eksik alanların sessizce varsayılanlanmasının bozuk/eksik kayıtları gizleyip gizlemediği testlerle doğrulanmalı; bu inceleme bunu hata olarak kanıtlamaz. |
+| Persistence / restore sözleşmesi | `application/hex_world_persistence.py:231-255,325-359,398-423` | Katı alan kümeleri ve domain owner doğrulamaları var; restore hedefinin boş olması ve NPC registry bulunması zorunlu. | Güçlü doğrulama kanıtı; tam test kapsamı ayrıca incelenmedi. |
+| Persistence / eski kayıt taşıma | `application/save_storage.py:82-86,109-175` | Varsayılan legacy kaynak yolu proje içindeki `save/`; taşıma çakışma ve bozuk kaynakları ayrı raporluyor. | Açık bir migration kaynağı. Kullanıcı verisinin yeni konuma taşınması davranışı için test dosyası mevcut; bu aşamada test çalıştırılmadı. |
+
+**Önemli:** Varsayılan değer kullanımı tek başına “sessiz hata” sayılmadı. Şema sürümüyle ilişkilendirilmiş eski kayıt uyumluluğu olabileceği için, yalnızca eksik alanın hangi sürümde geçerli olduğu ve testlerin bunu güvenceye alıp almadığıyla birlikte değerlendirilmelidir.
+
+## 13. Tarihsel content ve yapılandırma incelemesi
+
+### 13.1 Paket ve manifest yapısı
+
+- `content/active_package.json`: Etkin paket `demo_eldoria` olarak açıkça seçilmiş; `schema_version: 1`.
+- `content/demo_eldoria/manifest.json`: Paket kimliği `demo_eldoria`, sürüm `0.7.1`; starter, NPC, quest, resource, character, gameplay_rules ve containers dosyaları ile harita/yerleşim dizinlerini tanımlıyor.
+- `content/movement_test/manifest.json`: Ayrı test paketi `movement_test`, sürüm `1.0.0-test`; starter, NPC, quest, resource, character ve gameplay_rules dosyalarını tanımlıyor.
+- Tarihsel ağaç üzerinde iki manifestteki `files` referanslarının tamamı gerçek dosyalara çözümleniyor. Bu iki paket için manifestin var olmayan JSON dosyasına işaret ettiği yönünde bulgu yok.
+- `application/content_pack.py:51-70`: Etkin paket yapılandırması okunamazsa, şeması yanlışsa, paket yolu boşsa veya paket bulunamazsa açık hata üretiliyor; sessizce başka pakete düşülmüyor.
+- `application/content_loader.py:86-110` ve `application/content_pack.py:135-157`: Manifest sürümü, paket sürümü, zorunlu kayıt alanları ve yinelenen NPC kimlikleri doğrulanıyor.
+
+### 13.2 Kimlik ve varsayılanların içerik tarafından tanımlanması
+
+- `content/demo_eldoria/gameplay_rules.json:1-7` ve `content/movement_test/gameplay_rules.json:1-7`: Oyuncu envanteri `player`, hesap kimliği `hero` olarak açıkça içerik kurallarında tanımlı.
+- Her iki `starter_content.json` dosyasında da `ids.world_id` ve `ids.hero_id` açıkça veriliyor. Bu, UI kodundaki sabit kimlik kullanımından farklı olarak paket yapılandırmasından gelen bir kimlik sözleşmesidir; kendi başına gizli varsayılan veya legacy kusuru olarak sınıflandırılmadı.
+- `application/content_pack.py:825-845`: Oyuncu envanteri yapılandırılmış `inventory_id` ile oluşturuluyor ve oyuncu aktörüne bağlanıyor; oyuncu aktörünün bulunmaması veya başka envantere bağlı olması hata veriyor.
+- `content/demo_eldoria/manifest.json` ve `content/movement_test/manifest.json` referans denetimleri bu iki paketin dosya bütünlüğü için olumlu kanıt sağlar; içeriklerin oyun tasarımı bakımından doğru veya dengeli olduğunu kanıtlamaz.
+
+### 13.3 Yapılandırma çoğulluğu adayı
+
+- `core/domain/movement/config.py:1-48` ve `hex_world_lab/movement/config.py` aynı adlı `MovementConfig` veri sınıfını ayrı modüllerde tanımlıyor.
+- Core sürümü ivmelenme, yavaşlama ve frenleme değerlerini de içerirken laboratuvar sürümü yalnızca hız ve koşu/gizlilik katsayılarını içeriyor.
+- Bu, iki hareket altyapısının ayrı sözleşmeleri olabilir; yalnızca benzer sınıf adı bulunması kopya/çakışan aktif yapılandırma kanıtı değildir. Hangi modülün ana oyun tarafından kullanıldığı ve iki tanımın ortaklaştırılması gerekip gerekmediği A0'ın runtime bağımlılık taramasında doğrulanmalıdır.
+
+### 13.4 Test ve paketleme yapılandırması
+
+- `pyproject.toml`: Pytest keşfi `tests/` ve `test_*.py` olarak tanımlı; ayrıca `[tool.unittest]` altında `python -m unittest discover -s . -t . -p test_*.py` komutu yer alıyor.
+- `requirements-test.txt`: Test bağımlılıkları `pytest` ve `ruff`; `requirements.txt` ise Pygame-ce runtime bağımlılığını içeriyor.
+- `pyproject.toml` paket veri listesi `demo_eldoria` içeriğini dağıtım paketine dahil ediyor; `movement_test` test paketi olarak listelenmiyor. Etkin paket de `demo_eldoria` olduğundan, incelenen konfigürasyonda bu bir çelişki olarak değerlendirilmedi.
+- Test komutu tanımları ve workflow'lar mevcuttur; A0 tarihsel test/lint sonuçları hâlâ bulunamamıştır.
+
+## 14. Bu turun kapsamı ve A0 kararı
+
+Bu turda:
+- Tarihsel tree'deki save/persistence ile ilişkili 42 yol listelendi; ana kayıt zarfı, migration, storage, Core restore, hex-world restore ve seçilmiş domain snapshot dosyaları doğrudan incelendi.
+- İki içerik manifesti ve bunların dosya referansları kontrol edildi.
+- Etkin paket seçimi, paket yükleyici, oyuncu kuralları, paketleme/test yapılandırması ve iki MovementConfig tanımı incelendi.
+- Hiçbir runtime dosyası değiştirilmedi ve tarihsel testler çalıştırılmadı.
+
+Henüz:
+- 42 persistence yolunun tamamı satır satır incelenmedi.
+- 301 test dosyasının tamamı ve testlerin ilgili eski kayıt/varsayılan davranışlarını kapsayıp kapsamadığı incelenmedi.
+- Runtime, content, tests ve tooling/docs kategorilerinin tamamı tek bir ortak legacy pattern listesiyle taranmadı.
+- Tarihsel A0 test/lint çalıştırma çıktısı veya A0'a ait doğrulanmış CI run kimliği bulunmadı.
+
+Bu nedenle A0 kararı değişmiyor: **kısmen doğrulanmış ve açık**. Bu tur, persistence ve content/config alanlarına ilişkin somut envanter ve bulguları ekler; A0 kapanışı için gereken tam tarama ve tarihsel test temel çizgisinin yerini tutmaz.
