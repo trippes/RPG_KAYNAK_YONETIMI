@@ -160,12 +160,18 @@ class TestContentPack(unittest.TestCase):
             (("hinge", 2), ("nail", 22), ("old_copper_ring", 1), ("wooden_plank", 22)),
         )
         self.assertIsNone(service.container_lock_state("village_chest"))
-        service.transfer_actor_item_from_container(
-            ids.hero_id, "player", "village_chest", "old_copper_ring", 1,
-        )
+        for item_id, quantity in (
+            ("old_copper_ring", 1),
+            ("wooden_plank", 22),
+            ("nail", 22),
+            ("hinge", 2),
+        ):
+            service.transfer_actor_item_from_container(
+                ids.hero_id, "player", "village_chest", item_id, quantity,
+            )
         self.assertEqual(
             service.inventory("player").items,
-            (("old_copper_ring", 1),),
+            (("hinge", 2), ("nail", 22), ("old_copper_ring", 1), ("wooden_plank", 22)),
         )
         populate_gameplay_resources(service, content_package_path=PACKAGE)
         self.assertEqual(
