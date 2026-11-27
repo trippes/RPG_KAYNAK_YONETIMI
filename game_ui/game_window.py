@@ -27,6 +27,7 @@ from .screens.container_screen import ContainerScreen
 from .window_manager import WindowManager
 from application.save_storage import SaveStorage, SaveStorageError
 from application.gameplay_step_clock import FixedStepAccumulator
+from application.simulation_time_driver import SimulationTimeDriver
 from application.continuous_player_movement import ContinuousPlayerMovementController
 from application.performance_monitor import PerformanceMonitor
 from core.domain.movement import MovementIntent
@@ -227,9 +228,8 @@ class GameWindow:
         self.pause_menu_open = False
         self.pause_menu_selected = 0
         self.running = False
-        # Canonical simulation time runs at 60 ticks per real second while a timed activity is active.
-        self._auto_time_fraction = 0.0
-        self._simulation_ticks_per_second = 60
+        # One shared adapter converts real elapsed time into canonical SimulationRuntime ticks.
+        self._simulation_time_driver = SimulationTimeDriver()
         self.notice = ""
         self.notice_level = "info"
         self._notice_frames = 0
@@ -735,32 +735,30 @@ class GameWindow:
             return False
 
     def _advance_active_time(self, elapsed_seconds):
-        """Advance canonical time only while a duration-based activity is running."""
-        if (
-            not self.gameplay_active
-            or self.pause_menu_open
-            or elapsed_seconds <= 0
-            or not self._has_running_timed_activity()
-        ):
-            self._auto_time_fraction = 0.0
-            return
+        """Advance the one canonical timeline while any actor has timed work."""
+        active = (
+            self.gameplay_active
+            and not self.pause_menu_open
+            and elapsed_seconds > 0
+            and self._has_running_timed_activity()
+        )
+        driver = getattr(self, "_simulation_time_driver", None)
+        if driver is None:
+            # Lightweight tests may construct GameWindow without __init__.
+            driver = SimulationTimeDriver()
+            self._simulation_time_driver = driver
 
-        self._auto_time_fraction += elapsed_seconds * self._simulation_ticks_per_second
-        ticks_to_advance = int(self._auto_time_fraction)
+        ticks_to_advance = driver.advance(elapsed_seconds, active=active)
         if ticks_to_advance <= 0:
             return
 
-        self._auto_time_fraction -= ticks_to_advance
-        for _ in range(ticks_to_advance):
-            if not self._has_running_timed_activity():
-                self._auto_time_fraction = 0.0
-                break
-            try:
-                self.service.advance_by(1)
-            except (KeyError, RuntimeError, ValueError) as error:
-                self._auto_time_fraction = 0.0
-                self._set_notice(f"Süreli eylem durduruldu: {error}", "error")
-                break
+        try:
+            # SimulationRuntime/ActionProcessor process scheduled event
+            # boundaries internally; do not loop once per individual tick.
+            self.service.advance_by(ticks_to_advance)
+        except (KeyError, RuntimeError, ValueError) as error:
+            driver.reset()
+            self._set_notice(f"Süreli eylem durduruldu: {error}", "error")
 
     def step(self, events=(), *, elapsed_seconds=0.0):
         # Some focused tests construct GameWindow without running __init__.
