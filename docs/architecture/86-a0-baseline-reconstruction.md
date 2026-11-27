@@ -121,3 +121,45 @@ Planın anlattığı aday kalıplar arasında `"hero"` / `"player"` sabitleri, `
 - `main`, `demo_eldoria` veya `experiment/hex-world-laboratory` dallarında işlem yapılmadı.
 - Bu rapor, A0'ı tamamlandı olarak işaretlemez.
 - Tarihsel test/lint komutları bu rapor hazırlanırken çalıştırılmadı; raporda test başarısı iddia edilmez.
+
+
+## 10. Tarihsel kaynak kodunda doğrulanan somut legacy bulguları
+
+Aşağıdaki satır incelemeleri doğrudan `f9e4914e` commit'indeki Git blob'larından yapılmıştır. Bunlar A0 taramasının tamamı değildir; fakat A0'ın aradığı kalıpların tarihsel başlangıç kodunda gerçekten bulunduğunu doğrular. Satır numaraları bu tarihsel commit'e aittir.
+
+| Kategori | Dosya ve satır | Gözlenen kalıp | Kullanım / risk |
+|---|---|---|---|
+| UI / kimlik | `game_ui/screens/character_creation.py:132,408` | `hero` sabit kimliği ve `.holder.current.characters` erişimi | Karakter oluşturma ekranı oyuncuyu sabit kimlikle buluyor; servis sınırını aşıyor. |
+| UI / kimlik | `game_ui/screens/character_screen.py:74,77,135` | `actor_character("hero")`, `actor_stats("hero")`, `improve_skill("hero", ...)` | Karakter ekranı oyuncu kimliğini sabit kabul ediyor. |
+| UI / sıra varsayımı | `game_ui/screens/character_screen.py:153` | `snapshot.actors[0]` | İlk aktörün oyuncu olduğu varsayılıyor. |
+| UI / sıra varsayımı | `game_ui/screens/container_screen.py:68` | `actors[0]` | Konteyner etkileşiminde ilk aktör seçiliyor. |
+| UI / servis sınırı | `game_ui/screens/dialogue_screen.py:57,96,144,227,347,524,545,571` | `service.application.holder.current` | Diyalog ekranı servis arkasındaki Application/SessionBundle verisine doğrudan erişiyor. |
+| UI / kimlik ve sıra | `game_ui/screens/dialogue_screen.py:159,184,238-239,348,454,467,480,493` | `player` / `hero` sabitleri ve ilk aktöre geri dönüş | Envanter, görev ve diyalog akışlarında oyuncu kimliği sabit; aktör seçimi ilk elemana düşebiliyor. |
+| UI / kimlik | `game_ui/screens/inventory_screen.py:22,219,234,242-243,390` | Varsayılan `inventory_id="player"`; `hero` ile eşya/istatistik işlemleri | Envanter kimliği ile aktör kimliği sabit varsayımlara bağlı. |
+| UI / kimlik | `game_ui/screens/market_screen.py:36,119` | Satın alma ve cüzdan için `hero` / `player` | Pazar işlemleri sabit oyuncu kimliğine bağlı. |
+| UI / servis sınırı | `game_ui/screens/production_screen.py:12,39,46` | `inventory_id="player"` ve doğrudan `service.application.holder.current` | Üretim ekranı hem sabit envanter kimliği hem Application erişimi kullanıyor. |
+| UI / kimlik | `game_ui/screens/currency_exchange_screen.py:75,107` | Bakiye ve döviz işlemlerinde `hero` | Döviz ekranı sabit oyuncu kimliğine bağlı. |
+| UI / servis sınırı | `game_ui/renderer.py:563,634,654` | HUD/quest/map çiziminde `service.application.holder.current` | Renderer UI dışı oturum verisini servis sınırı arkasından doğrudan okuyor. |
+| UI / sıra varsayımı | `game_ui/renderer.py:657` | `actors[0].world_id` | Harita seçimi ilk aktörün dünyasına bağlanmış. |
+| UI / varsayılan kimlik | `game_ui/renderer.py:455,559,605` | `actor_id="hero"`, `inventory_id="player"` | Render API'leri varsayılan oyuncu/çanta kimliği varsayıyor. |
+
+### 10.1 Sınıflandırma
+
+Bu somut bulguların tamamı esas olarak **UI** kategorisindedir. Bir kısmı aynı zamanda **kimlik/servis sınırı** riskidir; ancak rapordaki altı ana kategoriye göre tek birincil kategori seçildiğinde UI altında tutulmuştur. Bu örnekler runtime, content, persistence, tests ve tooling/docs kategorilerinin tamamının tarandığı anlamına gelmez.
+
+### 10.2 Tarama kapsamı sınırı
+
+Bu turda tarihsel commit ağacı ve ilgili 13 UI/Application dosyasının bir bölümü incelendi. Özellikle karakter, konteyner, diyalog, envanter, pazar, üretim, döviz, renderer ve Application kodundan somut satırlar doğrulandı. `application/game_application.py` içindeki `holder.current` kullanımlarının önemli bölümü Application katmanının kendi içidir; bunlar UI servis sınırı ihlaliyle aynı risk olarak sınıflandırılmamalıdır.
+
+Bu nedenle henüz:
+- 290 üretim Python dosyasının tamamı,
+- 301 test dosyasının tamamı,
+- `hex_world_lab/` altındaki 123 Python dosyası,
+- bütün persistence/save-load ve content/config dosyaları
+aynı pattern setiyle satır satır taranmış değildir. Bu sayılar tarama kapsamının büyüklüğünü belirtir; taranmış dosya sayısı değildir.
+
+Kod arama servisi bu incelemede `ref=f9e4914e` parametresini dikkate almayıp varsayılan dal sonuçlarını döndürdüğü için, güncel kod arama sonuçları tarihsel bulgu kanıtı olarak kullanılmadı. Yukarıdaki bulgular yalnızca tarihsel commit ağacından elde edilen blob SHA'ları okunarak doğrulandı.
+
+## 11. Güncel A0 kararı
+
+Tarihsel kodda A0'ın hedeflediği legacy kalıpların somut örnekleri artık dosya/satır/kullanım amacıyla kanıtlanmıştır. Bununla birlikte tam kapsamlı kategori taraması ve tarihsel test/lint başlangıç çıktısı hâlâ eksiktir. A0 bu nedenle **kısmen doğrulanmış ve açık** durumundadır; kapanış onayı verilmemiştir.
