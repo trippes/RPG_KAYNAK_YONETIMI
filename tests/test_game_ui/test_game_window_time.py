@@ -1,8 +1,8 @@
-from types import SimpleNamespace
 import unittest
+from types import SimpleNamespace
 
-from game_ui.game_window import GameWindow
 from application.simulation_time_driver import SimulationTimeDriver
+from game_ui.game_window import GameWindow
 
 
 class _TimedService:
