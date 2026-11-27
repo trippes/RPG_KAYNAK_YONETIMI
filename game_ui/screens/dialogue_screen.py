@@ -64,6 +64,17 @@ class DialogueScreen:
     def is_active(self):
         return self.target_npc_id is not None
 
+    @property
+    def active_npc_id(self):
+        """Return the NPC identity needed by an external gameplay transition."""
+        if self.context is not None:
+            return self.context[1]
+        return self.target_npc_id
+
+    def complete_external_transition(self):
+        """Close the current conversation after opening its destination screen."""
+        self._reset_dialogue()
+
     def panel_rect(self, width=960, height=640):
         panel_height = min(self._panel_height, max(210, height - 180))
         return (36, height - panel_height - 18, width - 72, panel_height)
