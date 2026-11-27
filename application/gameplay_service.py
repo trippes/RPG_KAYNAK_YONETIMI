@@ -158,6 +158,12 @@ class RecipeView:
 
 
 @dataclass(frozen=True)
+class WorldView:
+    world_id: str
+    name: str
+
+
+@dataclass(frozen=True)
 class QuestObjectiveView:
     objective_id: str
     description: str
@@ -165,6 +171,7 @@ class QuestObjectiveView:
     optional: bool
     progress: int
     required: int
+    target_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -191,6 +198,7 @@ class QuestView:
     objectives: tuple[QuestObjectiveView, ...]
     reward: QuestRewardView
     branches: tuple[QuestBranchView, ...]
+    target_name: str | None = None
 
 
 @dataclass(frozen=True)
@@ -277,10 +285,6 @@ class GameplayService:
         self._npc_behavior_system_key = None
         self._npc_avoidance_system = None
         self._npc_avoidance_system_key = None
-
-    @property
-    def application(self) -> GameApplication:
-        return self._application
 
     @property
     def hex_world_runtime_owner(self):
@@ -999,8 +1003,10 @@ class GameplayService:
         return self._application.save(path)
 
     def load(self, path):
+        previous_bundle = self._bundle
         result = self._application.load(path)
-        self._chains.clear()
+        if result is not previous_bundle:
+            self._reset_session_runtime_state()
         self._bundle = result
         result.actor_activities.bind_gameplay_service(self)
         self._rebind_content_quests()
@@ -2117,6 +2123,50 @@ class GameplayService:
         """Mark that character creation was opened from the introductory NPC dialogue."""
         self._creation_from_eren = True
 
+    @property
+    def character_creation_from_dialogue(self) -> bool:
+        """Whether character creation was opened from the introductory dialogue."""
+        return bool(getattr(self, "_creation_from_eren", False))
+
+    def character_creation_options(self):
+        """Return the content-defined race and class options for character creation."""
+        factory = self._character_factory
+        if factory is None:
+            return (), ()
+        return tuple(factory.races.values()), tuple(factory.classes.values())
+
+    def customize_player_character(
+        self, name: str, age: int, attributes, *, race=None,
+        character_class=None, appearance=None,
+    ) -> bool:
+        """Validate and apply the player's character-creation command."""
+        if not isinstance(name, str) or not name.strip():
+            raise ValueError("İsim alanı boş bırakılamaz.")
+        if isinstance(age, bool) or not isinstance(age, int) or not 13 <= age <= 120:
+            raise ValueError("Yaş 13 ile 120 arasında olmalı.")
+        if not isinstance(attributes, dict):
+            raise TypeError("Karakter özellikleri geçerli bir eşleme olmalı.")
+        values = tuple(attributes.values())
+        if any(isinstance(value, bool) or not isinstance(value, int) or not 8 <= value <= 15 for value in values):
+            raise ValueError("Özellik puanları 8 ile 15 arasında olmalı.")
+        if sum(value - 10 for value in values) != 12:
+            raise ValueError("Dağıtılmamış özellik puanların var.")
+        character_id = self.player_character_id
+        if character_id is None:
+            raise GameplayServiceError("Oyuncu karakteri bulunamadı.")
+        self._application.customize_character(
+            character_id, name, age, attributes, race=race,
+            character_class=character_class, appearance=appearance,
+        )
+        # Preserve the opening's existing recognition behavior without exposing
+        # the NPC registry to the UI.
+        if self.dialogue_npc_name("warden_lyra") is not None:
+            self.change_relationship(self.player_actor_id, "warden_lyra", trust=1)
+        from_dialogue = self.character_creation_from_dialogue
+        self._player_name_confirmed = True
+        self._creation_from_eren = False
+        return from_dialogue
+
     def dialogue_npc_name(self, npc_id: str | None) -> str | None:
         """Return an NPC display name without exposing the active session bundle."""
         if not npc_id:
@@ -2481,6 +2531,7 @@ class GameplayService:
                     bool(objective.optional),
                     int(objective.progress),
                     int(objective.required),
+                    getattr(objective, "target_id", None),
                 )
                 for objective in quest.objectives
             )
@@ -2510,6 +2561,10 @@ class GameplayService:
                     branches.append(QuestBranchView(
                         group, options, progress.selected_branch(quest.quest_id, group),
                     ))
+            target_id = next(
+                (item.target_id for item in objectives if item.target_id),
+                None,
+            )
             result.append(QuestView(
                 quest.quest_id,
                 quest.title,
@@ -2523,8 +2578,27 @@ class GameplayService:
                     tuple(reward.items), tuple(reward.reputation),
                 ),
                 tuple(branches),
+                self._target_display_name(bundle, target_id) if target_id else None,
             ))
-        return tuple(result)
+        return tuple(sorted(result, key=lambda item: item.quest_id))
+
+    @staticmethod
+    def _target_display_name(bundle, target_id: str) -> str:
+        actor = bundle.actors.get(bundle.player_actor_id) if hasattr(bundle, "player_actor_id") else None
+        if actor is None:
+            actor = bundle.actors.get("hero")
+        if actor is not None:
+            world = bundle.movement.map_for(actor.world_id)
+            location = world.get(target_id) if world is not None else None
+            if location is not None:
+                return location.name
+        npc = bundle.social.npcs.get(target_id)
+        return npc.name if npc is not None else target_id
+
+    def quest_panel_state(self) -> QuestView | None:
+        """Return the active quest summary used by the compact HUD panel."""
+        quests = self.quest_log_state("active")
+        return quests[0] if quests else None
 
     def quest_log_counts(self) -> tuple[int, int, int]:
         """Return active, completed and failed quest counts."""
@@ -2796,6 +2870,13 @@ class GameplayService:
         for faction_id, amount in quest.reward.reputation:
             bundle.social.change_reputation(faction_id, amount)
 
+    def active_world_state(self) -> WorldView | None:
+        """Return the active world's immutable identity and display name."""
+        world = self._current_bundle().session.worlds.get_active()
+        if world is None:
+            return None
+        return WorldView(world.world_id, world.name)
+
     def state(self) -> GameplaySnapshotView:
         """Return a deterministic read-only view without mutating the session."""
         bundle = self._current_bundle()
@@ -2864,12 +2945,22 @@ class GameplayService:
     def activities_state(self) -> tuple[ActivityView, ...]:
         return self._current_bundle().actor_activities.activities()
 
+    def _reset_session_runtime_state(self) -> None:
+        """Dispose runtime objects whose identity is bound to the previous session."""
+        for chain in self._chains.values():
+            chain.dispose()
+        self._chains.clear()
+        self._hex_physics_snapshots.clear()
+        self._companion_command_service = None
+        self._npc_behavior_system = None
+        self._npc_behavior_system_key = None
+        self._npc_avoidance_system = None
+        self._npc_avoidance_system_key = None
+
     def _current_bundle(self):
         bundle = self._application.holder.current
         if bundle is not self._bundle:
-            for chain in self._chains.values():
-                chain.dispose()
-            self._chains.clear()
+            self._reset_session_runtime_state()
             self._bundle = bundle
         return bundle
 
