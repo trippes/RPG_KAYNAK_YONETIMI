@@ -345,9 +345,8 @@ class ActorActivity:
             elapsed = duration
         elif self.state == ActivityState.RUNNING and current_tick is not None:
             elapsed = min(duration, max(0, current_tick.value - self.start_tick.value))
-        elif self.end_tick is not None and self.state == ActivityState.CANCELLED:
-            elapsed = min(duration, max(0, self.end_tick.value - self.start_tick.value))
         else:
+            # Cancelled/failed activities stop accruing progress immediately.
             elapsed = 0
         remaining = max(0, duration - elapsed)
         progress = (elapsed / duration) if duration > 0 else (
@@ -476,7 +475,6 @@ class ActorActivityManager:
         if activity.job_id is not None:
             self._jobs.cancel(activity.job_id, reason)
         activity.cancel(reason)
-        activity.end_tick = self.runtime.current_tick
         actor.clear_activity(activity.activity_id)
         return activity.view()
 
@@ -499,7 +497,6 @@ class ActorActivityManager:
             activity.complete(event.simulation_tick)
             actor.clear_activity(activity.activity_id)
         elif event.event_type == CanonicalEventType.ACTION_CANCELLED:
-            activity.end_tick = event.simulation_tick
             activity.cancel("production job cancelled")
             actor.clear_activity(activity.activity_id)
         elif event.event_type == CanonicalEventType.ACTION_FAILED:
