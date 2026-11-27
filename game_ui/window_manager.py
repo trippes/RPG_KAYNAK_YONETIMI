@@ -60,8 +60,9 @@ class WindowManager:
         for window in self.windows.values():
             window.bounds.width = min(window.bounds.width, self.width)
             window.bounds.height = min(window.bounds.height, self.height)
-            window.bounds.topleft = self._clamp(
-                window, window.bounds.x, window.bounds.y,
+            window.bounds.topleft = (
+                max(0, min(window.bounds.x, self.width - window.bounds.width)),
+                max(0, min(window.bounds.y, self.height - window.bounds.height)),
             )
             viewport = getattr(window.screen, "set_viewport", None)
             if callable(viewport) and getattr(window.screen, "responsive_layout", False):
