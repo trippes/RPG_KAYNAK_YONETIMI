@@ -268,6 +268,8 @@ class HexWorldRuntime:
         if request.actor_id not in self._entities:
             return False
         actor = self.entity(request.actor_id)
+        if not actor.active or actor.kind not in {"player", "npc"}:
+            return False
         if actor.position.map_id != map_id:
             return False
         from application.construction_placement import ConstructionPlacementValidator
