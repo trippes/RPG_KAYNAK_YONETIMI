@@ -146,6 +146,18 @@ class FacilityView:
 
 
 @dataclass(frozen=True)
+class RecipeView:
+    """Immutable recipe catalog entry exposed to read-only consumers."""
+
+    recipe_id: str
+    inputs: tuple
+    outputs: tuple
+    processing_time: object
+    facility_type: str | None
+    required_capabilities: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class JobView:
     job_id: str
     recipe_id: str
@@ -796,6 +808,83 @@ class GameplayService:
                 f"Timed action did not complete: {action.action_id}"
             )
         return callback()
+
+    def recipes_state(self) -> tuple[RecipeView, ...]:
+        """Return the active session's recipe catalog as a stable read-only view."""
+        recipes = self._current_bundle().recipes.values()
+        return tuple(
+            RecipeView(
+                recipe.recipe_id,
+                recipe.inputs,
+                recipe.outputs,
+                recipe.processing_time,
+                recipe.facility_type,
+                recipe.required_capabilities,
+            )
+            for recipe in sorted(recipes, key=lambda item: item.recipe_id)
+        )
+
+    def production_facility_for_recipe(
+        self,
+        recipe_id: str,
+        facility_id: str | None = None,
+    ) -> FacilityView | None:
+        """Resolve a compatible facility without exposing its mutable aggregate.
+
+        An explicitly selected facility is checked for existence, activity and
+        recipe compatibility, preserving the production screen's prior
+        selection behavior. Automatic selection additionally requires capacity.
+        """
+        bundle = self._current_bundle()
+        recipe = self._recipe(bundle, recipe_id)
+        facilities = bundle.facilities
+
+        if facility_id is not None:
+            facility = facilities.get(facility_id)
+            if (
+                facility is None
+                or not facility.active
+                or (
+                    recipe.facility_type is not None
+                    and recipe.facility_type != facility.facility_type
+                )
+                or not set(recipe.required_capabilities).issubset(
+                    set(facility.capabilities)
+                )
+            ):
+                return None
+        else:
+            facility = next(
+                (
+                    candidate
+                    for candidate in sorted(
+                        facilities.facilities(),
+                        key=lambda item: item.facility_id,
+                    )
+                    if candidate.active
+                    and (
+                        recipe.facility_type is None
+                        or recipe.facility_type == candidate.facility_type
+                    )
+                    and set(recipe.required_capabilities).issubset(
+                        set(candidate.capabilities)
+                    )
+                    and candidate.capacity.reserved < candidate.capacity.capacity
+                ),
+                None,
+            )
+            if facility is None:
+                return None
+
+        return FacilityView(
+            facility.facility_id,
+            facility.facility_type,
+            facility.active,
+            tuple(facility.capabilities),
+            facility.capacity.capacity,
+            facility.capacity.reserved,
+            tuple(facility.active_job_ids),
+        )
 
     def start_production(
         self,
