@@ -53,6 +53,27 @@ class WindowManager:
             if self.windows[window_id].visible
         )
 
+    def set_viewport(self, width, height):
+        """Update display bounds and keep registered windows inside the viewport."""
+        self.width = max(1, int(width))
+        self.height = max(1, int(height))
+        for window in self.windows.values():
+            window.bounds.width = min(window.bounds.width, self.width)
+            window.bounds.height = min(window.bounds.height, self.height)
+            window.bounds.topleft = self._clamp(
+                window, window.bounds.x, window.bounds.y,
+            )
+            viewport = getattr(window.screen, "set_viewport", None)
+            if callable(viewport) and getattr(window.screen, "responsive_layout", False):
+                viewport(
+                    window.bounds.width,
+                    max(
+                        0,
+                        window.bounds.height
+                        - (self.TITLE_HEIGHT if window.frame else 0),
+                    ),
+                )
+
     def register(
         self, window_id, screen, bounds, *,
         content_origin=(24, 126), title=None, frame=True, close_offset=None,
