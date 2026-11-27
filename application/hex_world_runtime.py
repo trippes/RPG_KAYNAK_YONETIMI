@@ -259,7 +259,7 @@ class HexWorldRuntime:
             raise TypeError("result must be a ConstructionPlacementResult.")
         if expected_revision != self._state_revision or result.snapshot_revision != expected_revision:
             return False
-        if not result.valid or not result.footprint_cells:
+        if not result.valid or not result.footprint_cells or not request.has_permission:
             return False
         map_id = request.position.map_id
         map_definition = self.map_definition(map_id)
