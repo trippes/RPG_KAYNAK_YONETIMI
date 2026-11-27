@@ -6,7 +6,7 @@ from application.construction_placement import (
     PlacementFailureReason,
 )
 from application.hex_map_definition import parse_hex_map
-from application.hex_world_runtime import HexWorldRuntime
+from application.hex_world_runtime import HexWorldRuntime, HexWorldRuntimeOwner
 from core.domain.spatial import (
     ConstructionPosition,
     EntityPosition,
@@ -119,6 +119,20 @@ class TestConstructionRuntimeIntegration(unittest.TestCase):
         self.assertFalse(second_result.valid)
         self.assertIn(PlacementFailureReason.OVERLAP, second_result.reasons)
         self.assertEqual(len(self.runtime.structure_placements()), 1)
+
+    def test_runtime_owner_cannot_discard_a_world_that_still_has_structures(self):
+        snapshot, result = self.preview()
+        self.assertTrue(
+            self.runtime.commit_if_revision(
+                snapshot.state_revision, self.request, result
+            )
+        )
+        owner = HexWorldRuntimeOwner(self.runtime)
+        self.runtime.remove_entity("player")
+
+        with self.assertRaisesRegex(RuntimeError, "entities or structures"):
+            owner.discard_if_empty(self.runtime)
+        self.assertIs(owner.runtime, self.runtime)
 
     def test_runtime_rejects_placement_by_unregistered_actor(self):
         snapshot = self.runtime.construction_snapshot(
