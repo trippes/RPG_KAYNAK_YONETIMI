@@ -247,18 +247,15 @@ class QuestLogScreen:
                 border_radius=1,
             )
 
-    def _quest_log(self):
-        return self.service.application.holder.current.quest_log
-
     def _category_quests(self, category=None):
         key = self.CATEGORIES[self.category if category is None else category][0]
-        return getattr(self._quest_log(), key)()
+        return self.service.quest_log_state(key)
 
     def _quests(self):
         return self._category_quests()
 
     def _counts(self):
-        return tuple(len(self._category_quests(index)) for index in range(len(self.CATEGORIES)))
+        return self.service.quest_log_counts()
 
     def _normalize_selection(self, quests):
         if not quests:
@@ -363,22 +360,19 @@ class QuestLogScreen:
     def _branch_groups(self, quest):
         if getattr(quest.state, "value", quest.state) != "completed":
             return ()
-        bundle = self.service.application.holder.current
-        graph = getattr(bundle, "quest_graph", None)
-        progress = getattr(bundle, "quest_graph_progress", None)
-        if graph is None or progress is None or quest.quest_id not in graph.quest_ids():
-            return ()
-        grouped = {}
-        for link in graph.outgoing(quest.quest_id):
-            if getattr(link.link_type, "value", link.link_type) == "alternative":
-                grouped.setdefault(link.branch_group, set()).add(link.target_quest_id)
-        result = []
-        for group, target_ids in sorted(grouped.items()):
-            targets = tuple(sorted(target_ids))
-            if len(targets) < 2:
-                continue
-            result.append((group, targets, progress.selected_branch(quest.quest_id, group)))
-        return tuple(result)
+        return tuple(
+            (branch.group, tuple(target_id for target_id, _title in branch.options),
+             branch.selected_quest_id)
+            for branch in quest.branches
+        )
+
+    @staticmethod
+    def _branch_target_name(quest, target_id):
+        for branch in quest.branches:
+            for option_id, title in branch.options:
+                if option_id == target_id:
+                    return title
+        return target_id
 
     def _render_list(self, renderer, quests):
         rect = renderer.pg.Rect(*self._list_bounds())
@@ -415,16 +409,9 @@ class QuestLogScreen:
                 max_width=row.width - 34,
             )
 
-    def _giver_name(self, quest):
-        giver_id = getattr(quest, "giver_npc_id", None)
-        if not giver_id:
-            return None
-        try:
-            npc = self.service.application.holder.current.social.npcs.get(giver_id)
-        except (AttributeError, KeyError, RuntimeError):
-            npc = None
-        name = getattr(npc, "name", None) if npc is not None else None
-        return name or "Bilinmeyen görev veren"
+    @staticmethod
+    def _giver_name(quest):
+        return quest.giver_name
 
     def _render_details(self, renderer, quest):
         self._branch_choice_rects = []
@@ -465,8 +452,7 @@ class QuestLogScreen:
             branch_y += 22
             branch_offset += 22
             if selected is not None:
-                target = self._quest_log().get(selected)
-                target_name = target.title if target is not None else selected
+                target_name = self._branch_target_name(quest, selected)
                 if rect.y + 62 <= branch_y <= rect.bottom - 24:
                     renderer.text(
                         f"Seçilen yol: {target_name}",
@@ -477,8 +463,7 @@ class QuestLogScreen:
                 branch_offset += 28
                 continue
             for target_id in targets:
-                target = self._quest_log().get(target_id)
-                target_name = target.title if target is not None else target_id
+                target_name = self._branch_target_name(quest, target_id)
                 button_rect = (
                     rect.x + 18, branch_y, max(1, rect.width - 36), 24,
                 )
