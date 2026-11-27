@@ -164,6 +164,25 @@ class WorldView:
 
 
 @dataclass(frozen=True)
+class RaceOptionView:
+    race_id: str
+    name: str
+
+
+@dataclass(frozen=True)
+class ClassOptionView:
+    class_id: str
+    name: str
+
+
+@dataclass(frozen=True)
+class CharacterCreationStateView:
+    character_id: str
+    race_id: str
+    class_id: str
+
+
+@dataclass(frozen=True)
 class QuestObjectiveView:
     objective_id: str
     description: str
@@ -2128,16 +2147,30 @@ class GameplayService:
         """Whether character creation was opened from the introductory dialogue."""
         return bool(getattr(self, "_creation_from_eren", False))
 
+    def character_creation_state(self) -> CharacterCreationStateView | None:
+        """Return the player's current character identity choices as an immutable view."""
+        character = self.actor_character(self.player_actor_id)
+        if character is None:
+            return None
+        return CharacterCreationStateView(
+            character.character_id,
+            character.race.race_id,
+            character.character_class.class_id,
+        )
+
     def character_creation_options(self):
-        """Return the content-defined race and class options for character creation."""
+        """Return immutable, content-defined race and class choices."""
         factory = self._character_factory
         if factory is None:
             return (), ()
-        return tuple(factory.races.values()), tuple(factory.classes.values())
+        return (
+            tuple(RaceOptionView(item.race_id, item.name) for item in factory.races.values()),
+            tuple(ClassOptionView(item.class_id, item.name) for item in factory.classes.values()),
+        )
 
     def customize_player_character(
-        self, name: str, age: int, attributes, *, race=None,
-        character_class=None, appearance=None,
+        self, name: str, age: int, attributes, *, race_id=None,
+        class_id=None, appearance=None,
     ) -> bool:
         """Validate and apply the player's character-creation command."""
         if not isinstance(name, str) or not name.strip():
@@ -2154,6 +2187,16 @@ class GameplayService:
         character_id = self.player_character_id
         if character_id is None:
             raise GameplayServiceError("Oyuncu karakteri bulunamadı.")
+        factory = self._character_factory
+        race = factory.races.get(race_id) if factory is not None and race_id else None
+        character_class = (
+            factory.classes.get(class_id)
+            if factory is not None and class_id else None
+        )
+        if race_id and race is None:
+            raise ValueError(f"Geçersiz ırk seçimi: {race_id}")
+        if class_id and character_class is None:
+            raise ValueError(f"Geçersiz sınıf seçimi: {class_id}")
         self._application.customize_character(
             character_id, name, age, attributes, race=race,
             character_class=character_class, appearance=appearance,
@@ -2582,11 +2625,11 @@ class GameplayService:
             ))
         return tuple(sorted(result, key=lambda item: item.quest_id))
 
-    @staticmethod
-    def _target_display_name(bundle, target_id: str) -> str:
-        actor = bundle.actors.get(bundle.player_actor_id) if hasattr(bundle, "player_actor_id") else None
-        if actor is None:
-            actor = bundle.actors.get("hero")
+    def _target_display_name(self, bundle, target_id: str) -> str:
+        try:
+            actor = bundle.actors.get(self.player_actor_id)
+        except GameplayServiceError:
+            actor = None
         if actor is not None:
             world = bundle.movement.map_for(actor.world_id)
             location = world.get(target_id) if world is not None else None
