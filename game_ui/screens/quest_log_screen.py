@@ -350,7 +350,7 @@ class QuestLogScreen:
     def _detail_content_height(self, quest):
         if quest is None:
             return 70
-        giver_height = 24 if getattr(quest, "giver_npc_id", None) else 0
+        giver_height = 24 if getattr(quest, "giver_name", None) else 0
         branch_height = sum(
             22 + (28 * len(targets) if selected is None else 28)
             for _group, targets, selected in self._branch_groups(quest)
