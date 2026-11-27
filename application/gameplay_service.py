@@ -150,9 +150,9 @@ class RecipeView:
     """Immutable recipe catalog entry exposed to read-only consumers."""
 
     recipe_id: str
-    inputs: tuple
-    outputs: tuple
-    processing_time: object
+    inputs: tuple[tuple[ResourceType, Quantity], ...]
+    outputs: tuple[tuple[ResourceType, Quantity], ...]
+    processing_time: Tick
     facility_type: str | None
     required_capabilities: tuple[str, ...]
 
