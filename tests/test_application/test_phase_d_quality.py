@@ -487,7 +487,7 @@ class TestPhaseDQuality(unittest.TestCase):
         self.assertEqual(window.window_manager.open_ids, ("inventory",))
         self.assertEqual(window.pause_menu_selected, 0)
 
-    def test_escape_keeps_pause_menu_open_and_preserves_selection(self):
+    def test_escape_closes_pause_menu_and_preserves_gameplay_windows(self):
         window = object.__new__(GameWindow)
         window.input = InputMapper()
         window.gameplay_active = True
@@ -504,18 +504,18 @@ class TestPhaseDQuality(unittest.TestCase):
         escape = type("Event", (), {"type": "KEYDOWN", "key": "escape"})()
         window.step([escape])
 
-        self.assertTrue(window.pause_menu_open)
+        self.assertFalse(window.pause_menu_open)
         self.assertEqual(window.pause_menu_selected, 2)
         self.assertEqual(window.window_manager.open_ids, ("inventory",))
 
-    def test_pause_menu_back_action_does_not_resume_gameplay(self):
+    def test_pause_menu_back_action_closes_pause_menu(self):
         window = object.__new__(GameWindow)
         window.pause_menu_open = True
         window.pause_menu_selected = 1
 
         window._handle_pause_menu(InputState(actions={"back"}))
 
-        self.assertTrue(window.pause_menu_open)
+        self.assertFalse(window.pause_menu_open)
         self.assertEqual(window.pause_menu_selected, 1)
 
     def test_recreating_gameplay_screens_closes_and_rebinds_session_windows(self):
