@@ -226,9 +226,7 @@ class HexWorldRuntime:
         from application.construction_placement import ConstructionPlacementSnapshot
 
         map_definition = self.map_definition(map_id)
-        supported = frozenset(supported_cells)
-        if any(not isinstance(cell, HexCoord) for cell in supported):
-            raise TypeError("supported_cells must contain HexCoord values.")
+        supported = self._construction_support.supported_foundation_cells(map_definition)
         occupied: dict[HexCoord, str] = {}
         for occupant in self._occupancy.snapshot():
             if occupant.position.map_id == map_id:
