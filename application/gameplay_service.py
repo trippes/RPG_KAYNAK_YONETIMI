@@ -2104,6 +2104,19 @@ class GameplayService:
             source_id, target_id, value=value, trust=trust
         )
 
+    @property
+    def player_name_confirmed(self) -> bool:
+        """Whether the player name was confirmed during the opening dialogue."""
+        return bool(getattr(self, "_player_name_confirmed", False))
+
+    def confirm_player_name(self) -> None:
+        """Record completion of the player-name step in the opening dialogue."""
+        self._player_name_confirmed = True
+
+    def begin_character_creation_from_dialogue(self) -> None:
+        """Mark that character creation was opened from the introductory NPC dialogue."""
+        self._creation_from_eren = True
+
     def dialogue_npc_name(self, npc_id: str | None) -> str | None:
         """Return an NPC display name without exposing the active session bundle."""
         if not npc_id:
