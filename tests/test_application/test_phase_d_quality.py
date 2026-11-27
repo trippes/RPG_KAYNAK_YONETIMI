@@ -2092,12 +2092,13 @@ class TestA13PlayerIdentity(unittest.TestCase):
 
         class Backend:
             SRCALPHA = 1
-            Rect = Rect
-            draw = Draw()
 
             @staticmethod
             def Surface(size, flags):
                 return PanelSurface(size, flags)
+
+        Backend.Rect = Rect
+        Backend.draw = Draw()
 
         window = object.__new__(GameWindow)
         window.pg = Backend()
