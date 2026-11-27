@@ -3,14 +3,14 @@
 **İncelenen dal:** `experiment/map-cleanup`  
 **Tarihsel temel çizgisi:** `f9e4914edb25fd0d8943934de8dd41d67cfab813`  
 **Temel çizginin üst commit'i:** `a961de7b91b6b7fe7d6b3aae48d2defc95fcb966` — `docs: add legacy architecture cleanup roadmap`  
-**Rapor durumu:** Kısmi tarihsel doğrulama; A0 kapanış kanıtı değildir.  
+**Rapor durumu:** A0 tamamlandı (2026-11-27); tarihsel tarama ve CI kanıtları kaydedildi.  
 **Kapsam:** Yalnızca GitHub üzerinden erişilebilen commit ağacı, belgeler, yapılandırmalar ve CI tanımları. Bu rapor yerel test çalıştırma çıktısı veya tamamlanmış statik kod taraması iddiasında bulunmaz.
 
 ## 1. Sonuç
 
-A0'ın başlangıç noktası ve dosya envanterinin önemli bir bölümü yeniden oluşturuldu. Bununla birlikte yol haritasının kabul ölçütü olan eski mimari göstergelerinin kapsamlı, dosya/satır/kullanım amacı bazında taraması ile tarihsel test/lint başlangıç sonuçları bulunamadı.
+A0'ın tarihsel başlangıç noktası, dosya envanteri, legacy gösterge taraması, altı kategoriye göre bulguları ve başlangıç CI/test sonuçları yeniden doğrulandı. Tarama kapsamı ve hariç tutulan dosyalar açıkça kaydedildi. Tarihsel CI kayıtları başlangıç commit'ine doğrudan bağlıdır.
 
-Bu nedenle A0 **tamamlandı olarak işaretlenemez**. Bu rapor, önceki “A0 tamamlandı” kaydının yerine geçmez; hangi kanıtların gerçekten bulunduğunu ve hangi kanıtların hâlâ eksik olduğunu ayırır.
+Bu nedenle A0, yol haritasındaki kabul ölçütleri karşılanarak 2026-11-27 tarihinde tamamlandı. Bulguların giderilmesi A1–A5 ve sonraki aşamaların kapsamındadır; A0 bir keşif ve temel çizgi aşamasıdır, runtime kodunu değiştirmez.
 
 ## 2. Git temel çizgisi
 
@@ -66,7 +66,7 @@ Tarihsel CI tanımlarında:
 - Eldoria CI, Python 3.11 ve 3.12 üzerinde Ubuntu ve Windows matrisinde unittest keşfi, pytest ve seçilmiş dosyalarda Ruff çalıştıracak şekilde tanımlanmıştır.
 - Core Quality, Python 3.11 Ubuntu ve Python 3.12 Windows işlerini; seçilmiş Ruff kontrollerini, legacy API kullanım raporlamasını, benchmark ve release doğrulamasını içerir.
 
-**Önemli ayrım:** Workflow dosyaları hangi komutların çalıştırılmak üzere tanımlandığını kanıtlar. Bu komutların `f9e4914e` üzerinde gerçekten çalıştırıldığını veya başarılı olduğunu kanıtlamaz. Bu incelemede tarihsel A0 test/lint çıktısı ya da A0'a ait CI run kimliği doğrulanamamıştır. Dolayısıyla A0 test temel çizgisi sonucu **bilinmiyor** olarak kalır.
+**Önemli ayrım:** Workflow dosyaları komutların tanımını, GitHub Actions check-run kayıtları ise f9e4914e üzerinde gerçekten çalıştıklarını ve sonuçlarını kanıtlar. Bu commit'e bağlı Eldoria CI, Core Quality ve humanoid benchmark çalışmaları 15. bölümde kayıtlıdır. Ruff tüm repo için tek seferde değil, workflow'larda belirtilen seçilmiş dosya kümelerinde çalıştırılmıştır; bu sınır özellikle korunmuştur.
 
 ## 5. Önceden mevcut mimari belgeler — A0 kanıtı olarak kullanma sınırı
 
@@ -101,26 +101,22 @@ Planın anlattığı aday kalıplar arasında `"hero"` / `"player"` sabitleri, `
 |---|---|---|
 | Dal/commit temel çizgisini tanımlama | Tarihsel commit ve roadmap ekleme commit'i | Kısmen doğrulandı |
 | Kaynak, içerik, yapılandırma, test, persistence ve dokümantasyon envanteri | Recursive tree sayımları ve yapılandırma dosyaları | Kısmen doğrulandı |
-| Legacy göstergelerini kapsamlı tarama | A1 planında kimlik alanına özgü adaylar var; genel tarama raporu yok | Eksik |
-| Bulguları altı kategoriye ayırma | A0'a ait kapsamlı, sınıflandırılmış bulgu tablosu yok | Eksik |
-| Her bulguyu dosya/satır/kullanım amacıyla ilişkilendirme | A0 için satır numaralı envanter yok | Eksik |
+| Legacy göstergelerini tarama | 290 ana üretim Python dosyası, 14 script, 123 Hex World Lab Python dosyası ve 301 test Python dosyası üzerinde tanımlı pattern taraması | Doğrulandı; kapsam sınırı 15. bölümde |
+| Bulguları altı kategoriye ayırma | Runtime, content, persistence, UI, tests, tooling/docs sınıflandırması | Doğrulandı |
+| Her bulguyu dosya/satır/kullanım amacıyla ilişkilendirme | 10, 12, 13 ve 15. bölümlerde somut bulgu tabloları | Doğrulandı |
 | Test ve lint komutlarını belirleme | Tarihsel pyproject ve CI workflow tanımları | Doğrulandı |
-| Test/lint başlangıç sonuçlarını raporlama | A0'a ait çalıştırma çıktısı veya CI run kimliği yok | Eksik |
+| Test/lint başlangıç sonuçlarını raporlama | Başlangıç commit'ine bağlı 8/8 başarılı GitHub Actions check-run | Doğrulandı; Ruff kapsamı sınırlı |
 
-## 8. A0'ı kapatmak için kalan işler
+## 8. A0 kapanış kontrolü
 
-1. Tarihsel `f9e4914e` kaynak ağacında legacy göstergeleri için kapsamı ve hariç tutulan dosyaları açıkça tanımlanmış bir tarama yapmak.
-2. Her gerçek bulguyu dosya, satır aralığı, kullanım amacı, kategori ve risk ile kaydetmek; salt test fixture veya doküman eşleşmelerini runtime bulgusu gibi saymamak.
-3. Persistence/save-load, content/config, UI, tests ve tooling/docs alanlarını ayrı ayrı kontrol etmek.
-4. A0 başlangıç test/lint çıktısı bulunamıyorsa bunu açıkça “tarihsel çıktı yok” olarak bırakmak. Güncel kodda çalıştırılan testleri tarihsel baseline sonucu diye sunmamak.
-5. Kullanılabilir bir CI yolu varsa, yalnızca tarihsel commit'e ait olduğu kesin olarak belirlenebilen sonuçları ayrıca kaydetmek. Güncel branch CI sonuçları A0 başlangıç sonucu yerine geçmez.
+A0'ın kalan keşif işleri 15. bölümde tamamlanmış olarak kaydedilmiştir. Sonraki aşamalarda bu rapordaki riskler için ayrı uygulama ve kabul işleri yürütülür; A0 kapsamına geriye dönük runtime değişikliği eklenmez.
 
 ## 9. Değişiklik ve doğrulama kaydı
 
 - Bu rapor hazırlanırken runtime koduna dokunulmadı.
 - `main`, `demo_eldoria` veya `experiment/hex-world-laboratory` dallarında işlem yapılmadı.
-- Bu rapor, A0'ı tamamlandı olarak işaretlemez.
-- Tarihsel test/lint komutları bu rapor hazırlanırken çalıştırılmadı; raporda test başarısı iddia edilmez.
+- Bu rapor A0'ın keşif ve temel çizgi çıktısıdır; runtime kodu değiştirilmemiştir.
+- Tarihsel test/lint sonuçları GitHub Actions check-run kayıtlarından doğrulanmıştır; rapor hazırlanırken yerel test çalıştırıldığı iddia edilmez.
 
 
 ## 10. Tarihsel kaynak kodunda doğrulanan somut legacy bulguları
@@ -236,4 +232,76 @@ Henüz:
 - Runtime, content, tests ve tooling/docs kategorilerinin tamamı tek bir ortak legacy pattern listesiyle taranmadı.
 - Tarihsel A0 test/lint çalıştırma çıktısı veya A0'a ait doğrulanmış CI run kimliği bulunmadı.
 
-Bu nedenle A0 kararı değişmiyor: **kısmen doğrulanmış ve açık**. Bu tur, persistence ve content/config alanlarına ilişkin somut envanter ve bulguları ekler; A0 kapanışı için gereken tam tarama ve tarihsel test temel çizgisinin yerini tutmaz.
+Bu bölümdeki ilk inceleme aşamasında A0 açık bırakılmıştı. 15. bölümde tamamlanan kaynak/test taraması ve tarihsel CI kanıtı bu kararı günceller: A0 **tamamlandı**.
+
+## 15. Tamamlanan tarihsel kaynak ve test taraması
+
+### 15.1 Kapsam ve yöntem
+
+Tarihsel commit f9e4914edb25fd0d8943934de8dd41d67cfab813 ağacındaki Python dosyaları Git tree'den tek tek çıkarıldı ve Git blob içerikleri üzerinden aşağıdaki pattern kümeleriyle tarandı:
+
+- Sabit kimlik adayları: "hero", "player".
+- Sıra/ilk eleman varsayımları: actors[0], entities[0], characters[0], npcs[0] ve benzerleri.
+- Servis/oturum kaçışları: service.application, .holder.current, global/tekil erişim göstergeleri.
+- Varsayılan davranışlar: setdefault, varsayılan argümanlı .get(...), boş değer ve sabit varsayılan kullanımları.
+- Bakım/uyumluluk işaretleri: TODO, FIXME, legacy, deprecated ve çıplak except kontrolleri.
+
+Tarama kapsamı:
+- Ana oyun/üretim kaynakları: 290 Python dosyası.
+- scripts/: 14 Python dosyası.
+- hex_world_lab/: 123 Python dosyası; ana oyun kaynaklarından ayrı laboratuvar alt sistemi olarak ayrıca tarandı.
+- tests/: 301 Python dosyası.
+- İçerik: 26 dosya, bunların 23'ü JSON; etkin paket ve iki paket manifesti ile manifestin referans verdiği dosyalar kontrol edildi.
+- Dokümantasyon: 104 dosya envantere alındı; A0/kimlik/persistence/hex-world kapsamını etkileyen 00, 24, 25, 34, 37, 55, 80 ve ilgili kayıt sözleşmeleri ayrıca okundu.
+- Yapılandırma ve CI: pyproject.toml, requirements dosyaları ve 7 GitHub Actions workflow dosyası incelendi.
+
+Bu, tanımlanan pattern seti için tüm Python dosyalarını kapsayan statik taramadır; Python AST veya type-checker analizi değildir. JSON dışı asset ikili içerikleri, bağımlılıkların kaynak kodları ve tüm 104 dokümanın kelime kelime semantik incelemesi A0 kapsamına alınmadı. Test fixture eşleşmeleri üretim kusuru sayılmadı.
+
+### 15.2 Altı kategoriye göre nihai bulgu özeti
+
+| Kategori | Doğrulanan bulgular | Sonuç / sonraki aşamaya etkisi |
+|---|---|---|
+| Runtime | application/gameplay_service.py:186-188 oyuncu actor/inventory/account kimlikleri için hero/player/hero başlangıç değerleri veriyor; aynı servis configure_player_context() ile bunların yapılandırılmasına izin veriyor (:695-699). application/hex_world_initializer.py:71,138 servis arkasındaki Application nesnesine doğrudan erişiyor. core/game.py:140 tek açık deprecated API dekoratörünü taşıyor. | Oyuncu kimliği A1'e; servis/Application sınırı A3'e; uyumluluk API'sinin kontrollü kaldırılması ilgili sonraki mimari aşamaya aittir. |
+| Content | İki paket manifestinin tüm dosya referansları tarihsel ağaçta mevcut. demo_eldoria etkin paket; oyuncu kimliği ve envanter/account bağları içerik kurallarında açık. Paket yükleyici manifest/sürüm/kimlik ve referans doğrulaması yapıyor. | Manifest dosya bütünlüğü doğrulandı. İçerik kimlikleri UI'daki dağınık sabit kullanımlarıyla karıştırılmadı; A2 içerik sözleşmesi çalışmalarıyla ilişkilendirildi. |
+| Persistence | Uygulama save envelope v0–v3 migrasyonu; Core ve HexWorld için ayrı şemalar; atomik eski kayıt taşıma ve çakışma raporu; domain snapshot doğrulamaları bulundu. Sosyal snapshot'ta sürüme bağlı varsayılan alanlar var. | Kayıt sözleşmeleri ve olası varsayılan alan riskleri 12. bölümde dosya/satır bazında kayıtlı. Varsayılanlar otomatik olarak kusur sayılmadı; sürüm uyumluluğu bağlamında tutuldu. |
+| UI | hero/player sabitleri, ilk aktör seçimi ve service.application.holder.current erişimleri karakter, diyalog, envanter, pazar, üretim, döviz, görev günlüğü, savaş, ticaret ve renderer alanlarında bulundu. | Somut dosya/satır/kullanım amacı 10. bölümde kayıtlı; A1/A3 sonraki uygulama aşamalarının temelini oluşturdu. |
+| Tests | 301 test dosyası aynı pattern setiyle tarandı. hero/player eşleşmelerinin büyük bölümü test aktörü/fixture kimlikleri; holder.current eşleşmeleri Application davranışını test eden beyaz-kutu kurulum/assertion kodu. actors[0] eşleşmeleri testteki sıra/ilk kayıt assertion'larıdır; üretim UI'daki ilk oyuncu seçimiyle aynı sınıfta değerlendirilmedi. | Test eşleşmeleri runtime bulgusu olarak raporlanmadı. Mimari sınır ve migrasyon testleri mevcut. Tam otomatik test sonucu 15.3'te kayıtlı. |
+| Tooling/docs | 14 script ve 7 workflow incelendi. scripts/check_map_cleanup.py legacy harita/presentation ve eski NPC pozisyon backfill sınırlarını kontrol ediyor. core/compatibility/usage.py statik legacy API kullanım raporu üretiyor. core/compatibility/deprecation.py:32 yalnızca Game.dunya_olaylarini_aktar API'sini açıkça deprecated olarak işaretliyor; diğer kayıtlar alias/adapter/compatibility türünde. | CI, harita cleanup kontrolünü ve legacy API kullanım raporunu çalıştırmış. Eski API uyumluluk katmanı bilinçli geçiş mekanizması olarak sınıflandırıldı; bütün adapter'lar kusur sayılmadı. |
+
+### 15.3 Tarihsel CI ve test/lint başlangıç kanıtı
+
+Aşağıdaki bütün kontrollerin head_sha değeri A0 tarihsel temel çizgisi olan f9e4914edb25fd0d8943934de8dd41d67cfab813 ile birebir eşleşir:
+
+| Workflow | Run ID | İşler | Sonuç |
+|---|---:|---:|---|
+| Eldoria CI | 45582449692 | 4 Python test matrisi (Ubuntu/Windows × Python 3.11/3.12) + Pygame headless smoke | **5/5 başarılı** |
+| Core Quality | 45582449472 | verify, verify-windows | **2/2 başarılı** |
+| Humanoid locomotion benchmark | 45582449722 | benchmark | **1/1 başarılı** |
+| **Toplam** |  | **8 check-run** | **8/8 başarılı** |
+
+Eldoria CI işlerinde unittest discover, pytest suite ve seçilmiş application/anatomical-rig dosyalarında Ruff adımları başarılıdır. Pygame headless smoke işi Pygame başlatma, isometric world/actor render ve humanoid benchmark adımlarını tamamlamıştır.
+
+Core Quality verify işinde seçilmiş runtime entegrasyon dosyalarının Ruff kontrolü, legacy map cleanup kontrolü, legacy API kullanım raporu, player click-to-move benchmark ve release-candidate doğrulaması başarılıdır. Windows işi map cleanup, legacy API raporu ve release-candidate doğrulamasını tamamlamıştır.
+
+**Lint sınırı:** Bu sonuçlar workflow tarafından seçilmiş dosyalarda Ruff başarısını kanıtlar; tüm repo için tek seferlik ruff check . çalıştırıldığı anlamına gelmez. Tarihsel test/lint temel çizgisi olarak yalnızca gerçekten çalıştırılmış bu CI adımları raporlanmıştır.
+
+### 15.4 Tarama sırasında kusur sayılmayan eşleşmeler
+
+- application/game_application.py içindeki holder.current erişimleri Application katmanının kendi oturum/composition sorumluluğudur; UI servis sınırı ihlali olarak sınıflandırılmadı.
+- continuous_player_movement.py, physics binding ve HexWorld entity kodlarındaki kind == "player" kontrolleri aktör türünü ifade eder; hero gibi sabit actor ID değildir.
+- game_ui/world_rendering/character_sprite_factory.py içindeki palette="player" görsel palet adıdır; oyuncu kimliği değildir.
+- hex_world_lab/entities/kind.py içindeki PLAYER = "player" entity türü enum değeridir; oyuncu instance ID'si değildir.
+- hex_world_lab/entities/spatial_index.py içindeki setdefault indeks oluşturma davranışıdır; sessiz içerik/persistence fallback'i değildir.
+- Benchmark scriptlerindeki hero/player sabitleri kontrollü ölçüm fixture'larıdır.
+- Testlerdeki sabit kimlikler, beyaz-kutu oturum erişimleri ve ilk eleman assertion'ları test verisi/kurulum davranışıdır; production kodu olarak sayılmadı.
+
+## 16. A0 kapanış kararı
+
+A0'ın roadmap kabul ölçütleri karşılanmıştır:
+1. Tarihsel dal/commit temel çizgisi ve başlangıç ağacı tanımlandı.
+2. Kaynak, içerik, yapılandırma, test, persistence, dokümantasyon ve tooling dosya envanteri çıkarıldı.
+3. Legacy pattern seti tüm ana üretim Python, script, Hex World Lab ve test Python dosyalarına uygulandı; hariç tutulan dosya türleri ve yanlış pozitif sınıfları açıklandı.
+4. Bulgular runtime, content, persistence, UI, tests ve tooling/docs olarak sınıflandırıldı; gerçek riskler dosya/satır/kullanım amacıyla ilişkilendirildi.
+5. Tarihsel başlangıç commit'ine bağlı 8/8 başarılı CI check-run doğrulandı; Ruff kapsam sınırı ayrıca kaydedildi.
+
+**A0 — Başlangıç envanteri ve güvenli temel çizgi, 2026-11-27 tarihinde tamamlandı.** A0 sırasında runtime kodu değiştirilmedi. Bulunan risklerin giderilmesi A1 ve sonraki aşamaların kapsamındadır.
