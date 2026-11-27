@@ -65,6 +65,13 @@ class FakeService:
     def hex_actor_binding(self):
         return self._actor_binding
 
+    def active_world_state(self):
+        world = self.application.aktif_dunya()
+        return SimpleNamespace(world_id=world.world_id)
+
+    def validate_session(self):
+        return self.application.holder.current.validate()
+
     def register_gameplay_placements(self, _catalog):
         return ()
 

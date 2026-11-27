@@ -170,7 +170,7 @@ class TestContentPack(unittest.TestCase):
         )
         self.assertEqual(activity.activity_type, "gather")
         self.assertEqual(activity.target_id, "herb_patch_01")
-        service.application.holder.current.inventories["player"].add(
+        application.holder.current.inventories["player"].add(
             ResourceType("wood"), Quantity(2, ResourceUnit.ITEM),
         )
         job = service.start_production(
