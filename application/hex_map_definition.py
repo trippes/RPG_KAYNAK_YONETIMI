@@ -97,6 +97,7 @@ class HexMapDefinition:
     transitions: tuple[HexMapTransition, ...] = ()
     orientation: str = "pointy_top"
     coordinate_system: str = "axial"
+    foundation_supporting_terrain_ids: frozenset[str] = frozenset()
 
     def __post_init__(self):
         if type(self.schema_version) is not int or self.schema_version != 2:
@@ -112,6 +113,11 @@ class HexMapDefinition:
             raise HexMapDefinitionError("default_terrain references an unknown terrain ID.")
         if any(not isinstance(t, str) or not t.strip() for t in self.terrain_ids):
             raise HexMapDefinitionError("terrain_ids must contain non-empty strings.")
+        foundation_support = frozenset(self.foundation_supporting_terrain_ids)
+        if any(not isinstance(t, str) or not t.strip() for t in foundation_support):
+            raise HexMapDefinitionError("foundation_supporting_terrain_ids must contain non-empty terrain IDs.")
+        if not foundation_support.issubset(self.terrain_ids):
+            raise HexMapDefinitionError("foundation support references an unknown terrain ID.")
         cells = dict(self.cells)
         if set(cells) != set(self.valid_cells):
             raise HexMapDefinitionError("Cell records must exactly match valid_cells.")
@@ -144,6 +150,7 @@ class HexMapDefinition:
             if not isinstance(tr.active, bool) or tr.traversal_mode not in {"one_way", "bidirectional"}: raise HexMapDefinitionError("Invalid transition active/traversal_mode.")
         object.__setattr__(self, "valid_cells", frozenset(self.valid_cells))
         object.__setattr__(self, "terrain_ids", frozenset(self.terrain_ids))
+        object.__setattr__(self, "foundation_supporting_terrain_ids", foundation_support)
         object.__setattr__(self, "cells", MappingProxyType(cells))
         object.__setattr__(self, "features", tuple(self.features))
         object.__setattr__(self, "landmarks", tuple(self.landmarks))
@@ -183,9 +190,9 @@ def _direction(value, field, optional=False):
 
 def parse_hex_map(data):
     if not isinstance(data, dict): raise HexMapDefinitionError("hex map must be an object.")
-    allowed={"schema_version","map_id","name","description","geometry","terrain_ids","default_terrain","valid_cells","cell_overrides","features","landmarks","transitions"}
+    allowed={"schema_version","map_id","name","description","geometry","terrain_ids","default_terrain","valid_cells","cell_overrides","features","landmarks","transitions","foundation_supporting_terrain_ids"}
     _unknown(data, allowed, "hex map")
-    required=allowed-{"description","cell_overrides","features","landmarks","transitions"}
+    required=allowed-{"description","cell_overrides","features","landmarks","transitions","foundation_supporting_terrain_ids"}
     missing=sorted(required-set(data))
     if missing: raise HexMapDefinitionError("hex map missing fields: "+", ".join(missing))
     if type(data["schema_version"]) is not int or data["schema_version"] != 2: raise HexMapDefinitionError("Unsupported hex map schema_version; expected 2.")
@@ -199,6 +206,14 @@ def parse_hex_map(data):
     terrain_ids=frozenset(_text(v,"terrain_ids item") for v in terrains)
     if len(terrain_ids)!=len(terrains): raise HexMapDefinitionError("terrain_ids contains duplicate IDs.")
     default=_text(data["default_terrain"],"default_terrain")
+    raw_foundation_support = data.get("foundation_supporting_terrain_ids", [])
+    if not isinstance(raw_foundation_support, list):
+        raise HexMapDefinitionError("foundation_supporting_terrain_ids must be a list.")
+    foundation_support = frozenset(_text(v, "foundation_supporting_terrain_ids item") for v in raw_foundation_support)
+    if len(foundation_support) != len(raw_foundation_support):
+        raise HexMapDefinitionError("foundation_supporting_terrain_ids contains duplicates.")
+    if not foundation_support.issubset(terrain_ids):
+        raise HexMapDefinitionError("foundation_supporting_terrain_ids references an unknown terrain ID.")
     if default not in terrain_ids: raise HexMapDefinitionError(f"Unknown default terrain '{default}'.")
     valid_list=_positions(data["valid_cells"],"valid_cells",True)
     if len(set(valid_list))!=len(valid_list): raise HexMapDefinitionError("valid_cells contains duplicate coordinates.")
@@ -243,7 +258,7 @@ def parse_hex_map(data):
         _unknown(item,{"id","source_cells","exit_direction","target_map_id","target_entry_direction","target_cells","active","traversal_mode"},f"transitions[{i}]")
         transitions.append(HexMapTransition(_text(item.get("id"),f"transitions[{i}].id"),_positions(item.get("source_cells",[]),f"transitions[{i}].source_cells",True),_direction(item.get("exit_direction"),f"transitions[{i}].exit_direction"),_text(item.get("target_map_id"),f"transitions[{i}].target_map_id"),_direction(item.get("target_entry_direction"),f"transitions[{i}].target_entry_direction",True),_positions(item.get("target_cells",[]),f"transitions[{i}].target_cells"),item.get("active",True),item.get("traversal_mode","one_way")))
     try:
-        return HexMapDefinition(2,_text(data["map_id"],"map_id"),_text(data["name"],"name"),data.get("description",""),default,valid,cells,terrain_ids,tuple(features),tuple(landmarks),tuple(transitions),geometry["orientation"],geometry["coordinate_system"])
+        return HexMapDefinition(2,_text(data["map_id"],"map_id"),_text(data["name"],"name"),data.get("description",""),default,valid,cells,terrain_ids,tuple(features),tuple(landmarks),tuple(transitions),geometry["orientation"],geometry["coordinate_system"],foundation_support)
     except (TypeError,ValueError) as e:
         if isinstance(e,HexMapDefinitionError): raise
         raise HexMapDefinitionError(str(e)) from e
