@@ -107,6 +107,10 @@ class ContainerScreen:
     def pointer_capture(self):
         return self._drag_item_id is not None
 
+    def cancel_drag(self):
+        """Release an in-progress item drag when the window loses ownership."""
+        self._drag_item_id = None
+
     def _take_all(self, actor_id, inventory_id):
         view = self.service.open_container(actor_id, inventory_id, self.container_id)
         moved = 0
