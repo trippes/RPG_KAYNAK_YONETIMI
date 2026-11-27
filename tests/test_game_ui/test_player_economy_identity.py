@@ -126,7 +126,7 @@ class TestPlayerEconomyIdentity(unittest.TestCase):
         screen = DialogueScreen.__new__(DialogueScreen)
         screen.service = self.service
         screen.context = ("traveler_actor", "village_carpenter", "carpenter_dialogue")
-        screen.node = SimpleNamespace(choices=())
+        screen.node = SimpleNamespace(node_id="start", choices=())
 
         self.assertEqual(screen._visible_choices(), ())
         self.service.dialogue_choices.assert_called_once_with(
