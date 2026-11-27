@@ -156,3 +156,26 @@ Aşama 2 tamamlanmış veya kullanıcı kabulüne hazır değildir. Aşama 3'e g
 - `reports/90-modular-building-construction-phase-2-placement.md` — this stage record
 
 Bütün kaynak değişiklikleri yalnızca `experiment/map-cleanup` dalında incelenmiştir. Bu rapor Aşama 2'yi kapatmaz ve sonraki aşamayı başlatmaz.
+
+
+## 10. Runtime entegrasyonu — ilk uygulama dilimi (2026-11-27)
+
+Bu inceleme kaydından sonra `HexWorldRuntime` içine ilk gerçek runtime entegrasyon dilimi eklendi:
+
+- Canlı yapı örnekleri `HexWorldRuntime` tarafından `HexWorldStructurePlacement` kayıtları olarak tutulur; `HexOccupancyRegistry` aktör/entity occupancy sahibi olarak kalır.
+- Runtime, tek bir placement snapshot'ında aktör hücrelerini ve yapı footprint hücrelerini birleştirir. Aktör occupancy kayıtları yapı kayıtlarına dönüştürülmez.
+- Runtime'ın monoton `state_revision` değeri entity kayıt, kaldırma, etkinlik değişikliği, hücre hareketi, sürekli konum güncellemesi ve başarılı yapı commit'i ile ilerler.
+- `commit_if_revision`, beklenen revision kontrolünü, aktörün runtime'da kayıtlı ve aynı haritada olmasını, footprint'in yeniden hesaplanmasını, dünya sınırı/blocked terrain/aktör/yapı çakışma kontrollerini ve yapı kaydını tek kilitli runtime işlemi içinde yapar.
+- Başarısız/stale commit yapı kayıtlarını, footprint indeksini veya revision değerini değiştirmez.
+- `HexWorldRuntimeOwner.discard_if_empty`, yapı kayıtları varken runtime'ın atılmasını da engeller.
+- Yeni test dosyası: `tests/test_application/test_construction_runtime_integration.py`. Aktör+structure snapshot, başarılı commit, stale revision, footprint overlap, kayıtlı olmayan actor ve runtime owner lifecycle senaryolarını kapsar.
+
+### Açık sınırlar
+
+- Support evidence runtime tarafından uydurulmaz. `construction_snapshot(..., supported_cells=...)` çağıran gerçek support owner'ın hücre kanıtını vermesini bekler. Henüz böyle bir production support owner entegrasyonu yoktur.
+- Permission şu anda request girdisidir; commit sınırında false karar tekrar reddedilir, ancak gerçek authorization owner henüz bağlanmamıştır.
+- Runtime commit, yapının kayıtlarını ve hex footprint indeksini yönetir; henüz rendering, collision broadphase, pathfinding, kapı/duvar davranışı veya save/load entegrasyonu yapmaz.
+- Runtime'ın kilidi runtime API'si üzerinden yapılan ilgili mutasyonları seri hale getirir. `occupancy` registry'sine runtime dışından doğrudan mutasyon yapılması desteklenen entegrasyon yolu değildir; bütün dünya değişiklikleri runtime API'sinden geçirilmelidir.
+- Gerçek oyun akışından placement service çağrısı ve manuel kabul henüz yapılmadı.
+
+Bu nedenle runtime entegrasyonunun temel storage/snapshot/commit yolu uygulanmış olsa da Aşama 2 tamamlanmış değildir. CI sonuçları ve sonraki entegrasyon kontrolleri beklenir.
