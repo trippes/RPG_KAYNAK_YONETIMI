@@ -2179,8 +2179,14 @@ class GameplayService:
         if factory is None:
             return (), ()
         return (
-            tuple(RaceOptionView(item.race_id, item.name) for item in factory.races.values()),
-            tuple(ClassOptionView(item.class_id, item.name) for item in factory.classes.values()),
+            tuple(
+                RaceOptionView(item.race_id, item.name)
+                for item in sorted(factory.races.values(), key=lambda value: value.race_id)
+            ),
+            tuple(
+                ClassOptionView(item.class_id, item.name)
+                for item in sorted(factory.classes.values(), key=lambda value: value.class_id)
+            ),
         )
 
     def customize_player_character(
