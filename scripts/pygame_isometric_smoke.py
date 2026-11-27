@@ -188,7 +188,7 @@ def main():
         for y in range(0, HEIGHT, 24)
     }
     assert len(pipeline.objects_for_map("starting_valley")) == 15
-    assert len(package.gameplay_placements.placements) == 3
+    assert len(package.gameplay_placements.placements) == 4
     assert len(sampled) > 12, "The composed isometric scene appears blank."
     assert OUTPUT.is_file() and OUTPUT.stat().st_size > 10_000
     print(

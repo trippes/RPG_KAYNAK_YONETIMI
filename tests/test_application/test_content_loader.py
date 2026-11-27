@@ -46,7 +46,7 @@ class TestContentPackageLoader(unittest.TestCase):
         self.assertEqual(npcs[0]["load_phase"], "opening")
         self.assertEqual(package.files["quests"]["quests"], [])
         resource_nodes = package.files["resources"]["nodes"]
-        self.assertEqual(tuple(node["id"] for node in resource_nodes), ("herb_patch_01",))
+        self.assertEqual(tuple(node["id"] for node in resource_nodes), ("herb_patch_01", "iron_vein_01"))
         self.assertEqual(len(package.files["characters"]["races"]), 3)
         self.assertEqual(len(package.files["characters"]["classes"]), 3)
 

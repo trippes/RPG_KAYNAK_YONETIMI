@@ -46,13 +46,13 @@ class TestContentPack(unittest.TestCase):
         self.assertEqual(tuple(item["container_id"] for item in containers), ("village_chest",))
         self.assertEqual(containers[0]["contents"], [{"item_id": "old_copper_ring", "quantity": 1}])
         items = load_item_definitions(package_path=PACKAGE)
-        self.assertEqual(tuple(item.item_id for item in items), ("old_copper_ring",))
+        self.assertEqual(tuple(item.item_id for item in items), ("old_copper_ring", "wooden_plank", "nail", "hinge", "wooden_floor_panel", "wooden_wall_panel", "wooden_post", "wooden_door", "wooden_window", "wooden_roof_panel"))
         facilities, recipes = load_production_definitions(package_path=PACKAGE)
         self.assertEqual(tuple(facility.facility_id for facility in facilities), ("village-workbench",))
-        self.assertEqual(tuple(recipe.recipe_id for recipe in recipes), ("wooden_plank",))
+        self.assertEqual(tuple(recipe.recipe_id for recipe in recipes), ("wooden_plank", "iron_nails", "iron_hinge", "wooden_floor_panel", "wooden_wall_panel", "wooden_post", "wooden_door", "wooden_window", "wooden_roof_panel"))
         self.assertEqual(load_quest_definitions(package_path=PACKAGE), ())
         resources = load_resource_definitions(package_path=PACKAGE)
-        self.assertEqual(tuple(node["id"] for node in resources), ("herb_patch_01",))
+        self.assertEqual(tuple(node["id"] for node in resources), ("herb_patch_01", "iron_vein_01"))
         self.assertTrue(load_character_definitions(package_path=PACKAGE))
         self.assertTrue(load_gameplay_rules(package_path=PACKAGE))
         starter = package.files["starter"]
@@ -201,8 +201,12 @@ class TestContentPack(unittest.TestCase):
             placement_data = json.loads(
                 placement_path.read_text(encoding="utf-8")
             )
+            placement_data["placements"] = [
+                placement for placement in placement_data["placements"]
+                if placement["domain_id"] != "iron_vein_01"
+            ]
             for placement in placement_data["placements"]:
-                if placement["kind"] == "resource_node":
+                if placement["domain_id"] == "herb_patch_01":
                     placement["domain_id"] = "oak_01"
             placement_path.write_text(
                 json.dumps(placement_data), encoding="utf-8",

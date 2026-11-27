@@ -82,14 +82,250 @@
             "unit": "item"
           }
         ],
-        "outputs": [
+        "outputs": [],
+        "item_outputs": [
           {
-            "resource_type": "wooden_plank",
+            "item_id": "wooden_plank",
+            "quantity": 1
+          }
+        ],
+        "processing_time_ticks": 60,
+        "facility_type": "workbench",
+        "required_capabilities": [
+          "woodworking"
+        ]
+      },
+      {
+        "recipe_id": "iron_nails",
+        "inputs": [
+          {
+            "resource_type": "iron",
             "quantity": 1,
             "unit": "item"
           }
         ],
+        "outputs": [],
+        "item_outputs": [
+          {
+            "item_id": "nail",
+            "quantity": 4
+          }
+        ],
+        "processing_time_ticks": 45,
+        "facility_type": "workbench",
+        "required_capabilities": [
+          "metalworking"
+        ]
+      },
+      {
+        "recipe_id": "iron_hinge",
+        "inputs": [
+          {
+            "resource_type": "iron",
+            "quantity": 2,
+            "unit": "item"
+          }
+        ],
+        "outputs": [],
+        "item_outputs": [
+          {
+            "item_id": "hinge",
+            "quantity": 1
+          }
+        ],
         "processing_time_ticks": 60,
+        "facility_type": "workbench",
+        "required_capabilities": [
+          "metalworking"
+        ]
+      },
+      {
+        "recipe_id": "wooden_floor_panel",
+        "inputs": [],
+        "outputs": [],
+        "item_inputs": [
+          {
+            "item_id": "wooden_plank",
+            "quantity": 4
+          },
+          {
+            "item_id": "nail",
+            "quantity": 4
+          }
+        ],
+        "item_outputs": [
+          {
+            "item_id": "wooden_floor_panel",
+            "quantity": 1
+          }
+        ],
+        "structure_part_bindings": [
+          {
+            "item_id": "wooden_floor_panel",
+            "part_definition_id": "wooden_floor_panel"
+          }
+        ],
+        "processing_time_ticks": 90,
+        "facility_type": "workbench",
+        "required_capabilities": [
+          "woodworking"
+        ]
+      },
+      {
+        "recipe_id": "wooden_wall_panel",
+        "inputs": [],
+        "outputs": [],
+        "item_inputs": [
+          {
+            "item_id": "wooden_plank",
+            "quantity": 5
+          },
+          {
+            "item_id": "nail",
+            "quantity": 6
+          }
+        ],
+        "item_outputs": [
+          {
+            "item_id": "wooden_wall_panel",
+            "quantity": 1
+          }
+        ],
+        "structure_part_bindings": [
+          {
+            "item_id": "wooden_wall_panel",
+            "part_definition_id": "wooden_wall_panel"
+          }
+        ],
+        "processing_time_ticks": 120,
+        "facility_type": "workbench",
+        "required_capabilities": [
+          "woodworking"
+        ]
+      },
+      {
+        "recipe_id": "wooden_post",
+        "inputs": [],
+        "outputs": [],
+        "item_inputs": [
+          {
+            "item_id": "wooden_plank",
+            "quantity": 2
+          }
+        ],
+        "item_outputs": [
+          {
+            "item_id": "wooden_post",
+            "quantity": 1
+          }
+        ],
+        "structure_part_bindings": [
+          {
+            "item_id": "wooden_post",
+            "part_definition_id": "wooden_post"
+          }
+        ],
+        "processing_time_ticks": 60,
+        "facility_type": "workbench",
+        "required_capabilities": [
+          "woodworking"
+        ]
+      },
+      {
+        "recipe_id": "wooden_door",
+        "inputs": [],
+        "outputs": [],
+        "item_inputs": [
+          {
+            "item_id": "wooden_plank",
+            "quantity": 4
+          },
+          {
+            "item_id": "nail",
+            "quantity": 4
+          },
+          {
+            "item_id": "hinge",
+            "quantity": 2
+          }
+        ],
+        "item_outputs": [
+          {
+            "item_id": "wooden_door",
+            "quantity": 1
+          }
+        ],
+        "structure_part_bindings": [
+          {
+            "item_id": "wooden_door",
+            "part_definition_id": "wooden_door"
+          }
+        ],
+        "processing_time_ticks": 120,
+        "facility_type": "workbench",
+        "required_capabilities": [
+          "woodworking"
+        ]
+      },
+      {
+        "recipe_id": "wooden_window",
+        "inputs": [],
+        "outputs": [],
+        "item_inputs": [
+          {
+            "item_id": "wooden_plank",
+            "quantity": 3
+          },
+          {
+            "item_id": "nail",
+            "quantity": 4
+          }
+        ],
+        "item_outputs": [
+          {
+            "item_id": "wooden_window",
+            "quantity": 1
+          }
+        ],
+        "structure_part_bindings": [
+          {
+            "item_id": "wooden_window",
+            "part_definition_id": "wooden_window"
+          }
+        ],
+        "processing_time_ticks": 90,
+        "facility_type": "workbench",
+        "required_capabilities": [
+          "woodworking"
+        ]
+      },
+      {
+        "recipe_id": "wooden_roof_panel",
+        "inputs": [],
+        "outputs": [],
+        "item_inputs": [
+          {
+            "item_id": "wooden_plank",
+            "quantity": 4
+          },
+          {
+            "item_id": "nail",
+            "quantity": 4
+          }
+        ],
+        "item_outputs": [
+          {
+            "item_id": "wooden_roof_panel",
+            "quantity": 1
+          }
+        ],
+        "structure_part_bindings": [
+          {
+            "item_id": "wooden_roof_panel",
+            "part_definition_id": "wooden_roof_panel"
+          }
+        ],
+        "processing_time_ticks": 100,
         "facility_type": "workbench",
         "required_capabilities": [
           "woodworking"
