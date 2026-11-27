@@ -181,7 +181,7 @@ Bu inceleme kaydından sonra `HexWorldRuntime` içine ilk gerçek runtime entegr
 Bu nedenle runtime entegrasyonunun temel storage/snapshot/commit yolu uygulanmış olsa da Aşama 2 tamamlanmış değildir. CI sonuçları ve sonraki entegrasyon kontrolleri beklenir.
 
 
-## 11. Gerçek zemin desteği entegrasyonu (2026-11-28)
+## 13. Gerçek zemin desteği entegrasyonu (2026-11-28)
 
 İlk support entegrasyonunda elle verilen `supported_cells` girdisi kaldırıldı. Destek kanıtının kaynağı artık map içeriğinin açık terrain capability tanımıdır:
 
@@ -197,7 +197,7 @@ Bu nedenle runtime entegrasyonunun temel storage/snapshot/commit yolu uygulanmı
 - `content/movement_test/hex_maps/movement_test_arena.json`: grass, stone ve dirt temel taşıyabilir; water taşıyamaz.
 - `content/demo_eldoria/hex_maps/starting_valley.json`: grass, forest_floor, clearing_floor ve rock temel taşıyabilir; water taşıyamaz. Rock'ın blocked olması yerleştirmeyi ayrıca engeller; bu, taşıma kabiliyetiyle geçilebilirliğin farklı kavramlar olduğunu korur.
 
-Test kapsamına runtime'ın destek hücrelerini terrain metadata'dan üretmesi ve metadata bulunmadığında `UNSUPPORTED` ile güvenli ret eklenmiştir. Runtime placement entegrasyon testleri artık `requires_support=True` ile çalışır.
+Test kapsamına runtime'ın destek hücrelerini terrain metadata'dan üretmesi, metadata bulunmadığında `UNSUPPORTED` ile güvenli ret ve atomic commit sınırında sahte/geçerli görünen fakat gerçekte desteksiz sonuçların reddi eklenmiştir. Runtime placement entegrasyon testleri artık `requires_support=True` ile çalışır.
 
 ### Kapsam sınırı
 
