@@ -1,7 +1,7 @@
 """Authoritative foundation-support evidence derived from map terrain metadata."""
 from __future__ import annotations
 
-from core.domain.spatial import HexCoord, LocalHexPosition
+from core.domain.spatial import HexCoord
 from application.hex_map_definition import HexMapDefinition
 
 
