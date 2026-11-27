@@ -518,6 +518,65 @@ class TestPhaseDQuality(unittest.TestCase):
         self.assertTrue(window.pause_menu_open)
         self.assertEqual(window.pause_menu_selected, 1)
 
+    def test_recreating_gameplay_screens_closes_and_rebinds_session_windows(self):
+        service, _ = populate_opening_content(GameApplication.create_default())
+
+        class Manager:
+            def __init__(self):
+                from game_ui.game_window import GAMEPLAY_WINDOW_IDS
+
+                self.windows = {
+                    window_id: SimpleNamespace(screen=object())
+                    for window_id in GAMEPLAY_WINDOW_IDS
+                }
+                self._open_ids = ("inventory", "container")
+                self.closed = []
+
+            @property
+            def open_ids(self):
+                return self._open_ids
+
+            def close(self, window_id):
+                self.closed.append(window_id)
+                self._open_ids = tuple(
+                    item for item in self._open_ids if item != window_id
+                )
+
+        class Clock:
+            def __init__(self):
+                self.reset_count = 0
+
+            def reset(self):
+                self.reset_count += 1
+
+        window = object.__new__(GameWindow)
+        window.service = service
+        window.screens = {"save_slots": object()}
+        window.window_manager = Manager()
+        window.gameplay_screen = "main"
+        window.current = "dialogue"
+        window.gameplay_active = True
+        window.pause_menu_open = True
+        window._movement_clock = Clock()
+        window._npc_simulation_clock = Clock()
+        window._player_movement_controller = object()
+        window._player_movement_controller_key = ("old-session",)
+
+        window._recreate_gameplay_screens()
+
+        self.assertEqual(window.window_manager.closed, ["inventory", "container"])
+        self.assertEqual(window.window_manager.open_ids, ())
+        for window_id, managed in window.window_manager.windows.items():
+            self.assertIs(managed.screen, window.screens[window_id])
+        self.assertFalse(window.pause_menu_open)
+        self.assertTrue(window.gameplay_active)
+        self.assertEqual(window.current, "main")
+        self.assertEqual(window._movement_clock.reset_count, 1)
+        self.assertEqual(window._npc_simulation_clock.reset_count, 1)
+        self.assertIsNone(window._player_movement_controller)
+        self.assertIsNone(window._player_movement_controller_key)
+        self.assertFalse(window.screens["dialogue"].is_active())
+
     def test_dialogue_exposes_public_external_transition_lifecycle(self):
         dialogue = DialogueScreen(SimpleNamespace(
             dialogue_npc_name=lambda npc_id: f"NPC {npc_id}",
