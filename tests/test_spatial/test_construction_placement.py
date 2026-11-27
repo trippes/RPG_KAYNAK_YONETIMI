@@ -3,6 +3,7 @@ import unittest
 
 from application.hex_map_definition import parse_hex_map
 from core.domain.spatial import ConstructionPosition, HexCoord, WorldPoint
+from core.domain.structures import StructureGeometryDefinition, StructurePartDefinition
 from application.construction_placement import (
     ConstructionPlacementRequest,
     ConstructionPlacementSnapshot,
@@ -61,6 +62,32 @@ class ConstructionPlacementTests(unittest.TestCase):
         self.assertEqual(result.footprint_cells, (HexCoord(0, 0), HexCoord(1, 0)))
         self.assertEqual(result.snapshot_revision, 4)
         self.assertEqual(result.reasons, ())
+
+    def test_request_uses_explicit_part_geometry_footprint(self):
+        part = StructurePartDefinition(
+            "wall.basic",
+            "wall",
+            StructureGeometryDefinition(
+                "custom", 2.0, 0.25, 3.0,
+                footprint_local_points=(WorldPoint(-20, 0), WorldPoint(20, 0)),
+            ),
+        )
+        placement = ConstructionPlacementRequest.from_part_definition(
+            part, ConstructionPosition("village", WorldPoint(0, 0)), "player",
+        )
+        result = ConstructionPlacementValidator.validate(placement, snapshot())
+        self.assertTrue(result.valid)
+        self.assertEqual(result.footprint_cells, (HexCoord(-1, 0), HexCoord(0, 0)))
+
+    def test_request_rejects_part_without_explicit_footprint(self):
+        part = StructurePartDefinition(
+            "wall.basic", "wall",
+            StructureGeometryDefinition("box", 2.0, 0.25, 3.0),
+        )
+        with self.assertRaisesRegex(ValueError, "footprint_local_points"):
+            ConstructionPlacementRequest.from_part_definition(
+                part, ConstructionPosition("village", WorldPoint(0, 0)), "player",
+            )
 
     def test_wrong_map_is_rejected(self):
         result = ConstructionPlacementValidator.validate(
