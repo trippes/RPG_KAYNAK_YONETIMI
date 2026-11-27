@@ -539,6 +539,34 @@ class TestGameplayService(unittest.TestCase):
         self.service.advance_to(5)
         self.assertEqual(self.inventory.get(self.tool), Quantity(1, ResourceUnit.ITEM))
 
+    def test_production_catalog_queries_are_immutable_and_service_owned(self):
+        before_tick = self.service.state().simulation_tick
+
+        first = self.service.recipes_state()
+        repeated = self.service.recipes_state()
+
+        self.assertEqual(tuple(recipe.recipe_id for recipe in first), ("smelt", "tool"))
+        self.assertEqual(first, repeated)
+        self.assertEqual(first[0].facility_type, "smelter")
+        self.assertEqual(
+            tuple((resource.value, quantity.value, quantity.unit.value)
+                  for resource, quantity in first[0].inputs),
+            (("ore", 2, "item"),),
+        )
+        with self.assertRaises(FrozenInstanceError):
+            first[0].recipe_id = "changed"
+
+        smelter = self.service.production_facility_for_recipe("smelt")
+        workshop = self.service.production_facility_for_recipe("tool")
+        incompatible = self.service.production_facility_for_recipe(
+            "smelt", facility_id="workshop-1",
+        )
+
+        self.assertEqual(smelter.facility_id, "smelter-1")
+        self.assertEqual(workshop.facility_id, "workshop-1")
+        self.assertIsNone(incompatible)
+        self.assertEqual(self.service.state().simulation_tick, before_tick)
+
     def test_gameplay_state_returns_detached_immutable_value_views(self):
         self.service.register_actor("z_worker", "worker", inventory_id="other")
         self.service.register_actor("a_worker", "worker", inventory_id="main")
