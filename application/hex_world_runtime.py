@@ -212,6 +212,7 @@ class HexWorldRuntime:
             if map_id is None or self._structure_placements[key].position.map_id == map_id
         )
 
+    @_runtime_state_locked
     def construction_snapshot(self, map_id: str, *, supported_cells=()):
         """Build placement evidence from this runtime's authoritative map and occupants.
 
