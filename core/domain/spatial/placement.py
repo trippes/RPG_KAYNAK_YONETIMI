@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from enum import Enum
 import math
 from types import MappingProxyType
-from typing import Mapping
+from typing import Callable, Mapping, Protocol
 
 from application.hex_map_definition import HexMapDefinition
 from core.domain.spatial import (
@@ -186,6 +186,60 @@ class ConstructionPlacementValidator:
             ordered_reasons,
             snapshot.state_revision,
         )
+
+
+
+class ConstructionPlacementCommitPort(Protocol):
+    """Atomic adapter over the existing authoritative world state.
+
+    Implementations must compare the revision and insert the placement in one
+    transaction. Returning False means the expected revision was stale and no
+    world mutation occurred.
+    """
+
+    def commit_if_revision(
+        self,
+        expected_revision: int,
+        request: ConstructionPlacementRequest,
+        result: ConstructionPlacementResult,
+    ) -> bool: ...
+
+
+class ConstructionPlacementService:
+    """Preview and compare-and-swap commit orchestration over injected ports."""
+
+    def __init__(
+        self,
+        snapshot_provider: Callable[[], ConstructionPlacementSnapshot],
+        commit_port: ConstructionPlacementCommitPort,
+    ) -> None:
+        if not callable(snapshot_provider):
+            raise TypeError("snapshot_provider must be callable.")
+        if not callable(getattr(commit_port, "commit_if_revision", None)):
+            raise TypeError("commit_port must implement commit_if_revision.")
+        self._snapshot_provider = snapshot_provider
+        self._commit_port = commit_port
+
+    def preview(
+        self, request: ConstructionPlacementRequest
+    ) -> ConstructionPlacementResult:
+        snapshot = self._snapshot_provider()
+        return ConstructionPlacementValidator.validate(request, snapshot)
+
+    def try_commit(
+        self, request: ConstructionPlacementRequest
+    ) -> ConstructionPlacementResult:
+        # Revalidate against a fresh snapshot immediately before atomic CAS.
+        snapshot = self._snapshot_provider()
+        result = ConstructionPlacementValidator.validate(request, snapshot)
+        if not result.valid:
+            return result
+        committed = self._commit_port.commit_if_revision(
+            snapshot.state_revision, request, result
+        )
+        if committed:
+            return result
+        return check_placement_revision(result, snapshot.state_revision + 1)
 
 
 def check_placement_revision(
