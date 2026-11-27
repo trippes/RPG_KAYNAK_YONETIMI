@@ -955,23 +955,22 @@ class GameWindow:
 
         if next_screen == "market":
             dialogue = self.screens["dialogue"]
-            context = getattr(dialogue, "context", None)
+            npc_id = dialogue.active_npc_id
             profile = (
-                self.service.market_for_npc(context[1])
-                if context is not None else None
+                self.service.market_for_npc(npc_id)
+                if npc_id is not None else None
             )
             if profile is None:
                 self._set_notice("Bu NPC için tanımlı bir pazar bulunamadı.", "error")
             else:
                 self.screens["market"].set_market(profile.market_id)
                 self.window_manager.open("market")
-                dialogue._reset_dialogue()
+                dialogue.complete_external_transition()
             next_screen = self.gameplay_screen
 
         if next_screen == "trade":
             dialogue = self.screens["dialogue"]
-            context = getattr(dialogue, "context", None)
-            npc_id = context[1] if context is not None else None
+            npc_id = dialogue.active_npc_id
             partner = (
                 self.service.trade_partner_for_npc(npc_id)
                 if npc_id is not None else None
@@ -981,7 +980,7 @@ class GameWindow:
             else:
                 self.screens["trade"].set_npc(npc_id)
                 self.window_manager.open("trade")
-                dialogue._reset_dialogue()
+                dialogue.complete_external_transition()
             next_screen = self.gameplay_screen
 
         if next_screen == "world":
