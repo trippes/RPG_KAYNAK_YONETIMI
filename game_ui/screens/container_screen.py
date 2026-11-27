@@ -53,6 +53,7 @@ class ContainerScreen:
         if not isinstance(container_id, str) or not container_id.strip():
             raise ValueError("container_id is required.")
         self.container_id = container_id
+        self._drag_item_id = None
         self.selected_index = 0
         self.scroll_row = 0
         self.search_text = ""
