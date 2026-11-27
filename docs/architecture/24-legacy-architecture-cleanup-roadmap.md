@@ -219,6 +219,36 @@ Roadmap onaylandıktan sonra ilk çalışma paketi şu sırayla yürütülür:
 
 | 2026-11-27 | A3.1 — GameplayService sorumluluk/API ve UI tüketici envanteri | **Tamamlandı (salt okunur envanter; kod değişikliği yok)** | Güncel dal kaynakları üzerinden servis ve bilinen UI tüketicileri yeniden incelendi; önceki yaklaşık sayılar güncellendi. Kesin bulgular ve dosya bazlı erişim listesi Bölüm 7.2'de kayıtlı. A3.1'in çıktısı servis sorumluluk haritası, public/private API envanteri, UI tüketici haritası, doğrudan Application erişimlerinin sınıflandırması ve read-model sözleşme boşluklarıdır. Bu kapanış A3.2 veya sonraki işlerin başladığı anlamına gelmez. |
 
+| 2026-11-27 | A3.2 — Sorgu/read-model sözleşmesi | **Kod ve hedefli test eklendi; CI doğrulaması bekleniyor** | `GameplayService.state()` ve `combat_state()` için salt okunur, deterministik, immutable view sözleşmesi tanımlandı. `test_gameplay_state_returns_detached_immutable_value_views` testi sıralama, tekrar sorguda kararlılık, frozen view alanları, snapshot'ın sonradan değişmemesi ve sorgunun tick ilerletmemesini doğrular. Combat read-model detached/immutable regresyon testi zaten mevcuttu ve korundu. Runtime/UI davranışı değiştirilmedi. |
+
+
+
+### 7.3. A3.2 — Sorgu ve read-model sözleşmesi (2026-11-27)
+
+**Amaç ve sınır:** A3.1'de tespit edilen doğrudan UI veri okumalarına geçiş yapmadan önce, mevcut servis sorgularının güvenilir read-model davranışını açıklaştırmak. Bu alt iş, mevcut `GameplayService.state()` ve `GameplayService.combat_state()` sorgularının sözleşmesini sabitler. Yeni oyun özelliği, ekran refaktörü veya UI'nin Application erişimlerini taşıma bu alt işin kapsamında değildir.
+
+**Kabul edilen sözleşme:**
+
+1. Sorgu metotları simülasyon tick'ini ilerletmez, kaynak/nesne tüketmez, faaliyet başlatmaz ve domain state üzerinde değişiklik yapmaz.
+2. Sorgu sonucu, mutable domain aggregate yerine immutable view dataclass'ları ve tuple koleksiyonları sunar.
+3. View alanları sorgu anındaki değeri temsil eder; kaynak aggregate daha sonra değişse de daha önce alınmış snapshot değişmez (detached snapshot).
+4. Aynı state için tekrarlanan sorgu eşit ve deterministik sonuç verir; koleksiyonlar kararlı kimlik sırasıyla sunulur.
+5. Komutlar mevcut servis komutlarında kalır; read-model nesneleri üzerinden state değiştirilemez.
+6. UI için henüz read-model'i bulunmayan NPC/dialogue, quest/graph, recipe/facility kataloğu ve aktif dünya başlığı verileri doğrudan Application erişimiyle okunmaya devam ediyor. Bunlar bilinen açıklar olarak korunur; A3.2'de sahte veya eksik bir birleşik snapshot üretmek yerine sonraki alt iş için açıkça bırakılır.
+
+**Mevcut yüzeyin sınıflandırması:**
+
+| Sorgu | Dönüş sözleşmesi | A3.2 kararı |
+|---|---|---|
+| `state()` | `GameplaySnapshotView`; frozen dataclass ve tuple tabanlı inventory/node/facility/job/chain/actor/activity görünümleri | Kabul edildi; deterministiklik, değişmezlik ve snapshot ayrışması testle güvenceye alındı. |
+| `combat_state()` | `CombatSnapshotView`; frozen combatant/encounter view tuple'ları | Kabul edildi; mevcut detached/immutable regresyon testi korundu. |
+| `inventory()`, `actor()`, `activity()`, `container_state()`, `lock_state()` | Alan bazlı immutable view'lar | Mevcut view sözleşmesiyle uyumlu; sonraki servis sınırı çalışmasında korunacak. |
+| `actor_character()`, `market_for_npc()`, `trade_partner_for_npc()`, `available_quests()` | Domain nesnesi/aggregate döndüren geçiş API'leri | UI-safe read-model olarak kabul edilmedi; dönüş tipi standardizasyonu ayrı iş olarak açık bırakıldı. |
+
+**Test kanıtı:** `tests/test_application/test_gameplay_service.py` içine `test_gameplay_state_returns_detached_immutable_value_views` eklendi. Test; inventory sıralamasını, actor sıralamasını, aynı state için tekrarlanan snapshot eşitliğini, frozen view alanlarının değiştirilememesini, kaynak inventory/node değiştikten sonra eski snapshot'ın korunmasını ve sorgular arasında simulation tick'in sabit kalmasını doğrular. Aynı dosyadaki `test_combat_state_returns_detached_immutable_views` combatant/encounter read-model'inin detached ve immutable davranışını zaten doğruladığından tekrar yazılmadı.
+
+**Değişiklik sınırı:** Runtime kodu, UI dosyaları, GameApplication composition root, persistence biçimi ve mevcut oyun davranışı değiştirilmedi. Tek kod deposu değişikliği hedefli regresyon testidir; bu nedenle A3.2 bir servis read-model sözleşmesi/kalite kapısı alt işi olarak kapatılır. A3.1'de sayılan doğrudan Application/private erişimler bu alt iş sonunda hâlâ mevcuttur; kaldırıldıkları iddia edilmez. Bunların güvenli servis sorgularına taşınması A3'ün sonraki alt işidir.
+
 ## 8. Tamamlanma tanımı
 
 Bu program ancak aşağıdaki koşulların tümü sağlandığında tamamlanmış sayılır:
