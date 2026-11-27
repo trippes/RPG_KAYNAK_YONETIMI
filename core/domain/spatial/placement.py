@@ -17,6 +17,7 @@ from core.domain.spatial import (
     ConstructionPosition,
     ConstructionSpaceTransform,
     HexCoord,
+    LocalHexPosition,
     WorldPoint,
 )
 
@@ -153,7 +154,7 @@ class ConstructionPlacementValidator:
         if not footprint:
             reasons.append(PlacementFailureReason.INVALID_FOOTPRINT)
         outside = any(
-            not snapshot.map_definition.has_cell(type(next(iter(snapshot.map_definition.valid_cells)))(cell.q, cell.r))
+            not snapshot.map_definition.has_cell(LocalHexPosition.from_hex_coord(cell))
             for cell in footprint
         )
         if outside:
