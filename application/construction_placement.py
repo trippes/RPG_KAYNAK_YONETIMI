@@ -20,6 +20,7 @@ from core.domain.spatial import (
     LocalHexPosition,
     WorldPoint,
 )
+from core.domain.structures import StructurePartDefinition
 
 
 class PlacementFailureReason(str, Enum):
@@ -41,6 +42,28 @@ class ConstructionPlacementRequest:
     actor_id: str
     requires_support: bool = False
     has_permission: bool = True
+
+    @classmethod
+    def from_part_definition(
+        cls,
+        part_definition: StructurePartDefinition,
+        position: ConstructionPosition,
+        actor_id: str,
+        *,
+        requires_support: bool = False,
+        has_permission: bool = True,
+    ) -> ConstructionPlacementRequest:
+        """Build placement input from the part's explicit geometry footprint."""
+        if not isinstance(part_definition, StructurePartDefinition):
+            raise TypeError("part_definition must be a StructurePartDefinition.")
+        return cls(
+            part_definition.part_definition_id,
+            position,
+            part_definition.geometry.footprint_local_points,
+            actor_id,
+            requires_support,
+            has_permission,
+        )
 
     def __post_init__(self) -> None:
         for name in ("part_definition_id", "actor_id"):
