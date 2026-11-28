@@ -173,7 +173,7 @@ class TestContentPack(unittest.TestCase):
             )
         self.assertEqual(
             service.inventory("player").items,
-            (("hinge", 2), ("nail", 22), ("old_copper_ring", 1), ("wooden_plank", 22)),
+            (("hinge", 2), ("iron", 20), ("nail", 22), ("old_copper_ring", 1), ("wooden_plank", 22)),
         )
         populate_gameplay_resources(service, content_package_path=PACKAGE)
         self.assertEqual(
