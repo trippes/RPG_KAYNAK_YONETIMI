@@ -49,9 +49,10 @@ class TestContentPack(unittest.TestCase):
             {"item_id": "wooden_plank", "quantity": 22},
             {"item_id": "nail", "quantity": 22},
             {"item_id": "hinge", "quantity": 2},
+            {"item_id": "iron", "quantity": 20},
         ])
         items = load_item_definitions(package_path=PACKAGE)
-        self.assertEqual(tuple(item.item_id for item in items), ("old_copper_ring", "wooden_plank", "nail", "hinge", "wooden_floor_panel", "wooden_wall_panel", "wooden_post", "wooden_door", "wooden_window", "wooden_roof_panel"))
+        self.assertEqual(tuple(item.item_id for item in items), ("old_copper_ring", "wooden_plank", "nail", "hinge", "wooden_floor_panel", "wooden_wall_panel", "wooden_post", "wooden_door", "wooden_window", "wooden_roof_panel", "iron"))
         facilities, recipes = load_production_definitions(package_path=PACKAGE)
         self.assertEqual(tuple(facility.facility_id for facility in facilities), ("village-workbench",))
         self.assertEqual(tuple(recipe.recipe_id for recipe in recipes), ("wooden_plank", "iron_nails", "iron_hinge", "wooden_floor_panel", "wooden_wall_panel", "wooden_post", "wooden_door", "wooden_window", "wooden_roof_panel"))
@@ -157,7 +158,7 @@ class TestContentPack(unittest.TestCase):
         self.assertEqual(opened.container_id, "village_chest")
         self.assertEqual(
             opened.items,
-            (("hinge", 2), ("nail", 22), ("old_copper_ring", 1), ("wooden_plank", 22)),
+            (("hinge", 2), ("iron", 20), ("nail", 22), ("old_copper_ring", 1), ("wooden_plank", 22)),
         )
         self.assertIsNone(service.container_lock_state("village_chest"))
         for item_id, quantity in (
@@ -165,6 +166,7 @@ class TestContentPack(unittest.TestCase):
             ("wooden_plank", 22),
             ("nail", 22),
             ("hinge", 2),
+            ("iron", 20),
         ):
             service.transfer_actor_item_from_container(
                 ids.hero_id, "player", "village_chest", item_id, quantity,
